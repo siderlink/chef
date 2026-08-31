@@ -36,6 +36,17 @@ module.exports = function (app, masterDb, sqlite3, options) {
     return path.join(__dirname, '..', `database_${tid}.sqlite`);
   }
 
+  // Rota do template do painel (carregado por super-admin.js via fetch)
+  app.get('/api/super/panel-template', superAdminAuth, (_req, res) => {
+    const templatePath = path.join(__dirname, '..', 'views', 'super-admin-panel.html');
+    if (fsSync.existsSync(templatePath)) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(fsSync.readFileSync(templatePath, 'utf8'));
+    } else {
+      res.status(404).json({ ok: false, erro: 'Template do painel nao encontrado.' });
+    }
+  });
+
   function listarBancosTenant() {
     try {
       const rootDir = path.join(__dirname, '..');
@@ -414,6 +425,25 @@ module.exports = function (app, masterDb, sqlite3, options) {
         await options.loadAllTenantFeatures();
       }
 
+      // 10) Gerar QR Code para acesso ao tenant
+      let qrCodeDataUrl = null;
+      try {
+        const baseDomain = options.baseDomain || 'cheff.pro';
+        const tenantUrl = customDomain
+          ? `https://${customDomain}/`
+          : (slug ? `https://${slug}.${baseDomain}/` : null);
+        if (tenantUrl) {
+          const qrLib = require('./public/vendor/qrcode/qrcode-generator.js');
+          const qr = qrLib(0, 'M');
+          qr.addData(tenantUrl);
+          qr.make();
+          const cell = Math.max(2, Math.floor(300 / qr.getModuleCount()));
+          qrCodeDataUrl = qr.createDataURL(cell, 4);
+        }
+      } catch (eQr) {
+        console.warn('[SuperAdmin] Falha ao gerar QR Code:', eQr.message);
+      }
+
       res.json({
         ok: true,
         id: newId,
@@ -421,6 +451,8 @@ module.exports = function (app, masterDb, sqlite3, options) {
         licenca: licencaVal,
         admin_criado: !!adminUserId,
         alertas: alertas,
+        qr_code: qrCodeDataUrl,
+        qr_url: customDomain ? `https://${customDomain}/` : (slug ? `https://${slug}.${options.baseDomain || 'cheff.pro'}/` : null),
         mensagem: 'Restaurante "' + nome + '" criado com sucesso!'
       });
     } catch (e) {
@@ -452,7 +484,24 @@ module.exports = function (app, masterDb, sqlite3, options) {
               }
             } catch (e) { }
           }
-          res.json({ ok: true, mensagem: 'Restaurante criado com sucesso!', id: newId });
+
+          // Gerar QR Code para o tenant
+          let qrCodeDataUrl = null;
+          try {
+            const baseDomain = options.baseDomain || 'cheff.pro';
+            // Usa ID como fallback se não há slug/custom_domain
+            const tenantUrl = `https://rest-${newId}.${baseDomain}/`;
+            const qrLib = require('./public/vendor/qrcode/qrcode-generator.js');
+            const qr = qrLib(0, 'M');
+            qr.addData(tenantUrl);
+            qr.make();
+            const cell = Math.max(2, Math.floor(300 / qr.getModuleCount()));
+            qrCodeDataUrl = qr.createDataURL(cell, 4);
+          } catch (eQr) {
+            console.warn('[SuperAdmin] Falha ao gerar QR Code:', eQr.message);
+          }
+
+          res.json({ ok: true, mensagem: 'Restaurante criado com sucesso!', id: newId, qr_code: qrCodeDataUrl, qr_url: `https://rest-${newId}.${options.baseDomain || 'cheff.pro'}/` });
         }
       );
     } catch (e) {

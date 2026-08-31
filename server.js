@@ -1442,7 +1442,7 @@ function localizarFuncionarioLogin(usuario, cb) {
   });
 }
 
-let BASE_DOMAIN = (process.env.BASE_DOMAIN || 'chefcozinha.com.br').toLowerCase();
+let BASE_DOMAIN = (process.env.BASE_DOMAIN || 'cheff.pro').toLowerCase();
 const domainMap = new Map(); // custom_domain → tenant_id
 const slugMap = new Map();   // slug → tenant_id
 let domainMapLoaded = false;
@@ -11718,9 +11718,9 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       isTenantFeatureEnabled: (tid, f) => true,
       metricSocketCount,
       ifoodApi: null,
-      baseDomain: process.env.BASE_DOMAIN || 'localhost',
+      baseDomain: BASE_DOMAIN,
       reloadDomainMaps: async () => {},
-      createFreshTenantDb: null,
+      createFreshTenantDb: createFreshTenantDb,
       ifoodDeps: null
     });
     console.log('👑 Controller do Super Admin carregado com sucesso no servidor principal.');
