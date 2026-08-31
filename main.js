@@ -3597,7 +3597,53 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(e => console.error("Erro fetch configs:", e));
   }
   fetchPdvConfigs();
-  socket.on('configuracoes_atualizadas', fetchPdvConfigs);
+  socket.on('configuracoes_atualizadas', function () {
+    if (typeof fetchPdvConfigs === 'function') fetchPdvConfigs();
+    if (typeof window.carregarFuncsModulos === 'function') window.carregarFuncsModulos();
+  });
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /* MÓDULOS / FUNÇÕES — liberados pelo super admin e ativados       */
+  /* pelo restaurante. Itens do caixa só aparecem quando ATIVOS.     */
+  /* ═══════════════════════════════════════════════════════════════ */
+  window.chefFuncs = null;
+  window.carregarFuncsModulos = async function () {
+    try {
+      const r = await fetch('/api/funcoes', { headers: authHeaders() });
+      const d = await r.json();
+      const map = {};
+      (d.features || []).forEach(function (f) { map[f.chave] = f; });
+      window.chefFuncs = map;
+      if (typeof window.aplicarVisibilidadeModulos === 'function') window.aplicarVisibilidadeModulos();
+    } catch (e) {}
+  };
+
+  // true se o restaurante liberou E ativou o módulo
+  window.isFuncModAtiva = function (chave) {
+    var f = window.chefFuncs && window.chefFuncs[chave];
+    if (!f) return true; // antes de carregar, nada é escondido (evita sumiço indevido)
+    return !!(f.available && f.enabled);
+  };
+
+  window.aplicarVisibilidadeModulos = function () {
+    var regras = {
+      hub_delivery: ['menu-hub-delivery', 'menu-mob-hub-delivery'],
+      fila_espera: ['btn-status-fila', 'menu-mob-fila-espera'],
+      reservas: ['btn-reservar-mesa']
+    };
+    Object.keys(regras).forEach(function (chave) {
+      var ativa = window.isFuncModAtiva(chave);
+      regras[chave].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = ativa ? '' : 'none';
+      });
+    });
+  };
+
+  socket.on('funcao_aprovada', function (data) {
+    if (data && data.feature && window.carregarFuncsModulos) window.carregarFuncsModulos();
+  });
+  window.carregarFuncsModulos();
 
   /* ═══════════════════════════════════════════════════════════════ */
   /* ONBOARDING WIZARD — 3 passos (Dados, Mesas, Produtos)         */
@@ -8403,6 +8449,12 @@ document.addEventListener('keydown', (e) => {
 
     let isCollapsed = false;
     let savedHeightPercent = 45;
+    if (typeof window.obterConfigLayoutColaborador === 'function') {
+      try {
+        const cfg = window.obterConfigLayoutColaborador();
+        if (cfg && cfg.mesas_height_pct) savedHeightPercent = cfg.mesas_height_pct;
+      } catch (e) {}
+    }
 
     function renderItensRecolhidos() {
       const strip = document.getElementById('mesas-collapsed-items');
@@ -8525,6 +8577,9 @@ document.addEventListener('keydown', (e) => {
         splitterV.classList.remove('dragging');
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        if (typeof window.salvarAlturaPainelMesas === 'function') {
+          window.salvarAlturaPainelMesas(savedHeightPercent);
+        }
       }
     };
     document.addEventListener('mouseup', stopDragV);

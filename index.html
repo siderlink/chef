@@ -415,7 +415,8 @@
               class="ph ph-shopping-cart"></i> Vendas (Balcão / Venda Rápida)</div>
           <div class="dropdown-item" onclick="document.getElementById('toolbar-delivery').click()"><i
               class="ph ph-truck"></i> Delivery</div>
-          <div class="dropdown-item" onclick="window.open('/hub-delivery.html', '_blank')"><i class="ph ph-truck"></i>
+          <div class="dropdown-item" id="menu-hub-delivery" onclick="window.open('/hub-delivery.html', '_blank')"><i
+              class="ph ph-truck"></i>
             Hub Delivery</div>
           <div class="dropdown-item" id="menu-financeiro"><i class="ph ph-currency-circle-dollar"></i> Financeiro</div>
           <div class="dropdown-item" id="menu-relatorios"><i class="ph ph-chart-bar"></i> Relatórios</div>
@@ -515,7 +516,7 @@
             onclick="document.getElementById('toolbar-delivery').click(); window.closeMobileMenu();">
             <i class="ph ph-truck"></i><span>Delivery</span>
           </button>
-          <button class="mobile-menu-item mob-card-amber"
+          <button class="mobile-menu-item mob-card-amber" id="menu-mob-hub-delivery"
             onclick="window.open('/hub-delivery.html', '_blank'); window.closeMobileMenu();">
             <i class="ph ph-truck"></i><span>Hub Delivery</span>
           </button>
@@ -529,7 +530,7 @@
           <button class="mobile-menu-item mob-card-rose" onclick="window.location.href='fila-pedidos.html'">
             <i class="ph ph-fire"></i><span>Fila de Preparo</span>
           </button>
-          <button class="mobile-menu-item mob-card-yellow"
+          <button class="mobile-menu-item mob-card-yellow" id="menu-mob-fila-espera"
             onclick="window.closeMobileMenu(); if(window.abrirFilaEsperaModal) window.abrirFilaEsperaModal();">
             <i class="ph ph-users-three"></i><span>Fila de Espera</span>
           </button>
@@ -1017,7 +1018,7 @@
           <div style="width: 10px; height: 10px; border-radius: 50%; background: #3ab55b;"></div> <span
             style="color: #3ab55b; font-weight: bold;" id="info-mesas-livres">0</span> Livres
         </div>
-        <button onclick="window.abrirFilaEsperaModal && window.abrirFilaEsperaModal()"
+        <button id="btn-status-fila" onclick="window.abrirFilaEsperaModal && window.abrirFilaEsperaModal()"
           title="Ver Fila de Espera de Clientes" class="btn-status-fila"
           style="display: flex; gap: 6px; align-items: center; background: #fff3dc; border: 1px solid #fde047; padding: 4px 10px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; color: #854d0e; transition: transform 0.2s;"
           onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">

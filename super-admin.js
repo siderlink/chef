@@ -3579,35 +3579,86 @@ document.addEventListener('DOMContentLoaded', function() {
     apiGet('/api/super/solicitacoes-features', function(err, data) {
       if (err || !data || !data.ok) { box.innerHTML = '<span style="color:var(--danger);">Erro ao carregar solicitações.</span>'; return; }
       var lista = data.solicitacoes || [];
+      var equipe = data.equipe_suporte || [];
       if (!lista.length) { box.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> Nenhuma solicitação registrada.'; return; }
       var nomeFeature = function(chave) {
+        if (chave === 'nova_solicitacao') return 'Função personalizada';
         for (var i = 0; i < (_featuresDef || []).length; i++) {
           if (_featuresDef[i].chave === chave) return _featuresDef[i].nome;
         }
         return chave;
       };
+      var statusBadge = function(st) {
+        if (st === 'pendente') return ' <span class="badge badge-ativo" style="background:rgba(168,85,247,0.15);color:#c4b5fd;">pendente</span>';
+        if (st === 'em_implementacao') return ' <span style="font-size:11px;color:#c4b5fd;background:rgba(168,85,247,0.15);border-radius:999px;padding:2px 8px;">⚙ em implementação</span>';
+        if (st === 'implementada') return ' <span style="font-size:11px;color:#fb923c;background:rgba(251,146,60,0.15);border-radius:999px;padding:2px 8px;">✓ implementada</span>';
+        if (st === 'aprovada') return ' <span style="font-size:11px;color:#34d399;">✓ aprovada</span>';
+        if (st === 'recusada') return ' <span style="font-size:11px;color:#f87171;">✕ recusada</span>';
+        return '';
+      };
+      var optSuporte = '<option value="">— Delegar p/ suporte —</option>';
+      equipe.forEach(function(m) {
+        optSuporte += '<option value="' + m.id + '">' + escapeHtml(m.nome + (m.cargo ? ' · ' + m.cargo : '')) + '</option>';
+      });
       var html = '<div style="display:flex;flex-direction:column;gap:10px;">';
       lista.forEach(function(s) {
-        var pendente = s.status === 'pendente';
-        var corBorda = pendente ? 'rgba(168,85,247,0.35)' : 'rgba(100,116,139,0.25)';
-        var fundo = pendente ? 'rgba(168,85,247,0.06)' : 'rgba(0,0,0,0.15)';
-        html += '<div style="border:1px solid ' + corBorda + ';background:' + fundo + ';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;">'
+        var responsavel = s.responsavel_nome ? ' <div style="margin-top:4px;font-size:0.75rem;color:#c4b5fd;"><i class="fa-solid fa-user-gear"></i> Responsável: ' + escapeHtml(s.responsavel_nome) + '</div>' : '';
+        var acoes = '';
+        if (s.status === 'pendente') {
+          acoes = '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'
+            + '<select id="sup-select-' + s.id + '" style="padding:0.4rem 0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-main);color:var(--text-main);font-size:0.8rem;">' + optSuporte + '</select>'
+            + '<button class="btn-action" style="background:#8b5cf6;color:white;padding:0.45rem 0.9rem;" onclick="delegarSolicitacaoFeature(' + s.id + ')"><i class="fa-solid fa-user-plus"></i> Delegar</button>'
+            + '<button class="btn-action" style="background:#22c55e;color:white;padding:0.45rem 0.9rem;" onclick="resolverSolicitacaoFeature(' + s.id + ',\'aprovar\')"><i class="fa-solid fa-check"></i> Aprovar</button>'
+            + '<button class="btn-action" style="background:#ef4444;color:white;padding:0.45rem 0.9rem;" onclick="resolverSolicitacaoFeature(' + s.id + ',\'recusar\')"><i class="fa-solid fa-xmark"></i> Recusar</button>'
+            + '</div>';
+        } else if (s.status === 'em_implementacao') {
+          acoes = '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+            + '<button class="btn-action" style="background:#f59e0b;color:white;padding:0.45rem 0.9rem;" onclick="implementarSolicitacaoFeature(' + s.id + ')"><i class="fa-solid fa-wrench"></i> Concluir implementação</button>'
+            + '<button class="btn-action" style="background:#22c55e;color:white;padding:0.45rem 0.9rem;" onclick="resolverSolicitacaoFeature(' + s.id + ',\'aprovar\')"><i class="fa-solid fa-check"></i> Aprovar já</button>'
+            + '<button class="btn-action" style="background:#ef4444;color:white;padding:0.45rem 0.9rem;" onclick="resolverSolicitacaoFeature(' + s.id + ',\'recusar\')"><i class="fa-solid fa-xmark"></i> Recusar</button>'
+            + '</div>';
+        } else if (s.status === 'implementada') {
+          acoes = '<div style="display:flex;gap:8px;">'
+            + '<button class="btn-action" style="background:#22c55e;color:white;padding:0.45rem 0.9rem;" onclick="resolverSolicitacaoFeature(' + s.id + ',\'aprovar\')"><i class="fa-solid fa-check"></i> Aprovar (liberar)</button>'
+            + '<button class="btn-action" style="background:#ef4444;color:white;padding:0.45rem 0.9rem;" onclick="resolverSolicitacaoFeature(' + s.id + ',\'recusar\')"><i class="fa-solid fa-xmark"></i> Recusar</button>'
+            + '</div>';
+        } else if (s.status === 'aprovada') {
+          acoes = '<span style="font-size:11px;color:#34d399;">Liberado para o restaurante ✓</span>';
+        } else if (s.status === 'recusada') {
+          acoes = '<span style="font-size:11px;color:#f87171;">Recusada</span>';
+        }
+        html += '<div style="border:1px solid ' + (s.status === 'pendente' ? 'rgba(168,85,247,0.35)' : 'rgba(100,116,139,0.25)') + ';background:' + (s.status === 'pendente' ? 'rgba(168,85,247,0.06)' : 'rgba(0,0,0,0.15)') + ';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;">'
           + '<div style="min-width:220px;">'
           + '<strong style="color:#e2e8f0;">#' + s.restaurante_id + ' · ' + escapeHtml(s.restaurante_nome || ('Restaurante ' + s.restaurante_id)) + '</strong>'
           + ' <span class="badge badge-plano" style="margin-left:6px;">' + escapeHtml(nomeFeature(s.feature)) + '</span>'
-          + (pendente ? ' <span class="badge badge-ativo">pendente</span>' : (s.status === 'aprovada' ? ' <span style="font-size:11px;color:#34d399;">✓ aprovada</span>' : ' <span style="font-size:11px;color:#f87171;">✕ recusada</span>'))
+          + statusBadge(s.status)
           + (s.mensagem ? '<div style="margin-top:6px;color:var(--text-muted);font-size:0.8rem;">“' + escapeHtml(s.mensagem) + '”</div>' : '')
-          + '<div style="margin-top:4px;font-size:0.72rem;color:var(--text-muted);">' + escapeHtml(s.criado_em || '') + '</div>'
+          + responsavel
+          + '<div style="margin-top:4px;font-size:0.72rem;color:var(--text-muted);">' + escapeHtml(s.criado_em || '') + (s.resolvido_em ? ' → ' + escapeHtml(s.resolvido_em) : '') + '</div>'
           + '</div>'
-          + (pendente
-            ? '<div style="display:flex;gap:8px;">'
-              + '<button class="btn-action" style="background:#22c55e;color:white;padding:0.45rem 0.9rem;" onclick="resolverSolicitacaoFeature(' + s.id + ',\'aprovar\')"><i class="fa-solid fa-check"></i> Aprovar</button>'
-              + '<button class="btn-action" style="background:#ef4444;color:white;padding:0.45rem 0.9rem;" onclick="resolverSolicitacaoFeature(' + s.id + ',\'recusar\')"><i class="fa-solid fa-xmark"></i> Recusar</button>'
-              + '</div>'
-            : '')
+          + '<div style="display:flex;gap:8px;align-items:center;">' + acoes + '</div>'
           + '</div>';
       });
       box.innerHTML = html + '</div>';
+    });
+  };
+
+  window.delegarSolicitacaoFeature = function(id) {
+    var sel = document.getElementById('sup-select-' + id);
+    var suporteId = sel ? parseInt(sel.value, 10) : NaN;
+    if (!suporteId) { showToast('Selecione um membro da equipe de suporte.', 'error'); return; }
+    apiPost('/api/super/solicitacoes-features/delegar', { id: id, suporte_id: suporteId }, function(err, data) {
+      if (err || !data || !data.ok) { showToast('Erro ao delegar.', 'error'); return; }
+      showToast(data.mensagem || 'Implementação delegada!', 'success');
+      carregarSolicitacoesFeatures();
+    });
+  };
+
+  window.implementarSolicitacaoFeature = function(id) {
+    apiPost('/api/super/solicitacoes-features/implementar', { id: id }, function(err, data) {
+      if (err || !data || !data.ok) { showToast('Erro ao marcar implementação.', 'error'); return; }
+      showToast(data.mensagem || 'Implementação concluída!', 'success');
+      carregarSolicitacoesFeatures();
     });
   };
 

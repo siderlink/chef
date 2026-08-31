@@ -5129,7 +5129,7 @@ function desenharMapaParceiros() {
   }
 })();
 
-// --- FUNÇÕES DO SISTEMA (tenant): status + solicitação de ativação ---
+// --- FUNÇÕES DO SISTEMA (tenant): status + ativação (liberado pelo super admin) ---
 async function carregarFuncoesSistema() {
   const box = document.getElementById('funcoes-lista');
   if (!box) return;
@@ -5141,34 +5141,101 @@ async function carregarFuncoesSistema() {
     if (!defs.length) { box.innerHTML = '<div style="color:#888;font-size:13px;">Nenhuma função configurável.</div>'; return; }
     let html = '';
     defs.forEach((f) => {
-      const statusBadge = f.enabled
-        ? '<span style="font-size:11px;font-weight:800;color:#16a34a;background:#dcfce7;border-radius:999px;padding:3px 10px;">ATIVA</span>'
-        : '<span style="font-size:11px;font-weight:800;color:#b45309;background:#fef3c7;border-radius:999px;padding:3px 10px;">INATIVA</span>';
-      const overrideTag = f.override ? ' <span title="Configuração manual do super admin" style="color:#f59e0b;">★</span>' : '';
-      let solHtml = '';
-      if (f.solicitacao && f.solicitacao.ultimo === 'pendente') {
-        solHtml = '<span style="font-size:11px;color:#7c3aed;font-weight:700;"><i class="ph ph-hourglass"></i> Solicitação em análise</span>';
-      } else if (f.solicitacao && f.solicitacao.ultimo === 'aprovada') {
-        solHtml = '<span style="font-size:11px;color:#16a34a;font-weight:700;">✓ Aprovada</span>';
+      const checkId = 'chk-funcao-' + f.chave;
+      const est = f.status_impl || (f.available ? 'liberada' : null);
+      const resp = f.responsavel_nome;
+
+      // BADGE de status do módulo (loja)
+      let statusBadge = '';
+      let nota = '';
+      let botoes = '';
+      if (est === 'liberada' || f.available) {
+        statusBadge = f.enabled
+          ? '<span style="font-size:11px;font-weight:800;color:#16a34a;background:#dcfce7;border-radius:999px;padding:3px 10px;">ATIVA</span>'
+          : '<span style="font-size:11px;font-weight:800;color:#b45309;background:#fef3c7;border-radius:999px;padding:3px 10px;">INATIVA</span>';
+        nota = '<span style="font-size:11px; font-weight:700; color:#16a34a; margin-top:6px; display:inline-block;"><i class="ph ph-check-circle"></i> Contratada e implementada — você pode ativar quando quiser</span>';
+        botoes = `<label style="position:relative; display:inline-block; width:44px; height:24px; flex-shrink:0; cursor:pointer;" title="Ligar / desligar">
+            <input type="checkbox" id="${checkId}" data-funcao-chave="${f.chave}" style="opacity:0; width:0; height:0;" ${f.enabled ? 'checked' : ''} onchange="window.ativarFuncao('${f.chave}', this.checked, this)">
+            <span style="position:absolute; inset:0; background-color:#d1d5db; border-radius:26px; transition:.3s;"></span>
+            <span style="position:absolute; height:18px; width:18px; left:3px; bottom:3px; background-color:white; border-radius:50%; transition:.3s;"></span>
+          </label>`;
+      } else if (est === 'em_implementacao') {
+        statusBadge = '<span style="font-size:11px;font-weight:800;color:#7c3aed;background:#ede9fe;border-radius:999px;padding:3px 10px;">EM IMPLEMENTAÇÃO</span>';
+        nota = `<span style="font-size:11px; font-weight:700; color:#7c3aed; margin-top:6px; display:inline-block;"><i class="ph ph-hard-drives"></i> A equipe já está trabalhando na sua implementação${resp ? ' (' + escHtml(resp) + ')' : ''}. Você será avisado quando ficar pronta.</span>`;
+      } else if (est === 'solicitada') {
+        statusBadge = '<span style="font-size:11px;font-weight:800;color:#b45309;background:#fef3c7;border-radius:999px;padding:3px 10px;">SOLICITADA</span>';
+        nota = '<span style="font-size:11px; font-weight:700; color:#b45309; margin-top:6px; display:inline-block;"><i class="ph ph-hourglass-high"></i> Solicitação enviada. Aguardando análise do super admin.</span>';
+      } else if (est === 'recusada') {
+        statusBadge = '<span style="font-size:11px;font-weight:800;color:#dc2626;background:#fee2e2;border-radius:999px;padding:3px 10px;">RECUSADA</span>';
+        nota = '<span style="font-size:11px; font-weight:700; color:#dc2626; margin-top:6px; display:inline-block;"><i class="ph ph-x-circle"></i> A solicitação foi recusada.</span>';
+        botoes = `<button onclick="solicitarFuncao('${f.chave}')" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;"><i class="ph ph-paper-plane-tilt"></i> Solicitar novamente</button>`;
+      } else {
+        // não solicitado
+        statusBadge = '<span style="font-size:11px;font-weight:800;color:#64748b;background:#e2e8f0;border-radius:999px;padding:3px 10px;">INDISPONÍVEL</span>';
+        nota = '<span style="font-size:11px; font-weight:700; color:#64748b; margin-top:6px; display:inline-block;"><i class="ph ph-info"></i> Não contratado. Solicite a implementação e nossa equipe cuida de tudo.</span>';
+        botoes = `<button onclick="solicitarFuncao('${f.chave}')" style="background:#fc4b15;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="ph ph-storefront"></i> Solicitar implementação</button>`;
       }
-      const btnSolicitar = (!f.enabled && (!f.solicitacao || f.solicitacao.ultimo !== 'pendente'))
-        ? `<button onclick="solicitarFuncao('${f.chave}')" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">
-             <i class="ph ph-paper-plane-tilt"></i> Solicitar ativação</button>`
-        : '';
-      html += `<div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap;">
+
+      html += `<div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; padding:14px 16px; display:flex; justify-content:space-between; gap:14px; align-items:center; flex-wrap:wrap;">
         <div style="min-width:240px; flex:1;">
-          <div style="font-weight:700; color:#1e293b; font-size:14px;">${f.nome}${overrideTag}</div>
-          <div style="font-size:12px; color:#64748b; margin-top:3px; line-height:1.45;">${f.desc}</div>
-          ${solHtml}
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="width:34px; height:34px; border-radius:9px; background:rgba(252,75,21,0.1); color:#fc4b15; display:flex; align-items:center; justify-content:center; font-size:18px;"><i class="ph ${f.icone || 'ph-puzzle-piece'}"></i></span>
+            <div>
+              <div style="font-weight:700; color:#1e293b; font-size:14px;">${escHtml(f.nome)}</div>
+              <div style="font-size:11px; color:#94a3b8;">${(f.categorias || []).join(' · ')}</div>
+            </div>
+          </div>
+          <div style="font-size:12px; color:#64748b; margin-top:6px; line-height:1.45;">${escHtml(f.desc)}</div>
+          ${nota}
         </div>
-        <div style="display:flex; gap:10px; align-items:center;">${statusBadge} ${btnSolicitar}</div>
+        <div style="display:flex; gap:10px; align-items:center;">${statusBadge} ${botoes}</div>
       </div>`;
     });
     box.innerHTML = html;
+    box.querySelectorAll('input[data-funcao-chave]').forEach(function (c) { atualizarToggleFuncaoVisual(c); });
   } catch (e) {
     box.innerHTML = '<div style="color:#ef4444;font-size:13px;">Falha de conexão.</div>';
   }
 }
+
+// Ativa/desativa uma função liberada (o super admin já habilitou para este restaurante)
+window.ativarFuncao = async (feature, enabled, chk) => {
+  const clamp = (v) => { if (v) { v.checked = !enabled; } };
+  try {
+    const r = await fetch('/api/funcoes/ativar', {
+      method: 'POST',
+      headers: authHeadersCfg(),
+      body: JSON.stringify({ feature, enabled: !!enabled })
+    });
+    const data = await r.json();
+    if (data.success) {
+      if (chk) chk.checked = !!enabled;
+      carregarFuncoesSistema();
+    } else {
+      clamp(chk);
+      alert(data.error || 'Erro ao atualizar função.');
+    }
+  } catch (e) {
+    clamp(chk);
+    alert('Falha de conexão.');
+  }
+};
+
+function atualizarToggleFuncaoVisual(chk) {
+  const track = chk.nextElementSibling;
+  const thumb = track ? track.nextElementSibling : null;
+  if (!track || !thumb) return;
+  if (chk.checked) {
+    track.style.backgroundColor = '#22c55e';
+    thumb.style.left = '25px';
+  } else {
+    track.style.backgroundColor = '#d1d5db';
+    thumb.style.left = '3px';
+  }
+}
+document.addEventListener('change', function (ev) {
+  if (ev.target && ev.target.dataset && ev.target.dataset.funcaoChave) atualizarToggleFuncaoVisual(ev.target);
+});
 
 window.solicitarFuncao = async (feature) => {
   const msg = prompt('Mensagem para o super admin (opcional):', '') || '';

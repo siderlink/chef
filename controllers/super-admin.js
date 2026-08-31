@@ -1100,12 +1100,14 @@ module.exports = function (app, masterDb, sqlite3, options) {
       `SELECT s.*, r.nome AS restaurante_nome, r.licenca
          FROM solicitacoes_features s
          LEFT JOIN restaurantes r ON r.id = s.restaurante_id
-        ORDER BY CASE s.status WHEN 'pendente' THEN 0 ELSE 1 END, s.criado_em DESC
+        ORDER BY CASE s.status WHEN 'pendente' THEN 0 WHEN 'em_implementacao' THEN 1 ELSE 2 END, s.criado_em DESC
         LIMIT 200`,
       [],
       (err, rows) => {
         if (err) return res.json({ ok: false, erro: err.message });
-        res.json({ ok: true, solicitacoes: rows || [] });
+        masterDb.all(`SELECT id, nome, email, cargo FROM equipe_suporte ORDER BY nome`, [], (err2, suporte) => {
+          res.json({ ok: true, solicitacoes: rows || [], equipe_suporte: suporte || [] });
+        });
       }
     );
   });
@@ -1158,6 +1160,42 @@ module.exports = function (app, masterDb, sqlite3, options) {
         if (sol) { try { io.to('restaurante_' + sol.restaurante_id).emit('funcao_recusada', { feature: sol.feature }); } catch (e2) {} }
         res.json(e ? { ok: false, erro: e.message } : { ok: true, mensagem: 'Solicitação recusada.' });
       });
+    });
+  });
+
+  // POST — delegar a implementação para um membro da equipe de suporte
+  app.post('/api/super/solicitacoes-features/delegar', superAdminAuth, (req, res) => {
+    const id = parseInt((req.body || {}).id, 10);
+    const suporteId = parseInt((req.body || {}).suporte_id, 10);
+    if (!id || !suporteId) return res.json({ ok: false, erro: 'ID da solicitação e do suporte são obrigatórios.' });
+    masterDb.get(`SELECT nome FROM equipe_suporte WHERE id = ?`, [suporteId], (errSup, sup) => {
+      masterDb.run(
+        `UPDATE solicitacoes_features SET status = 'em_implementacao', responsavel_nome = ?, responsavel_tipo = 'suporte', responsavel_id = ? WHERE id = ?`,
+        [sup ? sup.nome : ('Suporte #' + suporteId), suporteId, id],
+        (e) => {
+          if (e) return res.json({ ok: false, erro: e.message });
+          res.json({ ok: true, mensagem: 'Implementação delegada ao suporte.' });
+        }
+      );
+    });
+  });
+
+  // POST — marcar implementação concluída (realizada pelo super admin ou, em seu nome, pelo suporte)
+  app.post('/api/super/solicitacoes-features/implementar', superAdminAuth, (req, res) => {
+    const id = parseInt((req.body || {}).id, 10);
+    const responsavelNome = String((req.body || {}).responsavel_nome || '').trim();
+    if (!id) return res.json({ ok: false, erro: 'ID obrigatório.' });
+    masterDb.get(`SELECT restaurante_id, feature, responsavel_nome FROM solicitacoes_features WHERE id = ?`, [id], (e, sol) => {
+      if (!sol) return res.json({ ok: false, erro: 'Solicitação não encontrada.' });
+      const nome = responsavelNome || sol.responsavel_nome || (req.superAdmin ? req.superAdmin.role || 'Super Admin' : 'Super Admin');
+      masterDb.run(
+        `UPDATE solicitacoes_features SET status = 'implementada', responsavel_nome = ?, responsavel_tipo = 'suporte' WHERE id = ?`,
+        [nome, id],
+        () => {
+          try { io.to('restaurante_' + sol.restaurante_id).emit('funcao_implementada', { feature: sol.feature, responsavel: nome }); } catch (e2) {}
+          res.json({ ok: true, mensagem: 'Implementação marcada como concluída.' });
+        }
+      );
     });
   });
 

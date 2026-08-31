@@ -421,6 +421,7 @@
         <div class="menu-item" data-target="sec-estudio-modulos"><i class="fa-solid fa-puzzle-piece" style="color:#fc4b15;"></i> Estúdio de Módulos (Caixa v1.1)</div>
         <div class="menu-item" data-target="sec-temas-curadoria"><i class="fa-solid fa-palette" style="color:#a78bfa;"></i> Curadoria de Temas</div>
         <div class="menu-item" data-target="sec-site-vendas-modulos"><i class="fa-solid fa-bullhorn" style="color:#38bdf8;"></i> Módulos Site de Vendas</div>
+        <div class="menu-item" data-target="sec-implementacoes"><i class="fa-solid fa-wrench" style="color:#fc4b15;"></i> Implementações</div>
       </div>
 
       <div class="content-area">
@@ -962,6 +963,26 @@
             </div>
           </div>
 
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════
+             SEÇÃO: IMPLEMENTAÇÕES DE MÓDULOS (para o restaurante)
+             ══════════════════════════════════════════════════════════════ -->
+        <div class="content-section" id="sec-implementacoes">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.8rem;">
+            <div>
+              <h2 style="font-family:'Outfit',sans-serif;margin:0;display:flex;align-items:center;gap:0.5rem;">
+                <i class="fa-solid fa-wrench" style="color:#fc4b15;"></i> Implementações de Módulos
+              </h2>
+              <p style="color:var(--text-muted);margin:0.4rem 0 0 0;font-size:0.85rem;">
+                Módulos que o super admin delegou a você para implementar nos restaurantes, em nome do super admin.
+              </p>
+            </div>
+            <button class="btn" style="background:#fc4b15;color:#fff;" onclick="carregarImplementacoesSuporte()"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+          </div>
+          <div id="implementacoes-suporte-body" style="display:flex;flex-direction:column;gap:0.8rem;">
+            <span style="color:var(--text-muted);">Carregando...</span>
+          </div>
         </div>
 
         <!-- ══════════════════════════════════════════════════════════════
@@ -1816,7 +1837,47 @@
       document.querySelectorAll('.menu-item[data-target="sec-site-vendas-modulos"]').forEach(function(btn){
         btn.addEventListener('click', function(){ setTimeout(carregarModulosSiteVendas, 80); });
       });
+      document.querySelectorAll('.menu-item[data-target="sec-implementacoes"]').forEach(function(btn){
+        btn.addEventListener('click', function(){ setTimeout(carregarImplementacoesSuporte, 80); });
+      });
     });
+
+    function escH(any){ return String(any==null?'':any).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    function carregarImplementacoesSuporte() {
+      var box = document.getElementById('implementacoes-suporte-body');
+      if (!box) return;
+      box.innerHTML = '<span style="color:var(--text-muted);">Carregando...</span>';
+      apiGet('/api/suporte/implementacoes', function(err, data) {
+        if (err || !data || !data.ok) { box.innerHTML = '<span style="color:var(--danger);">Erro ao carregar implementações: ' + (err ? err.message : (data && data.erro)) + '</span>'; return; }
+        var lista = data.implementacoes || [];
+        if (!lista.length) { box.innerHTML = '<div style="color:var(--text-muted);padding:2rem 0;text-align:center;"><i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> Nenhuma implementação delegada a você no momento.</div>'; return; }
+        var html = '';
+        lista.forEach(function(s) {
+          html += '<div style="background:#111827;border:1px solid #374151;border-radius:12px;padding:1rem 1.2rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:center;">'
+            + '<div style="min-width:220px;">'
+            + '<strong style="color:#e2e8f0;">#' + s.restaurante_id + ' · ' + escH(s.restaurante_nome || ('Restaurante ' + s.restaurante_id)) + '</strong>'
+            + ' <span style="display:inline-block;background:rgba(252,75,21,0.15);color:#fc4b15;border-radius:6px;padding:2px 8px;font-size:0.75rem;margin-left:6px;">' + escH(s.feature_nome || s.feature) + '</span>'
+            + (s.status === 'em_implementacao' ? ' <span style="font-size:0.75rem;color:#c4b5fd;">⚙ em implementação</span>' : ' <span style="font-size:0.75rem;color:#f59e0b;">pendente</span>')
+            + (s.mensagem ? '<div style="margin-top:6px;color:var(--text-muted);font-size:0.8rem;">“' + escH(s.mensagem) + '”</div>' : '')
+            + '<div style="margin-top:4px;font-size:0.72rem;color:var(--text-muted);">' + escH(s.criado_em || '') + '</div>'
+            + '</div>'
+            + '<div style="display:flex;gap:8px;">'
+            + '<button class="btn" style="background:#22c55e;color:#fff;" onclick="concluirImplementacaoSuporte(' + s.id + ')"><i class="fa-solid fa-check"></i> Concluir implementação</button>'
+            + '</div>'
+            + '</div>';
+        });
+        box.innerHTML = html;
+      });
+    }
+
+    function concluirImplementacaoSuporte(id) {
+      apiPost('/api/suporte/implementacoes/' + id + '/concluir', {}, function(err, data) {
+        if (err || !data || !data.ok) { mostrarToastCuradoria('⚠️ ' + (err ? err.message : (data && data.erro)), 'danger'); return; }
+        mostrarToastCuradoria('✅ ' + (data.mensagem || 'Implementação concluída!'), 'success');
+        carregarImplementacoesSuporte();
+      });
+    }
   </script>
 
   <!-- MODAL DE CRIAÇÃO / EDIÇÃO DE MÓDULO DO SITE DE VENDAS -->

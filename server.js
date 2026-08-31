@@ -810,6 +810,32 @@ masterDb.serialize(() => {
   masterDb.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_telemetria_install ON telemetria (install_id)`);
   masterDb.run(`ALTER TABLE telemetria ADD COLUMN admin_login TEXT`, err => { if (err) {} });
   masterDb.run(`ALTER TABLE telemetria ADD COLUMN chave_ativacao TEXT`, err => { if (err) {} });
+  masterDb.run(`CREATE TABLE IF NOT EXISTS solicitacoes_features (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    restaurante_id INTEGER,
+    feature TEXT,
+    mensagem TEXT,
+    status TEXT DEFAULT 'pendente',
+    criado_em DATETIME DEFAULT (datetime('now', 'localtime')),
+    resolvido_em DATETIME
+  )`);
+  masterDb.run(`ALTER TABLE solicitacoes_features ADD COLUMN responsavel_nome TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE solicitacoes_features ADD COLUMN responsavel_tipo TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE solicitacoes_features ADD COLUMN responsavel_id INTEGER`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE solicitacoes_features ADD COLUMN observacao TEXT`, err => { if (err) {} });
+  masterDb.run(`CREATE TABLE IF NOT EXISTS equipe_suporte (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT,
+    email TEXT UNIQUE,
+    telefone TEXT,
+    password_hash TEXT,
+    cargo TEXT,
+    especialidade TEXT,
+    status TEXT DEFAULT 'disponivel',
+    xp INTEGER DEFAULT 0,
+    nivel INTEGER DEFAULT 1,
+    data_cadastro DATETIME DEFAULT (datetime('now','localtime'))
+  )`);
   masterDb.run(`CREATE TABLE IF NOT EXISTS sync_fila (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tipo TEXT NOT NULL,
@@ -10903,8 +10929,164 @@ app.get('/api/plugins/admin', (req, res) => {
   res.json({ success: true, plugins: [] });
 });
 
+// ─── Funções do Sistema (módulos) — liberadas pelo Super Admin e ativadas pelo restaurante ───
+const FUNCOES_MODULOS = [
+  { chave: 'jogos', nome: 'Jogos / Premiações', desc: 'Jogos na mesa e sistema de premiação para os clientes duelarem entre si.', icone: 'ph-game-controller', categorias: ['Entretenimento'] },
+  { chave: 'hub_delivery', nome: 'Hub Delivery', desc: 'Hub de pedidos agregados de marketplaces (iFood, Rappi, Uber Eats, Mucho) e delivery próprio.', icone: 'ph-scooter', categorias: ['Delivery'] },
+  { chave: 'reservas', nome: 'Reservas Futuras', desc: 'Reservas de mesas com calendário, prazos e aprovação do restaurante.', icone: 'ph-calendar-check', categorias: ['Operação'] },
+  { chave: 'fila_espera', nome: 'Fila de Espera', desc: 'Fila de espera de clientes por mesas, com chamada e alocação automática.', icone: 'ph-users-three', categorias: ['Operação'] }
+];
+
+// Config de ativação de cada módulo (restaurante liga/desliga; padrão ligado quando disponível)
+const FUNCOES_CONFIG_KEY = function(chave) { return 'mod_' + chave; };
+
+// Resolve o status de implementação de um módulo para o tenant (via solicitacoes_features)
+function lerStatusImplementacao(tid, cb) {
+  masterDb.all(
+    `SELECT feature, status, mensagem, responsavel_nome, responsavel_tipo, observacao, criado_em, resolvido_em
+       FROM solicitacoes_features WHERE restaurante_id = ? ORDER BY id DESC LIMIT 200`,
+    [tid],
+    (err, rows) => {
+      const mapa = {};
+      (rows || []).forEach(r => { if (!mapa[r.feature]) mapa[r.feature] = r; });
+      cb(mapa);
+    }
+  );
+}
+
 app.get('/api/funcoes', (req, res) => {
-  res.json({ success: true, funcoes: [] });
+  withTenant(req, () => {
+    const tid = resolveTenantId(req) || 1;
+    const features = getTenantFeaturesSync(tid) || {};
+    db.all(`SELECT chave, valor FROM configuracoes WHERE chave LIKE 'mod_%'`, [], (err, rows) => {
+      const mods = {};
+      if (!err && rows) rows.forEach(r => { mods[r.chave] = r.valor; });
+      lerStatusImplementacao(tid, (solsMap) => {
+        const lista = FUNCOES_MODULOS.map(f => {
+          const available = !!features[f.chave];
+          const cfgKey = FUNCOES_CONFIG_KEY(f.chave);
+          const raw = mods[cfgKey];
+          const enabled = raw === undefined ? available : (raw === 'true' || raw === true);
+          const sol = solsMap[f.chave];
+          // status_impl: 'liberada' | 'em_implementacao' | 'implementada' | 'solicitada' | 'recusada' | null
+          let statusImpl = null;
+          let responsavel = null;
+          if (available) {
+            statusImpl = 'liberada';
+          } else if (sol) {
+            if (sol.status === 'em_implementacao') { statusImpl = 'em_implementacao'; responsavel = sol.responsavel_nome; }
+            else if (sol.status === 'implementada') { statusImpl = 'implementada'; responsavel = sol.responsavel_nome; }
+            else if (sol.status === 'aprovada') { statusImpl = 'implementada'; responsavel = sol.responsavel_nome; }
+            else if (sol.status === 'recusada') { statusImpl = 'recusada'; }
+            else { statusImpl = 'solicitada'; }
+          } else if (sol) {
+            if (sol.status === 'em_implementacao') { statusImpl = 'em_implementacao'; responsavel = sol.responsavel_nome; }
+            else if (sol.status === 'recusada') { statusImpl = 'recusada'; }
+            else { statusImpl = 'solicitada'; }
+          }
+          return {
+            chave: f.chave,
+            nome: f.nome,
+            desc: f.desc,
+            icone: f.icone || null,
+            categorias: f.categorias || [],
+            available: available,
+            enabled: !!enabled,
+            override: available,
+            cfgKey: cfgKey,
+            status_impl: statusImpl,
+            responsavel_nome: responsavel,
+            solicitacao_mensagem: sol ? sol.mensagem : null,
+            solicitacao_id: sol ? sol.id : null,
+            solicitacao_status: sol ? sol.status : null
+          };
+        });
+        res.json({ success: true, features: lista });
+      });
+    });
+  });
+});
+
+// Loja de plugins do restaurante — catálogo de módulos disponíveis para o tenant
+app.get('/api/loja/plugins', (req, res) => {
+  withTenant(req, () => {
+    const tid = resolveTenantId(req) || 1;
+    const features = getTenantFeaturesSync(tid) || {};
+    db.all(`SELECT chave, valor FROM configuracoes WHERE chave LIKE 'mod_%'`, [], (err, rows) => {
+      const mods = {};
+      if (!err && rows) rows.forEach(r => { mods[r.chave] = r.valor; });
+      lerStatusImplementacao(tid, (solsMap) => {
+        const catalogo = FUNCOES_MODULOS.map(f => {
+          const available = !!features[f.chave];
+          const raw = mods[FUNCOES_CONFIG_KEY(f.chave)];
+          const enabled = raw === undefined ? available : (raw === 'true' || raw === true);
+          const sol = solsMap[f.chave];
+          let estado = 'disponivel'; // disponivel | solicitado | em_implementacao | liberado | recusado
+          if (available) estado = 'liberado';
+          else if (sol) {
+            if (sol.status === 'em_implementacao') estado = 'em_implementacao';
+            else if (sol.status === 'implementada' || sol.status === 'aprovada') estado = 'liberado';
+            else if (sol.status === 'recusada') estado = 'recusado';
+            else estado = 'solicitado';
+          }
+          return {
+            chave: f.chave,
+            nome: f.nome,
+            desc: f.desc,
+            categorias: f.categorias || [],
+            icone: f.icone || null,
+            estado: estado,
+            ativo: !!enabled,
+            available: available,
+            responsavel_nome: (sol && (sol.status === 'em_implementacao' || sol.status === 'implementada')) ? sol.responsavel_nome : null,
+            solicitacao_id: sol ? sol.id : null,
+            solicitacao_mensagem: sol ? sol.mensagem : null,
+            solicitacao_status: sol ? sol.status : null
+          };
+        });
+        res.json({ success: true, catalogo: catalogo });
+      });
+    });
+  });
+});
+
+app.post('/api/funcoes/ativar', verificarToken, (req, res) => {
+  const { feature, enabled } = req.body || {};
+  if (!feature) return res.status(400).json({ success: false, error: 'Função não informada.' });
+  const def = FUNCOES_MODULOS.find(f => f.chave === feature);
+  if (!def) return res.status(400).json({ success: false, error: 'Função desconhecida.' });
+  const tid = resolveTenantId(req) || 1;
+  const features = getTenantFeaturesSync(tid) || {};
+  if (!features[feature]) {
+    return res.status(403).json({ success: false, error: 'Esta função não está liberada para o seu restaurante. Solicite a ativação ao super admin.' });
+  }
+  withTenant(req, () => {
+    const cfgKey = FUNCOES_CONFIG_KEY(feature);
+    const val = enabled ? 'true' : 'false';
+    db.run(`INSERT INTO configuracoes (chave, valor) VALUES (?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor`, [cfgKey, val], (e) => {
+      if (e) return res.status(500).json({ success: false, error: e.message });
+      setTimeout(() => io.emit('configuracoes_atualizadas'), 300);
+      res.json({ success: true, mensagem: 'Função atualizada com sucesso!' });
+    });
+  });
+});
+
+// Solicitar ativação de uma função ao super admin (mantém compatibilidade com o fluxo atual)
+app.post('/api/funcoes/solicitar', verificarToken, (req, res) => {
+  const { feature, mensagem } = req.body || {};
+  const tid = resolveTenantId(req) || 1;
+  const chave = feature || 'nova_solicitacao';
+  if (!chave) return res.status(400).json({ success: false, error: 'Função não informada.' });
+  const nome = (FUNCOES_MODULOS.find(f => f.chave === chave) || {}).nome || chave;
+  masterDb.run(
+    `INSERT INTO solicitacoes_features (restaurante_id, feature, mensagem, criado_em) VALUES (?, ?, ?, datetime('now','localtime'))`,
+    [tid, chave, (mensagem || '').trim() || `Solicitação de ativação: ${nome}`],
+    function (err) {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+      try { io.to('admin').emit('nova_solicitacao_feature', { restaurante_id: tid, feature: chave }); } catch (e2) {}
+      res.json({ success: true, mensagem: 'Solicitação enviada! O super admin irá analisar.' });
+    }
+  );
 });
 
 app.get('/api/config/produtos', (req, res) => {
@@ -11649,6 +11831,51 @@ app.post('/api/suporte/concluir-tarefa', relatoSuporteAuth, (req, res) => {
       res.json({ ok: true, mensagem: 'Tarefa concluída! +10 XP' });
     }
   );
+});
+
+// ── SUPORTE: implementações de módulos delegadas ao atendente, em nome do super admin ──
+const nomeFuncaoPorChave = (chave) => {
+  if (chave === 'nova_solicitacao') return 'Função personalizada';
+  const def = (typeof FUNCOES_MODULOS !== 'undefined' && FUNCOES_MODULOS) ? FUNCOES_MODULOS.find(f => f.chave === chave) : null;
+  return def ? def.nome : chave;
+};
+
+// GET — fila de implementações delegadas a este atendente de suporte
+app.get('/api/suporte/implementacoes', relatoSuporteAuth, (req, res) => {
+  masterDb.all(
+    `SELECT s.*, r.nome AS restaurante_nome FROM solicitacoes_features s
+       LEFT JOIN restaurantes r ON r.id = s.restaurante_id
+      WHERE s.responsavel_id = ? AND s.status IN ('em_implementacao','pendente') AND s.feature != 'nova_solicitacao'
+      ORDER BY s.criado_em ASC LIMIT 200`,
+    [req.suporteId || 0],
+    (err, rows) => {
+      if (err) return res.json({ ok: false, erro: err.message });
+      const itens = (rows || []).map(s => ({ id: s.id, restaurante_id: s.restaurante_id, restaurante_nome: s.restaurante_nome, feature: s.feature, feature_nome: nomeFuncaoPorChave(s.feature), mensagem: s.mensagem, status: s.status, criado_em: s.criado_em }));
+      res.json({ ok: true, implementacoes: itens });
+    }
+  );
+});
+
+// POST — atendente conclui a implementação do módulo (em nome do super admin)
+app.post('/api/suporte/implementacoes/:id/concluir', relatoSuporteAuth, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.json({ ok: false, erro: 'ID obrigatório.' });
+  masterDb.get(`SELECT nome FROM equipe_suporte WHERE id = ?`, [req.suporteId || 0], (errSup, sup) => {
+    const nomeSuporte = (errSup || !sup) ? ('Suporte #' + (req.suporteId || '')) : sup.nome;
+    masterDb.run(
+      `UPDATE solicitacoes_features SET status = 'implementada', responsavel_nome = ?, responsavel_tipo = 'suporte' WHERE id = ? AND responsavel_id = ? AND status = 'em_implementacao'`,
+      [nomeSuporte, id, req.suporteId || 0],
+      function(err) {
+        if (err) return res.json({ ok: false, erro: err.message });
+        if (this.changes === 0) return res.json({ ok: false, erro: 'Implementação não encontrada ou não delegada a você.' });
+        masterDb.run(`UPDATE equipe_suporte SET xp = xp + 15 WHERE id = ?`, [req.suporteId || 0]);
+        masterDb.get(`SELECT restaurante_id, feature FROM solicitacoes_features WHERE id = ?`, [id], (e2, sol) => {
+          if (sol) { try { io.to('restaurante_' + sol.restaurante_id).emit('funcao_implementada', { feature: sol.feature, responsavel: nomeSuporte }); } catch (e3) {} }
+        });
+        res.json({ ok: true, mensagem: 'Implementação concluída! O super admin aprovará a liberação.' });
+      }
+    );
+  });
 });
 
 // POST /api/super/deploy-commit — Executa deploy zero-downtime para um commit específico

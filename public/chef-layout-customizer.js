@@ -217,43 +217,20 @@
     if (typeof window.showToast === 'function') window.showToast('Layout padrão restaurado!', 'info');
   };
 
-  // Inicialização e Redimensionamento com Splitter Horizontal
+  // Inicialização (aplica o layout salvo)
+  // Nota: o arraste do splitter #splitter-middle-v é de responsabilidade
+  // exclusiva do main.js (initMesasSectionResizer), que também persiste a
+  // altura via window.salvarAlturaPainelMesas. Mantido aqui apenas o apply.
+
+  // Salva a altura do painel de mesas definida pelo arraste do splitter
+  window.salvarAlturaPainelMesas = function (pct) {
+    var cfg = window.obterConfigLayoutColaborador();
+    cfg.mesas_height_pct = Math.round(pct);
+    window.salvarConfigLayoutColaborador(cfg);
+  };
+
   document.addEventListener('DOMContentLoaded', function () {
     setTimeout(window.aplicarConfigLayoutColaborador, 200);
-
-    var splitter = document.getElementById('splitter-middle-v');
-    var mesasContainer = document.getElementById('mesas-section-container');
-    if (splitter && mesasContainer) {
-      var isDragging = false;
-
-      splitter.addEventListener('mousedown', function (e) {
-        isDragging = true;
-        document.body.style.userSelect = 'none';
-      });
-
-      document.addEventListener('mousemove', function (e) {
-        if (!isDragging) return;
-        var parentRect = mesasContainer.parentElement.getBoundingClientRect();
-        var newHeightPct = Math.round(((e.clientY - parentRect.top) / parentRect.height) * 100);
-        if (newHeightPct >= 25 && newHeightPct <= 80) {
-          mesasContainer.style.flex = '0 0 ' + newHeightPct + '%';
-        }
-      });
-
-      document.addEventListener('mouseup', function () {
-        if (isDragging) {
-          isDragging = false;
-          document.body.style.userSelect = '';
-          var flexVal = mesasContainer.style.flex;
-          var match = flexVal.match(/(d+)%/);
-          if (match) {
-            var cfg = window.obterConfigLayoutColaborador();
-            cfg.mesas_height_pct = parseInt(match[1]);
-            window.salvarConfigLayoutColaborador(cfg);
-          }
-        }
-      });
-    }
   });
 
 })(window, document);
