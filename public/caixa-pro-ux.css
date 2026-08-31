@@ -1196,3 +1196,56 @@ body.dark-mode .mesa-item {
 #panel-items-tbody tr.product-item-row.dragging-item-row {
   opacity: 0.55 !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   ESTADO RECOLHIDO DA SEÇÃO DE MESAS — vence em QUALQUER viewport
+   (desktop, mobile e paisagem curta). Sobrescreve os flex/height/display
+   !important das regras acima para que o botão "Recolher" funcione.
+   ══════════════════════════════════════════════════════════════════ */
+#mesas-section-container.mesas-recolhida,
+.workspace.mesas-collapsed-view #mesas-section-container.mesas-recolhida {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+#mesas-section-container.mesas-recolhida .mesas-scroll,
+#mesas-section-container.mesas-recolhida #orders-grid,
+.workspace.mesas-collapsed-view #mesas-section-container.mesas-recolhida .mesas-scroll,
+.workspace.mesas-collapsed-view #mesas-section-container.mesas-recolhida #orders-grid {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  flex: 0 0 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  grid-template-columns: none !important;
+  gap: 0 !important;
+}
+
+#mesas-section-container.mesas-recolhida #mesas-collapsed-items {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Em "Mesas & Pedido" recolhido no mobile, garante que o painel de produtos
+   assume o espaço restante da tela. */
+.workspace.mesas-collapsed-view #products-section-container,
+.workspace.mesas-collapsed-view .products-container {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+}
+
+.workspace.mesas-collapsed-view .middle-v-splitter,
+.workspace.mesas-collapsed-view #splitter-middle-v {
+  display: none !important;
+}

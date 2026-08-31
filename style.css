@@ -1185,8 +1185,6 @@ body {
 }
 
 .mesa-item {
-  -webkit-user-select: none;
-  user-select: none;
   cursor: grab
 }
 
