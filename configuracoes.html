@@ -2288,6 +2288,106 @@
       min-width: 600px !important;
     }
 
+    /* ══════════════════════════════════════════════════════════════════
+       SISTEMA ÚNICO MODULAR E RESPONSIVO DAS CONFIGURAÇÕES
+       (consolida os blocos sobrepostos acima em camadas previsíveis)
+       ══════════════════════════════════════════════════════════════════ */
+
+    /* 1) Padrão: toda aba vira coluna limpa de largura total.
+          Isso neutraliza o "bento grid" genérico que forçava até as
+          abas de tabela (mesas, produtos, RH...) a virarem cartões. */
+    .admin-tab-content.active {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 16px !important;
+      width: 100% !important;
+      overflow-x: hidden !important;
+    }
+    .admin-tab-content.active > div {
+      min-width: 0 !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    /* 2) Abas MODULARES de configuração (cartões lado a lado).
+          Diretores viram seções-cartão numa grade auto-ajustável:
+          1 col. (mobile) → 2 col. (tablet) → até 3 col. (desktop). */
+    #admin-tab-inicio.admin-tab-content.active,
+    #admin-tab-gerais.admin-tab-content.active,
+    #admin-tab-resolucao.admin-tab-content.active,
+    #admin-tab-sons.admin-tab-content.active,
+    #admin-tab-atalhos.admin-tab-content.active,
+    #admin-tab-funcionalidades.admin-tab-content.active {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+      gap: 16px !important;
+      align-items: start !important;
+    }
+    #admin-tab-inicio.admin-tab-content.active > div,
+    #admin-tab-gerais.admin-tab-content.active > div,
+    #admin-tab-resolucao.admin-tab-content.active > div,
+    #admin-tab-sons.admin-tab-content.active > div,
+    #admin-tab-atalhos.admin-tab-content.active > div,
+    #admin-tab-funcionalidades.admin-tab-content.active > div {
+      background: var(--cfg-card-bg) !important;
+      border: 1.5px solid var(--cfg-border) !important;
+      border-radius: 14px !important;
+      padding: 18px 20px !important;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.03) !important;
+      box-sizing: border-box !important;
+    }
+    /* Cartões largos (com tabela, toggles globais ou ações finais) ocupam toda a linha */
+    #admin-tab-inicio.admin-tab-content.active > div.grid-full,
+    #admin-tab-inicio.admin-tab-content.active > div:last-child,
+    #admin-tab-gerais.admin-tab-content.active > div.grid-full,
+    #admin-tab-gerais.admin-tab-content.active > div:has(table),
+    #admin-tab-resolucao.admin-tab-content.active > div.grid-full,
+    #admin-tab-sons.admin-tab-content.active > div.grid-full,
+    #admin-tab-atalhos.admin-tab-content.active > div.grid-full,
+    #admin-tab-funcionalidades.admin-tab-content.active > div.grid-full {
+      grid-column: 1 / -1 !important;
+    }
+
+    /* 3) Interior dos cartões: campos em grade flexível que respondem sozinhos */
+    #admin-tab-inicio.admin-tab-content.active div[style*="grid-template-columns"],
+    #admin-tab-gerais.admin-tab-content.active div[style*="grid-template-columns"],
+    #admin-tab-resolucao.admin-tab-content.active div[style*="grid-template-columns"],
+    #admin-tab-sons.admin-tab-content.active div[style*="grid-template-columns"],
+    #admin-tab-atalhos.admin-tab-content.active div[style*="grid-template-columns"],
+    #admin-tab-funcionalidades.admin-tab-content.active div[style*="grid-template-columns"] {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+    }
+
+    /* 4) Camadas responsivas consolidadas: mobile / tablet / desktop */
+    @media (max-width: 640px) {
+      #admin-tab-inicio.admin-tab-content.active,
+      #admin-tab-gerais.admin-tab-content.active,
+      #admin-tab-resolucao.admin-tab-content.active,
+      #admin-tab-sons.admin-tab-content.active,
+      #admin-tab-atalhos.admin-tab-content.active,
+      #admin-tab-funcionalidades.admin-tab-content.active {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+      }
+      .main-workspace { padding: 14px 12px 90px !important; }
+    }
+    @media (min-width: 641px) and (max-width: 1024px) {
+      #admin-tab-inicio.admin-tab-content.active,
+      #admin-tab-gerais.admin-tab-content.active,
+      #admin-tab-resolucao.admin-tab-content.active,
+      #admin-tab-sons.admin-tab-content.active,
+      #admin-tab-atalhos.admin-tab-content.active,
+      #admin-tab-funcionalidades.admin-tab-content.active {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+      .config-sidebar { width: 200px !important; }
+      .main-workspace { padding: 18px !important; }
+    }
+    @media (min-width: 1025px) {
+      .config-sidebar { width: 232px !important; }
+      .main-workspace { padding: 24px 28px 70px !important; }
+    }
+
   </style>
 
 
