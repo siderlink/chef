@@ -190,6 +190,47 @@ const app  = express();
 app.use(cors());
 app.use(express.json());
 
+// ── Middleware Global de Resolução de Tenant por Subdomínio e Domínio Próprio ──
+app.use((req, res, next) => {
+  let tenantId = null;
+  const rawHost = (req.headers.host || req.hostname || '').split(':')[0].toLowerCase();
+
+  // 1. Domínio próprio (ex: restaurantenovo1.com.br)
+  if (typeof domainMap !== 'undefined' && domainMap.has(rawHost)) {
+    tenantId = domainMap.get(rawHost);
+  }
+  // 2. Subdomínio por slug (ex: restaurantenovo1.meudominio.com ou restaurantenovo1.localhost)
+  else if (rawHost && typeof slugMap !== 'undefined') {
+    let sub = '';
+    const baseDom = typeof BASE_DOMAIN !== 'undefined' ? BASE_DOMAIN : '';
+    if (baseDom && rawHost.endsWith('.' + baseDom)) {
+      sub = rawHost.replace('.' + baseDom, '').split('.')[0];
+    } else if (rawHost.includes('.') && !rawHost.startsWith('www.')) {
+      sub = rawHost.split('.')[0];
+    }
+    if (sub && sub !== 'www' && slugMap.has(sub)) {
+      tenantId = slugMap.get(sub);
+    }
+  }
+
+  // 3. Fallback: Headers HTTP ou parâmetro query
+  if (!tenantId) {
+    const headerTid = req.headers['x-tenant-id'] || req.headers['x-restaurante-id'];
+    if (headerTid) tenantId = parseInt(headerTid, 10);
+  }
+  if (!tenantId && req.query && req.query.restaurante_id) {
+    tenantId = parseInt(req.query.restaurante_id, 10);
+  }
+
+  const finalTid = (Number.isFinite(tenantId) && tenantId > 0) ? tenantId : 1;
+  req.tenantId = finalTid;
+  if (typeof tenantContext !== 'undefined' && tenantContext.run) {
+    tenantContext.run(finalTid, () => next());
+  } else {
+    next();
+  }
+});
+
 // Middleware global para registrar acessos à API (Quem, O Que, Pra Onde)
 app.use('/api', (req, res, next) => {
   const start = Date.now();
@@ -217,7 +258,6 @@ app.use('/api', (req, res, next) => {
   });
   next();
 });
-
 app.use((req, res, next) => {
   const origSetHeader = res.setHeader.bind(res);
   res.setHeader = (name, val) => {
