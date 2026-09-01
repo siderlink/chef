@@ -6749,12 +6749,6 @@ function popularSelectsSom() {
 
 function persistirSecoesFila(secoes) {
   configs.fila_secoes = secoes.slice();
-  const filaMod = document.getElementById('config-fila-modo');
-  if (filaMod) {
-    configs.fila_modo = filaMod.value;
-    localStorage.setItem('fila_modo', filaMod.value);
-    localStorage.setItem('chef_fila_modo', filaMod.value);
-  }
   try { localStorage.setItem('fila_secoes', JSON.stringify(secoes)); } catch (e) {}
   renderizarCardsSecoesFila();
   popularSelectsSom();

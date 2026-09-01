@@ -263,9 +263,67 @@ app.post('/api/telemetria/clicks', express.json({ limit: '1mb' }), (req, res) =>
   res.json({ ok: true, count: clicks.length });
 });
 
-app.use(express.static(DIST_DIR));
-app.use(express.static(path.join(BASE_DIR, 'public')));
-app.use(express.static(BASE_DIR));
+// ── Rotas Amigáveis & URLs Limpas (Sem .html) ──
+app.get('/', (req, res) => {
+  res.sendFile(path.join(BASE_DIR, 'site.html'));
+});
+
+app.get('/site', (req, res) => {
+  res.sendFile(path.join(BASE_DIR, 'site.html'));
+});
+
+app.get('/sistema', (req, res) => {
+  res.sendFile(path.join(BASE_DIR, 'index.html'));
+});
+
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(BASE_DIR, 'index.html'));
+});
+
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(BASE_DIR, 'index.html'));
+});
+
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(BASE_DIR, 'index.html'));
+});
+
+// Middleware dinâmico para servir qualquer página .html sem precisar digitar .html na URL
+app.use((req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  if (req.path.startsWith('/api/') || req.path.includes('.')) return next();
+
+  const relPath = req.path.substring(1);
+  if (!relPath) return next();
+
+  const possiblePaths = [
+    path.join(BASE_DIR, `${relPath}.html`),
+    path.join(DIST_DIR, `${relPath}.html`),
+    path.join(BASE_DIR, 'src', 'views', 'caixa', `${relPath}.html`),
+    path.join(BASE_DIR, 'src', 'views', 'garcom', `${relPath}.html`),
+    path.join(BASE_DIR, 'src', 'views', 'cozinha', `${relPath}.html`),
+    path.join(BASE_DIR, 'src', 'views', 'admin', `${relPath}.html`),
+    path.join(BASE_DIR, 'src', 'views', 'autoatendimento', `${relPath}.html`),
+    path.join(BASE_DIR, 'public', `${relPath}.html`)
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return res.sendFile(p);
+    }
+  }
+  next();
+});
+
+const staticOpts = { extensions: ['html'] };
+app.use(express.static(DIST_DIR, staticOpts));
+app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'caixa'), staticOpts));
+app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'garcom'), staticOpts));
+app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'cozinha'), staticOpts));
+app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'admin'), staticOpts));
+app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'autoatendimento'), staticOpts));
+app.use(express.static(path.join(BASE_DIR, 'public'), staticOpts));
+app.use(express.static(BASE_DIR, staticOpts));
 
 const https = require('https');
 const tls = require('tls');
@@ -468,6 +526,7 @@ const db = {
   run: function(...args) { return getTenantDb().run(...args); },
   all: function(...args) { return getTenantDb().all(...args); },
   get: function(...args) { return getTenantDb().get(...args); },
+  prepare: function(...args) { return getTenantDb().prepare(...args); },
   serialize: function(cb) { return getTenantDb().serialize(cb); },
   close: function(cb) {
     const tenantId = tenantContext.getStore() || 1;
@@ -894,7 +953,7 @@ async function superAdminAuth(req, res, next) {
       }
     } catch (e) { }
   }
-  return res.json({ ok: false, erro: 'Acesso não autorizado. Autentique-se novamente.' });
+  return res.status(401).json({ ok: false, erro: 'Acesso não autorizado. Autentique-se novamente.' });
 }
 
 // Anti-brute-force: max 5 senhas erradas por IP a cada 15 min
@@ -1449,7 +1508,7 @@ function localizarFuncionarioLogin(usuario, cb) {
           const tid = parseInt(rests[i++].id, 10);
           if (!Number.isFinite(tid) || tid <= 0 || tid === atual) continue;
           const dbPath = path.join(__dirname, `database_${tid}.sqlite`);
-          if (!fsSync.existsSync(dbPath)) continue;
+          if (!fs.existsSync(dbPath)) continue;
           const tdb = new sqlite3.Database(dbPath);
           tdb.get(q, [usuario, usuario], (e2, row2) => {
             tdb.close();
@@ -1469,8 +1528,8 @@ function localizarFuncionarioLogin(usuario, cb) {
 }
 
 let BASE_DOMAIN = (process.env.BASE_DOMAIN || 'cheff.pro').toLowerCase();
-const domainMap = new Map(); // custom_domain → tenant_id
-const slugMap = new Map();   // slug → tenant_id
+const domainMap = new Map();
+const slugMap = new Map();
 let domainMapLoaded = false;
 
 function loadDomainMaps() {
@@ -5544,7 +5603,7 @@ io.on('connection', (socket) => {
   };
 
   socket.on('get_ai_combo_suggestions', () => {
-    db.all(`SELECT * FROM produtos WHERE status = 'ativo' ORDER BY categoria, nome`, (err, products) => {
+    db.all(`SELECT * FROM produtos WHERE status IS NULL OR status != 'inativo' ORDER BY categoria, nome`, (err, products) => {
       if (err || !products || products.length < 2) {
         return socket.emit('ai_combo_suggestions', { suggestions: [], stats: {}, error: 'Cadastre pelo menos 2 produtos ativos.' });
       }
@@ -11955,3 +12014,4 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);
   }
 }
+

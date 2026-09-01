@@ -1,0 +1,2398 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Painel do Dono - Chef Cozinha</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+<style>
+    :root {
+      --bg: #0a0f1e;
+      --card: #111827;
+      --card2: #1a2235;
+      --border: rgba(255,255,255,0.09);
+      --primary: #fc4b15;
+      --primary-light: rgba(252,75,21,0.15);
+      --green: #10b981;
+      --green-light: rgba(16,185,129,0.15);
+      --red: #f43f5e;
+      --red-light: rgba(244,63,94,0.15);
+      --blue: #3b82f6;
+      --blue-light: rgba(59,130,246,0.15);
+      --purple: #8b5cf6;
+      --purple-light: rgba(139,92,246,0.15);
+      --yellow: #f59e0b;
+      --text: #f1f5f9;
+      --text-sub: #64748b;
+      --font: 'Outfit', sans-serif;
+      /* Tamanhos de fonte para público 60+ */
+      --fs-xs: 14px;
+      --fs-sm: 16px;
+      --fs-md: 18px;
+      --fs-lg: 22px;
+      --fs-xl: 28px;
+      --fs-kpi: 42px;
+      --radius: 20px;
+      --radius-lg: 28px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* ── Loader ── */
+    .loader-overlay {
+      position: fixed; inset: 0;
+      background: rgba(10,15,30,0.92);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 9999; transition: opacity 0.3s;
+    }
+    .loader-overlay.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 56px; height: 56px;
+      border: 5px solid rgba(252,75,21,0.15);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.9s infinite linear;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #111827 0%, #0a0f1e 100%);
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .logo-box {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--primary) 0%, #ff8c42 100%);
+      border-radius: 16px;
+      display: flex; justify-content: center; align-items: center;
+      box-shadow: 0 4px 18px rgba(252,75,21,0.35);
+    }
+    .logo-box i { font-size: 26px; color: white; }
+    .header-title { font-size: var(--fs-lg); font-weight: 900; letter-spacing: -0.5px; }
+    .header-sub { font-size: var(--fs-sm); color: var(--text-sub); display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 20px;
+      font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .status-pill.open { background: var(--green-light); color: var(--green); }
+    .status-pill.closed { background: var(--red-light); color: var(--red); }
+    .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse-dot 2s infinite; }
+    @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .btn-logout {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      font-size: 22px;
+    }
+    .btn-reportar-problema {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 14px;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 700; font-size: var(--fs-sm);
+      transition: all 0.2s;
+    }
+    .btn-reportar-problema i { font-size: 18px; color: #f59e0b; }
+    .btn-reportar-problema:hover { background: rgba(245,158,11,0.12); border-color: #f59e0b; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modal-relato-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 24px; width: 100%; max-width: 460px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    .modal-relato-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .modal-relato-header h3 { margin: 0; font-size: var(--fs-lg); display: flex; align-items: center; gap: 10px; }
+    .modal-relato-header i { color: #f59e0b; }
+    .modal-fechar { background: none; border: none; color: var(--text-sub); font-size: 26px; cursor: pointer; line-height: 1; }
+    .modal-fechar:hover { color: var(--text); }
+    .modal-relato-sub { color: var(--text-sub); font-size: var(--fs-sm); margin: 0 0 16px; }
+    .relato-label { display: block; font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-sub); margin: 14px 0 6px; }
+    .relato-input { width: 100%; background: var(--bg-input, rgba(255,255,255,0.05)); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; color: var(--text); font-size: var(--fs-sm); font-family: inherit; resize: vertical; box-sizing: border-box; }
+    .relato-input:focus { outline: none; border-color: #f59e0b; }
+    .relato-prioridade-row { display: flex; gap: 8px; }
+    .relato-pri { flex: 1; padding: 10px; border-radius: 12px; border: 1px solid var(--border); background: transparent; color: var(--text-sub); cursor: pointer; font-weight: 700; font-size: var(--fs-sm); transition: all 0.15s; }
+    .relato-pri.ativa { background: #f59e0b22; border-color: #f59e0b; color: #f59e0b; }
+    .relato-feedback { margin-top: 14px; padding: 10px 14px; border-radius: 12px; font-size: var(--fs-sm); }
+    .relato-feedback.sucesso { background: rgba(34,197,94,0.12); color: #22c55e; }
+    .relato-feedback.erro { background: rgba(239,68,68,0.12); color: #ef4444; }
+    .relato-enviar { width: 100%; margin-top: 18px; padding: 14px; border: none; border-radius: 14px; background: linear-gradient(135deg, #f59e0b, #ea580c); color: #fff; font-size: var(--fs-md); font-weight: 800; cursor: pointer; transition: opacity 0.2s; }
+    .relato-enviar:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-logout:active { background: var(--red-light); color: var(--red); }
+
+    /* ── Main layout ── */
+    main {
+      padding: 20px 16px 60px;
+      max-width: 620px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex; flex-direction: column; gap: 24px;
+    }
+
+    /* ── Section title ── */
+    .sec-title {
+      font-size: var(--fs-md);
+      font-weight: 800;
+      color: var(--text);
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px;
+    }
+    .sec-title i { color: var(--primary); font-size: 22px; }
+
+    /* ── Period filter pills ── */
+    .periodo-row {
+      display: flex; gap: 10px; overflow-x: auto;
+      padding-bottom: 4px; scrollbar-width: none;
+    }
+    .btn-periodo {
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid var(--border);
+      color: var(--text-sub);
+      padding: 12px 20px;
+      border-radius: 14px;
+      font-size: var(--fs-sm);
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: all 0.2s;
+      outline: none;
+    }
+    .btn-periodo.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 14px rgba(252,75,21,0.3); }
+
+    #container-datas-custom {
+      display: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      gap: 12px;
+    }
+
+    /* ── KPI Cards ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 22px 20px;
+      display: flex; flex-direction: column;
+      position: relative; overflow: hidden;
+      transition: transform 0.15s;
+    }
+    .kpi-card:active { transform: scale(0.98); }
+    .kpi-card.full { grid-column: span 2; }
+
+    .kpi-label {
+      font-size: var(--fs-xs);
+      font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .kpi-icon {
+      width: 38px; height: 38px;
+      border-radius: 12px;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 20px;
+    }
+    .kpi-icon.orange { background: var(--primary-light); color: var(--primary); }
+    .kpi-icon.green  { background: var(--green-light);   color: var(--green);   }
+    .kpi-icon.blue   { background: var(--blue-light);    color: var(--blue);    }
+    .kpi-icon.purple { background: var(--purple-light);  color: var(--purple);  }
+
+    .kpi-value {
+      font-size: var(--fs-kpi);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -1px;
+      margin-bottom: 6px;
+    }
+    .kpi-sub {
+      font-size: var(--fs-xs);
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    /* Progress bar */
+    .progress-wrap { margin-top: 16px; }
+    .progress-labels { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--text-sub); margin-bottom: 8px; font-weight: 700; }
+    .progress-bg { height: 10px; background: rgba(255,255,255,0.06); border-radius: 20px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary) 0%, #ff8c00 100%); width: 0%; border-radius: 20px; transition: width 0.8s ease-out; }
+
+    /* ── Big Action Buttons — controle remoto ── */
+    .remote-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .remote-btn {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      color: var(--text);
+      outline: none;
+      position: relative;
+      overflow: hidden;
+    }
+    .remote-btn:active { transform: scale(0.96); }
+    .remote-btn .rb-icon {
+      width: 64px; height: 64px;
+      border-radius: 20px;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 30px;
+      transition: transform 0.2s;
+    }
+    .remote-btn:active .rb-icon { transform: scale(0.92); }
+    .remote-btn .rb-label {
+      font-size: var(--fs-md);
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .remote-btn .rb-sub {
+      font-size: var(--fs-xs);
+      color: var(--text-sub);
+      line-height: 1.3;
+    }
+    .remote-btn.blue-btn  { border-color: rgba(59,130,246,0.3); }
+    .remote-btn.blue-btn:active  { background: var(--blue-light); border-color: var(--blue); }
+    .remote-btn.green-btn { border-color: rgba(16,185,129,0.3); }
+    .remote-btn.green-btn:active { background: var(--green-light); border-color: var(--green); }
+    .remote-btn.orange-btn { border-color: rgba(252,75,21,0.3); }
+    .remote-btn.orange-btn:active { background: var(--primary-light); border-color: var(--primary); }
+    .remote-btn.purple-btn { border-color: rgba(139,92,246,0.3); }
+    .remote-btn.purple-btn:active { background: var(--purple-light); border-color: var(--purple); }
+    .remote-btn.full { grid-column: span 2; flex-direction: row; padding: 22px 24px; justify-content: flex-start; gap: 20px; text-align: left; }
+    .remote-btn.full .rb-icon { flex-shrink: 0; }
+    .remote-btn.full .rb-text { display: flex; flex-direction: column; gap: 4px; }
+
+    /* ── Collaborator Remote Control ── */
+    .colab-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+    .colab-card:hover {
+      border-color: var(--primary);
+    }
+    .colab-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .colab-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .colab-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 800;
+      position: relative;
+    }
+    .colab-status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      border: 2px solid var(--card);
+    }
+    .colab-status-dot.online { background: #10b981; }
+    .colab-status-dot.offline { background: #94a3b8; }
+    .colab-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .colab-action-btn {
+      padding: 8px 6px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      font-size: var(--fs-xs);
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .colab-action-btn:active { transform: scale(0.95); }
+    .colab-action-btn:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* ── Caixa control card ── */
+    .caixa-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .caixa-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .caixa-info-label { font-size: var(--fs-lg); font-weight: 800; margin-bottom: 4px; }
+    .caixa-info-sub { font-size: var(--fs-sm); color: var(--text-sub); }
+
+    .btn-caixa {
+      border: none;
+      padding: 18px 28px;
+      border-radius: 16px;
+      font-size: var(--fs-lg);
+      font-weight: 800;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 10px;
+      color: white;
+      transition: all 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-caixa:active { transform: scale(0.96); }
+    .btn-caixa.open  { background: var(--green); box-shadow: 0 4px 18px rgba(16,185,129,0.35); }
+    .btn-caixa.close { background: var(--red);   box-shadow: 0 4px 18px rgba(244,63,94,0.35); }
+
+    /* ── Meta de vendas ── */
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-label {
+      font-size: var(--fs-sm); font-weight: 800; color: var(--text-sub);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .form-row { display: flex; gap: 12px; align-items: stretch; }
+    .form-input {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      padding: 18px 20px;
+      border-radius: 16px;
+      font-size: var(--fs-md);
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--primary); }
+    .btn-primary {
+      background: var(--primary);
+      color: white; border: none;
+      padding: 18px 24px;
+      border-radius: 16px;
+      font-size: var(--fs-md);
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .btn-primary:active { transform: scale(0.96); background: var(--primary-hover, #e03e0d); }
+
+    /* ── Aviso urgente ── */
+    .aviso-area {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    textarea.form-input {
+      resize: none;
+      min-height: 100px;
+      font-family: var(--font);
+      line-height: 1.5;
+    }
+    .btn-aviso {
+      background: linear-gradient(135deg, var(--purple) 0%, #a855f7 100%);
+      color: white; border: none;
+      padding: 20px;
+      border-radius: 16px;
+      font-size: var(--fs-lg);
+      font-weight: 800;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      transition: all 0.2s;
+      width: 100%;
+      box-shadow: 0 4px 18px rgba(139,92,246,0.35);
+    }
+    .btn-aviso:active { transform: scale(0.97); }
+
+    /* ── Equipe card ── */
+    .equipe-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    }
+    .equipe-info { display: flex; flex-direction: column; gap: 6px; }
+    .equipe-count { font-size: 56px; font-weight: 900; letter-spacing: -2px; color: var(--purple); }
+    .equipe-label { font-size: var(--fs-md); font-weight: 700; }
+    .equipe-sub { font-size: var(--fs-sm); color: var(--text-sub); }
+    .btn-equipe {
+      background: var(--purple-light);
+      border: 1.5px solid rgba(139,92,246,0.3);
+      color: var(--purple);
+      padding: 20px 24px;
+      border-radius: 16px;
+      font-size: var(--fs-md);
+      font-weight: 800;
+      cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-equipe i { font-size: 28px; }
+    .btn-equipe:active { background: var(--purple); color: white; }
+
+    /* ── Ranking de produtos ── */
+    .ranking-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .ranking-header {
+      padding: 20px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .ranking-header-left { display: flex; align-items: center; gap: 12px; }
+    .ranking-header-left i { font-size: 24px; color: var(--green); }
+    .ranking-header-left span { font-size: var(--fs-md); font-weight: 800; }
+    .ranking-chevron { font-size: 22px; color: var(--text-sub); transition: transform 0.3s; }
+    .ranking-chevron.open { transform: rotate(180deg); }
+    .ranking-body {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.35s ease-out;
+      border-top: 1px solid transparent;
+    }
+    .ranking-body.open {
+      max-height: 600px;
+      border-top-color: var(--border);
+    }
+    .ranking-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: var(--fs-sm);
+    }
+    .ranking-item:last-child { border-bottom: none; }
+    .ranking-item .rk-name { font-weight: 700; color: var(--text); }
+    .ranking-item .rk-val  { font-weight: 800; color: var(--green); }
+    .ranking-pos { font-size: var(--fs-lg); font-weight: 900; color: var(--text-sub); min-width: 32px; }
+
+    /* ── Feed de atividade ── */
+    .feed-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      max-height: 280px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .feed-item {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .feed-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .feed-icon {
+      width: 38px; height: 38px; border-radius: 12px;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .feed-icon.blue   { background: var(--blue-light);   color: var(--blue); }
+    .feed-icon.green  { background: var(--green-light);  color: var(--green); }
+    .feed-icon.purple { background: var(--purple-light); color: var(--purple); }
+    .feed-icon.orange { background: var(--primary-light);color: var(--primary); }
+    .feed-text { font-size: var(--fs-sm); font-weight: 600; line-height: 1.4; }
+    .feed-time { font-size: var(--fs-xs); color: var(--text-sub); margin-top: 4px; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: #1e293b;
+      border: 1px solid var(--border);
+      color: white;
+      padding: 18px 28px;
+      border-radius: 20px;
+      font-size: var(--fs-md);
+      font-weight: 700;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+      z-index: 10000;
+      transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex; align-items: center; gap: 12px;
+      pointer-events: none;
+      max-width: 90vw;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast i { font-size: 24px; flex-shrink: 0; }
+    .toast.success { border-color: rgba(16,185,129,0.4); }
+    .toast.error { border-color: rgba(244,63,94,0.4); }
+
+    /* ── Modal genérico ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(10,15,30,0.88);
+      backdrop-filter: blur(10px);
+      display: flex; justify-content: center; align-items: flex-end;
+      z-index: 1000;
+      transition: opacity 0.3s;
+    }
+    .modal-overlay.hidden { opacity: 0; pointer-events: none; }
+    .modal-sheet {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px 28px 0 0;
+      width: 100%; max-width: 620px;
+      padding: 28px 24px 40px;
+      display: flex; flex-direction: column; gap: 20px;
+      box-shadow: 0 -20px 50px rgba(0,0,0,0.5);
+      transform: translateY(0);
+      transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      max-height: 92vh; overflow-y: auto;
+    }
+    .modal-overlay.hidden .modal-sheet { transform: translateY(100%); }
+    .modal-drag { width: 40px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 4px; margin: 0 auto -8px; }
+    .modal-title-row { display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { font-size: var(--fs-xl); font-weight: 900; }
+    .modal-close {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      color: var(--text); border-radius: 12px; padding: 12px;
+      cursor: pointer; font-size: 22px; display: flex;
+    }
+
+    /* ── Modal Caixa (abrir/fechar) ── */
+    .caixa-modal-icon {
+      width: 72px; height: 72px; border-radius: 22px;
+      display: flex; justify-content: center; align-items: center;
+      margin: 0 auto;
+      font-size: 36px;
+    }
+    .caixa-modal-icon.open  { background: var(--green-light); color: var(--green); }
+    .caixa-modal-icon.close { background: var(--red-light); color: var(--red); }
+    .caixa-modal-desc { font-size: var(--fs-md); color: var(--text-sub); text-align: center; line-height: 1.5; }
+
+    /* ── Modal RH — abas ── */
+    .rh-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+    .rh-tab {
+      flex: 1; padding: 14px 8px;
+      background: rgba(255,255,255,0.04); border: 1.5px solid var(--border);
+      border-radius: 14px; color: var(--text-sub);
+      font-size: var(--fs-sm); font-weight: 700;
+      cursor: pointer; text-align: center; transition: all 0.2s;
+    }
+    .rh-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* ── Confirm buttons ── */
+    .confirm-row { display: flex; gap: 12px; }
+    .btn-cancel {
+      flex: 1;
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      padding: 20px;
+      border-radius: 16px;
+      font-size: var(--fs-md);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-confirm {
+      flex: 2;
+      background: var(--green);
+      color: white; border: none;
+      padding: 20px;
+      border-radius: 16px;
+      font-size: var(--fs-md);
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .btn-confirm.red { background: var(--red); }
+    .btn-confirm:active, .btn-cancel:active { transform: scale(0.97); }
+
+    select.form-input {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 256 256'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'%3E%3C/path%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 44px;
+    }
+
+    /* Meta input wrapper */
+    .meta-input-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    /* Features grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.2s;
+    }
+    .feature-card.active { border-color: rgba(16,185,129,0.4); }
+    .feature-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .feature-icon i { font-size: 20px; }
+    .feature-info { flex: 1; min-width: 0; }
+    .feature-name { font-size: var(--fs-sm); font-weight: 700; margin-bottom: 2px; }
+    .feature-desc { font-size: 11px; color: var(--text-sub); line-height: 1.3; }
+    .feature-toggle {
+      position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; cursor: pointer;
+    }
+    .feature-toggle input { opacity: 0; width: 0; height: 0; }
+    .feature-toggle .track {
+      position: absolute; inset: 0; background: #4a4a5a; border-radius: 24px; transition: .3s;
+    }
+    .feature-toggle input:checked + .track { background: var(--green); }
+    .feature-toggle .thumb {
+      position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background: white; border-radius: 50%; transition: .3s;
+    }
+    .feature-toggle input:checked ~ .thumb { left: 23px; }
+  
+  /* ════════════════════ iPAD MINI (768x1024 / 1024x768) ════════════════════ */
+  @media screen and (min-width: 700px) and (max-width: 900px) and (orientation: portrait) {
+    header { padding: 14px 18px; }
+    .header-title { font-size: var(--fs-xl); }
+    main { padding: 18px; max-width: 720px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+    .btn-periodo, .btn-reportar-problema { min-height: 44px; }
+    [style*="grid-template-columns"] { grid-template-columns: repeat(2, 1fr) !important; }
+  }
+
+  @media screen and (min-width: 901px) and (max-width: 1100px) and (orientation: landscape) {
+    main { padding: 16px 24px; }
+    .btn-periodo, .btn-reportar-problema { min-height: 42px; }
+  }
+
+  /* ════════════════════ DESKTOP / ULTRAWIDE ════════════════════ */
+
+  /* ─── Desktop padrão (≥1280px): coluna mais larga, modais centrados ─── */
+  @media screen and (min-width: 1280px) {
+    main {
+      max-width: 960px;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px 20px;
+      align-items: start;
+    }
+    /* Emparelhamento das seções em duas colunas */
+    main > div:nth-child(1) { grid-column: 1 / -1; } /* Filtros de período */
+    main > div:nth-child(2) { grid-column: 1 / -1; } /* KPIs */
+    main > div:nth-child(7),
+    main > div:nth-child(8) { grid-column: auto; }
+    main > div:nth-child(9),
+    main > div:nth-child(10) { grid-column: 1 / -1; } /* Funcionalidades + Feed */
+    /* Botões com tamanho mínimo/máximo */
+    .btn-periodo { min-height: 44px; max-height: 56px; padding: 10px 22px; }
+    .btn-primary { max-height: 60px; }
+    .remote-btn { min-height: 96px; max-height: 140px; }
+    /* Bottom sheets viram diálogos centrados no desktop */
+    .modal-overlay { align-items: center !important; }
+    .modal-sheet { max-width: 680px; border-radius: var(--radius-lg); margin: 0 auto; }
+  }
+
+  /* ─── Tier UW1: Ultrawide base (≥1921px / 2560×1080+) ─── */
+  @media screen and (min-width: 1921px) {
+    main { max-width: 1440px; gap: 22px 26px; padding: 28px; }
+    header { padding: 16px 32px; }
+    .header-title { font-size: var(--fs-xl); }
+    /* KPIs: faturamento ocupa a linha toda; mesas e ticket dividem */
+    .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 16px; }
+    .kpi-card.full { grid-column: 1 / -1 !important; }
+    .kpi-grid > .kpi-card:not(.full) { grid-column: span 2 !important; }
+    /* Controle remoto em uma linha de 4 */
+    .remote-grid { grid-template-columns: repeat(4, 1fr) !important; }
+    .remote-btn.full { grid-column: span 2; }
+    /* Cards de formulário lado a lado com altura equilibrada */
+    .form-input { min-height: 52px; max-height: 64px; font-size: var(--fs-lg); }
+    .modal-relato-box { max-width: 560px; }
+    .modal-sheet { max-width: 780px; }
+    .sec-title { font-size: var(--fs-lg); }
+  }
+
+  /* ─── Tier UW2: Super ultrawide (≥2561px / 3440×1440) ─── */
+  @media screen and (min-width: 2561px) {
+    main { max-width: 1760px; gap: 26px 30px; padding: 32px; border-radius: 20px; }
+    header { padding: 18px 40px; }
+    .kpi-grid { gap: 20px !important; }
+    .kpi-value { font-size: clamp(var(--fs-xxl), 3vw, 56px); }
+    .remote-btn { min-height: 120px; }
+    .features-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)) !important; gap: 16px; }
+    .feed-card { max-height: 420px; }
+    .modal-sheet { max-width: 860px; }
+  }
+
+  /* ─── Tier UW3: Super ultrawide duplo 4K (≥3841px) ─── */
+  @media screen and (min-width: 3841px) {
+    main { max-width: 2100px; gap: 30px 36px; padding: 40px; }
+    header { padding: 20px 56px; }
+    .kpi-grid { gap: 24px !important; }
+    .remote-btn { min-height: 150px; max-height: 200px; }
+    .ranking-item, .feed-card { font-size: var(--fs-lg); }
+    .modal-sheet { max-width: 960px; }
+  }
+
+  /* ════════════════════ SELETOR DE LAYOUT DO PAINEL (3 opções configuráveis) ════════════════════ */
+  .layout-switcher {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .ls-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    color: var(--text-sub);
+  }
+  .ls-options {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .ls-btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text-sub);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .ls-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+  .ls-btn.active {
+    background: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(252, 75, 21, 0.35);
+  }
+
+  /* Colaborador vira cartão clicável que abre o modal de funções */
+  .colab-card-click {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    padding: 12px 16px;
+  }
+  .colab-card-click:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.10); border-color: var(--primary); }
+  .colab-card-click:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .colab-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .colab-info strong { font-size: var(--fs-md); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .colab-info span { font-size: var(--fs-xs); color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .colab-chevron { color: var(--text-sub); font-size: 18px; flex-shrink: 0; transition: transform 0.15s ease; }
+  .colab-card-click:hover .colab-chevron { transform: translateX(3px); color: var(--primary); }
+
+  /* LAYOUT COMPACTO: coluna única estreita em qualquer tela grande */
+  @media screen and (min-width: 1280px) {
+    body[data-layout-dono="compacto"] main {
+      display: block;
+      max-width: 780px;
+      padding: 24px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    body[data-layout-dono="compacto"] main > div { grid-column: auto !important; }
+    body[data-layout-dono="compacto"] .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    body[data-layout-dono="compacto"] .kpi-card.full,
+    body[data-layout-dono="compacto"] .kpi-grid > .kpi-card:not(.full) { grid-column: span 1 !important; }
+    body[data-layout-dono="compacto"] .modal-sheet { max-width: 640px; }
+  }
+
+  /* LAYOUT DASHBOARD: duas colunas já em telas médias + painel largo */
+  @media screen and (min-width: 1100px) {
+    body[data-layout-dono="dashboard"] main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px 22px;
+      align-items: start;
+      max-width: 1240px;
+    }
+    body[data-layout-dono="dashboard"] main > div:nth-child(1),
+    body[data-layout-dono="dashboard"] main > div:nth-child(2),
+    body[data-layout-dono="dashboard"] main > div:nth-child(9),
+    body[data-layout-dono="dashboard"] main > div:nth-child(10) { grid-column: 1 / -1; }
+  }
+  @media screen and (min-width: 1280px) {
+    body[data-layout-dono="dashboard"] main { max-width: 1320px; gap: 22px 24px; }
+    body[data-layout-dono="dashboard"] .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 14px; }
+    body[data-layout-dono="dashboard"] .kpi-card.full { grid-column: 1 / -1 !important; }
+    body[data-layout-dono="dashboard"] .kpi-grid > .kpi-card:not(.full) { grid-column: span 2 !important; }
+    body[data-layout-dono="dashboard"] .features-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  }
+    /* ══════════════════════════════════════════════════════════════════
+       MOTOR MODULAR BENTO GRID PARA PAINEL DO DONO (MOBILE -> ULTRAWIDE)
+       ══════════════════════════════════════════════════════════════════ */
+    :root {
+      --bg: #090d16;
+      --card: #111827;
+      --card2: #1e293b;
+      --border: rgba(255,255,255,0.09);
+      --primary: #fc4b15;
+      --primary-light: rgba(252,75,21,0.15);
+      --green: #10b981;
+      --green-light: rgba(16,185,129,0.15);
+      --blue: #3b82f6;
+      --blue-light: rgba(59,130,246,0.15);
+      --purple: #8b5cf6;
+      --purple-light: rgba(139,92,246,0.15);
+      --text: #f8fafc;
+      --text-sub: #94a3b8;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      zoom: 1 !important;
+    }
+
+    /* Container Principal Fluido & Modular */
+    main {
+      padding: 24px 20px 80px !important;
+      margin: 0 auto !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      transition: max-width 0.3s ease;
+    }
+
+    /* ─── Mobile (< 768px): Coluna Única Confortável ─── */
+    @media (max-width: 767px) {
+      main {
+        max-width: 600px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 18px !important;
+      }
+      .kpi-grid { grid-template-columns: 1fr 1fr !important; }
+      .remote-grid { grid-template-columns: 1fr 1fr !important; }
+    }
+
+    /* ─── Tablet & Telas Médias (768px a 1199px) ─── */
+    @media (min-width: 768px) and (max-width: 1199px) {
+      main {
+        max-width: 960px !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 20px !important;
+        align-items: start !important;
+      }
+      .grid-span-all,
+      .sec-periodo-wrap,
+      .kpi-grid-container,
+      .features-container {
+        grid-column: 1 / -1 !important;
+      }
+      .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
+      .remote-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+
+    /* ─── Desktop & Monitores Wide (1200px a 1799px) ─── */
+    @media (min-width: 1200px) and (max-width: 1799px) {
+      main {
+        max-width: 1440px !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 22px !important;
+        align-items: start !important;
+      }
+      .grid-span-all,
+      .sec-periodo-wrap,
+      .kpi-grid-container {
+        grid-column: 1 / -1 !important;
+      }
+      .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
+      .remote-grid { grid-template-columns: repeat(4, 1fr) !important; }
+      .features-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important; }
+    }
+
+    /* ─── Monitores Ultrawide & 4K (≥ 1800px) ─── */
+    @media (min-width: 1800px) {
+      main {
+        max-width: 1800px !important;
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 24px !important;
+        align-items: start !important;
+      }
+      .grid-span-all,
+      .sec-periodo-wrap,
+      .kpi-grid-container {
+        grid-column: 1 / -1 !important;
+      }
+      .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
+      .remote-grid { grid-template-columns: repeat(4, 1fr) !important; }
+      .features-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important; }
+    }
+
+    /* Cartões Modulares com Acabamento Premium */
+    .kpi-card,
+    .remote-btn,
+    .colab-card,
+    .caixa-card,
+    .aviso-area,
+    .equipe-card,
+    .ranking-card,
+    .feed-card,
+    .meta-input-card {
+      background: var(--card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: var(--radius-lg) !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2) !important;
+      transition: transform 0.2s, border-color 0.2s !important;
+    }
+
+    .kpi-card:hover,
+    .remote-btn:hover,
+    .colab-card:hover {
+      border-color: rgba(252,75,21,0.4) !important;
+      transform: translateY(-2px) !important;
+    }
+
+    /* Modais Centralizados com Backdrop Blur no Desktop */
+    @media (min-width: 768px) {
+      .modal-overlay {
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .modal-sheet {
+        border-radius: var(--radius-lg) !important;
+        max-width: 620px !important;
+        margin: auto !important;
+      }
+    }
+
+
+    /* Sistema Responsivo para Painel Dono */
+    @media (max-width: 768px) {
+      div[style*="grid-template-columns: 1fr 1fr"],
+      div[style*="grid-template-columns:1fr 1fr"],
+      div[style*="grid-template-columns: repeat(4, 1fr)"],
+      div[style*="grid-template-columns: repeat(3, 1fr)"] {
+        grid-template-columns: 1fr !important;
+      }
+      table {
+        min-width: 500px !important;
+      }
+    }
+  
+
+    /* ══════════════════════════════════════════════════════════════════
+       SISTEMA DE TEMAS DINÂMICOS (CLARO / ESCURO) & LONG PRESS
+       ══════════════════════════════════════════════════════════════════ */
+    :root, body[data-theme="light"], body.theme-light {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --card2: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-sub: #64748b;
+      --primary: #fc4b15;
+      --primary-light: rgba(252,75,21,0.12);
+      --green: #10b981;
+      --green-light: rgba(16,185,129,0.12);
+      --red: #f43f5e;
+      --red-light: rgba(244,63,94,0.12);
+      --blue: #3b82f6;
+      --blue-light: rgba(59,130,246,0.12);
+      --purple: #8b5cf6;
+      --purple-light: rgba(139,92,246,0.12);
+      --yellow: #f59e0b;
+      --header-bg: #ffffff;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.06);
+    }
+
+    [data-theme="dark"], body.theme-dark, body:not([data-theme="light"]):not(.theme-light) {
+      --bg: #090d16;
+      --card: #111827;
+      --card2: #1e293b;
+      --border: rgba(255,255,255,0.09);
+      --text: #f8fafc;
+      --text-sub: #94a3b8;
+      --primary: #fc4b15;
+      --primary-light: rgba(252,75,21,0.15);
+      --green: #10b981;
+      --green-light: rgba(16,185,129,0.15);
+      --red: #f43f5e;
+      --red-light: rgba(244,63,94,0.15);
+      --blue: #3b82f6;
+      --blue-light: rgba(59,130,246,0.15);
+      --purple: #8b5cf6;
+      --purple-light: rgba(139,92,246,0.15);
+      --yellow: #f59e0b;
+      --header-bg: linear-gradient(135deg, #111827 0%, #0a0f1e 100%);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.25);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    body {
+      background: var(--bg) !important;
+      color: var(--text) !important;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    header {
+      background: var(--header-bg) !important;
+      border-bottom: 1px solid var(--border) !important;
+    }
+
+    .kpi-card, .card, .chart-card, .ranking-box, .features-grid > div, .modal-sheet {
+      background: var(--card) !important;
+      border-color: var(--border) !important;
+      box-shadow: var(--shadow-sm) !important;
+    }
+
+    /* ── Feedback Visual de Long Press (Manter Pressionado) ── */
+    .has-long-press {
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+
+    .has-long-press:active, .long-press-active {
+      transform: scale(0.97) !important;
+      box-shadow: 0 0 0 3px var(--primary-light), var(--shadow-md) !important;
+    }
+
+    .long-press-badge {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-sub);
+      background: rgba(0,0,0,0.06);
+      padding: 2px 6px;
+      border-radius: 6px;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    /* ── Modos de Layout Visíveis e Impactantes ── */
+    body[data-layout-dono="compacto"] main {
+      display: flex !important;
+      flex-direction: column !important;
+      max-width: 760px !important;
+      margin: 0 auto !important;
+      gap: 14px !important;
+      padding: 16px !important;
+    }
+    body[data-layout-dono="compacto"] .kpi-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 10px !important;
+    }
+    body[data-layout-dono="compacto"] .kpi-card {
+      padding: 14px !important;
+    }
+    body[data-layout-dono="compacto"] .kpi-card .val {
+      font-size: 26px !important;
+    }
+
+    body[data-layout-dono="confortavel"] main {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)) !important;
+      max-width: 1200px !important;
+      margin: 0 auto !important;
+      gap: 20px !important;
+      padding: 20px !important;
+    }
+
+    body[data-layout-dono="dashboard"] main {
+      display: grid !important;
+      grid-template-columns: repeat(12, 1fr) !important;
+      max-width: 1540px !important;
+      margin: 0 auto !important;
+      gap: 18px !important;
+      padding: 20px !important;
+    }
+    body[data-layout-dono="dashboard"] .dono-sec-full {
+      grid-column: span 12 !important;
+    }
+    body[data-layout-dono="dashboard"] .dono-sec-half {
+      grid-column: span 6 !important;
+    }
+    body[data-layout-dono="dashboard"] .dono-sec-third {
+      grid-column: span 4 !important;
+    }
+
+  
+    /* ══════════════════════════════════════════════════════════════════
+       PERFORMANCE 60/120 FPS & SEÇÕES RECOLHÍVEIS / EXPANSÍVEIS
+       ══════════════════════════════════════════════════════════════════ */
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      content-visibility: auto;
+      contain: paint;
+    }
+
+    .dono-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg, 24px);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+      contain: layout style;
+    }
+
+    .sec-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      padding: 4px 2px;
+      margin-bottom: 14px;
+    }
+
+    .sec-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .sec-title i {
+      color: var(--primary);
+      font-size: 22px;
+    }
+
+    .btn-sec-toggle {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      color: var(--text-sub);
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s, color 0.15s;
+    }
+
+    .btn-sec-toggle:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .dono-section.is-collapsed .btn-sec-toggle {
+      transform: rotate(-90deg);
+    }
+
+    .dono-section.is-collapsed .sec-content {
+      display: none !important;
+    }
+
+    .dono-section.is-collapsed {
+      padding-bottom: 14px;
+    }
+
+    .sec-collapsed-badge {
+      display: none;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-sub);
+      background: var(--card2);
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .dono-section.is-collapsed .sec-collapsed-badge {
+      display: inline-block;
+      margin-left: auto;
+      margin-right: 12px;
+    }
+
+  </style>
+  <script src="/chef-telemetry-clicks.js" defer></script>
+</head>
+<body>
+
+  <!-- Loading overlay -->
+  <div id="loader" class="loader-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="logo-box">
+        <i class="ph-bold ph-chart-line-up"></i>
+      </div>
+      <div>
+        <div class="header-title">Meu Painel</div>
+        <div class="header-sub">
+          <span id="caixa-badge" class="status-pill closed">
+            <span class="dot"></span>
+            <span id="caixa-badge-txt">Fechado</span>
+          </span>
+          <span id="header-time">--:--</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn-reportar-problema" onclick="abrirTrocarRestaurante()" title="Alternar entre seus restaurantes" style="background:rgba(255,255,255,0.12);">
+        <i class="ph-bold ph-buildings"></i> <span id="btn-rest-atual">Restaurante</span>
+      </button>
+      <button class="btn-reportar-problema" onclick="abrirModalRelato()" title="Reportar problema ao suporte">
+        <i class="ph-bold ph-lifebuoy"></i> <span>Reportar Problema</span>
+      </button>
+      <button class="btn-logout" onclick="efetuarLogout()" title="Sair do Painel">
+        <i class="ph-bold ph-sign-out"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Sheet: Trocar Restaurante (dono de rede) -->
+  <style>
+    .troca-overlay { position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.45); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:none; align-items:flex-end; justify-content:center; opacity:0; transition:opacity 0.28s cubic-bezier(0.32,0.72,0,1); }
+    .troca-overlay.aberto { display:flex; } .troca-overlay.visivel { opacity:1; }
+    @media (min-width:640px){ .troca-overlay{ align-items:center; } }
+    .troca-sheet { width:100%; max-width:420px; max-height:80vh; overflow-y:auto; background:#ffffff; border-radius:24px 24px 0 0; padding:12px 20px 24px 20px; transform:translateY(100%); transition:transform 0.38s cubic-bezier(0.32,0.72,0,1); box-shadow:0 -12px 48px rgba(0,0,0,0.18); overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+    @media (min-width:640px){ .troca-sheet{ border-radius:24px; } }
+    .troca-overlay.visivel .troca-sheet { transform:translateY(0); }
+    .troca-grabber { width:40px; height:5px; border-radius:3px; background:#e2e8f0; margin:4px auto 14px auto; }
+    .troca-card { display:flex; align-items:center; gap:13px; width:100%; background:#f8fafc; border:2px solid transparent; border-radius:16px; padding:13px 14px; margin-bottom:10px; cursor:pointer; text-align:left; transition:transform 0.12s ease, border-color 0.15s ease, background 0.15s ease; -webkit-tap-highlight-color:transparent; }
+    .troca-card:hover { border-color:#fec7ad; background:#fff7f3; }
+    .troca-card:active { transform:scale(0.97); }
+    .troca-avatar { width:44px; height:44px; flex-shrink:0; border-radius:13px; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:18px; background:linear-gradient(135deg,#fc4b15,#ffa726); box-shadow:0 4px 12px rgba(252,75,21,0.25); }
+    .troca-badge-atual { background:#dcfce7; color:#166534; font-size:10.5px; font-weight:800; padding:2px 9px; border-radius:10px; margin-left:auto; flex-shrink:0; white-space:nowrap; }
+  </style>
+  <div class="troca-overlay" id="troca-overlay" onclick="if(event.target===this) fecharTrocarRestaurante()">
+    <div class="troca-sheet" role="dialog" aria-modal="true" aria-label="Trocar restaurante">
+      <div class="troca-grabber"></div>
+      <h2 style="font-size:20px; font-weight:800; color:#1e293b; margin-bottom:4px;">Trocar de restaurante</h2>
+      <p style="color:#64748b; font-size:13.5px; margin-bottom:16px;">Escolha qual estabelecimento você quer gerenciar agora.</p>
+      <div id="troca-lista"></div>
+      <button onclick="fecharTrocarRestaurante()" style="width:100%; margin-top:4px; padding:12px; background:none; border:none; color:#94a3b8; font-size:13px; font-weight:600; cursor:pointer;">Cancelar</button>
+    </div>
+  </div>
+  <script>
+    function abrirTrocarRestaurante() {
+      const overlay = document.getElementById('troca-overlay');
+      fetch('/api/auth/minha-rede', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('chef_token') } })
+        .then(r => r.json())
+        .then(d => {
+          const rede = (d && d.rede) || [];
+          if (!rede.length || rede.length < 2) { alert('Você ainda administra apenas este restaurante.'); return; }
+          document.getElementById('troca-lista').innerHTML = rede.map(r => {
+            const ehAtual = String(r.id) === String(d.atual);
+            return `<button type="button" class="troca-card" onclick="escolherTrocaRede(${r.id})">
+              <span class="troca-avatar">${String(r.nome || '?').trim().charAt(0).toUpperCase()}</span>
+              <span style="flex:1; min-width:0;">
+                <strong style="display:block; color:#1e293b; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${r.nome || ('Restaurante #' + r.id)}</strong>
+                ${!r.ativo ? '<span style="color:#94a3b8; font-size:12px;">Inativo</span>' : ''}
+              </span>
+              ${ehAtual ? '<span class="troca-badge-atual">ATUAL</span>' : ''}
+            </button>`;
+          }).join('');
+          overlay.classList.add('aberto');
+          requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('visivel')));
+          try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
+        })
+        .catch(() => alert('Erro ao carregar seus restaurantes.'));
+    }
+    function fecharTrocarRestaurante() {
+      const overlay = document.getElementById('troca-overlay');
+      if (!overlay) return;
+      overlay.classList.remove('visivel');
+      setTimeout(() => overlay.classList.remove('aberto'), 380);
+    }
+    function escolherTrocaRede(rid) {
+      try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {}
+      fetch('/api/auth/trocar-restaurante', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('chef_token') },
+        body: JSON.stringify({ restaurante_id: rid })
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d && d.success) {
+            localStorage.setItem('chef_token', d.token);
+            localStorage.setItem('restaurante_id', String(d.restaurante_id));
+            localStorage.setItem('cc_ultimo_restaurante', String(d.restaurante_id));
+            localStorage.setItem('cc_offline_habilitado', d.offline_habilitado ? '1' : '0');
+            window.location.reload();
+          } else {
+            alert((d && d.error) || 'Não foi possível alternar.');
+            fecharTrocarRestaurante();
+          }
+        })
+        .catch(() => { alert('Erro de conexão.'); fecharTrocarRestaurante(); });
+    }
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && document.getElementById('troca-overlay')?.classList.contains('aberto')) {
+        ev.preventDefault(); fecharTrocarRestaurante();
+      }
+    });
+    (function () {
+      fetch('/api/auth/minha-rede', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('chef_token') } })
+        .then(r => r.json())
+        .then(d => {
+          const atual = ((d || {}).rede || []).find(x => String(x.id) === String(d.atual));
+          if (atual) document.getElementById('btn-rest-atual').textContent = atual.nome;
+        })
+        .catch(() => {});
+    })();
+  </script>
+
+  <!-- Modal: Reportar Problema -->
+  <div id="modal-relato" class="modal-overlay" style="display:none;">
+    <div class="modal-relato-box">
+      <div class="modal-relato-header">
+        <h3><i class="ph-bold ph-lifebuoy"></i> Reportar Problema</h3>
+        <button class="modal-fechar" onclick="fecharModalRelato()">&times;</button>
+      </div>
+      <p class="modal-relato-sub">Descreva o que aconteceu. Sua equipe de suporte recebe na hora como tarefa.</p>
+      <label class="relato-label">Categoria</label>
+      <select id="relato-categoria" class="relato-input">
+        <option value="bug">Bug / Erro no sistema</option>
+        <option value="duvida">Dúvida de uso</option>
+        <option value="sugestao">Sugestão</option>
+        <option value="outro">Outro</option>
+      </select>
+      <label class="relato-label">Prioridade</label>
+      <div class="relato-prioridade-row">
+        <button type="button" class="relato-pri ativa" data-pri="baixa" onclick="selecionarPrioridade('baixa', this)">Baixa</button>
+        <button type="button" class="relato-pri" data-pri="media" onclick="selecionarPrioridade('media', this)">Média</button>
+        <button type="button" class="relato-pri" data-pri="alta" onclick="selecionarPrioridade('alta', this)">Alta</button>
+      </div>
+      <label class="relato-label">Título</label>
+      <input id="relato-titulo" class="relato-input" type="text" maxlength="120" placeholder="Ex.: Impressora não imprime pedidos da cozinha">
+      <label class="relato-label">Descrição</label>
+      <textarea id="relato-descricao" class="relato-input" rows="4" maxlength="1500" placeholder="O que aconteceu? O que você esperava que acontecesse?"></textarea>
+      <div id="relato-feedback" class="relato-feedback" style="display:none;"></div>
+      <button class="relato-enviar" id="btn-enviar-relato" onclick="enviarRelato()">
+        <i class="ph-bold ph-paper-plane-tilt"></i> Enviar para o Suporte
+      </button>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- Filtros de Período -->
+    <div>
+      <div class="sec-title">
+        <i class="ph-bold ph-calendar"></i>
+        <span>Período: <span id="periodo-rotulo-exibicao" style="color: var(--green);">Hoje</span></span>
+      </div>
+      <div class="periodo-row">
+        <button class="btn-periodo active" onclick="selecionarPeriodoDono('hoje', this)">
+          <i class="ph-bold ph-sun"></i> Hoje
+        </button>
+        <button class="btn-periodo" onclick="selecionarPeriodoDono('semana', this)">
+          <i class="ph-bold ph-calendar-blank"></i> Semana
+        </button>
+        <button class="btn-periodo" onclick="selecionarPeriodoDono('mes', this)">
+          <i class="ph-bold ph-calendar-plus"></i> Mês
+        </button>
+        <button class="btn-periodo" onclick="togglePeriodoCustomDono(this)">
+          <i class="ph-bold ph-funnel"></i> Outro
+        </button>
+      </div>
+
+      <!-- Seletor de Layout do Painel & Reordenação -->
+      <div class="layout-switcher" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="ls-label"><i class="ph-bold ph-layout"></i> Layout:</span>
+          <div class="ls-options" role="group" aria-label="Escolher layout do painel">
+            <button type="button" class="ls-btn" data-ls-layout="compacto" onclick="definirLayoutDono('compacto')" title="Coluna única compacta e densa"><i class="ph-bold ph-rows"></i> Compacto</button>
+            <button type="button" class="ls-btn" data-ls-layout="confortavel" onclick="definirLayoutDono('confortavel')" title="Duas colunas equilibradas (Padrão)"><i class="ph-bold ph-columns"></i> Confortável</button>
+            <button type="button" class="ls-btn" data-ls-layout="dashboard" onclick="definirLayoutDono('dashboard')" title="Painel amplo com visão executiva"><i class="ph-bold ph-cards"></i> Dashboard</button>
+          </div>
+        </div>
+
+        
+        <button type="button" id="btn-toggle-all-sections" onclick="window.toggleTodasSecoes()" style="background:var(--card); border:1.5px solid var(--border); color:var(--text); padding:8px 14px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:var(--shadow-sm); transition:all 0.15s;">
+          <i class="ph-bold ph-caret-double-up" id="icon-toggle-all" style="color:var(--primary); font-size:16px;"></i>
+          <span id="txt-toggle-all">Recolher Tudo</span>
+        </button>
+
+        <button type="button" onclick="window.abrirModalReordenarSeccoes()" style="background:var(--card); border:1.5px solid var(--border); color:var(--text); padding:8px 14px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:var(--shadow-sm); transition:all 0.15s;">
+          <i class="ph-bold ph-arrows-down-up" style="color:var(--primary); font-size:16px;"></i>
+          <span>Organizar Seções</span>
+        </button>
+      </div>
+
+      <div id="container-datas-custom" style="display:none; flex-direction:column; gap:12px; margin-top:12px; background:var(--card); padding:20px; border-radius:var(--radius-lg); border:1px solid var(--border);">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label class="form-label" for="dono-data-inicio">Data Início</label>
+            <input type="date" id="dono-data-inicio" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="dono-data-fim">Data Fim</label>
+            <input type="date" id="dono-data-fim" class="form-input">
+          </div>
+        </div>
+        <button class="btn-primary" onclick="aplicarDatasCustomDono()" style="width:100%; justify-content:center; font-size:var(--fs-lg); padding:20px;">
+          <i class="ph-bold ph-funnel"></i> Filtrar
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI Grid -->
+    <div>
+      <div class="sec-title">
+        <i class="ph-bold ph-chart-bar"></i>
+        <span>Resumo do Dia</span>
+      </div>
+      <div class="kpi-grid">
+
+        <!-- Faturamento -->
+        <div class="kpi-card full">
+          <div class="kpi-label">
+            <span id="kpi-title-faturamento">💰 Faturamento Hoje</span>
+            <div class="kpi-icon green"><i class="ph-fill ph-currency-dollar"></i></div>
+          </div>
+          <div id="kpi-faturamento" class="kpi-value" style="color: var(--green);">R$ 0,00</div>
+          <div id="kpi-sub-total-pedidos" class="kpi-sub">0 pedidos finalizados</div>
+          <div class="progress-wrap">
+            <div class="progress-labels">
+              <span id="goal-percent">0% da meta</span>
+              <span id="goal-target-label">Meta: R$ 0,00</span>
+            </div>
+            <div class="progress-bg">
+              <div id="kpi-progress-fill" class="progress-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mesas -->
+        <div class="kpi-card">
+          <div class="kpi-label">
+            <span>🍽️ Mesas</span>
+            <div class="kpi-icon orange"><i class="ph-fill ph-house-line"></i></div>
+          </div>
+          <div id="kpi-mesas" class="kpi-value" style="color: var(--primary);">0</div>
+          <div class="kpi-sub">Em atendimento</div>
+        </div>
+
+        <!-- Ticket médio -->
+        <div class="kpi-card">
+          <div class="kpi-label">
+            <span>📊 Ticket</span>
+            <div class="kpi-icon blue"><i class="ph-fill ph-trend-up"></i></div>
+          </div>
+          <div id="kpi-ticket" class="kpi-value" style="color: var(--blue);">R$ 0,00</div>
+          <div class="kpi-sub">Por pedido</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Equipe -->
+    <div class="equipe-card">
+      <div class="equipe-info">
+        <div class="equipe-count" id="kpi-equipe">0</div>
+        <div class="equipe-label">Colaboradores Ativos</div>
+        <div class="equipe-sub">Com ponto aberto agora</div>
+      </div>
+      <button class="btn-equipe" onclick="abrirModalRhDono()">
+        <i class="ph-bold ph-users-three"></i>
+        <span style="font-size:var(--fs-xs);">Gerenciar<br>Equipe</span>
+      </button>
+    </div>
+
+    <!-- CAIXA — Abrir / Fechar -->
+    <div>
+      <div class="sec-title">
+        <i class="ph-bold ph-cash-register"></i>
+        <span>Controle do Caixa</span>
+      </div>
+      <div class="caixa-card">
+        <div class="caixa-status-row">
+          <div>
+            <div class="caixa-info-label" id="cashier-control-title">Verificando...</div>
+            <div class="caixa-info-sub" id="cashier-control-subtitle">Aguarde...</div>
+          </div>
+          <button id="cashier-toggle-btn" class="btn-caixa open" onclick="abrirCaixaFluxo()">
+            <i class="ph-bold ph-lock-open" id="cashier-btn-icon"></i>
+            <span id="cashier-btn-text">Abrir</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROLE REMOTO DO CAIXA -->
+    <div>
+      <div class="sec-title">
+        <i class="ph-bold ph-desktop"></i>
+        <span>Controle Remoto do Caixa</span>
+      </div>
+
+      <!-- Telas do Sistema -->
+      <div style="font-size: var(--fs-xs); font-weight: 800; color: var(--text-sub); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
+        Navegação de Telas
+      </div>
+      <div class="remote-grid" style="margin-bottom: 16px;">
+        <button class="remote-btn orange-btn" onclick="comandarNavegacao('index.html')">
+          <div class="rb-icon" style="background: var(--primary-light); color: var(--primary);">
+            <i class="ph-bold ph-armchair"></i>
+          </div>
+          <span class="rb-label">Mesas & Salão</span>
+          <span class="rb-sub">Tela principal de pedidos</span>
+        </button>
+
+        <button class="remote-btn blue-btn" onclick="comandarNavegacao('financeiro.html')">
+          <div class="rb-icon" style="background: var(--blue-light); color: var(--blue);">
+            <i class="ph-bold ph-money"></i>
+          </div>
+          <span class="rb-label">Financeiro & DRE</span>
+          <span class="rb-sub">Caixa, fluxo e sangria</span>
+        </button>
+
+        <button class="remote-btn green-btn" onclick="comandarNavegacao('fila-pedidos.html')">
+          <div class="rb-icon" style="background: var(--green-light); color: var(--green);">
+            <i class="ph-bold ph-cooking-pot"></i>
+          </div>
+          <span class="rb-label">KDS Cozinha</span>
+          <span class="rb-sub">Fila e esteira de preparo</span>
+        </button>
+
+        <button class="remote-btn purple-btn" onclick="comandarNavegacao('dashboard.html')">
+          <div class="rb-icon" style="background: var(--purple-light); color: var(--purple);">
+            <i class="ph-bold ph-chart-line-up"></i>
+          </div>
+          <span class="rb-label">Dashboard</span>
+          <span class="rb-sub">Relatórios e vendas</span>
+        </button>
+
+        <button class="remote-btn" onclick="comandarNavegacao('cardapio.html')">
+          <div class="rb-icon" style="background: rgba(234,88,12,0.15); color: #ea580c;">
+            <i class="ph-bold ph-book-open"></i>
+          </div>
+          <span class="rb-label">Cardápio</span>
+          <span class="rb-sub">Cardápio digital</span>
+        </button>
+
+        <button class="remote-btn" onclick="comandarNavegacao('configuracoes.html')">
+          <div class="rb-icon" style="background: rgba(100,116,139,0.15); color: #64748b;">
+            <i class="ph-bold ph-gear"></i>
+          </div>
+          <span class="rb-label">Configurações</span>
+          <span class="rb-sub">Painel administrativo</span>
+        </button>
+
+        <button class="remote-btn" onclick="abrirModalTotemDispositivos()" style="position: relative;">
+          <div class="rb-icon" style="background: rgba(14,165,233,0.15); color: #0ea5e9;">
+            <i class="ph-bold ph-monitor-play"></i>
+          </div>
+          <span class="rb-label">Modo Totem</span>
+          <span class="rb-sub">Autoatendimento no dispositivo</span>
+          <span id="totem-badge-ativo" style="display:none; position:absolute; top:8px; right:10px; background:#22c55e; color:#fff; font-size:9px; font-weight:800; padding:2px 7px; border-radius:999px;">ATIVO</span>
+        </button>
+      </div>
+
+      <!-- Ações Imediatas no Terminal -->
+      <div style="font-size: var(--fs-xs); font-weight: 800; color: var(--text-sub); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
+        Ações Imediatas no Terminal
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+        <button class="colab-action-btn" onclick="comandarCaixaAcao('recarregar')" style="padding: 14px 10px;">
+          <i class="ph-bold ph-arrows-clockwise" style="font-size: 22px; color: var(--primary);"></i>
+          <span style="font-weight: 800; font-size: 11.5px;">Recarregar (F5)</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="comandarCaixaAcao('tocar_alerta')" style="padding: 14px 10px;">
+          <i class="ph-bold ph-bell-ringing" style="font-size: 22px; color: #f59e0b;"></i>
+          <span style="font-weight: 800; font-size: 11.5px;">Tocar Alerta</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="comandarCaixaAcao('bloquear_tela')" style="padding: 14px 10px;">
+          <i class="ph-bold ph-lock-key" style="font-size: 22px; color: #ef4444;"></i>
+          <span style="font-weight: 800; font-size: 11.5px;">Bloquear Tela</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="comandarCaixaAcao('alternar_tema')" style="padding: 14px 10px;">
+          <i class="ph-bold ph-moon-stars" style="font-size: 22px; color: #8b5cf6;"></i>
+          <span style="font-weight: 800; font-size: 11.5px;">Alternar Tema</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="comandarCaixaAcao('abrir_gaveta')" style="padding: 14px 10px;">
+          <i class="ph-bold ph-receipt" style="font-size: 22px; color: #10b981;"></i>
+          <span style="font-weight: 800; font-size: 11.5px;">Abrir Gaveta</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="comandarCaixaAcao('abrir_fila')" style="padding: 14px 10px;">
+          <i class="ph-bold ph-users-three" style="font-size: 22px; color: #3b82f6;"></i>
+          <span style="font-weight: 800; font-size: 11.5px;">Abrir Fila</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CONTROLE REMOTO DE CADA COLABORADOR -->
+    <div>
+      <div class="sec-title" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i class="ph-bold ph-users"></i>
+          <span>Controle Remoto de Colaboradores</span>
+        </div>
+        <button class="btn-refresh" onclick="carregarFuncionariosControleRemoto()" style="padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text-sub); cursor: pointer; font-size: 12px;">
+          <i class="ph ph-arrows-clockwise"></i> Atualizar
+        </button>
+      </div>
+      <div id="lista-controle-colaboradores" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="text-align: center; color: var(--text-sub); font-size: var(--fs-sm); padding: 16px;">Carregando colaboradores...</div>
+      </div>
+    </div>
+
+    <!-- CUPONS QR & PROMOÇÕES -->
+    
+    <!-- MÓDULO VIP: MENSAGENS EM MASSA & NOTIFICAÇÕES PUSH PWA (CONTRATAÇÃO À PARTE) -->
+    <div id="sec-marketing-vip" class="dono-section">
+      <div class="sec-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <i class="ph-bold ph-megaphone" style="color:var(--primary);"></i>
+          <span>Mensagens & Notificações Push (PWA + WhatsApp)</span>
+        </div>
+        <span class="sec-collapsed-badge">Oculto</span>
+      </div>
+
+      <div class="sec-content" id="marketing-container-content" style="margin-top:14px;">
+        <!-- Card Promocional de Contratação -->
+        <div id="marketing-showcase-card" style="background:linear-gradient(135deg, rgba(252,75,21,0.08) 0%, rgba(59,130,246,0.08) 100%); border:1.5px dashed var(--primary); border-radius:18px; padding:22px; text-align:center;">
+          <div style="font-size:36px; margin-bottom:8px;">📲 📢</div>
+          <h3 style="font-size:18px; font-weight:800; color:var(--text); margin-bottom:6px;">Engaje seus Clientes com Disparo de Mensagens & Cupons</h3>
+          <p style="font-size:13.5px; color:var(--text-sub); max-width:600px; margin:0 auto 16px auto; line-height:1.5;">
+            Envie novidades, promoções relâmpago e cupons QR diretamente no celular dos clientes cadastrados e nos dispositivos com o App PWA instalado!
+          </p>
+          <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+            <button type="button" class="btn-primary" onclick="window.abrirModalContratarMarketing()" style="padding:12px 24px; font-size:14px; font-weight:800;">
+              <i class="ph-bold ph-crown"></i> Contratar Módulo de Mensagens & Push
+            </button>
+            <button type="button" class="btn-secondary" onclick="window.ativarTesteMarketing()" style="padding:12px 18px; font-size:13px; font-weight:700;">
+              <i class="ph-bold ph-sparkle"></i> Ativar Demonstração Gratuita
+            </button>
+          </div>
+        </div>
+
+        <!-- Painel de Disparo Ativo (quando contratado) -->
+        <div id="marketing-active-panel" style="display:none; flex-direction:column; gap:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card2); padding:12px 16px; border-radius:14px; border:1px solid var(--border);">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="status-pill open"><span class="dot"></span> Ativo</span>
+              <span style="font-size:13px; color:var(--text-sub);">Público estimado: <strong id="marketing-total-clientes" style="color:var(--text);">-- clientes cadastrados</strong></span>
+            </div>
+            <button onclick="window.abrirModalDisparoMassa()" class="btn-primary" style="padding:8px 16px; font-size:13px; font-weight:800;">
+              <i class="ph-bold ph-paper-plane-tilt"></i> Novo Disparo em Massa
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cupons-section-dono">
+      <div class="sec-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <i class="ph-bold ph-ticket" style="color:var(--primary);"></i>
+          <span>Cupons QR & Promoções</span>
+        </div>
+        <button class="btn-primary" onclick="abrirModalCriarCupom()" style="padding:10px 16px; font-size:var(--fs-sm); border-radius:12px; gap:6px;">
+          <i class="ph-bold ph-plus"></i> Novo Cupom QR
+        </button>
+      </div>
+
+      <!-- Resumo Rápido de Cupons -->
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:12px;">
+        <div class="kpi-card" style="padding:14px; text-align:center;">
+          <span style="font-size:var(--fs-xs); color:var(--text-sub); display:block; font-weight:700;">Ativos</span>
+          <div id="kpi-cupons-ativos" style="font-size:var(--fs-xl); font-weight:900; color:var(--primary);">0</div>
+        </div>
+        <div class="kpi-card" style="padding:14px; text-align:center;">
+          <span style="font-size:var(--fs-xs); color:var(--text-sub); display:block; font-weight:700;">Total Usos</span>
+          <div id="kpi-cupons-usos" style="font-size:var(--fs-xl); font-weight:900; color:var(--green);">0</div>
+        </div>
+        <div class="kpi-card" style="padding:14px; text-align:center;">
+          <span style="font-size:var(--fs-xs); color:var(--text-sub); display:block; font-weight:700;">Vendas c/ QR</span>
+          <div id="kpi-cupons-vendas" style="font-size:var(--fs-xl); font-weight:900; color:var(--blue);">R$ 0</div>
+        </div>
+      </div>
+
+      <!-- Grid de Cupons -->
+      <div id="grid-cupons-dono" style="display:flex; flex-direction:column; gap:12px;">
+        <div style="text-align:center; color:var(--text-sub); font-size:var(--fs-sm); padding:20px;">Carregando cupons...</div>
+      </div>
+    </div>
+
+    <!-- Painel Rápido: Meta Diária & Aviso à Equipe -->
+    <div style="display:grid; grid-template-columns: 1fr; gap:12px;">
+      <!-- Meta de vendas compacta -->
+      <div class="meta-input-card" style="padding:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:6px; font-size:var(--fs-sm); font-weight:800;">
+            <i class="ph-bold ph-target" style="color:var(--primary);"></i>
+            <span>Meta de Vendas</span>
+          </div>
+          <span style="font-size:var(--fs-xs); color:var(--text-sub);">Diária</span>
+        </div>
+        <div class="form-row" style="gap:8px;">
+          <input type="number" id="meta-input" class="form-input" placeholder="Ex: 5000" inputmode="numeric" style="padding:10px 14px; font-size:var(--fs-md);">
+          <button class="btn-primary" onclick="salvarMeta()" style="padding:10px 16px; font-size:var(--fs-sm);">
+            <i class="ph-bold ph-check"></i> Salvar
+          </button>
+        </div>
+      </div>
+
+      <!-- Aviso urgente compacto -->
+      <div class="aviso-area" style="padding:16px;">
+        <div style="display:flex; align-items:center; gap:6px; font-size:var(--fs-sm); font-weight:800; margin-bottom:8px;">
+          <i class="ph-bold ph-megaphone" style="color:#8b5cf6;"></i>
+          <span>Aviso Imediato para Equipe</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="notif-input" class="form-input" placeholder="Ex: Vamos abrir 30 minutos mais cedo hoje!" style="flex:1; padding:10px 14px; font-size:var(--fs-sm);">
+          <button class="btn-aviso" onclick="notificarEquipe()" style="padding:10px 16px; font-size:var(--fs-sm); width:auto; white-space:nowrap;">
+            <i class="ph-bold ph-paper-plane-tilt"></i> Enviar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ranking de produtos -->
+    <div class="ranking-card">
+      <div class="ranking-header" onclick="toggleRanking()">
+        <div class="ranking-header-left">
+          <i class="ph-bold ph-trophy"></i>
+          <span>Produtos Mais Vendidos</span>
+        </div>
+        <i class="ph-bold ph-caret-down ranking-chevron" id="ranking-chevron"></i>
+      </div>
+      <div class="ranking-body" id="ranking-body">
+        <div id="ranking-list" style="padding:8px 0;">
+          <div style="text-align:center; color:var(--text-sub); padding:24px; font-size:var(--fs-md);">Nenhuma venda registrada.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Funcionalidades -->
+    <div>
+      <div class="sec-title">
+        <i class="ph-bold ph-toggle-left"></i>
+        <span>Funcionalidades</span>
+      </div>
+      <div class="features-grid" id="features-grid-dono"></div>
+    </div>
+
+    <!-- Feed de Atividade -->
+    <div>
+      <div class="sec-title">
+        <i class="ph-bold ph-activity"></i>
+        <span>Atividade em Tempo Real</span>
+      </div>
+      <div id="activity-feed" class="feed-card">
+        <div style="text-align:center; color:var(--text-sub); font-size:var(--fs-md); padding:12px;">Aguardando atividades...</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="toast">
+    <i class="ph-bold ph-info" id="toast-icon"></i>
+    <span id="toast-text">Notificação</span>
+  </div>
+
+  <!-- Modal: Abrir Caixa -->
+  <div id="modal-abrir-caixa" class="modal-overlay hidden">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div style="text-align:center;">
+        <div class="caixa-modal-icon open"><i class="ph-bold ph-lock-open"></i></div>
+      </div>
+      <div class="modal-title-row">
+        <span class="modal-title">Abrir o Caixa</span>
+        <button class="modal-close" onclick="fecharModal('modal-abrir-caixa')"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <p class="caixa-modal-desc">Digite o valor em dinheiro que está no caixa agora (fundo de troco).</p>
+      <div class="form-group">
+        <label class="form-label" for="fundo-troco-input">💵 Valor do Fundo de Troco (R$)</label>
+        <input type="number" id="fundo-troco-input" class="form-input" placeholder="Ex: 200,00" inputmode="decimal" style="font-size:28px; font-weight:900; text-align:center; padding:24px;">
+      </div>
+      <div class="confirm-row">
+        <button class="btn-cancel" onclick="fecharModal('modal-abrir-caixa')">Cancelar</button>
+        <button class="btn-confirm" onclick="confirmarAbrirCaixa()">
+          <i class="ph-bold ph-lock-open"></i> Abrir Caixa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Fechar Caixa -->
+  <div id="modal-fechar-caixa" class="modal-overlay hidden">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div style="text-align:center;">
+        <div class="caixa-modal-icon close"><i class="ph-bold ph-lock"></i></div>
+      </div>
+      <div class="modal-title-row">
+        <span class="modal-title">Fechar o Caixa</span>
+        <button class="modal-close" onclick="fecharModal('modal-fechar-caixa')"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <p class="caixa-modal-desc">Conte o dinheiro que está no caixa e digite o valor total encontrado.</p>
+      <div class="form-group">
+        <label class="form-label" for="saldo-final-input">💵 Total em Dinheiro no Caixa (R$)</label>
+        <input type="number" id="saldo-final-input" class="form-input" placeholder="Ex: 350,00" inputmode="decimal" style="font-size:28px; font-weight:900; text-align:center; padding:24px;">
+      </div>
+      <div class="confirm-row">
+        <button class="btn-cancel" onclick="fecharModal('modal-fechar-caixa')">Cancelar</button>
+        <button class="btn-confirm red" onclick="confirmarFecharCaixa()">
+          <i class="ph-bold ph-lock"></i> Fechar Caixa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: RH Equipe -->
+  <div id="modal-rh-dono" class="modal-overlay hidden">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-users-three" style="color:var(--purple);"></i> Gerenciar Equipe</span>
+        <button class="modal-close" onclick="fecharModal('modal-rh-dono')"><i class="ph-bold ph-x"></i></button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="select-rh-funcionario">👤 Selecionar Colaborador</label>
+        <select id="select-rh-funcionario" class="form-input" style="font-size:var(--fs-md);">
+          <option value="">Carregando...</option>
+        </select>
+      </div>
+
+      <div class="rh-tabs">
+        <button id="tab-rh-btn-pagamento" class="rh-tab active" onclick="alternarAbaRhDono('pagamento')">💰 Pagar</button>
+        <button id="tab-rh-btn-falta"     class="rh-tab"        onclick="alternarAbaRhDono('falta')">📋 Falta</button>
+        <button id="tab-rh-btn-folga"     class="rh-tab"        onclick="alternarAbaRhDono('folga')">🌴 Folga</button>
+      </div>
+
+      <!-- Aba Pagamento -->
+      <div id="aba-rh-pagamento">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="rh-pagamento-valor">Valor a Pagar (R$)</label>
+          <input type="number" step="0.01" id="rh-pagamento-valor" class="form-input" placeholder="Ex: 120,00" inputmode="decimal">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="rh-pagamento-forma">Forma de Pagamento</label>
+          <select id="rh-pagamento-forma" class="form-input">
+            <option value="Dinheiro">💵 Dinheiro</option>
+            <option value="Pix">📱 Pix</option>
+            <option value="Transferência">🏦 Transferência</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label class="form-label" for="rh-pagamento-obs">Observação (opcional)</label>
+          <input type="text" id="rh-pagamento-obs" class="form-input" placeholder="Ex: Diária, adiantamento...">
+        </div>
+        <button class="btn-confirm" onclick="salvarPagamentoDono()" style="width:100%; font-size:var(--fs-lg); padding:22px; border-radius:16px;">
+          <i class="ph-bold ph-check"></i> Registrar Pagamento
+        </button>
+      </div>
+
+      <!-- Aba Falta -->
+      <div id="aba-rh-falta" style="display:none;">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="rh-falta-data">Data da Falta</label>
+          <input type="date" id="rh-falta-data" class="form-input">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="rh-falta-justificativa">Motivo da Falta</label>
+          <input type="text" id="rh-falta-justificativa" class="form-input" placeholder="Ex: Atestado médico">
+        </div>
+        <div style="display:flex; align-items:center; gap:14px; background:rgba(255,255,255,0.04); padding:18px; border-radius:14px; border:1px solid var(--border); margin-bottom:20px; cursor:pointer;" onclick="document.getElementById('rh-falta-remunerada').click()">
+          <input type="checkbox" id="rh-falta-remunerada" style="width:22px; height:22px; cursor:pointer; accent-color:var(--green);">
+          <label for="rh-falta-remunerada" style="font-size:var(--fs-md); font-weight:700; cursor:pointer;">Falta remunerada (não descontar)</label>
+        </div>
+        <button class="btn-confirm" onclick="salvarAbonoFaltaDono()" style="width:100%; font-size:var(--fs-lg); padding:22px; border-radius:16px;">
+          <i class="ph-bold ph-check"></i> Registrar Falta
+        </button>
+      </div>
+
+      <!-- Aba Folga -->
+      <div id="aba-rh-folga" style="display:none;">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="rh-folga-inicio">Data da Folga</label>
+          <input type="date" id="rh-folga-inicio" class="form-input">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="rh-folga-fim">Data Final (deixe em branco se for 1 dia)</label>
+          <input type="date" id="rh-folga-fim" class="form-input">
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="rh-folga-tipo">Tipo de Folga</label>
+          <select id="rh-folga-tipo" class="form-input">
+            <option value="Escala">📅 Folga da Escala</option>
+            <option value="Feriado">🎉 Feriado compensado</option>
+            <option value="Outro">📝 Outro motivo</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label class="form-label" for="rh-folga-obs">Observação</label>
+          <input type="text" id="rh-folga-obs" class="form-input" placeholder="Ex: Compensação de hora extra">
+        </div>
+        <button class="btn-confirm" onclick="salvarFolgaDono()" style="width:100%; font-size:var(--fs-lg); padding:22px; border-radius:16px; background: var(--purple);">
+          <i class="ph-bold ph-check"></i> Conceder Folga
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal: Funções Remotas do Colaborador (abre ao clicar no cartão) -->
+  <div id="modal-funcoes-colaborador" class="modal-overlay hidden">
+    <div class="modal-sheet" style="max-width: 480px;">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-user-gear" style="color:var(--primary);"></i> Controle Remoto</span>
+        <button class="modal-close" onclick="fecharModal('modal-funcoes-colaborador')"><i class="ph-bold ph-x"></i></button>
+      </div>
+
+      <input type="hidden" id="funcoes-colab-target-id">
+      <div style="display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:14px;">
+        <div class="colab-avatar" id="funcoes-colab-avatar">C</div>
+        <div style="min-width:0;">
+          <strong id="funcoes-colab-nome" style="font-size:var(--fs-md); display:block; color:var(--text);">—</strong>
+          <span id="funcoes-colab-cargo" style="font-size:var(--fs-xs); color:var(--text-sub);">—</span>
+        </div>
+      </div>
+      <p class="caixa-modal-desc" style="margin-bottom:14px;">Escolha uma ação remota para executar neste colaborador.</p>
+
+      <div class="colab-actions-grid" id="funcoes-colab-grid">
+        <button class="colab-action-btn" onclick="executarAcaoColaborador('mensagem')" title="Enviar mensagem no celular">
+          <i class="ph-bold ph-chat-circle-dots" style="color: var(--primary); font-size: 18px;"></i>
+          <span>Mensagem</span>
+        </button>
+        <button class="colab-action-btn" onclick="executarAcaoColaborador('chamar')" title="Chamar e vibrar celular">
+          <i class="ph-bold ph-bell-ringing" style="color: #f59e0b; font-size: 18px;"></i>
+          <span>Chamar</span>
+        </button>
+        <button class="colab-action-btn" onclick="executarAcaoColaborador('direcionar')" title="Direcionar tela do App Garçom">
+          <i class="ph-bold ph-device-mobile" style="color: var(--blue); font-size: 18px;"></i>
+          <span>Direcionar</span>
+        </button>
+        <button class="colab-action-btn" onclick="executarAcaoColaborador('ponto')" title="Registrar ponto remoto">
+          <i class="ph-bold ph-clock" style="color: #10b981; font-size: 18px;"></i>
+          <span>Ponto</span>
+        </button>
+        <button class="colab-action-btn" onclick="executarAcaoColaborador('pagamento')" title="Lançar pagamento ou vale">
+          <i class="ph-bold ph-money" style="color: #3b82f6; font-size: 18px;"></i>
+          <span>Pagar</span>
+        </button>
+        <button class="colab-action-btn" onclick="executarAcaoColaborador('folga')" title="Conceder folga ou falta">
+          <i class="ph-bold ph-calendar-plus" style="color: var(--purple); font-size: 18px;"></i>
+          <span>Folga</span>
+        </button>
+        <button class="colab-action-btn" onclick="executarAcaoColaborador('logout')" title="Desconectar sessão do colaborador">
+          <i class="ph-bold ph-sign-out" style="color: var(--red); font-size: 18px;"></i>
+          <span>Logout</span>
+        </button>
+        <button class="colab-action-btn" onclick="executarAcaoColaborador('zap')" title="WhatsApp ou Alerta Sonoro">
+          <i class="ph-bold ph-whatsapp-logo" style="color: #16a34a; font-size: 18px;"></i>
+          <span>Zap</span>
+        </button>
+      </div>
+
+      <button class="btn-cancel" onclick="fecharModal('modal-funcoes-colaborador')" style="width: 100%; padding: 12px; margin-top: 14px;">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Modal: Enviar Mensagem Direta para Colaborador -->
+  <div id="modal-msg-colaborador" class="modal-overlay hidden">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-chat-circle-dots" style="color:var(--primary);"></i> Mensagem no Celular</span>
+        <button class="modal-close" onclick="fecharModal('modal-msg-colaborador')"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <p class="caixa-modal-desc">Envie um aviso instantâneo que aparecerá na tela do smartphone do colaborador.</p>
+      
+      <input type="hidden" id="msg-colab-target-id">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Colaborador Destinatário</label>
+        <input type="text" id="msg-colab-target-nome" class="form-input" readonly style="font-weight:800; background:rgba(255,255,255,0.05);">
+      </div>
+
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label" for="msg-colab-texto">Mensagem / Instrução</label>
+        <textarea id="msg-colab-texto" class="form-input" placeholder="Ex: Atenda com urgência a Mesa 4 ou venha ao balcão..." style="height:100px;"></textarea>
+      </div>
+
+      <div class="confirm-row">
+        <button class="btn-cancel" onclick="fecharModal('modal-msg-colaborador')">Cancelar</button>
+        <button class="btn-confirm" onclick="confirmarEnviarMsgColaborador()">
+          <i class="ph-bold ph-paper-plane-tilt"></i> Enviar Mensagem
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Redirecionar Tela do App Garçom -->
+  <div id="modal-direcionar-colaborador" class="modal-overlay hidden">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-device-mobile" style="color:var(--blue);"></i> Direcionar Tela do App</span>
+        <button class="modal-close" onclick="fecharModal('modal-direcionar-colaborador')"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <p class="caixa-modal-desc">Escolha qual tela será aberta imediatamente no aplicativo móvel do colaborador.</p>
+      
+      <input type="hidden" id="direcionar-colab-target-id">
+      <input type="hidden" id="direcionar-colab-target-nome">
+
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+        <button class="colab-action-btn" onclick="confirmarDirecionarApp('tables')" style="padding: 16px; flex-direction: row; justify-content: flex-start; gap: 14px; text-align: left;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(252,75,21,0.15); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            <i class="ph-bold ph-armchair"></i>
+          </div>
+          <div>
+            <strong style="font-size: var(--fs-md); display: block;">Tela de Mesas & Comandas</strong>
+            <span style="font-size: var(--fs-xs); color: var(--text-sub);">Grade principal do salão</span>
+          </div>
+        </button>
+
+        <button class="colab-action-btn" onclick="confirmarDirecionarApp('esteira')" style="padding: 16px; flex-direction: row; justify-content: flex-start; gap: 14px; text-align: left;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(16,185,129,0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            <i class="ph-bold ph-cooking-pot"></i>
+          </div>
+          <div>
+            <strong style="font-size: var(--fs-md); display: block;">Esteira de Pedidos Prontos</strong>
+            <span style="font-size: var(--fs-xs); color: var(--text-sub);">Itens prontos para entrega na mesa</span>
+          </div>
+        </button>
+
+        <button class="colab-action-btn" onclick="confirmarDirecionarApp('atalhos')" style="padding: 16px; flex-direction: row; justify-content: flex-start; gap: 14px; text-align: left;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(59,130,246,0.15); color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            <i class="ph-bold ph-lightning"></i>
+          </div>
+          <div>
+            <strong style="font-size: var(--fs-md); display: block;">Painel de Atalhos Rápidos</strong>
+            <span style="font-size: var(--fs-xs); color: var(--text-sub);">Fila de espera, KDS e vendas</span>
+          </div>
+        </button>
+      </div>
+
+      <button class="btn-cancel" onclick="fecharModal('modal-direcionar-colaborador')" style="width: 100%; padding: 14px;">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Modal: Criar Novo Cupom QR -->
+  <div id="modal-criar-cupom" class="modal-overlay hidden">
+    <div class="modal-sheet" style="max-width: 520px;">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-ticket" style="color:var(--primary);"></i> Criar Cupom QR</span>
+        <button class="modal-close" onclick="fecharModal('modal-criar-cupom')"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <p class="caixa-modal-desc">Crie um cupom de desconto com QR Code para distribuir em mesas, redes sociais ou WhatsApp.</p>
+
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:18px;">
+        <div class="form-group">
+          <label class="form-label" for="cupom-codigo">Código do Cupom</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="cupom-codigo" class="form-input" placeholder="Ex: PROMO15" style="text-transform:uppercase; font-weight:800; letter-spacing:1px;">
+            <button type="button" class="btn-secondary" onclick="gerarCodigoCupomRandom()" style="padding:10px 14px; font-size:12px; font-weight:700; white-space:nowrap;">
+              <i class="ph-bold ph-shuffle"></i> Gerar
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cupom-titulo">Título / Descrição da Promoção</label>
+          <input type="text" id="cupom-titulo" class="form-input" placeholder="Ex: 15% OFF no Almoço de Terça">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label class="form-label" for="cupom-tipo">Tipo de Desconto</label>
+            <select id="cupom-tipo" class="form-input">
+              <option value="desconto_porcentagem">Porcentagem (%)</option>
+              <option value="desconto_fixo">Valor em R$ (Fixo)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cupom-valor">Valor do Desconto</label>
+            <input type="number" id="cupom-valor" class="form-input" placeholder="Ex: 15" step="0.5" min="1">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label class="form-label" for="cupom-limite">Limite de Usos (0 = Ilimitado)</label>
+            <input type="number" id="cupom-limite" class="form-input" placeholder="Ex: 50" min="0" value="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cupom-validade">Validade (Opcional)</label>
+            <input type="date" id="cupom-validade" class="form-input">
+          </div>
+        
+        <!-- Seletor de Produtos Aplicáveis -->
+        <div class="form-group" style="margin-top:4px;">
+          <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Aplicar Desconto em:</span>
+            <span style="font-size:11px; color:var(--primary); font-weight:700;" id="cupom-produtos-selecionados-txt">Todos os Produtos</span>
+          </label>
+          <div style="display:flex; gap:10px; margin-bottom:8px;">
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text); cursor:pointer;">
+              <input type="radio" name="cupom_escopo" value="todos" checked onchange="window.toggleEscopoProdutosCupom('todos')">
+              <span>Todo o Cardápio</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text); cursor:pointer;">
+              <input type="radio" name="cupom_escopo" value="especificos" onchange="window.toggleEscopoProdutosCupom('especificos')">
+              <span>Produtos Específicos</span>
+            </label>
+          </div>
+
+          <div id="container-produtos-cupom" style="display:none; max-height:160px; overflow-y:auto; background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:10px;">
+            <input type="text" id="filtro-produtos-cupom" placeholder="🔍 Filtrar produto..." oninput="window.filtrarProdutosCupom(this.value)" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:12px; margin-bottom:8px; box-sizing:border-box;">
+            <div id="lista-produtos-cupom" style="display:flex; flex-direction:column; gap:6px;">
+              <span style="font-size:12px; color:var(--text-sub); text-align:center; padding:10px;">Carregando produtos...</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button class="btn-cancel" onclick="fecharModal('modal-criar-cupom')" style="flex:1; padding:14px;">Cancelar</button>
+        <button class="btn-primary" onclick="salvarNovoCupom()" style="flex:2; padding:14px; justify-content:center; font-weight:800;">
+          <i class="ph-bold ph-qr-code"></i> Criar & Gerar QR Code
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Exportar / Imprimir Plaquinha QR Code -->
+  <div id="modal-exportar-qr" class="modal-overlay hidden">
+    <div class="modal-sheet" style="max-width: 480px;">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-printer" style="color:var(--primary);"></i> Placa QR Code</span>
+        <button class="modal-close" onclick="fecharModal('modal-exportar-qr')"><i class="ph-bold ph-x"></i></button>
+      </div>
+
+      <!-- Plaquinha de Mesa Estilizada (Pronta para Impressão) -->
+      <div id="flyer-impressao-mesa" style="background:#ffffff; color:#0f172a; border-radius:18px; padding:24px; text-align:center; border:2px solid #e2e8f0; box-shadow:0 10px 30px rgba(0,0,0,0.08); margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:900; letter-spacing:2px; color:#fc4b15; text-transform:uppercase; margin-bottom:4px;" id="qr-flyer-restaurante">CHEF RESTAURANTE</div>
+        <h2 style="font-size:22px; font-weight:900; margin:0 0 6px 0; color:#0f172a;" id="qr-flyer-titulo">PROMOÇÃO ESPECIAL</h2>
+        <p style="font-size:13px; color:#64748b; margin:0 0 16px 0;" id="qr-flyer-sub">Aponte a câmera do seu celular para garantir seu desconto!</p>
+        
+        <div style="display:inline-block; padding:14px; background:#f8fafc; border-radius:16px; border:1.5px dashed #cbd5e1; margin-bottom:14px;">
+          <div id="qr-flyer-canvas-wrapper">
+            <!-- QR Canvas Injected Here -->
+          </div>
+        </div>
+
+        <div style="display:inline-block; padding:6px 18px; background:rgba(252,75,21,0.12); color:#fc4b15; border-radius:20px; font-weight:900; font-size:18px; letter-spacing:1.5px; margin-bottom:10px;" id="qr-flyer-badge">
+          CUPOM: PROMO10
+        </div>
+        <div style="font-size:11px; color:#94a3b8; font-weight:600;" id="qr-flyer-regras">Válido no pedido pelo app ou com o garçom</div>
+      </div>
+
+      <!-- Ações de Exportação -->
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
+        <button class="colab-action-btn" onclick="imprimirFlyerMesa()" style="padding:12px 6px;">
+          <i class="ph-bold ph-printer" style="font-size:22px; color:var(--primary);"></i>
+          <span style="font-size:11px; font-weight:800;">Imprimir</span>
+        </button>
+        <button class="colab-action-btn" onclick="baixarQrPng()" style="padding:12px 6px;">
+          <i class="ph-bold ph-download-simple" style="font-size:22px; color:var(--green);"></i>
+          <span style="font-size:11px; font-weight:800;">Baixar PNG</span>
+        </button>
+        <button class="colab-action-btn" onclick="compartilharQrWhatsApp()" style="padding:12px 6px;">
+          <i class="ph-bold ph-whatsapp-logo" style="font-size:22px; color:#25D366;"></i>
+          <span style="font-size:11px; font-weight:800;">WhatsApp</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Desempenho do Cupom -->
+  <div id="modal-desempenho-cupom" class="modal-overlay hidden">
+    <div class="modal-sheet" style="max-width: 550px;">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-chart-line-up" style="color:var(--blue);"></i> Desempenho do Cupom</span>
+        <button class="modal-close" onclick="fecharModal('modal-desempenho-cupom')"><i class="ph-bold ph-x"></i></button>
+      </div>
+
+      <div style="background:var(--bg-card); border-radius:14px; padding:16px; border:1px solid var(--border); margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div>
+            <h3 style="margin:0; font-size:var(--fs-lg); font-weight:900;" id="desempenho-cupom-titulo">Título</h3>
+            <span style="font-size:var(--fs-xs); color:var(--text-sub);" id="desempenho-cupom-codigo">CÓDIGO</span>
+          </div>
+          <span id="desempenho-cupom-badge" style="padding:4px 10px; border-radius:12px; font-weight:800; font-size:12px; background:rgba(16,185,129,0.15); color:var(--green);">10% OFF</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:12px;">
+          <div style="background:var(--bg); padding:10px; border-radius:10px;">
+            <span style="font-size:11px; color:var(--text-sub); display:block;">Total de Usos</span>
+            <strong style="font-size:18px; color:var(--primary);" id="desempenho-total-usos">0</strong>
+          </div>
+          <div style="background:var(--bg); padding:10px; border-radius:10px;">
+            <span style="font-size:11px; color:var(--text-sub); display:block;">Último Resgate</span>
+            <strong style="font-size:13px; color:var(--text);" id="desempenho-ultimo-resgate">Nunca</strong>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:var(--fs-xs); font-weight:800; text-transform:uppercase; color:var(--text-sub); margin-bottom:8px; letter-spacing:0.5px;">
+        Histórico de Resgates
+      </div>
+      <div id="lista-historico-usos-cupom" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; margin-bottom:16px;">
+        <div style="text-align:center; color:var(--text-sub); padding:16px; font-size:var(--fs-sm);">Nenhum uso registrado ainda.</div>
+      </div>
+
+      <button class="btn-cancel" onclick="fecharModal('modal-desempenho-cupom')" style="width:100%; padding:14px;">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Modal: Modo Totem — escolher dispositivo -->
+  <div id="modal-totem-dispositivo" class="modal-overlay hidden">
+    <div class="modal-sheet">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-monitor-play" style="color:#0ea5e9;"></i> Modo Totem</span>
+        <button class="modal-close" onclick="fecharModal('modal-totem-dispositivo')"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <p style="font-size:var(--fs-sm); color:var(--text-sub); margin-bottom:12px; line-height:1.5;">
+        Escolha qual dispositivo conectado será o totem de autoatendimento. Ele ficará
+        <strong>bloqueado para o cliente</strong> (sem sair pelo botão voltar) até você liberá-lo aqui.
+      </p>
+      <div id="lista-totem-dispositivos" style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto; margin-bottom:12px;">
+        <div style="text-align:center; color:var(--text-sub); padding:16px; font-size:var(--fs-sm);">Carregando dispositivos...</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-cancel" onclick="window.location.href='totem-config.html'" style="flex:1; padding:12px;">
+          <i class="ph-bold ph-paint-brush"></i> Personalizar Totem
+        </button>
+        <button class="btn-confirm" onclick="carregarListaDispositivosTotem()" style="flex:1; padding:12px;">
+          <i class="ph-bold ph-arrows-clockwise"></i> Atualizar lista
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- socket.io unificado no topo -->
+  <script src="/vendor/qrcode/qrcode-generator.js"></script>
+  <script src="/vendor/qrcode/qr-helper.js"></script>
+  <script src="/chef-tz.js"></script>
+  <script src="/painel-dono.js"></script>
+</body>
+</html>

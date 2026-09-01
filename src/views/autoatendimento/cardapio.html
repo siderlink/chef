@@ -1,0 +1,4055 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cardápio Digital | Chef Cozinha</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Dynamic GTAG & Meta Pixel Tracking -->
+  <script src="/tracking-loader.js"></script>
+  <script>if (window.ChefTracking) window.ChefTracking.init('cardapio');</script>
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="stylesheet" href="/dark-mode.css">
+  <!-- QR Code local (funciona sem internet) -->
+  <script src="/vendor/qrcode/qrcode-generator.js"></script>
+  <script src="/vendor/qrcode/qr-helper.js"></script>
+  <style>
+    :root {
+      --primary: #fc4b15;
+      --primary-hover: #e03e09;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .header-info h1 {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    .header-info p {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .table-badge {
+      background: linear-gradient(135deg, var(--primary) 0%, #ff6b3d 100%);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(252, 75, 21, 0.25);
+    }
+
+    main {
+      flex: 1;
+      padding: 20px;
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Search Bar */
+    .search-container {
+      position: relative;
+    }
+
+    .search-container i {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 20px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 14px 16px 14px 48px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 14.5px;
+      background: var(--surface);
+      outline: none;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow);
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(252, 75, 21, 0.15);
+    }
+
+    /* Categories Tabs */
+    .categories-container {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scrollbar-width: none;
+      /* Firefox */
+    }
+
+    .categories-container::-webkit-scrollbar {
+      display: none;
+      /* Safari and Chrome */
+    }
+
+    .category-tab {
+      padding: 12px 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .category-tab.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(252, 75, 21, 0.3);
+      transform: translateY(-1px);
+    }
+
+    /* Menu Items Grid */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+      padding-bottom: 80px;
+    }
+
+    .menu-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .menu-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      border-color: #ffecd9;
+    }
+
+    .menu-card-emoji {
+      width: 58px;
+      height: 58px;
+      background: #fff7ed;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      border: 1px solid #ffedd5;
+      flex-shrink: 0;
+    }
+
+    .menu-card-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .menu-card-details h4 {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.35;
+    }
+
+    .menu-card-price {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .btn-add-to-cart {
+      background: var(--primary);
+      color: white;
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      box-shadow: 0 4px 10px rgba(252, 75, 21, 0.25);
+      transition: all 0.15s ease;
+    }
+
+    .btn-add-to-cart:hover {
+      transform: scale(1.1);
+      background: var(--primary-hover);
+    }
+
+    /* Floating Cart Button */
+    #fab-cart {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      color: white;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(252, 75, 21, 0.45);
+      z-index: 95;
+      transition: all 0.2s ease;
+    }
+
+    #fab-cart:hover {
+      transform: scale(1.08);
+      box-shadow: 0 12px 30px rgba(252, 75, 21, 0.55);
+    }
+
+    .cart-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: var(--text);
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+    }
+
+    /* Floating Garçom Button */
+    #fab-garcom {
+      position: fixed;
+      bottom: 96px;
+      right: 24px;
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+      z-index: 95;
+      transition: all 0.2s ease;
+    }
+
+    #fab-garcom:hover {
+      transform: scale(1.08);
+    }
+
+    /* Order Tracking Panel */
+    #tracking-panel {
+      position: fixed;
+      bottom: 168px;
+      right: 24px;
+      width: min(280px, calc(100vw - 48px));
+      max-height: 320px;
+      overflow-y: auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+      z-index: 96;
+      padding: 16px;
+      display: none;
+    }
+
+    #tracking-panel.open {
+      display: block;
+    }
+
+    #tracking-panel::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    #tracking-panel::-webkit-scrollbar-thumb {
+      background: #ddd;
+      border-radius: 4px;
+    }
+
+    .tracking-header {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tracking-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f1f1;
+      font-size: 13px;
+    }
+
+    .tracking-item:last-child {
+      border-bottom: none;
+    }
+
+    .tracking-item-emoji {
+      font-size: 20px;
+    }
+
+    .tracking-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tracking-item-name {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tracking-item-qty {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .tracking-status-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .tracking-status-badge.pendente {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .tracking-status-badge.preparando {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .tracking-status-badge.pronto {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .tracking-status-badge.Entregue,
+    .tracking-status-badge.Finalizado {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    .tracking-progress {
+      margin-top: 4px;
+      height: 4px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .tracking-progress-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s ease;
+      background: linear-gradient(90deg, var(--primary), #fc6b2a);
+    }
+
+    .tracking-time {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    /* Floating Perfil Button */
+    #fab-perfil {
+      position: fixed;
+      bottom: 160px;
+      right: 24px;
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+      z-index: 95;
+      transition: all 0.2s ease;
+    }
+
+    #fab-perfil:hover {
+      transform: scale(1.08);
+    }
+
+    /* Modals Overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: #f1f5f9;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Qty controls */
+    .qty-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-qty {
+      background: #f1f5f9;
+      color: var(--text);
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    .btn-qty:hover {
+      background: #e2e8f0;
+    }
+
+    /* Cart list */
+    .cart-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      max-height: 250px;
+      padding-right: 4px;
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cart-item-info {
+      flex: 1;
+      padding-right: 10px;
+    }
+
+    .cart-item-name {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .cart-item-price {
+      font-size: 13px;
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    /* General Form elements */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      outline: none;
+      transition: border 0.15s;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      box-shadow: 0 4px 12px rgba(252, 75, 21, 0.2);
+    }
+
+    .btn-submit:hover {
+      background: var(--primary-hover);
+    }
+
+    /* Pix Box formatting */
+    .pix-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pix-copia-cola {
+      background: #eff6ff;
+      border: 1px dashed #bfdbfe;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: monospace;
+      width: 100%;
+      word-break: break-all;
+      cursor: pointer;
+      user-select: all;
+    }
+
+    /* Skeletons */
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+
+    .skeleton-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      height: 90px;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.6;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.6;
+      }
+    }
+
+    /* Tour Mode - Digital Guided Tour */
+    .tour-toggle {
+      background: none;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .tour-toggle:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .tour-toggle.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 3px 10px rgba(252, 75, 21, 0.25);
+    }
+
+    .tour-banner {
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+      border: 1px solid #fed7aa;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tour-banner.visible {
+      display: flex;
+    }
+
+    .tour-banner h2 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #9a3412;
+    }
+
+    .tour-banner p {
+      font-size: 13px;
+      color: #7c2d12;
+      line-height: 1.5;
+    }
+
+    .tour-banner .tour-step {
+      font-size: 11px;
+      font-weight: 700;
+      color: #c2410c;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .menu-card-descricao {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.4;
+      display: none;
+    }
+
+    .menu-card-descricao.visible,
+    .tour-mode .menu-card-descricao {
+      display: block !important;
+    }
+
+    .tour-mode .menu-card {
+      padding: 16px;
+      border-left: 3px solid var(--primary);
+    }
+
+    .tour-mode .menu-card-emoji {
+      width: 64px;
+      height: 64px;
+      font-size: 32px;
+    }
+
+    .tour-mode .menu-card-details h4 {
+      font-size: 15px;
+    }
+
+    .tour-mode .menu-card-price {
+      font-size: 16px;
+    }
+
+    .tour-progress {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 0;
+    }
+
+    .tour-progress.visible {
+      display: flex;
+    }
+
+    .tour-progress-bar {
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .tour-progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    .tour-progress-text {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    @media (max-width: 480px) {
+      main {
+        padding: 12px 12px 100px;
+      }
+
+      .header-info p {
+        font-size: 13px;
+      }
+
+      .menu-card {
+        padding: 12px;
+        gap: 10px;
+      }
+
+      .menu-card-emoji {
+        font-size: 36px;
+        min-width: 50px;
+      }
+
+      .menu-card-title {
+        font-size: 15px;
+      }
+
+      .menu-card-descricao {
+        font-size: 12.5px;
+      }
+
+      .menu-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .categories-container {
+        padding: 12px 12px 0;
+        gap: 6px;
+      }
+
+      .modal-content {
+        max-width: 92vw;
+        padding: 20px;
+      }
+
+      #fab-cart {
+        width: 52px;
+        height: 52px;
+        font-size: 20px;
+        bottom: 16px;
+        right: 16px;
+      }
+
+      #fab-garcom {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+        bottom: 80px;
+        right: 16px;
+      }
+
+      #fab-perfil {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+        bottom: 140px;
+        right: 16px;
+      }
+
+      #tracking-panel {
+        right: 12px;
+        bottom: 150px;
+        max-height: 260px;
+      }
+
+      .cart-item {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .cart-item-info {
+        min-width: 120px;
+      }
+
+      .form-input {
+        font-size: 14px;
+        padding: 12px;
+      }
+
+      .btn-submit {
+        font-size: 14px;
+        padding: 12px;
+      }
+
+      .pix-copia-cola {
+        font-size: 12px;
+        word-break: break-all;
+      }
+
+      .tour-banner {
+        padding: 16px;
+      }
+
+      .tour-banner h2 {
+        font-size: 16px;
+      }
+
+      .tour-banner p {
+        font-size: 13.5px;
+      }
+
+      #toast-notification {
+        top: 12px;
+        right: 12px;
+        left: 12px;
+        max-width: none;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      main {
+        padding: 12px 8px 100px;
+      }
+
+      .category-tab {
+        padding: 10px 16px;
+        font-size: 13px;
+      }
+
+      .menu-card {
+        padding: 10px;
+      }
+
+      .menu-card-emoji {
+        font-size: 32px;
+        min-width: 44px;
+      }
+
+      #tracking-panel {
+        right: 8px;
+        left: 8px;
+        width: auto;
+        bottom: 140px;
+      }
+    }
+    /* ═══ DARK MODE ═══ */
+    body.dark-mode {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: rgba(255,255,255,0.07);
+      --shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    body.dark-mode header { background: rgba(15,23,42,0.88); }
+    body.dark-mode .category-tab { background: #1e293b; color: #94a3b8; border-color: rgba(255,255,255,0.07); }
+    body.dark-mode .category-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    body.dark-mode .menu-card { background: #1e293b; border-color: rgba(255,255,255,0.07); box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+    body.dark-mode .menu-card:hover { border-color: rgba(252,75,21,0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    body.dark-mode .menu-card-emoji { background: #0f172a; border-color: rgba(255,255,255,0.07); }
+    body.dark-mode .menu-card-details h4 { color: #f1f5f9; }
+    body.dark-mode .menu-card-price { color: #fb923c; }
+    body.dark-mode .menu-card-descricao { color: #94a3b8; }
+    body.dark-mode .btn-add-to-cart { background: var(--primary); }
+    body.dark-mode #fab-cart { background: #1e293b; border-color: rgba(255,255,255,0.1); }
+    body.dark-mode .cart-badge { background: var(--primary); border-color: #1e293b; }
+    body.dark-mode .modal-overlay { background: rgba(0,0,0,0.7); }
+    body.dark-mode .modal-content { background: #1e293b; color: #f1f5f9; }
+    body.dark-mode .modal-content .qty-btn { background: #334155; color: #f1f5f9; }
+    body.dark-mode .modal-content input, body.dark-mode .modal-content textarea, body.dark-mode .modal-content select { background: #0f172a; color: #f1f5f9; border-color: rgba(255,255,255,0.1); }
+    body.dark-mode input::placeholder, body.dark-mode textarea::placeholder { color: #64748b; }
+    body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode h5, body.dark-mode h6 { color: #f1f5f9; }
+    body.dark-mode .menu-skeleton { background: #1e293b; }
+    body.dark-mode .skel-line { background: #334155; }
+  
+    /* ══════════════════════════════════════════════════════════════════
+       TEMA ESCURO OLED REFINADO & ALTO CONTRASTE (CARDÁPIO DIGITAL)
+       ══════════════════════════════════════════════════════════════════ */
+    [data-theme="dark"],
+    body.dark-mode {
+      --primary: #fc4b15;
+      --primary-hover: #ff6b3d;
+      --bg: #090d16;
+      --surface: #111827;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #1e293b;
+      --shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    [data-theme="dark"] header,
+    body.dark-mode header {
+      background: rgba(17, 24, 39, 0.9) !important;
+      border-bottom-color: #1e293b !important;
+    }
+
+    [data-theme="dark"] .menu-card,
+    body.dark-mode .menu-card {
+      background: #111827 !important;
+      border-color: #1e293b !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    [data-theme="dark"] .menu-card:hover,
+    body.dark-mode .menu-card:hover {
+      border-color: #fc4b15 !important;
+      box-shadow: 0 8px 25px rgba(252, 75, 21, 0.2) !important;
+      transform: translateY(-2px);
+    }
+
+    [data-theme="dark"] .menu-card-emoji,
+    body.dark-mode .menu-card-emoji {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+    }
+
+    [data-theme="dark"] .category-tab,
+    body.dark-mode .category-tab {
+      background: #111827 !important;
+      border-color: #1e293b !important;
+      color: #94a3b8 !important;
+    }
+
+    [data-theme="dark"] .category-tab.active,
+    body.dark-mode .category-tab.active {
+      background: #fc4b15 !important;
+      color: #ffffff !important;
+      border-color: #fc4b15 !important;
+      box-shadow: 0 4px 14px rgba(252, 75, 21, 0.4) !important;
+    }
+
+    [data-theme="dark"] .search-input,
+    body.dark-mode .search-input {
+      background: #111827 !important;
+      border-color: #1e293b !important;
+      color: #f8fafc !important;
+    }
+
+    [data-theme="dark"] .modal-content,
+    [data-theme="dark"] .modal-sheet,
+    body.dark-mode .modal-content,
+    body.dark-mode .modal-sheet {
+      background: #111827 !important;
+      color: #f8fafc !important;
+      border-color: #1e293b !important;
+    }
+
+    [data-theme="dark"] .form-input,
+    body.dark-mode .form-input {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+      color: #f8fafc !important;
+    }
+
+    [data-theme="dark"] .btn-qty,
+    body.dark-mode .btn-qty {
+      background: #1e293b !important;
+      color: #f8fafc !important;
+    }
+
+    [data-theme="dark"] #tracking-panel,
+    body.dark-mode #tracking-panel {
+      background: #111827 !important;
+      border: 1px solid #1e293b !important;
+      color: #f8fafc !important;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       TAMANHO DOS EMOJIS PROPORCIONAL & VIBRANTE
+       ══════════════════════════════════════════════════════════════════ */
+    .menu-card-emoji {
+      font-size: 38px !important;
+      width: 64px !important;
+      height: 64px !important;
+      border-radius: 16px !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+
+    .menu-card:hover .menu-card-emoji {
+      transform: scale(1.08);
+    }
+
+    .category-tab-emoji {
+      font-size: 1.45em !important;
+      margin-right: 6px !important;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    #modal-emoji {
+      font-size: 52px !important;
+      display: inline-block;
+      margin-bottom: 8px;
+      animation: popIn 0.3s ease;
+    }
+
+    .cart-item-emoji {
+      font-size: 1.5em !important;
+      margin-right: 6px;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       BARRA DE LEITURA / PROGRESSO FIXA NO TOPO
+       ══════════════════════════════════════════════════════════════════ */
+    #menu-reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4.5px;
+      width: 0%;
+      background: linear-gradient(90deg, #fc4b15 0%, #f59e0b 50%, #10b981 100%);
+      z-index: 9999999;
+      box-shadow: 0 0 12px rgba(252, 75, 21, 0.8);
+      transition: width 0.08s ease-out;
+      pointer-events: none;
+    }
+
+    /* BANNER DE SUGESTÃO POR ENGAJAMENTO (DWELL-TIME HEATMAP) */
+    #banner-interesse-cliente {
+      display: none;
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+      border: 1.5px solid #fed7aa;
+      border-radius: 18px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(252, 75, 21, 0.08);
+      animation: slideToastDown 0.3s ease-out;
+    }
+
+    [data-theme="dark"] #banner-interesse-cliente,
+    body.dark-mode #banner-interesse-cliente {
+      background: linear-gradient(135deg, #1e1b18 0%, #291d15 100%) !important;
+      border-color: #7c2d12 !important;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       MODAL TOUR GASTRONÔMICO IMERSIVO
+       ══════════════════════════════════════════════════════════════════ */
+    .tour-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 999999;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .tour-modal-card {
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      background: var(--surface, #ffffff);
+      border-radius: 28px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+      border: 1.5px solid var(--border, #e2e8f0);
+      animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .tour-card-header {
+      background: linear-gradient(135deg, #fc4b15 0%, #e03e09 100%);
+      color: white;
+      padding: 20px;
+      position: relative;
+    }
+
+    .tour-step-indicators {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .tour-step-dot {
+      flex: 1;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.35);
+      border-radius: 2px;
+      transition: background 0.3s ease;
+    }
+
+    .tour-step-dot.active {
+      background: #ffffff;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    }
+
+    .tour-card-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .tour-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: var(--bg, #f8fafc);
+      border: 1px solid var(--border, #e2e8f0);
+      transition: transform 0.15s ease;
+    }
+
+    .tour-item-row:hover {
+      transform: translateY(-1px);
+    }
+
+</style>
+  <script src="/locales.js"></script>
+  <script src="/broadcast.js"></script>
+  <script src="/i18n.js"></script>
+  <link rel="icon" href="/icons/icon.ico">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#fc4b15">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Chef Cozinha">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+</head>
+
+<body>
+  <div id="menu-reading-progress"></div>
+  <script>
+    /* Detect dark mode: localStorage > system preference */
+    (function(){
+      var t = localStorage.getItem('chef_tema');
+      if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.body.classList.add('dark-mode');
+      }
+    })();
+  </script>
+
+  <header>
+    <div class="header-info">
+      <h1 id="restaurant-name-header">Chef Cozinha</h1>
+      <p id="welcome-user-crm">Cardápio Digital</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <button class="tour-toggle" id="btn-tour-toggle" onclick="window.toggleTour()" title="Tour Guiado">
+        <i class="ph ph-compass"></i> Tour
+      </button>
+      <div id="btn-edit-profile-header" onclick="window.editarPerfilCrm()"
+        style="cursor: pointer; display: none; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: #f1f5f9; color: #475569; font-size: 18px; border: 1px solid #cbd5e1;"
+        title="Editar Perfil">
+        <i class="ph ph-user"></i>
+      </div>
+      
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="tour-toggle" onclick="window.abrirTourGastronomico()" style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 1.5px solid #fed7aa; color: #c2410c; padding: 7px 14px; border-radius: 20px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(252,75,21,0.12);">
+          <i class="ph-fill ph-sparkle" style="color: #fc4b15; font-size: 16px;"></i>
+          <span>Tour da Casa</span>
+        </button>
+        <button onclick="if(window.ChefTheme && window.ChefTheme.toggle) window.ChefTheme.toggle(); else document.body.classList.toggle('dark-mode');" style="background: transparent; border: 1px solid var(--border); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted);" title="Alternar Tema Claro / Escuro">
+          <i class="ph ph-moon"></i>
+        </button>
+      </div>
+      <div class="table-badge" id="mesa-badge">Mesa</div>
+    </div>
+  </header>
+
+  <main id="main-menu-area">
+    <!-- BANNER FILA DE ESPERA — Design Compacto -->
+    <div id="banner-fila-espera" style="display:none; position:sticky; top:0; z-index:90; margin:0 -12px 12px; padding:0;">
+
+      <!-- PILULA FLUTUANTE (status resumido) -->
+      <div id="fila-pill" style="display:none; background:linear-gradient(135deg,#1e293b,#334155); border-radius:16px; padding:12px 16px; box-shadow:0 6px 20px rgba(0,0,0,0.25); backdrop-filter:blur(10px);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="flex:0 0 38px; height:38px; border-radius:12px; background:linear-gradient(135deg,#f59e0b,#d97706); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(245,158,11,0.35);">
+            <i class="ph ph-hourglass-high" style="color:white; font-size:18px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:13px; font-weight:700; color:#f8fafc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              Fila de Espera <span id="badge-fila-posicao" style="background:#f59e0b; color:#1e293b; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:800; margin-left:4px;">--</span>
+            </div>
+            <div id="text-fila-status-sub" style="font-size:11px; color:#94a3b8; margin-top:1px;">Aguardando mesa...</div>
+          </div>
+          <button onclick="document.getElementById('fila-form-overlay').style.display='flex'" style="flex:0 0 auto; background:#f59e0b; color:#1e293b; border:none; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap;">
+            <i class="ph ph-list" style="margin-right:4px;"></i> Ver Fila
+          </button>
+        </div>
+        <!-- CONTAINER DE OFERTA DE MESA -->
+        <div id="cardapio-offer-container" style="display:none; margin-top:10px;"></div>
+        <!-- BOTAO CHAMAR GARCOM -->
+        <button id="btn-big-chamar-garcom-fila" onclick="window.chamarGarcomFilaGrande()" style="width:100%; margin-top:10px; padding:10px; background:linear-gradient(135deg,#d97706,#b45309); color:white; border:none; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; display:flex; justify-content:center; align-items:center; gap:6px;">
+          <i class="ph ph-bell-ringing" style="font-size:16px;"></i> Chamar Garcom
+        </button>
+      </div>
+
+      <!-- MODAL DE FORMULARIO DE CADASTRO -->
+      <div id="fila-form-overlay" onclick="if(event.target===this)this.style.display='none'" style="display:none; position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); align-items:flex-end; justify-content:center; padding:0;">
+        <div style="width:100%; max-width:480px; background:white; border-radius:20px 20px 0 0; padding:24px 20px 32px; max-height:90vh; overflow-y:auto; animation:slideUp 0.3s ease;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div>
+              <h3 style="margin:0; color:#1e293b; font-size:18px; font-weight:800;">Fila de Espera</h3>
+              <p style="margin:2px 0 0; font-size:12px; color:#94a3b8;">Cadastre-se para entrar na fila</p>
+            </div>
+            <button onclick="this.closest('#fila-form-overlay').style.display='none'" style="width:32px; height:32px; border-radius:50%; border:none; background:#f1f5f9; color:#64748b; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+              <i class="ph ph-x"></i>
+            </button>
+          </div>
+          <div id="fila-cadastro-form" style="display:none;">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div>
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Seu Nome *</label>
+                <input type="text" id="input-fila-cadastro-nome" placeholder="Nome completo"
+                  style="width:100%; padding:12px 14px; border:1.5px solid #e2e8f0; border-radius:12px; font-size:14px; background:#f8fafc; color:#1e293b; outline:none; transition:border 0.2s; box-sizing:border-box;"
+                  onfocus="this.style.borderColor='#f59e0b';this.style.background='white'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
+              </div>
+              <div>
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">WhatsApp *</label>
+                <input type="tel" id="input-fila-cadastro-telefone" placeholder="(11) 99999-9999"
+                  style="width:100%; padding:12px 14px; border:1.5px solid #e2e8f0; border-radius:12px; font-size:14px; background:#f8fafc; color:#1e293b; outline:none; transition:border 0.2s; box-sizing:border-box;"
+                  onfocus="this.style.borderColor='#f59e0b';this.style.background='white'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
+              </div>
+              <div style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                  <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Pessoas *</label>
+                  <select id="input-fila-cadastro-pessoas"
+                    style="width:100%; padding:12px 14px; border:1.5px solid #e2e8f0; border-radius:12px; font-size:14px; background:#f8fafc; color:#1e293b; font-weight:700; box-sizing:border-box;">
+                    <option value="1">1 pessoa</option>
+                    <option value="2" selected>2 pessoas</option>
+                    <option value="3">3 pessoas</option>
+                    <option value="4">4 pessoas</option>
+                    <option value="5">5 pessoas</option>
+                    <option value="6">6 pessoas</option>
+                    <option value="7">7 pessoas</option>
+                    <option value="8">8+ pessoas</option>
+                  </select>
+                </div>
+                <div style="flex:1;">
+                  <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Preferencia</label>
+                  <input type="text" id="input-fila-cadastro-preferencia" placeholder="Salao, Varanda..."
+                    style="width:100%; padding:12px 14px; border:1.5px solid #e2e8f0; border-radius:12px; font-size:14px; background:#f8fafc; color:#1e293b; outline:none; transition:border 0.2s; box-sizing:border-box;"
+                    onfocus="this.style.borderColor='#f59e0b';this.style.background='white'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
+                </div>
+              </div>
+              <div>
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Observacao</label>
+                <input type="text" id="input-fila-cadastro-obs" placeholder="Cadeira de bebe, aniversario..."
+                  style="width:100%; padding:12px 14px; border:1.5px solid #e2e8f0; border-radius:12px; font-size:14px; background:#f8fafc; color:#1e293b; outline:none; transition:border 0.2s; box-sizing:border-box;"
+                  onfocus="this.style.borderColor='#f59e0b';this.style.background='white'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
+              </div>
+              <button id="btn-fila-cadastrar" onclick="window.filaCadastrarCliente()"
+                style="width:100%; padding:14px; background:linear-gradient(135deg,#f59e0b,#d97706); color:white; border:none; border-radius:12px; font-weight:800; font-size:15px; cursor:pointer; display:flex; justify-content:center; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(245,158,11,0.35); transition:transform 0.2s; margin-top:4px;"
+                onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <i class="ph ph-hand-raised" style="font-size:20px;"></i> Entrar na Fila
+              </button>
+            </div>
+          </div>
+
+          <!-- LISTA DA FILA (dentro do modal) -->
+          <div id="lista-fila-espera" style="display:none; margin-top:12px; border-top:1px solid #f1f5f9; padding-top:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+              <div style="font-size:12px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:1px; display:flex; align-items:center; gap:6px;">
+                <i class="ph ph-users-three"></i> Pessoas na Fila
+                <span id="lista-fila-count" style="background:#e2e8f0; color:#475569; padding:1px 8px; border-radius:20px; font-size:11px;"></span>
+              </div>
+              <button onclick="document.getElementById('fila-form-overlay').style.display='none'" style="background:#f1f5f9; color:#64748b; border:none; width:28px; height:28px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">
+                <i class="ph ph-x"></i>
+              </button>
+            </div>
+            <div id="lista-fila-rows"></div>
+          </div>
+        </div>
+      </div>
+
+      <style>
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes filaPulse { 0%,100% { box-shadow:0 6px 20px rgba(0,0,0,0.25); } 50% { box-shadow:0 6px 25px rgba(245,158,11,0.4); } }
+        #fila-pill { animation: filaPulse 3s ease-in-out infinite; }
+      </style>
+    </div>
+
+    <div class="search-container">
+      <i class="ph ph-magnifying-glass"></i>
+      <input type="text" class="search-input" id="search-input" placeholder="Buscar produtos no cardápio...">
+    </div>
+
+    <!-- AVISO DE RESTRICAO NA FILA -->
+    <div id="fila-restricao-aviso" style="display:none; background:linear-gradient(135deg,#fef3c7,#fde68a); border:1px solid #f59e0b; border-radius:12px; padding:12px 16px; margin-bottom:14px; display:none; align-items:center; gap:10px;">
+      <div style="flex:0 0 32px; height:32px; border-radius:8px; background:#f59e0b; display:flex; align-items:center; justify-content:center;">
+        <i class="ph ph-info" style="color:white; font-size:16px;"></i>
+      </div>
+      <div style="flex:1;">
+        <p style="margin:0; font-size:13px; font-weight:700; color:#92400e;" id="fila-restricao-aviso-texto">Alguns itens estao disponiveis somente apos a liberacao da sua mesa.</p>
+      </div>
+    </div>
+
+    <!-- Tour Banner -->
+    <div class="tour-banner" id="tour-banner">
+      <div class="tour-step" id="tour-step-label">Bem-vindo</div>
+      <h2 id="tour-banner-title">Bem-vindo ao nosso restaurante!</h2>
+      <p id="tour-banner-text">Explore o cardápio e descubra os sabores que preparamos com carinho para você.</p>
+    </div>
+
+    <div class="tour-progress" id="tour-progress">
+      <div class="tour-progress-bar">
+        <div class="tour-progress-fill" id="tour-progress-fill" style="width: 0%;"></div>
+      </div>
+      <span class="tour-progress-text" id="tour-progress-text">0%</span>
+    </div>
+
+    <div class="categories-container" id="categories-tabs"></div>
+
+    <div class="skeleton-grid" id="menu-skeletons">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    </div>
+
+    
+    <!-- BANNER DINÂMICO DE INTERESSE / DWELL TIME HEATMAP -->
+    <div id="banner-interesse-cliente">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+          <span id="banner-interesse-emoji" style="font-size: 32px;">🔥</span>
+          <div>
+            <strong style="font-size: 14px; color: var(--text); display: block;" id="banner-interesse-titulo">Você ficou de olho nisso!</strong>
+            <span style="font-size: 12px; color: var(--text-muted);" id="banner-interesse-sub">Que tal adicionar ao seu pedido agora?</span>
+          </div>
+        </div>
+        <button id="banner-interesse-btn-add" style="padding: 8px 14px; border-radius: 12px; background: #fc4b15; color: white; border: none; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(252,75,21,0.25);">
+          <i class="ph-bold ph-plus"></i> Pedir
+        </button>
+      </div>
+    </div>
+    <div class="menu-grid" id="menu-items" style="display: none;">
+      <!-- Grid items injected via JS -->
+    </div>
+  </main>
+
+  <div id="tracking-panel">
+    <div class="tracking-header"><i class="ph ph-shopping-bag"></i> Meus Pedidos</div>
+    <div id="tracking-items"></div>
+  </div>
+
+  <button id="fab-cart" onclick="window.abrirCarrinho()">
+    <i class="ph ph-shopping-cart-simple"></i>
+    <span class="cart-badge" id="cart-badge-count">0</span>
+  </button>
+
+  <button id="fab-garcom" onclick="window.chamarGarcom()">
+    <i class="ph ph-hand-waving"></i>
+  </button>
+
+  <button id="fab-perfil" onclick="window.abrirPerfilCliente()">
+    <i class="ph ph-user-circle"></i>
+  </button>
+
+  <div class="area-colaborador-btns" style="display:none;">
+    <button id="fab-avaliar" title="Avaliar experiência" style="position:fixed; bottom:228px; right:24px; width:52px; height:52px; background:linear-gradient(135deg,#f59e0b,#d97706); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; border:none; cursor:pointer; box-shadow:0 6px 20px rgba(245,158,11,.4); z-index:95; transition:all .2s ease;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
+      <i class="ph-fill ph-star"></i>
+    </button>
+  </div>
+
+  <!-- MODAL: DETALHES / ADICIONAR ITEM -->
+  <div class="modal-overlay" id="modal-item-details">
+    <div class="modal-content">
+      <button class="modal-close" onclick="window.fecharItemDetails()">&times;</button>
+      <div style="display: flex; gap: 14px; align-items: center;">
+        <div class="menu-card-emoji" id="modal-emoji">🍔</div>
+        <div>
+          <h3 id="modal-title" style="font-size: 17px; font-weight: 800;">Nome do Item</h3>
+          <span id="modal-price" style="font-weight: 800; color: var(--primary); font-size: 16px;">R$ 0,00</span>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top: 8px;">
+        <label class="form-label">Quantidade:</label>
+        <div class="qty-control">
+          <button class="btn-qty" onclick="window.changeItemDetailsQty(-1)">-</button>
+          <span id="modal-qty" style="font-weight: 800; font-size: 17px; width: 20px; text-align: center;">1</span>
+          <button class="btn-qty" onclick="window.changeItemDetailsQty(1)">+</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observações (opcional):</label>
+        <textarea id="modal-obs" rows="2" class="form-input" style="resize:none;"
+          placeholder="Ex: Sem cebola, gelo e limão..."></textarea>
+      </div>
+      <div id="modal-montavel-section" style="display:none; margin-top:8px;">
+        <label class="form-label" style="font-weight:700; color:var(--primary);">Monte o seu — Escolha as composições:</label>
+        <div id="modal-montavel-cats"></div>
+        <div id="modal-montavel-preco" style="margin-top:8px; font-weight:800; color:var(--primary); font-size:15px;"></div>
+        <input type="hidden" id="modal-composicoes" value="[]">
+      </div>
+      <button class="btn-submit" onclick="window.adicionarItemAoCarrinho()" style="margin-top: 8px;">
+        Adicionar ao Pedido
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: REVISAR CARRINHO / CHECKOUT -->
+  <div class="modal-overlay" id="modal-cart">
+    <div class="modal-content">
+      <button class="modal-close" onclick="window.fecharCarrinho()">&times;</button>
+      <div class="modal-title">
+        <i class="ph ph-shopping-cart-simple" style="color: var(--primary);"></i> Seu Pedido
+      </div>
+
+      <div class="cart-list" id="cart-items-list">
+        <!-- Injected via JS -->
+      </div>
+
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid var(--border); padding-top: 12px; font-weight: 800;">
+        <span>Total:</span>
+        <span id="cart-total-value" style="color: var(--primary); font-size: 17px;">R$ 0,00</span>
+      </div>
+
+      <div class="form-group" style="margin-top: 8px;">
+        <label class="form-label">Seu Nome / Identificação (Obrigatório):</label>
+        <input type="text" id="input-customer-name" class="form-input" placeholder="Digite seu nome...">
+      </div>
+
+      <button class="btn-submit" onclick="window.enviarPedido()" id="btn-submit-order" style="margin-top: 8px;">
+        Enviar Pedido
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: PAGAMENTO PIX E AGUARDANDO CONFIRMAÇÃO -->
+  <div class="modal-overlay" id="modal-checkout-status">
+    <div class="modal-content"
+      style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px;">
+
+      <div id="checkout-spinner"
+        style="font-size: 54px; color: var(--primary); animation: spin 2s linear infinite; display: flex; align-items: center; justify-content: center;">
+        <i class="ph ph-circle-notch"></i>
+      </div>
+
+      <div id="checkout-success-icon"
+        style="font-size: 54px; color: #22c55e; display: none; align-items: center; justify-content: center;">
+        <i class="ph ph-check-circle"></i>
+      </div>
+
+      <div id="checkout-fail-icon"
+        style="font-size: 54px; color: #ef4444; display: none; align-items: center; justify-content: center;">
+        <i class="ph ph-x-circle"></i>
+      </div>
+
+      <div>
+        <h3 id="checkout-status-title" style="font-size: 18px; font-weight: 800;">Processando Pedido</h3>
+        <p id="checkout-status-desc"
+          style="font-size: 13.5px; color: var(--text-muted); line-height: 1.4; margin-top: 8px;">
+          Enviando suas informações para o caixa do estabelecimento. Por favor, aguarde...
+        </p>
+      </div>
+
+      <!-- Container Pix (Visible only for Pix flow) -->
+      <div id="pix-payment-box" style="display: none; width: 100%; flex-direction: column; gap: 14px;">
+        <div class="pix-box">
+          <span style="font-size: 12.5px; color: #475569; font-weight: 700;">Beneficiário: <strong
+              id="pix-beneficiary-name">-</strong></span>
+          <span style="font-size: 15px; font-weight: 800; color: var(--primary);">Valor: <strong
+              id="pix-total-amount">R$ 0,00</strong></span>
+
+          <div
+            style="background: white; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; justify-content: center; width: 150px; height: 150px; margin: 5px 0;">
+            <img id="pix-qr-img" src="" alt="Pix QR Code" style="width: 130px; height: 130px;">
+          </div>
+
+          <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Código Pix Copia
+            e Cola:</label>
+          <div class="pix-copia-cola" id="pix-key-string" onclick="window.copyPixKey()">-</div>
+          <span style="font-size: 11px; color: #2b5c9e; font-weight: 600;"><i class="ph ph-copy"></i> Clique no código
+            acima para copiar</span>
+        </div>
+
+        <button class="btn-submit" onclick="window.confirmarPagamentoPixEnviado()">
+          Já fiz o pagamento Pix
+        </button>
+      </div>
+
+      <button id="btn-status-close" class="btn-submit"
+        style="display: none; background: #cbd5e1; color: var(--text); box-shadow: none;"
+        onclick="window.fecharStatusModal()">
+        Fechar
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: LOGIN / CADASTRO CRM -->
+  <div class="modal-overlay" id="modal-crm-login" style="display: none; z-index: 100002;">
+    <div class="modal-content" style="max-width: 400px; text-align: center; gap: 20px;">
+      <div style="font-size: 54px; color: var(--primary);">
+        <i class="ph ph-user-circle-plus"></i>
+      </div>
+      <div>
+        <h3 style="font-size: 18px; font-weight: 800; color: var(--text);">Olá! Identifique-se</h3>
+        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.4; margin-top: 6px;">
+          Para fazer o seu pedido, faça o seu cadastro rápido e acumule pontos de fidelidade no nosso restaurante!
+        </p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; text-align: left; width: 100%;">
+        <div class="form-group">
+          <label class="form-label">Seu Nome Completo:</label>
+          <input type="text" id="input-crm-name" class="form-input" placeholder="Digite seu nome...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telefone / WhatsApp (DDD + Número):</label>
+          <input type="tel" id="input-crm-phone" class="form-input" placeholder="Ex: 11999999999">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data de Nascimento (Opcional - p/ presentes):</label>
+          <input type="date" id="input-crm-birthday" class="form-input">
+        </div>
+      </div>
+
+      <button class="btn-submit" onclick="window.salvarPerfilCrm()">
+        Entrar e Ver Cardápio
+      </button>
+      <button onclick="window.pularCrmLogin()"
+        style="background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 8px; font-weight: 600; text-decoration: underline;">
+        Pular e ver cardápio sem cadastro
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMAÇÃO DE MESA -->
+  <div class="modal-overlay" id="modal-confirm-mesa" style="display: none; z-index: 100001;">
+    <div class="modal-content" style="max-width: 400px; text-align: center; gap: 16px;">
+      <div style="font-size: 48px; color: var(--primary);">
+        <i class="ph ph-map-pin"></i>
+      </div>
+      <div>
+        <h3 style="font-size: 18px; font-weight: 800; color: var(--text);">Confirme a sua Mesa</h3>
+        <p style="font-size: 13.5px; color: var(--text-muted); line-height: 1.4; margin-top: 6px;">
+          Para garantir que os itens cheguem até você, confirme a mesa em que está sentado:
+        </p>
+      </div>
+
+      <div
+        style="background: #f8fafc; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; font-weight: 800; font-size: 18px; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 8px;"
+        id="confirm-mesa-display">
+        Mesa 1
+      </div>
+
+      <div id="box-change-mesa" style="display: none; flex-direction: column; text-align: left; width: 100%; gap: 6px;">
+        <label class="form-label">Selecione a Mesa Correta:</label>
+        <select id="select-confirm-mesa" class="form-input"
+          style="background:#fff; height:45px; font-size:14px; font-weight:bold;">
+          <!-- Injetado via JS -->
+        </select>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 8px;">
+        <button class="btn-submit" onclick="window.confirmMesaYes()">
+          Sim, estou nesta mesa
+        </button>
+        <button class="btn-submit" style="background: #cbd5e1; color: var(--text); box-shadow: none;"
+          onclick="window.changeMesaNo()" id="btn-change-mesa-trigger">
+          Não, alterar mesa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CHAMAR GARÇOM -->
+  <div class="modal-overlay" id="modal-chamar-garcom" style="display:none;">
+    <div class="modal-content" style="max-width:340px; text-align:center;">
+      <div style="font-size:48px; margin-bottom:8px;" id="chamar-garcom-icon"><i class="ph ph-hand-waving"></i></div>
+      <h3 id="chamar-garcom-title" style="font-size:18px; font-weight:800;">Chamando garçom...</h3>
+      <p id="chamar-garcom-desc" style="color:var(--muted); font-size:14px; margin-top:6px; line-height:1.4;">Aguarde,
+        em breve um garçom atenderá sua mesa.</p>
+      <button class="btn-submit" id="btn-chamar-garcom-fechar" style="display:none; margin-top:14px;"
+        onclick="window.fecharModalChamarGarcom()">Ok</button>
+    </div>
+  </div>
+
+  <!-- ════ RESERVA: BOAS-VINDAS TEMÁTICO NO QR DA MESA ════ -->
+  <div id="modal-reserva-boas"
+    style="display:none; position:fixed; inset:0; z-index:99998; background:linear-gradient(160deg,#1e1b4b 0%,#312e81 45%,#7c2d12 100%); overflow-y:auto; align-items:flex-start; justify-content:center;">
+    <div style="max-width:520px; width:100%; margin:auto 0; padding:28px 18px 40px; text-align:center; color:#fff;">
+      <div
+        style="width:84px;height:84px;margin:0 auto 14px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f97316);display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:0 10px 40px rgba(249,115,22,.45);">
+        🍽️
+      </div>
+      <p style="margin:0; font-size:13px; letter-spacing:2.5px; text-transform:uppercase; color:#fdba74; font-weight:700;">Mesa reservada com carinho</p>
+      <h1 id="rb-nome" style="margin:6px 0 4px; font-size:30px; line-height:1.15;">Cliente</h1>
+      <p id="rb-info" style="margin:0 0 18px; color:#e0e7ff; font-size:14px;"></p>
+
+      <!-- Refeição temática completa -->
+      <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:0 0 20px;">
+        <div class="rb-curso"><span>🍹</span>Bebidas</div>
+        <div class="rb-curso"><span>🥗</span>Entradas</div>
+        <div class="rb-curso"><span>🍤</span>Porções</div>
+        <div class="rb-curso"><span>🍽️</span>Pratos</div>
+        <div class="rb-curso"><span>🍰</span>Sobremesas</div>
+      </div>
+      <p style="color:#c7d2fe; font-size:13.5px; margin:0 0 18px;">Uma experiência completa te espera: bebidas, entradas, porções, prato principal e sobremesa — tudo fresquinho, do jeito que a casa faz.</p>
+
+      <!-- PASSO 1: boas-vindas -->
+      <div id="rb-passo-boas">
+        <button onclick="window.rbIrValidar()"
+          style="width:100%; padding:15px; border:none; border-radius:14px; background:linear-gradient(90deg,#f97316,#fb923c); color:#fff; font-size:16px; font-weight:800; cursor:pointer; box-shadow:0 8px 25px rgba(249,115,22,.4);">Sou eu! Confirmar minha reserva</button>
+        <button onclick="window.rbMostrarOutroDireto()"
+          style="width:100%; margin-top:10px; padding:12px; border:none; border-radius:12px; background:rgba(255,255,255,.12); color:#e0e7ff; font-size:14px; font-weight:600; cursor:pointer;">Não sou eu</button>
+      </div>
+
+      <!-- PASSO 2: últimos dígitos -->
+      <div id="rb-passo-digits" style="display:none;">
+        <p style="margin:0 0 8px; color:#e0e7ff; font-size:14px;">Pra sua segurança, digite os <strong>últimos 8 dígitos</strong> do telefone da reserva:</p>
+        <input id="rb-digits" type="tel" inputmode="numeric" maxlength="8" placeholder="••••••••"
+          style="width:100%; padding:16px; font-size:26px; letter-spacing:8px; text-align:center; border-radius:14px; border:2px solid rgba(255,255,255,.25); background:rgba(255,255,255,.08); color:#fff; outline:none;" />
+        <p id="rb-erro" style="display:none; color:#fecaca; font-size:13px; margin:8px 0 0;"></p>
+        <button onclick="window.rbConfirmarDigitos()"
+          style="width:100%; margin-top:12px; padding:15px; border:none; border-radius:14px; background:#22c55e; color:#fff; font-size:16px; font-weight:800; cursor:pointer; box-shadow:0 8px 25px rgba(34,197,94,.35);">Confirmar</button>
+        <button onclick="window.rbMostrarOutroDireto()" style="width:100%; margin-top:10px; padding:10px; border:none; background:none; color:#a5b4fc; font-size:13px; cursor:pointer;">Não bateu — ver outras mesas</button>
+      </div>
+
+      <!-- PASSO 3: não é o cliente da reserva -->
+      <div id="rb-passo-outro" style="display:none;">
+        <p style="margin:0 0 12px; color:#e0e7ff; font-size:14.5px;">Sem problema! 😄 Esta mesa está reservada para <strong id="rb-nome2">outro cliente</strong>. Escolha uma mesa livre abaixo e fique à vontade:</p>
+        <div id="rb-mesas-livres" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;"></div>
+        <button onclick="window.rbVerCardapio()"
+          style="width:100%; margin-top:14px; padding:13px; border:none; border-radius:12px; background:rgba(255,255,255,.12); color:#fff; font-size:14px; font-weight:700; cursor:pointer;">Continuar aqui mesmo (ver cardápio)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra gentil de mesa preferida (cliente recorrente) -->
+  <div id="barra-mesa-preferida"
+    style="display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:86px; z-index:96000; max-width:420px; width:calc(100vw - 32px); background:#1e293b; color:#fff; border-radius:16px; padding:14px 16px; box-shadow:0 12px 40px rgba(0,0,0,.35); align-items:center; gap:10px;">
+    <i class="ph ph-heart" style="font-size:22px; color:#f472b6; flex-shrink:0;"></i>
+    <span id="bmp-texto" style="flex:1; font-size:13px; line-height:1.35;"></span>
+    <button id="bmp-sim" style="padding:8px 14px; border:none; border-radius:10px; background:#22c55e; color:#fff; font-weight:800; cursor:pointer; font-size:13px;">Sim!</button>
+    <button id="bmp-nao" style="padding:8px 10px; border:none; border-radius:10px; background:rgba(255,255,255,.12); color:#cbd5e1; cursor:pointer; font-size:12px;">Depois</button>
+  </div>
+
+  <!-- Toast Notification (empilhável: cada aviso cria o próprio card) -->
+  <div id="toast-stack"
+    style="position:fixed; top:20px; right:20px; z-index:100001; display:flex; flex-direction:column; gap:8px; max-width:330px; width:calc(100vw - 40px); pointer-events:none;">
+  </div>
+  <div id="toast-notification"
+    style="display:none; position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:12px 20px; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.15); z-index:100000; font-size:14px; font-weight:600; max-width:320px; align-items:center; gap:8px;">
+    <i class="ph ph-check-circle"></i>
+    <span id="toast-message"></span>
+  </div>
+
+  <style>
+    @keyframes chefToastIn {
+      from {
+        opacity: 0;
+        transform: translateX(40px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── MODO TOTEM ── */
+    body.totem-mode .btn-edit-profile-header,
+    body.totem-mode #btn-edit-profile-header,
+    body.totem-mode #welcome-user-crm,
+    body.totem-mode header button:not(#mesa-badge):not(.totem-keep) {
+      display: none !important;
+    }
+
+    body.totem-mode.totem-rot {
+      transform: rotate(180deg);
+      transform-origin: center center;
+      width: 100vw;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .rb-curso {
+      display:flex; flex-direction:column; align-items:center; gap:4px;
+      background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.15);
+      border-radius:12px; padding:10px 4px; font-size:10.5px; font-weight:700; color:#e0e7ff;
+    }
+    .rb-curso span { font-size:22px; }
+    #rb-mesas-livres .rb-mesa-livre {
+      padding:10px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.25);
+      background:rgba(255,255,255,.1); color:#fff; font-weight:700; font-size:13px; cursor:pointer;
+    }
+    #rb-mesas-livres .rb-mesa-livre small { display:block; font-weight:400; opacity:.75; font-size:10.5px; }
+  </style>
+
+  <script src="/socket.io.min.js"></script>
+  <script src="/fuzzy-search.js"></script>
+  <script src="/plugin-client.js"></script>
+
+  <script>
+    // Parse URL params to read table name and restaurante id
+    const urlParams = new URLSearchParams(window.location.search);
+    let mesaNome = urlParams.get('mesa') || 'Mesa';
+    const mesaOrigem = mesaNome;
+    let pendingRequiresValidation = false;
+    document.getElementById('mesa-badge').innerText = mesaNome;
+    const restauranteId = urlParams.get('restaurante_id') || localStorage.getItem('restaurante_id') || '1';
+
+    /* ── MODO TOTEM (quiosque de auto-atendimento) ──
+       Ativado remotamente pelo dono (Dispositivos & Terminais). Esconde a UI de
+       perfil, pede tela cheia no primeiro toque e pode inverter 180° quando o
+       tablet/monitor fica de frente para o cliente. */
+    const MODO_TOTEM = urlParams.get('totem') === '1';
+    if (MODO_TOTEM) {
+      try { sessionStorage.setItem('cc_modo_totem', '1'); } catch (e) { }
+      document.body.classList.add('totem-mode');
+      if (urlParams.get('rot') === '180') document.body.classList.add('totem-rot');
+      const _pedirFullscreenTotem = () => {
+        const el = document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        window.removeEventListener('pointerdown', _pedirFullscreenTotem);
+      };
+      window.addEventListener('pointerdown', _pedirFullscreenTotem, { once: false });
+      // Botão flutuante discreto para o funcionário sair do modo totem (3 toques)
+      let _toquesSair = 0;
+      document.addEventListener('pointerdown', (ev) => {
+        if (!document.getElementById('totem-sair')) return;
+        if (ev.clientY < 60 && ev.clientX > window.innerWidth - 60) {
+          if (++_toquesSair >= 3) {
+            sessionStorage.removeItem('cc_modo_totem');
+            window.location.href = `/index.html?restaurante_id=${encodeURIComponent(restauranteId)}`;
+          }
+        }
+      });
+      setTimeout(() => {
+        const sair = document.createElement('div');
+        sair.id = 'totem-sair';
+        sair.title = 'Toque 3x aqui para sair do modo totem';
+        sair.style.cssText = 'position:fixed;top:0;right:0;width:48px;height:48px;z-index:99999;';
+        document.body.appendChild(sair);
+      }, 600);
+    }
+
+    // FILA DE ESPERA - declarations moved here to avoid temporal dead zone
+    const MODO_FILA = urlParams.get('modo') === 'fila';
+    const bannerFila = document.getElementById('banner-fila-espera');
+    const filaPill = document.getElementById('fila-pill');
+    const badgeFilaPos = document.getElementById('badge-fila-posicao');
+    const listaFilaRows = document.getElementById('lista-fila-rows');
+    const listaFilaCount = document.getElementById('lista-fila-count');
+    const listaFilaWrap = document.getElementById('lista-fila-espera');
+    const filaCadastroForm = document.getElementById('fila-cadastro-form');
+    const filaFormOverlay = document.getElementById('fila-form-overlay');
+    const filaStatusConteudo = { set display(v) { if (filaPill) filaPill.style.display = v; } };
+    const escFila = (t) => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+    const socket = io({ query: { token: localStorage.getItem('chef_token'), restaurante_id: restauranteId } });
+
+    // Inicializar plugins client-side
+    if (window.ChefPluginLoader) window.ChefPluginLoader.init(socket, { currentPage: 'cardapio' });
+
+    socket.on('connect', () => {
+      socket.emit('cliente_na_mesa', mesaNome);
+      autoIdentificar();
+    });
+
+    let MENU = [];
+    let CART = [];
+    let CONFIGS = {
+      qr_order_enabled: true,
+      qr_order_flow: "caixa",
+      qr_pix_key: "",
+      qr_pix_name: ""
+    };
+
+    let crmPerfil = null;
+    let allMesas = [];
+
+    function checkCrmLogin() {
+      const saved = localStorage.getItem('cliente_perfil');
+      if (saved) {
+        try {
+          crmPerfil = JSON.parse(saved);
+          if (crmPerfil && crmPerfil.nome) {
+            document.getElementById('welcome-user-crm').innerText = `Olá, ${crmPerfil.nome.split(' ')[0]}!`;
+            document.getElementById('btn-edit-profile-header').style.display = 'flex';
+            document.getElementById('input-customer-name').value = crmPerfil.nome;
+            return;
+          }
+        } catch (e) { }
+      }
+      document.getElementById('modal-crm-login').style.display = 'flex';
+    }
+
+    // Reidentifica o cliente já salvo no celular (mesmo telefone) para
+    // reutilizar o cadastro e marcar o cliente desta mesa.
+    function autoIdentificar() {
+      const saved = localStorage.getItem('cliente_perfil');
+      if (!saved) return;
+      let profile = null;
+      try { profile = JSON.parse(saved); } catch (e) { return; }
+      if (!profile || !profile.telefone) return;
+      socket.emit('identificar_cliente_qr', { nome: profile.nome || '', telefone: profile.telefone, data_nascimento: profile.data_nascimento || '' }, (res) => {
+        if (res && res.success && res.cliente) {
+          crmPerfil = res.cliente;
+          localStorage.setItem('cliente_perfil', JSON.stringify(crmPerfil));
+          if (crmPerfil.nome) {
+            document.getElementById('welcome-user-crm').innerText = `Olá, ${crmPerfil.nome.split(' ')[0]}!`;
+            const editBtn = document.getElementById('btn-edit-profile-header');
+            if (editBtn) editBtn.style.display = 'flex';
+            const inputCust = document.getElementById('input-customer-name');
+            if (inputCust) inputCust.value = crmPerfil.nome;
+          }
+          associarClienteMesa();
+        }
+      });
+    }
+
+    // Informa ao sistema quem é o cliente logado nesta mesa.
+    function associarClienteMesa() {
+      if (!crmPerfil || !crmPerfil.nome) return;
+      socket.emit('cliente_entrou_mesa', {
+        mesa: mesaNome,
+        cliente: {
+          id: crmPerfil.id || null,
+          nome: crmPerfil.nome,
+          telefone: crmPerfil.telefone || ''
+        }
+      });
+    }
+
+    window.salvarPerfilCrm = () => {
+      const name = document.getElementById('input-crm-name').value.trim();
+      const phone = document.getElementById('input-crm-phone').value.trim();
+      const birthday = document.getElementById('input-crm-birthday').value;
+      const btn = document.querySelector('#modal-crm-login .btn-submit');
+
+      if (!name || !phone) {
+        return alert('Nome e Telefone são obrigatórios para identificação.');
+      }
+
+      if (btn) {
+        btn.innerText = 'Entrando...';
+        btn.disabled = true;
+      }
+
+      // Add timeout in case server doesn't respond
+      let responded = false;
+      setTimeout(() => {
+        if (!responded) {
+          if (btn) {
+            btn.innerText = 'Entrar e Ver Cardápio';
+            btn.disabled = false;
+          }
+          alert('O servidor demorou a responder. Verifique sua conexão ou tente novamente.');
+        }
+      }, 5000);
+
+      socket.emit('identificar_cliente_qr', { nome: name, telefone: phone, data_nascimento: birthday }, (res) => {
+        responded = true;
+        if (btn) {
+          btn.innerText = 'Entrar e Ver Cardápio';
+          btn.disabled = false;
+        }
+
+        if (res && res.success) {
+          crmPerfil = res.cliente;
+          localStorage.setItem('cliente_perfil', JSON.stringify(crmPerfil));
+
+          document.getElementById('modal-crm-login').style.display = 'none';
+          document.getElementById('welcome-user-crm').innerText = `Olá, ${crmPerfil.nome.split(' ')[0]}!`;
+
+          const editBtn = document.getElementById('btn-edit-profile-header');
+          if (editBtn) editBtn.style.display = 'flex';
+
+          const inputCust = document.getElementById('input-customer-name');
+          if (inputCust) inputCust.value = crmPerfil.nome;
+          associarClienteMesa();
+        } else {
+          alert(res ? res.error : 'Erro de comunicação com o servidor.');
+        }
+      });
+    };
+
+    window.editarPerfilCrm = () => {
+      if (crmPerfil) {
+        document.getElementById('input-crm-name').value = crmPerfil.nome || '';
+        document.getElementById('input-crm-phone').value = crmPerfil.telefone || '';
+        document.getElementById('input-crm-birthday').value = crmPerfil.data_nascimento || '';
+      }
+      document.getElementById('modal-crm-login').style.display = 'flex';
+    };
+
+    window.pularCrmLogin = () => {
+      document.getElementById('modal-crm-login').style.display = 'none';
+    };
+
+    socket.emit('get_mesas');
+    socket.on('mesas_atualizadas', (mesas) => {
+      allMesas = (mesas || []).filter(m => !m.nome.toLowerCase().includes('comanda'));
+
+      const select = document.getElementById('select-confirm-mesa');
+      if (select) {
+        select.innerHTML = allMesas.map(m => `
+          <option value="${m.nome}" ${m.nome === mesaNome ? 'selected' : ''}>${m.nome}</option>
+        `).join('');
+      }
+    });
+
+    let activeCategory = 'Todos';
+    let selectedItem = null;
+    let selectedQty = 1;
+    let searchFilter = '';
+    let _montavelConfig = null;
+    let currentPendingOrderId = null;
+    let tourActive = false;
+    let tourBannerData = {
+      steps: [
+        { label: 'Boas-vindas', title: 'Bem-vindo ao nosso restaurante!', text: 'Estamos felizes em recebê-lo. Explore nosso cardápio digital e descubra cada detalhe dos nossos pratos preparados com dedicação.' },
+        { label: 'Nossa História', title: 'Uma Tradição de Sabor', text: 'Desde nossa fundação, buscamos trazer o melhor da culinária, combinando ingredientes frescos com receitas que atravessam gerações.' },
+        { label: 'Ingredientes', title: 'Qualidade em Cada Prato', text: 'Selecionamos pessoalmente cada ingrediente. Das hortas locais aos fornecedores parceiros, tudo é pensado para garantir o sabor único.' },
+        { label: 'O Chef', title: 'Paixão pela Cozinha', text: 'Nossa equipe é liderada por chefs apaixonados que transformam cada refeição em uma experiência memorável.' }
+      ],
+      currentStep: 0
+    };
+
+    function gerarDescricao(p) {
+      if (p.descricao && p.descricao.trim()) return p.descricao;
+      const descs = {
+        'Bebidas': 'Refrescante e saboroso, perfeito para acompanhar seu momento.',
+        'Petiscos': 'Preparado na hora com ingredientes selecionados. Ideal para compartilhar.',
+        'Porções': 'Porção generosa preparada com todo carinho pela nossa cozinha.',
+        'Lanches': 'Montado no momento do pedido com pão fresco e ingredientes de primeira linha.',
+        'Pratos': 'Prato completo preparado sob medida para você saborear.',
+        'Sobremesas': 'Doce tentação preparada pela nossa confeitaria artesanal.',
+        'Mais Pedidos': 'O favorito dos nossos clientes! Não é à toa que está entre os mais pedidos.'
+      };
+      return descs[p.categoria] || 'Delicioso item do nosso cardápio. Peça e surpreenda-se!';
+    }
+
+    // Load configs from API
+    fetch('/api/config?restaurante_id=' + encodeURIComponent(restauranteId))
+      .then(r => r.json())
+      .then(conf => {
+        CONFIGS = conf;
+        CONFIGS.qr_order_enabled = (CONFIGS.qr_order_enabled === 'true' || CONFIGS.qr_order_enabled === true);
+        if (CONFIGS.nome_restaurante) {
+          document.getElementById('restaurant-name-header').innerText = CONFIGS.nome_restaurante;
+          document.title = `${CONFIGS.nome_restaurante} | Cardápio`;
+        }
+
+        if (CONFIGS.qr_order_enabled === false) {
+          document.getElementById('main-menu-area').innerHTML = `
+            <div style="display:flex; justify-content:center; align-items:center; min-height:60vh; flex-direction:column; padding:20px; text-align:center;">
+              <i class="ph ph-qr-code" style="font-size:72px; color:#fc4b15; margin-bottom:15px;"></i>
+              <h2 style="margin-bottom:10px;">Acesso Indisponível</h2>
+              <p style="color:#666;">Os pedidos via celular estão temporariamente desabilitados.</p>
+            </div>
+          `;
+        }
+
+        if (MODO_FILA && CONFIGS.fila_restricao_habilitada === 'true') {
+          const avisoEl = document.getElementById('fila-restricao-aviso');
+          const avisoTxt = document.getElementById('fila-restricao-aviso-texto');
+          if (avisoEl) avisoEl.style.display = 'flex';
+          if (avisoTxt) avisoTxt.textContent = CONFIGS.fila_mensagem_restricao || 'Alguns itens estao disponiveis somente apos a liberacao da sua mesa.';
+        }
+      })
+      .catch(e => console.error('Error fetching configs:', e));
+
+    // Show CRM login modal (skip in fila mode - has its own registration)
+    if (!MODO_FILA) checkCrmLogin();
+
+    // Mostrar botões do colaborador (avaliar + reservar) apenas se logado como staff
+    (function verificarColaborador() {
+      try {
+        const sess = JSON.parse(localStorage.getItem('chef_session') || '{}');
+        const cargo = (sess.cargo || '').toLowerCase();
+        const isColab = ['admin','administrador','adm','gerente','garçom','garcom','caixa','suporte'].includes(cargo);
+        if (isColab) {
+          document.querySelectorAll('.area-colaborador-btns').forEach(el => el.style.display = '');
+        }
+      } catch (e) {}
+    })();
+
+    // Reserva para esta mesa? Boas-vindas + validação gentil via QR
+    verificarReservaQr();
+
+    // Request menu products from server
+    socket.emit('get_produtos');
+    socket.on('produtos_atualizados', (prods) => {
+      MENU = (prods || []).filter(p => (p.categoria !== 'Mais Pedidos' || p.originalId) && (p.visibilidade === 'todos' || p.visibilidade === undefined || p.visibilidade === null));
+
+      if (MODO_FILA && CONFIGS.fila_restricao_habilitada === 'true') {
+        const tipo = CONFIGS.fila_restricao_tipo || 'nenhum';
+        if (tipo === 'categorias') {
+          let liberadas = [];
+          try { liberadas = JSON.parse(CONFIGS.fila_categorias_liberadas || '[]'); } catch(e) {}
+          MENU = MENU.filter(p => liberadas.includes(p.categoria));
+        } else if (tipo === 'itens') {
+          let liberados = [];
+          try { liberados = JSON.parse(CONFIGS.fila_itens_liberados || '[]'); } catch(e) {}
+          MENU = MENU.filter(p => liberados.includes(p.id));
+        }
+      }
+
+      document.getElementById('menu-skeletons').style.display = 'none';
+      document.getElementById('menu-items').style.display = 'grid';
+
+      renderTabs();
+      renderMenu();
+    });
+
+    socket.on('connect_error', () => {
+      document.getElementById('menu-skeletons').innerHTML = `
+        <div style="grid-column: 1/-1; text-align:center; padding:40px;">
+          <i class="ph ph-wifi-slash" style="font-size:48px; color:#ef4444; margin-bottom:12px;"></i>
+          <p style="color:#ef4444; font-weight:600; margin-bottom:8px;">Sem conexão com o servidor</p>
+          <p style="color:#94a3b8; font-size:13px;">Verifique sua rede Wi-Fi e recarregue a página.</p>
+        </div>`;
+    });
+
+    setTimeout(() => {
+      if (MENU.length === 0) {
+        document.getElementById('menu-skeletons').innerHTML = `
+          <div style="grid-column: 1/-1; text-align:center; padding:40px;">
+            <i class="ph ph-clock" style="font-size:48px; color:#f59e0b; margin-bottom:12px;"></i>
+            <p style="color:#f59e0b; font-weight:600; margin-bottom:8px;">Carregando cardápio...</p>
+            <p style="color:#94a3b8; font-size:13px;">Aguarde ou recarregue a página.</p>
+          </div>`;
+      }
+    }, 8000);
+
+    socket.on('pedido_qr_atualizado', ({ id, status }) => {
+      if (id == currentPendingOrderId) {
+        const spinner = document.getElementById('checkout-spinner');
+        const successIcon = document.getElementById('checkout-success-icon');
+        const failIcon = document.getElementById('checkout-fail-icon');
+        const title = document.getElementById('checkout-status-title');
+        const desc = document.getElementById('checkout-status-desc');
+        const closeBtn = document.getElementById('btn-status-close');
+        const pixBox = document.getElementById('pix-payment-box');
+
+        pixBox.style.display = 'none';
+        spinner.style.display = 'none';
+
+        if (status === 'Aprovado') {
+          successIcon.style.display = 'flex';
+          title.innerText = 'Pedido Confirmado!';
+          desc.innerText = 'Excelente! Seu pedido foi aceito pelo caixa e já foi enviado para a cozinha preparar.';
+          closeBtn.style.display = 'block';
+          closeBtn.innerText = 'Fazer novo pedido';
+
+          // Clear cart
+          CART = [];
+          atualizarCartBadge();
+
+          // PWA: após 3s, oferecer instalar o app para acompanhar o pedido e ver benefícios
+          setTimeout(function () { showPwaOrderPrompt(); }, 3000);
+        } else if (status === 'Recusado') {
+          failIcon.style.display = 'flex';
+          title.innerText = 'Pedido Recusado';
+          desc.innerText = 'Desculpe, o caixa recusou ou cancelou o envio do seu pedido. Por favor, chame o atendente para verificar.';
+          closeBtn.style.display = 'block';
+          closeBtn.innerText = 'Voltar ao cardápio';
+        }
+      }
+    });
+
+    function renderTabs() {
+      const container = document.getElementById('categories-tabs');
+      const cats = ['Todos', ...new Set(MENU.map(p => p.categoria))];
+
+      container.innerHTML = cats.map(c => `
+        <div class="category-tab ${c === activeCategory ? 'active' : ''}" onclick="selectCategory('${c}')">${c}</div>
+      `).join('');
+    }
+
+    window.selectCategory = (cat) => {
+      activeCategory = cat;
+      renderTabs();
+      renderMenu();
+      const container = document.getElementById('categories-tabs');
+      if (container) {
+        setTimeout(() => {
+          const active = container.querySelector('.category-tab.active');
+          if (active) {
+            const cw = container.clientWidth;
+            const ol = active.offsetLeft;
+            const ow = active.offsetWidth;
+            container.scrollTo({ left: Math.max(0, ol - cw / 2 + ow / 2), behavior: 'smooth' });
+          }
+        }, 30);
+      }
+    };
+
+    function renderMenu() {
+      const container = document.getElementById('menu-items');
+      let filtered = MENU;
+
+      if (activeCategory !== 'Todos') {
+        filtered = filtered.filter(p => p.categoria === activeCategory);
+      }
+
+      if (searchFilter.trim() !== '') {
+        const q = searchFilter.trim();
+        filtered = window.FuzzySearch.filter(filtered, q, (p) => [p.nome, p.categoria || '']);
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:#888; grid-column: 1/-1; padding:30px;">Nenhum produto encontrado nesta categoria.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(p => {
+        const desc = gerarDescricao(p);
+        const fotoSegura = (p.foto_url && /^https?:\/\//i.test(p.foto_url)) ? p.foto_url.replace(/"/g, '&quot;') : '';
+        return `
+        <div class="menu-card" onclick="window.abrirItemDetails(${p.id})">
+          ${fotoSegura
+            ? `<img class="menu-card-emoji" src="${fotoSegura}" alt="${p.nome.replace(/"/g, '')}" loading="lazy" style="width:56px; height:56px; border-radius:14px; object-fit:cover; flex-shrink:0;" onerror="this.outerHTML='<div class=\\'menu-card-emoji\\'>${p.emoji || '🍽️'}</div>'">`
+            : `<div class="menu-card-emoji">${p.emoji || '🍽️'}</div>`}
+          <div class="menu-card-details">
+            <h4 class="menu-card-title">${p.nome}</h4>
+            <span class="menu-card-price">R$ ${parseFloat(p.preco).toFixed(2).replace('.', ',')}</span>
+            <div class="menu-card-descricao ${tourActive ? 'visible' : ''}">${desc}</div>
+          </div>
+          <button class="btn-add-to-cart" onclick="event.stopPropagation(); window.abrirItemDetails(${p.id})">
+            <i class="ph ph-plus"></i>
+          </button>
+        </div>
+      `}).join('');
+    }
+
+    window.toggleTour = () => {
+      tourActive = !tourActive;
+      const btn = document.getElementById('btn-tour-toggle');
+      const banner = document.getElementById('tour-banner');
+      const progress = document.getElementById('tour-progress');
+      const mainArea = document.getElementById('main-menu-area');
+
+      if (tourActive) {
+        btn.classList.add('active');
+        btn.innerHTML = '<i class="ph ph-compass"></i> Tour';
+        mainArea.classList.add('tour-mode');
+        tourBannerData.currentStep = 0;
+        updateTourBanner();
+        banner.classList.add('visible');
+        progress.classList.add('visible');
+      } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '<i class="ph ph-compass"></i> Tour';
+        mainArea.classList.remove('tour-mode');
+        banner.classList.remove('visible');
+        progress.classList.remove('visible');
+      }
+      renderMenu();
+    };
+
+    function updateTourBanner() {
+      const step = tourBannerData.steps[tourBannerData.currentStep];
+      if (!step) return;
+      document.getElementById('tour-step-label').textContent = step.label;
+      document.getElementById('tour-banner-title').textContent = step.title;
+      document.getElementById('tour-banner-text').textContent = step.text;
+      const progress = ((tourBannerData.currentStep + 1) / tourBannerData.steps.length) * 100;
+      document.getElementById('tour-progress-fill').style.width = progress + '%';
+      document.getElementById('tour-progress-text').textContent = Math.round(progress) + '%';
+    }
+
+    document.addEventListener('scroll', () => {
+      if (!tourActive) return;
+      const cards = document.querySelectorAll('.menu-card');
+      if (cards.length === 0) return;
+      let maxVisible = 0;
+      let visibleIndex = -1;
+      cards.forEach((card, i) => {
+        const rect = card.getBoundingClientRect();
+        const visible = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
+        if (visible > maxVisible) {
+          maxVisible = visible;
+          visibleIndex = i;
+        }
+      });
+      const stepIndex = Math.min(
+        Math.floor((visibleIndex / cards.length) * tourBannerData.steps.length),
+        tourBannerData.steps.length - 1
+      );
+      if (stepIndex !== tourBannerData.currentStep && stepIndex >= 0) {
+        tourBannerData.currentStep = stepIndex;
+        updateTourBanner();
+      }
+    });
+
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      searchFilter = e.target.value;
+      renderMenu();
+    });
+
+    window.abrirItemDetails = (id) => {
+      const item = MENU.find(x => x.id === id);
+      if (!item) return;
+
+      selectedItem = item;
+      selectedQty = 1;
+      _montavelConfig = null;
+
+      document.getElementById('modal-title').innerText = item.nome;
+      document.getElementById('modal-price').innerText = `R$ ${parseFloat(item.preco).toFixed(2).replace('.', ',')}`;
+      document.getElementById('modal-emoji').innerText = item.emoji || '🍽️';
+      document.getElementById('modal-qty').innerText = '1';
+      document.getElementById('modal-obs').value = '';
+      window._compsAtuais = [];
+
+      const montavelSection = document.getElementById('modal-montavel-section');
+      if (montavelSection) montavelSection.style.display = 'none';
+
+      if (typeof restauranteId !== 'undefined' && item.id) {
+        fetch('/api/montaveis/produto/' + item.id, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('chef_token') || '') } })
+          .then(r => r.json())
+          .then(cfg => {
+            if (cfg && cfg.id) {
+              _montavelConfig = cfg;
+              window.renderMontavelUI();
+            }
+          })
+          .catch(() => {});
+      }
+
+      document.getElementById('modal-item-details').style.display = 'flex';
+    };
+
+    window.fecharItemDetails = () => {
+      document.getElementById('modal-item-details').style.display = 'none';
+      selectedItem = null;
+    };
+
+    window.changeItemDetailsQty = (dir) => {
+      selectedQty += dir;
+      if (selectedQty < 1) selectedQty = 1;
+      document.getElementById('modal-qty').innerText = selectedQty;
+    };
+
+    window._compsAtuais = [];
+    window.renderMontavelUI = () => {
+      const section = document.getElementById('modal-montavel-section');
+      const catsContainer = document.getElementById('modal-montavel-cats');
+      const precoEl = document.getElementById('modal-montavel-preco');
+      const hiddenInput = document.getElementById('modal-composicoes');
+      if (!section || !_montavelConfig) { if (section) section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      window._compsAtuais = _montavelConfig.categorias.map(() => []);
+
+      catsContainer.innerHTML = _montavelConfig.categorias.map((cat, ci) => {
+        const isSingle = cat.max_escolhas === 1;
+        const optsHtml = cat.opcoes.map((opt, oi) => {
+          const inputType = isSingle ? 'radio' : 'checkbox';
+          const inputName = 'montavel-cat-' + ci;
+          return '<label style="display:flex; align-items:center; gap:6px; padding:6px 8px; background:white; border:1px solid var(--border); border-radius:6px; cursor:pointer; font-size:13px;">' +
+            '<input type="' + inputType + '" name="' + inputName + '" value="' + oi + '" onchange="window.onMontavelSelect(' + ci + ',' + oi + ',' + isSingle + ')">' +
+            '<span style="flex:1;">' + escFila(opt.nome) + '</span>' +
+            (opt.preco > 0 ? '<span style="color:var(--primary); font-weight:700; font-size:12px;">+R$ ' + opt.preco.toFixed(2).replace('.', ',') + '</span>' : '') +
+            '</label>';
+        }).join('');
+
+        return '<div style="margin-bottom:10px;">' +
+          '<div style="font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">' +
+          escFila(cat.nome) +
+          (cat.obrigatoria ? ' <span style="color:#dc2626;">*</span>' : '') +
+          (cat.max_escolhas > 1 ? ' <span style="color:#94a3b8; font-weight:400;">(escolha até ' + cat.max_escolhas + ')</span>' : '') +
+          '</div>' +
+          '<div style="display:flex; flex-direction:column; gap:4px;">' + optsHtml + '</div>' +
+          '</div>';
+      }).join('');
+
+      window._updateMontavelPrice();
+      if (hiddenInput) hiddenInput.value = JSON.stringify(window._compsAtuais);
+    };
+
+    window.onMontavelSelect = (catIdx, optIdx, isSingle) => {
+      if (isSingle) {
+        window._compsAtuais[catIdx] = [optIdx];
+      } else {
+        const arr = window._compsAtuais[catIdx];
+        const pos = arr.indexOf(optIdx);
+        if (pos >= 0) arr.splice(pos, 1);
+        else {
+          const max = _montavelConfig.categorias[catIdx].max_escolhas || 1;
+          if (arr.length < max) arr.push(optIdx);
+        }
+      }
+      window._updateMontavelPrice();
+      const hiddenInput = document.getElementById('modal-composicoes');
+      if (hiddenInput) hiddenInput.value = JSON.stringify(window._compsAtuais);
+    };
+
+    window._updateMontavelPrice = () => {
+      const precoEl = document.getElementById('modal-montavel-preco');
+      if (!precoEl || !_montavelConfig) return;
+      let base = parseFloat(selectedItem ? selectedItem.preco : 0);
+      let total = _montavelConfig.pricing_model === 'fixo' ? _montavelConfig.preco_fixo : base;
+
+      if (_montavelConfig.pricing_model === 'soma') {
+        _montavelConfig.categorias.forEach((cat, ci) => {
+          (window._compsAtuais[ci] || []).forEach(oi => {
+            if (cat.opcoes[oi]) total += cat.opcoes[oi].preco || 0;
+          });
+        });
+      }
+
+      precoEl.textContent = 'Total: R$ ' + total.toFixed(2).replace('.', ',');
+      if (selectedItem) selectedItem._precoMontavel = total;
+    };
+
+    window.adicionarItemAoCarrinho = () => {
+      if (!selectedItem) return;
+
+      const obs = document.getElementById('modal-obs').value.trim();
+      const rawComps = JSON.parse(document.getElementById('modal-composicoes') ? (document.getElementById('modal-composicoes').value || '[]') : '[]');
+
+      let composicoes = [];
+      let precoUnit = parseFloat(selectedItem.preco);
+      if (_montavelConfig) {
+        _montavelConfig.categorias.forEach((cat, ci) => {
+          (rawComps[ci] || []).forEach(oi => {
+            const opt = cat.opcoes[oi];
+            if (opt) composicoes.push({ categoria: cat.nome, opcao: opt.nome, preco: opt.preco || 0 });
+          });
+        });
+        precoUnit = _montavelConfig.pricing_model === 'fixo' ? _montavelConfig.preco_fixo : selectedItem._precoMontavel || precoUnit;
+      } else {
+        composicoes = rawComps;
+      }
+
+      const existing = CART.find(x => x.id === selectedItem.id && x.obs === obs && JSON.stringify(x.composicoes) === JSON.stringify(composicoes));
+
+      if (existing) {
+        existing.quantity += selectedQty;
+        existing.total = existing.quantity * precoUnit;
+      } else {
+        CART.push({
+          id: selectedItem.id,
+          productName: selectedItem.nome,
+          productEmoji: selectedItem.emoji,
+          quantity: selectedQty,
+          preco: precoUnit,
+          obs: obs,
+          composicoes: composicoes,
+          sector: selectedItem.setor || 'Cozinha 1',
+          total: selectedQty * precoUnit
+        });
+      }
+
+      atualizarCartBadge();
+      window.fecharItemDetails();
+    };
+
+    function atualizarCartBadge() {
+      const fab = document.getElementById('fab-cart');
+      const badge = document.getElementById('cart-badge-count');
+
+      const totalItems = CART.reduce((acc, c) => acc + c.quantity, 0);
+      if (totalItems > 0) {
+        fab.style.display = 'flex';
+        badge.innerText = totalItems;
+      } else {
+        fab.style.display = 'none';
+      }
+    }
+
+    window.abrirCarrinho = () => {
+      const list = document.getElementById('cart-items-list');
+      const totalVal = document.getElementById('cart-total-value');
+
+      if (CART.length === 0) return alert('Seu carrinho está vazio.');
+
+      list.innerHTML = CART.map((item, idx) => `
+        <div class="cart-item">
+          <div class="cart-item-info">
+            <div class="cart-item-name">${item.quantity}x ${item.productEmoji || ''} ${item.productName}</div>
+            ${item.obs ? `<div style="font-size:11px; color:#888; margin-top:2px;">Obs: ${item.obs}</div>` : ''}
+            ${item.composicoes && item.composicoes.length > 0 ? '<div style="font-size:11px; color:#3b82f6; margin-top:2px; font-weight:600;">Monte: ' + item.composicoes.map(c => (typeof c === 'object' ? c.categoria + ': ' + c.opcao : c)).join(' | ') + '</div>' : ''}
+            <span class="cart-item-price">R$ ${item.total.toFixed(2).replace('.', ',')}</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
+            <div class="qty-control">
+              <button class="btn-qty" onclick="window.changeCartQty(${idx}, -1)" style="width:24px; height:24px; font-size:13px;">-</button>
+              <button class="btn-qty" onclick="window.changeCartQty(${idx}, 1)" style="width:24px; height:24px; font-size:13px;">+</button>
+            </div>
+            <button onclick="window.removeCartItem(${idx})" style="background:none; border:none; color:#c92a2a; font-size:11px; font-weight:700; cursor:pointer; margin-top:4px;">Excluir</button>
+          </div>
+        </div>
+      `).join('');
+
+      const total = CART.reduce((acc, c) => acc + c.total, 0);
+      totalVal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+
+      document.getElementById('modal-cart').style.display = 'flex';
+    };
+
+    window.fecharCarrinho = () => {
+      document.getElementById('modal-cart').style.display = 'none';
+    };
+
+    window.changeCartQty = (idx, dir) => {
+      const item = CART[idx];
+      if (!item) return;
+
+      item.quantity += dir;
+      if (item.quantity < 1) {
+        window.removeCartItem(idx);
+      } else {
+        item.total = item.quantity * item.preco;
+        window.abrirCarrinho();
+        atualizarCartBadge();
+      }
+    };
+
+    window.removeCartItem = (idx) => {
+      CART.splice(idx, 1);
+      atualizarCartBadge();
+
+      if (CART.length === 0) {
+        window.fecharCarrinho();
+      } else {
+        window.abrirCarrinho();
+      }
+    };
+
+    window.enviarPedido = () => {
+      // Check CRM profile login
+      if (!crmPerfil) {
+        document.getElementById('modal-cart').style.display = 'none';
+        document.getElementById('modal-crm-login').style.display = 'flex';
+        return;
+      }
+
+      const name = document.getElementById('input-customer-name').value.trim();
+      if (!name) return alert('Por favor, informe seu nome para identificação do pedido.');
+
+      // Close cart and open Table Confirmation modal
+      document.getElementById('modal-cart').style.display = 'none';
+
+      document.getElementById('confirm-mesa-display').innerText = mesaNome;
+      document.getElementById('box-change-mesa').style.display = 'none';
+      document.getElementById('btn-change-mesa-trigger').style.display = 'block';
+
+      // Update dropdown selection
+      const select = document.getElementById('select-confirm-mesa');
+      if (select) select.value = mesaNome;
+
+      document.getElementById('modal-confirm-mesa').style.display = 'flex';
+    };
+
+    window.confirmMesaYes = () => {
+      const select = document.getElementById('select-confirm-mesa');
+      const isChanging = document.getElementById('box-change-mesa').style.display === 'flex' && select;
+      const novaMesa = isChanging ? select.value : mesaNome;
+      const mudouMesa = isChanging && novaMesa !== mesaOrigem;
+
+      if (mudouMesa) {
+        socket.emit('verificar_mesa_conflict', { mesa: novaMesa, clienteId: crmPerfil ? crmPerfil.id : null }, (result) => {
+          if (result && result.conflict) {
+            pendingRequiresValidation = true;
+            mesaNome = novaMesa;
+            document.getElementById('mesa-badge').innerText = mesaNome;
+            socket.emit('cliente_na_mesa', mesaNome);
+            associarClienteMesa();
+            document.getElementById('modal-confirm-mesa').style.display = 'none';
+
+            const avisoHtml = `
+              <div class="modal-overlay" id="modal-aviso-validacao" style="display:flex; z-index:100002;">
+                <div class="modal-content" style="max-width:400px; text-align:center; gap:16px;">
+                  <div style="font-size:48px; color:#f59e0b;"><i class="ph ph-warning"></i></div>
+                  <div>
+                    <h3 style="font-size:18px; font-weight:800; color:var(--text);">Mesa já ocupada</h3>
+                    <p style="font-size:13.5px; color:var(--text-muted); line-height:1.5; margin-top:8px;">
+                      A mesa <strong>${novaMesa}</strong> já está ocupada por <strong>${result.ocupadoPor}</strong>.
+                      Um garçom será enviado para validar o seu pedido antes de enviá-lo à cozinha.
+                    </p>
+                  </div>
+                  <button class="btn-submit" onclick="document.getElementById('modal-aviso-validacao').remove(); proceedToCheckout();" style="width:100%;">
+                    Entendi, vou aguardar validação
+                  </button>
+                </div>
+              </div>`;
+            document.body.insertAdjacentHTML('beforeend', avisoHtml);
+          } else {
+            pendingRequiresValidation = false;
+            mesaNome = novaMesa;
+            document.getElementById('mesa-badge').innerText = mesaNome;
+            socket.emit('cliente_na_mesa', mesaNome);
+            associarClienteMesa();
+            document.getElementById('modal-confirm-mesa').style.display = 'none';
+            proceedToCheckout();
+          }
+        });
+        return;
+      }
+
+      if (isChanging) {
+        mesaNome = select.value;
+        document.getElementById('mesa-badge').innerText = mesaNome;
+        socket.emit('cliente_na_mesa', mesaNome);
+        associarClienteMesa();
+      }
+
+      document.getElementById('modal-confirm-mesa').style.display = 'none';
+      proceedToCheckout();
+    };
+
+    window.changeMesaNo = () => {
+      document.getElementById('box-change-mesa').style.display = 'flex';
+      document.getElementById('btn-change-mesa-trigger').style.display = 'none';
+    };
+
+    function proceedToCheckout() {
+      const name = crmPerfil.nome;
+      const total = CART.reduce((acc, c) => acc + c.total, 0);
+
+      const spinner = document.getElementById('checkout-spinner');
+      const successIcon = document.getElementById('checkout-success-icon');
+      const failIcon = document.getElementById('checkout-fail-icon');
+      const title = document.getElementById('checkout-status-title');
+      const desc = document.getElementById('checkout-status-desc');
+      const pixBox = document.getElementById('pix-payment-box');
+      const closeBtn = document.getElementById('btn-status-close');
+
+      spinner.style.display = 'flex';
+      successIcon.style.display = 'none';
+      failIcon.style.display = 'none';
+      title.innerText = 'Processando Pedido';
+      desc.innerText = 'Enviando suas informações para o caixa do estabelecimento. Por favor, aguarde...';
+      pixBox.style.display = 'none';
+      closeBtn.style.display = 'none';
+
+      document.getElementById('modal-checkout-status').style.display = 'flex';
+
+      const isPixFlow = CONFIGS.qr_order_flow === 'pix';
+
+      if (isPixFlow) {
+        spinner.style.display = 'none';
+        title.innerText = 'Pagamento via Pix';
+        desc.innerText = 'Este estabelecimento exige pagamento via Pix para enviar os pedidos para a cozinha. Faça o pagamento de acordo com os detalhes abaixo:';
+
+        document.getElementById('pix-beneficiary-name').innerText = CONFIGS.qr_pix_name || 'Estabelecimento Chef Cozinha';
+        document.getElementById('pix-total-amount').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+
+        const pixKey = CONFIGS.qr_pix_key || 'chefcozinha@pix.com.br';
+        const pixCopyString = `00020101021226840014BR.GOV.BCB.PIX0114${pixKey}5204000053039865405${total.toFixed(2)}5802BR5915CHEFCOZINHABENE6008BRASILIA62070503***6304`;
+        document.getElementById('pix-key-string').innerText = pixCopyString;
+
+        const pixQrImg = document.getElementById('pix-qr-img');
+        if (typeof window.qrImg === 'function') {
+          window.qrImg(pixQrImg, pixCopyString, 150);
+        } else {
+          pixQrImg.src = (window.location.origin || '') + '/api/qr?size=150&data=' + encodeURIComponent(pixCopyString);
+        }
+
+        pixBox.style.display = 'flex';
+      } else {
+        submitPendingOrder(name, total, false);
+      }
+    }
+
+    window.confirmarPagamentoPixEnviado = () => {
+      const name = crmPerfil.nome;
+      const total = CART.reduce((acc, c) => acc + c.total, 0);
+      const pixKey = CONFIGS.qr_pix_key || 'chefcozinha@pix.com.br';
+
+      const spinner = document.getElementById('checkout-spinner');
+      const pixBox = document.getElementById('pix-payment-box');
+      const title = document.getElementById('checkout-status-title');
+      const desc = document.getElementById('checkout-status-desc');
+
+      pixBox.style.display = 'none';
+      spinner.style.display = 'flex';
+      title.innerText = 'Verificando Pagamento';
+      desc.innerText = 'Informamos ao caixa que o Pix foi pago. Aguardando confirmação do operador...';
+
+      submitPendingOrder(name, total, true, pixKey);
+    };
+
+    function submitPendingOrder(name, total, paidViaPix, pixKey = '') {
+      const emitItens = CART.map(item => ({
+        id: item.id,
+        productName: item.productName,
+        productEmoji: item.productEmoji,
+        quantity: item.quantity,
+        total: item.preco.toFixed(2),
+        sector: item.sector,
+        observations: item.obs || '',
+        composicoes: item.composicoes || []
+      }));
+
+      socket.emit('criar_pedido_qr', {
+        mesa: mesaNome,
+        cliente_nome: name,
+        itens: emitItens,
+        valor_total: total,
+        pago_pix: paidViaPix,
+        chave_pix: pixKey,
+        cliente_id: crmPerfil ? crmPerfil.id : null,
+        cliente_telefone: crmPerfil ? crmPerfil.telefone : '',
+        is_fila: MODO_FILA ? true : false,
+        requires_validacao: pendingRequiresValidation,
+        mesa_origem: pendingRequiresValidation ? mesaOrigem : null
+      });
+    }
+
+    socket.on('criar_pedido_qr_resposta', (res) => {
+      if (res && res.success) {
+        currentPendingOrderId = res.id;
+        if (res.requires_validacao) {
+          const desc = document.getElementById('checkout-status-desc');
+          if (desc) desc.innerText = 'Pedido enviado! Aguardando validação do garçom...';
+        }
+      } else {
+        alert(res.error || 'Erro ao registrar pedido QR.');
+        window.fecharStatusModal();
+      }
+    });
+
+    window.copyPixKey = () => {
+      const text = document.getElementById('pix-key-string').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Código Pix Copia e Cola copiado com sucesso!');
+      }).catch(err => {
+        console.error('Failed to copy Pix string:', err);
+      });
+    };
+
+    window.fecharStatusModal = () => {
+      document.getElementById('modal-checkout-status').style.display = 'none';
+    };
+
+    window.chamarGarcom = () => {
+      const perfil = perfilClienteAtual();
+      const clienteNome = (perfil && perfil.nome) ? perfil.nome : '';
+      socket.emit('chamar_garcom', { localName: mesaNome, userName: 'Chamada', clienteNome: clienteNome, mensagem: 'Garçom chamado via QR' });
+      const btn = document.getElementById('fab-garcom');
+      btn.innerHTML = '<i class="ph ph-check"></i>';
+      btn.style.background = 'linear-gradient(135deg, #059669, #047857)';
+      setTimeout(() => { btn.innerHTML = '<i class="ph ph-hand-waving"></i>'; btn.style.background = ''; }, 3000);
+      document.getElementById('modal-chamar-garcom').style.display = 'flex';
+      document.getElementById('chamar-garcom-icon').innerHTML = '<i class="ph ph-hand-waving"></i>';
+      document.getElementById('chamar-garcom-title').innerText = 'Chamando garçom...';
+      document.getElementById('chamar-garcom-desc').innerText = 'Aguarde, em breve você receberá atendimento.';
+      document.getElementById('btn-chamar-garcom-fechar').style.display = 'none';
+    };
+
+    window.fecharModalChamarGarcom = () => {
+      document.getElementById('modal-chamar-garcom').style.display = 'none';
+    };
+
+    socket.on('garcom_chegando', ({ garcomNome }) => {
+      document.getElementById('chamar-garcom-icon').innerHTML = '<i class="ph ph-user-check"></i>';
+      document.getElementById('chamar-garcom-title').innerText = 'Garçom a caminho!';
+      document.getElementById('chamar-garcom-desc').innerText = `${garcomNome} está indo até você.`;
+      document.getElementById('btn-chamar-garcom-fechar').style.display = 'block';
+      document.getElementById('modal-chamar-garcom').style.display = 'flex';
+      showToast(`Garçom ${garcomNome} está indo até você`);
+    });
+
+    const PREP_TIME = { 'Cozinha 1': 20, 'Bar': 5, 'Caixa': 1, 'Chamada': 0 };
+    let trackingOrders = [];
+
+    function calcProgress(createdAt) {
+      if (!createdAt) return { progress: 0, remaining: '...' };
+      const created = new Date(createdAt + (createdAt.includes('T') ? '' : 'Z')).getTime();
+      if (isNaN(created)) return { progress: 0, remaining: '...' };
+      const now = Date.now();
+      const sector = 'Cozinha 1';
+      const prepMin = PREP_TIME[sector] || 20;
+      const prepMs = prepMin * 60000;
+      const elapsed = now - created;
+      const progress = Math.min(100, Math.round((elapsed / prepMs) * 100));
+      const remainingMs = Math.max(0, prepMs - elapsed);
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      return { progress, remaining: remainingMin > 0 ? `${remainingMin} min` : 'Saiu!' };
+    }
+
+    function renderTracking() {
+      const container = document.getElementById('tracking-items');
+      if (!trackingOrders.length) { container.innerHTML = ''; return; }
+      container.innerHTML = trackingOrders.map(o => {
+        const { progress, remaining } = calcProgress(o.createdAt);
+        const statusMap = {
+          'Pendente': 'pendente', 'Em preparo': 'preparando', 'Preparando': 'preparando',
+          'Pronto': 'pronto', 'Entregue': 'Entregue', 'Finalizado': 'Finalizado'
+        };
+        const statusClass = statusMap[o.status] || 'pendente';
+        const statusLabel = o.status === 'Pronto' ? 'Pronto' : o.status === 'Entregue' ? 'Entregue' : o.status === 'Finalizado' ? 'Finalizado' : o.status === 'Em preparo' || o.status === 'Preparando' ? 'Preparando' : 'Pendente';
+        return `<div class="tracking-item">
+          <div class="tracking-item-emoji">${o.productEmoji || '🍽️'}</div>
+          <div class="tracking-item-info">
+            <div class="tracking-item-name">${o.productName}</div>
+            <div class="tracking-item-qty">Qtd: ${o.quantity || 1}</div>
+            <div class="tracking-progress"><div class="tracking-progress-bar" style="width:${progress}%"></div></div>
+            <div class="tracking-time">${remaining} &middot; ${o.sector || ''}</div>
+          </div>
+          <span class="tracking-status-badge ${statusClass}">${statusLabel}</span>
+        </div>`;
+      }).join('');
+    }
+
+    socket.on('meus_pedidos', ({ orders }) => {
+      trackingOrders = (orders || []).filter(o => o.status !== 'Entregue' && o.status !== 'Finalizado');
+      renderTracking();
+      if (trackingOrders.length > 0) {
+        document.getElementById('tracking-panel').classList.add('open');
+      }
+    });
+
+    socket.on('pedido_status_cliente', (data) => {
+      const idx = trackingOrders.findIndex(o => o.pedidoId == data.pedidoId);
+      if (idx >= 0) {
+        trackingOrders[idx].status = data.status;
+        trackingOrders[idx].prontoEm = data.prontoEm;
+      } else {
+        trackingOrders.push(data);
+      }
+      trackingOrders = trackingOrders.filter(o => o.status !== 'Entregue' && o.status !== 'Finalizado');
+      renderTracking();
+      if (trackingOrders.length > 0) {
+        document.getElementById('tracking-panel').classList.add('open');
+      } else {
+        document.getElementById('tracking-panel').classList.remove('open');
+      }
+    });
+
+    function showToast(message) {
+      // Toast EMPILHÁVEL: cada mensagem cria seu próprio card (não sobrescreve avisos abertos)
+      const stack = document.getElementById('toast-stack');
+      if (!stack) { alert(message); return; }
+      const card = document.createElement('div');
+      card.style.cssText =
+        'display:flex;align-items:center;gap:8px;background:#10b981;color:#fff;padding:12px 16px;border-radius:12px;' +
+        'box-shadow:0 8px 30px rgba(0,0,0,0.18);font-size:14px;font-weight:600;pointer-events:auto;' +
+        'animation:chefToastIn .3s ease;transition:opacity .4s ease,transform .4s ease;';
+      const icon = document.createElement('i');
+      icon.className = 'ph ph-check-circle';
+      icon.style.fontSize = '18px';
+      const span = document.createElement('span');
+      span.innerText = message;
+      card.appendChild(icon);
+      card.appendChild(span);
+      stack.appendChild(card);
+      while (stack.children.length > 5) stack.removeChild(stack.firstChild);
+      setTimeout(() => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(30px)';
+        setTimeout(() => card.remove(), 450);
+      }, 6000);
+    }
+
+    // ══════ ALERTAS DO CAIXA / COZINHA PARA O CLIENTE ══════
+    // Empilha vários alertas simultâneos e guarda os não lidos:
+    // se o cliente fechar a página, recebe tudo ao reabrir.
+    function mostrarAlertaCliente(a) {
+      const stack = document.getElementById('toast-stack');
+      if (!stack) return;
+      const cores = {
+        status: '#2563eb',
+        mensagem: '#fc4b15',
+        promocao: '#7c3aed',
+        info: '#0ea5e9'
+      };
+      const cor = cores[a.tipo] || cores.info;
+      const card = document.createElement('div');
+      card.style.cssText =
+        'display:flex;gap:10px;align-items:flex-start;background:#fff;color:#1e293b;padding:14px 16px;border-radius:14px;' +
+        'border-left:5px solid ' + cor + ';box-shadow:0 12px 40px rgba(0,0,0,0.22);font-size:13.5px;pointer-events:auto;' +
+        'animation:chefToastIn .35s ease;';
+      let icone = '🔔';
+      if (a.tipo === 'status') icone = a.titulo && a.titulo.includes('Pronto') ? '✅' : (a.titulo && a.titulo.includes('preparo') ? '👨‍🍳' : '🍽️');
+      if (a.tipo === 'mensagem') icone = '💬';
+      if (a.tipo === 'promocao') icone = '🎁';
+      card.innerHTML =
+        '<div style="font-size:22px;line-height:1;">' + icone + '</div>' +
+        '<div style="flex:1;"><div style="font-weight:800;font-size:13px;color:' + cor + ';margin-bottom:2px;">' +
+        (a.titulo ? String(a.titulo) : 'Aviso') + '</div>' +
+        '<div style="color:#334155;line-height:1.45;">' + String(a.mensagem || '') + '</div>' +
+        '<div style="margin-top:6px;font-size:11px;color:#94a3b8;">' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</div></div>';
+      const btnFechar = document.createElement('button');
+      btnFechar.innerHTML = '&times;';
+      btnFechar.style.cssText = 'background:none;border:none;font-size:20px;color:#94a3b8;cursor:pointer;padding:0 2px;line-height:1;';
+      btnFechar.onclick = () => card.remove();
+      card.appendChild(btnFechar);
+      stack.appendChild(card);
+      while (stack.children.length > 5) stack.removeChild(stack.firstChild);
+      setTimeout(() => {
+        card.style.transition = 'opacity .5s ease';
+        card.style.opacity = '0';
+        setTimeout(() => card.remove(), 550);
+      }, 12000);
+      // Notificação nativa do navegador/PWA quando permitido
+      try {
+        if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+          new Notification(a.titulo || 'Chef Cozinha', { body: a.mensagem || '', icon: '/icons/icon-192.png' });
+        }
+      } catch (e) { }
+    }
+
+    socket.on('alerta_cliente', (a) => {
+      if (!a) return;
+      mostrarAlertaCliente(a);
+      try { localStorage.setItem('chef_ultimo_alerta_' + mesaNome, JSON.stringify(a)); } catch (e) { }
+      if (a.id) socket.emit('alerta_marcar_entregues', [a.id]);
+      // Pede permissão de notificação após primeira interação (política dos navegadores)
+      try {
+        if ('Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission();
+        }
+      } catch (e) { }
+    });
+
+    // Resgate de alertas perdidos (cliente fechou/reabriu a tela)
+    (function resgatarAlertasPerdidos() {
+      if (!mesaNome) return;
+      fetch('/api/alertas-cliente?mesa=' + encodeURIComponent(mesaNome))
+        .then(r => r.json())
+        .then(d => {
+          const lista = (d && d.alertas) || [];
+          if (!lista.length) return;
+          lista.forEach((a, i) => setTimeout(() => mostrarAlertaCliente(a), i * 700));
+          const ids = lista.map(x => x.id).filter(Boolean);
+          if (ids.length) {
+            fetch('/api/alertas-cliente/lidas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ids })
+            }).catch(() => { });
+          }
+        })
+        .catch(() => { });
+    })();
+
+    // --- PWA Install Prompt (pós-pedido QR) ---
+    let deferredPwaPrompt = null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      deferredPwaPrompt = e;
+    });
+    window.addEventListener('appinstalled', function () {
+      deferredPwaPrompt = null;
+    });
+
+    function pwaOrderStyles() {
+      if (document.getElementById('chef-pwa-order-style')) return;
+      var s = document.createElement('style');
+      s.id = 'chef-pwa-order-style';
+      s.textContent =
+        '#chef-pwa-order-overlay{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);animation:pwaOrderFade .3s ease;font-family:system-ui,-apple-system,sans-serif;}' +
+        '.chef-pwa-order-card{background:#fff;border-radius:20px;padding:36px 24px 20px;text-align:center;max-width:340px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,0.3);animation:pwaOrderUp .4s ease;}' +
+        '.dark .chef-pwa-order-card{background:#1e1e24;color:#eee;}' +
+        '.chef-pwa-order-icon{font-size:3rem;margin-bottom:12px;}' +
+        '.chef-pwa-order-title{font-size:1.15rem;font-weight:800;margin-bottom:6px;}' +
+        '.chef-pwa-order-text{font-size:0.86rem;color:#666;line-height:1.5;margin-bottom:22px;}' +
+        '.dark .chef-pwa-order-text{color:#aaa;}' +
+        '.chef-pwa-order-btn{display:block;width:100%;padding:13px;background:#fc4b15;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;margin-bottom:8px;}' +
+        '.chef-pwa-order-btn:hover{background:#e03a0b;}' +
+        '.chef-pwa-order-secondary{display:block;width:100%;padding:11px;background:#f1f5f9;color:#1e293b;border:1px solid #e2e8f0;border-radius:12px;font-size:0.88rem;font-weight:600;cursor:pointer;margin-bottom:8px;}' +
+        '.chef-pwa-order-secondary:hover{background:#e2e8f0;}' +
+        '.chef-pwa-order-link{display:block;background:none;border:none;color:#999;font-size:0.76rem;cursor:pointer;padding:6px;text-decoration:underline;text-underline-offset:2px;}' +
+        '@keyframes pwaOrderFade{from{opacity:0}to{opacity:1}}' +
+        '@keyframes pwaOrderUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}';
+      document.head.appendChild(s);
+    }
+
+    function pwaOrderAvailable() {
+      if (!deferredPwaPrompt) return false;
+      if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return false;
+      return true;
+    }
+
+    function pwaGoAreaCliente(section) {
+      if (crmPerfil) localStorage.setItem('cliente_perfil', JSON.stringify(crmPerfil));
+      window.location.href = '/area-cliente?from=cardapio&mesa=' + encodeURIComponent(mesaNome) + '&restaurante_id=' + encodeURIComponent(restauranteId) + (section ? '&secao=' + section : '');
+    }
+
+    function showPwaOrderPrompt() {
+      if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return;
+      // Cooldown de 24h (antes era 1x por sessão e o cliente nunca mais via o convite)
+      try {
+        const ultimo = parseInt(localStorage.getItem('chef_pwa_order_asked_at') || '0', 10);
+        if (Date.now() - ultimo < 24 * 60 * 60 * 1000) return;
+      } catch (e) { }
+      try { localStorage.setItem('chef_pwa_order_asked_at', String(Date.now())); } catch (e) { }
+      pwaOrderStyles();
+
+      var ehIos = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      // iOS não dispara beforeinstallprompt: mostra instruções manuais de instalação
+      if (!pwaOrderAvailable() && !ehIos) {
+        registrarServiceWorkerPwa();
+        return;
+      }
+      var overlay = document.createElement('div');
+      overlay.id = 'chef-pwa-order-overlay';
+      overlay.innerHTML =
+        '<div class="chef-pwa-order-card">' +
+        '<div class="chef-pwa-order-icon">📱</div>' +
+        '<div class="chef-pwa-order-title">Quer acompanhar seu pedido?</div>' +
+        '<div class="chef-pwa-order-text">Instale o app do Chef Cozinha para acompanhar seu pedido em tempo real e verificar seus benefícios e pontos.</div>' +
+        '<button class="chef-pwa-order-btn" id="chef-pwa-order-install">' + (deferredPwaPrompt ? 'Instalar app' : 'Como instalar no iPhone 🍎') + '</button>' +
+        '<button class="chef-pwa-order-secondary" id="chef-pwa-order-track">Acompanhar pedido</button>' +
+        '<button class="chef-pwa-order-secondary" id="chef-pwa-order-benefits">Ver benefícios</button>' +
+        '<button class="chef-pwa-order-link" id="chef-pwa-order-later">Agora não</button>' +
+        '</div>';
+      if (ehIos && !deferredPwaPrompt) {
+        overlay.querySelector('.chef-pwa-order-text').innerText =
+          'No iPhone: toque no botão Compartilhar (□↑) na barra do Safari e depois em "Adicionar à Tela de Início". Assim você acompanha seu pedido em tempo real!';
+      }
+      var closeOverlay = function () {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      };
+      overlay.querySelector('#chef-pwa-order-install').addEventListener('click', function () {
+        if (deferredPwaPrompt) {
+          var dp = deferredPwaPrompt;
+          deferredPwaPrompt = null;
+          dp.prompt();
+          dp.userChoice.then(function (choice) {
+            if (choice && choice.outcome === 'accepted') {
+              setTimeout(function () { pwaGoAreaCliente(); }, 600);
+            }
+          });
+          closeOverlay();
+        } else {
+          closeOverlay();
+          pwaGoAreaCliente();
+        }
+      });
+      overlay.querySelector('#chef-pwa-order-track').addEventListener('click', function () {
+        closeOverlay();
+        pwaGoAreaCliente();
+      });
+      overlay.querySelector('#chef-pwa-order-benefits').addEventListener('click', function () {
+        closeOverlay();
+        pwaGoAreaCliente('beneficios');
+      });
+      overlay.querySelector('#chef-pwa-order-later').addEventListener('click', closeOverlay);
+      document.body.appendChild(overlay);
+    }
+
+    // Registra o Service Worker — SEM ele o navegador nunca oferece a instalação do PWA
+    function registrarServiceWorkerPwa() {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.register('/sw.js').catch(function () { });
+    }
+    registrarServiceWorkerPwa();
+    // --- Fim PWA Install Prompt ---
+
+    // ══════════════════════════════════════════════════════════════
+    // ══ RESERVA VIA QR: boas-vindas temático + validação gentil ══
+    // ══════════════════════════════════════════════════════════════
+    let _reservaCtx = null;
+    let _reservaTentativas = 0;
+
+    function _esc(t) {
+      return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function mostrarBoasVindasReserva() {
+      const r = _reservaCtx.reserva;
+      document.getElementById('rb-nome').innerText = r.cliente_nome || 'Cliente';
+      document.getElementById('rb-info').innerText = `${r.pessoas} pessoa(s) · ${r.horario}${r.observacao ? ' · ' + r.observacao : ''}`;
+      document.getElementById('rb-passo-boas').style.display = 'block';
+      document.getElementById('rb-passo-digits').style.display = 'none';
+      document.getElementById('rb-passo-outro').style.display = 'none';
+      document.getElementById('modal-reserva-boas').style.display = 'flex';
+    }
+
+    window.rbIrValidar = () => {
+      document.getElementById('rb-passo-boas').style.display = 'none';
+      document.getElementById('rb-digits').value = '';
+      document.getElementById('rb-erro').style.display = 'none';
+      document.getElementById('rb-passo-digits').style.display = 'block';
+      setTimeout(() => { const i = document.getElementById('rb-digits'); if (i) i.focus(); }, 150);
+    };
+
+    window.rbConfirmarDigitos = async () => {
+      const digitos = document.getElementById('rb-digits').value.replace(/\D/g, '');
+      if (digitos.length < 4) return;
+      try {
+        const resp = await fetch('/api/reservas/qr-validar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ restaurante_id: restauranteId, reserva_id: _reservaCtx.reserva.id, digitos, cliente_id: (crmPerfil && crmPerfil.id) || null })
+        });
+        const data = await resp.json();
+        if (data.ok) {
+          fecharReservaBoas();
+          showToast(data.mensagem || 'Reserva confirmada! Aproveite!', 'success');
+          sugerirMesaPreferida();
+          return;
+        }
+        _reservaTentativas++;
+        if (_reservaTentativas >= 2) {
+          rbMostrarOutro();
+        } else {
+          const el = document.getElementById('rb-erro');
+          el.innerText = 'Não bateu 😊 Confira os últimos dígitos do telefone usado na reserva.';
+          el.style.display = 'block';
+        }
+      } catch (e) {
+        const el = document.getElementById('rb-erro');
+        el.innerText = 'Não conseguimos validar agora. Tente novamente.';
+        el.style.display = 'block';
+      }
+    };
+
+    function rbMostrarOutro() {
+      document.getElementById('rb-passo-digits').style.display = 'none';
+      document.getElementById('rb-passo-boas').style.display = 'none';
+      document.getElementById('rb-passo-outro').style.display = 'block';
+      const n2 = document.getElementById('rb-nome2');
+      if (n2 && _reservaCtx && _reservaCtx.reserva) n2.innerText = _reservaCtx.reserva.cliente_nome || 'outro cliente';
+      fetch('/api/reservas/mesas-livres')
+        .then(r => r.json())
+        .then(d => {
+          const wrap = document.getElementById('rb-mesas-livres');
+          if (!d.ok || !d.mesas.length) {
+            wrap.innerHTML = '<em style="color:#94a3b8;">Sem mesas livres agora — o anfitrião vem te ajudar já!</em>';
+            return;
+          }
+          wrap.innerHTML = d.mesas.map(m =>
+            `<button class="rb-mesa-livre" onclick="window.rbEscolherOutraMesa('${_esc(m.nome)}')">${_esc(m.nome)} <small>${m.lugares || 4} lugares</small></button>`
+          ).join('');
+        }).catch(() => { });
+    }
+
+    window.rbEscolherOutraMesa = (nome) => {
+      mesaNome = nome;
+      document.getElementById('mesa-badge').innerText = nome;
+      try { socket.emit('cliente_na_mesa', nome); } catch (e) { }
+      fecharReservaBoas();
+      showToast(`Ótimo! Você está na ${nome}. Seja bem-vindo(a)! 🎉`, 'success');
+    };
+
+    function fecharReservaBoas() {
+      document.getElementById('modal-reserva-boas').style.display = 'none';
+    }
+
+    async function sugerirMesaPreferida() {
+      if (!crmPerfil || !crmPerfil.id) return;
+      try {
+        const resp = await fetch('/api/clientes/preferencia-mesa?cliente_id=' + encodeURIComponent(crmPerfil.id));
+        const d = await resp.json();
+        if (!d.ok || !d.mesa || d.mesa === mesaNome) return;
+        const livres = await fetch('/api/reservas/mesas-livres').then(r => r.json());
+        if (!livres.ok || !livres.mesas.some(m => m.nome === d.mesa)) return;
+        const bar = document.getElementById('barra-mesa-preferida');
+        document.getElementById('bmp-texto').innerText =
+          `Você costuma sentar na ${d.mesa} (${d.visitas} visita${d.visitas > 1 ? 's' : ''}). Quer ir para lá hoje?`;
+        bar.style.display = 'flex';
+        document.getElementById('bmp-sim').onclick = () => {
+          bar.style.display = 'none';
+          window.rbEscolherOutraMesa(d.mesa);
+        };
+        document.getElementById('bmp-nao').onclick = () => { bar.style.display = 'none'; };
+      } catch (e) { }
+    }
+
+    async function verificarReservaQr() {
+      if (MODO_TOTEM) return; // totem é auto-atendimento genérico
+      try {
+        const resp = await fetch('/api/reservas/qr-contexto?restaurante_id=' + encodeURIComponent(restauranteId) + '&mesa=' + encodeURIComponent(mesaOrigem));
+        _reservaCtx = await resp.json();
+        if (!_reservaCtx.ok || !_reservaCtx.reserva || _reservaCtx.reserva.validada_qr) return;
+        // Cliente recorrente com telefone salvo igual ao da reserva: valida direto
+        const telSalvo = String((crmPerfil && crmPerfil.telefone) || '').replace(/\D/g, '');
+        if (telSalvo && telSalvo.slice(-8) === _reservaCtx.reserva.telefone_ult8) {
+          await fetch('/api/reservas/qr-validar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ restaurante_id: restauranteId, reserva_id: _reservaCtx.reserva.id, digitos: telSalvo.slice(-8), cliente_id: crmPerfil.id })
+          });
+          showToast(`Que bom te ver de novo, ${(_reservaCtx.reserva.cliente_nome || '').split(' ')[0]}! Sua reserva na ${mesaOrigem} foi confirmada 🎉`, 'success');
+          sugerirMesaPreferida();
+          return;
+        }
+        mostrarBoasVindasReserva();
+      } catch (e) { }
+    }
+
+    window.rbVerCardapio = () => {
+      fecharReservaBoas();
+      const alvo = document.getElementById('menu-section') || document.getElementById('categories');
+      if (alvo) alvo.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    window.rbMostrarOutroDireto = () => rbMostrarOutro();
+
+    window.abrirPerfilCliente = () => {
+      if (!crmPerfil) {
+        document.getElementById('modal-crm-login').style.display = 'flex';
+      }
+      localStorage.setItem('cliente_perfil', JSON.stringify(crmPerfil));
+      window.location.href = '/area-cliente?from=cardapio&mesa=' + encodeURIComponent(mesaNome) + '&restaurante_id=' + encodeURIComponent(restauranteId);
+    };
+
+    // FAB estrela: leva direto para a aba de avaliação na área do cliente
+    document.getElementById('fab-avaliar').addEventListener('click', function () {
+      pwaGoAreaCliente('avaliar');
+    });
+
+    // === FILA DE ESPERA DE CLIENTES (modo=fila, via QR Code) ===
+
+    function perfilClienteAtual() {
+      if (typeof crmPerfil !== 'undefined' && crmPerfil && crmPerfil.nome) return crmPerfil;
+      try {
+        const saved = JSON.parse(localStorage.getItem('cliente_perfil') || 'null');
+        return saved && saved.nome ? saved : null;
+      } catch (e) { return null; }
+    }
+
+    function formataEsperaFila(criadoEm) {
+      if (!criadoEm) return '';
+      let ts = new Date(criadoEm.replace(' ', 'T')).getTime();
+      if (isNaN(ts)) ts = Date.now();
+      const mins = Math.floor((Date.now() - ts) / 60000);
+      if (mins < 1) return 'agora';
+      if (mins < 60) return mins + 'min';
+      const h = Math.floor(mins / 60);
+      return h + 'h' + (mins % 60) + 'm';
+    }
+
+    function renderFilaEsperaLista(lista, idxAtual, perfil) {
+      if (!MODO_FILA || !listaFilaWrap) return;
+      if (lista.length === 0) { listaFilaWrap.style.display = 'none'; return; }
+      listaFilaWrap.style.display = 'block';
+      if (listaFilaCount) listaFilaCount.textContent = lista.length;
+      const telCliente = perfil ? String(perfil.telefone || '').replace(/\D/g, '') : '';
+      const nomeCliente = perfil ? String(perfil.nome || '').toLowerCase().trim() : '';
+      if (listaFilaRows) {
+        listaFilaRows.innerHTML = lista.map((r, i) => {
+          const telRow = String(r.cliente_telefone || '').replace(/\D/g, '');
+          const nomeRow = String(r.cliente_nome || '').toLowerCase().trim();
+          const ehEu = (telCliente && telRow && telRow === telCliente) || (nomeCliente && nomeRow && nomeRow === nomeCliente);
+          const nome = r.cliente_nome || ('Cliente ' + (i + 1));
+          const pessoas = parseInt(r.pessoas) || 2;
+          const espera = formataEsperaFila(r.criado_em);
+          return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;margin-bottom:6px;background:' + (ehEu ? '#fff7ed' : 'white') + ';border:1.5px solid ' + (ehEu ? '#d97706' : '#fde68a') + ';">' +
+            '<span style="flex:0 0 auto;min-width:30px;height:30px;border-radius:50%;background:' + (ehEu ? '#d97706' : '#f59e0b') + ';color:white;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;">' + (i + 1) + '</span>' +
+            '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:14px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escFila(nome) + (ehEu ? ' <span style="font-size:11px;color:#92400e;font-weight:800;">(Você)</span>' : '') + '</div>' +
+            '<div style="font-size:12px;color:#92400e;">' + pessoas + ' pessoa' + (pessoas > 1 ? 's' : '') + ' · esperando há ' + escFila(espera) + '</div>' +
+            '</div>' +
+            '<span style="flex:0 0 auto;font-size:11px;font-weight:700;color:' + (ehEu ? '#d97706' : '#b45309') + ';">' + escFila(r.status || 'Esperando') + '</span>' +
+            '</div>';
+        }).join('');
+      }
+    }
+
+    window.aceitarMesaOfertadaFila = function (id, mesaName) {
+      if (!confirm('Confirmar entrada na ' + mesaName + '?')) return;
+      if (typeof socket !== 'undefined' && socket) {
+        socket.emit('cliente_aceitou_mesa_fila', { id: id, mesaName: mesaName });
+      }
+      alert('Otimo! Voce aceitou a ' + mesaName + '. Por favor, dirija-se a mesa.');
+      window.location.href = 'cardapio.html?mesa=' + encodeURIComponent(mesaName) + '&restaurante_id=' + encodeURIComponent(restauranteId);
+    };
+
+    window.recusarMesaOfertadaFila = function (id, mesaName) {
+      if (!confirm('Deseja aguardar a proxima mesa e liberar a ' + mesaName + '?')) return;
+      if (typeof socket !== 'undefined' && socket) {
+        socket.emit('cliente_recusou_mesa_fila', { id: id, mesaName: mesaName });
+      }
+    };
+
+    window.filaCadastrarCliente = function () {
+      const nome = (document.getElementById('input-fila-cadastro-nome') || {}).value || '';
+      const telefone = (document.getElementById('input-fila-cadastro-telefone') || {}).value || '';
+      const pessoas = parseInt((document.getElementById('input-fila-cadastro-pessoas') || {}).value) || 2;
+      const preferencia = (document.getElementById('input-fila-cadastro-preferencia') || {}).value || '';
+      const obs = (document.getElementById('input-fila-cadastro-obs') || {}).value || '';
+
+      if (!nome.trim()) return alert('Por favor, informe seu nome.');
+      if (!telefone.trim()) return alert('Por favor, informe seu telefone/WhatsApp.');
+
+      const btn = document.getElementById('btn-fila-cadastrar');
+      if (btn) { btn.innerText = 'Entrando na fila...'; btn.disabled = true; btn.style.opacity = '0.7'; }
+
+      const perfilDados = { nome: nome.trim(), telefone: telefone.trim() };
+      crmPerfil = perfilDados;
+      localStorage.setItem('cliente_perfil', JSON.stringify(perfilDados));
+
+      socket.emit('identificar_cliente_qr', { nome: perfilDados.nome, telefone: perfilDados.telefone, data_nascimento: '' }, function () { });
+
+      socket.emit('adicionar_fila_espera', {
+        cliente_nome: nome.trim(),
+        cliente_telefone: telefone.trim(),
+        pessoas: pessoas,
+        mesa_preferida: preferencia.trim(),
+        observacao: obs.trim()
+      });
+
+      if (btn) { btn.innerHTML = '<i class="ph ph-spinner" style="font-size:18px; animation: spin 1s linear infinite;"></i> Cadastrando...'; }
+
+      setTimeout(function () {
+        socket.emit('get_fila_espera');
+      }, 800);
+    };
+
+    function atualizarFilaEsperaCliente(rows) {
+      if (!MODO_FILA || !bannerFila) return;
+      const perfil = perfilClienteAtual();
+      const lista = rows || [];
+
+      bannerFila.style.display = 'block';
+
+      if (!perfil) {
+        if (filaCadastroForm) filaCadastroForm.style.display = 'block';
+        if (filaStatusConteudo) filaStatusConteudo.display = 'none';
+        if (filaFormOverlay) filaFormOverlay.style.display = 'flex';
+        return;
+      }
+
+      const telCliente = String(perfil.telefone || '').replace(/\D/g, '');
+      const nomeCliente = String(perfil.nome || '').toLowerCase().trim();
+      let idx = -1;
+      for (let i = 0; i < lista.length; i++) {
+        const r = lista[i];
+        const telRow = String(r.cliente_telefone || '').replace(/\D/g, '');
+        const nomeRow = String(r.cliente_nome || '').toLowerCase().trim();
+        if (telCliente && telRow && telRow === telCliente) { idx = i; break; }
+        if (nomeCliente && nomeRow && nomeRow === nomeCliente) { idx = i; break; }
+      }
+
+      if (idx < 0) {
+        if (filaCadastroForm) filaCadastroForm.style.display = 'block';
+        if (filaStatusConteudo) filaStatusConteudo.display = 'none';
+        if (filaFormOverlay) filaFormOverlay.style.display = 'flex';
+        return;
+      }
+
+      if (filaCadastroForm) filaCadastroForm.style.display = 'none';
+      if (filaStatusConteudo) filaStatusConteudo.display = 'block';
+      if (filaFormOverlay) filaFormOverlay.style.display = 'none';
+      if (badgeFilaPos) badgeFilaPos.textContent = '#' + (idx + 1);
+
+      const offerContainer = document.getElementById('cardapio-offer-container');
+      if (offerContainer) {
+        if (idx >= 0 && (lista[idx].status === 'Mesa Ofertada' || lista[idx].mesa_ofertada)) {
+          const item = lista[idx];
+          const mesa = item.mesa_ofertada || 'uma mesa';
+          offerContainer.style.display = 'block';
+          offerContainer.innerHTML =
+            '<div style="background:#f0fdf4; border:2px solid #22c55e; border-radius:14px; padding:16px; margin:12px 0; text-align:center; box-shadow:0 4px 12px rgba(34,197,94,0.15);">' +
+            '<div style="font-size: 26px; margin-bottom: 4px;">🎉</div>' +
+            '<h3 style="margin: 0 0 6px 0; color: #15803d; font-size: 18px;">A ' + escFila(mesa) + ' esta liberada para voce!</h3>' +
+            '<p style="margin: 0 0 14px 0; font-size: 13px; color: #166534;">Deseja aceitar e ir para a <strong>' + escFila(mesa) + '</strong> agora ou aguardar a proxima?</p>' +
+            '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">' +
+            '<button onclick="window.aceitarMesaOfertadaFila(' + item.id + ', \'' + escFila(mesa) + '\')" style="background: #22c55e; color: white; border: none; padding: 12px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13.5px; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(34,197,94,0.3);">' +
+            '<i class="ph ph-check-circle" style="font-size: 18px;"></i> Aceitar e Ir para a ' + escFila(mesa) +
+            '</button>' +
+            '<button onclick="window.recusarMesaOfertadaFila(' + item.id + ', \'' + escFila(mesa) + '\')" style="background: #ffffff; color: #64748b; border: 1px solid #cbd5e1; padding: 12px 14px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12.5px; display: flex; align-items: center; gap: 6px;">' +
+            '<i class="ph ph-arrow-u-up-right"></i> Aguardar Proxima Mesa' +
+            '</button>' +
+            '</div>' +
+            '</div>';
+        } else {
+          offerContainer.style.display = 'none';
+        }
+      }
+
+      renderFilaEsperaLista(lista, idx, perfil);
+    }
+
+    window.chamarGarcomFilaGrande = () => {
+      if (typeof window.chamarGarcom === 'function') window.chamarGarcom();
+      else document.getElementById('fab-garcom').click();
+    };
+
+    if (MODO_FILA) {
+      const p = perfilClienteAtual();
+      const mBadge = document.getElementById('mesa-badge');
+      if (mBadge) mBadge.innerText = (p && p.nome) ? p.nome : 'Fila de Espera';
+
+      bannerFila.style.display = 'block';
+      if (p && p.nome) {
+        if (filaCadastroForm) filaCadastroForm.style.display = 'none';
+        if (filaStatusConteudo) filaStatusConteudo.display = 'block';
+        if (filaFormOverlay) filaFormOverlay.style.display = 'none';
+      } else {
+        if (filaCadastroForm) filaCadastroForm.style.display = 'block';
+        if (filaStatusConteudo) filaStatusConteudo.display = 'none';
+        if (filaFormOverlay) filaFormOverlay.style.display = 'flex';
+      }
+    }
+
+    if (typeof socket !== 'undefined' && socket) {
+      socket.on('fila_espera_atualizada', atualizarFilaEsperaCliente);
+      if (MODO_FILA) {
+        socket.emit('get_fila_espera');
+      }
+
+      // --- AVISO DO CAIXA PARA CLIENTE NA FILA ---
+      let currentFilaId = null;
+      socket.on('fila_aviso_cliente', (data) => {
+        const msg = data && data.mensagem ? data.mensagem : '';
+        if (!msg) return;
+        const overlay = document.createElement('div');
+        overlay.id = 'fila-aviso-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);font-family:Inter,sans-serif;';
+        overlay.innerHTML =
+          '<div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:slideUp .3s ease;">' +
+          '<div style="font-size:42px;margin-bottom:10px;">📢</div>' +
+          '<h2 style="margin:0 0 8px;color:#1e293b;font-size:18px;">Aviso do Caixa</h2>' +
+          '<p style="margin:0 0 20px;color:#475569;font-size:15px;line-height:1.5;">' + escFila(msg) + '</p>' +
+          '<button onclick="this.closest(\'#fila-aviso-overlay\').remove()" style="padding:12px 32px;background:#6c5ce7;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">Entendi</button>' +
+          '</div>';
+        document.body.appendChild(overlay);
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      });
+
+      // --- MESA LIBERADA PELO CAIXA: redirecionar automaticamente para o cardapio da mesa ---
+      socket.on('fila_mesa_liberada', (data) => {
+        if (!data || !data.mesa) return;
+        const mesa = data.mesa;
+        const msg = data.mensagem || 'Sua mesa esta pronta!';
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);font-family:Inter,sans-serif;';
+        overlay.innerHTML =
+          '<div style="background:white;border-radius:20px;padding:32px 28px;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:slideUp .3s ease;">' +
+          '<div style="font-size:48px;margin-bottom:10px;">🎉</div>' +
+          '<h2 style="margin:0 0 6px;color:#15803d;font-size:20px;">' + escFila(mesa) + ' Liberada!</h2>' +
+          '<p style="margin:0 0 16px;color:#475569;font-size:14px;">' + escFila(msg) + '</p>' +
+          '<div style="font-size:13px;color:#94a3b8;margin-bottom:16px;">Redirecionando em <span id="fila-redirect-countdown">3</span>s...</div>' +
+          '</div>';
+        document.body.appendChild(overlay);
+        if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+        let count = 3;
+        const cdEl = overlay.querySelector('#fila-redirect-countdown');
+        const timer = setInterval(() => {
+          count--;
+          if (cdEl) cdEl.textContent = count;
+          if (count <= 0) {
+            clearInterval(timer);
+            window.location.href = 'cardapio.html?mesa=' + encodeURIComponent(mesa) + '&restaurante_id=' + encodeURIComponent(restauranteId);
+          }
+        }, 1000);
+      });
+
+      // Junta sala de fila quando o cliente é identificado
+      function joinFilaRoom(filaId) {
+        if (filaId && filaId !== currentFilaId) {
+          currentFilaId = filaId;
+          socket.emit('fila_cliente_join', filaId);
+        }
+      }
+
+      // Hook no atualizarFilaEsperaCliente para capturar o fila_id
+      const _origAtualizar = atualizarFilaEsperaCliente;
+      atualizarFilaEsperaCliente = function(rows) {
+        _origAtualizar(rows);
+        if (!MODO_FILA) return;
+        const perfil = perfilClienteAtual();
+        if (!perfil || !rows) return;
+        const telCliente = String(perfil.telefone || '').replace(/\D/g, '');
+        const nomeCliente = String(perfil.nome || '').toLowerCase().trim();
+        for (let i = 0; i < rows.length; i++) {
+          const r = rows[i];
+          const telRow = String(r.cliente_telefone || '').replace(/\D/g, '');
+          const nomeRow = String(r.cliente_nome || '').toLowerCase().trim();
+          if ((telCliente && telRow && telRow === telCliente) || (nomeCliente && nomeRow && nomeRow === nomeCliente)) {
+            joinFilaRoom(r.id);
+            break;
+          }
+        }
+      };
+      socket.removeListener('fila_espera_atualizada', _origAtualizar);
+      socket.on('fila_espera_atualizada', atualizarFilaEsperaCliente);
+    }
+  </script>
+
+
+  <script src="/fullscreen.js"></script>
+
+  <!-- ═══ RESERVA FUTURA: botão flutuante + modal (cliente agenda mesa p/ data) ═══ -->
+  <div class="area-colaborador-btns" style="display:none;">
+    <div id="btn-reservar-flutuante" onclick="abrirModalReserva()" style="position:fixed;bottom:84px;right:16px;z-index:9000;background:#0ea5e9;color:white;border:none;border-radius:50px;padding:12px 20px;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 6px 18px rgba(14,165,233,0.45);display:flex;align-items:center;gap:8px;">
+      <span style="font-size:17px;">📅</span> Reservar
+    </div>
+  </div>
+  <div id="modal-reserva-futura" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.65);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)fecharModalReserva()">
+    <div style="background:white;color:#1e293b;border-radius:18px;max-width:430px;width:100%;max-height:88vh;overflow-y:auto;padding:22px;">
+      <h3 style="margin:0 0 4px;font-size:19px;">📅 Reservar sua mesa</h3>
+      <p id="reserva-prazo-info" style="margin:0 0 14px;font-size:12.5px;color:#64748b;">Carregando prazo...</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:700;">Data<span style="color:red;">*</span>
+          <input type="date" id="res-c-data" style="width:100%;padding:9px;border-radius:8px;border:1px solid #cbd5e1;font-size:14px;margin-top:3px;">
+        </label>
+        <label style="font-size:12px;font-weight:700;">Horário
+          <input type="time" id="res-c-hora" value="19:00" style="width:100%;padding:9px;border-radius:8px;border:1px solid #cbd5e1;font-size:14px;margin-top:3px;">
+        </label>
+      </div>
+      <label style="font-size:12px;font-weight:700;display:block;">Mesa desejada
+        <select id="res-c-mesa" style="width:100%;padding:9px;border-radius:8px;border:1px solid #cbd5e1;font-size:14px;margin-top:3px;"><option>Carregando mesas...</option></select>
+      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+        <label style="font-size:12px;font-weight:700;">Pessoas
+          <input type="number" id="res-c-pessoas" min="1" max="50" value="2" style="width:100%;padding:9px;border-radius:8px;border:1px solid #cbd5e1;font-size:14px;margin-top:3px;">
+        </label>
+        <label style="font-size:12px;font-weight:700;">Seu telefone<span style="color:red;">*</span>
+          <input type="tel" id="res-c-telefone" placeholder="(11) 99999-0000" style="width:100%;padding:9px;border-radius:8px;border:1px solid #cbd5e1;font-size:14px;margin-top:3px;">
+        </label>
+      </div>
+      <label style="font-size:12px;font-weight:700;display:block;margin-top:10px;">Seu nome<span style="color:red;">*</span>
+        <input type="text" id="res-c-nome" placeholder="Como você se chama?" style="width:100%;padding:9px;border-radius:8px;border:1px solid #cbd5e1;font-size:14px;margin-top:3px;">
+      </label>
+      <label style="font-size:12px;font-weight:700;display:block;margin-top:10px;">Observação <span style="font-weight:400;color:#94a3b8;">(ex.: é meu aniversário!)</span>
+        <textarea id="res-c-obs" rows="2" maxlength="400" style="width:100%;padding:9px;border-radius:8px;border:1px solid #cbd5e1;font-size:13px;margin-top:3px;resize:none;"></textarea>
+      </label>
+      <div id="res-c-resultado" style="display:none;margin-top:12px;padding:11px 14px;border-radius:10px;font-size:13px;"></div>
+      <button onclick="enviarReservaCliente()" id="btn-enviar-reserva" style="width:100%;margin-top:14px;padding:13px;background:#0ea5e9;color:white;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;">Confirmar Reserva</button>
+      <button onclick="verMinhasReservas()" style="width:100%;margin-top:8px;padding:10px;background:#f1f5f9;color:#334155;border:none;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;">Ver minhas reservas / fazer check-in</button>
+      <button onclick="fecharModalReserva()" style="width:100%;margin-top:6px;padding:8px;background:none;color:#94a3b8;border:none;font-size:12px;cursor:pointer;">Fechar</button>
+    </div>
+  </div>
+  <script>
+  (function () {
+    'use strict';
+    var rid = new URLSearchParams(location.search).get('restaurante_id') || localStorage.getItem('restaurante_id') || '1';
+    var API = '';
+    function q(id) { return document.getElementById(id); }
+
+    window.abrirModalReserva = function () {
+      var m = q('modal-reserva-futura');
+      if (!m) return;
+      m.style.display = 'flex';
+      var hoje = new Date(); hoje.setMinutes(hoje.getMinutes() - hoje.getTimezoneOffset());
+      q('res-c-data').min = hoje.toISOString().slice(0, 10);
+      fetch(API + '/api/reservas/config?restaurante_id=' + rid).then(function (r) { return r.json(); }).then(function (cfg) {
+        if (cfg && cfg.ok) {
+          q('reserva-prazo-info').textContent = cfg.prazo_max_dias > 0
+            ? '✓ Reservas confirmadas na hora até ' + cfg.prazo_max_dias + ' dias à frente. Além disso, o restaurante analisa e entra em contato.'
+            : 'Todas as reservas passam pela análise do restaurante — eles entram em contato pelo telefone.';
+        }
+      }).catch(function () {});
+      carregarMesas();
+    };
+    window.fecharModalReserva = function () { var m = q('modal-reserva-futura'); if (m) m.style.display = 'none'; };
+
+    function carregarMesas() {
+      var data = q('res-c-data').value || new Date().toISOString().slice(0, 10);
+      fetch(API + '/api/reservas/disponibilidade?data=' + data + '&restaurante_id=' + rid).then(function (r) { return r.json(); }).then(function (d) {
+        var sel = q('res-c-mesa');
+        if (!d || !d.ok) { sel.innerHTML = '<option>Erro ao carregar mesas</option>'; return; }
+        var ocupadas = {};
+        (d.reservas_do_dia || []).forEach(function (r) { if (r.status !== 'cancelada') ocupadas[r.mesa] = true; });
+        sel.innerHTML = (d.mesas || []).map(function (m) {
+          var tomada = ocupadas[m.nome];
+          return '<option value="' + m.nome.replace(/"/g, '&quot;') + '"' + (tomada ? ' disabled' : '') + '>' + m.nome + (tomada ? ' — já reservada neste dia' : '') + '</option>';
+        }).join('') || '<option>Nenhuma mesa disponível</option>';
+      }).catch(function () {});
+    }
+    q('res-c-data').addEventListener('change', carregarMesas);
+
+    window.enviarReservaCliente = function () {
+      var btn = q('btn-enviar-reserva');
+      var body = {
+        mesa_nome: q('res-c-mesa').value,
+        data: q('res-c-data').value,
+        horario: q('res-c-hora').value || '19:00',
+        pessoas: parseInt(q('res-c-pessoas').value, 10) || 2,
+        nome: q('res-c-nome').value.trim(),
+        telefone: q('res-c-telefone').value.trim(),
+        observacao: q('res-c-obs').value.trim()
+      };
+      var box = q('res-c-resultado');
+      box.style.display = 'none';
+      if (!body.mesa_nome || !body.data || !body.nome || !body.telefone) {
+        box.style.display = 'block'; box.style.background = '#fef3c7'; box.style.color = '#92400e';
+        box.textContent = 'Preencha os campos obrigatórios (*).'; return;
+      }
+      btn.disabled = true; btn.textContent = 'Enviando...';
+      fetch(API + '/api/reservas?restaurante_id=' + rid, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        btn.disabled = false; btn.textContent = 'Confirmar Reserva';
+        box.style.display = 'block';
+        box.style.background = data.ok ? '#dcfce7' : '#fee2e2';
+        box.style.color = data.ok ? '#166534' : '#991b1b';
+        box.textContent = (data.mensagem || data.erro || '');
+        if (data.ok) {
+          try { localStorage.setItem('cc_meu_telefone_reserva', body.telefone.replace(/\D/g, '')); } catch (e) {}
+        }
+      }).catch(function () {
+        btn.disabled = false; btn.textContent = 'Confirmar Reserva';
+        box.style.display = 'block'; box.style.background = '#fee2e2'; box.style.color = '#991b1b';
+        box.textContent = 'Erro de conexão. Tente novamente.';
+      });
+    };
+
+    window.verMinhasReservas = function () {
+      var tel = (localStorage.getItem('cc_meu_telefone_reserva') || q('res-c-telefone').value.replace(/\D/g, '') || '');
+      tel = tel || prompt('Telefone usado na reserva (só números):') || '';
+      tel = tel.replace(/\D/g, '');
+      if (!tel) return;
+      try { localStorage.setItem('cc_meu_telefone_reserva', tel); } catch (e) {}
+      fetch(API + '/api/reservas/minhas?telefone=' + tel + '&restaurante_id=' + rid).then(function (r) { return r.json(); }).then(function (d) {
+        var box = q('res-c-resultado');
+        box.style.display = 'block';
+        if (!d || !d.ok || !(d.reservas || []).length) {
+          box.style.background = '#f1f5f9'; box.style.color = '#334155';
+          box.textContent = 'Nenhuma reserva encontrada para este telefone.'; return;
+        }
+        box.style.background = '#eff6ff'; box.style.color = '#1e40af';
+        var linhas = d.reservas.map(function (r) {
+          var hoje = new Date(); hoje.setMinutes(hoje.getMinutes() - hoje.getTimezoneOffset());
+          var ehHoje = r.data_reserva === hoje.toISOString().slice(0, 10);
+          var podeCheckin = ehHoje && r.status === 'confirmada';
+          return '<div style="margin-bottom:6px;">📌 <strong>' + r.data_reserva.split('-').reverse().join('/') + '</strong> às ' + r.horario +
+            ' — ' + r.mesa_nome + ' (' + ({ confirmada: 'confirmada', checkin: 'check-in ✓', pendente_aprovacao: 'aguardando restaurante', cancelada: 'cancelada' }[r.status] || r.status) + ')' +
+            (podeCheckin ? ' <button onclick="fazerCheckinReserva(\'' + r.id + '\')" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:4px 12px;font-weight:800;cursor:pointer;font-size:12px;margin-left:6px;">Fazer check-in</button>' : '') +
+            '</div>';
+        }).join('');
+        box.innerHTML = '<strong>Suas reservas:</strong><br>' + linhas;
+      });
+    };
+
+    window.fazerCheckinReserva = function (id) {
+      var tel = localStorage.getItem('cc_meu_telefone_reserva') || '';
+      fetch(API + '/api/reservas/checkin?restaurante_id=' + rid, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: parseInt(id, 10), telefone: tel })
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        var box = q('res-c-resultado');
+        box.style.display = 'block';
+        box.style.background = d.ok ? '#dcfce7' : '#fee2e2';
+        box.style.color = d.ok ? '#166534' : '#991b1b';
+        box.textContent = d.mensagem || d.erro || '';
+        if (d.ok) verMinhasReservas();
+      });
+    };
+  })();
+  </script>
+
+
+  <!-- MODAL DO TOUR GASTRONÔMICO IMERSIVO -->
+  <div id="modal-tour-imersivo" class="tour-modal-overlay" onclick="if(event.target===this) window.fecharTourGastronomico()">
+    <div class="tour-modal-card">
+      
+      <!-- Cabeçalho com Indicadores de Etapas -->
+      <div class="tour-card-header">
+        <div class="tour-step-indicators">
+          <div class="tour-step-dot active" id="tour-dot-0"></div>
+          <div class="tour-step-dot" id="tour-dot-1"></div>
+          <div class="tour-step-dot" id="tour-dot-2"></div>
+          <div class="tour-step-dot" id="tour-dot-3"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; font-weight: 800;" id="tour-capitulo-tag">Capítulo 1 de 4</span>
+            <h3 style="font-size: 18px; font-weight: 900; margin: 2px 0 0 0;" id="tour-capitulo-titulo">Nossa História & Paixão</h3>
+          </div>
+          <button onclick="window.fecharTourGastronomico()" style="background: rgba(255,255,255,0.2); border: none; width: 32px; height: 32px; border-radius: 50%; color: white; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+        </div>
+      </div>
+
+      <!-- Corpo do Slide Atual -->
+      <div class="tour-card-body" id="tour-conteudo-dinamico">
+        <!-- Renderizado dinamicamente por JS -->
+      </div>
+
+      <!-- Rodapé de Navegação do Tour -->
+      <div style="padding: 16px 20px; border-top: 1px solid var(--border, #e2e8f0); display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--bg, #f8fafc);">
+        <button id="tour-btn-anterior" onclick="window.navegarTour(-1)" style="padding: 11px 16px; border-radius: 12px; background: transparent; border: 1px solid var(--border, #cbd5e1); color: var(--text-muted, #64748b); font-weight: 700; font-size: 13px; cursor: pointer;">
+          Anterior
+        </button>
+        <div style="display: flex; gap: 8px; flex: 1; justify-content: flex-end;">
+          <button id="tour-btn-proximo" onclick="window.navegarTour(1)" style="flex: 1; padding: 12px 18px; border-radius: 12px; background: #fc4b15; border: none; color: white; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(252,75,21,0.3);">
+            <span>Próximo</span> <i class="ph-bold ph-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>
+
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// 1. BARRA DE LEITURA / PROGRESSO FIXA NO TOPO
+// ══════════════════════════════════════════════════════════════════
+window.addEventListener('scroll', () => {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = docHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / docHeight) * 100)) : 0;
+  const bar = document.getElementById('menu-reading-progress');
+  if (bar) bar.style.width = progress + '%';
+}, { passive: true });
+
+// ══════════════════════════════════════════════════════════════════
+// 2. TRACKING DE DWELL TIME & RE-VISITAS (HEATMAP DE INTERESSE)
+// ══════════════════════════════════════════════════════════════════
+window._itemEngajamento = new Map();
+let _itemAbertoId = null;
+let _itemAbertoTimestamp = 0;
+
+function trackItemViewStart(itemId) {
+  _itemAbertoId = itemId;
+  _itemAbertoTimestamp = Date.now();
+  
+  const current = window._itemEngajamento.get(itemId) || { id: itemId, tempoSegundos: 0, revisitas: 0, adicionou: false };
+  current.revisitas += 1;
+  window._itemEngajamento.set(itemId, current);
+}
+
+function trackItemViewEnd(itemId, adicionouAoCarrinho = false) {
+  if (_itemAbertoTimestamp > 0 && _itemAbertoId === itemId) {
+    const duracaoSegundos = Math.round((Date.now() - _itemAbertoTimestamp) / 1000);
+    const current = window._itemEngajamento.get(itemId) || { id: itemId, tempoSegundos: 0, revisitas: 1, adicionou: false };
+    current.tempoSegundos += duracaoSegundos;
+    if (adicionouAoCarrinho) current.adicionou = true;
+    window._itemEngajamento.set(itemId, current);
+
+    // Enviar dados para o backend em tempo real para a IA do Dono
+    if (window.socket && window.socket.emit) {
+      const prod = (typeof MENU !== 'undefined' && MENU.find(x => x.id === itemId));
+      window.socket.emit('cardapio_analytics_engajamento', {
+        restaurante_id: typeof restauranteId !== 'undefined' ? restauranteId : (localStorage.getItem('restaurante_id') || '1'),
+        mesa: typeof mesaParam !== 'undefined' ? mesaParam : (localStorage.getItem('chef_mesa') || 'Mesa'),
+        produtoId: itemId,
+        produtoNome: prod ? prod.nome : 'Item',
+        tempoSegundos: duracaoSegundos,
+        revisitas: current.revisitas,
+        adicionouCarrinho: adicionouAoCarrinho
+      });
+    }
+
+    _itemAbertoId = null;
+    _itemAbertoTimestamp = 0;
+
+    // Verificar se deve exibir recomendação dinâmica "Você quase pediu isso!"
+    verificarSugestaoInteresse();
+  }
+}
+
+function verificarSugestaoInteresse() {
+  const banner = document.getElementById('banner-interesse-cliente');
+  if (!banner || typeof MENU === 'undefined') return;
+
+  // Encontrar o item não adicionado com maior engajamento (mais tempo ou revisitas)
+  let melhorCandidato = null;
+  let maxScore = 0;
+
+  window._itemEngajamento.forEach((data, id) => {
+    if (!data.adicionou) {
+      const score = data.tempoSegundos + (data.revisitas * 6);
+      if (score >= 8 && score > maxScore) {
+        maxScore = score;
+        melhorCandidato = MENU.find(x => x.id === id);
+      }
+    }
+  });
+
+  if (melhorCandidato) {
+    document.getElementById('banner-interesse-emoji').innerText = melhorCandidato.emoji || '🔥';
+    document.getElementById('banner-interesse-titulo').innerText = `Você ficou de olho em ${melhorCandidato.nome}!`;
+    document.getElementById('banner-interesse-sub').innerText = `R$ ${parseFloat(melhorCandidato.preco).toFixed(2).replace('.', ',')} • Receita especial do Chef`;
+    
+    const btn = document.getElementById('banner-interesse-btn-add');
+    btn.onclick = () => {
+      if (typeof window.adicionarDiretoAoCarrinho === 'function') {
+        window.adicionarDiretoAoCarrinho(melhorCandidato.id);
+      } else if (typeof window.abrirItemDetails === 'function') {
+        window.abrirItemDetails(melhorCandidato.id);
+      }
+      banner.style.display = 'none';
+      const d = window._itemEngajamento.get(melhorCandidato.id);
+      if (d) d.adicionou = true;
+    };
+
+    banner.style.display = 'block';
+  }
+}
+
+// Hook nos métodos existentes de abrir/fechar detalhes
+const originalAbrirDetails = window.abrirItemDetails;
+window.abrirItemDetails = function(id) {
+  trackItemViewStart(id);
+  if (originalAbrirDetails) originalAbrirDetails(id);
+};
+
+const originalFecharDetails = window.fecharItemDetails;
+window.fecharItemDetails = function() {
+  if (_itemAbertoId) trackItemViewEnd(_itemAbertoId, false);
+  if (originalFecharDetails) originalFecharDetails();
+};
+
+const originalAdicionarCarrinho = window.adicionarItemAoCarrinho;
+window.adicionarItemAoCarrinho = function() {
+  if (_itemAbertoId) trackItemViewEnd(_itemAbertoId, true);
+  if (originalAdicionarCarrinho) originalAdicionarCarrinho();
+};
+
+// ══════════════════════════════════════════════════════════════════
+// 3. MODO TOUR GASTRONÔMICO IMERSIVO DA CASA
+// ══════════════════════════════════════════════════════════════════
+let _tourEtapaAtual = 0;
+
+window.abrirTourGastronomico = function() {
+  _tourEtapaAtual = 0;
+  renderizarEtapaTour();
+  document.getElementById('modal-tour-imersivo').style.display = 'flex';
+};
+
+window.fecharTourGastronomico = function() {
+  document.getElementById('modal-tour-imersivo').style.display = 'none';
+};
+
+window.navegarTour = function(delta) {
+  _tourEtapaAtual += delta;
+  if (_tourEtapaAtual < 0) _tourEtapaAtual = 0;
+  if (_tourEtapaAtual > 3) {
+    window.fecharTourGastronomico();
+    if (typeof window.abrirCarrinho === 'function' && typeof CART !== 'undefined' && CART.length > 0) {
+      window.abrirCarrinho();
+    }
+    return;
+  }
+  renderizarEtapaTour();
+};
+
+let _customTourConfig = null;
+try {
+  fetch('/api/config?restaurante_id=' + encodeURIComponent(typeof restauranteId !== 'undefined' ? restauranteId : (localStorage.getItem('restaurante_id') || '1')))
+    .then(r => r.json())
+    .then(cfg => {
+      if (cfg && cfg.tour_gastronomico) {
+        try {
+          _customTourConfig = typeof cfg.tour_gastronomico === 'string' ? JSON.parse(cfg.tour_gastronomico) : cfg.tour_gastronomico;
+        } catch(e) {}
+      }
+    }).catch(() => {});
+} catch(e) {}
+
+function renderizarEtapaTour() {
+  // Atualizar dots
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('tour-dot-' + i);
+    if (dot) dot.className = 'tour-step-dot' + (i === _tourEtapaAtual ? ' active' : '');
+  }
+
+  const tag = document.getElementById('tour-capitulo-tag');
+  const titulo = document.getElementById('tour-capitulo-titulo');
+  const conteudo = document.getElementById('tour-conteudo-dinamico');
+  const btnProximo = document.getElementById('tour-btn-proximo');
+
+  if (_tourEtapaAtual === 0) {
+    tag.innerText = 'Capítulo 1 de 4';
+    titulo.innerText = (_customTourConfig && _customTourConfig.titulo) ? _customTourConfig.titulo : 'Nossa História & Tradição';
+    const textoHist = (_customTourConfig && _customTourConfig.historia) ? _customTourConfig.historia : '${textoHist}';
+    conteudo.innerHTML = `
+      <div style="text-align:center; padding:10px 0;">
+        <div style="font-size:48px; margin-bottom:10px;">👨‍🍳🔥🥩</div>
+        <h4 style="font-size:16px; font-weight:800; color:var(--text); margin-bottom:8px;">Paixão pela Gastronomia Artesanal</h4>
+        <p style="font-size:13.5px; color:var(--text-muted); line-height:1.6; margin-bottom:12px;">
+          Bem-vindo à nossa mesa! Cada prato é preparado com ingredientes frescos selecionados diariamente, cortes nobres maturados e temperos frescos que garantem uma experiência inesquecível.
+        </p>
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:16px; padding:14px; text-align:left;">
+          <div style="font-size:12.5px; font-weight:700; color:var(--primary); margin-bottom:4px;">✨ Nossa Metodologia de Preparo:</div>
+          <ul style="font-size:12px; color:var(--text-muted); padding-left:18px; line-height:1.5;">
+            <li>Cocção lenta no ponto perfeito para máxima suculência.</li>
+            <li>Frituras sequinhas e crocantes em óleo de alta qualidade.</li>
+            <li>Molhos e temperos autorais da casa feitos do zero.</li>
+          </ul>
+        </div>
+      </div>
+    `;
+    btnProximo.innerHTML = '<span>Ver Entradas</span> <i class="ph-bold ph-arrow-right"></i>';
+  } else if (_tourEtapaAtual === 1) {
+    tag.innerText = 'Capítulo 2 de 4';
+    titulo.innerText = 'Para Abrir o Apetite (Entradas)';
+    
+    // Buscar itens de entradas / porções
+    let entradas = (typeof MENU !== 'undefined') ? MENU.filter(m => {
+      const cat = (m.categoria || m.category || '').toLowerCase();
+      const nome = (m.nome || m.name || '').toLowerCase();
+      return cat.includes('entrada') || cat.includes('porç') || cat.includes('petisco') || nome.includes('pastel') || nome.includes('bolinho') || nome.includes('frita');
+    }).slice(0, 4) : [];
+
+    if (entradas.length === 0 && typeof MENU !== 'undefined') entradas = MENU.slice(0, 3);
+
+    const itensHtml = entradas.map(item => `
+      <div class="tour-item-row">
+        <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+          <span style="font-size:26px; flex-shrink:0;">${item.emoji || '🥟'}</span>
+          <div style="min-width:0; flex:1;">
+            <strong style="font-size:13.5px; color:var(--text); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.nome || item.name}</strong>
+            <span style="font-size:12px; font-weight:800; color:var(--primary);">R$ ${parseFloat(item.preco || item.price).toFixed(2).replace('.', ',')}</span>
+          </div>
+        </div>
+        <button onclick="window.adicionarItemTourDireto(${item.id})" style="padding:8px 12px; border-radius:10px; background:#fc4b15; color:white; border:none; font-weight:800; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:4px; box-shadow:0 2px 8px rgba(252,75,21,0.25);">
+          <i class="ph-bold ph-plus"></i> Pedir
+        </button>
+      </div>
+    `).join('');
+
+    conteudo.innerHTML = `
+      <p style="font-size:13px; color:var(--text-muted); margin:0 0 10px 0;">
+        Recomendamos começar com nossos pastéis crocantes, bolinhos artesanais ou batatas rústicas:
+      </p>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        ${itensHtml}
+      </div>
+    `;
+    btnProximo.innerHTML = '<span>Pratos Principais</span> <i class="ph-bold ph-arrow-right"></i>';
+  } else if (_tourEtapaAtual === 2) {
+    tag.innerText = 'Capítulo 3 de 4';
+    titulo.innerText = 'Pratos Principais & Carros-Chefes';
+
+    let pratos = (typeof MENU !== 'undefined') ? MENU.filter(m => {
+      const cat = (m.categoria || m.category || '').toLowerCase();
+      return !cat.includes('bebida') && !cat.includes('entrada') && !cat.includes('sobremesa');
+    }).slice(0, 4) : [];
+
+    if (pratos.length === 0 && typeof MENU !== 'undefined') pratos = MENU.slice(0, 3);
+
+    const itensHtml = pratos.map(item => `
+      <div class="tour-item-row">
+        <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+          <span style="font-size:26px; flex-shrink:0;">${item.emoji || '🍽️'}</span>
+          <div style="min-width:0; flex:1;">
+            <strong style="font-size:13.5px; color:var(--text); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.nome || item.name}</strong>
+            <span style="font-size:12px; font-weight:800; color:var(--primary);">R$ ${parseFloat(item.preco || item.price).toFixed(2).replace('.', ',')}</span>
+          </div>
+        </div>
+        <button onclick="window.adicionarItemTourDireto(${item.id})" style="padding:8px 12px; border-radius:10px; background:#fc4b15; color:white; border:none; font-weight:800; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:4px; box-shadow:0 2px 8px rgba(252,75,21,0.25);">
+          <i class="ph-bold ph-plus"></i> Pedir
+        </button>
+      </div>
+    `).join('');
+
+    conteudo.innerHTML = `
+      <p style="font-size:13px; color:var(--text-muted); margin:0 0 10px 0;">
+        Os cortes mais elogiados pelos nossos clientes, servidos no ponto e com guarnições caprichadas:
+      </p>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        ${itensHtml}
+      </div>
+    `;
+    btnProximo.innerHTML = '<span>Bebidas & Sobremesas</span> <i class="ph-bold ph-arrow-right"></i>';
+  } else {
+    tag.innerText = 'Capítulo 4 de 4';
+    titulo.innerText = 'Bebidas, Drinks & Sobremesas';
+
+    let bebidas = (typeof MENU !== 'undefined') ? MENU.filter(m => {
+      const cat = (m.categoria || m.category || '').toLowerCase();
+      return cat.includes('bebida') || cat.includes('drink') || cat.includes('sobremesa') || cat.includes('doce');
+    }).slice(0, 4) : [];
+
+    if (bebidas.length === 0 && typeof MENU !== 'undefined') bebidas = MENU.slice(0, 3);
+
+    const itensHtml = bebidas.map(item => `
+      <div class="tour-item-row">
+        <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+          <span style="font-size:26px; flex-shrink:0;">${item.emoji || '🍹'}</span>
+          <div style="min-width:0; flex:1;">
+            <strong style="font-size:13.5px; color:var(--text); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.nome || item.name}</strong>
+            <span style="font-size:12px; font-weight:800; color:var(--primary);">R$ ${parseFloat(item.preco || item.price).toFixed(2).replace('.', ',')}</span>
+          </div>
+        </div>
+        <button onclick="window.adicionarItemTourDireto(${item.id})" style="padding:8px 12px; border-radius:10px; background:#fc4b15; color:white; border:none; font-weight:800; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:4px; box-shadow:0 2px 8px rgba(252,75,21,0.25);">
+          <i class="ph-bold ph-plus"></i> Pedir
+        </button>
+      </div>
+    `).join('');
+
+    const cartCount = typeof CART !== 'undefined' ? CART.length : 0;
+    conteudo.innerHTML = `
+      <p style="font-size:13px; color:var(--text-muted); margin:0 0 10px 0;">
+        Para completar sua experiência, confira nossos drinks refrescantes e sobremesas especiais:
+      </p>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+        ${itensHtml}
+      </div>
+      <div style="background:var(--bg); border:1px dashed var(--border); border-radius:14px; padding:12px; text-align:center; font-size:13px; font-weight:700; color:var(--text);">
+        🛒 Itens no seu pedido: <strong style="color:var(--primary);">${cartCount} itens</strong>
+      </div>
+    `;
+    btnProximo.innerHTML = '<span>Finalizar Tour</span> <i class="ph-bold ph-check"></i>';
+  }
+}
+
+window.adicionarItemTourDireto = function(itemId) {
+  const item = (typeof MENU !== 'undefined' && MENU.find(x => x.id === itemId));
+  if (!item) return;
+
+  if (typeof CART !== 'undefined') {
+    const existing = CART.find(x => x.id === item.id);
+    const precoUnit = parseFloat(item.preco || item.price);
+    if (existing) {
+      existing.quantity += 1;
+      existing.total = existing.quantity * precoUnit;
+    } else {
+      CART.push({
+        id: item.id,
+        productName: item.nome || item.name,
+        productEmoji: item.emoji,
+        quantity: 1,
+        preco: precoUnit,
+        obs: '',
+        composicoes: [],
+        sector: item.setor || item.sector || 'Cozinha 1',
+        total: precoUnit
+      });
+    }
+
+    if (typeof atualizarBadgeCarrinho === 'function') atualizarBadgeCarrinho();
+    if (typeof salvarCarrinhoLocalStorage === 'function') salvarCarrinhoLocalStorage();
+    
+    // Notificação visual
+    trackItemViewEnd(item.id, true);
+    
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:800;z-index:9999999;box-shadow:0 8px 25px rgba(0,0,0,0.25);animation:slideToastDown 0.3s ease;';
+    toast.innerHTML = `✓ ${item.nome || item.name} adicionado ao pedido!`;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.remove(); }, 2200);
+
+    renderizarEtapaTour();
+  }
+};
+</script>

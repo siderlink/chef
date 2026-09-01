@@ -4,8 +4,6 @@
   
   // Páginas públicas que não exigem login
   const publicPages = [
-    'site.html',
-    'site',
     'login.html',
     'registro.html',
     'ativacao.html',

@@ -1,0 +1,583 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#fc4b15">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Caixa Mobile - Chef</title>
+  <link rel="icon" href="/icons/icon.ico">
+  <link rel="manifest" href="/manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="stylesheet" href="/pdv-mobile.css">
+
+  <script src="/socket.io.min.js"></script>
+  <script src="/vendor/qrcode/qrcode-generator.js"></script>
+  <script src="/vendor/qrcode/qr-helper.js"></script>
+  <script src="/fuzzy-search.js"></script>
+  <script src="/vendor/html5-qrcode/html5-qrcode.min.js" type="text/javascript"></script>
+
+  <script src="/locales.js"></script>
+  <script src="/broadcast.js"></script>
+  <script src="/i18n.js"></script>
+  <script src="auth.js"></script>
+  <link rel="stylesheet" href="/apple-transitions.css">
+  <script src="/apple-transitions.js" defer></script>
+</head>
+
+<body>
+
+  <!-- Top Header -->
+  <header class="app-header">
+    <div class="app-title">
+      <i class="ph ph-storefront" style="color: var(--primary);"></i>
+      <span>Chef Mobile</span>
+    </div>
+    <div class="app-actions">
+      <button class="header-btn" title="QR do Ponto"
+        onclick="window.abrirZoomQrPontoMobile && window.abrirZoomQrPontoMobile()"><i
+          class="ph ph-qr-code"></i></button>
+      <button class="header-btn"
+        onclick="alert('Central de Notificações em breve! Aqui você receberá avisos como: Garçom chamado na mesa, novo delivery, etc.')"><i
+          class="ph ph-bell"></i></button>
+      <button class="header-btn" onclick="window.location.href='/index.html'"><i class="ph ph-monitor"></i></button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="app-content">
+
+    <!-- View: Mesas -->
+    <section id="view-mesas" class="view-section active">
+      <div class="mesas-filters">
+        <button class="filter-chip active" data-filter="all">Todas (0)</button>
+        <button class="filter-chip" data-filter="ocupada">Ocupadas (0)</button>
+        <button class="filter-chip" data-filter="livre">Livres (0)</button>
+        <button class="filter-chip" data-filter="fechando">Fechando (0)</button>
+      </div>
+
+      <div class="mesas-grid">
+      </div>
+    </section>
+
+    <!-- View: Cardápio (Pedido) -->
+    <section id="view-cardapio" class="view-section">
+      <div class="search-bar-container">
+        <input type="text" id="search-produto" class="search-input" placeholder="Buscar por código ou nome...">
+      </div>
+      <div class="categorias-filters" id="categorias-container">
+        <button class="filter-chip active" data-categoria="all">Todos</button>
+      </div>
+      <div class="produtos-list" id="produtos-container">
+        <div class="p-4" style="text-align: center; color: var(--text-muted); margin-top: 50px;">
+          <i class="ph ph-spinner-gap ph-spin" style="font-size: 32px; color: var(--primary);"></i>
+          <p style="margin-top: 16px;">Carregando cardápio...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- View: Fila de Pedidos -->
+    <section id="view-comanda" class="view-section" style="flex-direction:column;">
+      <div style="text-align:center;padding:40px 16px;color:var(--text-muted);">
+        <i class="ph ph-clock" style="font-size:48px;color:#cbd5e1;margin-bottom:16px;display:block;"></i>
+        <h3>Fila de Pedidos</h3>
+        <p style="margin-top:8px;font-size:14px;">Carregando pedidos...</p>
+      </div>
+    </section>
+
+    <!-- View: Estoque -->
+    <section id="view-estoque" class="view-section" style="flex-direction: column; background: #000;">
+      <div
+        style="padding: 12px 16px; background: rgba(0,0,0,0.9); display: flex; justify-content: space-between; align-items: center; gap: 8px; z-index: 10;">
+        <span style="font-weight: 600; color: white; font-size: 14px;">Leitor de Código de Barras</span>
+        <div style="display: flex; gap: 6px;">
+          <button onclick="abrirModalNota()"
+            style="background:#22c55e;border:none;color:#052e14;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer;"><i
+              class="ph ph-camera"></i> Nova Nota</button>
+          <button onclick="abrirNotasLista()"
+            style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:white;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer;"><i
+              class="ph ph-receipt"></i> Notas</button>
+        </div>
+      </div>
+      <div id="reader" style="flex: 1; width: 100%; height: 100%;"></div>
+      <div id="scan-result-msg"
+        style="padding: 16px; background: rgba(0,0,0,0.8); color: var(--primary); text-align: center; font-weight: 600; display: none;">
+      </div>
+    </section>
+
+    <!-- View: Mais (Ações) -->
+    <section id="view-mais" class="view-section">
+      <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+        <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Ações Rápidas</h3>
+
+        <button onclick="abrirSangriaSuprimento('Sangria')"
+          style="display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border-color);border-radius:12px;padding:14px 16px;cursor:pointer;text-align:left;">
+          <div
+            style="width:40px;height:40px;border-radius:10px;background:#fef2f2;display:flex;align-items:center;justify-content:center;">
+            <i class="ph ph-arrow-up-right" style="font-size:20px;color:#ef4444;"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--text-main);">Sangria</div>
+            <div style="font-size:12px;color:var(--text-muted);">Registrar retirada de caixa</div>
+          </div>
+        </button>
+
+        <button onclick="abrirSangriaSuprimento('Suprimento')"
+          style="display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border-color);border-radius:12px;padding:14px 16px;cursor:pointer;text-align:left;">
+          <div
+            style="width:40px;height:40px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;">
+            <i class="ph ph-arrow-down-left" style="font-size:20px;color:#22c55e;"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--text-main);">Suprimento</div>
+            <div style="font-size:12px;color:var(--text-muted);">Registrar entrada de dinheiro</div>
+          </div>
+        </button>
+
+        <button onclick="chamarGarcom()"
+          style="display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border-color);border-radius:12px;padding:14px 16px;cursor:pointer;text-align:left;">
+          <div
+            style="width:40px;height:40px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;">
+            <i class="ph ph-bell-ringing" style="font-size:20px;color:#3b82f6;"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--text-main);">Chamar Garçom</div>
+            <div style="font-size:12px;color:var(--text-muted);">Enviar notificação para cozinha</div>
+          </div>
+        </button>
+
+        <button onclick="window.location.href='/configuracoes.html'"
+          style="display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border-color);border-radius:12px;padding:14px 16px;cursor:pointer;text-align:left;">
+          <div
+            style="width:40px;height:40px;border-radius:10px;background:#f8fafc;display:flex;align-items:center;justify-content:center;">
+            <i class="ph ph-gear" style="font-size:20px;color:#64748b;"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--text-main);">Configurações</div>
+            <div style="font-size:12px;color:var(--text-muted);">Abrir painel administrativo</div>
+          </div>
+        </button>
+
+        <button onclick="window.location.href='/fila-pedidos.html'"
+          style="display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border-color);border-radius:12px;padding:14px 16px;cursor:pointer;text-align:left;">
+          <div
+            style="width:40px;height:40px;border-radius:10px;background:#faf5ff;display:flex;align-items:center;justify-content:center;">
+            <i class="ph ph-cooking-pot" style="font-size:20px;color:#9c27b0;"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--text-main);">Tela Cozinha</div>
+            <div style="font-size:12px;color:var(--text-muted);">Abrir fila de pedidos KDS</div>
+          </div>
+        </button>
+
+        <button onclick="window.location.href='/painel-funcionario.html'"
+          style="display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border-color);border-radius:12px;padding:14px 16px;cursor:pointer;text-align:left;">
+          <div
+            style="width:40px;height:40px;border-radius:10px;background:#f3e8ff;display:flex;align-items:center;justify-content:center;">
+            <i class="ph ph-users" style="font-size:20px;color:#9b59b6;"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--text-main);">Área do Colaborador</div>
+            <div style="font-size:12px;color:var(--text-muted);">Entrar na área de membros</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Modal Sangria/Suprimento -->
+      <div id="modal-sangria" class="mobile-modal-overlay" onclick="fecharSangria(event)">
+        <div class="mobile-modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-title" id="sangria-titulo">Sangria</div>
+            <button class="modal-close" onclick="fecharSangria()"><i class="ph ph-x"></i></button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div>
+              <label
+                style="font-size:12px;color:var(--text-muted);font-weight:600;display:block;margin-bottom:8px;">Valor
+                (R$)</label>
+              <input type="number" id="sangria-valor" class="form-input" min="0.01" step="0.01" placeholder="0,00"
+                style="font-size:20px;font-weight:700;text-align:right;">
+            </div>
+            <div>
+              <label
+                style="font-size:12px;color:var(--text-muted);font-weight:600;display:block;margin-bottom:8px;">Descrição
+                (Opcional)</label>
+              <input type="text" id="sangria-desc" class="form-input" placeholder="Ex: Troco para motorista">
+            </div>
+            <button class="btn-primary" onclick="confirmarSangriaSuprimento()">Confirmar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a href="#" class="nav-item active" data-target="view-mesas">
+      <i class="ph ph-squares-four"></i>
+      <span>Mesas</span>
+    </a>
+    <a href="#" class="nav-item" data-target="view-cardapio">
+      <i class="ph ph-list-plus"></i>
+      <span>Cardápio</span>
+    </a>
+    <a href="#" class="nav-item" data-target="view-comanda">
+      <i class="ph ph-queue"></i>
+      <span>Fila</span>
+    </a>
+    <a href="#" class="nav-item" data-target="view-estoque">
+      <i class="ph ph-barcode"></i>
+      <span>Estoque</span>
+    </a>
+    <a href="#" class="nav-item" data-target="view-mais">
+      <i class="ph ph-dots-three"></i>
+      <span>Mais</span>
+    </a>
+  </nav>
+
+  <!-- Modal Adicionar Produto -->
+  <div id="modal-produto" class="mobile-modal-overlay" onclick="fecharModalProduto(event)">
+    <div class="mobile-modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-produto-nome">Nome do Produto</div>
+        <button class="modal-close" onclick="fecharModalProduto()"><i class="ph ph-x"></i></button>
+      </div>
+      <div style="color: var(--primary); font-weight: 700; font-size: 18px; text-align: center;"
+        id="modal-produto-preco">R$ 0,00</div>
+
+      <div class="qty-control">
+        <button class="qty-btn" onclick="alterarQtd(-1)"><i class="ph ph-minus"></i></button>
+        <div class="qty-value" id="modal-produto-qtd">1</div>
+        <button class="qty-btn" onclick="alterarQtd(1)"><i class="ph ph-plus"></i></button>
+      </div>
+
+      <input type="text" id="modal-produto-obs" class="form-input" placeholder="Observações (ex: sem cebola)...">
+
+      <div id="modal-produto-comps-section" style="display:none;">
+        <div style="font-size:12px;font-weight:700;color:#8b5cf6;margin-bottom:4px;">Monte o Seu:</div>
+        <div id="modal-produto-montavel-cats"></div>
+        <div id="modal-produto-montavel-preco" style="margin-top:6px;font-weight:700;color:#8b5cf6;font-size:14px;"></div>
+        <input type="hidden" id="modal-produto-composicoes-json" value="[]">
+      </div>
+
+      <button class="btn-primary" onclick="confirmarAdicionarProduto()">Lançar na Mesa</button>
+    </div>
+  </div>
+
+  <!-- Modal Checkout -->
+  <div id="modal-checkout" class="mobile-modal-overlay" onclick="fecharModalCheckout(event)">
+    <div class="mobile-modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">Finalizar Pagamento</div>
+        <button class="modal-close" onclick="fecharModalCheckout()"><i class="ph ph-x"></i></button>
+      </div>
+
+      <div id="checkout-summary" class="checkout-summary"></div>
+
+      <!-- Valor -->
+      <div
+        style="background:#1a202c;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span style="font-size:12px;color:#a0aec0;font-weight:700;">VALOR:</span>
+        <span id="checkout-visor" style="font-size:22px;font-weight:800;color:#48bb78;font-family:monospace;">R$
+          0,00</span>
+      </div>
+
+      <!-- Numpad -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px;">
+        <button onclick="checkoutNumpadPress('1')"
+          style="background:#f1f5f9;border:none;border-radius:10px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;">1</button>
+        <button onclick="checkoutNumpadPress('2')"
+          style="background:#f1f5f9;border:none;border-radius:10px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;">2</button>
+        <button onclick="checkoutNumpadPress('3')"
+          style="background:#f1f5f9;border:none;border-radius:10px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;">3</button>
+        <button onclick="checkoutNumpadClear()"
+          style="background:#fee2e2;border:none;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;color:#ef4444;">C</button>
+        <button onclick="checkoutNumpadPress('4')"
+          style="background:#f1f5f9;border:none;border-radius:10px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;">4</button>
+        <button onclick="checkoutNumpadPress('5')"
+          style="background:#f1f5f9;border:none;border-radius:10px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;">5</button>
+        <button onclick="checkoutNumpadPress('6')"
+          style="background:#f1f5f9;border:none;border-radius:10px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;">6</button>
+        <button onclick="checkoutNumpadTotal()"
+          style="background:#dcfce7;border:none;border-radius:10px;padding:14px;font-size:12px;font-weight:700;cursor:pointer;color:#16a34a;">TOTAL</button>
+        <button onclick="checkoutNumpadPress('7')"
+          style="background:#f1f5f9;border:none;border-radius:10px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;">7</button>
+        <button onclick="checkoutNumpadPress('8')"
+          style="background:#f1f5f9;border:none;border-radius:10px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;">8</button>
+        <button onclick="checkoutNumpadPress('9')"
+          style="background:#f1f5f9;border:none;border-radius:10px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;">9</button>
+        <button onclick="checkoutNumpadPress('00')"
+          style="background:#f1f5f9;border:none;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;">00</button>
+        <button onclick="checkoutNumpadPress('0')"
+          style="background:#f1f5f9;border:none;grid-column:span 2;border-radius:10px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;">0</button>
+        <button onclick="checkoutNumpadPress('BACKSPACE')"
+          style="background:#f1f5f9;border:none;border-radius:10px;padding:14px;font-size:18px;cursor:pointer;"><i
+            class="ph ph-backspace"></i></button>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">
+        Forma de Pagamento</div>
+      <div id="checkout-methods-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- Modal Entrada de Estoque -->
+  <div id="modal-estoque" class="mobile-modal-overlay" onclick="fecharModalEstoque(event)">
+    <div class="mobile-modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">Entrada de Estoque</div>
+        <button class="modal-close" onclick="fecharModalEstoque()"><i class="ph ph-x"></i></button>
+      </div>
+
+      <div id="estoque-produto-nome"
+        style="font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 16px; text-align: center;">Nome
+        do Produto</div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+        <div>
+          <label
+            style="font-size: 12px; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 8px;">Quantidade
+            (Soma ao Atual)</label>
+          <input type="number" id="estoque-qtd" class="form-input" value="1" min="1" step="0.1">
+        </div>
+        <div>
+          <label
+            style="font-size: 12px; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 8px;">Valor
+            de Custo Unitário (R$) (Opcional)</label>
+          <input type="number" id="estoque-custo" class="form-input" value="" min="0" step="0.01" placeholder="0,00">
+        </div>
+        <div>
+          <label
+            style="font-size: 12px; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 8px;">Validade
+            (Opcional)</label>
+          <input type="date" id="estoque-validade" class="form-input">
+        </div>
+        <button class="btn-primary" onclick="confirmarEntradaEstoque()">Salvar Entrada</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nota Fiscal (Entrada de Estoque) -->
+  <div id="modal-nota" class="mobile-modal-overlay" onclick="if(event.target===this)fecharModalNota()">
+    <div class="mobile-modal-content" onclick="event.stopPropagation()"
+      style="max-height:94vh;display:flex;flex-direction:column;">
+      <div class="modal-header">
+        <div class="modal-title">Nota Fiscal de Compra</div>
+        <button class="modal-close" onclick="fecharModalNota()"><i class="ph ph-x"></i></button>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:16px;display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1.4;">
+            <label class="nota-label">Fornecedor</label>
+            <input type="text" id="nota-fornecedor" class="form-input" placeholder="Nome do fornecedor">
+          </div>
+          <div style="flex:0.8;">
+            <label class="nota-label">Número</label>
+            <input type="text" id="nota-numero" class="form-input" placeholder="Nº da nota">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;">
+            <label class="nota-label">Data da nota</label>
+            <input type="date" id="nota-data" class="form-input">
+          </div>
+          <div style="flex:1.4;">
+            <label class="nota-label">Chave de acesso (via QR)</label>
+            <input type="text" id="nota-chave" class="form-input" placeholder="Preenchida ao ler o QR">
+          </div>
+        </div>
+
+        <div style="display:flex;gap:6px;">
+          <button class="nota-method-tab active" data-method="foto" onclick="notaSelecionarMetodo('foto')"><i
+              class="ph ph-camera"></i> Foto</button>
+          <button class="nota-method-tab" data-method="qr" onclick="notaSelecionarMetodo('qr')"><i
+              class="ph ph-qr-code"></i> QR da Nota</button>
+          <button class="nota-method-tab" data-method="barcode" onclick="notaSelecionarMetodo('barcode')"><i
+              class="ph ph-barcode"></i> Cód. barras</button>
+        </div>
+
+        <div id="nota-panel-foto">
+          <input type="file" id="nota-foto-input" accept="image/*" capture="environment" style="display:none;"
+            onchange="notaFotoSelecionada(this)">
+          <button class="btn-primary" style="width:100%;" onclick="notaEscolherFoto()"><i class="ph ph-camera"></i>
+            Tirar foto da nota</button>
+          <div id="nota-foto-preview" style="margin-top:8px;"></div>
+          <button class="btn-primary" style="width:100%;background:#4f46e5;margin-top:8px;"
+            onclick="notaReconhecerOCR()"><i class="ph ph-magnifying-glass"></i> Ler itens da foto (OCR)</button>
+          <div id="nota-ocr-status"
+            style="display:none;font-size:12px;color:var(--text-muted);text-align:center;margin-top:8px;"></div>
+        </div>
+
+        <div id="nota-panel-qr" style="display:none;">
+          <div id="nota-qr-reader"></div>
+          <div id="nota-qr-msg"
+            style="display:none;font-size:12px;color:var(--text-muted);text-align:center;margin-top:8px;"></div>
+        </div>
+
+        <div id="nota-panel-barcode" style="display:none;">
+          <div id="nota-barcode-reader"></div>
+          <div id="nota-barcode-msg"
+            style="display:none;font-size:12px;color:var(--text-muted);text-align:center;margin-top:8px;"></div>
+        </div>
+
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-weight:700;font-size:14px;color:var(--text-main);">Itens da nota</span>
+            <button onclick="notaAddLinha()"
+              style="background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;"><i
+                class="ph ph-plus"></i> Item manual</button>
+          </div>
+          <div id="nota-itens-list"></div>
+          <div
+            style="display:flex;justify-content:space-between;align-items:center;background:#1a202c;border-radius:10px;padding:12px 16px;margin-top:8px;">
+            <span style="color:#a0aec0;font-size:13px;font-weight:700;">TOTAL DA NOTA</span>
+            <span id="nota-total" style="color:#48bb78;font-size:20px;font-weight:800;font-family:monospace;">R$
+              0,00</span>
+          </div>
+          <input type="text" id="nota-obs" class="form-input" placeholder="Observação (opcional)"
+            style="margin-top:8px;">
+          <button class="btn-primary" style="width:100%;margin-top:8px;" onclick="notaSalvar()"><i
+              class="ph ph-check"></i> Salvar Nota e Dar Entrada no Estoque</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lista de Notas -->
+  <div id="modal-notas-list" class="mobile-modal-overlay" onclick="if(event.target===this)fecharNotasLista()">
+    <div class="mobile-modal-content" onclick="event.stopPropagation()"
+      style="max-height:94vh;display:flex;flex-direction:column;">
+      <div class="modal-header">
+        <div class="modal-title">Notas de Entrada</div>
+        <button class="modal-close" onclick="fecharNotasLista()"><i class="ph ph-x"></i></button>
+      </div>
+      <div id="notas-list-body" style="overflow-y:auto;flex:1;padding:16px;"></div>
+    </div>
+  </div>
+
+  <!-- Modal Divisao de Conta -->
+  <div id="modal-divisao" class="mobile-modal-overlay" onclick="fecharDivisao(event)">
+    <div class="mobile-modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">Dividir Conta</div>
+        <button class="modal-close" onclick="fecharDivisao()"><i class="ph ph-x"></i></button>
+      </div>
+
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Itens da comanda:</div>
+      <div id="divisao-items" style="max-height:200px;overflow-y:auto;margin-bottom:16px;"></div>
+
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Total da mesa: <strong id="divisao-total"
+          style="color:var(--text-main);"></strong></div>
+
+      <div style="display:flex;align-items:center;gap:12px;margin:16px 0;">
+        <span style="font-size:14px;font-weight:600;color:var(--text-main);white-space:nowrap;">Dividir por</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button
+            onclick="if(document.getElementById('divisao-pessoas').value>2){document.getElementById('divisao-pessoas').value--;atualizarDivisaoPreview()}"
+            style="width:40px;height:40px;border-radius:50%;border:2px solid var(--border-color);background:white;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">-</button>
+          <input type="number" id="divisao-pessoas" value="2" min="2" max="50" class="form-input"
+            style="width:60px;text-align:center;font-size:18px;font-weight:700;" onchange="atualizarDivisaoPreview()">
+          <button onclick="document.getElementById('divisao-pessoas').value++;atualizarDivisaoPreview()"
+            style="width:40px;height:40px;border-radius:50%;border:2px solid var(--border-color);background:white;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+        </div>
+      </div>
+
+      <div id="divisao-preview"></div>
+
+      <button class="btn-primary" style="margin-top:16px;" onclick="confirmarDivisao()">Confirmar Divisao</button>
+    </div>
+  </div>
+
+  <script src="/offline-queue.js"></script>
+<script src="/chef-tz.js"></script>
+<script src="/pdv-mobile.js?v=20260828fix5"></script>
+  <script src="/pdv-estoque.js"></script>
+  <script src="/vendor/tesseract/tesseract.min.js"></script>
+  <script src="/pdv-nota.js"></script>
+  <style>
+    @keyframes slideToast {
+      from {
+        transform: translate(-50%, -20px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+      }
+    }
+
+    .nota-method-tab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 8px;
+      border: 1px solid var(--border-color);
+      background: white;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .nota-method-tab.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .nota-label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    #nota-qr-reader,
+    #nota-barcode-reader {
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      min-height: 200px;
+    }
+
+    #nota-qr-reader video,
+    #nota-barcode-reader video {
+      border-radius: 10px;
+    }
+  </style>
+  <!-- MODAL AMPLIAR QR PONTO (MODO ESPERA: fica expandido até a 1ª interação) -->
+  <div id="modal-zoom-qr-ponto"
+    style="display: none; z-index: 100000; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); justify-content: center; align-items: center;">
+    <div
+      style="background: var(--bg-card); padding: 24px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; position: relative; max-width: 90%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+      <button onclick="window.chefFecharEspera && window.chefFecharEspera('modal-zoom-qr-ponto')"
+        style="position: absolute; top: 12px; right: 12px; background: var(--bg-secondary); border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary); width: 36px; height: 36px; border-radius: 50%;">&times;</button>
+      <h3
+        style="margin: 0 0 14px 0; color: #fc4b15; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        <i class="ph ph-qr-code" style="font-size: 24px;"></i> Área do Colaborador
+      </h3>
+      <img id="qr-ponto-img-zoomed" src="" alt="QR Ponto Ampliado"
+        style="width: 300px; height: 300px; max-width: 80vw; border-radius: 12px; margin-bottom: 14px; border: 1px solid var(--border-color); padding: 10px; background: var(--bg-card); object-fit: contain;">
+      <span style="font-size: 13.5px; color: var(--text-secondary); font-weight: 500;">Escaneie o QR Code com o celular para registrar
+        o ponto</span>
+      <span style="font-size: 11.5px; color: var(--text-muted); margin-top: 8px; opacity: 0.75;">Toque na tela para
+        voltar</span>
+    </div>
+  </div>
+
+  <script src="/fullscreen.js"></script>
+
+</body>
+
+</html>

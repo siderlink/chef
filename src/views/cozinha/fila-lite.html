@@ -1,0 +1,719 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Fila da Cozinha Lite</title>
+  <style>
+    /* ═══ RESET ═══ */
+    * { margin: 0; padding: 0; -webkit-box-sizing: border-box; box-sizing: border-box; }
+
+    /* ═══ MODO ESCURO (padrão) ═══ */
+    body {
+      font-family: Arial, Helvetica, "Lucida Grande", Verdana, sans-serif;
+      background: #111318;
+      color: #e8e8e8;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ═══ MODO CLARO ═══ */
+    body.light {
+      background: #f0f2f5;
+      color: #1a1a1a;
+    }
+
+    /* ═══ CABEÇALHO ═══ */
+    .hdr {
+      background: #1a1d24;
+      border-bottom: 1px solid #2a2d35;
+      padding: 10px 12px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+    body.light .hdr {
+      background: #ffffff;
+      border-bottom-color: #ddd;
+    }
+    .hdr-row {
+      display: block;
+      overflow: hidden;
+    }
+    .hdr-title {
+      float: left;
+      font-size: 16px;
+      font-weight: bold;
+      line-height: 34px;
+      color: #fc4b15;
+    }
+    .hdr-right {
+      float: right;
+    }
+
+    /* ═══ BOTÃO TEMA ═══ */
+    .btn-tema {
+      background: #2a2d35;
+      border: 1px solid #3a3d45;
+      color: #ccc;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      float: right;
+    }
+    .btn-tema:active { opacity: 0.7; }
+    body.light .btn-tema {
+      background: #e0e0e0;
+      border-color: #ccc;
+      color: #333;
+    }
+
+    /* ═══ SETORES ═══ */
+    .setores {
+      background: #1a1d24;
+      border-bottom: 1px solid #2a2d35;
+      padding: 6px 12px;
+      position: fixed;
+      top: 55px;
+      left: 0;
+      right: 0;
+      z-index: 99;
+      white-space: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    body.light .setores {
+      background: #ffffff;
+      border-bottom-color: #ddd;
+    }
+    .set-btn {
+      display: inline-block;
+      background: #2a2d35;
+      border: 1px solid #3a3d45;
+      color: #999;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 6px 14px;
+      margin-right: 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .set-btn:active { opacity: 0.7; }
+    .set-btn.ativo {
+      background: #fc4b15;
+      border-color: #fc4b15;
+      color: #fff;
+    }
+    body.light .set-btn {
+      background: #e8e8e8;
+      border-color: #ddd;
+      color: #666;
+    }
+    body.light .set-btn.ativo {
+      background: #fc4b15;
+      border-color: #fc4b15;
+      color: #fff;
+    }
+
+    /* ═══ STATUS BAR ═══ */
+    .status-bar {
+      background: #15171c;
+      border-bottom: 1px solid #2a2d35;
+      padding: 5px 12px;
+      position: fixed;
+      top: 93px;
+      left: 0;
+      right: 0;
+      z-index: 98;
+      font-size: 11px;
+      color: #666;
+      overflow: hidden;
+    }
+    body.light .status-bar {
+      background: #f8f8f8;
+      border-bottom-color: #ddd;
+      color: #999;
+    }
+    .status-bar .ico { margin-right: 4px; }
+    .st-espera { color: #f5a623; font-weight: bold; }
+    .st-preparo { color: #3498db; font-weight: bold; }
+    .st-pronto { color: #2ecc71; font-weight: bold; }
+
+    /* ═══ LISTA DE PEDIDOS ═══ */
+    .lista {
+      margin-top: 110px;
+      padding: 8px;
+    }
+    .vazio {
+      text-align: center;
+      padding: 60px 20px;
+      color: #555;
+      font-size: 15px;
+    }
+    body.light .vazio { color: #999; }
+
+    /* ═══ CARD DO PEDIDO ═══ */
+    .ped {
+      background: #1e2028;
+      border: 1px solid #2a2d35;
+      border-left: 4px solid #f5a623;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    body.light .ped {
+      background: #ffffff;
+      border-color: #ddd;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .ped-Em\ espera { border-left-color: #f5a623; }
+    .ped-Em\ preparo { border-left-color: #3498db; }
+    .ped-Pronto { border-left-color: #2ecc71; }
+
+    .ped-top {
+      display: block;
+      overflow: hidden;
+      padding: 8px 10px 4px;
+    }
+    .ped-qtd {
+      float: left;
+      font-size: 22px;
+      font-weight: bold;
+      color: #fc4b15;
+      line-height: 1;
+      margin-right: 8px;
+      min-width: 40px;
+    }
+    .ped-info {
+      overflow: hidden;
+    }
+    .ped-produto {
+      font-size: 14px;
+      font-weight: bold;
+      color: #eee;
+      line-height: 1.3;
+    }
+    body.light .ped-produto { color: #222; }
+    .ped-local {
+      font-size: 12px;
+      color: #888;
+      margin-top: 2px;
+    }
+    .ped-tempo {
+      float: right;
+      font-size: 11px;
+      color: #999;
+      text-align: right;
+      line-height: 1;
+      padding-top: 2px;
+    }
+    .ped-tempo .tm-num {
+      font-size: 18px;
+      font-weight: bold;
+      display: block;
+    }
+    .tm-ok { color: #2ecc71; }
+    .tm-ok { color: #2ecc71; }
+    .tm-medio { color: #f5a623; }
+    .tm-longo { color: #e74c3c; }
+
+    /* ═══ AÇÕES ═══ */
+    .ped-acoes {
+      display: block;
+      overflow: hidden;
+      padding: 4px 10px 8px;
+      border-top: 1px solid #2a2d35;
+    }
+    body.light .ped-acoes { border-top-color: #eee; }
+    .btn-acao {
+      display: inline-block;
+      border: none;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 7px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 6px;
+      margin-top: 4px;
+      float: left;
+    }
+    .btn-acao:active { opacity: 0.7; }
+    .btn-iniciar {
+      background: #f5a623;
+      color: #000;
+    }
+    .btn-pronto {
+      background: #2ecc71;
+      color: #fff;
+    }
+    .btn-voltar {
+      background: #555;
+      color: #fff;
+    }
+    body.light .btn-voltar { background: #ccc; color: #333; }
+    .btn-chamar {
+      background: #3498db;
+      color: #fff;
+    }
+    .btn-chamar:active {
+      background: #2980b9;
+    }
+
+    /* ═══ TOAST ═══ */
+    .toast {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      -webkit-transform: translateX(-50%);
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: bold;
+      z-index: 999;
+      text-align: center;
+    }
+    body.light .toast { background: #222; }
+    .toast.mostrar { display: block; }
+
+    /* ═══ SCROLLBAR ═══ */
+    ::-webkit-scrollbar { height: 4px; width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
+  </style>
+<link rel="icon" href="/icons/icon.ico">
+  <link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#fc4b15">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chef Cozinha">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+</head>
+<body>
+
+  <!-- CABEÇALHO -->
+  <div class="hdr">
+    <div class="hdr-row">
+      <div class="hdr-title">&#x1F373; Fila da Cozinha</div>
+      <div class="hdr-right">
+        <button class="btn-tema" id="btnTema" onclick="alternarTema()">&#x263E; Escuro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETORES -->
+  <div class="setores" id="setores">
+    <button class="set-btn ativo" onclick="mudarSetor('Todos', this)">Todos</button>
+    <button class="set-btn" onclick="mudarSetor('Cozinha 1', this)">Cozinha 1</button>
+    <button class="set-btn" onclick="mudarSetor('Cozinha 2', this)">Cozinha 2</button>
+    <button class="set-btn" onclick="mudarSetor('Bar', this)">Bar</button>
+  </div>
+
+  <!-- BARRA DE STATUS -->
+  <div class="status-bar" id="statusBar">
+    <span class="ico">&#x21BB;</span> Atualizando...
+  </div>
+
+  <!-- LISTA -->
+  <div class="lista" id="lista">
+    <div class="vazio">Carregando pedidos...</div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   FILA LITE - Compatível com Android 3.2 / iOS 6.1
+   Sem ES6, sem Socket.IO, sem CSS moderno
+   ═══════════════════════════════════════════════ */
+
+var pedidos = [];
+var filtroSetor = 'Todos';
+var intervalo = null;
+var BASE = '';
+
+/* ═══ TEMA (ESCURO / CLARO) ═══ */
+function lerCookie(nome) {
+  var parts = document.cookie.split(';');
+  for (var i = 0; i < parts.length; i++) {
+    var c = parts[i].replace(/^\s+/, '');
+    if (c.indexOf(nome + '=') === 0) {
+      return c.substring(nome.length + 1);
+    }
+  }
+  return '';
+}
+
+function gravarCookie(nome, valor, dias) {
+  var d = new Date();
+  d.setTime(d.getTime() + (dias * 24 * 60 * 60 * 1000));
+  document.cookie = nome + '=' + valor + ';expires=' + d.toUTCString() + ';path=/';
+}
+
+function aplicarTema(tema) {
+  var body = document.body;
+  var btn = document.getElementById('btnTema');
+  if (tema === 'light') {
+    body.className = 'light';
+    btn.innerHTML = '&#x2600; Claro';
+  } else {
+    body.className = '';
+    btn.innerHTML = '&#x263E; Escuro';
+  }
+}
+
+function alternarTema() {
+  var atual = document.body.className;
+  var novo = (atual === 'light') ? 'dark' : 'light';
+  aplicarTema(novo);
+  gravarCookie('fila_tema', novo, 365);
+}
+
+/* Aplicar tema salvo */
+var temaSalvo = lerCookie('fila_tema');
+if (temaSalvo === 'light' || temaSalvo === 'dark') {
+  aplicarTema(temaSalvo);
+} else {
+  aplicarTema('dark');
+}
+
+/* ═══ SETOR ═══ */
+function mudarSetor(setor, btn) {
+  filtroSetor = setor;
+  var botoes = document.getElementById('setores').getElementsByTagName('button');
+  for (var i = 0; i < botoes.length; i++) {
+    botoes[i].className = 'set-btn';
+  }
+  btn.className = 'set-btn ativo';
+  renderizar();
+}
+
+/* ═══ TEMPO DECORRIDO ═══ */
+function tempoDecorrido(createdAt) {
+  if (!createdAt) return 0;
+  var agora = new Date();
+  var criado = new Date(createdAt);
+  var diff = Math.floor((agora.getTime() - criado.getTime()) / 60000);
+  return diff > 0 ? diff : 0;
+}
+
+function corTempo(min) {
+  if (min < 15) return 'tm-ok';
+  if (min < 45) return 'tm-medio';
+  return 'tm-longo';
+}
+
+function corFundo(min) {
+  if (min < 15) return '#1e2a1e';
+  if (min < 30) return '#2a2a1e';
+  if (min < 45) return '#2a2218';
+  if (min < 60) return '#2a1c18';
+  return '#2a1818';
+}
+
+function corFundoClaro(min) {
+  if (min < 15) return '#e8f5e9';
+  if (min < 30) return '#fff8e1';
+  if (min < 45) return '#fff3e0';
+  if (min < 60) return '#fce4ec';
+  return '#f8e0e0';
+}
+
+/* ═══ TOAST ═══ */
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.className = 'toast mostrar';
+  setTimeout(function() { t.className = 'toast'; }, 2500);
+}
+
+/* ═══ XHR HELPER ═══ */
+function tokenAuth() {
+  try {
+    var t = localStorage.getItem('chef_token');
+    if (t) return t;
+    var sess = JSON.parse(localStorage.getItem('chef_session') || 'null');
+    if (sess && sess.token) return sess.token;
+    return '';
+  } catch (e) { return ''; }
+}
+function sessaoFuncionario() {
+  try { return !localStorage.getItem('chef_token') && !!localStorage.getItem('chef_session'); }
+  catch (e) { return false; }
+}
+function redirecionarSemSessao() {
+  if (sessaoFuncionario()) window.location.href = '/painel-funcionario.html';
+  else window.location.href = '/login.html';
+}
+
+function xhrGet(url, cb) {
+  var x = new XMLHttpRequest();
+  x.open('GET', url, true);
+  var t = tokenAuth();
+  if (t) x.setRequestHeader('Authorization', 'Bearer ' + t);
+  x.onreadystatechange = function() {
+    if (x.readyState === 4) {
+      if (x.status === 401 || x.status === 403) { cb(new Error('auth'), null); return; }
+      if (x.status >= 200 && x.status < 300) {
+        try { cb(null, JSON.parse(x.responseText)); }
+        catch(e) { cb(e, null); }
+      } else {
+        cb(new Error('http ' + x.status), null);
+      }
+    }
+  };
+  x.onerror = function() { cb(new Error('Erro de rede'), null); };
+  x.send(null);
+}
+
+function xhrPost(url, data, cb) {
+  var x = new XMLHttpRequest();
+  x.open('POST', url, true);
+  x.setRequestHeader('Content-Type', 'application/json');
+  var t = tokenAuth();
+  if (t) x.setRequestHeader('Authorization', 'Bearer ' + t);
+  x.onreadystatechange = function() {
+    if (x.readyState === 4) {
+      if (x.status === 401 || x.status === 403) { cb(new Error('auth'), null); return; }
+      try { cb(null, JSON.parse(x.responseText)); }
+      catch(e) { cb(e, null); }
+    }
+  };
+  x.onerror = function() { cb(new Error('Erro de rede'), null); };
+  x.send(JSON.stringify(data));
+}
+
+/* ═══ CARREGAR PEDIDOS ═══ */
+function buscarPedidos() {
+  xhrGet(BASE + '/api/pedidos', function(err, data) {
+    if (err && err.message === 'auth') {
+      redirecionarSemSessao();
+      if (intervalo) { clearInterval(intervalo); intervalo = null; }
+      return;
+    }
+    if (err || !data) {
+      document.getElementById('statusBar').innerHTML = '<span class="ico">&#x26A0;</span> Erro ao conectar';
+      return;
+    }
+    pedidos = data;
+    var agora = new Date();
+    document.getElementById('statusBar').innerHTML =
+      '<span class="ico">&#x21BB;</span> Atualizado ' +
+      agora.getHours() + ':' + (agora.getMinutes() < 10 ? '0' : '') + agora.getMinutes() +
+      ' &mdash; ' + pedidos.length + ' pedidos';
+    renderizar();
+  });
+}
+
+/* ═══ FILTRAR ═══ */
+function filtrar() {
+  var resultado = [];
+  for (var i = 0; i < pedidos.length; i++) {
+    var p = pedidos[i];
+    if (p.status === 'Finalizado' || p.status === 'Cancelado' || p.status === 'Entregue') continue;
+    if (p.sector === 'chamada' || p.sector === 'Chamada') continue;
+    if (filtroSetor !== 'Todos' && p.sector !== filtroSetor) continue;
+    resultado.push(p);
+  }
+  return resultado;
+}
+
+/* ═══ STATUS ANTERIOR ═══ */
+function statusAnterior(status) {
+  if (status === 'Em preparo') return 'Em espera';
+  if (status === 'Pronto') return 'Em preparo';
+  return null;
+}
+
+function statusProximo(status) {
+  if (status === 'Em espera' || status === 'Pendente') return 'Em preparo';
+  if (status === 'Em preparo') return 'Pronto';
+  return null;
+}
+
+function textoBotao(status) {
+  if (status === 'Em espera' || status === 'Pendente') return '&#x1F525; Iniciar';
+  if (status === 'Em preparo') return '&#x1F37A; Pronto';
+  if (status === 'Pronto') return '&#x1F514; Chamar';
+  return '';
+}
+
+function classeBotao(status) {
+  if (status === 'Em espera' || status === 'Pendente') return 'btn-acao btn-iniciar';
+  if (status === 'Em preparo') return 'btn-acao btn-pronto';
+  if (status === 'Pronto') return 'btn-acao btn-chamar';
+  return 'btn-acao';
+}
+
+/* ═══ RENDERIZAR ═══ */
+function classeStatus(st) {
+  if (st === 'Em espera' || st === 'Pendente') return 'ped-Em\\ espera';
+  if (st === 'Em preparo') return 'ped-Em\\ preparo';
+  if (st === 'Pronto') return 'ped-Pronto';
+  return '';
+}
+
+function numInt(v, fallback) {
+  var n = parseInt(v, 10);
+  return (n > 0) ? n : (fallback || 0);
+}
+
+function renderizar() {
+  var lista = document.getElementById('lista');
+  var items = filtrar();
+
+  if (items.length === 0) {
+    lista.innerHTML = '<div class="vazio">&#x2714; Nenhum pedido na fila</div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var p = items[i];
+    var mins = tempoDecorrido(p.createdAt);
+    var cls = corTempo(mins);
+    var bg = (document.body.className === 'light') ? corFundoClaro(mins) : corFundo(mins);
+    var st = p.status || 'Pendente';
+    var emoji = escaparHtml(p.productEmoji) || '&#x1F37D;';
+    var local = p.localName || '';
+    var user = p.userName || '';
+    var qtd = numInt(p.quantity, 1);
+    var idNum = numInt(p.id, 0);
+    var nome = p.productName || 'Item';
+    var clsPed = classeStatus(st);
+
+    html += '<div class="ped ' + clsPed + '" style="background:' + bg + '">';
+    html += '<div class="ped-top">';
+    html += '<div class="ped-qtd">' + qtd + 'x</div>';
+    html += '<div class="ped-info">';
+    html += '<div class="ped-produto">' + emoji + ' ' + escaparHtml(nome) + '</div>';
+    html += '<div class="ped-local">' + escaparHtml(local) + (user ? ' &middot; ' + escaparHtml(user) : '') + '</div>';
+    html += '</div>';
+    html += '<div class="ped-tempo"><span class="tm-num ' + cls + '">' + mins + '</span>min</div>';
+    html += '</div>';
+
+    html += '<div class="ped-acoes">';
+
+    var prev = statusAnterior(st);
+    if (prev) {
+      html += '<button class="btn-acao btn-voltar" onclick="alterarStatus(' + idNum + ', \'' + prev + '\')">&#x21A9; Voltar</button>';
+    }
+
+    var prox = statusProximo(st);
+    if (prox) {
+      if (prox === 'Pronto') {
+        html += '<button class="btn-acao btn-pronto" onclick="alterarStatus(' + idNum + ', \'Pronto\')">&#x2714; Pronto</button>';
+      } else {
+        html += '<button class="btn-acao ' + classeBotao(st) + '" onclick="alterarStatus(' + idNum + ', \'' + prox + '\')">&#x1F525; Iniciar</button>';
+      }
+    }
+
+    if (st === 'Pronto') {
+      html += '<button class="btn-acao btn-chamar" onclick="chamarGarcom(' +
+        idNum + ', \'' + escQuote(p.productName || '') + '\', ' +
+        qtd + ', \'' + escQuote(p.localName || '') + '\', \'' + escQuote(p.userName || '') + '\')">&#x1F514; Chamar Gar&ccedil;om</button>';
+    }
+
+    html += '</div>';
+    html += '</div>';
+  }
+
+  /* Resumo */
+  var cntEspera = 0, cntPreparo = 0, cntPronto = 0;
+  for (var j = 0; j < items.length; j++) {
+    var s2 = items[j].status;
+    if (s2 === 'Em espera' || s2 === 'Pendente') cntEspera++;
+    else if (s2 === 'Em preparo') cntPreparo++;
+    else if (s2 === 'Pronto') cntPronto++;
+  }
+  html += '<div style="text-align:center;padding:12px;font-size:12px;color:#888;">';
+  html += '<span class="st-espera">' + cntEspera + ' espera</span> &nbsp; ';
+  html += '<span class="st-preparo">' + cntPreparo + ' preparo</span> &nbsp; ';
+  html += '<span class="st-pronto">' + cntPronto + ' pronto</span>';
+  html += '</div>';
+
+  lista.innerHTML = html;
+}
+
+/* ═══ ESCAPAR HTML ═══ */
+function escaparHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escQuote(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/[\r\n]/g, ' ');
+}
+
+/* ═══ AÇÕES ═══ */
+function alterarStatus(id, status) {
+  xhrPost(BASE + '/api/pedidos/' + id + '/status', { status: status }, function(err, data) {
+    if (err && err.message === 'auth') {
+      redirecionarSemSessao();
+      if (intervalo) { clearInterval(intervalo); intervalo = null; }
+      return;
+    }
+    if (err || !data || !data.success) {
+      showToast('Erro ao atualizar status');
+      return;
+    }
+    showToast('Status: ' + status);
+    buscarPedidos();
+  });
+}
+
+function chamarGarcom(id, produto, qtd, local, user) {
+  xhrPost(BASE + '/api/pedidos/chamar-garcom', {
+    id: id,
+    productName: produto,
+    quantity: qtd,
+    localName: local,
+    userName: user
+  }, function(err, data) {
+    if (err && err.message === 'auth') {
+      redirecionarSemSessao();
+      if (intervalo) { clearInterval(intervalo); intervalo = null; }
+      return;
+    }
+    if (err || !data || !data.success) {
+      showToast('Erro ao chamar gar&ccedil;om');
+      return;
+    }
+    showToast('Gar&ccedil;om chamado!');
+  });
+}
+
+/* ═══ INICIAR ═══ */
+buscarPedidos();
+intervalo = setInterval(buscarPedidos, 10000);
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js')
+    .then(function(reg) { console.log('PWA pronto:', reg.scope); })
+    .catch(function(err) { console.log('Erro SW:', err); });
+}
+</script>
+</body>
+</html>
+

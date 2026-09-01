@@ -1,0 +1,1335 @@
+/*
+ * dark-mode.css — Modo Noturno Global do Chef Cozinha
+ * Carregado em todas as páginas operacionais.
+ * Ativado via classe `body.dark-mode`.
+ *
+ * Paleta:
+ *   bg-0 (mais fundo)  : #0d1117
+ *   bg-1 (app)         : #13171f
+ *   bg-2 (sidebar/nav) : #1a1f2e
+ *   bg-3 (cards)       : #1e2435
+ *   bg-4 (inputs)      : #252b3b
+ *   border             : rgba(255,255,255,0.07)
+ *   text-primary       : #e8edf5
+ *   text-secondary     : #8b95a9
+ *   accent             : #fc4b15
+ */
+
+/* ═══════════════════════════════════════════
+   1. VARIÁVEIS GLOBAIS
+═══════════════════════════════════════════ */
+body.dark-mode {
+  --bg-color:   #13171f;
+  --bg-sidebar: #1a1f2e;
+  --bg-card:    #1e2435;
+  --text-primary:   #e8edf5;
+  --text-secondary: #8b95a9;
+  --border-color:   rgba(255,255,255,0.07);
+  --accent-hover:   rgba(252,75,21,0.12);
+  --shadow-sm:  0 2px 8px rgba(0,0,0,0.4);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.5);
+  --shadow-card:0 4px 16px rgba(0,0,0,0.45);
+
+  background-color: #13171f !important;
+  color: #e8edf5 !important;
+}
+
+/* ═══════════════════════════════════════════
+   2. LAYOUT PRINCIPAL
+═══════════════════════════════════════════ */
+body.dark-mode .app-container,
+body.dark-mode .main-content,
+body.dark-mode .content-area,
+body.dark-mode .page-content,
+body.dark-mode .content-wrapper,
+body.dark-mode #main-content,
+body.dark-mode #content {
+  background-color: #13171f;
+}
+
+/* Sidebar / nav lateral */
+body.dark-mode .sidebar,
+body.dark-mode .side-menu,
+body.dark-mode .nav-sidebar,
+body.dark-mode aside,
+body.dark-mode .left-panel,
+body.dark-mode .sidebar-sectors {
+  background-color: #1a1f2e !important;
+  border-right: 1px solid rgba(255,255,255,0.07) !important;
+  color: #e8edf5;
+}
+
+/* Header / top bar */
+body.dark-mode header,
+body.dark-mode .top-bar,
+body.dark-mode .top-menubar,
+body.dark-mode .navbar,
+body.dark-mode .app-header,
+body.dark-mode .page-header {
+  background-color: #1a1f2e !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+  color: #e8edf5 !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4) !important;
+}
+
+body.dark-mode header *,
+body.dark-mode .top-bar *,
+body.dark-mode .top-menubar * {
+  color: #e8edf5;
+}
+
+/* ═══════════════════════════════════════════
+   3. CARDS & PAINÉIS
+═══════════════════════════════════════════ */
+body.dark-mode .card,
+body.dark-mode .widget,
+body.dark-mode .panel,
+body.dark-mode .box,
+body.dark-mode .info-card,
+body.dark-mode .stat-card,
+body.dark-mode .metric-card,
+body.dark-mode .summary-card,
+body.dark-mode .kpi-card,
+body.dark-mode .data-card,
+body.dark-mode .report-card,
+body.dark-mode .section-card,
+body.dark-mode .chart-card,
+body.dark-mode .dash-card,
+body.dark-mode [class*="-card"]:not(.table-card):not(.menu-item),
+body.dark-mode [class*="card-"]:not(.cart-badge):not(.card-category-badge) {
+  background-color: #1e2435 !important;
+  border-color: rgba(255,255,255,0.07) !important;
+  color: #e8edf5 !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45) !important;
+}
+
+/* ═══════════════════════════════════════════
+   4. TABELAS
+═══════════════════════════════════════════ */
+body.dark-mode table { border-color: rgba(255,255,255,0.07); }
+body.dark-mode th {
+  background-color: #1e2435 !important;
+  color: #8b95a9 !important;
+  border-bottom-color: rgba(255,255,255,0.07) !important;
+}
+body.dark-mode td {
+  background-color: transparent !important;
+  color: #e8edf5 !important;
+  border-bottom-color: rgba(255,255,255,0.05) !important;
+}
+body.dark-mode tr:hover td,
+body.dark-mode tbody tr:hover {
+  background-color: rgba(255,255,255,0.03) !important;
+}
+body.dark-mode .table-container,
+body.dark-mode .table-wrapper,
+body.dark-mode .data-table,
+body.dark-mode #tabelaPedidos,
+body.dark-mode .finance-table {
+  background-color: #1e2435 !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+
+/* ═══════════════════════════════════════════
+   5. FORMULÁRIOS & INPUTS
+═══════════════════════════════════════════ */
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+  background-color: #252b3b !important;
+  color: #e8edf5 !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #576070 !important;
+}
+body.dark-mode input:focus,
+body.dark-mode textarea:focus,
+body.dark-mode select:focus {
+  border-color: #fc4b15 !important;
+  box-shadow: 0 0 0 3px rgba(252,75,21,0.15) !important;
+  outline: none !important;
+}
+body.dark-mode label {
+  color: #8b95a9 !important;
+}
+body.dark-mode option {
+  background-color: #1e2435;
+  color: #e8edf5;
+}
+
+/* ═══════════════════════════════════════════
+   6. MODAIS & OVERLAYS (GERAL E ESPECÍFICOS)
+═══════════════════════════════════════════ */
+body.dark-mode .modal,
+body.dark-mode .modal-content,
+body.dark-mode .modal-box,
+body.dark-mode .dialog,
+body.dark-mode .popup,
+body.dark-mode [class*="modal"]:not([class*="modal-overlay"]):not(.modal-close),
+[data-theme="dark"] .modal,
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .dialog,
+[data-theme="dark"] .popup {
+  background-color: #161d2a !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: #e8edf5 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer,
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+  border-color: rgba(255,255,255,0.07) !important;
+  background-color: transparent !important;
+}
+body.dark-mode .modal-overlay,
+body.dark-mode .overlay,
+body.dark-mode .backdrop,
+[data-theme="dark"] .modal-overlay {
+  background-color: rgba(5, 8, 15, 0.82) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+/* --- 6.1 MODAL DE FECHAMENTO DE CONTA (CHECKOUT) --- */
+body.dark-mode #checkout-modal-overlay .modal,
+[data-theme="dark"] #checkout-modal-overlay .modal {
+  background: #151c28 !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  color: #f1f5f9 !important;
+}
+
+body.dark-mode #checkout-modal-overlay [style*="border-right"],
+[data-theme="dark"] #checkout-modal-overlay [style*="border-right"] {
+  border-right-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Detalhamento do Consumo & Resumo Financeiro */
+body.dark-mode #checkout-modal-overlay [style*="background: var(--bg-secondary)"],
+body.dark-mode #checkout-modal-overlay div:has(> table),
+[data-theme="dark"] #checkout-modal-overlay [style*="background: var(--bg-secondary)"] {
+  background: #1a2232 !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+body.dark-mode #checkout-modal-items-tbody tr:hover,
+[data-theme="dark"] #checkout-modal-items-tbody tr:hover {
+  background: rgba(255,255,255,0.04) !important;
+}
+
+/* Container do Meio: Lançar Pagamento */
+body.dark-mode #checkout-modal-overlay [style*="background: rgba(252,75,21,0.06)"],
+[data-theme="dark"] #checkout-modal-overlay [style*="background: rgba(252,75,21,0.06)"] {
+  background: rgba(252, 75, 21, 0.05) !important;
+  border-color: rgba(252, 75, 21, 0.22) !important;
+}
+
+body.dark-mode #checkout-modal-toggle-touch-btn:not([style*="background: rgb(252, 75, 21)"]):not([style*="background:#fc4b15"]),
+[data-theme="dark"] #checkout-modal-toggle-touch-btn:not([style*="background: rgb(252, 75, 21)"]):not([style*="background:#fc4b15"]) {
+  background: #1e2738 !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #94a3b8 !important;
+}
+
+/* Botões de Método Touch Screen */
+body.dark-mode .touch-method-btn,
+[data-theme="dark"] .touch-method-btn {
+  background: #1c2436 !important;
+  border: 1.5px solid rgba(255,255,255,0.09) !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25) !important;
+}
+body.dark-mode .touch-method-btn:hover,
+[data-theme="dark"] .touch-method-btn:hover {
+  background: #232d42 !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
+body.dark-mode .touch-method-btn.active,
+[data-theme="dark"] .touch-method-btn.active {
+  background: rgba(252, 75, 21, 0.18) !important;
+  border-color: #fc4b15 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(252,75,21,0.3) !important;
+}
+
+/* Visor de Valor Touch */
+body.dark-mode #checkout-modal-touch-visor,
+[data-theme="dark"] #checkout-modal-touch-visor {
+  color: #4ade80 !important;
+}
+
+/* Teclado Numérico Virtual */
+body.dark-mode .touch-num-btn,
+[data-theme="dark"] .touch-num-btn {
+  background: #1c2436 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: #f8fafc !important;
+}
+body.dark-mode .touch-num-btn:hover,
+[data-theme="dark"] .touch-num-btn:hover {
+  background: #28334a !important;
+}
+body.dark-mode .touch-num-btn:active,
+[data-theme="dark"] .touch-num-btn:active {
+  background: #334155 !important;
+}
+body.dark-mode .touch-num-btn[data-val="BACKSPACE"],
+[data-theme="dark"] .touch-num-btn[data-val="BACKSPACE"] {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #f87171 !important;
+}
+
+/* Ações Rápidas (Limpar C / Total Restante) */
+body.dark-mode #checkout-modal-touch-container button[onclick*="ClearTouchValue"],
+[data-theme="dark"] #checkout-modal-touch-container button[onclick*="ClearTouchValue"] {
+  background: #1c2436 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #94a3b8 !important;
+}
+body.dark-mode #checkout-modal-touch-container button[onclick*="SetRemainingTouchValue"],
+[data-theme="dark"] #checkout-modal-touch-container button[onclick*="SetRemainingTouchValue"] {
+  background: rgba(37, 99, 235, 0.18) !important;
+  border: 1px solid rgba(37, 99, 235, 0.35) !important;
+  color: #93c5fd !important;
+}
+
+/* Lista de Pagamentos Efetuados */
+body.dark-mode #checkout-modal-lista-pagamentos,
+[data-theme="dark"] #checkout-modal-lista-pagamentos {
+  background: #121824 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+body.dark-mode #checkout-modal-lista-pagamentos > div,
+[data-theme="dark"] #checkout-modal-lista-pagamentos > div {
+  background: #1c2436 !important;
+  border-color: rgba(255,255,255,0.07) !important;
+  color: #f1f5f9 !important;
+}
+
+/* Divisão de Conta */
+body.dark-mode #checkout-modal-overlay [style*="background: #ebf8ff"],
+body.dark-mode #checkout-modal-overlay [style*="background:#ebf8ff"],
+[data-theme="dark"] #checkout-modal-overlay [style*="background: #ebf8ff"],
+[data-theme="dark"] #checkout-modal-overlay [style*="background:#ebf8ff"] {
+  background: rgba(37, 99, 235, 0.12) !important;
+  border-color: rgba(37, 99, 235, 0.28) !important;
+  color: #93c5fd !important;
+}
+body.dark-mode #checkout-modal-split-parts,
+[data-theme="dark"] #checkout-modal-split-parts {
+  background: #121824 !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #93c5fd !important;
+}
+
+/* Total Pago & Faltando Cards */
+body.dark-mode #checkout-modal-overlay [style*="background: #f0fff4"],
+body.dark-mode #checkout-modal-overlay [style*="background:#f0fff4"],
+[data-theme="dark"] #checkout-modal-overlay [style*="background: #f0fff4"],
+[data-theme="dark"] #checkout-modal-overlay [style*="background:#f0fff4"] {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+body.dark-mode #checkout-modal-overlay [style*="background: #f0fff4"] span,
+[data-theme="dark"] #checkout-modal-overlay [style*="background: #f0fff4"] span {
+  color: #34d399 !important;
+}
+body.dark-mode #checkout-modal-pago,
+[data-theme="dark"] #checkout-modal-pago {
+  color: #4ade80 !important;
+}
+
+body.dark-mode #checkout-modal-status-box,
+body.dark-mode #checkout-modal-overlay [style*="background: #fff5f5"],
+[data-theme="dark"] #checkout-modal-status-box,
+[data-theme="dark"] #checkout-modal-overlay [style*="background: #fff5f5"] {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+}
+body.dark-mode #checkout-modal-restante-label,
+[data-theme="dark"] #checkout-modal-restante-label {
+  color: #f87171 !important;
+}
+body.dark-mode #checkout-modal-restante,
+[data-theme="dark"] #checkout-modal-restante {
+  color: #ef4444 !important;
+}
+
+/* Módulo Fiscal NFC-e no Checkout */
+body.dark-mode #checkout-modal-overlay [style*="background: #f0fdf4"],
+[data-theme="dark"] #checkout-modal-overlay [style*="background: #f0fdf4"] {
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.22) !important;
+}
+body.dark-mode #checkout-modal-overlay [style*="background: #f0fdf4"] label,
+[data-theme="dark"] #checkout-modal-overlay [style*="background: #f0fdf4"] label {
+  color: #4ade80 !important;
+}
+body.dark-mode #checkout-modal-doc-consumidor,
+[data-theme="dark"] #checkout-modal-doc-consumidor {
+  background: #121824 !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #f1f5f9 !important;
+}
+body.dark-mode #checkout-modal-overlay button[onclick*="semCpfConsumidor"],
+[data-theme="dark"] #checkout-modal-overlay button[onclick*="semCpfConsumidor"] {
+  background: #1e2738 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #94a3b8 !important;
+}
+body.dark-mode #btn-personalizar-nfce-itens,
+[data-theme="dark"] #btn-personalizar-nfce-itens {
+  background: rgba(37, 99, 235, 0.18) !important;
+  border: 1px solid rgba(37, 99, 235, 0.35) !important;
+  color: #93c5fd !important;
+}
+
+/* Fidelidade & Concluir Mesa */
+body.dark-mode #checkout-modal-overlay [style*="FIDELIDADE"],
+body.dark-mode #checkout-modal-overlay div:has(> #checkout-modal-cliente-telefone),
+[data-theme="dark"] #checkout-modal-overlay div:has(> #checkout-modal-cliente-telefone) {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 10px !important;
+}
+body.dark-mode #checkout-modal-cliente-telefone,
+[data-theme="dark"] #checkout-modal-cliente-telefone {
+  background: #121824 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #f1f5f9 !important;
+}
+body.dark-mode #btn-concluir-fechar-mesa,
+[data-theme="dark"] #btn-concluir-fechar-mesa {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+}
+
+/* --- 6.2 MODAL COBRAR COMANDA & ITENS COMPARTILHADOS --- */
+body.dark-mode #comanda-checkout-overlay .modal,
+[data-theme="dark"] #comanda-checkout-overlay .modal {
+  background: #151c28 !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  color: #f1f5f9 !important;
+}
+body.dark-mode #comanda-modal-items,
+[data-theme="dark"] #comanda-modal-items {
+  background: #121824 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: #f1f5f9 !important;
+}
+body.dark-mode #comanda-checkout-overlay [style*="rgba(252,75,21,0.06)"],
+[data-theme="dark"] #comanda-checkout-overlay [style*="rgba(252,75,21,0.06)"] {
+  background: rgba(252, 75, 21, 0.06) !important;
+  border-color: rgba(252, 75, 21, 0.25) !important;
+}
+body.dark-mode #comanda-modal-split-label,
+body.dark-mode #comanda-checkout-overlay [style*="color: #666"],
+[data-theme="dark"] #comanda-checkout-overlay [style*="color: #666"] {
+  color: #cbd5e1 !important;
+}
+body.dark-mode #comanda-checkout-overlay [style*="color: #2c3e50"],
+[data-theme="dark"] #comanda-checkout-overlay [style*="color: #2c3e50"] {
+  color: #f8fafc !important;
+}
+
+/* --- 6.3 MODAL FILA DE ESPERA DE CLIENTES --- */
+body.dark-mode #modal-fila-espera .modal,
+[data-theme="dark"] #modal-fila-espera .modal {
+  background: #151c28 !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  color: #f1f5f9 !important;
+}
+body.dark-mode #modal-fila-espera [style*="background: #fffbeb"],
+body.dark-mode #modal-fila-espera [style*="background:#fffbeb"],
+[data-theme="dark"] #modal-fila-espera [style*="background: #fffbeb"],
+[data-theme="dark"] #modal-fila-espera [style*="background:#fffbeb"] {
+  background: rgba(245, 158, 11, 0.08) !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+body.dark-mode #modal-fila-espera [style*="color: #92400e"],
+[data-theme="dark"] #modal-fila-espera [style*="color: #92400e"] {
+  color: #fbbf24 !important;
+}
+body.dark-mode #modal-fila-espera button[onclick*="abrirQrFilaEsperaModal"],
+[data-theme="dark"] #modal-fila-espera button[onclick*="abrirQrFilaEsperaModal"] {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  color: #fbbf24 !important;
+}
+body.dark-mode #modal-fila-espera input,
+[data-theme="dark"] #modal-fila-espera input {
+  background: #121824 !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #f8fafc !important;
+}
+body.dark-mode #modal-fila-espera thead tr,
+[data-theme="dark"] #modal-fila-espera thead tr {
+  background: #1c2436 !important;
+  color: #94a3b8 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* --- 6.4 MODAL DE NOTAS FISCAIS EMITIDAS (NFC-e) --- */
+body.dark-mode #nfce-overlay > div,
+[data-theme="dark"] #nfce-overlay > div {
+  background: #151c28 !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  color: #f1f5f9 !important;
+}
+body.dark-mode #nfce-overlay h2,
+[data-theme="dark"] #nfce-overlay h2 {
+  color: #f8fafc !important;
+}
+body.dark-mode #nfce-overlay [style*="border-bottom: 2px solid #f1f5f9"],
+[data-theme="dark"] #nfce-overlay [style*="border-bottom: 2px solid #f1f5f9"] {
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}
+body.dark-mode #nfce-overlay button[onclick*="gerenciar-notas"],
+[data-theme="dark"] #nfce-overlay button[onclick*="gerenciar-notas"] {
+  background: #1e2738 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+/* 4 KPI Cards do NFC-e */
+body.dark-mode #nfce-overlay [style*="background: #eff6ff"],
+[data-theme="dark"] #nfce-overlay [style*="background: #eff6ff"] {
+  background: rgba(37, 99, 235, 0.12) !important;
+  border: 1px solid rgba(37, 99, 235, 0.28) !important;
+}
+body.dark-mode #nfce-overlay [style*="background: #eff6ff"] span,
+[data-theme="dark"] #nfce-overlay [style*="background: #eff6ff"] span {
+  color: #93c5fd !important;
+}
+body.dark-mode #nfce-total-valor,
+[data-theme="dark"] #nfce-total-valor {
+  color: #60a5fa !important;
+}
+
+body.dark-mode #nfce-overlay [style*="background: #f0fdf4"],
+[data-theme="dark"] #nfce-overlay [style*="background: #f0fdf4"] {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.28) !important;
+}
+body.dark-mode #nfce-overlay [style*="background: #f0fdf4"] span,
+[data-theme="dark"] #nfce-overlay [style*="background: #f0fdf4"] span {
+  color: #86efac !important;
+}
+body.dark-mode #nfce-count-autorizadas,
+[data-theme="dark"] #nfce-count-autorizadas {
+  color: #4ade80 !important;
+}
+
+body.dark-mode #nfce-overlay [style*="background: #fef2f2"],
+[data-theme="dark"] #nfce-overlay [style*="background: #fef2f2"] {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(239, 68, 68, 0.28) !important;
+}
+body.dark-mode #nfce-overlay [style*="background: #fef2f2"] span,
+[data-theme="dark"] #nfce-overlay [style*="background: #fef2f2"] span {
+  color: #fca5a5 !important;
+}
+body.dark-mode #nfce-count-canceladas,
+[data-theme="dark"] #nfce-count-canceladas {
+  color: #f87171 !important;
+}
+
+body.dark-mode #nfce-ambiente-tag,
+[data-theme="dark"] #nfce-ambiente-tag {
+  color: #f8fafc !important;
+}
+body.dark-mode #nfce-search-input,
+[data-theme="dark"] #nfce-search-input {
+  background: #121824 !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #f8fafc !important;
+}
+
+/* ═══════════════════════════════════════════
+   7. NAVEGAÇÃO & ABAS
+═══════════════════════════════════════════ */
+body.dark-mode .nav-item,
+body.dark-mode .menu-item-nav,
+body.dark-mode .sidebar-link,
+body.dark-mode .nav-link,
+[data-theme="dark"] .nav-item,
+[data-theme="dark"] .nav-link {
+  color: #8b95a9 !important;
+}
+body.dark-mode .nav-item:hover,
+body.dark-mode .nav-link:hover,
+body.dark-mode .menu-icon:hover,
+[data-theme="dark"] .nav-item:hover {
+  background-color: rgba(255,255,255,0.05) !important;
+  color: #e8edf5 !important;
+}
+body.dark-mode .nav-item.active,
+body.dark-mode .nav-link.active,
+body.dark-mode .sidebar-link.active,
+[data-theme="dark"] .nav-item.active {
+  background-color: rgba(252,75,21,0.15) !important;
+  color: #fc4b15 !important;
+}
+
+/* Tabs (abas) */
+body.dark-mode .tab,
+body.dark-mode .tabs .tab,
+body.dark-mode .bill-tab,
+body.dark-mode [role="tab"],
+[data-theme="dark"] .tab {
+  background-color: #1e2435 !important;
+  border-color: rgba(255,255,255,0.07) !important;
+  color: #8b95a9 !important;
+}
+body.dark-mode .tab.active,
+body.dark-mode .bill-tab.active,
+body.dark-mode [role="tab"][aria-selected="true"],
+[data-theme="dark"] .tab.active {
+  background-color: #fc4b15 !important;
+  color: #ffffff !important;
+  border-color: #fc4b15 !important;
+}
+
+/* ═══════════════════════════════════════════
+   8. BOTÕES
+═══════════════════════════════════════════ */
+body.dark-mode .btn,
+body.dark-mode button:not(.btn-primary):not([class*="btn-"]):not([id*="btn-global"]):not(.touch-method-btn):not(.touch-num-btn) {
+  background-color: #252b3b;
+  color: #e8edf5;
+  border-color: rgba(255,255,255,0.1);
+}
+body.dark-mode .btn:hover,
+body.dark-mode button:not(.btn-primary):not([class*="btn-"]):not([id*="btn-global"]):not(.touch-method-btn):not(.touch-num-btn):hover {
+  background-color: #2e3550;
+}
+body.dark-mode .btn-secondary {
+  background-color: #252b3b !important;
+  color: #e8edf5 !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+body.dark-mode .btn-primary,
+body.dark-mode .btn-danger,
+body.dark-mode .btn-success,
+body.dark-mode .btn-warning {
+  filter: brightness(0.95);
+}
+
+/* ═══════════════════════════════════════════
+   9. STATUS BADGES & TAGS
+═══════════════════════════════════════════ */
+body.dark-mode .badge,
+body.dark-mode .status-badge,
+body.dark-mode .tag,
+body.dark-mode .chip {
+  filter: brightness(0.85) saturate(0.95);
+}
+body.dark-mode .status-badge.pendente  { background: rgba(133,100,4,0.25)   !important; color: #fbbf24 !important; }
+body.dark-mode .status-badge.aprovado  { background: rgba(21,87,36,0.3)     !important; color: #4ade80 !important; }
+body.dark-mode .status-badge.recusado  { background: rgba(114,28,36,0.3)    !important; color: #f87171 !important; }
+body.dark-mode .status-badge.entregue  { background: rgba(29,78,216,0.25)   !important; color: #93c5fd !important; }
+
+/* ═══════════════════════════════════════════
+   10. FILA DA COZINHA (fila-pedidos / fila.css / modo TV)
+═══════════════════════════════════════════ */
+body.dark-mode .app-container,
+body.dark-mode .main-content,
+body.dark-mode .content-body,
+body.dark-mode .queue-section,
+[data-theme="dark"] .app-container,
+[data-theme="dark"] .main-content,
+[data-theme="dark"] .content-body,
+[data-theme="dark"] .queue-section {
+  background-color: #0d121c !important;
+  color: #f8fafc !important;
+}
+
+/* Sidebars da Fila */
+body.dark-mode .sidebar-sectors,
+body.dark-mode .sector-sidebar,
+body.dark-mode .right-panel-status,
+[data-theme="dark"] .sidebar-sectors,
+[data-theme="dark"] .right-panel-status {
+  background-color: #161d2a !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  color: #e8edf5 !important;
+}
+
+/* Header das Colunas da Fila */
+body.dark-mode .queue-header,
+body.dark-mode .fila-header,
+body.dark-mode .kanban-header,
+[data-theme="dark"] .queue-header,
+[data-theme="dark"] .fila-header {
+  background-color: #182030 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  color: #94a3b8 !important;
+}
+body.dark-mode .col-resize-handle:after,
+[data-theme="dark"] .col-resize-handle:after {
+  background: #334155 !important;
+}
+
+/* Barra de Filtro de Tipo (Todos / Porções / A La Carte) */
+body.dark-mode .queue-tipo-bar,
+[data-theme="dark"] .queue-tipo-bar {
+  background-color: #161d2a !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+body.dark-mode .queue-tipo-label,
+[data-theme="dark"] .queue-tipo-label {
+  color: #94a3b8 !important;
+}
+body.dark-mode .queue-tipo-btn,
+[data-theme="dark"] .queue-tipo-btn {
+  background-color: #1c2436 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: #cbd5e1 !important;
+}
+body.dark-mode .queue-tipo-btn:hover,
+[data-theme="dark"] .queue-tipo-btn:hover {
+  background-color: #26334d !important;
+}
+body.dark-mode .queue-tipo-btn.active,
+[data-theme="dark"] .queue-tipo-btn.active {
+  background-color: #fc4b15 !important;
+  border-color: #fc4b15 !important;
+  color: #ffffff !important;
+}
+
+/* KDS styling is fully managed in fila.css */
+body.dark-mode .btn-reverter,
+[data-theme="dark"] .btn-reverter {
+  background-color: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #94a3b8 !important;
+}
+
+/* Observações & Composições (fundo do item continua pastel → texto escuro) */
+body.dark-mode .item-observacao,
+[data-theme="dark"] .item-observacao {
+  background: rgba(245, 158, 11, 0.18) !important;
+  border-color: rgba(180, 83, 9, 0.45) !important;
+  color: #854d0e !important;
+}
+body.dark-mode .item-composicoes,
+[data-theme="dark"] .item-composicoes {
+  background: rgba(59, 130, 246, 0.12) !important;
+  border-color: rgba(30, 64, 175, 0.35) !important;
+  color: #1e40af !important;
+}
+body.dark-mode .item-composicoes .comp-item,
+[data-theme="dark"] .item-composicoes .comp-item {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+/* Status Buttons & Actions da Sidebar Direita */
+body.dark-mode .status-btn,
+body.dark-mode .action-btn,
+[data-theme="dark"] .status-btn,
+[data-theme="dark"] .action-btn {
+  background: #1c2436 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: #cbd5e1 !important;
+}
+body.dark-mode .status-btn:hover,
+body.dark-mode .action-btn:hover,
+[data-theme="dark"] .status-btn:hover,
+[data-theme="dark"] .action-btn:hover {
+  background: #26334d !important;
+  color: #ffffff !important;
+}
+body.dark-mode .sector-btn,
+[data-theme="dark"] .sector-btn {
+  color: #94a3b8 !important;
+}
+body.dark-mode .sector-btn.active,
+[data-theme="dark"] .sector-btn.active {
+  background: rgba(26, 115, 232, 0.18) !important;
+}
+body.dark-mode .sector-btn.active span,
+[data-theme="dark"] .sector-btn.active span {
+  color: #60a5fa !important;
+}
+
+/* Campo de Busca da Fila */
+body.dark-mode #fila-search-input,
+[data-theme="dark"] #fila-search-input {
+  background: #121824 !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: #f8fafc !important;
+}
+
+/* Modal de Configurações da Fila */
+body.dark-mode .fila-settings-card,
+[data-theme="dark"] .fila-settings-card {
+  background-color: #161d2a !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+body.dark-mode .fila-settings-header,
+[data-theme="dark"] .fila-settings-header {
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  color: #f8fafc !important;
+}
+body.dark-mode .fila-settings-label,
+[data-theme="dark"] .fila-settings-label {
+  color: #94a3b8 !important;
+}
+body.dark-mode .fila-settings-btn,
+[data-theme="dark"] .fila-settings-btn {
+  background: #1c2436 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: #cbd5e1 !important;
+}
+body.dark-mode .fila-settings-btn:hover,
+[data-theme="dark"] .fila-settings-btn:hover {
+  background: #26334d !important;
+}
+body.dark-mode .fila-settings-btn.active,
+[data-theme="dark"] .fila-settings-btn.active {
+  background: #fc4b15 !important;
+  border-color: #fc4b15 !important;
+  color: #ffffff !important;
+}
+body.dark-mode .fila-settings-input,
+[data-theme="dark"] .fila-settings-input {
+  background: #121824 !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: #f8fafc !important;
+}
+
+/* Modo TV / Cards em Grid */
+body.dark-mode .card-mesa,
+body.dark-mode .card-pedido,
+[data-theme="dark"] .card-mesa,
+[data-theme="dark"] .card-pedido {
+  background-color: #182030 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3) !important;
+}
+body.dark-mode .card-mesa-header,
+[data-theme="dark"] .card-mesa-header {
+  background-color: #1e283c !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  color: #f8fafc !important;
+}
+
+/* Scrollbars das Sidebars da Fila (antes ficavam claras demais no escuro) */
+body.dark-mode .sidebar-sectors::-webkit-scrollbar-thumb,
+body.dark-mode .right-panel-status::-webkit-scrollbar-thumb,
+[data-theme="dark"] .sidebar-sectors::-webkit-scrollbar-thumb,
+[data-theme="dark"] .right-panel-status::-webkit-scrollbar-thumb {
+  background: #334155 !important;
+}
+body.dark-mode .sidebar-sectors::-webkit-scrollbar-thumb:hover,
+body.dark-mode .right-panel-status::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .sidebar-sectors::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .right-panel-status::-webkit-scrollbar-thumb:hover {
+  background: #475569 !important;
+}
+
+/* Modal Seleção de Fila / Setor */
+body.dark-mode .modal-setor-overlay,
+[data-theme="dark"] .modal-setor-overlay {
+  background: rgba(2, 6, 23, 0.75) !important;
+}
+body.dark-mode .modal-setor-card,
+[data-theme="dark"] .modal-setor-card {
+  background-color: #161d2a !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+body.dark-mode .modal-setor-header,
+[data-theme="dark"] .modal-setor-header {
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+  color: #f8fafc !important;
+}
+body.dark-mode .modal-setor-close,
+[data-theme="dark"] .modal-setor-close {
+  color: #94a3b8 !important;
+  background: rgba(255,255,255,0.06) !important;
+}
+body.dark-mode .sector-modal-btn,
+[data-theme="dark"] .sector-modal-btn {
+  background-color: #1c2436 !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+body.dark-mode .sector-modal-btn:hover,
+[data-theme="dark"] .sector-modal-btn:hover {
+  background-color: #26334d !important;
+}
+body.dark-mode .sector-modal-title,
+[data-theme="dark"] .sector-modal-title {
+  color: #f8fafc !important;
+}
+body.dark-mode .sector-modal-sub,
+[data-theme="dark"] .sector-modal-sub {
+  color: #94a3b8 !important;
+}
+
+/* Painel de Dicas Rápidas da IA Gerente (inline "background:white" no HTML) */
+body.dark-mode #ia-gerente-panel,
+[data-theme="dark"] #ia-gerente-panel {
+  background: #161d2a !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  color: #e8edf5 !important;
+}
+body.dark-mode #ia-gerente-panel > div:first-child,
+[data-theme="dark"] #ia-gerente-panel > div:first-child {
+  color: #f8fafc !important;
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}
+body.dark-mode #ia-gerente-panel button,
+[data-theme="dark"] #ia-gerente-panel button {
+  background: #26334d !important;
+  color: #cbd5e1 !important;
+}
+body.dark-mode #ia-gerente-fab,
+[data-theme="dark"] #ia-gerente-fab {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+  border-color: #f59e0b !important;
+}
+body.dark-mode #ia-gerente-badge,
+[data-theme="dark"] #ia-gerente-badge {
+  border-color: #0d121c !important;
+}
+
+/* ═══════════════════════════════════════════
+   11. FINANCEIRO (financeiro.html & dashboard)
+═══════════════════════════════════════════ */
+body.dark-mode .finance-sidebar,
+body.dark-mode .financeiro-sidebar,
+body.dark-mode aside.sidebar,
+[data-theme="dark"] aside.sidebar {
+  background-color: #161d2a !important;
+  border-right: 1px solid rgba(255,255,255,0.08) !important;
+}
+body.dark-mode aside.sidebar .sidebar-header h2,
+[data-theme="dark"] aside.sidebar .sidebar-header h2 {
+  color: #f8fafc !important;
+}
+body.dark-mode .app-container,
+[data-theme="dark"] .app-container {
+  background-color: #0d121c !important;
+}
+body.dark-mode main.main-content,
+[data-theme="dark"] main.main-content {
+  background-color: #0d121c !important;
+  color: #f8fafc !important;
+}
+body.dark-mode h1,
+[data-theme="dark"] h1 {
+  color: #f8fafc !important;
+}
+
+/* Tabs do Financeiro */
+body.dark-mode [id^="tab-btn-"],
+[data-theme="dark"] [id^="tab-btn-"] {
+  color: #94a3b8 !important;
+}
+body.dark-mode #tab-btn-resumo,
+[data-theme="dark"] #tab-btn-resumo {
+  color: #fc4b15 !important;
+}
+
+/* 8 Cards do Resumo de Turno (Caixa) */
+body.dark-mode #section-resumo-caixa [style*="grid-template-columns: repeat(auto-fit"] > div,
+[data-theme="dark"] #section-resumo-caixa [style*="grid-template-columns: repeat(auto-fit"] > div {
+  background: #182030 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+body.dark-mode #card-troco,
+[data-theme="dark"] #card-troco {
+  color: #f8fafc !important;
+}
+body.dark-mode #card-gaveta,
+[data-theme="dark"] #card-gaveta {
+  color: #4ade80 !important;
+}
+body.dark-mode #card-faturado,
+[data-theme="dark"] #card-faturado {
+  color: #fb923c !important;
+}
+body.dark-mode #card-pix,
+[data-theme="dark"] #card-pix {
+  color: #34d399 !important;
+}
+body.dark-mode #card-debito,
+[data-theme="dark"] #card-debito {
+  color: #60a5fa !important;
+}
+body.dark-mode #card-credito,
+[data-theme="dark"] #card-credito {
+  color: #c084fc !important;
+}
+body.dark-mode #card-fiado,
+[data-theme="dark"] #card-fiado {
+  color: #fbbf24 !important;
+}
+body.dark-mode #card-descontos,
+[data-theme="dark"] #card-descontos {
+  color: #f87171 !important;
+}
+
+/* Botões Sangria e Suprimento */
+body.dark-mode #btn-sangria,
+[data-theme="dark"] #btn-sangria {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  color: #f87171 !important;
+}
+body.dark-mode #btn-suprimento,
+[data-theme="dark"] #btn-suprimento {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  color: #34d399 !important;
+}
+
+/* DRE — Demonstração do Lucro Real */
+body.dark-mode #section-resumo-caixa > div:has(#dre-faturamento-bruto),
+body.dark-mode #section-resumo-caixa [style*="DRE —"],
+[data-theme="dark"] #section-resumo-caixa > div:has(#dre-faturamento-bruto) {
+  background: #182030 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+body.dark-mode #section-resumo-caixa h3,
+[data-theme="dark"] #section-resumo-caixa h3 {
+  color: #f8fafc !important;
+}
+body.dark-mode #dre-margem-badge,
+[data-theme="dark"] #dre-margem-badge {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #94a3b8 !important;
+}
+
+/* Tabela Waterfall do DRE */
+body.dark-mode #section-resumo-caixa div:has(> table:has(#dre-faturamento-bruto)),
+[data-theme="dark"] #section-resumo-caixa div:has(> table:has(#dre-faturamento-bruto)) {
+  background: #121824 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+body.dark-mode table:has(#dre-faturamento-bruto) tr,
+[data-theme="dark"] table:has(#dre-faturamento-bruto) tr {
+  border-bottom-color: rgba(255,255,255,0.06) !important;
+}
+body.dark-mode table:has(#dre-faturamento-bruto) td,
+[data-theme="dark"] table:has(#dre-faturamento-bruto) td {
+  color: #cbd5e1 !important;
+}
+body.dark-mode #dre-faturamento-bruto,
+[data-theme="dark"] #dre-faturamento-bruto {
+  color: #f8fafc !important;
+}
+body.dark-mode table:has(#dre-faturamento-bruto) tr:has(#dre-receita-liquida),
+[data-theme="dark"] table:has(#dre-faturamento-bruto) tr:has(#dre-receita-liquida) {
+  background: rgba(56, 189, 248, 0.08) !important;
+}
+body.dark-mode #dre-receita-liquida,
+[data-theme="dark"] #dre-receita-liquida {
+  color: #38bdf8 !important;
+}
+body.dark-mode table:has(#dre-faturamento-bruto) tr:has(#dre-lucro-liquido),
+[data-theme="dark"] table:has(#dre-faturamento-bruto) tr:has(#dre-lucro-liquido) {
+  background: rgba(16, 185, 129, 0.14) !important;
+}
+body.dark-mode #dre-lucro-liquido,
+[data-theme="dark"] #dre-lucro-liquido {
+  color: #34d399 !important;
+}
+
+/* 4 Cards de Métricas DRE */
+body.dark-mode #dre-card-lucro,
+[data-theme="dark"] #dre-card-lucro {
+  color: #34d399 !important;
+}
+body.dark-mode div:has(> #dre-card-lucro),
+[data-theme="dark"] div:has(> #dre-card-lucro) {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+body.dark-mode #dre-card-margem,
+[data-theme="dark"] #dre-card-margem {
+  color: #60a5fa !important;
+}
+body.dark-mode div:has(> #dre-card-margem),
+[data-theme="dark"] div:has(> #dre-card-margem) {
+  background: rgba(37, 99, 235, 0.1) !important;
+  border-color: rgba(37, 99, 235, 0.25) !important;
+}
+
+body.dark-mode #dre-card-cmv,
+[data-theme="dark"] #dre-card-cmv {
+  color: #fbbf24 !important;
+}
+body.dark-mode div:has(> #dre-card-cmv),
+[data-theme="dark"] div:has(> #dre-card-cmv) {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+body.dark-mode #dre-card-taxas,
+[data-theme="dark"] #dre-card-taxas {
+  color: #c084fc !important;
+}
+body.dark-mode div:has(> #dre-card-taxas),
+[data-theme="dark"] div:has(> #dre-card-taxas) {
+  background: rgba(168, 85, 247, 0.1) !important;
+  border-color: rgba(168, 85, 247, 0.25) !important;
+}
+
+/* Histórico de Movimentações */
+body.dark-mode #section-resumo-caixa div:has(> #tabela-movimentacoes),
+[data-theme="dark"] #section-resumo-caixa div:has(> #tabela-movimentacoes) {
+  background: #182030 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+body.dark-mode #tabela-movimentacoes tr,
+[data-theme="dark"] #tabela-movimentacoes tr {
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
+body.dark-mode #tabela-movimentacoes td,
+[data-theme="dark"] #tabela-movimentacoes td {
+  color: #e2e8f0 !important;
+}
+
+/* Relatório Avançado */
+body.dark-mode #section-relatorio-avancado > div,
+[data-theme="dark"] #section-relatorio-avancado > div {
+  background: #182030 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+body.dark-mode #section-relatorio-avancado label,
+[data-theme="dark"] #section-relatorio-avancado label {
+  color: #94a3b8 !important;
+}
+body.dark-mode #section-relatorio-avancado input,
+body.dark-mode #section-relatorio-avancado select,
+[data-theme="dark"] #section-relatorio-avancado input,
+[data-theme="dark"] #section-relatorio-avancado select {
+  background: #121824 !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: #f8fafc !important;
+}
+body.dark-mode #rep-kpi-faturamento,
+[data-theme="dark"] #rep-kpi-faturamento {
+  color: #f8fafc !important;
+}
+
+/* ═══════════════════════════════════════════
+   12. CONFIGURAÇÕES (configuracoes.html)
+═══════════════════════════════════════════ */
+body.dark-mode .config-section,
+body.dark-mode .settings-card,
+body.dark-mode .config-panel,
+[data-theme="dark"] .config-section,
+[data-theme="dark"] .settings-card {
+  background-color: #1e2435 !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+body.dark-mode .config-sidebar,
+body.dark-mode .settings-nav {
+  background-color: #1a1f2e !important;
+}
+body.dark-mode .config-tab,
+body.dark-mode .settings-tab {
+  color: #8b95a9 !important;
+}
+body.dark-mode .config-tab.active,
+body.dark-mode .settings-tab.active {
+  background-color: rgba(252,75,21,0.15) !important;
+  color: #fc4b15 !important;
+}
+body.dark-mode .toggle-switch .slider {
+  background-color: #3d4663 !important;
+}
+body.dark-mode .toggle-switch input:checked + .slider {
+  background-color: #fc4b15 !important;
+}
+
+/* ═══════════════════════════════════════════
+   13. DASHBOARD
+═══════════════════════════════════════════ */
+body.dark-mode .chart-container,
+body.dark-mode canvas {
+  filter: brightness(0.88) contrast(1.05);
+}
+body.dark-mode .table-section,
+body.dark-mode .recent-orders,
+body.dark-mode .top-products {
+  background-color: #1e2435 !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+
+/* ═══════════════════════════════════════════
+   14. PAINEL FUNCIONÁRIO
+═══════════════════════════════════════════ */
+body.dark-mode .funcionario-header,
+body.dark-mode .ponto-header,
+body.dark-mode .employee-header {
+  background: linear-gradient(135deg, #1e2435, #252b3b) !important;
+}
+body.dark-mode .pagamento-item,
+body.dark-mode .ponto-item,
+body.dark-mode .historico-item {
+  border-bottom-color: rgba(255,255,255,0.06) !important;
+}
+body.dark-mode .pagamento-item:hover,
+body.dark-mode .ponto-item:hover {
+  background-color: rgba(255,255,255,0.03) !important;
+}
+
+/* ═══════════════════════════════════════════
+   15. SCROLLBAR ESCURA
+═══════════════════════════════════════════ */
+body.dark-mode ::-webkit-scrollbar,
+[data-theme="dark"] ::-webkit-scrollbar { width: 6px; height: 6px; }
+body.dark-mode ::-webkit-scrollbar-track,
+[data-theme="dark"] ::-webkit-scrollbar-track { background: #151c28; }
+body.dark-mode ::-webkit-scrollbar-thumb,
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+body.dark-mode ::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* ═══════════════════════════════════════════
+   16. UTILITÁRIOS / SEPARADORES
+═══════════════════════════════════════════ */
+body.dark-mode hr,
+body.dark-mode .divider,
+body.dark-mode .separator,
+[data-theme="dark"] hr {
+  border-color: rgba(255,255,255,0.07) !important;
+}
+body.dark-mode .text-muted,
+body.dark-mode .text-secondary,
+body.dark-mode .subtitle,
+[data-theme="dark"] .text-muted {
+  color: #8b95a9 !important;
+}
+body.dark-mode code,
+body.dark-mode pre {
+  background-color: #0d1117 !important;
+  border-color: rgba(255,255,255,0.07) !important;
+  color: #a5f3fc !important;
+}
+
+/* ═══════════════════════════════════════════
+   17. TOAST / NOTIFICAÇÕES
+═══════════════════════════════════════════ */
+body.dark-mode #toast,
+[data-theme="dark"] #toast {
+  background-color: #1e2435 !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #e8edf5 !important;
+}
+
+/* ═══════════════════════════════════════════
+   18. PAINEL DE CONFIGURAÇÕES (configuracoes.html)
+═══════════════════════════════════════════ */
+body.dark-mode .config-header,
+[data-theme="dark"] .config-header {
+  background: #121218 !important;
+  color: #f4f4f5 !important;
+  border-bottom: 1px solid #27272a !important;
+}
+
+body.dark-mode .config-sidebar,
+[data-theme="dark"] .config-sidebar {
+  background: #121218 !important;
+  border-right: 1px solid #27272a !important;
+}
+
+body.dark-mode .main-workspace,
+[data-theme="dark"] .main-workspace {
+  background: #18181b !important;
+  color: #f4f4f5 !important;
+}
+
+body.dark-mode .tab-table-scroll,
+[data-theme="dark"] .tab-table-scroll {
+  background: #18181b !important;
+  border: 1px solid #27272a !important;
+}
+
+body.dark-mode .tab-table-scroll table thead tr,
+body.dark-mode .tab-table-scroll table thead th,
+[data-theme="dark"] .tab-table-scroll table thead tr,
+[data-theme="dark"] .tab-table-scroll table thead th {
+  background: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+body.dark-mode .tab-form-header,
+[data-theme="dark"] .tab-form-header {
+  background: transparent !important;
+}
+
+body.dark-mode h2.aba-titulo,
+[data-theme="dark"] h2.aba-titulo {
+  color: #f4f4f5 !important;
+  border-bottom: 2px solid #27272a !important;
+}
+
+body.dark-mode .group-title,
+[data-theme="dark"] .group-title {
+  color: #a1a1aa !important;
+}
+
+body.dark-mode .admin-tab-btn,
+[data-theme="dark"] .admin-tab-btn {
+  color: #a1a1aa !important;
+}
+
+body.dark-mode .admin-tab-btn:hover,
+[data-theme="dark"] .admin-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f4f4f5 !important;
+}
+
+body.dark-mode .admin-tab-btn.active,
+[data-theme="dark"] .admin-tab-btn.active {
+  background: rgba(252, 75, 21, 0.2) !important;
+  color: #ff5722 !important;
+}
+
+/* ═══════════════════════════════════════════
+   19. ALERTAS INTELIGENTES (IA)
+═══════════════════════════════════════════ */
+body.dark-mode #ia-alertas-panel,
+[data-theme="dark"] #ia-alertas-panel {
+  background-color: #111827 !important;
+  color: #f8fafc !important;
+  border-color: #374151 !important;
+}
+
+body.dark-mode .ia-alertas-header,
+[data-theme="dark"] .ia-alertas-header {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-bottom-color: #374151 !important;
+}
+
+body.dark-mode .ia-card,
+[data-theme="dark"] .ia-card {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.dark-mode #ia-alertas-icon,
+[data-theme="dark"] #ia-alertas-icon {
+  background: #1e293b !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+}
+
+

@@ -230,6 +230,11 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static(DIST_DIR));
+app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'caixa')));
+app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'garcom')));
+app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'cozinha')));
+app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'admin')));
+app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'autoatendimento')));
 
 // (Segurança) Rejeita path traversal ANTES de qualquer static/rota. O fallback
 // SPA abaixo usa path.join(DIST_DIR, req.path) e, sem este guard, um path com
@@ -470,6 +475,7 @@ const db = {
   run: function(...args) { return getTenantDb().run(...args); },
   all: function(...args) { return getTenantDb().all(...args); },
   get: function(...args) { return getTenantDb().get(...args); },
+  prepare: function(...args) { return getTenantDb().prepare(...args); },
   serialize: function(cb) { return getTenantDb().serialize(cb); },
   close: function(cb) {
     const tenantId = tenantContext.getStore() || 1;

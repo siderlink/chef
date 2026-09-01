@@ -95,12 +95,17 @@ function callGeminiApi(apiKey, model, systemInstruction, prompt, isJson = false)
  * Testa se uma chave API do Gemini é válida
  */
 async function testarApiKey(apiKey, model = DEFAULT_MODEL) {
-  try {
-    const res = await callGeminiApi(apiKey, model, 'Você é um validador de chave de IA.', 'Responda apenas: OK', false);
-    return { ok: true, modelo: model, resposta: res.text.trim() };
-  } catch (err) {
-    return { ok: false, erro: err.message };
+  const modelsToTry = Array.from(new Set([model, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'])).filter(Boolean);
+  let lastErr = null;
+  for (const m of modelsToTry) {
+    try {
+      const res = await callGeminiApi(apiKey, m, 'Você é um validador de chave de IA.', 'Responda apenas: OK', false);
+      return { ok: true, modelo: m, resposta: res.text.trim() };
+    } catch (err) {
+      lastErr = err;
+    }
   }
+  return { ok: false, erro: lastErr ? lastErr.message : 'Falha ao validar chave API do Gemini.' };
 }
 
 /**

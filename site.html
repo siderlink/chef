@@ -1,6 +1,38 @@
 <!DOCTYPE html>
 <html lang="pt-BR" class="no-js">
 <head>
+  <script>
+    (function() {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var forceSite = params.get('site') === '1' || params.get('noredirect') === '1' || window.location.hash === '#site';
+        if (!forceSite) {
+          var token = localStorage.getItem('chef_token');
+          var credsStr = localStorage.getItem('chef_session') || localStorage.getItem('chef_credentials') || localStorage.getItem('chef_app_creds') || localStorage.getItem('currentUser') || localStorage.getItem('logged_user');
+          var superAdminToken = localStorage.getItem('chef_super_admin_local_token');
+          
+          if (superAdminToken) {
+            window.location.replace('/super-admin.html');
+            return;
+          }
+          
+          if (token || credsStr) {
+            var creds = {};
+            try { creds = JSON.parse(credsStr || '{}'); } catch(e) {}
+            var cargo = (creds.cargo || creds.funcao || creds.role || localStorage.getItem('userRole') || 'admin').toLowerCase();
+            
+            if (cargo === 'garçom' || cargo === 'garcom') {
+              window.location.replace('/garcom.html');
+            } else if (['cozinha', 'copa', 'bar'].includes(cargo)) {
+              window.location.replace('/fila-pedidos.html');
+            } else {
+              window.location.replace('/index.html');
+            }
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title">Chef Cozinha — O Sistema Mais Rápido e Completo para Restaurantes e Bares</title>
@@ -1546,7 +1578,7 @@
     </ul>
 
     <div class="header-actions">
-      <a href="/login.html" class="btn-login">Entrar</a>
+      <a href="/index.html" class="btn-login">Entrar</a>
       <button class="btn-header" id="btn-consultor" onclick="falarConsultor()">
         <i class="ph ph-whatsapp-logo" style="font-size: 18px;"></i>
         <span>Falar com Consultor</span>
@@ -2164,7 +2196,7 @@
         <h4>Atendimento</h4>
         <ul>
           <li><a onclick="falarConsultor()" style="cursor:pointer;"><i class="ph ph-whatsapp-logo"></i> WhatsApp Comercial</a></li>
-          <li><a href="/login.html">Painel Administrativo</a></li>
+          <li><a href="/index.html">Painel Administrativo</a></li>
           <li><a onclick="abrirSetupModal()" style="cursor:pointer;">Criar Conta Grátis</a></li>
         </ul>
       </div>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#fc4b15">
+  <title>Caixa v1.1 — Chef Cozinha</title>
+  <link rel="icon" href="/icons/icon.ico">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="stylesheet" href="/caixa-v11.css">
+  <script src="/socket.io.min.js"></script>
+  <script src="/auth.js"></script>
+  <script src="/fullscreen.js"></script>
+  <script src="/vendor/qrcode/qr-helper.js"></script>
+  <script src="/public/chef-module-bus.js"></script>
+  <link rel="stylesheet" href="/apple-transitions.css">
+  <script src="/apple-transitions.js" defer></script>
+</head>
+
+<body data-profile="desktop">
+
+  <header class="v11-header">
+    <div class="v11-brand">
+      <i class="ph-fill ph-cooking-pot"></i>
+      <div class="v11-brand-text">
+        <strong>Chef Cozinha</strong>
+        <span id="v11-clock">--:--</span>
+      </div>
+    </div>
+
+    <div class="v11-header-status">
+      <span id="v11-caixa-status" class="v11-pill v11-pill-off"><i class="ph ph-lock-key"></i> Caixa Fechado</span>
+      <span id="v11-profile-pill" class="v11-pill"><i class="ph ph-monitor"></i> Desktop</span>
+    </div>
+
+    <div class="v11-header-actions">
+      <button id="v11-btn-editar" class="v11-hbtn" title="Organizar blocos do layout"><i
+          class="ph ph-cursor-click"></i><span>Editar Layout</span></button>
+      <button id="v11-btn-resetar" class="v11-hbtn" title="Restaurar layout padrão"><i
+          class="ph ph-arrow-counter-clockwise"></i></button>
+      <button id="v11-btn-classico" class="v11-hbtn" title="Voltar para a tela clássica do caixa"><i
+          class="ph ph-arrow-u-up-left"></i><span>Tema Clássico</span></button>
+    </div>
+  </header>
+
+  <main class="v11-wrap">
+    <p class="v11-edit-hint" id="v11-edit-hint"><i class="ph ph-hand-grabbing"></i> Arraste os blocos para reorganizar •
+      Use <strong>P/M/G</strong> para mudar o tamanho • <i class="ph-bold ph-palette"></i> para mudar <strong>cores, botões e letras</strong> • <strong>×</strong> oculta o bloco</p>
+    <section id="v11-grid" class="v11-grid" aria-live="polite">
+
+      
+      <!-- MÓDULO OPCIONAL 1: ENTREGAS & MOTOBOYS (CHEFF ENTREGAS) -->
+      <article class="v11-widget sz-m" data-w="entregas">
+        <header><i class="ph-fill ph-moped" style="color:#f59e0b;"></i><h2>Delivery &amp; Motoboys</h2>
+          <div class="w-ctl"><button class="w-style" title="Personalizar Cores, Botões e Letras" style="background:#e2e8f0; color:#0f172a; border:none; border-radius:4px; padding:2px 6px; font-size:11px; cursor:pointer; font-weight:bold; margin-right:2px;"><i class="ph-bold ph-palette"></i></button><button class="w-size" title="Tamanho">P</button><button class="w-hide" title="Ocultar">×</button></div>
+        </header>
+        <div class="w-body v11-resumo">
+          <div class="r-card r-laranja"><small>Em Rota / Despacho</small><strong id="v11-entregas-rota">0</strong></div>
+          <div class="r-card"><small>Motoboys Disponíveis</small><strong id="v11-motoboys-disp">0</strong></div>
+        </div>
+      </article>
+
+      <!-- MÓDULO OPCIONAL 2: TAREFAS & CHECKLIST DO TURNO -->
+      <article class="v11-widget sz-m" data-w="tarefas">
+        <header><i class="ph-fill ph-check-square" style="color:#3b82f6;"></i><h2>Checklist &amp; Tarefas</h2>
+          <div class="w-ctl"><button class="w-style" title="Personalizar Cores, Botões e Letras" style="background:#e2e8f0; color:#0f172a; border:none; border-radius:4px; padding:2px 6px; font-size:11px; cursor:pointer; font-weight:bold; margin-right:2px;"><i class="ph-bold ph-palette"></i></button><button class="w-size" title="Tamanho">P</button><button class="w-hide" title="Ocultar">×</button></div>
+        </header>
+        <div class="w-body">
+          <ul id="v11-tarefas-list" class="v11-list"><li class="w-empty">Todas as tarefas concluídas!</li></ul>
+        </div>
+      </article>
+
+      <!-- MÓDULO OPCIONAL 3: ESTOQUE CRÍTICO & ALERTAS -->
+      <article class="v11-widget sz-s" data-w="estoque">
+        <header><i class="ph-fill ph-warning" style="color:#ef4444;"></i><h2>Estoque Crítico</h2>
+          <div class="w-ctl"><button class="w-style" title="Personalizar Cores, Botões e Letras" style="background:#e2e8f0; color:#0f172a; border:none; border-radius:4px; padding:2px 6px; font-size:11px; cursor:pointer; font-weight:bold; margin-right:2px;"><i class="ph-bold ph-palette"></i></button><button class="w-size" title="Tamanho">P</button><button class="w-hide" title="Ocultar">×</button></div>
+        </header>
+        <div class="w-body">
+          <ul id="v11-estoque-list" class="v11-list"><li class="w-empty">Nenhum item em falta hoje.</li></ul>
+        </div>
+      </article>
+
+      <!-- RESUMO DO DIA -->
+      <article class="v11-widget sz-l" data-w="resumo">
+        <header><i class="ph-fill ph-chart-bar"></i><h2>Resumo de Hoje</h2>
+          <div class="w-ctl"><button class="w-style" title="Personalizar Cores, Botões e Letras" style="background:#e2e8f0; color:#0f172a; border:none; border-radius:4px; padding:2px 6px; font-size:11px; cursor:pointer; font-weight:bold; margin-right:2px;"><i class="ph-bold ph-palette"></i></button><button class="w-size" title="Tamanho">P</button><button class="w-hide"
+              title="Ocultar">×</button></div>
+        </header>
+        <div class="w-body v11-resumo">
+          <div class="r-card r-verde"><small>Faturamento (pgtos hoje)</small><strong id="v11-fat-hoje">R$ 0,00</strong>
+          </div>
+          <div class="r-card"><small>Mesas ocupadas</small><strong id="v11-mesas-ocupadas">0</strong></div>
+          <div class="r-card"><small>Contas pedidas</small><strong id="v11-contas-pedidas">0</strong></div>
+          <div class="r-card r-laranja"><small>Em preparo (cozinha)</small><strong id="v11-em-preparo">0</strong></div>
+        </div>
+      </article>
+
+      <!-- MESAS & COMANDAS -->
+      <article class="v11-widget sz-l" data-w="mesas">
+        <header><i class="ph-fill ph-squares-four"></i><h2>Mesas &amp; Comandas</h2>
+          <div class="w-ctl"><button class="w-style" title="Personalizar Cores, Botões e Letras" style="background:#e2e8f0; color:#0f172a; border:none; border-radius:4px; padding:2px 6px; font-size:11px; cursor:pointer; font-weight:bold; margin-right:2px;"><i class="ph-bold ph-palette"></i></button><button class="w-size" title="Tamanho">P</button><button class="w-hide"
+              title="Ocultar">×</button></div>
+        </header>
+        <div class="w-body">
+          <div id="v11-mesas-grid" class="v11-mesas"><span class="w-empty">Carregando mesas...</span></div>
+          <a class="v11-go" href="/index.html"><i class="ph ph-arrow-right"></i> Abrir gestão completa</a>
+        </div>
+      </article>
+
+      <!-- CHAMADOS / CONTAS PEDIDAS -->
+      <article class="v11-widget sz-m" data-w="chamados">
+        <header><i class="ph-fill ph-hand-raising"></i><h2>Chamados</h2>
+          <div class="w-ctl"><button class="w-style" title="Personalizar Cores, Botões e Letras" style="background:#e2e8f0; color:#0f172a; border:none; border-radius:4px; padding:2px 6px; font-size:11px; cursor:pointer; font-weight:bold; margin-right:2px;"><i class="ph-bold ph-palette"></i></button><button class="w-size" title="Tamanho">P</button><button class="w-hide"
+              title="Ocultar">×</button></div>
+        </header>
+        <div class="w-body">
+          <ul id="v11-chamados-list" class="v11-list"><li class="w-empty">Nenhuma conta solicitada.</li></ul>
+        </div>
+      </article>
+
+      <!-- FILA DA COZINHA -->
+      <article class="v11-widget sz-m" data-w="fila">
+        <header><i class="ph-fill ph-cooking-pot"></i><h2>Fila da Cozinha</h2>
+          <div class="w-ctl"><button class="w-style" title="Personalizar Cores, Botões e Letras" style="background:#e2e8f0; color:#0f172a; border:none; border-radius:4px; padding:2px 6px; font-size:11px; cursor:pointer; font-weight:bold; margin-right:2px;"><i class="ph-bold ph-palette"></i></button><button class="w-size" title="Tamanho">P</button><button class="w-hide"
+              title="Ocultar">×</button></div>
+        </header>
+        <div class="w-body">
+          <ul id="v11-fila-list" class="v11-list"><li class="w-empty">Sem itens em rota.</li></ul>
+          <a class="v11-go" href="/fila-pedidos.html"><i class="ph ph-arrow-right"></i> Abrir KDS completo</a>
+        </div>
+      </article>
+
+      <!-- QR PONTO -->
+      <article class="v11-widget sz-s" data-w="ponto">
+        <header><i class="ph-fill ph-fingerprint"></i><h2>Ponto do Colaborador</h2>
+          <div class="w-ctl"><button class="w-style" title="Personalizar Cores, Botões e Letras" style="background:#e2e8f0; color:#0f172a; border:none; border-radius:4px; padding:2px 6px; font-size:11px; cursor:pointer; font-weight:bold; margin-right:2px;"><i class="ph-bold ph-palette"></i></button><button class="w-size" title="Tamanho">P</button><button class="w-hide"
+              title="Ocultar">×</button></div>
+        </header>
+        <div class="w-body w-center">
+          <img id="v11-ponto-img" alt="QR Ponto" title="Clique para exibir em modo espera"
+            onclick="window.v11AbrirQrPonto && window.v11AbrirQrPonto()">
+          <span class="w-sub">Clique para ampliar (fecha na 1ª interação)</span>
+        </div>
+      </article>
+
+      <!-- ATALHOS -->
+      <article class="v11-widget sz-l" data-w="atalhos">
+        <header><i class="ph-fill ph-rocket-launch"></i><h2>Todas as Seções</h2>
+          <div class="w-ctl"><button class="w-style" title="Personalizar Cores, Botões e Letras" style="background:#e2e8f0; color:#0f172a; border:none; border-radius:4px; padding:2px 6px; font-size:11px; cursor:pointer; font-weight:bold; margin-right:2px;"><i class="ph-bold ph-palette"></i></button><button class="w-size" title="Tamanho">P</button><button class="w-hide"
+              title="Ocultar">×</button></div>
+        </header>
+        <div class="w-body">
+          <nav id="v11-atalhos" class="v11-atalhos"></nav>
+        </div>
+      </article>
+
+    </section>
+  </main>
+
+  <!-- ZOOM QR PONTO (MODO ESPERA) -->
+  <div id="modal-zoom-qr-ponto"
+    style="display:none; z-index:100000; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(4px); justify-content:center; align-items:center;">
+    <img id="qr-ponto-img-zoomed" alt="QR Ponto Ampliado"
+      style="width:340px; height:340px; max-width:85vw; max-height:85vh; border-radius:16px; background:#fff; padding:14px; object-fit:contain;">
+  </div>
+
+  <script src="/chef-tz.js"></script>
+  <script src="/caixa-v11.js"></script>
+  <script src="/caixa-v11-modals.js?v=1787938598083"></script>
+  <script src="/chef-colaborador-dock.js"></script>
+  <script src="/chef-layout-injetor.js"></script>
+</body>
+
+</html>

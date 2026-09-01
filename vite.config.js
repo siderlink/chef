@@ -13,7 +13,16 @@ const copyRootStatics = () => ({
       'main.js', 'auth.js', 'fuzzy-search.js'
     ];
     for (const f of files) {
-      const src = resolve(__dirname, f);
+      let src = resolve(__dirname, f);
+      if (!fs.existsSync(src)) {
+        if (f.endsWith('.css') && fs.existsSync(resolve(__dirname, 'src', 'css', f))) {
+          src = resolve(__dirname, 'src', 'css', f);
+        } else if (fs.existsSync(resolve(__dirname, 'src', 'js', 'pages', f))) {
+          src = resolve(__dirname, 'src', 'js', 'pages', f);
+        } else if (fs.existsSync(resolve(__dirname, 'src', 'js', 'modules', f))) {
+          src = resolve(__dirname, 'src', 'js', 'modules', f);
+        }
+      }
       const dest = resolve(__dirname, 'dist', f);
       if (fs.existsSync(src)) fs.copyFileSync(src, dest);
     }
@@ -45,6 +54,14 @@ const injectPolyfills = () => {
 const isCodespaces = process.env.CODESPACES === 'true';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@views': resolve(__dirname, 'src/views'),
+      '@js': resolve(__dirname, 'src/js'),
+      '@css': resolve(__dirname, 'src/css'),
+      '@modules': resolve(__dirname, 'src/js/modules')
+    }
+  },
   plugins: [
     copyRootStatics(),
     injectPolyfills(),
@@ -89,28 +106,29 @@ export default defineConfig({
     target: 'es2020',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        garcom: resolve(__dirname, 'garcom.html'),
-        fila: resolve(__dirname, 'fila-pedidos.html'),
+        main: fs.existsSync(resolve(__dirname, 'src/views/caixa/index.html')) ? resolve(__dirname, 'src/views/caixa/index.html') : resolve(__dirname, 'index.html'),
+        garcom: fs.existsSync(resolve(__dirname, 'src/views/garcom/garcom.html')) ? resolve(__dirname, 'src/views/garcom/garcom.html') : resolve(__dirname, 'garcom.html'),
+        fila: fs.existsSync(resolve(__dirname, 'src/views/cozinha/fila-pedidos.html')) ? resolve(__dirname, 'src/views/cozinha/fila-pedidos.html') : resolve(__dirname, 'fila-pedidos.html'),
+        'fila-classica': fs.existsSync(resolve(__dirname, 'src/views/cozinha/fila-pedidos-classica.html')) ? resolve(__dirname, 'src/views/cozinha/fila-pedidos-classica.html') : resolve(__dirname, 'fila-pedidos-classica.html'),
         financeiro: resolve(__dirname, 'financeiro.html'),
         cadastro: resolve(__dirname, 'cadastro.html'),
-        'super-admin': resolve(__dirname, 'super-admin.html'),
+        'super-admin': fs.existsSync(resolve(__dirname, 'src/views/admin/super-admin.html')) ? resolve(__dirname, 'src/views/admin/super-admin.html') : resolve(__dirname, 'super-admin.html'),
         ativacao: resolve(__dirname, 'ativacao.html'),
         dashboard: resolve(__dirname, 'dashboard.html'),
-        configuracoes: resolve(__dirname, 'configuracoes.html'),
+        configuracoes: fs.existsSync(resolve(__dirname, 'src/views/admin/configuracoes.html')) ? resolve(__dirname, 'src/views/admin/configuracoes.html') : resolve(__dirname, 'configuracoes.html'),
         'painel-funcionario': resolve(__dirname, 'painel-funcionario.html'),
         'site-vendas': resolve(__dirname, 'site-vendas.html'),
-        cardapio: resolve(__dirname, 'cardapio.html'),
+        cardapio: fs.existsSync(resolve(__dirname, 'src/views/autoatendimento/cardapio.html')) ? resolve(__dirname, 'src/views/autoatendimento/cardapio.html') : resolve(__dirname, 'cardapio.html'),
         login: resolve(__dirname, 'login.html'),
-        'pdv-mobile': resolve(__dirname, 'pdv-mobile.html'),
+        'pdv-mobile': fs.existsSync(resolve(__dirname, 'src/views/autoatendimento/pdv-mobile.html')) ? resolve(__dirname, 'src/views/autoatendimento/pdv-mobile.html') : resolve(__dirname, 'pdv-mobile.html'),
         'area-cliente': resolve(__dirname, 'area-cliente.html'),
-        'fila-lite': resolve(__dirname, 'fila-lite.html'),
-        'garcom-lite': resolve(__dirname, 'garcom-lite.html'),
+        'fila-lite': fs.existsSync(resolve(__dirname, 'src/views/cozinha/fila-lite.html')) ? resolve(__dirname, 'src/views/cozinha/fila-lite.html') : resolve(__dirname, 'fila-lite.html'),
+        'garcom-lite': fs.existsSync(resolve(__dirname, 'src/views/garcom/garcom-lite.html')) ? resolve(__dirname, 'src/views/garcom/garcom-lite.html') : resolve(__dirname, 'garcom-lite.html'),
         'conta-cliente': resolve(__dirname, 'conta-cliente.html'),
         registro: resolve(__dirname, 'registro.html'),
         suporte: resolve(__dirname, 'suporte.html'),
-        'painel-dono': resolve(__dirname, 'painel-dono.html'),
-        totem: resolve(__dirname, 'totem.html'),
+        'painel-dono': fs.existsSync(resolve(__dirname, 'src/views/admin/painel-dono.html')) ? resolve(__dirname, 'src/views/admin/painel-dono.html') : resolve(__dirname, 'painel-dono.html'),
+        totem: fs.existsSync(resolve(__dirname, 'src/views/autoatendimento/totem.html')) ? resolve(__dirname, 'src/views/autoatendimento/totem.html') : resolve(__dirname, 'totem.html'),
         'hub-delivery': resolve(__dirname, 'hub-delivery.html')
       }
     }

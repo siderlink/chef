@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>KDS Cozinha - Fila de Pedidos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/fila.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="stylesheet" href="/dark-mode.css">
+  <script src="/theme-manager.js?v=20260829t1"></script>
+  <script src="/vendor/morphdom/morphdom.min.js"></script>
+  <script src="/locales.js"></script>
+  <script src="/broadcast.js"></script>
+  <script src="/i18n.js"></script>
+  <link rel="icon" href="/icons/icon.ico">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#fc4b15">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Chef Cozinha">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <script src="/socket.io.min.js"></script>
+  <script src="/chef-tz.js"></script>
+  <script src="fila.js?v=20260829"></script>
+</head>
+
+<body class="kds-body">
+
+    <!-- TOP BARRA PRINCIPAL DO KDS -->
+  <header class="kds-navbar">
+    
+    <!-- ESQUERDA: VOLTAR AO CAIXA + BRAND -->
+    <div class="kds-navbar-left">
+      <button class="kds-nav-btn kds-btn-caixa" onclick="window.location.href='/index.html'" title="Voltar ao Caixa (Início)">
+        <i class="ph-bold ph-house"></i>
+        <span>Caixa</span>
+      </button>
+      <div class="kds-brand-badge">
+        <i class="ph-fill ph-chef-hat" style="color: #fc4b15; font-size: 24px;"></i>
+        <div class="kds-brand-texts">
+          <strong class="kds-brand-name">KDS Cozinha</strong>
+          <span class="kds-brand-sector" id="current-sector-label-sub">Todos os Setores</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTRO: STATUS TABS + SETORES UNIFICADOS -->
+    <div class="kds-navbar-center">
+      <!-- Status Tabs Principais -->
+      <div class="kds-segmented-control" id="kds-status-tabs-desktop">
+        <button class="kds-segment-btn status-btn active" data-status="Em espera" onclick="filtrarFila('Em espera')">
+          <i class="ph-bold ph-hourglass-high" style="color: #f59e0b;"></i>
+          <span>Espera</span>
+          <span class="kds-badge-count badge-espera" id="kds-badge-espera">0</span>
+        </button>
+        <button class="kds-segment-btn status-btn" data-status="Em preparo" onclick="filtrarFila('Em preparo')">
+          <i class="ph-bold ph-fire" style="color: #3b82f6;"></i>
+          <span>Preparo</span>
+          <span class="kds-badge-count badge-preparo" id="kds-badge-preparo">0</span>
+        </button>
+        <button class="kds-segment-btn status-btn" data-status="Pronto" onclick="filtrarFila('Pronto')">
+          <i class="ph-bold ph-bowl-food" style="color: #10b981;"></i>
+          <span>Prontos</span>
+          <span class="kds-badge-count badge-pronto" id="kds-badge-pronto">0</span>
+        </button>
+      </div>
+
+      <div class="kds-nav-separator"></div>
+
+      <!-- Setores (Chips com Scroll Horizontal) -->
+      <div class="kds-chips-scroll" id="kds-sectors-scroll-wrap">
+        <button class="kds-chip-item active sector-modal-btn" data-sector="Todos" onclick="filtrarSetor('Todos')">
+          <i class="ph-bold ph-storefront"></i> <span>Todos os Setores</span>
+        </button>
+        <div id="kds-sectors-chips-dynamic" style="display: contents;"></div>
+      </div>
+    </div>
+
+    <!-- DIREITA: SELETOR GRADE/LINHAS + BUSCA + TEMA + AJUSTES -->
+    <div class="kds-navbar-right">
+      <!-- Seletor de Modo de Exibição: Grade vs Linhas -->
+      <div style="display: flex; background: var(--bg-tertiary, #1e293b); padding: 3px; border-radius: 10px; border: 1px solid var(--border-color, #334155);">
+        <button type="button" id="btn-layout-grid" onclick="window.alterarModoDisposicao('grid')" title="Modo Grade de Cards" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 800; cursor: pointer; background: #fc4b15; color: white; display: flex; align-items: center; gap: 4px;">
+          <i class="ph-bold ph-squares-four"></i> <span>Grade</span>
+        </button>
+        <button type="button" id="btn-layout-lista" onclick="window.alterarModoDisposicao('lista')" title="Modo Exibição em Linha" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted, #94a3b8); display: flex; align-items: center; gap: 4px;">
+          <i class="ph-bold ph-rows"></i> <span>Linhas</span>
+        </button>
+      </div>
+
+      <!-- Busca rápida -->
+      <div class="kds-search-bar">
+        <i class="ph ph-magnifying-glass"></i>
+        <input type="text" id="fila-search-input" placeholder="Buscar mesa..." oninput="window.filaSearchInput && window.filaSearchInput()">
+      </div>
+
+      <!-- Alternar Tema Claro / Escuro -->
+      <button class="kds-icon-btn" onclick="if(window.ChefTheme && window.ChefTheme.toggle) { window.ChefTheme.toggle(); } else if(typeof window.toggleTheme==='function') { window.toggleTheme(); }" title="Alternar Tema Claro / Escuro">
+        <i class="ph-bold ph-moon"></i>
+      </button>
+
+      <!-- Configurações do KDS -->
+      <button class="kds-icon-btn" onclick="window.abrirModalFilaSettings()" title="Configurações da Fila">
+        <i class="ph-bold ph-gear"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ÁREA PRINCIPAL DA FILA DE PEDIDOS -->
+  <main class="kds-main-container">
+    <div class="queue-section" style="width: 100%; height: 100%; overflow-y: auto;">
+      <div class="queue-list" id="queue-list">
+        <!-- Itens injetados dinamicamente via fila.js -->
+      </div>
+    </div>
+  </main>
+
+  <!-- BARRA DE NAVEGAÇÃO INFERIOR NO MOBILE (RODAPÉ FIXO < 768px) -->
+  <nav class="kds-mobile-bottom-nav" id="kds-mobile-bottom-nav">
+    <button class="kds-nav-tab active" data-status="Em espera" onclick="filtrarFila('Em espera')">
+      <i class="ph-bold ph-hourglass-high" style="color: #f59e0b;"></i>
+      <span>Espera</span>
+      <span class="kds-tab-badge badge-espera" id="kds-badge-espera-mob">0</span>
+    </button>
+    <button class="kds-nav-tab" data-status="Em preparo" onclick="filtrarFila('Em preparo')">
+      <i class="ph-bold ph-fire" style="color: #3b82f6;"></i>
+      <span>Preparo</span>
+      <span class="kds-tab-badge badge-preparo" id="kds-badge-preparo-mob">0</span>
+    </button>
+    <button class="kds-nav-tab" data-status="Pronto" onclick="filtrarFila('Pronto')">
+      <i class="ph-bold ph-bowl-food" style="color: #10b981;"></i>
+      <span>Prontos</span>
+      <span class="kds-tab-badge badge-pronto" id="kds-badge-pronto-mob">0</span>
+    </button>
+    <button class="kds-nav-tab" onclick="window.abrirModalFilaSettings()">
+      <i class="ph-bold ph-sliders"></i>
+      <span>Ajustes</span>
+    </button>
+  </nav>
+
+  <!-- MODAL CONFIGURAÇÕES DA FILA -->
+  <div id="modal-fila-settings" class="fila-settings-overlay" style="display:none;" onclick="if(event.target===this)window.fecharModalFilaSettings()">
+    <div class="fila-settings-card" style="max-height: 90vh; overflow-y: auto;">
+      <div class="fila-settings-header">
+        <i class="ph ph-gear" style="font-size: 20px; color: #1a73e8;"></i>
+        <span>Configurações da Fila</span>
+        <button type="button" onclick="window.fecharModalFilaSettings()" class="fila-settings-close" title="Fechar">&times;</button>
+      </div>
+      <div class="fila-settings-body">
+        
+        <!-- SEÇÃO FILTRAR POR SETOR / COZINHA -->
+        <div class="fila-settings-group">
+          <span class="fila-settings-label">Setor / Cozinha</span>
+          <div class="fila-settings-grid" style="grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));">
+            <button class="fila-settings-btn sector-modal-btn active" data-sector="Todos" onclick="filtrarSetor('Todos')">
+              <i class="ph ph-storefront"></i><span>Todos</span>
+            </button>
+            <div id="modal-settings-setores-dinamicos" style="display: contents;"></div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO FILTRAR POR STATUS -->
+        <div class="fila-settings-group">
+          <span class="fila-settings-label">Status do Pedido</span>
+          <div class="fila-settings-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+            <button class="fila-settings-btn status-btn" data-status="Em espera" onclick="filtrarFila('Em espera')">
+              <i class="ph ph-hourglass-high" style="color: #f39c12;"></i><span>Espera</span>
+            </button>
+            <button class="fila-settings-btn status-btn" data-status="Em preparo" onclick="filtrarFila('Em preparo')">
+              <i class="ph ph-fire" style="color: #e74c3c;"></i><span>Preparo</span>
+            </button>
+            <button class="fila-settings-btn status-btn" data-status="Pronto" onclick="filtrarFila('Pronto')">
+              <i class="ph ph-bowl-food" style="color: #27ae60;"></i><span>Prontos</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SEÇÃO DISPOSIÇÃO -->
+        <div class="fila-settings-group">
+          <span class="fila-settings-label">Disposição dos Cards</span>
+          <div class="fila-settings-grid">
+            <button class="fila-settings-btn layout-btn active" data-mode="grid" onclick="window.alterarModoDisposicao && window.alterarModoDisposicao('grid')">
+              <i class="ph ph-squares-four"></i><span>Grade KDS</span>
+            </button>
+            <button class="fila-settings-btn layout-btn" data-mode="lista" onclick="window.alterarModoDisposicao && window.alterarModoDisposicao('lista')">
+              <i class="ph ph-list-bullets"></i><span>Linhas</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SEÇÃO CAMPOS DO CARD (ORDEM E VISIBILIDADE) -->
+        <div class="fila-settings-group">
+          <span class="fila-settings-label">Campos do Card (ordem e visibilidade)</span>
+          <div id="kds-card-fields-config" style="display:flex;flex-direction:column;gap:6px;"></div>
+          <span style="font-size:11px;color:#94a3b8;font-weight:600;margin-top:4px;">Arraste com os botões para reordenar. Alterações valem para todos os colaboradores (salvo no servidor).</span>
+        </div>
+
+        <!-- SEÇÃO TAMANHO DA LETRA -->
+        <div class="fila-settings-group">
+          <span class="fila-settings-label">Tamanho da Letra</span>
+          <div class="fila-settings-row">
+            <button class="fila-settings-btn flex-1" id="popup-btn-font-dec" onclick="window.alterarTamanhoFonte && window.alterarTamanhoFonte(-1)">
+              <i class="ph ph-text-aa-offset-decrease"></i><span>A-</span>
+            </button>
+            <button class="fila-settings-btn flex-1" id="popup-btn-font-inc" onclick="window.alterarTamanhoFonte && window.alterarTamanhoFonte(1)">
+              <i class="ph ph-text-aa-offset-increase"></i><span>A+</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SEÇÃO DESTAQUE -->
+        <div class="fila-settings-group">
+          <span class="fila-settings-label">Destaque Novo Pedido</span>
+          <div class="fila-settings-row fila-settings-input-row">
+            <i class="ph ph-timer" style="font-size: 18px; color: #1a73e8;"></i>
+            <input type="number" id="cfg-tempo-pulse" min="1" max="30" value="3" class="fila-settings-input">
+            <span style="font-size: 12px; color: #64748b; font-weight: 600;">seg. piscando</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/sortablejs/Sortable.min.js"></script>
+
+  <!-- Floating Bulb FAB for Dicas Rápidas -->
+  <button id="ia-gerente-fab" title="Dicas Rápidas da Cozinha" onclick="window.toggleDicasRapidas()" style="display:none;position:fixed;bottom:16px;left:16px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);border:2px solid #f59e0b;box-shadow:0 4px 16px rgba(245,158,11,0.35);z-index:9999;cursor:pointer;align-items:center;justify-content:center;font-size:22px;transition:all 0.3s ease;">
+    💡
+    <span id="ia-gerente-badge" style="position:absolute;top:-2px;right:-2px;width:12px;height:12px;background:#ef4444;border-radius:50%;border:2px solid white;display:none;"></span>
+  </button>
+
+  <!-- IA Gerente Panel (cozinha) -->
+  <div id="ia-gerente-panel" style="display:none;position:fixed;bottom:16px;left:16px;width:320px;max-width:calc(100vw - 32px);max-height:220px;overflow-y:auto;background:white;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.18);border:1px solid #e2e8f0;z-index:10000;padding:12px;font-size:12.5px;transition:all 0.4s cubic-bezier(0.16, 1, 0.3, 1);transform-origin:bottom left;">
+    <div style="font-weight:700;font-size:13px;color:#1e293b;padding-bottom:8px;border-bottom:1px solid #e2e8f0;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="display:flex;align-items:center;gap:6px;"><i class="ph ph-lightbulb-fill" style="color:#f59e0b;font-size:16px;"></i> Dicas Rápidas</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button onclick="window.minimizarDicasRapidas()" title="Minimizar para lâmpada" style="background:#f1f5f9;border:none;border-radius:6px;cursor:pointer;font-size:12px;padding:2px 6px;color:#64748b;font-weight:bold;">🗕</button>
+        <button onclick="window.fecharDicasRapidas()" title="Fechar" style="background:#f1f5f9;border:none;border-radius:6px;cursor:pointer;font-size:14px;padding:2px 6px;color:#64748b;font-weight:bold;">&times;</button>
+      </div>
+    </div>
+    <div id="ia-gerente-content"></div>
+  </div>
+
+  <script src="/fullscreen.js"></script>
+  <script>window.PUSH_ROLE = 'cozinha';</script>
+  <script src="/push-client.js"></script>
+  <script src="/chef-colaborador-dock.js"></script>
+  <script src="/chef-layout-injetor.js"></script>
+</body>
+
+</html>

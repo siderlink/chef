@@ -15,17 +15,10 @@ const HOST = window.location.hostname;
 
 // Se o restaurante configurou o modo Clássico, redireciona para a fila clássica.
 (function kdsDetectarVersaoClassica() {
-  const localModo = localStorage.getItem('fila_modo') || localStorage.getItem('chef_fila_modo');
-  if (localModo === 'classica') {
-    window.location.replace('/fila-pedidos-classica.html');
-    return;
-  }
   fetch('/api/config')
     .then(r => r.json())
     .then(cfg => {
       if (cfg && String(cfg.fila_modo || '').toLowerCase() === 'classica') {
-        localStorage.setItem('fila_modo', 'classica');
-        localStorage.setItem('chef_fila_modo', 'classica');
         window.location.replace('/fila-pedidos-classica.html');
       }
     })
