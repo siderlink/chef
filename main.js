@@ -444,9 +444,14 @@ window.apelidarDispositivo = function () {
 };
 
 window.onDragStartTable = (e, mesa) => {
+  if (!e || !e.dataTransfer) return;
+  e.dataTransfer.setData('text/plain', mesa);
   e.dataTransfer.setData('type', 'table');
   e.dataTransfer.setData('mesa', mesa);
   e.dataTransfer.effectAllowed = 'move';
+  if (e.target && e.target.classList) {
+    e.target.classList.add('dragging-chef');
+  }
 };
 
 window.onDragStartItem = (e, itemId, comandaName = '') => {
@@ -1714,39 +1719,50 @@ let ordersData = [];
 window.ordersData = ordersData;
 
 window.onDropMesa = async (e, targetMesa) => {
-  e.preventDefault();
-  e.stopPropagation();
+  if (e) {
+    e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+  }
 
-  const type = e.dataTransfer.getData('type');
-  if (!type) return;
+  const type = (e && e.dataTransfer ? e.dataTransfer.getData('type') : '') || 'table';
+  let draggedMesa = e && e.dataTransfer ? e.dataTransfer.getData('mesa') : '';
+  if (!draggedMesa && e && e.dataTransfer) {
+    draggedMesa = e.dataTransfer.getData('text/plain');
+  }
 
-  if (type === 'table') {
-    const draggedMesa = e.dataTransfer.getData('mesa');
-    if (!draggedMesa || draggedMesa === targetMesa) return;
+  if (!targetMesa && e && e.target) {
+    const card = e.target.closest('.mesa-item');
+    if (card) targetMesa = card.getAttribute('data-mesa') || card.getAttribute('data-nome');
+  }
 
-    // Check if targetMesa is occupied or not by looking at window.ordersData
+  if (type === 'table' || (!type && draggedMesa)) {
+    if (!draggedMesa || !targetMesa || draggedMesa === targetMesa) return;
+
     const isOccupied = window.ordersData && window.ordersData.some(o =>
       (o.mesa_grupo === targetMesa || o.localName === targetMesa) && o.status !== 'Finalizado' && o.status !== 'Cancelado' && o.status !== 'Pago'
     );
 
-    const operador = window.crmPerfil ? window.crmPerfil.nome : 'Desconhecido';
+    const operador = (window.crmPerfil && window.crmPerfil.nome) || localStorage.getItem('chef_operador_nome') || 'Caixa';
 
     if (isOccupied) {
       if (await chefConfirm(
         'Mover para Comanda',
         `A ${targetMesa} já está ocupada. Deseja mover os pedidos da ${draggedMesa} para uma comanda na ${targetMesa} e liberar a ${draggedMesa}?`
       )) {
-        socket.emit('transferir_mesa', { mesaAtual: draggedMesa, novaMesa: targetMesa, operador });
+        if (typeof socket !== 'undefined' && socket) socket.emit('transferir_mesa', { mesaAtual: draggedMesa, novaMesa: targetMesa, operador });
       }
     } else {
       if (await chefConfirm('Transferir mesa', 'Mover ' + draggedMesa + ' para ' + targetMesa + '?')) {
-        socket.emit('transferir_mesa', { mesaAtual: draggedMesa, novaMesa: targetMesa, operador });
+        if (typeof socket !== 'undefined' && socket) socket.emit('transferir_mesa', { mesaAtual: draggedMesa, novaMesa: targetMesa, operador });
       }
     }
   } else if (type === 'item') {
-    const itemId = e.dataTransfer.getData('itemId');
-    if (await chefConfirm('Transferir item', 'Mover este item para ' + targetMesa + '?')) {
-      socket.emit('transferir_item', { itemId: itemId, novaMesa: targetMesa, operador: window.crmPerfil ? window.crmPerfil.nome : 'Desconhecido' });
+    const itemId = (e && e.dataTransfer ? e.dataTransfer.getData('itemId') : '') || (e && e.dataTransfer ? e.dataTransfer.getData('text/plain') : '');
+    if (itemId && targetMesa) {
+      const operador = (window.crmPerfil && window.crmPerfil.nome) || localStorage.getItem('chef_operador_nome') || 'Caixa';
+      if (await chefConfirm('Transferir item', 'Mover este item para ' + targetMesa + '?')) {
+        if (typeof socket !== 'undefined' && socket) socket.emit('transferir_item', { itemId: itemId, novaMesa: targetMesa, operador });
+      }
     }
   }
 };
@@ -11252,19 +11268,9 @@ document.addEventListener('drop', (e) => {
   if (targetCard) {
     e.preventDefault();
     targetCard.classList.remove('drag-over');
-    const mesaOrigem = e.dataTransfer.getData('text/plain');
-    const mesaDestino = targetCard.getAttribute('data-mesa') || targetCard.getAttribute('data-nome') || (targetCard.querySelector('.mesa-id') ? targetCard.querySelector('.mesa-id').innerText.trim() : '');
-    
-    if (mesaOrigem && mesaDestino && mesaOrigem !== mesaDestino) {
-      if (confirm(`Deseja transferir/juntar a ${mesaOrigem} para a ${mesaDestino}?`)) {
-        if (typeof socket !== 'undefined') {
-          socket.emit('transferir_mesa', {
-            mesaAtual: mesaOrigem,
-            novaMesa: mesaDestino,
-            operador: localStorage.getItem('chef_operador_nome') || 'Caixa'
-          });
-        }
-      }
+    const targetMesa = targetCard.getAttribute('data-mesa') || targetCard.getAttribute('data-nome') || (targetCard.querySelector('.mesa-id') ? targetCard.querySelector('.mesa-id').innerText.trim() : '');
+    if (typeof window.onDropMesa === 'function') {
+      window.onDropMesa(e, targetMesa);
     }
   }
 });
