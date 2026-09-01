@@ -225,6 +225,90 @@ module.exports = function ({ app, db, masterDb, io, options, log }) {
       ordem: 8,
       novo: 1,
       cores: '{"primary":"#7c3aed","bgPage":"#0f0a1e","bgCard":"#1a1030","borderColor":"#2d1b69","textMain":"#f5f3ff","statusOcupada":"#f43f5e","statusLivre":"#10b981"}'
+    },
+    {
+      id: 'verde_campos',
+      nome: 'Verde Campos da Serra',
+      nicho: 'Saudável & Natural',
+      emoji_nicho: '🌿',
+      descricao: 'Paleta clara e vibrante em verde fresco, ideal para saudáveis, saladas, bowls e comida natural.',
+      badge: 'lancamento',
+      desconto: 0,
+      estrelas: 4.6,
+      votos: 12,
+      ordem: 9,
+      novo: 1,
+      cores: '{"primary":"#16a34a","bgPage":"#f4faf4","bgCard":"#ffffff","borderColor":"#dfe9df","textMain":"#1c2b1c","statusOcupada":"#dc2626","statusLivre":"#16a34a"}'
+    },
+    {
+      id: 'azul_marinho',
+      nome: 'Azul Marinho Executivo',
+      nicho: 'Frutos do Mar & Seafood',
+      emoji_nicho: '🌊',
+      descricao: 'Azul profundo e elegante sobre base escura, sofisticação náutica para peixarias e restaurantes de frutos do mar.',
+      badge: 'destaque',
+      desconto: 0,
+      estrelas: 4.7,
+      votos: 18,
+      ordem: 10,
+      novo: 1,
+      cores: '{"primary":"#3b82f6","bgPage":"#0a1122","bgCard":"#12203f","borderColor":"#1e3a5f","textMain":"#eff6ff","statusOcupada":"#f43f5e","statusLivre":"#10b981"}'
+    },
+    {
+      id: 'violeta_noite',
+      nome: 'Violeta Noite Premium',
+      nicho: 'Doceria & Confeitaria',
+      emoji_nicho: '💜',
+      descricao: 'Violeta luxuoso com fundo escuro profundo, charme noturno para docerias, confeitarias e cafés gourmet.',
+      badge: 'lancamento',
+      desconto: 0,
+      estrelas: 4.5,
+      votos: 9,
+      ordem: 11,
+      novo: 1,
+      cores: '{"primary":"#a78bfa","bgPage":"#0e0714","bgCard":"#1c1029","borderColor":"#3b2a5c","textMain":"#f5f3ff","statusOcupada":"#f43f5e","statusLivre":"#10b981"}'
+    },
+    {
+      id: 'areia_costa',
+      nome: 'Areia & Costa Tropical',
+      nicho: 'Praia & Esticão',
+      emoji_nicho: '🏖️',
+      descricao: 'Base clara em tom areia com toque aqua vibrante, frescor praiano para quiosques, açaí e drinks.',
+      badge: 'lancamento',
+      desconto: 0,
+      estrelas: 4.6,
+      votos: 11,
+      ordem: 12,
+      novo: 1,
+      cores: '{"primary":"#0d9488","bgPage":"#fefbf3","bgCard":"#ffffff","borderColor":"#efe7d3","textMain":"#292524","statusOcupada":"#dc2626","statusLivre":"#0d9488"}'
+    },
+    {
+      id: 'rouge_paris',
+      nome: 'Rouge Paris Elegance',
+      nicho: 'Cozinha Internacional',
+      emoji_nicho: '🌹',
+      descricao: 'Rosa-soberano e vinho profundo sobre fundo escuro aveludado, requinte parisiense para gastronomia fina.',
+      badge: 'destaque',
+      desconto: 0,
+      estrelas: 4.8,
+      votos: 15,
+      ordem: 13,
+      novo: 1,
+      cores: '{"primary":"#fb7185","bgPage":"#160a0d","bgCard":"#241318","borderColor":"#4a2431","textMain":"#fdf2f8","statusOcupada":"#f43f5e","statusLivre":"#10b981"}'
+    },
+    {
+      id: 'grafite_tech',
+      nome: 'Grafite Steel Tech',
+      nicho: 'Steakhouse Moderna',
+      emoji_nicho: '⚙️',
+      descricao: 'Cinza grafite industrial com contraste azul-aço, identidade moderna para steakhouse e cozinha de brasa.',
+      badge: 'lancamento',
+      desconto: 0,
+      estrelas: 4.6,
+      votos: 14,
+      ordem: 14,
+      novo: 1,
+      cores: '{"primary":"#38bdf8","bgPage":"#0e1116","bgCard":"#161b24","borderColor":"#2a3443","textMain":"#f1f5f9","statusOcupada":"#f43f5e","statusLivre":"#10b981"}'
     }
   ];
 
@@ -288,17 +372,15 @@ module.exports = function ({ app, db, masterDb, io, options, log }) {
       atualizado_em DATETIME DEFAULT (datetime('now','localtime'))
     )`);
 
-    // Seed com temas padrão se a tabela estiver vazia
-    db.get(`SELECT COUNT(*) as n FROM temas_catalogo`, (err, row) => {
-      if (err || (row && row.n > 0)) return;
-      const sqlInsert = `INSERT OR IGNORE INTO temas_catalogo
-        (id, nome, nicho, emoji_nicho, descricao, badge, desconto, estrelas, votos, ordem, novo, cores)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`;
-      TEMAS_DEFAULT.forEach(t => {
-        db.run(sqlInsert, [t.id, t.nome, t.nicho, t.emoji_nicho, t.descricao, t.badge, t.desconto, t.estrelas, t.votos, t.ordem, t.novo, t.cores]);
-      });
-      log('Catálogo de temas semeado com ' + TEMAS_DEFAULT.length + ' temas padrão.');
+    // Seed com temas padrão — SEMPRE INSERT OR IGNORE (idempotente): adiciona
+    // temas novos em bancos já existentes sem sobrescrever ajustes da curadoria.
+    const sqlInsert = `INSERT OR IGNORE INTO temas_catalogo
+      (id, nome, nicho, emoji_nicho, descricao, badge, desconto, estrelas, votos, ordem, novo, cores)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`;
+    TEMAS_DEFAULT.forEach(t => {
+      db.run(sqlInsert, [t.id, t.nome, t.nicho, t.emoji_nicho, t.descricao, t.badge, t.desconto, t.estrelas, t.votos, t.ordem, t.novo, t.cores]);
     });
+    log('Catálogo de temas semeado/verificado com ' + TEMAS_DEFAULT.length + ' temas padrão.');
 
     // Seed módulos padrão do site de vendas
     db.get(`SELECT COUNT(*) as n FROM site_vendas_modulos`, (err, row) => {

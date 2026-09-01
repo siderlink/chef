@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,8 @@
   <!-- QR Code local (funciona sem internet) -->
   <script src="/vendor/qrcode/qrcode-generator.js"></script>
   <script src="/vendor/qrcode/qr-helper.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+  <script src="/theme-manager.js?v=20260901paletas"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
 
@@ -42,8 +43,8 @@
       color: var(--text);
       overflow-x: hidden;
       padding-bottom: 24px;
-      background-image: radial-gradient(ellipse at 20% 0%, rgba(252,75,21,0.04) 0%, transparent 60%),
-                        radial-gradient(ellipse at 80% 100%, rgba(252,75,21,0.03) 0%, transparent 60%);
+      background-image: radial-gradient(ellipse at 20% 0%, color-mix(in srgb, var(--primary) 4%, transparent) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 100%, color-mix(in srgb, var(--primary) 3%, transparent) 0%, transparent 60%);
     }
 
     .container {
@@ -80,7 +81,7 @@
       justify-content: center;
       color: white;
       font-size: 22px;
-      box-shadow: 0 4px 12px rgba(252,75,21,0.25);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 25%, transparent);
     }
 
     .brand-name {
@@ -142,7 +143,7 @@
       left: 0;
       right: 0;
       height: 3px;
-      background: linear-gradient(90deg, var(--primary), var(--primary-light), #ffb088, var(--primary-light), var(--primary));
+      background: linear-gradient(90deg, var(--primary), var(--primary-light), color-mix(in srgb, var(--primary) 55%, #ffffff), var(--primary-light), var(--primary));
       background-size: 200% 100%;
       animation: shimmer 4s ease-in-out infinite;
     }
@@ -227,7 +228,7 @@
     }
     .divider.thick {
       height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(252,75,21,0.15), transparent);
+      background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--primary) 15%, transparent), transparent);
       margin: 4px 0;
     }
 
@@ -251,7 +252,7 @@
     .total-row.grand-total {
       margin-top: 8px;
       padding: 16px 0 0;
-      border-top: 2px solid rgba(252,75,21,0.12);
+      border-top: 2px solid color-mix(in srgb, var(--primary) 12%, transparent);
     }
 
     .total-row.grand-total .total-label {
@@ -313,7 +314,7 @@
     .spinner {
       width: 36px;
       height: 36px;
-      border: 3px solid rgba(252,75,21,0.12);
+      border: 3px solid color-mix(in srgb, var(--primary) 12%, transparent);
       border-top-color: var(--primary);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
@@ -399,17 +400,17 @@
     .btn-primary {
       background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white;
-      box-shadow: 0 4px 16px rgba(252,75,21,0.25);
+      box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 25%, transparent);
     }
 
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(252,75,21,0.35);
+      box-shadow: 0 8px 24px color-mix(in srgb, var(--primary) 35%, transparent);
     }
 
     .btn-primary:active {
       transform: translateY(0);
-      box-shadow: 0 2px 8px rgba(252,75,21,0.2);
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 20%, transparent);
     }
 
     /* RECEIPT DIV */
@@ -654,8 +655,67 @@
 <script>
   const socket = io({ query: { restaurante_id: new URLSearchParams(window.location.search).get('restaurante_id') || localStorage.getItem('restaurante_id') || '1' } });
   const urlParams = new URLSearchParams(window.location.search);
-  const mesaQuery = urlParams.get('mesa');
+const mesaQuery = urlParams.get('mesa');
   let hasLoaded = false;
+
+  // ── Pré-definição do restaurante: esta tela usa a paleta escolhida nas Configurações ──
+  window.socket = (typeof socket !== 'undefined' && window.socket === undefined) ? socket : window.socket;
+  const ridConta = urlParams.get('restaurante_id') || localStorage.getItem('restaurante_id') || '1';
+
+  function hexToRgbArr(hex) {
+    let h = String(hex || '#ffffff').replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    return [parseInt(h.substr(0, 2), 16) || 255, parseInt(h.substr(2, 2), 16) || 255, parseInt(h.substr(4, 2), 16) || 255];
+  }
+  function rgbToHex(rgb) {
+    return '#' + rgb.map(n => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0')).join('');
+  }
+  function mixCores(hex1, hex2, pct) {
+    const a = hexToRgbArr(hex1), b = hexToRgbArr(hex2);
+    return rgbToHex(a.map((v, i) => v + (b[i] - v) * pct));
+  }
+  function rgbaCores(hex, alpha) {
+    return 'rgba(' + hexToRgbArr(hex).join(', ') + ', ' + alpha + ')';
+  }
+
+  function aplicarPaletaConta(cfg) {
+    if (!cfg || typeof cfg !== 'object') return;
+    const root = document.documentElement;
+    const set = (k, v) => { try { root.style.setProperty(k, v, 'important'); } catch (e) { } };
+    const primary = cfg.primary || '#fc4b15';
+    const bg = cfg.bgColor || '#f7f3f0';
+    const card = cfg.bgCard || '#ffffff';
+    const border = cfg.borderColor || 'rgba(255,255,255,0.5)';
+    const text = cfg.textPrimary || '#1c1917';
+
+    set('--primary', primary);
+    set('--primary-light', mixCores(primary, '#ffffff', 0.18));
+    set('--primary-dark', mixCores(primary, '#000000', 0.18));
+    set('--bg-1', bg);
+    set('--bg-2', mixCores(bg, primary, 0.06));
+    set('--bg-color', bg);
+    set('--bg-main', bg);
+    set('--card-bg', rgbaCores(card, 0.9));
+    set('--card-border', String(border).indexOf('#') === 0 ? rgbaCores(border, 0.5) : border);
+    set('--border-color', String(border).indexOf('#') === 0 ? border : border);
+    set('--text', text);
+    set('--text-primary', text);
+    set('--text-secondary', mixCores(text, bg, 0.4));
+    set('--text-muted', mixCores(text, bg, 0.6));
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', primary);
+  }
+
+  window.addEventListener('chef_custom_theme_applied', ev => aplicarPaletaConta(ev.detail));
+
+  fetch('/api/public/theme?restaurante_id=' + encodeURIComponent(ridConta))
+    .then(r => r.json())
+    .then(d => {
+      if (d && d.ok && d.theme && window.ChefTheme && window.ChefTheme.applyCustom) {
+        window.ChefTheme.applyCustom(d.theme);
+      }
+    })
+    .catch(() => { });
 
   if (!mesaQuery) {
     document.getElementById('titulo-mesa').innerText = 'Mesa não informada';

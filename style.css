@@ -6439,3 +6439,23 @@ body:not(.dark-mode) .left-actions .btn-action {
   flex: 1 1 auto !important;
   padding-right: 4px;
 }
+
+/* Drag & Drop Visual Feedback */
+.mesa-item[draggable="true"] {
+  cursor: grab;
+}
+.mesa-item[draggable="true"]:active {
+  cursor: grabbing;
+}
+.mesa-item.dragging-chef {
+  opacity: 0.4 !important;
+  transform: scale(0.96);
+  border: 2px dashed #fc4b15 !important;
+}
+.mesa-item.drag-over {
+  border: 2px solid #fc4b15 !important;
+  background: rgba(252, 75, 21, 0.12) !important;
+  box-shadow: 0 0 16px rgba(252, 75, 21, 0.4) !important;
+  transform: scale(1.04);
+  transition: all 0.15s ease;
+}

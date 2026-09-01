@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Dynamic GTAG & Meta Pixel Tracking -->
   <script src="/tracking-loader.js"></script>
-  <script src="/theme-manager.js?v=20260829t1"></script>
+  <script src="/theme-manager.js?v=20260901paletas"></script>
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/responsive-native.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
@@ -28,10 +28,8 @@
   <script src="/vendor/qrcode/qrcode-generator.js"></script>
   <script src="/vendor/qrcode/qr-helper.js"></script>
 
-  <!-- Intro.js for Guided Tour -->
-  <link rel="stylesheet" href="/vendor/introjs/introjs.min.css" />
-  <script src="/vendor/introjs/intro.min.js"></script>
-
+  <!-- SortableJS para Arraste & Reordenação de Blocos -->
+  <script src="/vendor/sortablejs/Sortable.min.js"></script>
 
   <link rel="stylesheet" href="/index-styles.css">
 
@@ -50,11 +48,11 @@
   <script src="/anti-tamper.js" defer></script>
   <link rel="stylesheet" href="/apple-transitions.css?v=1787948800000">
   <script src="/apple-transitions.js?v=1787948800000" defer></script>
-  <link rel="stylesheet" href="/caixa-pro-ux.css?v=20260831recolher">
-  <script src="/caixa-pro-ux.js?v=20260828fix3" defer></script>
+<link rel="stylesheet" href="/caixa-pro-ux.css?v=20260901uxcaixa">
+    <script src="/caixa-pro-ux.js?v=20260901uxcaixa" defer></script>
   <script src="/pagamento-parcial-modal.js?v=20260828fix5" defer></script>
   <script src="/chef-telemetry-clicks.js" defer></script>
-  <script src="/chef-layout-customizer.js" defer></script>
+  <script src="/chef-layout-customizer.js?v=20260901uxcaixa" defer></script>
 </head>
 
 <body>
@@ -393,7 +391,7 @@
     </div>
 
     <!-- TOP MENUBAR -->
-    <div class="top-menubar">
+    <div class="top-menubar has-caixa-busca">
       <div class="dropdown-wrapper">
         <span class="menu-trigger" data-dropdown="drop-arquivo">Arquivo</span>
         <div class="dropdown-menu" id="drop-arquivo">
@@ -438,6 +436,12 @@
       <!-- Nome do Restaurante (preenchido via licença) -->
       <span class="restaurant-name" id="restaurant-name"
         style="margin-left:auto; font-size:13px; color:#aaa; padding-right:8px;"></span>
+
+      <!-- Busca de Mesa / Comanda (presente em TODAS as visualizações) -->
+      <div class="caixa-ux-search-box" id="caixa-ux-search-box-topbar">
+        <input type="text" id="caixa-ux-search" class="caixa-ux-search-input" placeholder="Buscar mesa ou comanda..." oninput="window.filtrarMesasBusca(this.value)">
+        <span class="caixa-ux-search-badge">F4</span>
+      </div>
 
       <!-- QR CODE PONTO (DESKTOP - DROPDOWN ESTILO COMMUNITY) -->
       <div id="qr-ponto-container" class="qr-ponto-box dropdown-menu">

@@ -445,12 +445,17 @@ window.apelidarDispositivo = function () {
 
 window.onDragStartTable = (e, mesa) => {
   if (!e || !e.dataTransfer) return;
-  e.dataTransfer.setData('text/plain', mesa);
-  e.dataTransfer.setData('type', 'table');
-  e.dataTransfer.setData('mesa', mesa);
+  const card = e.target ? e.target.closest('.mesa-item') : null;
+  const nomeMesa = mesa || (card ? (card.getAttribute('data-mesa') || card.getAttribute('data-nome')) : '');
+
+  try { e.dataTransfer.setData('Text', nomeMesa); } catch(err) {}
+  try { e.dataTransfer.setData('text/plain', nomeMesa); } catch(err) {}
+  try { e.dataTransfer.setData('type', 'table'); } catch(err) {}
+  try { e.dataTransfer.setData('mesa', nomeMesa); } catch(err) {}
   e.dataTransfer.effectAllowed = 'move';
-  if (e.target && e.target.classList) {
-    e.target.classList.add('dragging-chef');
+
+  if (card) {
+    card.classList.add('dragging-chef');
   }
 };
 
@@ -1724,10 +1729,20 @@ window.onDropMesa = async (e, targetMesa) => {
     if (typeof e.stopPropagation === 'function') e.stopPropagation();
   }
 
-  const type = (e && e.dataTransfer ? e.dataTransfer.getData('type') : '') || 'table';
-  let draggedMesa = e && e.dataTransfer ? e.dataTransfer.getData('mesa') : '';
-  if (!draggedMesa && e && e.dataTransfer) {
-    draggedMesa = e.dataTransfer.getData('text/plain');
+  let type = '';
+  let draggedMesa = '';
+  let itemId = '';
+
+  if (e && e.dataTransfer) {
+    try { type = e.dataTransfer.getData('type'); } catch(err) {}
+    try { draggedMesa = e.dataTransfer.getData('mesa'); } catch(err) {}
+    if (!draggedMesa) {
+      try { draggedMesa = e.dataTransfer.getData('Text'); } catch(err) {}
+    }
+    if (!draggedMesa) {
+      try { draggedMesa = e.dataTransfer.getData('text/plain'); } catch(err) {}
+    }
+    try { itemId = e.dataTransfer.getData('itemId'); } catch(err) {}
   }
 
   if (!targetMesa && e && e.target) {

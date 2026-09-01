@@ -8,11 +8,204 @@ const activeSockets = new Map();
 const originalLog = console.log;
 const originalError = console.error;
 
+
+const ANSI = {
+  reset: "\x1b[0m",
+  bright: "\x1b[1m",
+  dim: "\x1b[2m",
+  cyan: "\x1b[36m",
+  yellow: "\x1b[33m",
+  green: "\x1b[32m",
+  magenta: "\x1b[35m",
+  blue: "\x1b[34m",
+  red: "\x1b[31m",
+  white: "\x1b[37m",
+  bgBlue: "\x1b[44m\x1b[37m",
+  bgCyan: "\x1b[46m\x1b[30m",
+  bgMagenta: "\x1b[45m\x1b[37m",
+  bgGreen: "\x1b[42m\x1b[30m",
+  bgRed: "\x1b[41m\x1b[37m",
+  bgYellow: "\x1b[43m\x1b[30m"
+};
+
+function stripAnsi(str) {
+  return String(str || '').replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+}
+
+function drawBoxLog(title, rows, boxColor = ANSI.cyan) {
+  const width = 68;
+  const titleStr = ` ${title} `;
+  const totalDashes = Math.max(2, width - titleStr.length);
+  const leftDashes = Math.floor(totalDashes / 2);
+  const rightDashes = totalDashes - leftDashes;
+  const header = `  ${boxColor}╭${'─'.repeat(leftDashes)}${ANSI.bright}${titleStr}${ANSI.reset}${boxColor}${'─'.repeat(rightDashes)}╮${ANSI.reset}`;
+
+  const bodyLines = [];
+  rows.forEach(row => {
+    const icon = row.icon || ' ';
+    const label = row.label || '';
+    const val = String(row.val || '');
+
+    const visText = `${icon} ${label ? label + ':' : ''} ${val}`.trim();
+    const visLen = stripAnsi(visText).length;
+    const padding = Math.max(0, width - 5 - visLen);
+
+    const formattedLabel = label ? `${ANSI.bright}${label}:${ANSI.reset}` : '';
+    const line = `  ${boxColor}│${ANSI.reset}   ${icon} ${formattedLabel} ${val}${' '.repeat(padding)} ${boxColor}│${ANSI.reset}`;
+    bodyLines.push(line);
+  });
+
+  const footer = `  ${boxColor}╰${'─'.repeat(width)}╯${ANSI.reset}`;
+  return [header, ...bodyLines, footer].join('\n');
+}
+
+function getHighResTimestamp() {
+  const d = new Date();
+  const pad = (n, w = 2) => String(n).padStart(w, '0');
+  const hh = pad(d.getHours());
+  const mm = pad(d.getMinutes());
+  const ss = pad(d.getSeconds());
+  const ms = pad(d.getMilliseconds(), 3);
+  return `${hh}:${mm}:${ss}.${ms}ms`;
+}
+
+function parseAndFormatLog(line) {
+  if (!line || typeof line !== 'string') return line;
+  if (line.includes('╭─') || line.includes('╔═') || line.includes('System Fetch') || line.includes('System Bootloader')) {
+    return line;
+  }
+
+  const timeStr = getHighResTimestamp();
+
+  if (line.includes('[HTTP')) {
+    const methodMatch = line.match(/\[HTTP ([A-Z]+)\]/);
+    const method = methodMatch ? methodMatch[1] : 'REQ';
+    const urlMatch = line.match(/\] (.*?) \|/);
+    const url = urlMatch ? urlMatch[1] : '';
+    const statusMatch = line.match(/Status: (.*?) \|/);
+    const status = statusMatch ? statusMatch[1] : '';
+    const pingMatch = line.match(/Ping\/Latência: (.*)/);
+    const ping = pingMatch ? pingMatch[1] : '0ms';
+
+    return drawBoxLog(`HTTP Request (${method})`, [
+      { icon: '📡', label: 'Endpoint', val: url },
+      { icon: '📊', label: 'Status', val: status },
+      { icon: '⚡', label: 'Ping/Latência', val: `${ANSI.yellow}${ping}${ANSI.reset}` },
+      { icon: '🕐', label: 'Horário (ms)', val: timeStr }
+    ], ANSI.cyan);
+  }
+
+  if (line.includes('Cliente conectado:')) {
+    const parts = line.split('Cliente conectado:');
+    const id = (parts[1] || '').trim();
+    return drawBoxLog('System Socket', [
+      { icon: '🔌', label: 'Conexão', val: `${ANSI.green}Cliente Conectado${ANSI.reset}` },
+      { icon: '👤', label: 'Socket ID', val: `${ANSI.yellow}${id}${ANSI.reset}` },
+      { icon: '🕐', label: 'Horário (ms)', val: timeStr }
+    ], ANSI.green);
+  }
+
+  if (line.includes('Dispositivo desconectado:')) {
+    const parts = line.split('Dispositivo desconectado:');
+    const id = (parts[1] || '').trim();
+    return drawBoxLog('System Socket', [
+      { icon: '🔌', label: 'Conexão', val: `${ANSI.red}Dispositivo Desconectado${ANSI.reset}` },
+      { icon: '👤', label: 'Socket ID', val: `${ANSI.yellow}${id}${ANSI.reset}` },
+      { icon: '🕐', label: 'Horário (ms)', val: timeStr }
+    ], ANSI.red);
+  }
+
+  if (line.includes('[Socket]')) {
+    const clean = line.replace('[Socket]', '').trim();
+    const rows = [{ icon: '⚡', label: 'Evento', val: `${ANSI.cyan}Socket Event${ANSI.reset}` }];
+    
+    clean.split('|').forEach(part => {
+      const p = part.trim();
+      if (p.includes('Usuario:')) rows.push({ icon: '👤', label: 'Usuário', val: p.replace(/.*Usuario:/, '').trim() });
+      else if (p.includes('Rest. ID:')) rows.push({ icon: '🏪', label: 'Restaurante', val: p.replace(/.*Rest. ID:/, '').trim() });
+      else if (p.includes('Evento:')) rows[0].val = `${ANSI.yellow}${p.replace(/.*Evento:/, '').trim()}${ANSI.reset}`;
+      else if (p.includes('Dados:')) rows.push({ icon: '📦', label: 'Payload', val: p.replace(/.*Dados:/, '').trim() });
+    });
+    rows.push({ icon: '🕐', label: 'Horário (ms)', val: timeStr });
+    return drawBoxLog('Real-time Socket', rows, ANSI.cyan);
+  }
+
+  if (line.includes('CLIQUE/AÇÃO') || line.includes('[Cli-Click]')) {
+    const clean = line.replace('👆 [CLIQUE/AÇÃO]', '').replace('[Cli-Click]', '').trim();
+    const rows = [{ icon: '👆', label: 'Ação', val: `${ANSI.yellow}${clean}${ANSI.reset}` }];
+    rows.push({ icon: '🕐', label: 'Horário (ms)', val: timeStr });
+    return drawBoxLog('Interação do Usuário', rows, ANSI.yellow);
+  }
+
+  if (line.includes('[Deploy]')) {
+    return drawBoxLog('Kernel & Deploy', [
+      { icon: '🚀', label: 'Status', val: `${ANSI.cyan}${line.replace('[Deploy]', '').trim()}${ANSI.reset}` },
+      { icon: '🕐', label: 'Horário (ms)', val: timeStr }
+    ], ANSI.cyan);
+  }
+
+  if (line.includes('[Sync Server]') || line.includes('[Sync]')) {
+    return drawBoxLog('Sync Server', [
+      { icon: '🔄', label: 'Status', val: `${ANSI.blue}${line.replace(/\[Sync Server\]|\[Sync\]/g, '').trim()}${ANSI.reset}` },
+      { icon: '🕐', label: 'Horário (ms)', val: timeStr }
+    ], ANSI.blue);
+  }
+
+  if (line.includes('[theme-curator]')) {
+    return drawBoxLog('App Store & Temas', [
+      { icon: '🎨', label: 'Módulo', val: `${ANSI.magenta}${line.replace('[theme-curator]', '').trim()}${ANSI.reset}` },
+      { icon: '🕐', label: 'Horário (ms)', val: timeStr }
+    ], ANSI.magenta);
+  }
+
+  if (line.includes('[iFood]')) {
+    return drawBoxLog('Integração iFood', [
+      { icon: '🛵', label: 'Status', val: `${ANSI.red}${line.replace('[iFood]', '').trim()}${ANSI.reset}` },
+      { icon: '🕐', label: 'Horário (ms)', val: timeStr }
+    ], ANSI.red);
+  }
+
+  if (line.includes('[Domains]')) {
+    return drawBoxLog('Rede & Domínios', [
+      { icon: '🌐', label: 'Status', val: `${ANSI.cyan}${line.replace('[Domains]', '').trim()}${ANSI.reset}` },
+      { icon: '🕐', label: 'Horário (ms)', val: timeStr }
+    ], ANSI.cyan);
+  }
+
+  if (line.includes('[Features]')) {
+    return drawBoxLog('Módulos & Features', [
+      { icon: '⭐', label: 'Status', val: `${ANSI.blue}${line.replace('[Features]', '').trim()}${ANSI.reset}` },
+      { icon: '🕐', label: 'Horário (ms)', val: timeStr }
+    ], ANSI.blue);
+  }
+
+  if (line.includes('[Licença]')) {
+    return drawBoxLog('Licenciamento', [
+      { icon: '🔑', label: 'Status', val: `${ANSI.green}${line.replace('[Licença]', '').trim()}${ANSI.reset}` },
+      { icon: '🕐', label: 'Horário (ms)', val: timeStr }
+    ], ANSI.green);
+  }
+
+  if (line.includes('👑 Controller do Super Admin')) {
+    return drawBoxLog('Super Admin Kernel', [
+      { icon: '👑', label: 'Status', val: `${ANSI.yellow}Controller carregado com sucesso${ANSI.reset}` },
+      { icon: '🕐', label: 'Horário (ms)', val: timeStr }
+    ], ANSI.yellow);
+  }
+
+  return drawBoxLog('System Log', [
+    { icon: '⚡', label: 'Mensagem', val: line },
+    { icon: '🕐', label: 'Horário (ms)', val: timeStr }
+  ], ANSI.cyan);
+}
+
 console.log = function(...args) {
   const line = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
   logLines.push(`[LOG] ${new Date().toLocaleTimeString()} - ${line}`);
   if (logLines.length > 100) logLines.shift();
-  originalLog.apply(console, args);
+
+  const formatted = parseAndFormatLog(line);
+  originalLog.call(console, formatted);
 };
 
 console.error = function(...args) {
@@ -189,6 +382,20 @@ const app  = express();
 
 app.use(cors());
 app.use(express.json());
+
+// ── Middleware de Métricas & Latência de Ping (ms) ──
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (req.originalUrl && (req.originalUrl.startsWith('/api') || req.originalUrl.includes('/socket.io'))) {
+      const statusText = `${res.statusCode} ${res.statusMessage || ''}`.trim();
+      const statusColor = res.statusCode < 400 ? ANSI.green : ANSI.red;
+      console.log(`[HTTP ${req.method}] ${req.originalUrl} | Status: ${statusColor}${statusText}${ANSI.reset} | Ping/Latência: ${ANSI.yellow}${duration}ms${ANSI.reset}`);
+    }
+  });
+  next();
+});
 
 // ── Middleware Global de Resolução de Tenant por Subdomínio e Domínio Próprio ──
 app.use((req, res, next) => {
@@ -1504,7 +1711,7 @@ function celebrarNovoRestaurante(nome, id, dono) {
 }
 
 
-const ANSI = {
+const ANSI2 = {
   reset: "\x1b[0m",
   bright: "\x1b[1m",
   dim: "\x1b[2m",

@@ -275,11 +275,19 @@
     var themeVars = buildModeVars(cfg);
 
     if (themeVars.length) {
-      var isDarkBg = !isLightColor(cfg.bgColor);
-      if (isDarkBg) {
+      // Paleta escolhida pelo restaurante (Loja de Temas) é a PRÉ-DEFINIÇÃO do
+      // ambiente: vale em AMBOS os modos (claro e escuro) em todas as telas,
+      // independente do toggle de tema do operador.
+      if (cfg.storeTema) {
         rules.push('[data-theme="dark"], body.theme-dark, body.dark-mode {\n  ' + themeVars.join('\n  ') + '\n}');
-      } else {
         rules.push('[data-theme="light"], body.theme-light, :root:not([data-theme="dark"]) {\n  ' + themeVars.join('\n  ') + '\n}');
+      } else {
+        var isDarkBg = !isLightColor(cfg.bgColor);
+        if (isDarkBg) {
+          rules.push('[data-theme="dark"], body.theme-dark, body.dark-mode {\n  ' + themeVars.join('\n  ') + '\n}');
+        } else {
+          rules.push('[data-theme="light"], body.theme-light, :root:not([data-theme="dark"]) {\n  ' + themeVars.join('\n  ') + '\n}');
+        }
       }
     }
 

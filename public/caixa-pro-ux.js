@@ -7,7 +7,30 @@
   // 1. INICIALIZAÇÃO E ATALHOS DE TECLADO GLOBAIS (F2, F4, F8, ESC)
   document.addEventListener('keydown', function (e) {
     const modoCaixa = localStorage.getItem('chef_caixa_tema') || 'pro_ux';
-    if (modoCaixa === 'classico') return; // Não interfere no modo clássico
+
+    // F4: Focar na Busca de Mesas / Comandas (funciona em TODAS as visualizações)
+    if (e.key === 'F4' || e.keyCode === 115) {
+      e.preventDefault();
+      const searchInput = document.getElementById('caixa-ux-search') || document.querySelector('.search-mesa-input');
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      }
+      return false;
+    }
+
+    // ESC dentro da busca: limpa e desfoca
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      const searchInput = document.getElementById('caixa-ux-search');
+      if (searchInput && document.activeElement === searchInput) {
+        searchInput.value = '';
+        window.filtrarMesasBusca('');
+        searchInput.blur();
+        return false;
+      }
+    }
+
+    if (modoCaixa === 'classico') return; // F2/F8/ESC-modal não interferem no modo clássico
 
     // F2: Venda Balcão / Lançamento Rápido
     if (e.key === 'F2' || e.keyCode === 113) {
@@ -17,17 +40,6 @@
         return idEl && idEl.innerText.toLowerCase().includes('balc');
       });
       if (balcaoCard) balcaoCard.click();
-      return false;
-    }
-
-    // F4: Focar na Busca de Mesas / Comandas
-    if (e.key === 'F4' || e.keyCode === 115) {
-      e.preventDefault();
-      const searchInput = document.getElementById('caixa-ux-search') || document.querySelector('.search-mesa-input');
-      if (searchInput) {
-        searchInput.focus();
-        searchInput.select();
-      }
       return false;
     }
 
@@ -50,6 +62,79 @@
     }
   });
 
+  // 1b. DIGITAR SEM SELEÇÃO = ESCREVE NA BUSCA DE MESA/COMANDA IMEDIATAMENTE
+  document.addEventListener('keydown', function (e) {
+    if (e.defaultPrevented) return;
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    // Busca de mesa/comanda fala com o grid de mesas
+    if (window.viewFilter && window.viewFilter !== 'Mesas' && window.viewFilter !== 'Todas') return;
+
+    const searchInput = document.getElementById('caixa-ux-search');
+    if (!searchInput) return;
+
+    if (e.key.length === 1) {
+      e.preventDefault();
+      searchInput.focus();
+      const insertAt = searchInput.selectionStart != null ? searchInput.selectionStart : searchInput.value.length;
+      searchInput.value = searchInput.value.slice(0, insertAt) + e.key + searchInput.value.slice(insertAt);
+      searchInput.setSelectionRange(insertAt + 1, insertAt + 1);
+      window.filtrarMesasBusca(searchInput.value);
+    } else if (e.key === 'Backspace' && document.activeElement !== searchInput) {
+      e.preventDefault();
+      searchInput.value = searchInput.value.slice(0, -1);
+      window.filtrarMesasBusca(searchInput.value);
+    }
+  });
+
+  // ─── DECORAÇÃO DAS MESAS COM O SETOR REAL (mesas.sala do servidor) ───
+  function statusReal(card) {
+    const st = (card.dataset.status || '').toLowerCase();
+    if (st) return st;
+    const m = (card.className || '').match(/status-([a-z]+)/);
+    return m ? m[1].toLowerCase() : '';
+  }
+
+  window.decorarMesasComSala = function () {
+    const porNome = {};
+    (window.allMesas || []).forEach(m => {
+      const n = (m.nome || '').toString().trim().toLowerCase();
+      if (n) porNome[n] = (m.sala || '').toString().trim() || 'Salão principal';
+    });
+    document.querySelectorAll('.mesa-item').forEach(card => {
+      const n = (card.dataset.mesa || '').toString().trim().toLowerCase();
+      if (!card.dataset.sala) card.dataset.sala = porNome[n] || 'Salão principal';
+    });
+    if (window._setorAtivoCaixa || window._categoriaAtivaCaixa) window.aplicarFiltrosCaixa();
+  };
+
+  // ─── FILTRO MESTRE (setor + categoria + busca combinados) ───
+  window.aplicarFiltrosCaixa = function () {
+    const setor = window._setorAtivoCaixa || 'todos';
+    const cat = window._categoriaAtivaCaixa || null;
+    const input = document.getElementById('caixa-ux-search');
+    const term = ((input && input.value) || '').toLowerCase().trim();
+
+    document.querySelectorAll('.mesa-item').forEach(card => {
+      let show = true;
+      if (show && setor !== 'todos' && (card.dataset.sala || 'Salão principal') !== setor) show = false;
+      if (show && cat) {
+        const st = statusReal(card);
+        if (cat === 'livres') show = st === 'disponivel' || st === 'livre';
+        else if (cat === 'ocupadas') show = st === 'ocupada';
+        else if (cat === 'fechamento') show = st === 'solicitada' || st === 'fechamento';
+        else show = true;
+      }
+      if (show && term && !((card.innerText || '').toLowerCase()).includes(term)) show = false;
+      card.style.display = show ? 'flex' : 'none';
+    });
+    document.querySelectorAll('.caixa-ux-stat-badge').forEach(b => {
+      b.classList.toggle('caixa-ux-stat-active', b.dataset.cat === cat);
+    });
+  };
+
   // 2. INJETAR BARRA DE RESUMO DO SALÃO NO TOPO DO GRID DE MESAS
   window.atualizarDashboardResumoCaixa = function () {
     const modoCaixa = localStorage.getItem('chef_caixa_tema') || 'pro_ux';
@@ -58,6 +143,8 @@
       if (el) el.style.display = 'none';
       return;
     }
+
+    window.decorarMesasComSala();
 
     let header = document.getElementById('caixa-ux-dashboard-header');
     const container = document.getElementById('tables-wrapper') || document.getElementById('orders-grid')?.parentNode;
@@ -71,10 +158,10 @@
     header.style.display = 'block';
 
     const cards = Array.from(document.querySelectorAll('.mesa-item'));
-    const total = cards.length || 1;
-    const ocupadas = cards.filter(c => c.classList.contains('ocupada') || c.style.borderColor?.includes('ef4444')).length;
-    const fechando = cards.filter(c => c.classList.contains('em-fechamento') || c.classList.contains('fechando')).length;
-    const reservadas = cards.filter(c => c.classList.contains('reservada')).length;
+    const total = cards.length;
+    const ocupadas = cards.filter(c => statusReal(c) === 'ocupada').length;
+    const fechando = cards.filter(c => statusReal(c) === 'solicitada' || statusReal(c) === 'fechamento').length;
+    const reservadas = cards.filter(c => statusReal(c) === 'reservada').length;
     const livres = Math.max(0, total - ocupadas - fechando - reservadas);
 
     header.innerHTML = `
@@ -87,7 +174,7 @@
       </div>
 
       <div class="caixa-ux-dashboard-bar">
-        <div class="caixa-ux-stat-badge" onclick="window.filtrarMesasPorCategoria('todas')" title="Ver todas as mesas">
+        <div class="caixa-ux-stat-badge" data-cat="todas" onclick="window.filtrarMesasPorCategoria('todas')" title="Ver todas as mesas">
           <div class="caixa-ux-stat-icon" style="background:#f1f5f9; color:#475569;"><i class="ph-bold ph-squares-four"></i></div>
           <div class="caixa-ux-stat-info">
             <span class="caixa-ux-stat-num">${total}</span>
@@ -95,7 +182,7 @@
           </div>
         </div>
 
-        <div class="caixa-ux-stat-badge" onclick="window.filtrarMesasPorCategoria('livres')" title="Filtrar mesas disponíveis">
+        <div class="caixa-ux-stat-badge" data-cat="livres" onclick="window.filtrarMesasPorCategoria('livres')" title="Filtrar mesas disponíveis">
           <div class="caixa-ux-stat-icon" style="background:#dcfce7; color:#16a34a;"><i class="ph-bold ph-check"></i></div>
           <div class="caixa-ux-stat-info">
             <span class="caixa-ux-stat-num" style="color:#16a34a;">${livres}</span>
@@ -103,7 +190,7 @@
           </div>
         </div>
 
-        <div class="caixa-ux-stat-badge" onclick="window.filtrarMesasPorCategoria('ocupadas')" title="Filtrar mesas ocupadas">
+        <div class="caixa-ux-stat-badge" data-cat="ocupadas" onclick="window.filtrarMesasPorCategoria('ocupadas')" title="Filtrar mesas ocupadas">
           <div class="caixa-ux-stat-icon" style="background:#fee2e2; color:#dc2626;"><i class="ph-bold ph-users"></i></div>
           <div class="caixa-ux-stat-info">
             <span class="caixa-ux-stat-num" style="color:#dc2626;">${ocupadas}</span>
@@ -111,17 +198,12 @@
           </div>
         </div>
 
-        <div class="caixa-ux-stat-badge" onclick="window.filtrarMesasPorCategoria('fechamento')" title="Filtrar mesas pedindo conta">
+        <div class="caixa-ux-stat-badge" data-cat="fechamento" onclick="window.filtrarMesasPorCategoria('fechamento')" title="Filtrar mesas pedindo conta">
           <div class="caixa-ux-stat-icon" style="background:#fef3c7; color:#d97706;"><i class="ph-bold ph-receipt"></i></div>
           <div class="caixa-ux-stat-info">
             <span class="caixa-ux-stat-num" style="color:#d97706;">${fechando}</span>
             <span class="caixa-ux-stat-label">Pedindo Conta</span>
           </div>
-        </div>
-
-        <div class="caixa-ux-search-box">
-          <input type="text" id="caixa-ux-search" class="caixa-ux-search-input" placeholder="Buscar mesa ou comanda..." oninput="window.filtrarMesasBusca(this.value)">
-          <span class="caixa-ux-search-badge">F4</span>
         </div>
       </div>
     `;
@@ -129,27 +211,21 @@
     if (typeof window.injetarAbasSetoresSalao === 'function') {
       window.injetarAbasSetoresSalao();
     }
+    window.aplicarVisibilidadeComponentesCaixaUx();
   };
 
   window.filtrarMesasBusca = function (term) {
-    term = (term || '').toLowerCase().trim();
-    const cards = document.querySelectorAll('.mesa-item');
-    cards.forEach(card => {
-      const idEl = card.querySelector('.mesa-id');
-      const text = (card.innerText || '').toLowerCase();
-      const match = !term || text.includes(term);
-      card.style.display = match ? 'flex' : 'none';
-    });
+    if (typeof term === 'string') {
+      const input = document.getElementById('caixa-ux-search');
+      if (input) input.value = term;
+    }
+    window.aplicarFiltrosCaixa();
   };
 
   window.filtrarMesasPorCategoria = function (cat) {
-    const cards = document.querySelectorAll('.mesa-item');
-    cards.forEach(card => {
-      if (cat === 'todas') card.style.display = 'flex';
-      else if (cat === 'livres') card.style.display = card.classList.contains('disponivel') || card.style.borderColor?.includes('10b981') ? 'flex' : 'none';
-      else if (cat === 'ocupadas') card.style.display = card.classList.contains('ocupada') || card.style.borderColor?.includes('ef4444') ? 'flex' : 'none';
-      else if (cat === 'fechamento') card.style.display = card.classList.contains('em-fechamento') || card.classList.contains('fechando') ? 'flex' : 'none';
-    });
+    if (cat === 'todas') cat = null;
+    window._categoriaAtivaCaixa = cat || null;
+    window.aplicarFiltrosCaixa();
   };
 
   // Observa mudanças no DOM para atualizar os contadores em tempo real
@@ -161,7 +237,34 @@
   document.addEventListener('DOMContentLoaded', () => {
     const grid = document.getElementById('orders-grid') || document.body;
     observer.observe(grid, { childList: true, subtree: true });
+    window.aplicarVisibilidadeComponentesCaixaUx();
     setTimeout(window.atualizarDashboardResumoCaixa, 600);
+  });
+
+  // ─── VISIBILIDADE POR "PERSONALIZAR LAYOUT" (Resumo / Setores / Busca) ───
+  window.aplicarVisibilidadeComponentesCaixaUx = function () {
+    let cfg = null;
+    try {
+      if (typeof window.obterConfigLayoutColaborador === 'function') {
+        cfg = window.obterConfigLayoutColaborador();
+      }
+    } catch (err) { cfg = null; }
+    if (!cfg) return;
+
+    const resumo = document.getElementById('caixa-ux-dashboard-header');
+    if (resumo) resumo.style.setProperty('display', (cfg.caixa_ux_resumo_visible === false) ? 'none' : 'block', 'important');
+
+    const setores = document.getElementById('caixa-ux-setores-container');
+    if (setores) setores.style.setProperty('display', (cfg.caixa_ux_setores_visible === false) ? 'none' : 'block', 'important');
+
+    const buscaBox = document.getElementById('caixa-ux-search-box-topbar');
+    if (buscaBox) buscaBox.style.setProperty('display', (cfg.caixa_ux_busca_visible === false) ? 'none' : 'flex', 'important');
+  };
+
+  document.addEventListener('chef_layout_colaborador_salvo', window.aplicarVisibilidadeComponentesCaixaUx);
+  window.addEventListener('chef_layout_colaborador_salvo', window.aplicarVisibilidadeComponentesCaixaUx);
+  window.addEventListener('storage', function (e) {
+    if (e.key && e.key.indexOf('chef_layout_user_') === 0) window.aplicarVisibilidadeComponentesCaixaUx();
   });
 
 
@@ -207,7 +310,7 @@
     }
   };
 
-  // ─── ABAS DE SETORES DO SALÃO ───
+  // ─── ABAS DE SETORES DO SALÃO (geradas a partir dos setores reais das mesas) ───
   window.injetarAbasSetoresSalao = function () {
     const modoMapa = localStorage.getItem('chef_mapa_salao_tema') || 'pro_ux';
     if (modoMapa === 'classico') {
@@ -224,39 +327,46 @@
       container = document.createElement('div');
       container.id = 'caixa-ux-setores-container';
       header.parentNode.insertBefore(container, header.nextSibling);
+      container.addEventListener('click', function (ev) {
+        const btn = ev.target.closest('.btn-setor-tab');
+        if (btn && btn.dataset.setor) window.filtrarMesaSetor(btn.dataset.setor);
+      });
     }
     container.style.display = 'block';
 
-    container.innerHTML = `
-      <div class="caixa-ux-setores-bar">
-        <button type="button" class="btn-setor-tab active" onclick="window.filtrarMesaSetor('todos', this)"><i class="ph-bold ph-grid-four"></i> Todos os Setores</button>
-        <button type="button" class="btn-setor-tab" onclick="window.filtrarMesaSetor('salao', this)"><i class="ph-bold ph-house-line"></i> 🏠 Salão Principal</button>
-        <button type="button" class="btn-setor-tab" onclick="window.filtrarMesaSetor('varanda', this)"><i class="ph-bold ph-sun"></i> 🌿 Varanda / Área Externa</button>
-        <button type="button" class="btn-setor-tab" onclick="window.filtrarMesaSetor('bar', this)"><i class="ph-bold ph-wine"></i> 🍸 Bar & Balcão</button>
-        <button type="button" class="btn-setor-tab" onclick="window.filtrarMesaSetor('mezanino', this)"><i class="ph-bold ph-stairs"></i> 🏢 Mezanino</button>
-      </div>
-    `;
+    // Agrupa mesas pelos setores reais (coluna salas da tabela de mesas)
+    const contagem = {};
+    (window.allMesas || []).forEach(m => {
+      const s = (m.sala || '').toString().trim() || 'Salão principal';
+      contagem[s] = (contagem[s] || 0) + 1;
+    });
+    const nomes = Object.keys(contagem).sort((a, b) => a.localeCompare(b, 'pt'));
+    const totalMesas = (window.allMesas || []).length;
+
+    const sig = 'todos:' + totalMesas + '|' + nomes.join(',');
+    if (container.dataset.sig !== sig) {
+      container.dataset.sig = sig;
+      const btns = [
+        '<button type="button" class="btn-setor-tab" data-setor="todos"><i class="ph-bold ph-grid-four"></i> Todos os Setores <span class="setor-count">' + totalMesas + '</span></button>'
+      ];
+      nomes.forEach(s => {
+        const esc = String(s).replace(/"/g, '&quot;');
+        btns.push('<button type="button" class="btn-setor-tab" data-setor="' + esc + '"><i class="ph-bold ph-house-line"></i> ' + String(s) + ' <span class="setor-count">' + contagem[s] + '</span></button>');
+      });
+      container.innerHTML = '<div class="caixa-ux-setores-bar">' + btns.join('') + '</div>';
+    }
+
+    container.querySelectorAll('.btn-setor-tab').forEach(b => {
+      b.classList.toggle('active', b.dataset.setor === (window._setorAtivoCaixa || 'todos'));
+    });
+    window.aplicarFiltrosCaixa();
+    window.aplicarVisibilidadeComponentesCaixaUx();
   };
 
-  window.filtrarMesaSetor = function (setor, btnEl) {
-    document.querySelectorAll('.btn-setor-tab').forEach(b => b.classList.remove('active'));
-    if (btnEl) btnEl.classList.add('active');
-
-    const cards = document.querySelectorAll('.mesa-item');
-    cards.forEach(card => {
-      const text = (card.innerText || '').toLowerCase();
-      if (setor === 'todos') {
-        card.style.display = 'flex';
-      } else if (setor === 'bar') {
-        card.style.display = (text.includes('balc') || text.includes('bar')) ? 'flex' : 'none';
-      } else if (setor === 'varanda') {
-        card.style.display = (text.includes('var') || text.includes('ext')) ? 'flex' : 'none';
-      } else if (setor === 'mezanino') {
-        card.style.display = (text.includes('mez') || text.includes('piso 2')) ? 'flex' : 'none';
-      } else {
-        card.style.display = (!text.includes('balc') && !text.includes('bar') && !text.includes('var')) ? 'flex' : 'none';
-      }
-    });
+  window.filtrarMesaSetor = function (setor) {
+    window._setorAtivoCaixa = setor || 'todos';
+    document.querySelectorAll('.btn-setor-tab').forEach(b => b.classList.toggle('active', b.dataset.setor === window._setorAtivoCaixa));
+    window.aplicarFiltrosCaixa();
   };
 
 

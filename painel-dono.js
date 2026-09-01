@@ -2159,8 +2159,304 @@ window.executarDisparoMassa = async function() {
   }
 };
 
+/* ══════════════════════════════════════════════════════════════════
+   MOTOR MODULAR E DE ACESSIBILIDADE DO PAINEL DO DONO (20 A 64+ ANOS)
+   ══════════════════════════════════════════════════════════════════ */
+
+const DONO_SECOES_DEF = [
+  { id: 'sec-periodo', nome: '📅 Período & Preferências de Layout', icon: 'ph-calendar' },
+  { id: 'sec-kpis', nome: '📊 Resumo do Dia (KPIs de Faturamento, Mesas, Ticket)', icon: 'ph-chart-bar' },
+  { id: 'sec-caixa', nome: '💵 Controle do Caixa (Abrir/Fechar)', icon: 'ph-cash-register' },
+  { id: 'sec-equipe', nome: '👥 Equipe & Colaboradores Ativos', icon: 'ph-users-three' },
+  { id: 'sec-remoto-telas', nome: '🖥️ Controle Remoto — Navegação de Telas', icon: 'ph-desktop' },
+  { id: 'sec-remoto-acoes', nome: '⚡ Ações Imediatas no Terminal', icon: 'ph-lightning' },
+  { id: 'sec-remoto-equipe', nome: '📱 Controle Remoto de Colaboradores', icon: 'ph-users' },
+  { id: 'sec-marketing-vip', nome: '📢 Mensagens em Massa & Push (Marketing VIP)', icon: 'ph-megaphone' },
+  { id: 'sec-cupons', nome: '🎟️ Cupons QR & Promoções', icon: 'ph-ticket' },
+  { id: 'sec-meta-aviso', nome: '🎯 Meta Diária & Aviso à Equipe', icon: 'ph-target' },
+  { id: 'sec-ranking', nome: '🏆 Ranking de Produtos Mais Vendidos', icon: 'ph-trophy' },
+  { id: 'sec-features', nome: '⚙️ Funcionalidades & Módulos Ativos', icon: 'ph-toggle-left' },
+  { id: 'sec-atividade', nome: '⚡ Feed de Atividade em Tempo Real', icon: 'ph-activity' }
+];
+
+window.getDonoModularConfig = function() {
+  try {
+    const raw = localStorage.getItem('cc_dono_modular_config');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  
+  return {
+    perfil: 'confortavel',
+    fontScale: 1.0,
+    secoes: DONO_SECOES_DEF.map((s, idx) => ({
+      id: s.id,
+      ordem: idx + 1,
+      visivel: true,
+      largura: 'medium'
+    }))
+  };
+};
+
+window.salvarDonoModularConfig = function(cfg) {
+  try {
+    localStorage.setItem('cc_dono_modular_config', JSON.stringify(cfg));
+    window.aplicarDonoModularConfig(cfg);
+  } catch (e) {}
+};
+
+window.alterarEscalaFonteDono = function(scale) {
+  const cfg = window.getDonoModularConfig();
+  cfg.fontScale = parseFloat(scale) || 1.0;
+  window.salvarDonoModularConfig(cfg);
+  if (typeof showToast === 'function') {
+    showToast(cfg.fontScale >= 1.25 ? '👓 Modo Sênior (60+) ativado com texto gigante!' : '🔤 Tamanho de fonte ajustado!', 'ph-text-aa', 'success');
+  }
+};
+
+window.aplicarPerfilDono = function(perfilNome) {
+  const cfg = window.getDonoModularConfig();
+  cfg.perfil = perfilNome;
+
+  if (perfilNome === 'senior') {
+    cfg.fontScale = 1.25; // Fonte gigante para 60+
+    cfg.secoes.forEach(s => {
+      s.visivel = ['sec-periodo', 'sec-kpis', 'sec-caixa', 'sec-equipe', 'sec-remoto-telas', 'sec-remoto-acoes', 'sec-meta-aviso'].includes(s.id);
+      s.largura = 'large';
+    });
+    if (typeof showToast === 'function') showToast('👓 Perfil Sênior (60+) Ativado: Fontes e Botões Gigantes!', 'ph-sparkle', 'success');
+  } else if (perfilNome === 'jovem') {
+    cfg.fontScale = 1.0;
+    cfg.secoes.forEach(s => {
+      s.visivel = true;
+      s.largura = 'medium';
+    });
+    if (typeof showToast === 'function') showToast('⚡ Perfil Jovem Executivo Ativado: Visão Completa Bento Grid!', 'ph-sparkle', 'success');
+  } else if (perfilNome === 'mobile_one_hand') {
+    cfg.fontScale = 1.1;
+    cfg.secoes.forEach(s => {
+      s.visivel = ['sec-periodo', 'sec-kpis', 'sec-caixa', 'sec-remoto-telas', 'sec-remoto-acoes'].includes(s.id);
+      s.largura = 'small';
+    });
+    if (typeof showToast === 'function') showToast('📱 Perfil Mobile Mão Única Ativado!', 'ph-mobile', 'success');
+  }
+
+  window.salvarDonoModularConfig(cfg);
+  const modal = document.getElementById('modal-reordenar-seccoes');
+  if (modal && !modal.classList.contains('hidden')) window.abrirModalReordenarSeccoes();
+};
+
+window.aplicarDonoModularConfig = function(cfg = null) {
+  if (!cfg) cfg = window.getDonoModularConfig();
+
+  // 1. Escala de Fonte (Acessibilidade para 60+)
+  const root = document.documentElement;
+  const fontScale = cfg.fontScale || 1.0;
+  root.style.setProperty('--fs-xs', `${Math.round(13 * fontScale)}px`);
+  root.style.setProperty('--fs-sm', `${Math.round(15 * fontScale)}px`);
+  root.style.setProperty('--fs-md', `${Math.round(17 * fontScale)}px`);
+  root.style.setProperty('--fs-lg', `${Math.round(21 * fontScale)}px`);
+  root.style.setProperty('--fs-xl', `${Math.round(26 * fontScale)}px`);
+  root.style.setProperty('--fs-kpi', `${Math.round(38 * fontScale)}px`);
+
+  if (fontScale >= 1.2) {
+    document.body.classList.add('mode-senior-60');
+  } else {
+    document.body.classList.remove('mode-senior-60');
+  }
+
+  // 2. Ordenação e Visibilidade das Seções no DOM
+  const main = document.querySelector('main');
+  if (!main) return;
+
+  const secMap = new Map();
+  cfg.secoes.forEach(s => secMap.set(s.id, s));
+
+  const elements = Array.from(main.children);
+  elements.forEach((el, index) => {
+    if (!el.id) {
+      if (el.querySelector('.sec-title')) {
+        const txt = el.querySelector('.sec-title').textContent.toLowerCase();
+        if (txt.includes('período')) el.id = 'sec-periodo';
+        else if (txt.includes('resumo') || txt.includes('kpi')) el.id = 'sec-kpis';
+        else if (txt.includes('caixa') && !txt.includes('remoto')) el.id = 'sec-caixa';
+        else if (txt.includes('controle remoto do caixa')) el.id = 'sec-remoto-telas';
+        else if (txt.includes('colaboradores')) el.id = 'sec-remoto-equipe';
+        else if (txt.includes('mensagens')) el.id = 'sec-marketing-vip';
+        else if (txt.includes('cupons')) el.id = 'sec-cupons';
+        else if (txt.includes('meta')) el.id = 'sec-meta-aviso';
+        else if (txt.includes('ranking') || txt.includes('produtos')) el.id = 'sec-ranking';
+        else if (txt.includes('funcionalidades')) el.id = 'sec-features';
+        else if (txt.includes('atividade')) el.id = 'sec-atividade';
+      } else if (el.classList.contains('equipe-card')) {
+        el.id = 'sec-equipe';
+      }
+    }
+
+    if (el.id && secMap.has(el.id)) {
+      const conf = secMap.get(el.id);
+      
+      if (conf.visivel === false) {
+        el.style.display = 'none';
+      } else {
+        el.style.display = '';
+      }
+
+      if (conf.largura === 'large') {
+        el.style.gridColumn = 'span 12';
+      } else if (conf.largura === 'medium') {
+        el.style.gridColumn = 'span 6';
+      } else if (conf.largura === 'small') {
+        el.style.gridColumn = 'span 4';
+      }
+
+      el.style.order = conf.ordem || (index + 1);
+    }
+  });
+};
+
+window.abrirModalReordenarSeccoes = function() {
+  let modal = document.getElementById('modal-reordenar-seccoes');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-reordenar-seccoes';
+    modal.className = 'modal-overlay hidden';
+    document.body.appendChild(modal);
+  }
+
+  const cfg = window.getDonoModularConfig();
+  const fontScale = cfg.fontScale || 1.0;
+
+  let htmlSeccoes = DONO_SECOES_DEF.map((def) => {
+    const item = cfg.secoes.find(s => s.id === def.id) || { visivel: true, largura: 'medium', ordem: 99 };
+    return `
+      <div class="mod-item-card" data-sec-id="${def.id}" style="background:var(--card2); border:1px solid var(--border); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong style="font-size:15px; color:var(--text); display:flex; align-items:center; gap:8px;">
+            <i class="ph-bold ${def.icon}" style="color:var(--primary);"></i> ${def.nome}
+          </strong>
+          <div style="display:flex; gap:6px;">
+            <button type="button" onclick="window.moverSecaoDono('${def.id}', -1)" style="padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; font-weight:800;">⬆️</button>
+            <button type="button" onclick="window.moverSecaoDono('${def.id}', 1)" style="padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; font-weight:800;">⬇️</button>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12px;">
+          <div>
+            <label style="color:var(--text-sub); font-weight:700; display:block; margin-bottom:4px;">Tamanho / Largura</label>
+            <select onchange="window.alterarParametroSecao('${def.id}', 'largura', this.value)" class="form-input" style="padding:8px 10px; font-size:12px;">
+              <option value="small" ${item.largura === 'small' ? 'selected' : ''}>Pequeno (1 col)</option>
+              <option value="medium" ${item.largura === 'medium' ? 'selected' : ''}>Médio (2 cols)</option>
+              <option value="large" ${item.largura === 'large' ? 'selected' : ''}>Grande (Linha Toda)</option>
+            </select>
+          </div>
+          <div>
+            <label style="color:var(--text-sub); font-weight:700; display:block; margin-bottom:4px;">Visibilidade</label>
+            <select onchange="window.alterarParametroSecao('${def.id}', 'visivel', this.value === 'true')" class="form-input" style="padding:8px 10px; font-size:12px;">
+              <option value="true" ${item.visivel !== false ? 'selected' : ''}>👁️ Exibir</option>
+              <option value="false" ${item.visivel === false ? 'selected' : ''}>🙈 Ocultar</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  modal.innerHTML = `
+    <div class="modal-sheet" style="max-width: 680px;">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-sliders" style="color:var(--primary);"></i> Personalizar Painel</span>
+        <button class="modal-close" onclick="fecharModal('modal-reordenar-seccoes')"><i class="ph-bold ph-x"></i></button>
+      </div>
+
+      <p style="font-size:13.5px; color:var(--text-sub); line-height:1.4; margin-bottom:12px;">
+        Escolha um <strong>Perfil Pronto por Faixa Etária</strong> ou personalize o tamanho e a visibilidade de cada card individualmente.
+      </p>
+
+      <!-- Presets de Perfil por Faixa Etária -->
+      <div style="background:var(--card2); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
+          ⚡ Perfis Rápidos por Faixa Etária
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;">
+          <button type="button" onclick="window.aplicarPerfilDono('senior')" class="btn-primary" style="padding:12px 8px; font-size:12px; flex-direction:column; gap:4px; text-align:center; background:linear-gradient(135deg, #10b981, #059669);">
+            <span style="font-size:18px;">👓</span>
+            <span>Sênior (60+)</span>
+            <small style="font-size:10px; opacity:0.8; font-weight:600;">Fontes & Botões Gigantes</small>
+          </button>
+
+          <button type="button" onclick="window.aplicarPerfilDono('jovem')" class="btn-primary" style="padding:12px 8px; font-size:12px; flex-direction:column; gap:4px; text-align:center; background:linear-gradient(135deg, #fc4b15, #ea580c);">
+            <span style="font-size:18px;">⚡</span>
+            <span>Jovem / Executivo</span>
+            <small style="font-size:10px; opacity:0.8; font-weight:600;">Bento Grid Completo</small>
+          </button>
+
+          <button type="button" onclick="window.aplicarPerfilDono('mobile_one_hand')" class="btn-primary" style="padding:12px 8px; font-size:12px; flex-direction:column; gap:4px; text-align:center; background:linear-gradient(135deg, #3b82f6, #2563eb);">
+            <span style="font-size:18px;">📱</span>
+            <span>Mobile Mão Única</span>
+            <small style="font-size:10px; opacity:0.8; font-weight:600;">Direto no Essencial</small>
+          </button>
+        </div>
+      </div>
+
+      <!-- Ajuste Rápido de Fonte (Acessibilidade) -->
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card2); border:1px solid var(--border); border-radius:14px; padding:12px 16px; margin-bottom:16px;">
+        <span style="font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;">
+          <i class="ph-bold ph-text-aa" style="color:var(--yellow);"></i> Tamanho do Texto & Ícones:
+        </span>
+        <div style="display:flex; gap:6px;">
+          <button type="button" onclick="window.alterarEscalaFonteDono(1.0)" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:${fontScale === 1.0 ? 'var(--primary)' : 'var(--card)'}; color:white; font-size:12px; font-weight:800; cursor:pointer;">Padrão (100%)</button>
+          <button type="button" onclick="window.alterarEscalaFonteDono(1.25)" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:${fontScale >= 1.2 ? 'var(--green)' : 'var(--card)'}; color:white; font-size:12px; font-weight:800; cursor:pointer;">👓 Gigante (125% - 60+)</button>
+        </div>
+      </div>
+
+      <div style="font-size:12px; font-weight:800; color:var(--text-sub); text-transform:uppercase; margin-bottom:10px; letter-spacing:0.5px;">
+        Ajuste Card a Card (Ordem & Dimensão)
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto; padding-right:4px;">
+        ${htmlSeccoes}
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button class="btn-cancel" onclick="fecharModal('modal-reordenar-seccoes')" style="flex:1; padding:14px;">Concluído</button>
+      </div>
+    </div>
+  `;
+
+  modal.classList.remove('hidden');
+};
+
+window.alterarParametroSecao = function(secId, campo, valor) {
+  const cfg = window.getDonoModularConfig();
+  const sec = cfg.secoes.find(s => s.id === secId);
+  if (sec) {
+    sec[campo] = valor;
+    window.salvarDonoModularConfig(cfg);
+  }
+};
+
+window.moverSecaoDono = function(secId, direcao) {
+  const cfg = window.getDonoModularConfig();
+  const idx = cfg.secoes.findIndex(s => s.id === secId);
+  if (idx === -1) return;
+
+  const targetIdx = idx + direcao;
+  if (targetIdx < 0 || targetIdx >= cfg.secoes.length) return;
+
+  const temp = cfg.secoes[idx];
+  cfg.secoes[idx] = cfg.secoes[targetIdx];
+  cfg.secoes[targetIdx] = temp;
+
+  cfg.secoes.forEach((s, i) => s.ordem = i + 1);
+
+  window.salvarDonoModularConfig(cfg);
+  window.abrirModalReordenarSeccoes();
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     if (typeof window.checarStatusMarketing === 'function') window.checarStatusMarketing();
+    if (typeof window.aplicarDonoModularConfig === 'function') window.aplicarDonoModularConfig();
   }, 200);
 });

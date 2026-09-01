@@ -21,7 +21,10 @@
       resumo_width_px: 320,
       info_mesa_local: 'topo', // 'topo' | 'resumo'
       dock_mini_visible: ['mini-lancar', 'mini-parcial', 'mini-fechar', 'mini-imprimir', 'mini-cliente', 'mini-qrcode', 'mini-desconto', 'mini-juntar', 'mini-chamar'],
-      resumo_sections_visible: ['cliente', 'permanencia', 'racha', 'itens', 'totais']
+      resumo_sections_visible: ['cliente', 'permanencia', 'racha', 'itens', 'totais'],
+      caixa_ux_resumo_visible: true,
+      caixa_ux_setores_visible: true,
+      caixa_ux_busca_visible: true
     };
   };
 
@@ -78,6 +81,22 @@
         }
       });
     }
+
+    // 5. Exibições da Tela de Mesas (Resumo do Salão / Setores / Busca)
+    var resumoCaixa = document.getElementById('caixa-ux-dashboard-header');
+    if (resumoCaixa) {
+      resumoCaixa.style.setProperty('display', cfg.caixa_ux_resumo_visible === false ? 'none' : 'block', 'important');
+    }
+    var setoresCaixa = document.getElementById('caixa-ux-setores-container');
+    if (setoresCaixa) {
+      setoresCaixa.style.setProperty('display', cfg.caixa_ux_setores_visible === false ? 'none' : 'block', 'important');
+    }
+    var buscaCaixa = document.getElementById('caixa-ux-search-box-topbar');
+    if (buscaCaixa) {
+      buscaCaixa.style.setProperty('display', cfg.caixa_ux_busca_visible === false ? 'none' : 'flex', 'important');
+    }
+
+    try { window.dispatchEvent(new CustomEvent('chef_layout_colaborador_salvo')); } catch(e){}
   };
 
   // ─── MODAL VISUAL DE PERSONALIZAÇÃO DO LAYOUT ───
@@ -165,6 +184,26 @@
             </div>
           </div>
 
+          <!-- 4. EXIBIÇÕES NA TELA DE MESAS (RESUMO / SETORES / BUSCA) -->
+          <div style="background:#f8fafc; padding:14px; border-radius:14px; border:1px solid #e2e8f0;">
+            <label style="font-size:13px; font-weight:800; color:#0f172a; display:block; margin-bottom:4px;">
+              <i class="ph-bold ph-squares-four" style="color:#fc4b15;"></i> Exibições na Tela de Mesas:
+            </label>
+            <span style="font-size:11.5px; color:#64748b; display:block; margin-bottom:8px;">Ative/desative itens acima dos botões das mesas. Nada é apagado — escolha o que usar.</span>
+            <div style="display:flex; flex-direction:column; gap:6px; font-size:12px; font-weight:600;">
+              ${[
+                { id: 'caixa_ux_resumo_visible', icon: '⚡', label: 'Resumo do Salão (indicadores + atalhos)' },
+                { id: 'caixa_ux_setores_visible', icon: '🧭', label: 'Barra de Setores do Salão' },
+                { id: 'caixa_ux_busca_visible', icon: '🔎', label: 'Busca de Mesa / Comanda (topo)' }
+              ].map(t => `
+                <label style="display:flex; align-items:center; gap:8px; padding:6px 8px; background:white; border-radius:8px; border:1px solid #e2e8f0; cursor:pointer;">
+                  <input type="checkbox" class="chk-caixa-ux" value="${t.id}" ${cfg[t.id] !== false ? 'checked' : ''} style="accent-color:#fc4b15;">
+                  <span>${t.icon} ${t.label}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+
         </div>
 
         <!-- BOTÕES DE AÇÃO -->
@@ -192,11 +231,19 @@
       dockVisibles.push(chk.value);
     });
 
+    var caixaUxFlags = { caixa_ux_resumo_visible: true, caixa_ux_setores_visible: true, caixa_ux_busca_visible: true };
+    document.querySelectorAll('.chk-caixa-ux').forEach(function (chk) {
+      caixaUxFlags[chk.value] = chk.checked;
+    });
+
     var newConfig = {
       mesas_height_pct: heightPct,
       resumo_width_px: 320,
       info_mesa_local: infoLocal,
-      dock_mini_visible: dockVisibles
+      dock_mini_visible: dockVisibles,
+      caixa_ux_resumo_visible: caixaUxFlags.caixa_ux_resumo_visible,
+      caixa_ux_setores_visible: caixaUxFlags.caixa_ux_setores_visible,
+      caixa_ux_busca_visible: caixaUxFlags.caixa_ux_busca_visible
     };
 
     window.salvarConfigLayoutColaborador(newConfig);
