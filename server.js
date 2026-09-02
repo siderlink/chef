@@ -507,7 +507,26 @@ app.post('/api/telemetria/clicks', express.json({ limit: '1mb' }), (req, res) =>
       console.log(`👆 [CLIQUE/AÇÃO] ${c.restaurante_nome || 'Restaurante'} | ${c.colaborador_nome || 'Colaborador'} (${c.colaborador_cargo || 'Op'}) -> "${c.funcao_nome || c.elemento_id}" em [${c.tela}] (${c.dispositivo || 'Web'})`);
     });
   }
-  res.json({ ok: true, count: clicks.length });
+res.json({ ok: true, count: clicks.length });
+});
+
+// ── Versão do Aplicativo (polling de atualização no caixa/front) ──
+// O main.js consulta /api/version a cada 5 min, na carga e no fluxo de update.
+app.get('/api/version', (req, res) => {
+  res.json({
+    ok: true,
+    version: deploymentConfig.getSoftwareVersion(),
+    timestamp: Date.now()
+  });
+});
+
+app.get('/api/update/features', (req, res) => {
+  res.json({
+    ok: true,
+    version: deploymentConfig.getSoftwareVersion(),
+    features: [],
+    message: ''
+  });
 });
 
 // ── Rotas Amigáveis & URLs Limpas (Sem .html) ──
@@ -3299,6 +3318,9 @@ function broadcastPedidos() {
           io.emit('initial_data', rowsAbertos);
           io.emit('pedidos_pdv_atualizados', rowsAll);
           io.emit('initial_pdv_data', rowsAll);
+          // Feed completo do caixa: inclui itens Pago/Fracionado para que o
+          // caixa exiba pagamentos parciais e itens recebidos em tempo real.
+          io.emit('pedidos_caixa_completos', rowsAll);
         }
       });
     });
@@ -3729,12 +3751,13 @@ io.on('connection', (socket) => {
 
 
   
-  // Alias: front-end emite 'get_orders' -> responde com pedidos do caixa
+// Alias: front-end emite 'get_orders' -> responde com pedidos do caixa
   socket.on('get_orders', () => {
-    db.all("SELECT * FROM pedidos WHERE status NOT IN ('Finalizado','Pago','Cancelado') ORDER BY createdAt ASC", [], (err, rows) => {
+    db.all("SELECT * FROM pedidos WHERE status NOT IN ('Finalizado','Cancelado') ORDER BY createdAt ASC", [], (err, rows) => {
       const dados = rows || [];
       socket.emit('pedidos_atualizados', dados);
       socket.emit('initial_data', dados);
+      socket.emit('pedidos_caixa_completos', dados);
     });
   });
 
@@ -3742,6 +3765,9 @@ io.on('connection', (socket) => {
     if (!socket.auth) return;
     db.all("SELECT * FROM pedidos WHERE status NOT IN ('Finalizado','Pago','Cancelado') ORDER BY createdAt ASC", [], (err, rows) => {
       socket.emit('pedidos_atualizados', rows || []);
+    });
+    db.all("SELECT * FROM pedidos WHERE status NOT IN ('Finalizado','Cancelado') ORDER BY createdAt ASC", [], (err, rows) => {
+      socket.emit('pedidos_caixa_completos', rows || []);
     });
   });
 
@@ -4056,6 +4082,7 @@ io.on('connection', (socket) => {
       const rowsAll = rows || [];
       socket.emit('initial_data', rowsAll.filter(r => r.status !== 'Pago'));
       socket.emit('initial_pdv_data', rowsAll);
+      socket.emit('pedidos_caixa_completos', rowsAll);
     });
   });
 

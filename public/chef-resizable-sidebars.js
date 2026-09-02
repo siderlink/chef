@@ -289,6 +289,9 @@
     window.setSidebarMode('left', savedLeftMode, false);
     window.setSidebarMode('right', savedRightMode, false);
 
+    // Alinhar splitters à ordem dos painéis (layout modular)
+    chefSyncSplitterOrders();
+
     // Manter os botões flutuantes de restauração sincronizados
     syncFloatRestoreVisibility();
     window.addEventListener('resize', syncFloatRestoreVisibility);
@@ -296,6 +299,32 @@
       .observe(document.body, { attributes: true, attributeFilter: ['class'] });
     setInterval(syncFloatRestoreVisibility, 1200);
   }
+
+  // Mantém os splitters laterais na posição correta entre o painel central e os
+  // painéis laterais, mesmo quando o chef-layout-customizer aplica `order` nos
+  // painéis (dock/minidock pode ir para a direita; resumo pode ir para a esquerda).
+  // Ignora o caso padrão (sem `order` inline) preservando a ordem do DOM.
+  function chefSyncSplitterOrders() {
+    var leftPanel = document.getElementById('left-panel');
+    var rightPanel = document.getElementById('right-panel');
+    var mainPanel = document.getElementById('main-panel');
+    var leftSplitter = document.getElementById('resizer-left');
+    var rightSplitter = document.getElementById('resizer-right');
+    if (!leftPanel || !rightPanel || !mainPanel || !leftSplitter || !rightSplitter) return;
+
+    var mainOrder = parseInt(mainPanel.style.order, 10);
+    if (!isFinite(mainOrder) || mainOrder !== 0) return; // layout padrão: preserva DOM order
+
+    var leftOrder = parseInt(leftPanel.style.order, 10);
+    var rightOrder = parseInt(rightPanel.style.order, 10);
+    var leftSplitterOrder = isFinite(leftOrder) ? leftOrder / 2 : 0;
+    var rightSplitterOrder = isFinite(rightOrder) ? rightOrder / 2 : 0;
+    if (leftOrder !== 2 && leftOrder !== -2) leftSplitterOrder = 0;
+    if (rightOrder !== 2 && rightOrder !== -2) rightSplitterOrder = 0;
+    leftSplitter.style.order = String(leftSplitterOrder);
+    rightSplitter.style.order = String(rightSplitterOrder);
+  }
+  window.chefSyncSplitterOrders = chefSyncSplitterOrders;
 
   // Função Global para Alternar Modos — unificada com caixa-pro-ux.js.
   // Se caixa-pro-ux.js carregar depois, sobrescreve setSidebarMode com a mesma lógica.

@@ -2526,161 +2526,10 @@ function renderOrders() {
       window.descontoAdicional = 0;
       window.servicoAdicional = 0;
 
-      let itemsToRender = item.items;
-      if (window.agruparItens) {
-        const grouped = {};
-        item.items.forEach(order => {
-          const key = order.productName;
-          if (!grouped[key]) grouped[key] = { ...order, quantity: 0, totalVal: 0 };
-          const totalVal = parseFloat(String(order.total).replace(',', '.'));
-          grouped[key].quantity += (order.quantity || 1);
-          grouped[key].totalVal += totalVal;
-        });
-        itemsToRender = Object.values(grouped).map(g => ({ ...g, total: g.totalVal }));
-      }
-
-      // Check if this is a merged mesa (has items from multiple localNames)
-      const isMergedMesa = item.isGroup && item.items && item.items.length > 0 && item.mesaName && item.mesaName.includes(' + ');
-      const originalMesas = isMergedMesa ? [...new Set(item.items.map(o => o.localName).filter(Boolean))] : [];
-
-      let itemsHTML = '';
-      itemsToRender.forEach((order, idx) => {
-        const totalVal = parseFloat(String(order.total).replace(',', '.'));
-        const isPaid = order.status === 'Pago';
-        const comandaTag = order.mesa_comanda
-          ? `<span class="comanda-badge" title="Clique para alterar ou remover da comanda (${order.mesa_comanda})" onclick="event.stopPropagation(); window.alterarComandaItemDirect(${order.id}, '${order.mesa_comanda}')">(${order.mesa_comanda}) <i class="ph ph-x" style="font-size:10px; margin-left:2px;"></i></span>`
-          : `<span class="shared-badge" title="Clique para atribuir este item a uma comanda" onclick="event.stopPropagation(); window.alterarComandaItemDirect(${order.id}, '')">[Mesa]</span>`;
-
-        // For merged mesas, show original mesa as a colored badge
-        const mesaOrigemBadge = isMergedMesa && order.localName
-          ? `<span style="display:inline-block; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; background:${order.localName === originalMesas[0] ? '#e3f2fd' : '#fff3e0'}; color:${order.localName === originalMesas[0] ? '#1565c0' : '#e65100'}; margin-left:6px;">${order.localName}</span>`
-          : '';
-
-        itemsHTML += `
-           <tr style="${isPaid ? 'opacity: 0.5;' : ''}" draggable="true" ondragstart="window.onDragStartItem(event, ${order.id}, '${order.mesa_comanda || ''}')" class="product-item-row" data-item-id="${order.id}" data-item-name="${(order.productName || 'Produto').replace(/"/g, '&quot;')}" data-item-status="${order.status || ''}">
-             <td>${String(idx + 1).padStart(3, '0')}</td>
-             <td style="${isPaid ? 'text-decoration: line-through;' : ''}">
-               ${order.productEmoji || ''} ${order.productName || 'Produto'}
-               ${mesaOrigemBadge}
-               ${comandaTag}
-               ${!isPaid && order.status ? `<span class="item-status-badge item-status-${order.status.toLowerCase().replace(/[^a-z0-9]+/g, '-')}" title="Clique com o botão direito para alterar o status de preparo">${order.status}</span>` : ''}
-               ${isPaid ? '<strong style="color: #3ab55b; margin-left: 8px;">(PAGO)</strong>' : ''}
-             </td>
-             <td>R$ ${(totalVal / (order.quantity || 1)).toFixed(2).replace('.', ',')}</td>
-             <td>${order.quantity || 1}</td>
-             <td style="font-weight: 600; color: #3ab55b;">R$ ${totalVal.toFixed(2).replace('.', ',')}</td>
-             <td>${order.userName || 'Caixa'}</td>
-             <td>
-                ${isPaid ? '' : `
-                   <i class="ph-bold ph-divide" style="color: #ea580c; cursor: pointer; margin-right: 8px; font-size: 16px;" title="Dividir este item em frações (½, ⅓, ¼, etc.) e atribuir a comandas" onclick="window.abrirModalDividirItemFracao(${order.id}, '${(order.productName || 'Produto').replace(/'/g, "\\'")}', '${order.productEmoji || '🍽️'}', ${totalVal}, ${(order.quantity || 1)})"></i>
-                   <i class="ph ph-user-switch" style="color: #2b5c9e; cursor: pointer; margin-right: 8px; font-size: 16px;" title="Atribuir / Mover Comanda" onclick="window.alterarComandaItemDirect(${order.id}, '${order.mesa_comanda || ''}')"></i>
-                   <i class="ph ph-trash" style="color: #eb5757; cursor: pointer; font-size: 16px;" title="Remover item do pedido" onclick="window.removerItemPedido('${order.id}')"></i>
-                `}
-             </td>
-           </tr>
-         `;
-      });
-      if (tbody) tbody.innerHTML = itemsHTML;
+      if (typeof window.renderItensPainelMesa === 'function') window.renderItensPainelMesa(item);
 
       // --- CÁLCULO E DIVISÃO POR COMANDA ---
-      const divRacha = document.getElementById('div-racha-comandas');
-      const listRacha = document.getElementById('racha-comandas-list');
-      const chkRachaShared = document.getElementById('chk-racha-compartilhados');
-
-      if (divRacha && listRacha) {
-        const unpaidItems = item.items.filter(o => o.status !== 'Pago');
-
-        const comandaSums = {};
-        let sharedTotal = 0;
-        let hasComandas = false;
-
-        // Para mesas juntadas, agrupar por localName (mesa original) como comanda
-        const isMergedMesaRacha = item.isGroup && item.mesaName && item.mesaName.includes(' + ');
-
-        unpaidItems.forEach(order => {
-          const val = parseFloat(String(order.total).replace(',', '.'));
-          let comanda;
-          if (isMergedMesaRacha && order.localName) {
-            comanda = order.localName;
-          } else {
-            comanda = order.mesa_comanda ? order.mesa_comanda.trim() : '';
-          }
-          if (comanda) {
-            comandaSums[comanda] = (comandaSums[comanda] || 0) + val;
-            hasComandas = true;
-          } else {
-            sharedTotal += val;
-          }
-        });
-
-        divRacha.style.display = 'block';
-
-        const activeComandaNames = Object.keys(comandaSums);
-        const numComandas = activeComandaNames.length;
-
-        const isSharedSplit = chkRachaShared && chkRachaShared.checked;
-        const sharePerComanda = (isSharedSplit && numComandas > 0) ? (sharedTotal / numComandas) : 0;
-
-        let rachaHTML = '';
-
-        // 1. Renderiza cada comanda ativa com suporte a Drop
-        const mesaIcon = isMergedMesaRacha ? 'ph-armchair' : 'ph-user';
-        const mesaLabel = isMergedMesaRacha ? 'Mesa' : 'Comanda';
-        activeComandaNames.forEach(cName => {
-          let total = comandaSums[cName] + sharePerComanda;
-
-          const serviceCheckbox = document.getElementById('taxa-servico');
-          if (serviceCheckbox && serviceCheckbox.checked) {
-            total *= 1.1;
-          }
-
-          rachaHTML += `
-                 <div class="comanda-racha-row" 
-                      onclick="window.cobrarComanda('${cName}', ${total})" 
-                      ondragover="window.onDragOverComandaRow(event)" 
-                      ondragleave="window.onDragLeaveComandaRow(event)" 
-                      ondrop="window.onDropItemOnComanda(event, '${cName}')"
-                      title="Clique para cobrar ${mesaLabel.toLowerCase()} '${cName}' ou Arraste um produto aqui para colocá-lo nesta ${mesaLabel.toLowerCase()}">
-                     <span style="font-weight:600; color:#fc4b15;"><i class="ph ${mesaIcon}"></i> ${cName}</span>
-                     <span style="font-weight:700; color:#3ab55b;">R$ ${total.toFixed(2).replace('.', ',')}</span>
-                 </div>
-              `;
-        });
-
-        // 2. Renderiza os Itens Compartilhados da Mesa (Alvo de Drop para remover de comanda)
-        let sharedVal = sharedTotal;
-        const serviceCheckbox = document.getElementById('taxa-servico');
-        if (serviceCheckbox && serviceCheckbox.checked) {
-          sharedVal *= 1.1;
-        }
-
-        rachaHTML += `
-              <div class="comanda-racha-row shared-target-row" 
-                   onclick="window.cobrarComanda('', ${sharedVal})" 
-                   ondragover="window.onDragOverComandaRow(event)" 
-                   ondragleave="window.onDragLeaveComandaRow(event)" 
-                   ondrop="window.onDropItemOnComanda(event, '')"
-                   title="Clique para cobrar os Itens Compartilhados ou Arraste um produto aqui para REMOVER da comanda e deixar na Mesa">
-                 <span><i class="ph ph-squares-four"></i> Itens Compartilhados</span>
-                 <span style="font-weight:700;">R$ ${sharedVal.toFixed(2).replace('.', ',')}</span>
-              </div>
-           `;
-
-        // 3. Renderiza zona para criar/mover para Nova Comanda via Arraste
-        rachaHTML += `
-              <div class="comanda-racha-row add-comanda-target-row" 
-                   ondragover="window.onDragOverComandaRow(event)" 
-                   ondragleave="window.onDragLeaveComandaRow(event)" 
-                   ondrop="window.onDropItemOnNovaComanda(event)"
-                   onclick="window.onDropItemOnNovaComanda(event)"
-                   title="Arraste qualquer produto aqui para mover/atribuir a uma NOVA comanda">
-                 <span style="color:#2b5c9e; font-size:12px; font-weight:600;"><i class="ph ph-plus-circle"></i> + Criar / Mover para Nova Comanda</span>
-                 <span style="font-size:10px; color:#888; font-style:italic;">(Arrastar produto aqui)</span>
-              </div>
-           `;
-
-        listRacha.innerHTML = rachaHTML;
-      }
+      if (typeof window.renderRachaComandas === 'function') window.renderRachaComandas(item);
 
       updateSummaryValue('resumo-produtos', item.totalBruto || item.total);
       updateSummaryValue('resumo-comissao', item.total * 0.1);
@@ -3121,36 +2970,286 @@ function updateSummaryValue(id, value) {
     .catch(() => {});
 })();
 
+// ── RENDER REUTILIZÁVEL: Produtos do pedido (painel central) ──
+window.renderItensPainelMesa = function (item) {
+  const tbody = document.getElementById('panel-items-tbody');
+  if (!tbody || !item || !Array.isArray(item.items)) return;
+
+  const isMergedMesa = item.isGroup && item.items.length > 0 && item.mesaName && item.mesaName.includes(' + ');
+  const originalMesas = isMergedMesa ? [...new Set(item.items.map(o => o.localName).filter(Boolean))] : [];
+
+  let itemsToRender = item.items;
+  if (window.agruparItens) {
+    const grouped = {};
+    item.items.forEach(order => {
+      const key = order.productName;
+      if (!grouped[key]) grouped[key] = { ...order, quantity: 0, totalVal: 0 };
+      const totalVal = parseFloat(String(order.total).replace(',', '.'));
+      grouped[key].quantity += (order.quantity || 1);
+      grouped[key].totalVal += totalVal;
+    });
+    itemsToRender = Object.values(grouped).map(g => ({ ...g, total: g.totalVal }));
+  }
+
+  let itemsHTML = '';
+  itemsToRender.forEach((order, idx) => {
+    const totalVal = parseFloat(String(order.total).replace(',', '.'));
+    const isPaid = order.status === 'Pago';
+    const comandaTag = order.mesa_comanda
+      ? `<span class="comanda-badge" title="Clique para alterar ou remover da comanda (${order.mesa_comanda})" onclick="event.stopPropagation(); window.alterarComandaItemDirect(${order.id}, '${order.mesa_comanda}')">(${order.mesa_comanda}) <i class="ph ph-x" style="font-size:10px; margin-left:2px;"></i></span>`
+      : `<span class="shared-badge" title="Clique para atribuir este item a uma comanda" onclick="event.stopPropagation(); window.alterarComandaItemDirect(${order.id}, '')">[Mesa]</span>`;
+
+    const mesaOrigemBadge = isMergedMesa && order.localName
+      ? `<span style="display:inline-block; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; background:${order.localName === originalMesas[0] ? '#e3f2fd' : '#fff3e0'}; color:${order.localName === originalMesas[0] ? '#1565c0' : '#e65100'}; margin-left:6px;">${order.localName}</span>`
+      : '';
+
+    itemsHTML += `
+       <tr style="${isPaid ? 'opacity: 0.5;' : ''}" draggable="true" ondragstart="window.onDragStartItem(event, ${order.id}, '${order.mesa_comanda || ''}')" class="product-item-row" data-item-id="${order.id}" data-item-name="${(order.productName || 'Produto').replace(/"/g, '&quot;')}" data-item-status="${order.status || ''}">
+         <td>${String(idx + 1).padStart(3, '0')}</td>
+         <td style="${isPaid ? 'text-decoration: line-through;' : ''}">
+           ${order.productEmoji || ''} ${order.productName || 'Produto'}
+           ${mesaOrigemBadge}
+           ${comandaTag}
+           ${!isPaid && order.status ? `<span class="item-status-badge item-status-${order.status.toLowerCase().replace(/[^a-z0-9]+/g, '-')}" title="Clique com o botão direito para alterar o status de preparo">${order.status}</span>` : ''}
+           ${isPaid ? '<strong style="color: #3ab55b; margin-left: 8px;">(PAGO)</strong>' : ''}
+         </td>
+         <td>R$ ${(totalVal / (order.quantity || 1)).toFixed(2).replace('.', ',')}</td>
+         <td>${order.quantity || 1}</td>
+         <td style="font-weight: 600; color: #3ab55b;">R$ ${totalVal.toFixed(2).replace('.', ',')}</td>
+         <td>${order.userName || 'Caixa'}</td>
+         <td>
+            ${isPaid ? '' : `
+               <i class="ph-bold ph-divide" style="color: #ea580c; cursor: pointer; margin-right: 8px; font-size: 16px;" title="Dividir este item em frações (½, ⅓, ¼, etc.) e atribuir a comandas" onclick="window.abrirModalDividirItemFracao(${order.id}, '${(order.productName || 'Produto').replace(/'/g, "\\'")}', '${order.productEmoji || '🍽️'}', ${totalVal}, ${(order.quantity || 1)})"></i>
+               <i class="ph ph-user-switch" style="color: #2b5c9e; cursor: pointer; margin-right: 8px; font-size: 16px;" title="Atribuir / Mover Comanda" onclick="window.alterarComandaItemDirect(${order.id}, '${order.mesa_comanda || ''}')"></i>
+               <i class="ph ph-trash" style="color: #eb5757; cursor: pointer; font-size: 16px;" title="Remover item do pedido" onclick="window.removerItemPedido('${order.id}')"></i>
+            `}
+         </td>
+       </tr>
+     `;
+  });
+  tbody.innerHTML = itemsHTML;
+};
+
+// ── RENDER REUTILIZÁVEL: Divisão por Comanda ──
+window.renderRachaComandas = function (item) {
+  const divRacha = document.getElementById('div-racha-comandas');
+  const listRacha = document.getElementById('racha-comandas-list');
+  const chkRachaShared = document.getElementById('chk-racha-compartilhados');
+  if (!divRacha || !listRacha || !item || !Array.isArray(item.items)) return;
+
+  const unpaidItems = item.items.filter(o => o.status !== 'Pago');
+
+  const comandaSums = {};
+  let sharedTotal = 0;
+
+  // Para mesas juntadas, agrupar por localName (mesa original) como comanda
+  const isMergedMesaRacha = item.isGroup && item.mesaName && item.mesaName.includes(' + ');
+
+  unpaidItems.forEach(order => {
+    const val = parseFloat(String(order.total).replace(',', '.'));
+    let comanda;
+    if (isMergedMesaRacha && order.localName) {
+      comanda = order.localName;
+    } else {
+      comanda = order.mesa_comanda ? order.mesa_comanda.trim() : '';
+    }
+    if (comanda) {
+      comandaSums[comanda] = (comandaSums[comanda] || 0) + val;
+    } else {
+      sharedTotal += val;
+    }
+  });
+
+  divRacha.style.display = 'block';
+
+  const activeComandaNames = Object.keys(comandaSums);
+  const numComandas = activeComandaNames.length;
+
+  const isSharedSplit = chkRachaShared && chkRachaShared.checked;
+  const sharePerComanda = (isSharedSplit && numComandas > 0) ? (sharedTotal / numComandas) : 0;
+
+  let rachaHTML = '';
+
+  // 1. Renderiza cada comanda ativa com suporte a Drop
+  const mesaIcon = isMergedMesaRacha ? 'ph-armchair' : 'ph-user';
+  const mesaLabel = isMergedMesaRacha ? 'Mesa' : 'Comanda';
+  activeComandaNames.forEach(cName => {
+    let total = comandaSums[cName] + sharePerComanda;
+
+    const serviceCheckbox = document.getElementById('taxa-servico');
+    if (serviceCheckbox && serviceCheckbox.checked) {
+      total *= 1.1;
+    }
+
+    rachaHTML += `
+           <div class="comanda-racha-row" 
+                onclick="window.cobrarComanda('${cName}', ${total})" 
+                ondragover="window.onDragOverComandaRow(event)" 
+                ondragleave="window.onDragLeaveComandaRow(event)" 
+                ondrop="window.onDropItemOnComanda(event, '${cName}')"
+                title="Clique para cobrar ${mesaLabel.toLowerCase()} '${cName}' ou Arraste um produto aqui para colocá-lo nesta ${mesaLabel.toLowerCase()}">
+               <span style="font-weight:600; color:#fc4b15;"><i class="ph ${mesaIcon}"></i> ${cName}</span>
+               <span style="font-weight:700; color:#3ab55b;">R$ ${total.toFixed(2).replace('.', ',')}</span>
+           </div>
+        `;
+  });
+
+  // 2. Renderiza os Itens Compartilhados da Mesa (Alvo de Drop para remover de comanda)
+  let sharedVal = sharedTotal;
+  const serviceCheckbox = document.getElementById('taxa-servico');
+  if (serviceCheckbox && serviceCheckbox.checked) {
+    sharedVal *= 1.1;
+  }
+
+  rachaHTML += `
+        <div class="comanda-racha-row shared-target-row" 
+             onclick="window.cobrarComanda('', ${sharedVal})" 
+             ondragover="window.onDragOverComandaRow(event)" 
+             ondragleave="window.onDragLeaveComandaRow(event)" 
+             ondrop="window.onDropItemOnComanda(event, '')"
+             title="Clique para cobrar os Itens Compartilhados ou Arraste um produto aqui para REMOVER da comanda e deixar na Mesa">
+           <span><i class="ph ph-squares-four"></i> Itens Compartilhados</span>
+           <span style="font-weight:700;">R$ ${sharedVal.toFixed(2).replace('.', ',')}</span>
+        </div>
+     `;
+
+  // 3. Renderiza zona para criar/mover para Nova Comanda via Arraste
+  rachaHTML += `
+        <div class="comanda-racha-row add-comanda-target-row" 
+             ondragover="window.onDragOverComandaRow(event)" 
+             ondragleave="window.onDragLeaveComandaRow(event)" 
+             ondrop="window.onDropItemOnNovaComanda(event)"
+             onclick="window.onDropItemOnNovaComanda(event)"
+             title="Arraste qualquer produto aqui para mover/atribuir a uma NOVA comanda">
+           <span style="color:#2b5c9e; font-size:12px; font-weight:600;"><i class="ph ph-plus-circle"></i> + Criar / Mover para Nova Comanda</span>
+           <span style="font-size:10px; color:#888; font-style:italic;">(Arrastar produto aqui)</span>
+        </div>
+     `;
+
+  listRacha.innerHTML = rachaHTML;
+};
+
+// ── REFRESH EM TEMPO REAL da mesa selecionada (pagamentos parciais) ──
+window.atualizarPainelMesaSelecionada = function () {
+  const atual = window.mesaAtual;
+  if (!atual || atual.isGroup === false) return;
+  const nome = String(atual.mesaName || atual.nome || '').trim();
+  if (!nome) return;
+
+  // reencontra o grupo fresco correspondente em ordersData
+  const grupos = new Map();
+  (Array.isArray(ordersData) ? ordersData : []).forEach(order => {
+    const key = String(order.mesa_grupo || order.localName || `Pedido Avulso #${order.id}`).trim();
+    let g = grupos.get(key);
+    if (!g) {
+      g = { isGroup: true, mesaName: key, localName: key, nome: key, items: [], userName: order.userName || 'Avulso', status: order.status, createdAt: order.createdAt, time: order.time, id: order.id, total: 0, totalBruto: 0, pagamentosParciais: [] };
+      grupos.set(key, g);
+    }
+    const v = parseFloat(String(order.total).replace(',', '.')) || 0;
+    if (order.productName && (order.productName.includes('Pagamento') || order.productName.includes('Pgto Parcial'))) {
+      let metodo = 'Dinheiro';
+      if (order.productName.includes('(')) metodo = order.productName.split('(')[1].replace(')', '');
+      const isComanda = order.productName.includes('Comanda');
+      g.pagamentosParciais.push({ valor: Math.abs(v), metodo, id: order.id, comanda: isComanda });
+    } else {
+      g.items.push(order);
+      g.totalBruto = (g.totalBruto || 0) + v;
+      if (order.status !== 'Pago') g.total = (g.total || 0) + v;
+    }
+    if (!g.userName || g.userName === 'Avulso') g.userName = order.userName || 'Avulso';
+  });
+  const grupo = grupos.get(nome);
+  if (!grupo) {
+    window.mesaAtual = null;
+    document.body.classList.remove('mesa-selecionada');
+    const tbody = document.getElementById('panel-items-tbody');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px;">Mesa não encontrada</td></tr>`;
+    return;
+  }
+
+  const nonPaymentItems = grupo.items.filter(i => i.status !== 'Pago');
+  grupo.status = nonPaymentItems.length > 0 ? ((nonPaymentItems.every(i => i.status === 'Pronto' || i.status === 'Concluido')) ? 'Pronto' : nonPaymentItems[0].status) : undefined;
+
+  // reativa o destaque .selected no card correspondente (renderOrders recria os cards)
+  document.querySelectorAll('.mesa-item.selected').forEach(c => c.classList.remove('selected'));
+  const cardEl = Array.from(document.querySelectorAll('.mesa-item')).find(c => (c.getAttribute('data-mesa') || '').trim() === nome);
+  if (cardEl) cardEl.classList.add('selected');
+
+  window.mesaAtual = grupo;
+  if (typeof window.renderItensRecolhidosMesas === 'function') {
+    try { window.renderItensRecolhidosMesas(); } catch (e) { }
+  }
+  try { window.renderItensPainelMesa(grupo); } catch (e) { }
+  try { window.renderRachaComandas(grupo); } catch (e) { }
+
+  const updateSummaryValue = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = `R$ ${val.toFixed(2).replace('.', ',')}`;
+  };
+  updateSummaryValue('resumo-produtos', grupo.totalBruto);
+  updateSummaryValue('resumo-comissao', grupo.total * 0.1);
+  updateSummaryValue('resumo-subtotal', grupo.totalBruto);
+
+  if (typeof window.recalcularPagamentosParciais === 'function') window.recalcularPagamentosParciais(nome);
+  if (typeof window.calcularTotal === 'function') { try { window.calcularTotal(); } catch (e) { } }
+  if (typeof window.calcRestante === 'function') { try { window.calcRestante(); } catch (e) { } }
+
+  // permanência (primeiro item)
+  const firstTimeStr = grupo.items[0] && grupo.items[0].time;
+  if (firstTimeStr && firstTimeStr.includes(':')) {
+    const [h, m] = firstTimeStr.split(':').map(Number);
+    const now = new Date();
+    let orderDate = new Date();
+    orderDate.setHours(h, m, 0, 0);
+    if (orderDate > now) orderDate.setDate(orderDate.getDate() - 1);
+    const diffMin = Math.floor((now - orderDate) / 60000);
+    const f = document.getElementById('info-permanencia');
+    if (f) f.innerText = diffMin + 'min';
+    const fm = document.getElementById('mobile-info-permanencia');
+    if (fm) fm.innerText = diffMin + 'min';
+  }
+
+  // modal parcial aberto desta mesa
+  if (window._mesaPagamentoParcial === nome && typeof window.atualizarModalPagamentoParcialDesagrupado === 'function') {
+    try { window.atualizarModalPagamentoParcialDesagrupado(); } catch (e) { }
+  }
+};
+
 // WebSocket Events
-// Server emits 'initial_data' on connect
-socket.on('initial_data', (data) => {
-  ordersData = Array.isArray(data) ? data : [];
-  window.ordersData = ordersData;
+window._caixaFeedCompleto = !!window._caixaFeedCompleto;
+
+// O caixa usa o feed COMPLETO (itens Pago/Fracionado incluídos) para o fluxo
+// financeiro: itens recebidos pela comanda mobile não podem sumir da tela e
+// os pagamentos parciais devem refletir imediatamente nos modais.
+function _setPedidosCaixa(rows, completo) {
+  if (!Array.isArray(rows)) rows = [];
+  if (completo) window._caixaFeedCompleto = true;
+  else if (window._caixaFeedCompleto) return; // feeds filtrados ignorados depois do feed completo
+  ordersData = rows;
+  window.ordersData = rows;
   renderOrders();
-});
+  if (typeof window.atualizarPainelMesaSelecionada === 'function') {
+    try { window.atualizarPainelMesaSelecionada(); } catch (e) { }
+  }
+}
+
+// Feed completo (inclui itens Pago/Fracionado), exclusivo do caixa
+socket.on('pedidos_caixa_completos', (data) => _setPedidosCaixa(data, true));
+
+// Server emits 'initial_data' on connect
+socket.on('initial_data', (data) => _setPedidosCaixa(data, false));
 
 // Alias legacy name just in case
-socket.on('initial_data_caixa', (data) => {
-  ordersData = Array.isArray(data) ? data : [];
-  window.ordersData = ordersData;
-  renderOrders();
-});
+socket.on('initial_data_caixa', (data) => _setPedidosCaixa(data, false));
 
 // Feed de atualização de pedidos (nome real do evento no servidor)
-socket.on('pedidos_atualizados', (pedidos) => {
-  ordersData = Array.isArray(pedidos) ? pedidos : [];
-  window.ordersData = ordersData;
-  renderOrders();
-});
+socket.on('pedidos_atualizados', (pedidos) => _setPedidosCaixa(pedidos, false));
 
 // Alias legacy
-socket.on('pedidos_caixa_atualizados', (pedidos) => {
-  ordersData = Array.isArray(pedidos) ? pedidos : [];
-  window.ordersData = ordersData;
-  renderOrders();
-});
+socket.on('pedidos_caixa_atualizados', (pedidos) => _setPedidosCaixa(pedidos, false));
 
 socket.on('pedido_adicionado', (novoPedido) => {
+  if (window._caixaFeedCompleto) return;
   const exists = ordersData.some(o => o.id === novoPedido.id);
   if (!exists) {
     ordersData.push(novoPedido);
@@ -3160,6 +3259,7 @@ socket.on('pedido_adicionado', (novoPedido) => {
 });
 
 socket.on('status_atualizado', (pedidoAtualizado) => {
+  if (window._caixaFeedCompleto) return;
   const index = ordersData.findIndex(o => o.id === pedidoAtualizado.id);
   if (index !== -1) {
     ordersData[index] = pedidoAtualizado;
@@ -3257,10 +3357,19 @@ socket.on('pagamento_parcial_registrado', (data) => {
   }
 
   // 3) recalcula o checkout modal aberto desta mesa (total pago / falta a pagar).
+  // Quando o feed completo já chegou com o pagamento, o refresh integral da mesa
+  // garante itens Pago visíveis + lista de pagamentos atualizada.
   const nomeMesaAtual = window.mesaAtual && (window.mesaAtual.nome || window.mesaAtual.mesaName);
   if (nomeMesaAtual === data.mesaName) {
-    window.recalcularPagamentosParciais(data.mesaName);
-    if (typeof window.calcRestante === 'function') window.calcRestante();
+    const jaTemNoFeed = Array.isArray(ordersData) && ordersData.some(o =>
+      (o.localName === data.mesaName || o.mesa_grupo === data.mesaName) &&
+      o.productName && (o.productName.includes('Pagamento') || o.productName.includes('Pgto Parcial')));
+    if (jaTemNoFeed && typeof window.atualizarPainelMesaSelecionada === 'function') {
+      window.atualizarPainelMesaSelecionada();
+    } else {
+      window.recalcularPagamentosParciais(data.mesaName);
+      if (typeof window.calcRestante === 'function') window.calcRestante();
+    }
   }
 });
 
