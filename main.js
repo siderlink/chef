@@ -1770,7 +1770,20 @@ window.onDropMesa = async (e, targetMesa) => {
       (o.mesa_grupo === targetMesa || o.localName === targetMesa) && o.status !== 'Finalizado' && o.status !== 'Cancelado' && o.status !== 'Pago'
     );
 
+    const isSrcOccupied = window.ordersData && window.ordersData.some(o =>
+      (o.mesa_grupo === draggedMesa || o.localName === draggedMesa) && o.status !== 'Finalizado' && o.status !== 'Cancelado' && o.status !== 'Pago'
+    );
+
     const operador = (window.crmPerfil && window.crmPerfil.nome) || localStorage.getItem('chef_operador_nome') || 'Caixa';
+
+    // Mesa de origem está livre (vazia): não é possível "mover" nada.
+    // Nesse caso, se o alvo também estiver livre, perguntar se quer JUNTAR as mesas.
+    if (!isSrcOccupied && !isOccupied) {
+      if (await chefConfirm('Juntar mesas', `Juntar a ${draggedMesa} com a ${targetMesa} em uma única mesa?`)) {
+        if (typeof socket !== 'undefined' && socket) socket.emit('juntar_mesas', { mesaA: draggedMesa, mesaB: targetMesa, operador });
+      }
+      return;
+    }
 
     if (isOccupied) {
       if (await chefConfirm(

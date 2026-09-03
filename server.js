@@ -4111,6 +4111,7 @@ io.on('connection', (socket) => {
       if (!err) {
         global.registrarAuditoria(operador || 'Sistema', 'TRANSFERENCIA_MESA', `Mesa ${mesaAtual} transferida para ${novaMesa}`, 'Operação de Salão', 'MEDIO');
         broadcastPedidos();
+        liberarMesaSeVazia(mesaAtual);
       }
     });
   });
