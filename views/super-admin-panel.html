@@ -3678,6 +3678,9 @@
                   class="fa-solid fa-chart-line"></i> GTAG &amp; Pixel</button>
               <button class="sv-tab-btn" data-sv-tab="sv-tab-seo" onclick="renderSiteVendasTab('sv-tab-seo')"><i
                   class="fa-solid fa-magnifying-glass-chart"></i> SEO</button>
+              <button class="sv-tab-btn" data-sv-tab="sv-tab-indexacao"
+                onclick="renderSiteVendasTab('sv-tab-indexacao')"><i
+                  class="fa-solid fa-shield-halved"></i> Verificação &amp; Indexação</button>
               <button class="sv-tab-btn" data-sv-tab="sv-tab-aparencia"
                 onclick="renderSiteVendasTab('sv-tab-aparencia')"><i
                   class="fa-solid fa-palette"></i> Aparência</button>
@@ -3877,6 +3880,68 @@
                 <button onclick="salvarSiteSEO()"
                   style="background:linear-gradient(135deg,#38bdf8,#0284c7);color:#fff;border:none;border-radius:12px;padding:14px 32px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;"><i
                     class="fa-solid fa-floppy-disk"></i> Salvar SEO</button>
+              </div>
+            </div>
+
+            <!-- VERIFICAÇÃO & INDEXAÇÃO -->
+            <div class="sv-tab-panel" id="sv-tab-indexacao" style="display:none;">
+              <div
+                style="padding:24px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;margin-bottom:20px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                  <div
+                    style="width:40px;height:40px;background:rgba(56,189,248,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#38bdf8;font-size:18px;"><i
+                      class="fa-solid fa-shield-halved"></i></div>
+                  <div>
+                    <h3 style="font-size:16px;margin:0;">Google Search Console &amp; Indexação</h3>
+                    <p style="color:#999;font-size:12.5px;margin:2px 0 0;">Verificação do domínio, sitemap, robots.txt e
+                      llm.txt. Aplicados automaticamente no servidor.</p>
+                  </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;">
+                  <div><label
+                      style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Domínio principal
+                      (canônico)</label><input id="sv-seo-dominio" placeholder="https://cheff.pro"
+                      style="width:100%;padding:10px 14px;background:rgba(0,0,0,0.25);border:1px solid var(--border-color);border-radius:10px;color:#fff;font-size:13px;outline:none;">
+                  </div>
+                  <div><label
+                      style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Código de verificação
+                      do Google (Search Console)</label><input id="sv-seo-gsc-verificacao"
+                      placeholder="Ex: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                      style="width:100%;padding:10px 14px;background:rgba(0,0,0,0.25);border:1px solid var(--border-color);border-radius:10px;color:#fff;font-size:13px;outline:none;">
+                    <small id="sv-seo-gsc-preview" style="color:#6ee7b7;font-size:11px;display:block;margin-top:4px;"></small>
+                  </div>
+                </div>
+
+                <div style="margin-top:14px;padding:12px 14px;background:rgba(56,189,248,0.06);border:1px dashed rgba(56,189,248,0.3);border-radius:10px;">
+                  <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">URLs públicas geradas automaticamente</label>
+                  <div style="font-size:13px;color:#e2e8f0;line-height:1.7;" id="sv-seo-urls-preview">
+                    <div>· <b>sitemap.xml</b>: <code id="sv-seo-url-sitemap">https://cheff.pro/sitemap.xml</code></div>
+                    <div>· <b>robots.txt</b>: <code id="sv-seo-url-robots">https://cheff.pro/robots.txt</code></div>
+                    <div>· <b>llm.txt</b>: <code id="sv-seo-url-llm">https://cheff.pro/llm.txt</code></div>
+                  </div>
+                </div>
+
+                <div style="margin-top:14px;"><label
+                    style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Conteúdo do
+                    robots.txt (deixe vazio para usar o padrão)</label><textarea id="sv-seo-robots-txt" rows="5"
+                    placeholder="User-agent: *&#10;Allow: /&#10;&#10;Sitemap: https://cheff.pro/sitemap.xml"
+                    style="width:100%;padding:10px 14px;background:rgba(0,0,0,0.25);border:1px solid var(--border-color);border-radius:10px;color:#fff;font-size:12px;outline:none;resize:vertical;font-family:monospace;"></textarea>
+                </div>
+
+                <div style="margin-top:14px;"><label
+                    style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Conteúdo do llm.txt
+                    (para os modelos de IA entenderem seu negócio)</label><textarea id="sv-seo-llm-txt" rows="6"
+                    placeholder="# Chef Cozinha&#10;&#10;Sistema de gestão para restaurantes e bares..."
+                    style="width:100%;padding:10px 14px;background:rgba(0,0,0,0.25);border:1px solid var(--border-color);border-radius:10px;color:#fff;font-size:12px;outline:none;resize:vertical;font-family:monospace;"></textarea>
+                  <p style="color:#777;font-size:11px;margin-top:6px;">Como os arquivos são gerados: ao salvar, o servidor
+                    serve <code>/sitemap.xml</code>, <code>/robots.txt</code> e <code>/llm.txt</code> dinamicamente a
+                    partir destes dados. No Google Search Console, adicione o domínio e envie o sitemap.</p>
+                </div>
+
+                <button onclick="salvarSiteIndexacao()"
+                  style="background:linear-gradient(135deg,#56ccf2,#2f80ed);color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;margin-top:16px;box-shadow:0 4px 12px rgba(56,189,248,0.3);"><i
+                    class="fa-solid fa-floppy-disk"></i> Salvar e Gerar Arquivos</button>
               </div>
             </div>
 

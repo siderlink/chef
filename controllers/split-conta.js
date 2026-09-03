@@ -65,6 +65,19 @@ module.exports = function (socket, io, db, helpers) {
       qtd REAL NOT NULL,
       valor REAL NOT NULL
     )`);
+    // Créditos / movimentações financeiras por comanda (itens compartilhados)
+    db.run(`CREATE TABLE IF NOT EXISTS comanda_creditos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      mesa TEXT NOT NULL,
+      comanda TEXT,
+      valor REAL NOT NULL DEFAULT 0,
+      tipo TEXT NOT NULL DEFAULT 'compartilhado',
+      metodo TEXT,
+      operador TEXT,
+      observacao TEXT,
+      turno_id INTEGER,
+      criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    )`);
   }
 
   carregarTabelas();
@@ -142,19 +155,34 @@ module.exports = function (socket, io, db, helpers) {
                     db.all(`SELECT * FROM configuracoes`, [], (e5, cfgs) => {
                       const cfg = {};
                       (cfgs || []).forEach(r => { cfg[r.chave] = r.valor; });
-                      socket.emit('split_dados', {
-                        success: true,
-                        mesa: mesaName,
-                        mesa_status: sessao.mesa_status || 'Ocupada',
-                        itens: listaItens,
-                        pagoPorItem,
-                        pagamentos: listaPagos,
-                        configs: {
-                          split_excedente: String(cfg.split_excedente || 'perguntar'),
-                          qr_pix_key: cfg.qr_pix_key || '',
-                          qr_pix_name: cfg.qr_pix_name || '',
-                          nome_restaurante: cfg.nome_restaurante || ''
-                        }
+
+                      db.all(`SELECT * FROM comanda_creditos WHERE mesa = ? ORDER BY id ASC`, [mesaName], (e6, creditosRows) => {
+                        const creditos = (creditosRows || []).map(r => ({
+                          id: r.id,
+                          comanda: r.comanda || null,
+                          valor: toNum(r.valor),
+                          tipo: r.tipo || 'comanda',
+                          metodo: r.metodo || 'Dinheiro',
+                          operador: r.operador || 'Caixa',
+                          observacao: r.observacao || null,
+                          criado_em: r.criado_em
+                        }));
+
+                        socket.emit('split_dados', {
+                          success: true,
+                          mesa: mesaName,
+                          mesa_status: sessao.mesa_status || 'Ocupada',
+                          itens: listaItens,
+                          pagoPorItem,
+                          pagamentos: listaPagos,
+                          creditos,
+                          configs: {
+                            split_excedente: String(cfg.split_excedente || 'perguntar'),
+                            qr_pix_key: cfg.qr_pix_key || '',
+                            qr_pix_name: cfg.qr_pix_name || '',
+                            nome_restaurante: cfg.nome_restaurante || ''
+                          }
+                        });
                       });
                     });
                   }

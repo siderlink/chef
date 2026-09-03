@@ -711,6 +711,19 @@ window.confirmarDivisaoItemFracao = () => {
   }
 };
 
+window.removerItemDividido = (itemId) => {
+  if (typeof ordersData !== 'undefined' && Array.isArray(ordersData)) {
+    const item = ordersData.find(o => o.id === itemId);
+    if (item) item.status = 'Fracionado';
+  }
+  if (window.mesaAtual && Array.isArray(window.mesaAtual.items)) {
+    const item = window.mesaAtual.items.find(i => i.id === itemId);
+    if (item) item.status = 'Fracionado';
+  }
+  if (typeof renderOrders === 'function') renderOrders();
+  if (typeof window.renderSection === 'function') window.renderSection();
+};
+
 window.switchMobileTab = (tabId) => {
   const ws = document.querySelector('.workspace');
   if (!ws) return;
@@ -2862,6 +2875,14 @@ function renderOrders() {
   }
 
   if (typeof window.updateTimers === 'function') window.updateTimers();
+
+  // Reaplica filtros de busca/setor/categoria do caixa após re-render (morphdom
+  // substitui o DOM e apagaria o display:none aplicado pelo filtrarMesasBusca)
+  if (typeof window.aplicarFiltrosCaixa === 'function') {
+    const buscaInput = document.getElementById('caixa-ux-search');
+    const term = ((buscaInput && buscaInput.value) || '').trim();
+    if (term || window._setorAtivoCaixa || window._categoriaAtivaCaixa) window.aplicarFiltrosCaixa();
+  }
 }
 
 
@@ -3370,6 +3391,25 @@ socket.on('pagamento_parcial_registrado', (data) => {
       window.recalcularPagamentosParciais(data.mesaName);
       if (typeof window.calcRestante === 'function') window.calcRestante();
     }
+  }
+});
+
+socket.on('comanda_status_mesa_result', (data) => {
+  if (!data || !data.success) return;
+  window._renderComandaModalStatus(data.movimentos, window.comandaCobrarNome);
+});
+
+socket.on('comanda_creditos_atualizado', (data) => {
+  if (!data || !data.mesaName) return;
+  const nome = window.mesaAtual && (window.mesaAtual.nome || window.mesaAtual.mesaName);
+  if (nome === data.mesaName) {
+    window.refreshComandaModalStatus();
+  }
+});
+
+socket.on('item_fracionado_sucesso', (data) => {
+  if (data && data.itemId && typeof window.removerItemDividido === 'function') {
+    window.removerItemDividido(data.itemId);
   }
 });
 
@@ -7880,8 +7920,52 @@ window.cobrarComanda = function (comandaName, totalVal) {
     }
   }
 
+  const partialInput = document.getElementById('comanda-modal-partial-value');
+  if (partialInput) partialInput.value = '0';
+
   modalOverlay.style.display = 'flex';
   window.recalcComandaModal();
+  window.refreshComandaModalStatus();
+};
+
+// Status atual do pagamento (movimentações financeiras por comanda) desta mesa
+window.refreshComandaModalStatus = function () {
+  const section = document.getElementById('comanda-modal-status-section');
+  const listEl = document.getElementById('comanda-modal-status-list');
+  if (!section || !listEl) return;
+  const mesaName = window.mesaAtual ? (window.mesaAtual.nome || window.mesaAtual.mesaName) : '';
+  const cName = window.comandaCobrarNome;
+  if (!mesaName) return;
+  if (typeof socket !== 'undefined' && socket) {
+    socket.emit('comanda_status_mesa', { mesaName });
+  } else {
+    section.style.display = 'none';
+  }
+};
+
+window._renderComandaModalStatus = function (movimentos, cName) {
+  const section = document.getElementById('comanda-modal-status-section');
+  const listEl = document.getElementById('comanda-modal-status-list');
+  if (!section || !listEl) return;
+  const rows = (movimentos || []).filter(m => !cName || !m.comanda || String(m.comanda).trim() === String(cName).trim());
+  if (!rows || rows.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  const fmt = v => 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ',');
+  listEl.innerHTML = rows.map(m => {
+    const tipoLabel = m.tipo === 'comanda' ? 'Comanda' : 'Compartilhados';
+    const comandaTag = m.comanda ? `<span style="opacity:.7;">(${m.comanda})</span>` : '';
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(39,174,96,0.08); border:1px solid rgba(39,174,96,0.25); border-radius:8px; padding:6px 8px;">
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <span style="font-weight:600;">${tipoLabel} ${comandaTag} - ${m.metodo}</span>
+          <span style="font-size:11px; color:#888;">${m.criado_em || ''} &middot; ${m.operador}${m.observacao ? ' &middot; ' + m.observacao : ''}</span>
+        </div>
+        <span style="font-weight:700; color:#27ae60;">${fmt(m.valor)}</span>
+      </div>`;
+  }).join('');
 };
 
 window.recalcComandaModal = function () {
@@ -7913,8 +7997,19 @@ window.recalcComandaModal = function () {
     });
   }
 
+  const partialInput = document.getElementById('comanda-modal-partial-value');
+  if (partialInput) {
+    baseTotal += (parseFloat(partialInput.value) || 0);
+  }
+
+  let useSharedCreditFlag = false;
+  if (partialInput) {
+    useSharedCreditFlag = (parseFloat(partialInput.value) || 0) > 0;
+  }
+  window.comandaModalSharedCredit = useSharedCreditFlag;
+
   const serviceCheckbox = document.getElementById('taxa-servico');
-  if (serviceCheckbox && serviceCheckbox.checked) {
+  if (serviceCheckbox && serviceCheckbox.checked && !window.comandaModalSharedCredit) {
     baseTotal *= 1.1;
   }
 
@@ -7967,23 +8062,52 @@ window.finalizarComandaModal = function () {
 
   if (typeof socket !== 'undefined' && socket) {
     const serviceCheckboxComanda = document.getElementById('taxa-servico');
-    socket.emit('pagamento_parcial_valor', {
-      mesaName: mesaName,
-      valor: val,
-      metodo: method,
-      comTaxa: serviceCheckboxComanda ? serviceCheckboxComanda.checked : true,
-      desconto: window.descontoAdicional || 0,
-      comandaName: cName,
-      itemIds: itemIds,
-      userName: window.loggedInUser || 'Caixa'
-    });
+    const partialInput = document.getElementById('comanda-modal-partial-value');
+    const partialVal = partialInput ? (parseFloat(partialInput.value) || 0) : 0;
+
+    if (window.comandaModalSharedCredit && cName) {
+      // Crédito parcial de compartilhados: cobra a comanda + valor parcial
+      // dos compartilhados como crédito financeiro (não consome a quantidade).
+      const valorComanda = itemsToPay.reduce((s, it) => s + (parseFloat(String(it.total).replace(',', '.')) || 0), 0);
+      const valorCompartilhado = partialVal;
+      socket.emit('comanda_cobrar_compartilhados', {
+        mesaName: mesaName,
+        comandaName: cName,
+        valorComanda: Math.round(valorComanda * 100) / 100,
+        valorCompartilhado: Math.round(valorCompartilhado * 100) / 100,
+        itemIdsComanda: itemsToPay.map(i => i.id),
+        itemIdCompartilhado: null,
+        metodo: method,
+        comTaxa: false,
+        userName: window.loggedInUser || 'Caixa',
+        observacao: cName ? `Pagamento da comanda ${cName} + crédito parcial de itens compartilhados` : 'Crédito parcial de itens compartilhados'
+      });
+    } else {
+      socket.emit('pagamento_parcial_valor', {
+        mesaName: mesaName,
+        valor: val,
+        metodo: method,
+        comTaxa: serviceCheckboxComanda ? serviceCheckboxComanda.checked : true,
+        desconto: window.descontoAdicional || 0,
+        comandaName: cName,
+        itemIds: itemIds,
+        userName: window.loggedInUser || 'Caixa'
+      });
+    }
   }
 
   setTimeout(() => {
     window.isComandaPaymentProcessing = false;
     btns.forEach(b => b.style.pointerEvents = 'auto');
     if (modalOverlay) modalOverlay.style.display = 'none';
-    alert(`Pagamento de R$ ${val.toFixed(2).replace('.', ',')} (${method}) recebido com sucesso para ${cName ? 'Comanda ' + cName : 'Itens Compartilhados'}!`);
+    if (window.comandaModalSharedCredit) {
+      const pInput = document.getElementById('comanda-modal-partial-value');
+      const pVal = pInput ? (parseFloat(pInput.value) || 0) : 0;
+      alert(`Pagamento de R$ ${val.toFixed(2).replace('.', ',')} (${method}) recebido para ${cName ? 'Comanda ' + cName : 'Itens Compartilhados'} (inclui R$ ${pVal.toFixed(2).replace('.', ',')} de crédito de itens compartilhados).`);
+    } else {
+      alert(`Pagamento de R$ ${val.toFixed(2).replace('.', ',')} (${method}) recebido com sucesso para ${cName ? 'Comanda ' + cName : 'Itens Compartilhados'}!`);
+    }
+    window.comandaModalSharedCredit = false;
   }, 1000);
 };
 
@@ -11398,3 +11522,144 @@ document.addEventListener('drop', (e) => {
     }
   }
 });
+
+/* ══════════════════════════════════════════════════════════════════
+   ARRASTE DE MESA POR POINTER (mouse) — garantia de que a mesa "segue
+   o cursor". O drag & drop nativo (HTML5 draggable) é frágil em vários
+   navegadores e não inicia em alguns setups. Este motor usa os eventos
+   de pointer do mouse diretamente: cria um fantasma que acompanha o
+   cursor e, ao soltar sobre outra mesa, dispara a mesma transferência
+   de comanda (onDropMesa) com confirmação.
+   O drag nativo é suprimido (preventDefault no dragstart) para que não
+   haja dupla reação. O toque já é coberto pelo initGestures.
+   ══════════════════════════════════════════════════════════════════ */
+(function initMesaDragPointer() {
+  if (window._mesaDragPointerInit) return;
+  window._mesaDragPointerInit = true;
+
+  let armed = null;        // { card, nome, ghost, alvo }
+  const THRESHOLD = 6;     // px antes de começar a arrastar de verdade
+
+  function nomeDaMesa(card) {
+    if (!card) return '';
+    return (card.getAttribute('data-mesa') || card.getAttribute('data-nome') ||
+      (card.querySelector('.mesa-id') ? card.querySelector('.mesa-id').innerText.trim() : ''));
+  }
+
+  function limparAlvos() {
+    document.querySelectorAll('.mesa-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+  }
+
+  function criarFantasma(card) {
+    const g = card.cloneNode(true);
+    g.removeAttribute('id');
+    const r = card.getBoundingClientRect();
+    g.style.cssText = 'position:fixed;z-index:999999;pointer-events:none;width:' + r.width + 'px;opacity:.92;' +
+      'transform:scale(1.04);box-shadow:0 12px 32px rgba(0,0,0,.5);margin:0;transition:none;background:var(--bg-card,#0f172a);';
+    document.body.appendChild(g);
+    return g;
+  }
+
+  document.addEventListener('mousedown', function (e) {
+    if (e.button !== 0) return;
+    const card = e.target && e.target.closest ? e.target.closest('.mesa-item') : null;
+    if (!card) return;
+    if (!card.getAttribute('data-status')) return;         // só mesas reais (com status)
+    if (card.id === 'nova-comanda-card') return;
+    if (e.target.closest('button, a, input, select, textarea, .action-popup-btn')) return;
+
+    armed = {
+      card: card,
+      nome: nomeDaMesa(card),
+      ghost: null,
+      alvo: null,
+      startX: e.clientX,
+      startY: e.clientY,
+      emArraste: false,
+      moved: false
+    };
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (!armed) return;
+    const dx = e.clientX - armed.startX;
+    const dy = e.clientY - armed.startY;
+
+    if (Math.abs(dx) > THRESHOLD || Math.abs(dy) > THRESHOLD) {
+      armed.moved = true;
+    }
+
+    if (!armed.moved) return;
+
+    if (!armed.emArraste) {
+      armed.emArraste = true;
+      armed.card.classList.add('dragging-chef');
+      armed.ghost = criarFantasma(armed.card);
+      document.body.style.userSelect = 'none';
+    }
+
+    if (armed.ghost) {
+      armed.ghost.style.left = (e.clientX - 30) + 'px';
+      armed.ghost.style.top = (e.clientY - 30) + 'px';
+    }
+
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const alvoCard = under && under.closest ? under.closest('.mesa-item') : null;
+    const valido = alvoCard && alvoCard !== armed.card && alvoCard.getAttribute('data-status') && alvoCard.id !== 'nova-comanda-card';
+    limparAlvos();
+    if (valido) {
+      alvoCard.classList.add('drag-over');
+      armed.alvo = alvoCard;
+    } else {
+      armed.alvo = null;
+    }
+  });
+
+  function finalizarMesaDrag(x, y) {
+    if (!armed) return;
+    const alvo = armed.alvo;
+    if (armed.ghost) { armed.ghost.remove(); armed.ghost = null; }
+    if (armed.card) armed.card.classList.remove('dragging-chef');
+    document.body.style.userSelect = '';
+    limparAlvos();
+
+    const origem = armed.nome;
+    const alvoNome = alvo ? nomeDaMesa(alvo) : '';
+    armed = null;
+
+    if (!alvo || !alvoNome || !origem || origem === alvoNome) return;
+
+    if (typeof window.onDropMesa === 'function') {
+      // Reaproveita onDropMesa: precisa de um objeto fake de evento com dataTransfer
+      const fakeEvent = {
+        preventDefault: function () {},
+        stopPropagation: function () {},
+        dataTransfer: {
+          getData: function (k) {
+            if (k === 'type' || k === 'text/plain' || k === 'Text') return 'table';
+            if (k === 'mesa') return origem;
+            return '';
+          }
+        }
+      };
+      window.onDropMesa(fakeEvent, alvoNome);
+    }
+  }
+
+  document.addEventListener('mouseup', function (e) {
+    if (!armed) return;
+    finalizarMesaDrag(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('blur', function () {
+    if (armed) finalizarMesaDrag(0, 0);
+  });
+
+  // Suprime o drag nativo para que este motor seja a única via (sem dupla reação)
+  document.addEventListener('dragstart', function (e) {
+    const card = e.target && e.target.closest ? e.target.closest('.mesa-item') : null;
+    if (card && window._mesaDragPointerInit) {
+      e.preventDefault();
+    }
+  }, true);
+})();

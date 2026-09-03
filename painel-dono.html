@@ -1505,52 +1505,82 @@
       opacity: 0.7;
     }
 
-    /* ── Modos de Layout Visíveis e Impactantes ── */
-    body[data-layout-dono="compacto"] main {
-      display: flex !important;
-      flex-direction: column !important;
-      max-width: 760px !important;
+    /* ══════════════════════════════════════════════════════════════════
+       MOTOR ÚNICO DE LAYOUT MODULAR (mobile → ultrawide)
+       Cada seção declara a largura que o dono escolheu via classes:
+         .dono-sec-full  (span total)
+         .dono-sec-half  (metade da largura útil)
+         .dono-sec-third (um terço da largura útil)
+       A densidade (espaçamento / colunas do deck ou cards) muda com os
+       modos compacto | confortável | dashboard do seletor "Layout".
+       ─────────────────────────────────────────────────────────────
+       1) BASE CELULAR (< 768px): coluna única sempre, sem exceções.
+       2) ≥ 768px: grid responsivo onde full/half/third se distribuem.
+       3) A ordem/visibilidade reais são controladas pelo painel-dono.js
+          (config por dono + restaurante) que move as <section> no DOM.
+       ══════════════════════════════════════════════════════════════════ */
+
+    /* (A) Mobile-first: coluna única, sem overflow, sem quebrar */
+    main {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+      padding: 18px 14px 80px !important;
+      width: 100% !important;
       margin: 0 auto !important;
-      gap: 14px !important;
-      padding: 16px !important;
+      box-sizing: border-box !important;
+      overflow-x: clip !important;
+      max-width: 100% !important;
     }
-    body[data-layout-dono="compacto"] .kpi-grid {
-      grid-template-columns: repeat(2, 1fr) !important;
-      gap: 10px !important;
-    }
-    body[data-layout-dono="compacto"] .kpi-card {
-      padding: 14px !important;
-    }
-    body[data-layout-dono="compacto"] .kpi-card .val {
-      font-size: 26px !important;
+    main > .dono-section {
+      grid-column: 1 / -1 !important;
+      min-width: 0 !important;
     }
 
+    /* (B) Tablet e acima: colunas ajustáveis pelas classes de largura */
+    @media (min-width: 768px) {
+      main {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 20px !important;
+        padding: 24px 22px 80px !important;
+        width: 100% !important;
+      }
+      main > .dono-section.dono-sec-full { grid-column: 1 / -1 !important; }
+      main > .dono-section.dono-sec-half { grid-column: span 2 !important; }
+      main > .dono-section.dono-sec-third { grid-column: span 1 !important; }
+    }
+    @media (min-width: 1100px) {
+      main > .dono-section.dono-sec-third { grid-column: span 1 !important; }
+    }
+
+    /* (C) Densidade por modo: o DONO escolhe como o painel se "aperta" */
+    body[data-layout-dono="compacto"] main {
+      max-width: 820px !important;
+      gap: 12px !important;
+      padding: 14px 12px 80px !important;
+    }
+    body[data-layout-dono="compacto"] main > .dono-section {
+      padding: 14px !important;
+    }
+    body[data-layout-dono="compacto"] .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+    body[data-layout-dono="compacto"] .kpi-card { padding: 14px !important; }
+    body[data-layout-dono="compacto"] .kpi-card .kpi-value, body[data-layout-dono="compacto"] .kpi-value { font-size: 24px !important; }
+
     body[data-layout-dono="confortavel"] main {
-      display: grid !important;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)) !important;
-      max-width: 1200px !important;
-      margin: 0 auto !important;
+      max-width: 1240px !important;
       gap: 20px !important;
-      padding: 20px !important;
     }
 
     body[data-layout-dono="dashboard"] main {
-      display: grid !important;
-      grid-template-columns: repeat(12, 1fr) !important;
-      max-width: 1540px !important;
-      margin: 0 auto !important;
-      gap: 18px !important;
-      padding: 20px !important;
+      max-width: 1560px !important;
+      gap: 22px !important;
+      padding: 26px 24px 80px !important;
     }
-    body[data-layout-dono="dashboard"] .dono-sec-full {
-      grid-column: span 12 !important;
-    }
-    body[data-layout-dono="dashboard"] .dono-sec-half {
-      grid-column: span 6 !important;
-    }
-    body[data-layout-dono="dashboard"] .dono-sec-third {
-      grid-column: span 4 !important;
-    }
+    body[data-layout-dono="dashboard"] .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
+    body[data-layout-dono="dashboard"] .kpi-card.full { grid-column: 1 / -1 !important; }
+
+    /* Override forte no modo completo: seções half podem ocupar a linha toda quando o dono marcar "linear" */
+    .dono-section[data-secao-full="1"].dono-sec-half { grid-column: 1 / -1 !important; }
 
   
     /* ══════════════════════════════════════════════════════════════════
@@ -1824,7 +1854,7 @@
   <main>
 
     <!-- Filtros de Período -->
-    <div>
+    <div class="dono-section dono-sec-full" data-secao="periodo" title="Período">
       <div class="sec-title">
         <i class="ph-bold ph-calendar"></i>
         <span>Período: <span id="periodo-rotulo-exibicao" style="color: var(--green);">Hoje</span></span>
@@ -1865,6 +1895,11 @@
           <i class="ph-bold ph-arrows-down-up" style="color:var(--primary); font-size:16px;"></i>
           <span>Organizar Seções</span>
         </button>
+
+        <button type="button" onclick="window.abrirModalPersonalizarDono()" style="background:var(--card); border:1.5px solid var(--border); color:var(--text); padding:8px 14px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:var(--shadow-sm); transition:all 0.15s;">
+          <i class="ph-bold ph-sliders-horizontal" style="color:var(--primary); font-size:16px;"></i>
+          <span>Personalizar</span>
+        </button>
       </div>
 
       <div id="container-datas-custom" style="display:none; flex-direction:column; gap:12px; margin-top:12px; background:var(--card); padding:20px; border-radius:var(--radius-lg); border:1px solid var(--border);">
@@ -1885,7 +1920,7 @@
     </div>
 
     <!-- KPI Grid -->
-    <div>
+    <div class="dono-section dono-sec-full" data-secao="kpis" title="Resumo do Dia">
       <div class="sec-title">
         <i class="ph-bold ph-chart-bar"></i>
         <span>Resumo do Dia</span>
@@ -1935,7 +1970,7 @@
     </div>
 
     <!-- Equipe -->
-    <div class="equipe-card">
+    <div class="equipe-card dono-section dono-sec-half" data-secao="equipe" title="Equipe">
       <div class="equipe-info">
         <div class="equipe-count" id="kpi-equipe">0</div>
         <div class="equipe-label">Colaboradores Ativos</div>
@@ -1948,7 +1983,7 @@
     </div>
 
     <!-- CAIXA — Abrir / Fechar -->
-    <div>
+    <div class="dono-section dono-sec-half" data-secao="caixa" title="Controle do Caixa">
       <div class="sec-title">
         <i class="ph-bold ph-cash-register"></i>
         <span>Controle do Caixa</span>
@@ -1968,7 +2003,7 @@
     </div>
 
     <!-- CONTROLE REMOTO DO CAIXA -->
-    <div>
+    <div class="dono-section dono-sec-full" data-secao="remoto-caixa" title="Controle Remoto do Caixa">
       <div class="sec-title">
         <i class="ph-bold ph-desktop"></i>
         <span>Controle Remoto do Caixa</span>
@@ -2075,7 +2110,7 @@
     </div>
 
     <!-- CONTROLE REMOTO DE CADA COLABORADOR -->
-    <div>
+    <div class="dono-section dono-sec-full" data-secao="remoto-colabs" title="Controle Remoto de Colaboradores">
       <div class="sec-title" style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <i class="ph-bold ph-users"></i>
@@ -2093,7 +2128,7 @@
     <!-- CUPONS QR & PROMOÇÕES -->
     
     <!-- MÓDULO VIP: MENSAGENS EM MASSA & NOTIFICAÇÕES PUSH PWA (CONTRATAÇÃO À PARTE) -->
-    <div id="sec-marketing-vip" class="dono-section">
+    <div id="sec-marketing-vip" class="dono-section dono-sec-half" data-secao="marketing" title="Mensagens & Notificações Push">
       <div class="sec-title" style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:center; gap:8px;">
           <i class="ph-bold ph-megaphone" style="color:var(--primary);"></i>
@@ -2135,7 +2170,7 @@
       </div>
     </div>
 
-    <div class="cupons-section-dono">
+    <div class="cupons-section-dono dono-section dono-sec-half" data-secao="cupons" title="Cupons QR & Promoções">
       <div class="sec-title" style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:center; gap:8px;">
           <i class="ph-bold ph-ticket" style="color:var(--primary);"></i>
@@ -2169,7 +2204,7 @@
     </div>
 
     <!-- Painel Rápido: Meta Diária & Aviso à Equipe -->
-    <div style="display:grid; grid-template-columns: 1fr; gap:12px;">
+    <div class="dono-section dono-sec-full" data-secao="meta-aviso" title="Meta & Aviso" style="display:grid; grid-template-columns: 1fr; gap:12px;">
       <!-- Meta de vendas compacta -->
       <div class="meta-input-card" style="padding:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -2203,7 +2238,7 @@
     </div>
 
     <!-- Ranking de produtos -->
-    <div class="ranking-card">
+    <div class="ranking-card dono-section dono-sec-half" data-secao="ranking" title="Produtos Mais Vendidos">
       <div class="ranking-header" onclick="toggleRanking()">
         <div class="ranking-header-left">
           <i class="ph-bold ph-trophy"></i>
@@ -2219,7 +2254,7 @@
     </div>
 
     <!-- Funcionalidades -->
-    <div>
+    <div class="dono-section dono-sec-half" data-secao="funcionalidades" title="Funcionalidades">
       <div class="sec-title">
         <i class="ph-bold ph-toggle-left"></i>
         <span>Funcionalidades</span>
@@ -2228,7 +2263,7 @@
     </div>
 
     <!-- Feed de Atividade -->
-    <div>
+    <div class="dono-section dono-sec-full" data-secao="feed" title="Atividade em Tempo Real">
       <div class="sec-title">
         <i class="ph-bold ph-activity"></i>
         <span>Atividade em Tempo Real</span>

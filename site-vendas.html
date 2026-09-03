@@ -9,7 +9,8 @@
   <meta name="robots" content="index, follow">
   <meta name="author" content="Chef Cozinha">
   <meta name="theme-color" content="#fc4b15">
-  <link rel="canonical" href="https://appchef.up.railway.app/site-vendas.html">
+  <meta name="google-site-verification" content="">
+  <link rel="canonical" href="https://cheff.pro/site-vendas.html">
 
   <!-- Favicon & PWA Icons -->
   <link rel="icon" href="/icons/icon.ico" type="image/x-icon">
@@ -17,19 +18,19 @@
 
   <!-- Open Graph / Facebook / WhatsApp -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://appchef.up.railway.app/site-vendas.html">
+  <meta property="og:url" content="https://cheff.pro/site-vendas.html">
   <meta property="og:title" content="Chef Cozinha — O Sistema Completo e Mais Rápido para Restaurantes, Bares e Pubs">
   <meta property="og:description" content="PDV ultra-rápido, Fila da Cozinha (KDS), Ponto Digital via QR Code e Proteção Antifraude. Teste 14 dias grátis sem cartão!">
-  <meta property="og:image" content="https://appchef.up.railway.app/icons/icon-512.png">
+  <meta property="og:image" content="https://cheff.pro/icons/icon-512.png">
   <meta property="og:site_name" content="Chef Cozinha">
   <meta property="og:locale" content="pt_BR">
 
   <!-- Twitter Cards -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://appchef.up.railway.app/site-vendas.html">
+  <meta name="twitter:url" content="https://cheff.pro/site-vendas.html">
   <meta name="twitter:title" content="Chef Cozinha — O Sistema Completo para Restaurantes e Bares">
   <meta name="twitter:description" content="PDV ultra-rápido, Fila da Cozinha (KDS), Ponto Digital via QR Code e Proteção Antifraude. Teste 14 dias grátis!">
-  <meta name="twitter:image" content="https://appchef.up.railway.app/icons/icon-512.png">
+  <meta name="twitter:image" content="https://cheff.pro/icons/icon-512.png">
 
   <!-- Structured Data JSON-LD (Schema.org) -->
   <script type="application/ld+json">
@@ -820,6 +821,23 @@
           setMetaTag('name', 'twitter:image', c.site_seo_og_imagem);
         }
         if (c.site_seo_robots) setMetaTag('name', 'robots', c.site_seo_robots);
+        if (c.site_seo_gsc_verificacao) upsertGscVerification(c.site_seo_gsc_verificacao);
+        if (c.site_seo_dominio) {
+          var canonical = String(c.site_seo_dominio).replace(/\/+$/, '') + (window.location.pathname || '/');
+          var canEl = document.querySelector('link[rel="canonical"]');
+          if (canEl) canEl.href = canonical;
+        }
+      } catch (e) { }
+    }
+
+    function upsertGscVerification(code) {
+      try {
+        var existing = document.querySelector('meta[name="google-site-verification"]');
+        if (existing) { existing.setAttribute('content', code); return; }
+        var meta = document.createElement('meta');
+        meta.name = 'google-site-verification';
+        meta.content = code;
+        document.head.appendChild(meta);
       } catch (e) { }
     }
 

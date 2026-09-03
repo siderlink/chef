@@ -1541,118 +1541,14 @@ window.aplicarTemaDono = function(theme) {
 
 
 // ════════════════════════════════════════════════════════════════════
-// REORDENAÇÃO DINÂMICA DE SEÇÕES DO PAINEL
+// REORDENAÇÃO / PERSONALIZAÇÃO DE SEÇÕES
+// Consolidada no "MOTOR MODULAR E DE ACESSIBILIDADE DO PAINEL DO DONO"
+// (abaixo), que unifica perfil, escala de fonte, ordem, visibilidade e
+// largura de cada seção, persistindo por restaurante via socket.
+// Os handlers usados pelos botões do HTML são:
+//   window.abrirModalPersonalizarDono()  → abre o modal de personalização
+//   window.abrirModalReordenarSeccoes()   → alias do mesmo modal
 // ════════════════════════════════════════════════════════════════════
-const SECOES_PADRAO = [
-  { id: 'sec-kpis', titulo: '💰 Faturamento & Indicadores do Dia (KPIs)' },
-  { id: 'sec-caixa', titulo: '🔒 Status do Turno & Controle do Caixa' },
-  { id: 'sec-mesas', titulo: '🍽️ Salão de Mesas & Ocupação' },
-  { id: 'sec-ranking', titulo: '📈 Ranking de Produtos Mais Vendidos' },
-  { id: 'sec-graficos', titulo: '📊 Gráficos de Faturamento & Meios de Pagamento' },
-  { id: 'sec-delivery', titulo: '🛵 Delivery & Rastreio de Entregas' },
-  { id: 'sec-equipe', titulo: '👥 Equipe Operacional & Ponto' },
-  { id: 'sec-atalhos', titulo: '⚡ Ações Rápidas & Gestão' }
-];
-
-window.aplicarOrdemSeccoes = function() {
-  let ordem = [];
-  try {
-    ordem = JSON.parse(localStorage.getItem('chef_dono_sections_order') || '[]');
-  } catch(e){}
-  if (!Array.isArray(ordem) || ordem.length === 0) {
-    ordem = SECOES_PADRAO.map(s => s.id);
-  }
-
-  const main = document.querySelector('main');
-  if (!main) return;
-
-  ordem.forEach(id => {
-    const el = document.getElementById(id);
-    if (el && el.parentNode === main) {
-      main.appendChild(el);
-    }
-  });
-};
-
-window.abrirModalReordenarSeccoes = function() {
-  let modal = document.getElementById('modal-reordenar-seccoes');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'modal-reordenar-seccoes';
-    modal.style.cssText = 'position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,0.7); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; padding:16px;';
-    document.body.appendChild(modal);
-  }
-
-  let ordem = [];
-  try {
-    ordem = JSON.parse(localStorage.getItem('chef_dono_sections_order') || '[]');
-  } catch(e){}
-  if (!Array.isArray(ordem) || ordem.length === 0) {
-    ordem = SECOES_PADRAO.map(s => s.id);
-  }
-
-  const itensHtml = ordem.map((id, index) => {
-    const info = SECOES_PADRAO.find(s => s.id === id) || { id, titulo: id };
-    return `
-      <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--card2); border:1px solid var(--border); border-radius:14px; margin-bottom:8px;">
-        <span style="font-weight:700; font-size:14px; color:var(--text);">${info.titulo}</span>
-        <div style="display:flex; gap:6px;">
-          <button type="button" onclick="window.moverSecaoDono(${index}, -1)" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''} style="background:var(--card); border:1px solid var(--border); color:var(--text); width:34px; height:34px; border-radius:10px; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">↑</button>
-          <button type="button" onclick="window.moverSecaoDono(${index}, 1)" ${index === ordem.length - 1 ? 'disabled style="opacity:0.3;"' : ''} style="background:var(--card); border:1px solid var(--border); color:var(--text); width:34px; height:34px; border-radius:10px; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">↓</button>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  modal.innerHTML = `
-    <div style="background:var(--card); border-radius:24px; padding:24px; width:100%; max-width:500px; box-shadow:var(--shadow-md); border:1px solid var(--border); box-sizing:border-box;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="font-size:18px; font-weight:800; color:var(--text); margin:0; display:flex; align-items:center; gap:8px;">
-          <i class="ph-bold ph-arrows-down-up" style="color:var(--primary);"></i> Organizar Seções do Painel
-        </h3>
-        <button onclick="document.getElementById('modal-reordenar-seccoes').style.display='none'" style="background:transparent; border:none; color:var(--text-sub); font-size:22px; cursor:pointer;">✕</button>
-      </div>
-      <p style="font-size:13px; color:var(--text-sub); margin-bottom:16px;">Use as setas para ajustar a ordem em que as seções aparecem no seu painel:</p>
-
-      <div style="max-height:50vh; overflow-y:auto; padding-right:4px;">
-        ${itensHtml}
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px;">
-        <button type="button" onclick="window.resetarOrdemSeccoes()" style="background:transparent; border:none; color:var(--red); font-size:13px; font-weight:700; cursor:pointer;">Resetar Padrão</button>
-        <button type="button" onclick="document.getElementById('modal-reordenar-seccoes').style.display='none'" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:12px; font-weight:800; font-size:14px; cursor:pointer;">Concluir</button>
-      </div>
-    </div>
-  `;
-  modal.style.display = 'flex';
-};
-
-window.moverSecaoDono = function(index, dir) {
-  let ordem = [];
-  try {
-    ordem = JSON.parse(localStorage.getItem('chef_dono_sections_order') || '[]');
-  } catch(e){}
-  if (!Array.isArray(ordem) || ordem.length === 0) {
-    ordem = SECOES_PADRAO.map(s => s.id);
-  }
-
-  const target = index + dir;
-  if (target < 0 || target >= ordem.length) return;
-
-  const temp = ordem[index];
-  ordem[index] = ordem[target];
-  ordem[target] = temp;
-
-  localStorage.setItem('chef_dono_sections_order', JSON.stringify(ordem));
-  window.aplicarOrdemSeccoes();
-  window.abrirModalReordenarSeccoes();
-};
-
-window.resetarOrdemSeccoes = function() {
-  localStorage.removeItem('chef_dono_sections_order');
-  window.aplicarOrdemSeccoes();
-  window.abrirModalReordenarSeccoes();
-};
 
 
 // ════════════════════════════════════════════════════════════════════
@@ -1805,10 +1701,10 @@ window.abrirModalAcoesCaixa = function() {
   modal.style.display = 'flex';
 };
 
-// Disparar a ordenação e o long press após carregar a página
+// Disparar o long press após carregar a página (ordenação/personalização
+// é feita pelo MOTOR MODULAR via seu próprio DOMContentLoaded)
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
-    if (typeof window.aplicarOrdemSeccoes === 'function') window.aplicarOrdemSeccoes();
     if (typeof window.initLongPressDono === 'function') window.initLongPressDono();
   }, 100);
 });
@@ -2164,44 +2060,75 @@ window.executarDisparoMassa = async function() {
    ══════════════════════════════════════════════════════════════════ */
 
 const DONO_SECOES_DEF = [
-  { id: 'sec-periodo', nome: '📅 Período & Preferências de Layout', icon: 'ph-calendar' },
-  { id: 'sec-kpis', nome: '📊 Resumo do Dia (KPIs de Faturamento, Mesas, Ticket)', icon: 'ph-chart-bar' },
-  { id: 'sec-caixa', nome: '💵 Controle do Caixa (Abrir/Fechar)', icon: 'ph-cash-register' },
-  { id: 'sec-equipe', nome: '👥 Equipe & Colaboradores Ativos', icon: 'ph-users-three' },
-  { id: 'sec-remoto-telas', nome: '🖥️ Controle Remoto — Navegação de Telas', icon: 'ph-desktop' },
-  { id: 'sec-remoto-acoes', nome: '⚡ Ações Imediatas no Terminal', icon: 'ph-lightning' },
-  { id: 'sec-remoto-equipe', nome: '📱 Controle Remoto de Colaboradores', icon: 'ph-users' },
-  { id: 'sec-marketing-vip', nome: '📢 Mensagens em Massa & Push (Marketing VIP)', icon: 'ph-megaphone' },
-  { id: 'sec-cupons', nome: '🎟️ Cupons QR & Promoções', icon: 'ph-ticket' },
-  { id: 'sec-meta-aviso', nome: '🎯 Meta Diária & Aviso à Equipe', icon: 'ph-target' },
-  { id: 'sec-ranking', nome: '🏆 Ranking de Produtos Mais Vendidos', icon: 'ph-trophy' },
-  { id: 'sec-features', nome: '⚙️ Funcionalidades & Módulos Ativos', icon: 'ph-toggle-left' },
-  { id: 'sec-atividade', nome: '⚡ Feed de Atividade em Tempo Real', icon: 'ph-activity' }
+  { id: 'sec-periodo', nome: '📅 Período & Preferências de Layout', icon: 'ph-calendar', larguraDef: 'large' },
+  { id: 'sec-kpis', nome: '📊 Resumo do Dia (KPIs de Faturamento, Mesas, Ticket)', icon: 'ph-chart-bar', larguraDef: 'large' },
+  { id: 'sec-caixa', nome: '💵 Controle do Caixa (Abrir/Fechar)', icon: 'ph-cash-register', larguraDef: 'medium' },
+  { id: 'sec-equipe', nome: '👥 Equipe & Colaboradores Ativos', icon: 'ph-users-three', larguraDef: 'medium' },
+  { id: 'sec-remoto-telas', nome: '🖥️ Controle Remoto — Navegação de Telas', icon: 'ph-desktop', larguraDef: 'large' },
+  { id: 'sec-remoto-acoes', nome: '⚡ Ações Imediatas no Terminal', icon: 'ph-lightning', larguraDef: 'medium' },
+  { id: 'sec-remoto-equipe', nome: '📱 Controle Remoto de Colaboradores', icon: 'ph-users', larguraDef: 'large' },
+  { id: 'sec-marketing-vip', nome: '📢 Mensagens em Massa & Push (Marketing VIP)', icon: 'ph-megaphone', larguraDef: 'medium' },
+  { id: 'sec-cupons', nome: '🎟️ Cupons QR & Promoções', icon: 'ph-ticket', larguraDef: 'medium' },
+  { id: 'sec-meta-aviso', nome: '🎯 Meta Diária & Aviso à Equipe', icon: 'ph-target', larguraDef: 'large' },
+  { id: 'sec-ranking', nome: '🏆 Ranking de Produtos Mais Vendidos', icon: 'ph-trophy', larguraDef: 'medium' },
+  { id: 'sec-features', nome: '⚙️ Funcionalidades & Módulos Ativos', icon: 'ph-toggle-left', larguraDef: 'medium' },
+  { id: 'sec-atividade', nome: '⚡ Feed de Atividade em Tempo Real', icon: 'ph-activity', larguraDef: 'large' }
 ];
 
+// Config por dono/restaurante pode vir do servidor (segue entre dispositivos)
+// ou, quando offline, do localStorage do navegador.
+window.donoConfigServidor = null;
+
 window.getDonoModularConfig = function() {
-  try {
-    const raw = localStorage.getItem('cc_dono_modular_config');
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  
-  return {
+  const defaults = {
     perfil: 'confortavel',
     fontScale: 1.0,
     secoes: DONO_SECOES_DEF.map((s, idx) => ({
       id: s.id,
       ordem: idx + 1,
       visivel: true,
-      largura: 'medium'
+      largura: s.larguraDef || 'medium'
     }))
   };
+
+  let cfg = null;
+  try {
+    const raw = localStorage.getItem('cc_dono_modular_config');
+    if (raw) cfg = JSON.parse(raw);
+  } catch (e) {}
+
+  // 1. Se há config do servidor, ela tem prioridade (é a do dono/restaurante).
+  if (window.donoConfigServidor) {
+    cfg = Object.assign({}, defaults, window.donoConfigServidor);
+  }
+
+  if (!cfg) cfg = defaults;
+
+  // Garante todos os campos/defaults
+  cfg.fontScale = cfg.fontScale != null ? cfg.fontScale : 1.0;
+  cfg.perfil = cfg.perfil || 'confortavel';
+  if (!Array.isArray(cfg.secoes)) cfg.secoes = defaults.secoes;
+
+  // Preenche seções que falten no array
+  const have = new Set(cfg.secoes.map(s => s.id));
+  DONO_SECOES_DEF.forEach((s, idx) => {
+    if (!have.has(s.id)) cfg.secoes.push({ id: s.id, ordem: idx + 1, visivel: true, largura: s.larguraDef || 'medium' });
+  });
+
+  return cfg;
 };
 
 window.salvarDonoModularConfig = function(cfg) {
+  if (!cfg) cfg = window.getDonoModularConfig();
   try {
     localStorage.setItem('cc_dono_modular_config', JSON.stringify(cfg));
-    window.aplicarDonoModularConfig(cfg);
   } catch (e) {}
+  window.aplicarDonoModularConfig(cfg);
+  // Envia ao servidor para persistir por restaurante (fica igual em qualquer
+  // dispositivo do DONO). Só após o socket autenticar para não gravar vazio.
+  if (socket && typeof socket.emit === 'function' && socket.connected && socket.auth) {
+    socket.emit('painel_dono_set_config', cfg);
+  }
 };
 
 window.alterarEscalaFonteDono = function(scale) {
@@ -2264,7 +2191,22 @@ window.aplicarDonoModularConfig = function(cfg = null) {
     document.body.classList.remove('mode-senior-60');
   }
 
-  // 2. Ordenação e Visibilidade das Seções no DOM
+  // Mapa data-secao -> id de config (padrão interno DONOMO)
+  const dataSecToId = {
+    'periodo': 'sec-periodo',
+    'kpis': 'sec-kpis',
+    'caixa': 'sec-caixa',
+    'equipe': 'sec-equipe',
+    'remoto-caixa': 'sec-remoto-telas',
+    'remoto-colabs': 'sec-remoto-equipe',
+    'marketing': 'sec-marketing-vip',
+    'cupons': 'sec-cupons',
+    'meta-aviso': 'sec-meta-aviso',
+    'ranking': 'sec-ranking',
+    'funcionalidades': 'sec-features',
+    'feed': 'sec-atividade'
+  };
+
   const main = document.querySelector('main');
   if (!main) return;
 
@@ -2274,10 +2216,13 @@ window.aplicarDonoModularConfig = function(cfg = null) {
   const elements = Array.from(main.children);
   elements.forEach((el, index) => {
     if (!el.id) {
-      if (el.querySelector('.sec-title')) {
+      const dataSec = el.getAttribute && el.getAttribute('data-secao');
+      if (dataSec && dataSecToId[dataSec]) {
+        el.id = dataSecToId[dataSec];
+      } else if (el.querySelector('.sec-title')) {
         const txt = el.querySelector('.sec-title').textContent.toLowerCase();
         if (txt.includes('período')) el.id = 'sec-periodo';
-        else if (txt.includes('resumo') || txt.includes('kpi')) el.id = 'sec-kpis';
+        else if (txt.includes('resumo')) el.id = 'sec-kpis';
         else if (txt.includes('caixa') && !txt.includes('remoto')) el.id = 'sec-caixa';
         else if (txt.includes('controle remoto do caixa')) el.id = 'sec-remoto-telas';
         else if (txt.includes('colaboradores')) el.id = 'sec-remoto-equipe';
@@ -2292,27 +2237,72 @@ window.aplicarDonoModularConfig = function(cfg = null) {
       }
     }
 
+    // Sempre garante as classes base do motor (mesmo sem config)
+    if (!el.classList.contains('dono-section')) el.classList.add('dono-section');
+
     if (el.id && secMap.has(el.id)) {
       const conf = secMap.get(el.id);
-      
+
       if (conf.visivel === false) {
         el.style.display = 'none';
       } else {
         el.style.display = '';
       }
 
-      if (conf.largura === 'large') {
-        el.style.gridColumn = 'span 12';
-      } else if (conf.largura === 'medium') {
-        el.style.gridColumn = 'span 6';
-      } else if (conf.largura === 'small') {
-        el.style.gridColumn = 'span 4';
-      }
+      // Largura com base nas classes do motor (4-col responsivo)
+      el.classList.remove('dono-sec-full', 'dono-sec-half', 'dono-sec-third');
+      if (conf.largura === 'large') el.classList.add('dono-sec-full');
+      else if (conf.largura === 'small') el.classList.add('dono-sec-third');
+      else el.classList.add('dono-sec-half');
 
       el.style.order = conf.ordem || (index + 1);
+    } else if (el.id && el.getAttribute('data-secao')) {
+      // Seção padrão sem entrada de config ativa: usa a largura padrão da definição
+      const def = DONO_SECOES_DEF.find(d => d.id === el.id);
+      const w = (def && def.larguraDef) || 'medium';
+      el.classList.remove('dono-sec-full', 'dono-sec-half', 'dono-sec-third');
+      if (w === 'large') el.classList.add('dono-sec-full');
+      else if (w === 'small') el.classList.add('dono-sec-third');
+      else el.classList.add('dono-sec-half');
     }
   });
 };
+
+// Persistência da configuração por restaurante (segue o dono entre dispositivos)
+window.painelDonoConfigCarregadoSocket = null;
+window.painelDonoConfigCarregadoLocal = false;
+
+window._carregarConfigServidor = function() {
+  if (socket && typeof socket.emit === 'function' && socket.auth && socket.connected) {
+    socket.emit('painel_dono_get_config');
+  } else if (typeof socket === 'object' && socket.emit) {
+    socket.emit('painel_dono_get_config');
+  }
+};
+window._aplicarSingletonDoSistema = null;
+
+window.abrirModalPersonalizarDono = function() {
+  if (typeof window.abrirModalReordenarSeccoes === 'function') {
+    window.abrirModalReordenarSeccoes();
+  }
+};
+
+window.cfgSalvarDono = function() {
+  window.salvarDonoModularConfig(window.getDonoModularConfig());
+  if (typeof showToast === 'function') showToast('Visualização salva para este restaurante.', 'ph-check', 'success');
+};
+
+window.cfgRestaurarDono = function() {
+  window.donoConfigServidor = null;
+  try { localStorage.removeItem('cc_dono_modular_config'); } catch (e) {}
+  const defaults = window.getDonoModularConfig();
+  window.aplicarDonoModularConfig(defaults);
+  if (socket && typeof socket.emit === 'function' && socket.connected && socket.auth) {
+    socket.emit('painel_dono_set_config', defaults);
+  }
+  if (typeof showToast === 'function') showToast('Visualização restaurada para o padrão.', 'ph-arrow-counter-clockwise', 'success');
+};
+
 
 window.abrirModalReordenarSeccoes = function() {
   let modal = document.getElementById('modal-reordenar-seccoes');
@@ -2458,5 +2448,23 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     if (typeof window.checarStatusMarketing === 'function') window.checarStatusMarketing();
     if (typeof window.aplicarDonoModularConfig === 'function') window.aplicarDonoModularConfig();
+    // Carrega a configuração do dono salva no servidor (segue entre dispositivos)
+    if (typeof window._carregarConfigServidor === 'function') window._carregarConfigServidor();
   }, 200);
 });
+
+// Recebe da tela a config do dono vinda do servidor e aplica por restauração.
+if (typeof socket === 'object' && socket && typeof socket.on === 'function') {
+  socket.on('painel_dono_config_pronta', (cfg) => {
+    window.donoConfigServidor = (cfg && typeof cfg === 'object') ? cfg : null;
+    if (window.donoConfigServidor) {
+      try {
+        localStorage.setItem('cc_dono_modular_config', JSON.stringify(window.donoConfigServidor));
+      } catch (e) {}
+      if (typeof window.aplicarDonoModularConfig === 'function') window.aplicarDonoModularConfig(window.donoConfigServidor);
+    }
+  });
+  socket.on('connect', () => {
+    if (typeof window._carregarConfigServidor === 'function') window._carregarConfigServidor();
+  });
+}

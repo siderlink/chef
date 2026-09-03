@@ -1,0 +1,38 @@
+# Chef Cozinha
+
+Sistema de gestão definitivo para restaurantes, bares, lanchonetes e pizzarias.
+
+## O que é
+
+O Chef Cozinha é uma plataforma completa de gestão para o setor de alimentação, com foco em
+rapidez, estabilidade e proteção contra fraudes. Opera em modo Offline-First, ou seja, o
+caixa e a cozinha continuam funcionando mesmo se a internet cair.
+
+## Principais funcionalidades
+
+- PDV (Ponto de Venda) ultra-rápido com atalhos personalizáveis (F1-F12)
+- Fila da Cozinha (KDS - Kitchen Display System) com alertas de tempo de espera
+- Comanda Mobile para garçons (celular/tablet), divisão e racha de contas
+- Trava Antifraude no caixa (impede lançamentos indevidos)
+- Ponto Digital via QR Code para colaboradores
+- Dashboard Financeiro (DRE, fluxo de caixa, CMV, margem de lucro)
+- Controle de Estoque e Ficha Técnica com baixa automática
+- Integração Delivery e iFood
+- Atendimento Balcão & Delivery com CRM integrado
+- Cardápio Digital e Totem de Autoatendimento
+
+## Perfil de uso
+
+O sistema atende restaurantes, bares, pubs, lanchonetes, pizzarias, hamburguerias e
+estabelecimentos de alimentação comercial de todos os portes — desde pequenos negócios
+até operações de alta demanda.
+
+## Página de vendas
+
+- Landing page principal: https://cheff.pro/site.html
+- Página de vendas completa: https://cheff.pro/site-vendas.html
+
+## Origem
+
+O Chef Cozinha é um software desenvolvido e mantido pela equipe Chef Cozinha, oferecido
+em inglês e português do Brasil, com dados localizados para o mercado brasileiro.

@@ -128,7 +128,7 @@
         else show = true;
       }
       if (show && term && !((card.innerText || '').toLowerCase()).includes(term)) show = false;
-      card.style.display = show ? 'flex' : 'none';
+      card.style.setProperty('display', show ? 'flex' : 'none', 'important');
     });
     document.querySelectorAll('.caixa-ux-stat-badge').forEach(b => {
       b.classList.toggle('caixa-ux-stat-active', b.dataset.cat === cat);

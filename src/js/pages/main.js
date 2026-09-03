@@ -2862,6 +2862,14 @@ function renderOrders() {
   }
 
   if (typeof window.updateTimers === 'function') window.updateTimers();
+
+  // Reaplica filtros de busca/setor/categoria do caixa após re-render (morphdom
+  // substitui o DOM e apagaria o display:none aplicado pelo filtrarMesasBusca)
+  if (typeof window.aplicarFiltrosCaixa === 'function') {
+    const buscaInput = document.getElementById('caixa-ux-search');
+    const term = ((buscaInput && buscaInput.value) || '').trim();
+    if (term || window._setorAtivoCaixa || window._categoriaAtivaCaixa) window.aplicarFiltrosCaixa();
+  }
 }
 
 

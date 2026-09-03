@@ -729,4 +729,185 @@ module.exports = function(socket, io, db, helpers) {
     });
   });
 
+  // ── CRÉDITOS / MOVIMENTAÇÕES POR COMANDA (itens compartilhados) ────────────
+  // Tabela que armazena, por comanda, cada crédito financeiro lançado
+  // (pagamento da própria comanda OU crédito parcial de itens compartilhados).
+  // É a "fonte" para exibir o status atual com cada movimentação quando os
+  // demais clientes da mesa forem acertar a conta.
+  db.run(`CREATE TABLE IF NOT EXISTS comanda_creditos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mesa TEXT NOT NULL,
+    comanda TEXT,
+    valor REAL NOT NULL DEFAULT 0,
+    tipo TEXT NOT NULL DEFAULT 'compartilhado',
+    metodo TEXT,
+    operador TEXT,
+    observacao TEXT,
+    turno_id INTEGER,
+    criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+  )`);
+
+  function registrarCreditoComanda({ mesa, comanda, valor, tipo, metodo, operador, observacao, turnoId }, cb) {
+    if (!valor || valor <= 0) return cb && cb(null);
+    db.run(
+      `INSERT INTO comanda_creditos (mesa, comanda, valor, tipo, metodo, operador, observacao, turno_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [mesa, comanda || null, Math.round(valor * 100) / 100, tipo || 'compartilhado', metodo || 'Dinheiro', operador || 'Caixa', observacao || null, turnoId],
+      function (err) { cb && cb(err ? null : this.lastID); }
+    );
+  }
+
+  // Consultar o status atual de pagamento + movimentações financeiras por comanda
+  // de uma mesa. Usado pelo modal do caixa e pela página de separar conta do cliente.
+  socket.on('comanda_status_mesa', ({ mesaName }) => {
+    const mesa = String(mesaName || '').toString().trim();
+    if (!mesa) return socket.emit('comanda_status_mesa_result', { success: false, movimentos: [] });
+
+    db.all(`SELECT * FROM comanda_creditos WHERE mesa = ? ORDER BY id ASC`, [mesa], (err, rows) => {
+      if (err) return socket.emit('comanda_status_mesa_result', { success: false, movimentos: [] });
+      const movimentos = (rows || []).map(r => ({
+        id: r.id,
+        mesa: r.mesa,
+        comanda: r.comanda || null,
+        valor: parseFloat(String(r.valor).replace(',', '.')) || 0,
+        tipo: r.tipo,
+        metodo: r.metodo || 'Dinheiro',
+        operador: r.operador || 'Caixa',
+        observacao: r.observacao || null,
+        criado_em: r.criado_em
+      }));
+      socket.emit('comanda_status_mesa_result', { success: true, mesa: mesa, movimentos, total: movimentos.reduce((a, m) => a + m.valor, 0) });
+    });
+  });
+
+  // Cobrança pelo caixa de uma comanda + crédito parcial de itens compartilhados.
+  // Fluxo: cliente acerta a própria comanda E paga parte dos compartilhados
+  // (ex.: própria comanda + R$ 20 dos pedidos compartilhados). O crédito dos
+  // compartilhados é apenas financeiro (não "consome" a quantidade do item),
+  // pois o restante da mesa ainda deve o que sobrar.
+  socket.on('comanda_cobrar_compartilhados', ({ mesaName, comandaName, valorComanda, valorCompartilhado, itemIdsComanda, itemIdCompartilhado, metodo, userName, comTaxa, observacao }) => {
+    if (!mesaName) return socket.emit('erro_pagamento', 'Informe a mesa.');
+    const comanda = String(comandaName || '').trim() || null;
+    const vComanda = parseFloat(String(valorComanda == null ? 0 : valorComanda).replace(',', '.')) || 0;
+    const vComp = parseFloat(String(valorCompartilhado == null ? 0 : valorCompartilhado).replace(',', '.')) || 0;
+    if (vComanda <= 0 && vComp <= 0) {
+      return socket.emit('erro_pagamento', 'Informe ao menos um valor a receber.');
+    }
+
+    checkCaixa(turno => {
+      if (!turno) {
+        return socket.emit('erro_caixa', 'O caixa está fechado! Abra o caixa antes de receber pagamentos.');
+      }
+
+      const lockKey = `comanda_cobrar_${mesaName}_${comanda || ''}_${vComanda.toFixed(2)}_${vComp.toFixed(2)}`;
+      if (activePaymentLocks.has(lockKey)) {
+        console.warn('[DUPLICATE PREVENTED] comanda_cobrar_compartilhados lock:', lockKey);
+        return;
+      }
+      activePaymentLocks.add(lockKey);
+      setTimeout(() => activePaymentLocks.delete(lockKey), 1500);
+
+      const now = new Date();
+      const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+      const metodoStr = String(metodo || 'Dinheiro').trim() || 'Dinheiro';
+      const operador = String(userName || 'Caixa').trim() || 'Caixa';
+
+      const fimDaMesa = (cbNext) => {
+        db.get(`SELECT count(1) as pendentes FROM pedidos WHERE (localName = ? OR mesa_grupo = ?) AND status NOT IN ('Finalizado', 'Cancelado', 'Pago') AND productName NOT LIKE 'Pgto Parcial%' AND productName NOT LIKE 'Credito Compartilhado%'`,
+          [mesaName, mesaName], (eP, row) => {
+            const pendentes = (row && row.pendentes) || 0;
+            broadcastPedidos();
+            setTimeout(() => io.emit('atualizacao_caixa'), 300);
+            io.emit('pagamento_parcial_registrado', {
+              mesaName, valor: Math.round((vComanda + vComp) * 100) / 100, metodo: metodoStr,
+              userName: operador, comandaName: comanda, originSocket: socket.id, origem: 'comanda_compartilhados'
+            });
+            io.emit('comanda_creditos_atualizado', { mesaName });
+            cbNext && cbNext(pendentes);
+          });
+      };
+
+      const lançarPedido = (nome, valorNumero) => new Promise((resolve) => {
+        const negativeTotal = (-Math.abs(valorNumero)).toFixed(2).replace('.', ',');
+        db.run(
+          `INSERT INTO pedidos (productName, productEmoji, quantity, total, status, localName, userName, time, sector, createdAt) VALUES (?, ?, ?, ?, 'Entregue', ?, ?, ?, 'Caixa', datetime('now', 'localtime'))`,
+          [nome, '💸', 1, negativeTotal, mesaName, operador, timeStr],
+          () => resolve(true)
+        );
+      });
+
+      const lançarMov = (valorNumero, descricao) => new Promise((resolve) => {
+        db.run(
+          `INSERT INTO movimentacoes (turno_id, tipo, valor, forma_pagamento, descricao, data) VALUES (?, 'Entrada', ?, ?, ?, datetime('now', 'localtime'))`,
+          [turno.id, Math.round(valorNumero * 100) / 100, metodoStr, descricao],
+          () => resolve(true)
+        );
+      });
+
+      const lançarTudo = () => {
+        (async () => {
+          // 1. Comanda: marcar itens como pagos + lançar crédito
+          if (vComanda > 0.001) {
+            const descComanda = comanda ? `Pgto Parcial (${metodoStr}) - Comanda ${comanda}` : `Pgto Parcial (${metodoStr})`;
+            await lançarPedido(descComanda, vComanda);
+            await lançarMov(vComanda, `${descComanda} - ${mesaName}`);
+
+            if (Array.isArray(itemIdsComanda) && itemIdsComanda.length > 0) {
+              const placeholders = itemIdsComanda.map(() => '?').join(',');
+              db.run(`UPDATE pedidos SET status = 'Pago', turno_id = ? WHERE id IN (${placeholders})`, [turno.id, ...itemIdsComanda]);
+            } else if (comanda) {
+              db.run(
+                `UPDATE pedidos SET status = 'Pago', turno_id = ? WHERE (localName = ? OR mesa_grupo = ?) AND TRIM(mesa_comanda) = ? AND status NOT IN ('Finalizado', 'Cancelado', 'Pago')`,
+                [turno.id, mesaName, mesaName, comanda]
+              );
+            }
+
+            registrarCreditoComanda({
+              mesa: mesaName, comanda, valor: vComanda, tipo: 'comanda',
+              metodo: metodoStr, operador, observacao: observacao || 'Pagamento da comanda', turnoId: turno.id
+            });
+          }
+
+          // 2. Crédito parcial de itens compartilhados (apenas financeiro).
+          //    Não marca itens compartilhados como pagos — o restante da mesa ainda deve.
+          if (vComp > 0.001) {
+            const descComp = `Pgto Parcial Compartilhados (${metodoStr})${comanda ? ` - Comanda ${comanda}` : ''}`;
+            await lançarPedido(descComp, vComp);
+            await lançarMov(vComp, `${descComp} - ${mesaName}`);
+
+            // Opcional: se o caixa escolheu "levar" um item compartilhado inteiro junto,
+            // ele é marcado como pago (quantidade inteira). Crédito é financeiro.
+            if (itemIdCompartilhado) {
+              db.run(`UPDATE pedidos SET status = 'Pago', turno_id = ? WHERE id = ?`, [turno.id, itemIdCompartilhado]);
+            }
+
+            registrarCreditoComanda({
+              mesa: mesaName, comanda, valor: vComp, tipo: 'compartilhado',
+              metodo: metodoStr, operador, observacao: observacao || 'Crédito parcial de itens compartilhados', turnoId: turno.id
+            });
+          }
+
+          // 3. Atualiza a mesa
+          db.all(`SELECT * FROM pedidos WHERE (localName = ? OR mesa_grupo = ?) AND status != 'Finalizado'`, [mesaName, mesaName], (e, r) => {
+            io.emit('itens_mesa_recebidos', { mesaName, items: r || [] });
+          });
+
+          global.registrarAuditoria(operador, 'PAGAMENTO_COMANDA_COMPARTILHADOS',
+            `${comanda || mesaName}: comanda R$ ${vComanda.toFixed(2)} + compartilhados R$ ${vComp.toFixed(2)} (${metodoStr})`, 'Financeiro', 'MEDIO');
+
+          fimDaMesa((pendentes) => {
+            if (pendentes === 0) {
+              db.run(`UPDATE mesas SET status = 'Disponível', observacao = '' WHERE nome = ?`, [mesaName], () => {
+                io.emit('sync_mesas_fechando', Array.from(mesasFechando));
+                db.all(`SELECT * FROM mesas`, (e, r) => io.emit('mesas_atualizadas', r || []));
+              });
+            }
+            socket.emit('comanda_cobrar_sucesso', { mesaName, comandaName: comanda, valorComanda: vComanda, valorCompartilhado: vComp, sucesso: true });
+          });
+        })();
+      };
+
+      lançarTudo();
+    });
+  });
+
 };

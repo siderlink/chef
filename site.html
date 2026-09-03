@@ -41,7 +41,8 @@
   <meta id="meta-robots" name="robots" content="index, follow">
   <meta id="meta-author" name="author" content="Chef Cozinha">
   <meta name="theme-color" content="#fc4b15">
-  <link rel="canonical" href="https://appchef.up.railway.app/site.html">
+  <meta name="google-site-verification" content="">
+  <link rel="canonical" href="https://cheff.pro/site.html">
 
   <!-- Favicon & PWA Icons -->
   <link rel="icon" href="/icons/icon.ico" type="image/x-icon">
@@ -49,19 +50,19 @@
 
   <!-- Open Graph / Facebook / WhatsApp -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://appchef.up.railway.app/site.html">
+  <meta property="og:url" content="https://cheff.pro/site.html">
   <meta id="og-title" property="og:title" content="Chef Cozinha — O Sistema Mais Rápido e Completo para Restaurantes e Bares">
   <meta id="og-description" property="og:description" content="PDV ultra-rápido Offline-First, Fila da Cozinha (KDS), Comanda Mobile ilimitada e Trava Antifraude. Teste 14 dias grátis sem cartão!">
-  <meta id="og-image" property="og:image" content="https://appchef.up.railway.app/icons/icon-512.png">
+  <meta id="og-image" property="og:image" content="https://cheff.pro/icons/icon-512.png">
   <meta property="og:site_name" content="Chef Cozinha">
   <meta id="og-locale" property="og:locale" content="pt_BR">
 
   <!-- Twitter Cards -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://appchef.up.railway.app/site.html">
+  <meta name="twitter:url" content="https://cheff.pro/site.html">
   <meta id="tw-title" name="twitter:title" content="Chef Cozinha — O Sistema Completo para Restaurantes e Bares">
   <meta id="tw-description" name="twitter:description" content="PDV ultra-rápido, Fila da Cozinha (KDS), Comanda Mobile ilimitada e Trava Antifraude. Teste 14 dias grátis!">
-  <meta id="tw-image" name="twitter:image" content="https://appchef.up.railway.app/icons/icon-512.png">
+  <meta id="tw-image" name="twitter:image" content="https://cheff.pro/icons/icon-512.png">
 
   <!-- Structured Data JSON-LD (Schema.org) -->
   <script type="application/ld+json">
@@ -3144,6 +3145,38 @@
       }));
 
       setTimeout(enviarProgresso, 1000);
+    })();
+  </script>
+
+  <script>
+    (function() {
+      function applySeoFromConfig(c) {
+        try {
+          if (c.site_seo_gsc_verificacao) {
+            var m = document.querySelector('meta[name="google-site-verification"]');
+            if (m) m.setAttribute('content', c.site_seo_gsc_verificacao);
+            else {
+              var meta = document.createElement('meta');
+              meta.name = 'google-site-verification';
+              meta.content = c.site_seo_gsc_verificacao;
+              document.head.appendChild(meta);
+            }
+          }
+          if (c.site_seo_dominio) {
+            var base = String(c.site_seo_dominio).replace(/\/+$/, '');
+            document.querySelectorAll('link[rel="canonical"], meta[property="og:url"], meta[name="twitter:url"]').forEach(function(el) {
+              var href = el.getAttribute('href') || el.getAttribute('content') || '';
+              if (href) { var v = base + (window.location.pathname || '/'); if (el.hasAttribute('href')) el.setAttribute('href', v); else el.setAttribute('content', v); }
+            });
+          }
+        } catch (e) {}
+      }
+      try {
+        fetch('/api/public/site-config', { credentials: 'same-origin' })
+          .then(function(r) { return r.json(); })
+          .then(function(data) { if (data && data.ok && data.configs) applySeoFromConfig(data.configs); })
+          .catch(function() {});
+      } catch (e) {}
     })();
   </script>
 

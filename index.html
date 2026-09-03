@@ -44,12 +44,12 @@
   <script src="/plugin-client.js"></script>
   <script src="/chef-tz.js"></script>
   <script src="/pwa-telemetry.js"></script>
-  <script src="main.js?v=20260901pagamentos"></script>
+  <script src="main.js?v=20260901buscafix"></script>
   <script src="/anti-tamper.js" defer></script>
   <link rel="stylesheet" href="/apple-transitions.css?v=1787948800000">
   <script src="/apple-transitions.js?v=1787948800000" defer></script>
 <link rel="stylesheet" href="/caixa-pro-ux.css?v=20260901modular">
-    <script src="/caixa-pro-ux.js?v=20260901modular" defer></script>
+    <script src="/caixa-pro-ux.js?v=20260901buscafix" defer></script>
   <script src="/pagamento-parcial-modal.js?v=20260828fix5" defer></script>
   <script src="/chef-telemetry-clicks.js" defer></script>
   <script src="/chef-layout-customizer.js?v=20260901splitters" defer></script>
@@ -1556,6 +1556,31 @@
               <!-- Injetado dinamicamente -->
             </div>
           </div>
+
+          <!-- Opcao 3: Credito parcial em valor (ex: propria comanda + R$20 compartilhados) -->
+          <div id="comanda-modal-partial-block"
+            style="margin-top: 4px; border-top: 1px dashed rgba(252,75,21,0.3); padding-top: 10px;">
+            <span style="font-weight: 600; color: #666; display: block; margin-bottom: 6px;">Ou lancar um <b>credito parcial em valor</b>
+              dos compartilhados (ex.: pagar a propria comanda + R$ 20,00 dos compartilhados):</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 15px; font-weight: 700; color: #e04a1b;">R$</span>
+              <input type="number" id="comanda-modal-partial-value" min="0" step="0.01" value="0"
+                oninput="window.recalcComandaModal()"
+                style="flex: 1; padding: 9px 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; font-weight: 700; color: var(--text-primary); background: var(--bg-input);">
+              <span style="font-size: 12px; color: #999;">so o valor, sem consumir a quantidade do item</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status do pagamento / movimentacoes financeiras por comanda -->
+      <div id="comanda-modal-status-section"
+        style="display: none; margin-bottom: 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px;">
+        <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #27ae60; display: flex; align-items: center; gap: 6px;">
+          <i class="ph ph-clock-counter-clockwise"></i> Status do Pagamento / Movimentacoes:
+        </h4>
+        <div id="comanda-modal-status-list" style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; max-height: 160px; overflow-y: auto;">
+          <!-- Injetado dinamicamente -->
         </div>
       </div>
 

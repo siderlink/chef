@@ -75,6 +75,8 @@
     .grupo-titulo { display: flex; align-items: center; gap: 8px; padding: 10px 4px 8px; font-size: 13px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
     .grupo-titulo .badge-comanda { background: var(--primary); color: #fff; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 20px; letter-spacing: 0; }
 
+    .credito-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25); border-radius: 12px; padding: 10px 12px; }
+
     .item-row { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; box-shadow: var(--shadow); }
     .item-main { display: flex; align-items: center; gap: 12px; }
     .item-emoji { width: 42px; height: 42px; flex-shrink: 0; border-radius: 12px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 22px; }
@@ -192,6 +194,11 @@
       </div>
 
       <div id="lista-itens"></div>
+
+      <div id="creditos-section" style="display:none; margin-top:18px;">
+        <div class="grupo-titulo" style="margin-bottom:8px;"><i class="ph ph-clock-counter-clockwise"></i> Pagamentos / movimentações da mesa</div>
+        <div id="creditos-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
     </div>
 
     <div class="bottom-toolbar" id="bottom-toolbar" style="display:none;">
@@ -272,6 +279,7 @@
       var socket = null;
       var itens = [];
       var pagoPorItem = {};
+      var creditos = [];          // movimentações / créditos por comanda feitos no caixa
       var claims = {};            // itemId -> qtd pego
       var configs = {};
       var mesaNome = '';
@@ -337,6 +345,7 @@
         socket.on('split_pagamento_sucesso', onSucesso);
         socket.on('pedidos_atualizados', carregarDados);
         socket.on('itens_mesa_recebidos', function (d) { if (d && d.mesaName === mesaNome) carregarDados(); });
+        socket.on('comanda_creditos_atualizado', function (d) { if (d && d.mesaName === mesaNome) carregarDados(); });
         socket.on('connect', carregarDados);
       }
 
@@ -350,6 +359,7 @@
         configs = d.configs || {};
         itens = d.itens || [];
         pagoPorItem = (d.pagoPorItem || {});
+        creditos = (d.creditos || []);
         Object.keys(claims).forEach(function (k) {
           var it = itens.find(function (i) { return String(i.id) === k; });
           if (!it) { delete claims[k]; return; }
@@ -378,6 +388,29 @@
       function renderTudo() {
         renderItens();
         atualizarResumos();
+        renderCreditos();
+      }
+
+      function renderCreditos() {
+        var section = document.getElementById('creditos-section');
+        var listEl = document.getElementById('creditos-list');
+        if (!section || !listEl) return;
+        if (!creditos || creditos.length === 0) {
+          section.style.display = 'none';
+          return;
+        }
+        section.style.display = 'block';
+        listEl.innerHTML = creditos.map(function (c) {
+          var tipoLabel = c.tipo === 'comanda' ? 'Pagamento da comanda' : 'Crédito de itens compartilhados';
+          var comandaTag = c.comanda ? (' <span class="badge-comanda">' + esc(c.comanda) + '</span>') : '';
+          return '<div class="credito-item">' +
+            '<div style="flex:1; min-width:0;">' +
+            '<div style="font-weight:700; font-size:13px;">' + tipoLabel + comandaTag + ' · ' + esc(c.metodo || 'Dinheiro') + '</div>' +
+            '<div style="font-size:11px; color:#94a3b8; margin-top:2px;">' + esc(c.criado_em || '') + (c.observacao ? ' · ' + esc(c.observacao) : '') + '</div>' +
+            '</div>' +
+            '<div style="font-weight:700; color:#27ae60; white-space:nowrap;">' + brl(num(c.valor)) + '</div>' +
+            '</div>';
+        }).join('');
       }
 
       function renderItens() {

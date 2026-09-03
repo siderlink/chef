@@ -4878,12 +4878,16 @@ var SITE_CONFIG_DEFAULTS = {
   site_seo_titulo: 'Chef Cozinha — O Sistema Mais Rápido e Completo para Restaurantes e Bares',
   site_seo_descricao: 'Chef Cozinha: Sistema de gestão definitivo para restaurantes, bares, lanchonetes e pizzarias. PDV ultra-rápido Offline-First, KDS Cozinha, Garçom Mobile ilimitado, Trava Antifraude e Ponto Digital. Teste 14 dias grátis sem cartão!',
   site_seo_keywords: 'sistema para restaurantes, sistema para bares, pdv restaurante, kds monitor de cozinha, comanda mobile garcom, ponto digital qr code, sistema de caixa restaurante, comanda eletronica, gestao de pizzaria',
-  site_seo_og_imagem: 'https://appchef.up.railway.app/icons/icon-512.png',
+  site_seo_og_imagem: 'https://cheff.pro/icons/icon-512.png',
   site_seo_og_titulo: 'Chef Cozinha — PDV, KDS e Comanda Mobile',
   site_seo_og_descricao: 'PDV ultra-rápido Offline-First, KDS Cozinha, Garçom Mobile ilimitado, Trava Antifraude e Ponto Digital. Teste 14 dias grátis!',
   site_seo_robots: 'index, follow',
   site_seo_autor: 'Chef Cozinha',
   site_seo_locale: 'pt_BR',
+  site_seo_dominio: 'https://cheff.pro',
+  site_seo_gsc_verificacao: '',
+  site_seo_robots_txt: 'User-agent: *\nAllow: /\n\nSitemap: https://cheff.pro/sitemap.xml',
+  site_seo_llm_txt: '# Chef Cozinha\n\nSistema de gestão completo para restaurantes, bares, lanchonetes e pizzarias.',
   site_design_fonte: 'Outfit',
   site_design_tema: 'flame',
   site_design_logo_tempo: 0.8,
@@ -4941,6 +4945,7 @@ function renderSiteVendasTab(tabId) {
   else if (tabId === 'sv-tab-aparencia') populateSiteAparencia();
   else if (tabId === 'sv-tab-blocos') populateSiteBlocos();
   else if (tabId === 'sv-tab-seo') populateSiteSEO();
+  else if (tabId === 'sv-tab-indexacao') populateSiteIndexacao();
 }
 
 function populateSiteAparencia() {
@@ -5296,6 +5301,67 @@ function salvarSiteSEO() {
     if (err || !data || !data.ok) return showToast('Erro ao salvar SEO.', 'danger');
     Object.keys(configs).forEach(function(k) { siteVendasConfigs[k] = configs[k]; });
     showToast('SEO salvo! Google e redes sociais usarão os novos dados.', 'success');
+  });
+}
+
+/* ── VERIFICAÇÃO & INDEXAÇÃO (Search Console / sitemap / robots / llm) ── */
+function seoNormalizeDomain(v) {
+  var d = String(v || '').trim().replace(/\/+$/, '');
+  if (!d) return 'https://cheff.pro';
+  if (!/^https?:\/\//i.test(d)) d = 'https://' + d;
+  return d;
+}
+
+function populateSiteIndexacao() {
+  var dominio = getSiteCfg('site_seo_dominio') || 'https://cheff.pro';
+  dominio = seoNormalizeDomain(dominio);
+  setVal('sv-seo-dominio', dominio);
+  setVal('sv-seo-gsc-verificacao', getSiteCfg('site_seo_gsc_verificacao'));
+  setVal('sv-seo-robots-txt', getSiteCfg('site_seo_robots_txt'));
+  setVal('sv-seo-llm-txt', getSiteCfg('site_seo_llm_txt'));
+
+  var gscPreview = document.getElementById('sv-seo-gsc-preview');
+  var gscVal = document.getElementById('sv-seo-gsc-verificacao');
+  if (gscPreview) {
+    gscPreview.textContent = gscVal && gscVal.value
+      ? '<meta name="google-site-verification" content="' + gscVal.value + '">'
+      : '';
+    gscPreview.style.display = gscVal && gscVal.value ? 'block' : 'none';
+  }
+  atualizarPreviewsIndexacao(dominio);
+}
+
+function atualizarPreviewsIndexacao(dominio) {
+  dominio = seoNormalizeDomain(dominio || getSiteCfg('site_seo_dominio'));
+  var ids = { 'sv-seo-url-sitemap': dominio + '/sitemap.xml', 'sv-seo-url-robots': dominio + '/robots.txt', 'sv-seo-url-llm': dominio + '/llm.txt' };
+  Object.keys(ids).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = ids[id];
+  });
+}
+
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.id === 'sv-seo-dominio') atualizarPreviewsIndexacao(e.target.value);
+  if (e.target && e.target.id === 'sv-seo-gsc-verificacao') {
+    var p = document.getElementById('sv-seo-gsc-preview');
+    if (p) {
+      p.textContent = e.target.value ? '<meta name="google-site-verification" content="' + e.target.value + '">' : '';
+      p.style.display = e.target.value ? 'block' : 'none';
+    }
+  }
+});
+
+function salvarSiteIndexacao() {
+  var configs = {
+    site_seo_dominio: seoNormalizeDomain(document.getElementById('sv-seo-dominio').value),
+    site_seo_gsc_verificacao: document.getElementById('sv-seo-gsc-verificacao').value.trim(),
+    site_seo_robots_txt: document.getElementById('sv-seo-robots-txt').value,
+    site_seo_llm_txt: document.getElementById('sv-seo-llm-txt').value
+  };
+  apiPost('/api/super/config-global', configs, function(err, data) {
+    if (err || !data || !data.ok) return showToast('Erro ao salvar indexação.', 'danger');
+    Object.keys(configs).forEach(function(k) { siteVendasConfigs[k] = configs[k]; });
+    showToast('Verificação & indexação salvas! sitemap.xml, robots.txt e llm.txt regenerados no servidor.', 'success');
   });
 }
 
