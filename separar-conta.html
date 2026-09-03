@@ -214,12 +214,14 @@
 
   <div id="sheet-pagamento" class="sheet-overlay" onclick="if(event.target===this)window.fecharPagamento()">
     <div class="sheet">
-      <h3>Pagar R$ <span id="ps-valor"></span></h3>
+      <h3>Sua conta</h3>
       <p class="sub">Itens selecionados: <b id="ps-itens"></b></p>
 
-      <div class="field">
-        <label>Valor a pagar</label>
-        <input type="number" id="input-valor-pagar" class="valor-input" min="0.01" step="0.01" inputmode="decimal" value="">
+      <div class="conta-resumo" style="display:flex; flex-direction:column; gap:6px; background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:13px; font-size:13.5px; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between;"><span>Itens</span><b id="ps-itens-valor">R$ 0,00</b></div>
+        <div style="display:flex; justify-content:space-between;"><span>Serviço (10%)</span><b id="ps-servico-valor">R$ 0,00</b></div>
+        <div style="display:flex; justify-content:space-between;"><span>Agradecer (caixinha)</span><b id="ps-gorjeta-valor">R$ 0,00</b></div>
+        <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:9px; font-weight:800; font-size:15px;"><span>Total p/ o caixa aprovar</span><b id="ps-valor">R$ 0,00</b></div>
       </div>
 
       <div class="field">
@@ -227,42 +229,32 @@
         <div class="metodos-grid" id="metodos-grid"></div>
       </div>
 
-      <div id="excedente-box" class="excedente-box" style="display:none;">
-        <div class="titulo">⚠️ Você vai pagar R$ <span id="exc-valor"></span> a mais</div>
-        <p style="font-size:12.5px; margin-bottom:10px;" id="exc-desc"></p>
-        <div class="opt-row" id="exc-opts"></div>
-      </div>
-
-      <div id="box-pix" class="pix-box" style="display:none;">
-        <div class="linha"><span>Beneficiário</span><b id="pix-beneficiario">-</b></div>
-        <div class="linha"><span>Valor</span><b id="pix-valor">R$ 0,00</b></div>
-        <div class="pix-qr-box"><img id="pix-qr-img" alt="Pix QR Code"></div>
-        <div class="pix-copia" id="pix-copia">-</div>
-        <button class="btn-green" onclick="window.copiarPix()" style="padding:12px;">Copiar código Pix</button>
-        <button class="btn-ghost" onclick="window.confirmarPix()" id="btn-confirmar-pix">Já fiz o pagamento Pix</button>
+      <div class="field">
+        <label>Agradecer ao time (opcional · vai p/ caixinha)</label>
+        <div class="opt-row" id="agradecer-opts"></div>
       </div>
 
       <div id="box-confirmar" style="display:block;">
-        <button class="btn-green" onclick="window.confirmarPagamento()" id="btn-confirmar-pagamento">Registrar pagamento</button>
+        <button class="btn-green" onclick="window.confirmarPagamento()" id="btn-confirmar-pagamento">Enviar para o caixa</button>
         <button class="btn-ghost" onclick="window.fecharPagamento()">Voltar</button>
       </div>
 
       <div id="box-spinner" style="display:none; text-align:center; padding:18px;">
         <div class="spinner"></div>
-        <p style="font-size:14px; color:var(--text-muted);">Registrando pagamento...</p>
+        <p style="font-size:14px; color:var(--text-muted);">Enviando para o caixa...</p>
       </div>
     </div>
   </div>
 
   <div id="view-sucesso" class="container" style="display:none;">
     <div class="screen-msg">
-      <i class="ph-bold ph-check-circle" style="color:var(--success); font-size:64px;"></i>
-      <h2>Pagamento registrado!</h2>
+      <i class="ph-bold ph-clock-clockwise" style="color:var(--primary); font-size:64px;"></i>
+      <h2>Comanda enviada!</h2>
       <div class="sucesso-num" id="ok-valor">R$ 0,00</div>
       <p id="ok-desc"></p>
       <div class="divisor"></div>
       <p style="font-size:13px; color:var(--text-muted); margin-bottom:18px;">
-        Avisamos o garçom que você separou os seus itens.
+        Sua comanda foi enviada para o caixa aprovar o pagamento. Aguarde um instante.
       </p>
       <button class="btn-primary" style="width:100%;" onclick="window.continuarSeparando()">
         <i class="ph-bold ph-user-plus"></i> Próxima pessoa separar
@@ -284,6 +276,11 @@
       var configs = {};
       var mesaNome = '';
       var metodoSel = 'Dinheiro';
+      var taxaServico = 10;      // % de serviço aplicado ao total selecionado
+      var agradecerSel = 0;      // gorjeta "agradecer" (+3/+8/+20) → caixinha
+      var comandaPronta = null;  // status da última comanda enviada p/ o caixa
+      var enviandoComanda = false;
+      var _prevCPStatus = null;  // p/ detectar transição de status da comanda pronta
       var pixGerado = false;
 
       var METODOS = [
@@ -320,6 +317,15 @@
         setTimeout(function () { toast.remove(); }, 3000);
       }
 
+      function mostrarAviso(msg) {
+        var toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed; top:64px; left:50%; transform:translateX(-50%); background:#3ab55b; color:#fff; padding:11px 18px; border-radius:12px; font-size:13.5px; font-weight:700; z-index:99999; max-width:90%; text-align:center; box-shadow:0 6px 20px rgba(58,181,91,0.35);';
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(function () { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; }, 2600);
+        setTimeout(function () { toast.remove(); }, 3000);
+      }
+
       function setErro(titulo, msg, icone) {
         document.getElementById('err-titulo').innerText = titulo;
         document.getElementById('err-msg').innerText = msg;
@@ -337,12 +343,15 @@
         socket.on('split_dados', function (d) { if (d && d.success) receberDados(d); });
         socket.on('split_erro', function (e) {
           if (e && e.code && e.code.indexOf('TOKEN') === 0) { setErro('QR inválido', e.msg || 'QR inválido ou expirado.'); return; }
+          enviandoComanda = false;
           var sp = document.getElementById('box-spinner');
           if (sp) sp.style.display = 'none';
           document.getElementById('btn-confirmar-pagamento').disabled = false;
-          mostrarErro((e && e.msg) || 'Não foi possível registrar o pagamento.');
+          document.getElementById('btn-confirmar-pagamento').innerText = 'Enviar para o caixa';
+          mostrarErro((e && e.msg) || 'Não foi possível enviar a comanda.');
         });
-        socket.on('split_pagamento_sucesso', onSucesso);
+        socket.on('comanda_pronta_enviada', onSucesso);
+        socket.on('comanda_pronta_atualizada', function () { carregarDados(); });
         socket.on('pedidos_atualizados', carregarDados);
         socket.on('itens_mesa_recebidos', function (d) { if (d && d.mesaName === mesaNome) carregarDados(); });
         socket.on('comanda_creditos_atualizado', function (d) { if (d && d.mesaName === mesaNome) carregarDados(); });
@@ -360,6 +369,19 @@
         itens = d.itens || [];
         pagoPorItem = (d.pagoPorItem || {});
         creditos = (d.creditos || []);
+        comandaPronta = d.comanda_pronta || null;
+        taxaServico = parseFloat((d.configs || {}).taxa_servico) || 10;
+        if (comandaPronta && comandaPronta.status === 'pendente') agradecerSel = 0;
+        if (_prevCPStatus !== null) {
+          var cur = comandaPronta ? comandaPronta.status : null;
+          if (_prevCPStatus === 'pendente' && cur === 'aprovado') {
+            mostrarAviso('Pagamento aprovado pelo caixa! ✓');
+          } else if (_prevCPStatus === 'pendente' && cur === 'recusado') {
+            enviandoComanda = false;
+            mostrarErro('Sua comanda foi recusada pelo caixa. Revise os itens e envie novamente.');
+          }
+        }
+        _prevCPStatus = comandaPronta ? comandaPronta.status : null;
         Object.keys(claims).forEach(function (k) {
           var it = itens.find(function (i) { return String(i.id) === k; });
           if (!it) { delete claims[k]; return; }
@@ -487,11 +509,17 @@
           </div>`;
       }
 
+      function totalComServico() {
+        var base = totalPegado();
+        return Math.round(base * (1 + (taxaServico || 0) / 100) * 100) / 100;
+      }
+
       function atualizarResumos() {
         var tp = totalPegado();
+        var tc = totalComServico();
         var qItens = itens.filter(function (i) { return qtdPega(i.id) > 0; }).length;
-        document.getElementById('total-selecionado').innerText = brl(tp);
-        document.getElementById('res-pegou').innerText = brl(tp);
+        document.getElementById('total-selecionado').innerText = brl(tc);
+        document.getElementById('res-pegou').innerText = brl(tc);
         document.getElementById('res-itens-cont').innerText = qItens + ' item(s)';
         var bruto = 0;
         itens.forEach(function (i) { bruto += num(i.total); });
@@ -536,15 +564,27 @@
         renderTudo();
       };
 
-      // ── PAGAMENTO ──
+      // ── PAGAMENTO (cliente envia p/ o caixa aprovar — NÃO finaliza) ──
       window.openPagamento = function () {
         renderMetodos();
+        renderAgradecer();
         var tp = totalPegado();
-        document.getElementById('input-valor-pagar').value = tp.toFixed(2);
-        document.getElementById('ps-valor').innerText = tp.toFixed(2).replace('.', ',');
+        var tc = totalComServico();
+        document.getElementById('ps-itens-valor').innerText = brl(tp);
+        document.getElementById('ps-servico-valor').innerText = brl(Math.round((tc - tp) * 100) / 100);
+        document.getElementById('ps-gorjeta-valor').innerText = brl(agradecerSel);
+        document.getElementById('ps-valor').innerText = brl(Math.round((tc + agradecerSel) * 100) / 100);
         document.getElementById('ps-itens').innerText = itens.filter(function (i) { return qtdPega(i.id) > 0; }).length + ' itens';
-        hidPix(false);
-        atualizarExcedente();
+        var btn = document.getElementById('btn-confirmar-pagamento');
+        if (btn) {
+          if (comandaPronta && comandaPronta.status === 'pendente') {
+            btn.disabled = true;
+            btn.innerText = 'Aguardando aprovação do caixa...';
+          } else {
+            btn.disabled = false;
+            btn.innerText = 'Enviar para o caixa';
+          }
+        }
         document.getElementById('sheet-pagamento').classList.add('active');
       };
       window.fecharPagamento = function () {
@@ -556,128 +596,49 @@
         showView('view-main');
       };
 
-      function valorAPagar() { return Math.max(0.01, num(document.getElementById('input-valor-pagar').value)); }
-
-      function excedente() {
-        var tp = totalPegado();
-        return Math.round((valorAPagar() - tp) * 100) / 100;
+      function renderAgradecer() {
+        var opts = document.getElementById('agradecer-opts');
+        if (!opts) return;
+        var valores = [0, 3, 8, 20];
+        opts.innerHTML = valores.map(function (v) {
+          var ativo = (agradecerSel === v);
+          return '<div class="opt-chip ' + (ativo ? 'active' : '') + '" data-agradecer="' + v + '" onclick="window.selAgradecer(' + v + ')">' +
+            (v === 0 ? 'Sem gorjeta' : 'Agradecer +' + v) +
+            '<small>' + (v > 0 ? 'vai p/ caixinha' : 'sem agradecer') + '</small></div>';
+        }).join('');
       }
-
-      function atualizarExcedente() {
-        var exc = excedente();
-        var box = document.getElementById('excedente-box');
-        var cfg = String(configs.split_excedente || 'perguntar');
-        if (exc > 0.005) {
-          box.style.display = 'block';
-          document.getElementById('exc-valor').innerText = exc.toFixed(2).replace('.', ',');
-          var opts = document.getElementById('exc-opts');
-          if (cfg === 'gorjeta') {
-            document.getElementById('exc-desc').innerText = 'Conforme definido pelo restaurante, o excedente será lançado como GORJETA (não abate na conta).';
-            opts.innerHTML = optRender('gorjeta');
-          } else if (cfg === 'abater') {
-            document.getElementById('exc-desc').innerText = 'Conforme definido pelo restaurante, o excedente será lançado como ABATE nos itens compartilhados da mesa.';
-            opts.innerHTML = optRender('abater');
-          } else {
-            document.getElementById('exc-desc').innerText = 'Escolha o que fazer com o valor extra:';
-            opts.innerHTML = optRender('abater') + optRender('gorjeta');
-            if (!window.excSel) { window.excSel = 'abater'; }
-            marcarOpt(window.excSel);
-          }
-        } else {
-          box.style.display = 'none';
-        }
-      }
-      function optRender(tipo) {
-        var ativo = (window.excSel === tipo || !window.excSel);
-        return '<div class="opt-chip ' + (ativo ? 'active' : '') + '" data-tipo="' + tipo + '" onclick="window.selExc(\'' + tipo + '\')">' +
-          (tipo === 'abater' ? '<i class="ph-bold ph-arrows-down-up"></i> Abater' : '<i class="ph-bold ph-heart"></i> Gorjeta') +
-          '<small>' + (tipo === 'abater' ? 'Reduz a conta pros outros' : 'Vai pro caixa como gorjeta') + '</small></div>';
-      }
-      function marcarOpt(tipo) {
-        document.querySelectorAll('#exc-opts .opt-chip').forEach(function (c) {
-          c.className = 'opt-chip' + (c.dataset.tipo === tipo ? ' active' : '');
-        });
-      }
-      window.selExc = function (tipo) { window.excSel = tipo; marcarOpt(tipo); };
+      window.selAgradecer = function (v) {
+        if (comandaPronta && comandaPronta.status === 'pendente') return;
+        agradecerSel = v;
+        renderAgradecer();
+        atualizarResumos();
+        var tc = totalComServico();
+        document.getElementById('ps-gorjeta-valor').innerText = brl(agradecerSel);
+        document.getElementById('ps-valor').innerText = brl(Math.round((tc + agradecerSel) * 100) / 100);
+      };
 
       function renderMetodos() {
         var html = METODOS.map(function (m) { return '<div class="metodo-chip ' + (metodoSel === m.nome ? 'active' : '') + '" data-metodo="' + m.nome + '" style="' + (metodoSel === m.nome ? 'border-color:' + m.cor + '; color:' + m.cor + ';' : '') + '"><i class="' + m.icone + '" style="color:' + m.cor + ';"></i>' + m.nome + '</div>'; }).join('');
         document.getElementById('metodos-grid').innerHTML = html;
         document.querySelectorAll('#metodos-grid .metodo-chip').forEach(function (ch) {
-          ch.onclick = function () {
-            metodoSel = ch.dataset.metodo;
-            renderMetodos();
-            if (metodoSel === 'PIX') { hidPix(true); prepararPix(); } else { hidPix(false); }
-          };
+          ch.onclick = function () { metodoSel = ch.dataset.metodo; renderMetodos(); };
         });
       }
 
-      function hidPix(show) {
-        document.getElementById('box-pix').style.display = show ? 'block' : 'none';
-        document.getElementById('box-confirmar').style.display = 'none';
-        if (!show) {
-          document.getElementById('btn-confirmar-pix').style.display = 'none';
-          document.getElementById('box-confirmar').style.display = 'block';
-        }
-      }
-
-      function prepararPix() {
-        var valor = valorAPagar();
-        var key = configs.qr_pix_key || 'chefcozinha@pix.com.br';
-        var nome = configs.qr_pix_name || 'Estabelecimento Chef Cozinha';
-        var copy = '00020101021226840014BR.GOV.BCB.PIX0114' + key + '5204000053039865405' + valor.toFixed(2) + '5802BR5915'
-          + String(nome || 'CHEFCOZINHA').substring(0, 24).toUpperCase() + 'BENE6008BRASILIA62070503***6304';
-        document.getElementById('pix-beneficiario').innerText = nome;
-        document.getElementById('pix-valor').innerText = brl(valor);
-        document.getElementById('pix-copia').innerText = copy;
-        var img = document.getElementById('pix-qr-img');
-        if (typeof window.qrImg === 'function') {
-          window.qrImg(img, copy, 210);
-        } else {
-          img.src = (window.location.origin || '') + '/api/qr?size=210&data=' + encodeURIComponent(copy);
-        }
-      }
-
-      window.copiarPix = function () {
-        var copy = document.getElementById('pix-copia').innerText;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(copy).then(function () { alert('Pix copiado!'); });
-        } else {
-          prompt('Copie o código Pix:', copy);
-        }
-      };
-      window.confirmarPix = function () {
-        pixGerado = true;
-        document.getElementById('btn-confirmar-pix').style.display = 'none';
-        confirmarPagamento();
-      };
-
       window.confirmarPagamento = function () {
-        var tp = totalPegado();
-        var vp = valorAPagar();
-        var exc = excedente();
-        var cfg = String(configs.split_excedente || 'perguntar');
-        var tipoExc = null;
-        if (exc > 0.005) {
-          if (cfg === 'gorjeta') tipoExc = 'gorjeta';
-          else if (cfg === 'abater') tipoExc = 'abater';
-          else tipoExc = window.excSel || 'abater';
-        }
-        if (metodoSel === 'PIX' && !pixGerado) {
-          prepararPix();
-          document.getElementById('btn-confirmar-pix').style.display = 'block';
-          document.getElementById('box-confirmar').style.display = 'none';
+        if (enviandoComanda) return;
+        if (comandaPronta && comandaPronta.status === 'pendente') {
+          mostrarErro('Você já enviou uma comanda. Aguarde o caixa aprovar.');
           return;
         }
-
+        var tp = totalPegado();
+        if (tp <= 0) { mostrarErro('Selecione ao menos um item para enviar.'); return; }
+        var tc = totalComServico();
+        var serv = Math.round((tc - tp) * 100) / 100;
         var comanda = null;
         itens.forEach(function (i) { if (qtdPega(i.id) > 0 && i.mesa_comanda) comanda = i.mesa_comanda; });
 
-        var payload = { token: TOKEN, clienteNome: nomeCliente(), comanda: comanda, metodo: metodoSel, valorPago: vp, excedenteTipo: tipoExc };
-        payload.itens = itens.filter(function (i) { return qtdPega(i.id) > 0; }).map(function (i) {
-          return { itemId: i.id, qtd: qtdPega(i.id) };
-        });
-
+        enviandoComanda = true;
         var boxP = document.getElementById('box-pix');
         var boxC = document.getElementById('box-confirmar');
         if (boxP) boxP.style.display = 'none';
@@ -685,20 +646,33 @@
         var sp = document.getElementById('box-spinner');
         sp.style.display = 'block';
         document.getElementById('btn-confirmar-pagamento').disabled = true;
-        socket.emit('registrar_split_pagamento', payload);
+
+        var payload = {
+          token: TOKEN,
+          clienteNome: nomeCliente(),
+          comanda: comanda,
+          metodo: metodoSel,
+          valorItens: Math.round(tp * 100) / 100,
+          valorServico: serv,
+          valorGorjeta: agradecerSel,
+          itens: itens.filter(function (i) { return qtdPega(i.id) > 0; }).map(function (i) { return { itemId: i.id, qtd: qtdPega(i.id) }; })
+        };
+        socket.emit('enviar_comanda_pronta', payload);
       };
 
       function onSucesso(d) {
         if (!d || !d.success) return;
         var sp = document.getElementById('box-spinner');
         if (sp) sp.style.display = 'none';
+        enviandoComanda = false;
         window.fecharPagamento();
-        document.getElementById('ok-valor').innerText = brl(d.valorPago);
-        var desc = 'Você separou ' + brl(d.valorItens) + ' em itens';
-        if (d.excedenteTipo === 'gorjeta') desc += '. Excedente de ' + brl(d.excesso) + ' virou GORJETA para o caixa.';
-        else if (d.excedenteTipo === 'abater') desc += '. Excedente de ' + brl(d.excesso) + ' abateu nos itens compartilhados da mesa.';
-        else desc += '. Nenhum valor extra.';
-        document.getElementById('ok-desc').innerText = desc;
+        var tp = totalPegado();
+        var tc = totalComServico();
+        var total = Math.round((tc + agradecerSel) * 100) / 100;
+        document.getElementById('ok-valor').innerText = brl(total);
+        var desc = 'Itens ' + brl(tp) + ' + serviço ' + brl(Math.round((tc - tp) * 100) / 100);
+        if (agradecerSel > 0) desc += ' + agradecer ' + brl(agradecerSel) + ' (caixinha)';
+        document.getElementById('ok-desc').innerText = desc + '. Veja o caixa para finalizar.';
         showView('view-sucesso');
         limparClaims();
       }
@@ -706,7 +680,6 @@
       document.addEventListener('DOMContentLoaded', function () {
         if (!TOKEN) { setErro('Link incompleto', 'Este link está sem o token da conta. Peça ao garçom um novo QR.', 'ph-qr-code'); return; }
         document.getElementById('input-nome-cliente').addEventListener('input', function () { });
-        document.getElementById('input-valor-pagar').addEventListener('input', function () { atualizarExcedente(); pixGerado = false; });
         conectar();
       });
     })();

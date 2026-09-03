@@ -44,7 +44,7 @@
   <script src="/plugin-client.js"></script>
   <script src="/chef-tz.js"></script>
   <script src="/pwa-telemetry.js"></script>
-  <script src="main.js?v=20260901buscafix"></script>
+  <script src="main.js?v=20260903dragfix2"></script>
   <script src="/anti-tamper.js" defer></script>
   <link rel="stylesheet" href="/apple-transitions.css?v=1787948800000">
   <script src="/apple-transitions.js?v=1787948800000" defer></script>
@@ -461,6 +461,13 @@
     <div class="top-toolbar">
       <button class="toolbar-btn active" id="toolbar-mesas" title="Mesas"><i class="ph ph-squares-four"></i></button>
       <button class="toolbar-btn" id="toolbar-comandas" title="Comandas"><i class="ph ph-receipt"></i></button>
+      <button class="toolbar-btn" id="toolbar-comandas-prontas" style="position:relative;" onclick="window.abrirComandasProntas && window.abrirComandasProntas()" title="Comandas prontas (aprovar)">
+        <i class="ph ph-bell"></i><span id="comandas-prontas-badge" class="comandas-prontas-badge"
+          style="display:none; position:absolute; top:4px; right:2px; min-width:18px; height:18px; padding:0 5px; border-radius:10px; background:#e74c3c; color:#fff; font-size:11px; font-weight:800; line-height:18px; text-align:center; align-items:center; justify-content:center;">0</span>
+      </button>
+      <button class="toolbar-btn" style="position:relative;" onclick="window.abrirCaixinhaRelatorio && window.abrirCaixinhaRelatorio()" title="Caixinha (gorjetas divididas)">
+        <i class="ph ph-piggy-bank"></i>
+      </button>
       <button class="toolbar-btn" id="toolbar-balcao" title="Balcão"><i class="ph ph-shopping-cart"></i></button>
       <button class="toolbar-btn" id="toolbar-delivery" title="Delivery"><i class="ph ph-truck"></i></button>
       <button class="toolbar-btn" onclick="window.abrirModalNfce && window.abrirModalNfce()"
@@ -1611,6 +1618,46 @@
           id="comanda-modal-submit-btn">
           <i class="ph ph-check-circle" style="font-size: 20px;"></i> Confirmar Pagamento
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Comandas Prontas (cliente enviou → caixa aprova/recusa) -->
+  <div class="modal-overlay" id="comandas-prontas-overlay"
+    style="display: none; z-index: 10002; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); justify-content: center; align-items: center;">
+    <div class="modal"
+      style="background: var(--bg-card); padding: 24px; border-radius: 16px; width: 620px; max-width: 94%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+      <div class="modal-header"
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 19px; color: #fc4b15; font-weight: 700;"><i class="ph ph-bell"></i> Comandas
+          Prontas</h3>
+        <button onclick="document.getElementById('comandas-prontas-overlay').style.display='none'"
+          style="background: none; border: none; font-size: 28px; cursor: pointer; color: var(--text-muted); line-height: 1;">&times;</button>
+      </div>
+      <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-muted);">Os clientes enviaram estas contas p/
+        aprovação. Confira e aprove ou recuse.</p>
+      <div id="comandas-prontas-list" style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- Injetado dinamicamente -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Caixinha (gorjetas "agradecer" divididas entre os funcionários) -->
+  <div class="modal-overlay" id="caixinha-overlay"
+    style="display: none; z-index: 10003; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); justify-content: center; align-items: center;">
+    <div class="modal"
+      style="background: var(--bg-card); padding: 24px; border-radius: 16px; width: 560px; max-width: 94%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+      <div class="modal-header"
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 19px; color: #fc4b15; font-weight: 700;"><i class="ph ph-piggy-bank"></i>
+          Caixinha</h3>
+        <button onclick="document.getElementById('caixinha-overlay').style.display='none'"
+          style="background: none; border: none; font-size: 28px; cursor: pointer; color: var(--text-muted); line-height: 1;">&times;</button>
+      </div>
+      <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-muted);">Gorjetas "agradecer" dos clientes,
+        divididas igualmente entre os funcionários ativos.</p>
+      <div id="caixinha-content" style="display: flex; flex-direction: column; gap: 14px;">
+        <!-- Injetado dinamicamente -->
       </div>
     </div>
   </div>

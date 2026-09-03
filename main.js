@@ -2165,7 +2165,7 @@ function renderOrders() {
       else if (statusClass === 'disponivel' || statusClass === 'livre') { iconClass = 'ph-chair'; iconColor = '#22c55e'; }
 
       html += `
-          <div class="mesa-item status-${statusClass}" id="mesa-card-${uid}" style="position: relative;" data-mesa="${nome}" data-status="${statusClass}" draggable="true" ondragstart="window.onDragStartTable(event, '${nome}')" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="window.onDropMesa(event, '${nome}'); this.classList.remove('drag-over');">
+          <div class="mesa-item status-${statusClass}" id="mesa-card-${uid}" style="position: relative;" data-mesa="${nome}" data-status="${statusClass}">
             ${statusClass === 'solicitada' ? '<div style="position: absolute; top: -8px; right: -8px; background: var(--bg-card); border-radius: 50%; padding: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex;"><i class="ph ph-receipt" style="color: #3498db;"></i></div>' : ''}
             <div class="mesa-header-info">
               <span class="mesa-id">${nome}</span>
@@ -3411,6 +3411,143 @@ socket.on('item_fracionado_sucesso', (data) => {
   if (data && data.itemId && typeof window.removerItemDividido === 'function') {
     window.removerItemDividido(data.itemId);
   }
+});
+
+// ── COMANDA PRONTA (cliente envia → caixa aprova) ──
+window._comandasProntasPendentes = window._comandasProntasPendentes || 0;
+
+function escCP(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function fmtBrlCP(v) {
+  const n = Number(v) || 0;
+  return 'R$ ' + n.toFixed(2).replace('.', ',');
+}
+function nomeItemPorIdCP(itemId) {
+  const id = String(itemId);
+  const all = (window.ordersData && window.ordersData.length) ? window.ordersData : [];
+  for (let i = 0; i < all.length; i++) {
+    if (String(all[i].id) === id) return all[i].productName || ('Item #' + id);
+  }
+  return 'Item #' + id;
+}
+function atualizaBadgeComandasProntas() {
+  const badge = document.getElementById('comandas-prontas-badge');
+  if (!badge) return;
+  const n = window._comandasProntasPendentes || 0;
+  if (n > 0) { badge.style.display = 'inline-flex'; badge.textContent = n > 99 ? '99+' : n; }
+  else { badge.style.display = 'none'; }
+}
+
+window.abrirComandasProntas = function () {
+  const overlay = document.getElementById('comandas-prontas-overlay');
+  if (!overlay || !window.socket) return;
+  overlay.style.display = 'flex';
+  const list = document.getElementById('comandas-prontas-list');
+  if (list) list.innerHTML = '<p style="font-size:14px;color:var(--text-muted);text-align:center;padding:20px;">Carregando...</p>';
+  window.socket.emit('listar_comandas_prontas');
+};
+window.fecharComandasProntas = function () {
+  const overlay = document.getElementById('comandas-prontas-overlay');
+  if (overlay) overlay.style.display = 'none';
+};
+
+function renderComandasProntas(lista) {
+  const list = document.getElementById('comandas-prontas-list');
+  if (!list) return;
+  const arr = Array.isArray(lista) ? lista : [];
+  window._comandasProntasPendentes = arr.length;
+  atualizaBadgeComandasProntas();
+  if (arr.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--text-muted);font-size:14px;"><i class="ph ph-check-circle" style="font-size:34px;color:#3ab55b;display:block;margin-bottom:10px;"></i>Nenhuma comanda pendente de aprovação.</div>';
+    return;
+  }
+  list.innerHTML = arr.map((c) => {
+    const nomes = (c.itens || []).map(i => nomeItemPorIdCP(i.itemId) + ' ×' + i.qtd).join(', ') || '—';
+    return `<div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <b style="font-size:15px;">${escCP(c.mesa || 'Mesa')}${c.comanda ? ' · Comanda ' + escCP(c.comanda) : ''}</b>
+        <span style="background:#fc4b1522;color:#fc4b15;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;">${escCP(c.metodo)}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">Cliente: <b style="color:var(--text-primary);">${escCP(c.clienteNome || 'Cliente')}</b></div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;"><b>Itens:</b> ${escCP(nomes)}</div>
+      <div style="display:flex;gap:10px;font-size:13px;flex-wrap:wrap;margin-bottom:12px;color:var(--text-secondary);">
+        <span>Itens <b>${fmtBrlCP(c.valorItens)}</b></span>
+        <span>Serviço <b>${fmtBrlCP(c.valorServico)}</b></span>
+        <span>Agradecer <b>${fmtBrlCP(c.valorGorjeta)}</b></span>
+        <span style="font-weight:800;color:#27ae60;">Total <b>${fmtBrlCP(c.valorTotal)}</b></span>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="window.aprovarComandaPronta(${c.id})" style="flex:1;padding:11px;background:#3ab55b;color:#fff;border:none;border-radius:9px;font-weight:700;cursor:pointer;"><i class="ph ph-check"></i> Aprovar</button>
+        <button onclick="window.recusarComandaPronta(${c.id})" style="flex:1;padding:11px;background:transparent;color:#e74c3c;border:1px solid #e74c3c;border-radius:9px;font-weight:700;cursor:pointer;"><i class="ph ph-x"></i> Recusar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.aprovarComandaPronta = function (id) {
+  const nome = (window.operadorAtual && window.operadorAtual.nome) || 'Caixa';
+  window.socket.emit('aproveitar_comanda_pronta', { id, operador: nome });
+};
+window.recusarComandaPronta = function (id) {
+  const nome = (window.operadorAtual && window.operadorAtual.nome) || 'Caixa';
+  if (confirm('Recusar esta comanda pronta? O cliente poderá revisar e reenviar.')) {
+    window.socket.emit('recusar_comanda_pronta', { id, operador: nome });
+  }
+};
+
+socket.on('comandas_prontas_lista', (data) => {
+  if (data && data.success) renderComandasProntas(data.itens);
+});
+socket.on('comanda_pronta_nova', () => { window.socket.emit('listar_comandas_prontas'); });
+socket.on('comanda_pronta_atualizada', () => {
+  window.socket.emit('listar_comandas_prontas');
+  setTimeout(() => window.socket.emit('atualizacao_caixa'), 400);
+});
+socket.on('comanda_pronta_resposta', () => { window.socket.emit('listar_comandas_prontas'); });
+
+// ── CAIXINHA (gorjetas "agradecer" divididas entre funcionários ativos) ──
+window.abrirCaixinhaRelatorio = function () {
+  const overlay = document.getElementById('caixinha-overlay');
+  if (!overlay || !window.socket) return;
+  overlay.style.display = 'flex';
+  const content = document.getElementById('caixinha-content');
+  if (content) content.innerHTML = '<p style="font-size:14px;color:var(--text-muted);text-align:center;padding:20px;">Carregando...</p>';
+  window.socket.emit('caixinha_relatorio');
+};
+window.fecharCaixinhaRelatorio = function () {
+  const overlay = document.getElementById('caixinha-overlay');
+  if (overlay) overlay.style.display = 'none';
+};
+socket.on('caixinha_relatorio_result', (data) => {
+  const content = document.getElementById('caixinha-content');
+  if (!content || !data || !data.success) return;
+  const funcs = Array.isArray(data.funcionarios) ? data.funcionarios : [];
+  const regs = Array.isArray(data.registros) ? data.registros : [];
+  const funcsHtml = funcs.length
+    ? funcs.map(f => `<div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;font-size:13px;"><span>${escCP(f.nome)} <small style="color:var(--text-muted);">${escCP(f.cargo || '')}</small></span><b style="color:#27ae60;">${fmtBrlCP(data.divisao)}</b></div>`).join('')
+    : '<p style="font-size:13px;color:var(--text-muted);">Nenhum funcionário ativo para dividir.</p>';
+  const regsHtml = regs.length
+    ? regs.map(r => `<div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-secondary);">
+        <span>${escCP(r.cliente_nome || 'Cliente')} · ${escCP(r.mesa || '')}${r.comanda ? ' · ' + escCP(r.comanda) : ''}</span>
+        <b>${fmtBrlCP(r.valor)}</b></div>`).join('')
+    : '<p style="font-size:13px;color:var(--text-muted);">Nenhuma gorjeta registrada ainda.</p>';
+  content.innerHTML =
+    `<div style="background:rgba(60,181,91,0.1);border:1px solid rgba(60,181,91,0.35);border-radius:14px;padding:16px;text-align:center;">
+       <div style="font-size:13px;color:var(--text-muted);">Total na caixinha</div>
+       <div style="font-size:28px;font-weight:800;color:#27ae60;">${fmtBrlCP(data.total)}</div>
+       <div style="font-size:12.5px;color:var(--text-muted);margin-top:4px;">${funcs.length} funcionários ativos · ${fmtBrlCP(data.divisao)} cada</div>
+     </div>
+     <div>
+       <div style="font-size:13px;font-weight:700;margin-bottom:8px;">Divisão igual (mensal)</div>
+       <div style="display:flex;flex-direction:column;gap:6px;">${funcsHtml}</div>
+     </div>
+     <div>
+       <div style="font-size:13px;font-weight:700;margin-bottom:8px;">Últimas gorjetas</div>
+       <div style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;border-top:1px solid var(--border-color);padding-top:8px;">${regsHtml}</div>
+     </div>`;
 });
 
 socket.on('mesa_finalizada', ({ mesaName }) => {
@@ -9981,10 +10118,12 @@ socket.on('connect', () => {
   socket.emit('get_qr_pedidos_pendentes', { restaurante_id: restId });
   socket.emit('get_pedidos', { restaurante_id: restId });
   socket.emit('get_mesas', { restaurante_id: restId });
+  socket.emit('listar_comandas_prontas');
 });
 if (socket.connected) {
   socket.emit('get_pedidos');
   socket.emit('get_mesas');
+  socket.emit('listar_comandas_prontas');
 }
 
 // --- LOGICA DO QR CODE DA MESA ---
@@ -11564,7 +11703,7 @@ document.addEventListener('drop', (e) => {
     if (e.button !== 0) return;
     const card = e.target && e.target.closest ? e.target.closest('.mesa-item') : null;
     if (!card) return;
-    if (!card.getAttribute('data-status')) return;         // só mesas reais (com status)
+    if (!card.getAttribute('data-mesa') && !card.getAttribute('data-status')) return; // só cards de mesa/comanda
     if (card.id === 'nova-comanda-card') return;
     if (e.target.closest('button, a, input, select, textarea, .action-popup-btn')) return;
 
@@ -11605,7 +11744,7 @@ document.addEventListener('drop', (e) => {
 
     const under = document.elementFromPoint(e.clientX, e.clientY);
     const alvoCard = under && under.closest ? under.closest('.mesa-item') : null;
-    const valido = alvoCard && alvoCard !== armed.card && alvoCard.getAttribute('data-status') && alvoCard.id !== 'nova-comanda-card';
+    const valido = alvoCard && alvoCard !== armed.card && (alvoCard.getAttribute('data-mesa') || alvoCard.getAttribute('data-status')) && alvoCard.id !== 'nova-comanda-card';
     limparAlvos();
     if (valido) {
       alvoCard.classList.add('drag-over');
@@ -11655,10 +11794,11 @@ document.addEventListener('drop', (e) => {
     if (armed) finalizarMesaDrag(0, 0);
   });
 
-  // Suprime o drag nativo para que este motor seja a única via (sem dupla reação)
+  // Suprime o drag nativo apenas quando este motor está armado (single path).
+  // Se o motor não armar (fallback), o drag nativo draggable continua funcionando.
   document.addEventListener('dragstart', function (e) {
     const card = e.target && e.target.closest ? e.target.closest('.mesa-item') : null;
-    if (card && window._mesaDragPointerInit) {
+    if (card && armed && window._mesaDragPointerInit) {
       e.preventDefault();
     }
   }, true);
