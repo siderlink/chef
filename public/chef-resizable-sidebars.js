@@ -166,14 +166,14 @@
         <div style="display:flex; align-items:center; justify-content:space-between; width:100%; padding:4px 2px 8px; border-bottom:1px solid var(--border-subtle, rgba(0,0,0,0.08)); margin-bottom:8px;">
           <span style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8;">Ações Rápidas</span>
           <div style="display:flex; gap:4px;">
-            <button type="button" class="sidebar-ctrl-btn" onclick="window.toggleSidebarMode('left','expanded')" title="Expandir Barra" style="background:none; border:none; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:14px; color:inherit;">
-              <i class="ph ph-sidebar-simple"></i>
+            <button type="button" class="sidebar-ctrl-btn" id="btn-sidebar-left-expanded" data-side="left" data-mode="expanded" onclick="window.toggleSidebarMode('left','expanded')" title="Expandir Barra" style="background:none; border:none; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:14px; color:inherit;">
+              <i class="ph-bold ph-square"></i>
             </button>
-            <button type="button" class="sidebar-ctrl-btn" onclick="window.toggleSidebarMode('left','mini')" title="Modo Mini / Icones" style="background:none; border:none; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:14px; color:inherit;">
-              <i class="ph ph-arrows-in-line-horizontal"></i>
+            <button type="button" class="sidebar-ctrl-btn" id="btn-sidebar-left-mini" data-side="left" data-mode="mini" onclick="window.toggleSidebarMode('left','mini')" title="Modo Mini / Ícones" style="background:none; border:none; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:14px; color:inherit;">
+              <i class="ph-bold ph-arrows-in-line-horizontal"></i>
             </button>
-            <button type="button" class="sidebar-ctrl-btn" onclick="window.toggleSidebarMode('left','hidden')" title="Ocultar Barra" style="background:none; border:none; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:14px; color:inherit;">
-              <i class="ph ph-x"></i>
+            <button type="button" class="sidebar-ctrl-btn" id="btn-sidebar-left-hidden" data-side="left" data-mode="hidden" onclick="window.toggleSidebarMode('left','hidden')" title="Ocultar Barra" style="background:none; border:none; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:14px; color:inherit;">
+              <i class="ph-bold ph-x"></i>
             </button>
           </div>
         </div>
@@ -189,14 +189,14 @@
         <div style="display:flex; align-items:center; justify-content:space-between; width:100%; padding:4px 2px 8px; border-bottom:1px solid var(--border-subtle, rgba(0,0,0,0.08)); margin-bottom:8px;">
           <span style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8;">Resumo da Conta</span>
           <div style="display:flex; gap:4px;">
-            <button type="button" class="sidebar-ctrl-btn" onclick="window.toggleSidebarMode('right','expanded')" title="Expandir Barra" style="background:none; border:none; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:14px; color:inherit;">
-              <i class="ph ph-sidebar-simple"></i>
+            <button type="button" class="sidebar-ctrl-btn" id="btn-sidebar-right-expanded" data-side="right" data-mode="expanded" onclick="window.toggleSidebarMode('right','expanded')" title="Expandir Barra" style="background:none; border:none; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:14px; color:inherit;">
+              <i class="ph-bold ph-square"></i>
             </button>
-            <button type="button" class="sidebar-ctrl-btn" onclick="window.toggleSidebarMode('right','mini')" title="Modo Compacto" style="background:none; border:none; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:14px; color:inherit;">
-              <i class="ph ph-arrows-in-line-horizontal"></i>
+            <button type="button" class="sidebar-ctrl-btn" id="btn-sidebar-right-mini" data-side="right" data-mode="mini" onclick="window.toggleSidebarMode('right','mini')" title="Modo Compacto" style="background:none; border:none; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:14px; color:inherit;">
+              <i class="ph-bold ph-arrows-in-line-horizontal"></i>
             </button>
-            <button type="button" class="sidebar-ctrl-btn" onclick="window.toggleSidebarMode('right','hidden')" title="Ocultar Resumo" style="background:none; border:none; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:14px; color:inherit;">
-              <i class="ph ph-x"></i>
+            <button type="button" class="sidebar-ctrl-btn" id="btn-sidebar-right-hidden" data-side="right" data-mode="hidden" onclick="window.toggleSidebarMode('right','hidden')" title="Ocultar Resumo" style="background:none; border:none; cursor:pointer; padding:3px 6px; border-radius:6px; font-size:14px; color:inherit;">
+              <i class="ph-bold ph-x"></i>
             </button>
           </div>
         </div>
@@ -366,6 +366,49 @@
 
     if (floatRestore) floatRestore.style.display = (desktop && mode === 'hidden') ? 'flex' : 'none';
     try { localStorage.setItem(side === 'left' ? STORAGE_LEFT_MODE : STORAGE_RIGHT_MODE, mode); } catch(e){}
+    try { localStorage.setItem('chef_sidebar_' + side + '_mode', mode); } catch(e){}
+
+    // Sincronizar com as configurações de layout do colaborador
+    try {
+      if (typeof window.obterConfigLayoutColaborador === 'function') {
+        const cfg = window.obterConfigLayoutColaborador();
+        if (side === 'left') {
+          cfg.dock_modo = (mode === 'mini' ? 'compacta' : (mode === 'hidden' ? 'oculta' : 'expandida'));
+        } else {
+          cfg.resumo_modo = (mode === 'mini' ? 'compacto' : (mode === 'hidden' ? 'oculto' : 'expandido'));
+        }
+        const op = localStorage.getItem('chef_operador_nome') || (window.crmPerfil ? window.crmPerfil.nome : null) || localStorage.getItem('crm_usuario') || 'Padrao';
+        localStorage.setItem('chef_layout_user_' + encodeURIComponent(op.replace(/\s+/g, '_')), JSON.stringify(cfg));
+      }
+    } catch(e){}
+
+    // Atualizar visual dos botões nos cabeçalhos
+    ['expanded', 'mini', 'hidden'].forEach(m => {
+      const btnHeader = document.getElementById(`btn-sidebar-${side}-${m}`);
+      if (btnHeader) {
+        btnHeader.classList.toggle('active', m === mode);
+        if (m === mode) {
+          btnHeader.style.setProperty('background', '#fc4b15', 'important');
+          btnHeader.style.setProperty('color', '#ffffff', 'important');
+        } else {
+          btnHeader.style.background = 'transparent';
+          btnHeader.style.color = 'inherit';
+        }
+      }
+      const btn = document.getElementById(`btn-mode-${side}-${m}`);
+      if (btn) {
+        btn.classList.toggle('active', m === mode);
+        if (m === mode) {
+          btn.style.background = '#fc4b15';
+          btn.style.color = '#ffffff';
+        } else {
+          btn.style.background = side === 'left' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
+          btn.style.color = side === 'left' ? '#cbd5e1' : 'var(--text-secondary, #64748b)';
+        }
+      }
+    });
+
+    syncFloatRestoreVisibility();
     window.dispatchEvent(new CustomEvent('chef_sidebar_mode_changed', { detail: { side: side, mode: mode } }));
   };
 
@@ -386,7 +429,6 @@
     if (typeof window.chefApplySidebarMode === 'function') {
       window.chefApplySidebarMode(side, mode);
     } else {
-      // Fallback mínimo caso chefApplySidebarMode não exista
       const panel = (side === 'left') ? document.querySelector('.left-actions, #left-panel') : document.querySelector('.right-info, #right-panel');
       if (!panel) return;
       panel.classList.remove('mode-expanded', 'mode-mini', 'mode-hidden', 'sidebar-expanded', 'sidebar-mini', 'sidebar-hidden');

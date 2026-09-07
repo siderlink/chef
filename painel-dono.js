@@ -377,12 +377,60 @@ window.renderizarListaFuncionariosRemoto = function(funcs) {
   if (!container) return;
 
   const lista = Array.isArray(funcs) ? funcs : [];
-  if (lista.length === 0) {
-    container.innerHTML = `<div style="text-align:center; color:var(--text-sub); padding:20px; font-size:var(--fs-sm);">Nenhum colaborador cadastrado.</div>`;
+  _cachedFuncionariosRemoto = lista;
+
+  // 1. Separar pendentes vs ativos
+  const boxPendentes = document.getElementById('dono-box-pendentes');
+  const listaPendentes = document.getElementById('dono-lista-pendentes');
+  const badgeCount = document.getElementById('dono-badge-pendentes-count');
+
+  const pendentes = lista.filter(f => f.status === 'Pendente' || (f.ativo === 0 && f.status !== 'Inativo'));
+  const ativos = lista.filter(f => f.status !== 'Pendente' && f.ativo !== 0);
+
+  if (boxPendentes) {
+    if (pendentes.length > 0) {
+      boxPendentes.style.display = 'block';
+      if (badgeCount) badgeCount.textContent = String(pendentes.length);
+      if (listaPendentes) {
+        listaPendentes.innerHTML = pendentes.map(f => {
+          const nome = escHtml(f.nome || 'Novo Colaborador');
+          const cargoPretendido = escHtml(f.cargo || 'Não especificado');
+          const usuario = escHtml(f.usuario || '');
+          const tel = f.telefone ? escHtml(f.telefone) : '';
+          return `
+            <div style="background: var(--card); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">
+                  ${escHtml((f.nome || 'P').charAt(0).toUpperCase())}
+                </div>
+                <div>
+                  <strong style="font-size: 13.5px; color: var(--text); display: block;">${nome}</strong>
+                  <span style="font-size: 11.5px; color: var(--text-sub);">Usuário: <code>@${usuario}</code> • Pretendido: <b>${cargoPretendido}</b> ${tel ? `• Tel: ${tel}` : ''}</span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" class="btn-primary" onclick="abrirModalAprovarColaboradorDono(${f.id})" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; gap: 4px; background: #10b981; border-color: #10b981;">
+                  <i class="ph-bold ph-check"></i> Aprovar
+                </button>
+                <button type="button" class="btn-cancel" onclick="recusarColaboradorDono(${f.id})" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; gap: 4px; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                  <i class="ph-bold ph-x"></i> Recusar
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    } else {
+      boxPendentes.style.display = 'none';
+    }
+  }
+
+  if (ativos.length === 0) {
+    container.innerHTML = `<div style="text-align:center; color:var(--text-sub); padding:20px; font-size:var(--fs-sm);">Nenhum colaborador ativo no momento.</div>`;
     return;
   }
 
-  container.innerHTML = lista.map(f => {
+  container.innerHTML = ativos.map(f => {
     const nome = escHtml(f.nome || 'Colaborador');
     const cargo = escHtml(f.cargo || 'Equipe');
     const tel = f.telefone ? escHtml(f.telefone) : '';
@@ -477,6 +525,11 @@ window.carregarFuncionariosControleRemoto = async function() {
     socket.emit('get_funcionarios');
   }
 
+  // Carrega políticas em paralelo
+  if (typeof carregarPoliticasAcessoDono === 'function') {
+    carregarPoliticasAcessoDono();
+  }
+
   try {
     const res = await fetch('/api/funcionarios', { headers: { 'Authorization': `Bearer ${token}` } });
     if (res.ok) {
@@ -489,6 +542,170 @@ window.carregarFuncionariosControleRemoto = async function() {
     }
   } catch (err) {
     console.warn('Erro ao buscar funcionarios via HTTP, aguardando socket...', err);
+  }
+};
+
+// ─── Aprovações & Convite de Colaboradores (Dono) ──────────────
+window.abrirModalAprovarColaboradorDono = function(id) {
+  const f = _cachedFuncionariosRemoto.find(x => String(x.id) === String(id));
+  if (!f) return;
+  const inputId = document.getElementById('aprovar-colab-id');
+  const inputNome = document.getElementById('aprovar-colab-nome');
+  const inputUser = document.getElementById('aprovar-colab-usuario');
+  const selCargo = document.getElementById('aprovar-colab-cargo');
+  const inputPin = document.getElementById('aprovar-colab-pin');
+
+  if (inputId) inputId.value = f.id;
+  if (inputNome) inputNome.value = f.nome || '';
+  if (inputUser) inputUser.value = f.usuario || '';
+  if (selCargo) selCargo.value = f.cargo || 'Garçom';
+  if (inputPin) inputPin.value = '';
+
+  abrirModal('modal-aprovar-colaborador-dono');
+};
+
+window.confirmarAprovacaoColaboradorDono = function() {
+  const id = document.getElementById('aprovar-colab-id')?.value;
+  const cargo = document.getElementById('aprovar-colab-cargo')?.value || 'Garçom';
+  const pin = document.getElementById('aprovar-colab-pin')?.value.trim();
+
+  if (!id) return;
+
+  if (socket && typeof socket.emit === 'function') {
+    socket.emit('aprovar_funcionario', {
+      id: id,
+      cargo: cargo,
+      pin: pin || null
+    });
+  }
+  fecharModal('modal-aprovar-colaborador-dono');
+  showToast('Aprovação enviada com sucesso!', 'ph-check-circle', 'success');
+  setTimeout(carregarFuncionariosControleRemoto, 500);
+};
+
+window.recusarColaboradorDono = function(id) {
+  if (!confirm('Deseja realmente recusar e remover este cadastro pendente?')) return;
+  if (socket && typeof socket.emit === 'function') {
+    socket.emit('recusar_funcionario', { id: id });
+  }
+  showToast('Cadastro recusado.', 'ph-x-circle', 'info');
+  setTimeout(carregarFuncionariosControleRemoto, 500);
+};
+
+window.abrirModalConviteColaboradorDono = function() {
+  const restId = localStorage.getItem('restaurante_id') || '1';
+  const urlConvite = `${window.location.origin}/cadastro.html?restaurante_id=${restId}`;
+  
+  const inputLink = document.getElementById('convite-colab-link');
+  if (inputLink) inputLink.value = urlConvite;
+
+  const containerQr = document.getElementById('convite-colab-qrcode');
+  if (containerQr) {
+    containerQr.innerHTML = '';
+    if (typeof qrcode === 'function') {
+      const qr = qrcode(0, 'M');
+      qr.addData(urlConvite);
+      qr.make();
+      containerQr.innerHTML = qr.createImgTag(5, 10);
+    } else {
+      containerQr.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(urlConvite)}" style="max-width:180px; border-radius:8px;" alt="QR Code Convite">`;
+    }
+  }
+
+  abrirModal('modal-convite-colaborador-dono');
+};
+
+window.copiarLinkConviteDono = function() {
+  const input = document.getElementById('convite-colab-link');
+  if (!input) return;
+  input.select();
+  navigator.clipboard.writeText(input.value).then(() => {
+    showToast('Link de convite copiado!', 'ph-copy', 'success');
+  }).catch(() => {
+    showToast('Não foi possível copiar automaticamente.', 'ph-warning');
+  });
+};
+
+window.compartilharConviteWhatsAppDono = function() {
+  const restId = localStorage.getItem('restaurante_id') || '1';
+  const urlConvite = `${window.location.origin}/cadastro.html?restaurante_id=${restId}`;
+  const txt = encodeURIComponent(`Olá! Faça seu cadastro na equipe pelo link:\n${urlConvite}`);
+  window.open(`https://wa.me/?text=${txt}`, '_blank');
+};
+
+// ─── Gestão de Políticas de Acesso da Equipe (Dono) ────────────
+window.carregarPoliticasAcessoDono = async function() {
+  try {
+    const res = await fetch('/api/equipe/politica-acesso', {
+      headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('chef_token') || '') }
+    });
+    const data = await res.json();
+    if (data && data.success && data.politica) {
+      const p = data.politica;
+      const chkOp = document.getElementById('dono-pol-exigir-op');
+      const selModo = document.getElementById('dono-pol-modo-ident');
+      const selInat = document.getElementById('dono-pol-inatividade');
+
+      if (chkOp) chkOp.checked = p.exigir_operador_acoes !== false;
+      if (selModo) selModo.value = p.modo_identificacao || 'pin';
+      if (selInat) selInat.value = String(p.bloqueio_inatividade_min || 0);
+
+      const acoes = p.acoes_exigem_gerente || ['desconto', 'cancelamento_item', 'cancelamento_mesa', 'sangria', 'reabertura'];
+      const chkDesc = document.getElementById('dono-act-desconto');
+      const chkItem = document.getElementById('dono-act-cancel-item');
+      const chkMesa = document.getElementById('dono-act-cancel-mesa');
+      const chkSang = document.getElementById('dono-act-sangria');
+      const chkReab = document.getElementById('dono-act-reabertura');
+
+      if (chkDesc) chkDesc.checked = acoes.includes('desconto');
+      if (chkItem) chkItem.checked = acoes.includes('cancelamento_item');
+      if (chkMesa) chkMesa.checked = acoes.includes('cancelamento_mesa');
+      if (chkSang) chkSang.checked = acoes.includes('sangria');
+      if (chkReab) chkReab.checked = acoes.includes('reabertura');
+    }
+  } catch(e) {
+    console.warn('[Dono Políticas]', e);
+  }
+};
+
+window.salvarPoliticasAcessoDono = async function() {
+  const chkOp = document.getElementById('dono-pol-exigir-op');
+  const selModo = document.getElementById('dono-pol-modo-ident');
+  const selInat = document.getElementById('dono-pol-inatividade');
+
+  const acoes = [];
+  if (document.getElementById('dono-act-desconto')?.checked) acoes.push('desconto');
+  if (document.getElementById('dono-act-cancel-item')?.checked) acoes.push('cancelamento_item');
+  if (document.getElementById('dono-act-cancel-mesa')?.checked) acoes.push('cancelamento_mesa');
+  if (document.getElementById('dono-act-sangria')?.checked) acoes.push('sangria');
+  if (document.getElementById('dono-act-reabertura')?.checked) acoes.push('reabertura');
+
+  const payload = {
+    exigir_operador_acoes: chkOp ? chkOp.checked : true,
+    modo_identificacao: selModo ? selModo.value : 'pin',
+    bloqueio_inatividade_min: selInat ? parseInt(selInat.value, 10) || 0 : 0,
+    acoes_exigem_gerente: acoes
+  };
+
+  try {
+    const res = await fetch('/api/equipe/politica-acesso', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (localStorage.getItem('chef_token') || '')
+      },
+      body: JSON.stringify({ politica: payload })
+    });
+    const data = await res.json();
+    if (data && data.success) {
+      showToast('Políticas de acesso salvas com sucesso!', 'ph-shield-check', 'success');
+      adicionarAoFeed('aviso', 'Você atualizou as políticas de acesso e segurança da equipe.');
+    } else {
+      showToast('Erro ao salvar políticas: ' + (data?.erro || 'desconhecido'), 'ph-warning', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('Falha na comunicação com o servidor.', 'ph-warning', 'error');
   }
 };
 
@@ -866,6 +1083,14 @@ socket.on('funcionarios_atualizados', (funcs) => {
     _cachedFuncionariosRemoto = funcs;
     renderizarListaFuncionariosRemoto(funcs);
   }
+});
+socket.on('novo_funcionario_pendente', (data) => {
+  showToast(`🔔 Novo cadastro de ${data?.nome || 'colaborador'} aguardando sua aprovação!`, 'ph-user-plus', 'info');
+  adicionarAoFeed('aviso', `Novo cadastro: ${data?.nome || ''} (${data?.cargo || 'Equipe'}). Aprove no painel.`);
+  carregarFuncionariosControleRemoto();
+});
+socket.on('politica_acesso_atualizada', () => {
+  if (typeof carregarPoliticasAcessoDono === 'function') carregarPoliticasAcessoDono();
 });
 socket.on('alerta_desconto_financeiro', (data) => {
   carregarMetricas();

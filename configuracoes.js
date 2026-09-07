@@ -10089,6 +10089,97 @@ window.salvarMarcaSuporteUI = function() {
     }
   };
 
+  // ─── GESTÃO DE POLÍTICAS DE ACESSO DOS COLABORADORES ───
+  window.carregarPoliticasAcessoCfg = async function () {
+    try {
+      const res = await fetch('/api/equipe/politica-acesso', {
+        headers: { ...(typeof authHeaders === 'function' ? authHeaders() : {}), 'Authorization': 'Bearer ' + localStorage.getItem('chef_token') }
+      });
+      const data = await res.json();
+      if (data && data.success && data.politica) {
+        const p = data.politica;
+        const chkOp = document.getElementById('cfg-pol-exigir-op');
+        const selModo = document.getElementById('cfg-pol-modo-ident');
+        const selInat = document.getElementById('cfg-pol-inatividade');
+
+        if (chkOp) chkOp.checked = p.exigir_operador_acoes !== false;
+        if (selModo) selModo.value = p.modo_identificacao || 'pin';
+        if (selInat) selInat.value = String(p.bloqueio_inatividade_min || 0);
+
+        const acoes = p.acoes_exigem_gerente || ['desconto', 'cancelamento_item', 'cancelamento_mesa', 'sangria', 'reabertura'];
+        const chkDesc = document.getElementById('cfg-act-desconto');
+        const chkItem = document.getElementById('cfg-act-cancel-item');
+        const chkMesa = document.getElementById('cfg-act-cancel-mesa');
+        const chkSang = document.getElementById('cfg-act-sangria');
+        const chkReab = document.getElementById('cfg-act-reabertura');
+
+        if (chkDesc) chkDesc.checked = acoes.includes('desconto');
+        if (chkItem) chkItem.checked = acoes.includes('cancelamento_item');
+        if (chkMesa) chkMesa.checked = acoes.includes('cancelamento_mesa');
+        if (chkSang) chkSang.checked = acoes.includes('sangria');
+        if (chkReab) chkReab.checked = acoes.includes('reabertura');
+      }
+    } catch(e) {
+      console.warn('[Config Políticas]', e);
+    }
+  };
+
+  window.salvarPoliticasAcessoCfg = async function () {
+    const btn = document.getElementById('btn-salvar-politicas-acesso-cfg');
+    const chkOp = document.getElementById('cfg-pol-exigir-op');
+    const selModo = document.getElementById('cfg-pol-modo-ident');
+    const selInat = document.getElementById('cfg-pol-inatividade');
+
+    const acoes = [];
+    if (document.getElementById('cfg-act-desconto')?.checked) acoes.push('desconto');
+    if (document.getElementById('cfg-act-cancel-item')?.checked) acoes.push('cancelamento_item');
+    if (document.getElementById('cfg-act-cancel-mesa')?.checked) acoes.push('cancelamento_mesa');
+    if (document.getElementById('cfg-act-sangria')?.checked) acoes.push('sangria');
+    if (document.getElementById('cfg-act-reabertura')?.checked) acoes.push('reabertura');
+
+    const payload = {
+      exigir_operador_acoes: chkOp ? chkOp.checked : true,
+      modo_identificacao: selModo ? selModo.value : 'pin',
+      bloqueio_inatividade_min: selInat ? parseInt(selInat.value, 10) || 0 : 0,
+      acoes_exigem_gerente: acoes
+    };
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph-bold ph-spinner-gap" style="animation:spin 1s infinite linear;"></i> Salvando...';
+    }
+
+    try {
+      const res = await fetch('/api/equipe/politica-acesso', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem('chef_token')
+        },
+        body: JSON.stringify({ politica: payload })
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        localStorage.setItem('chef_politica_acesso', JSON.stringify(payload));
+        if (typeof showToast === 'function') {
+          showToast('Políticas de acesso da equipe salvas com sucesso!', 'success');
+        } else {
+          alert('Políticas de acesso da equipe salvas com sucesso!');
+        }
+      } else {
+        alert('Erro ao salvar políticas: ' + (data.error || 'Falha no servidor.'));
+      }
+    } catch(err) {
+      alert('Erro de conexão ao salvar políticas.');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Salvar Políticas';
+      }
+    }
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     window.renderizarConfiguracaoModulosHome();
+    window.carregarPoliticasAcessoCfg();
   });

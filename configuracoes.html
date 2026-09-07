@@ -3752,6 +3752,78 @@
           </div>
         </div>
 
+        <!-- CARD 5: POLÍTICAS DE ACESSO & SEGURANÇA DA EQUIPE -->
+        <div style="background:var(--cfg-card-bg); border:1.5px solid var(--cfg-border); border-radius:16px; padding:22px; margin-top:20px; box-shadow:0 4px 15px rgba(0,0,0,0.03);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+            <h3 style="margin:0; font-size:17px; font-weight:800; color:var(--cfg-heading); display:flex; align-items:center; gap:8px;">
+              <i class="ph-bold ph-shield-check" style="color:#fc4b15; font-size:22px;"></i> Políticas de Acesso & Segurança da Equipe
+            </h3>
+            <button id="btn-salvar-politicas-acesso-cfg" onclick="window.salvarPoliticasAcessoCfg && window.salvarPoliticasAcessoCfg()" style="padding:9px 18px; background:linear-gradient(135deg, #ff6b3d 0%, #fc4b15 100%); color:white; border:none; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 3px 10px rgba(252,75,21,0.25);">
+              <i class="ph-bold ph-floppy-disk"></i> Salvar Políticas
+            </button>
+          </div>
+          <p style="font-size:13px; color:var(--cfg-text-muted); margin-bottom:18px; line-height:1.5;">
+            Defina como os colaboradores devem se identificar no terminal e quais operações sensíveis exigem autorização do gerente.
+          </p>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
+            <!-- Regra 1: Exigência de Operador -->
+            <div style="background:var(--cfg-subtle-bg); border:1px solid var(--cfg-border); border-radius:12px; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <strong style="font-size:13.5px; color:var(--cfg-heading);">Exigir Operador Logado</strong>
+                <input type="checkbox" id="cfg-pol-exigir-op" checked style="width:18px; height:18px; cursor:pointer;">
+              </div>
+              <p style="font-size:12px; color:var(--cfg-text-muted); margin:0;">Exige colaborador identificado para adicionar pedidos, dar descontos ou fechar contas.</p>
+            </div>
+
+            <!-- Regra 2: Modo de Identificação -->
+            <div style="background:var(--cfg-subtle-bg); border:1px solid var(--cfg-border); border-radius:12px; padding:16px;">
+              <label style="display:block; font-size:13.5px; font-weight:700; color:var(--cfg-heading); margin-bottom:6px;">Modo de Identificação no PDV</label>
+              <select id="cfg-pol-modo-ident" style="width:100%; padding:9px 12px; border:1px solid var(--cfg-border); border-radius:8px; background:var(--cfg-card-bg); color:var(--cfg-text); font-size:13px;">
+                <option value="pin">PIN Numérico Rápido (4 a 6 dígitos)</option>
+                <option value="senha">Usuário e Senha Completa</option>
+              </select>
+              <p style="font-size:11.5px; color:var(--cfg-text-muted); margin-top:6px;">O PIN rápido permite troca veloz de operadores em terminais touchscreen.</p>
+            </div>
+
+            <!-- Regra 3: Bloqueio por Inatividade -->
+            <div style="background:var(--cfg-subtle-bg); border:1px solid var(--cfg-border); border-radius:12px; padding:16px;">
+              <label style="display:block; font-size:13.5px; font-weight:700; color:var(--cfg-heading); margin-bottom:6px;">Bloqueio por Inatividade</label>
+              <select id="cfg-pol-inatividade" style="width:100%; padding:9px 12px; border:1px solid var(--cfg-border); border-radius:8px; background:var(--cfg-card-bg); color:var(--cfg-text); font-size:13px;">
+                <option value="0">Desativado (Nunca bloquear)</option>
+                <option value="2">Após 2 minutos sem uso</option>
+                <option value="5">Após 5 minutos sem uso</option>
+                <option value="10">Após 10 minutos sem uso</option>
+                <option value="15">Após 15 minutos sem uso</option>
+                <option value="30">Após 30 minutos sem uso</option>
+              </select>
+              <p style="font-size:11.5px; color:var(--cfg-text-muted); margin-top:6px;">Solicita nova identificação caso o terminal fique ocioso.</p>
+            </div>
+
+            <!-- Regra 4: Ações que Exigem Supervisor -->
+            <div style="background:var(--cfg-subtle-bg); border:1px solid var(--cfg-border); border-radius:12px; padding:16px; grid-column:1 / -1;">
+              <strong style="display:block; font-size:14px; color:var(--cfg-heading); margin-bottom:10px;">Operações que Exigem Autorização de Gerente (PIN Supervisor)</strong>
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                  <input type="checkbox" id="cfg-act-desconto" value="desconto" checked> Aplicar Descontos
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                  <input type="checkbox" id="cfg-act-cancel-item" value="cancelamento_item" checked> Cancelar Itens Lançados
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                  <input type="checkbox" id="cfg-act-cancel-mesa" value="cancelamento_mesa" checked> Cancelar Mesa Inteira
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                  <input type="checkbox" id="cfg-act-sangria" value="sangria" checked> Sangria / Suprimento
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                  <input type="checkbox" id="cfg-act-reabertura" value="reabertura" checked> Reabrir Conta Fechada
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- TAB PINS TEMPORARIOS -->

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -257,6 +257,8 @@
   </head>
 <body>
   
+<body>
+  
   <div class="bg-orb orb-1"></div>
   <div class="bg-orb orb-2"></div>
 
@@ -270,6 +272,26 @@
       <h2>Criar Conta</h2>
       <p class="subtitle">Junte-se à equipe de atendimento</p>
       
+      <!-- IDENTIFICAÇÃO DO RESTAURANTE DESTINO -->
+      <div id="badge-restaurante-alvo" style="background: rgba(16,185,129,0.1); border: 1.5px solid rgba(16,185,129,0.3); border-radius: 14px; padding: 12px 14px; margin-bottom: 18px; width: 100%; display: none; align-items: center; gap: 12px; box-sizing: border-box;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16,185,129,0.2); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 20px; flex-shrink: 0;">
+          <i class="ph-bold ph-storefront"></i>
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-size: 11px; color: #10b981; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Vincular ao Restaurante</div>
+          <div id="label-restaurante-nome" style="color: #ffffff; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Identificando...</div>
+        </div>
+        <i class="ph-bold ph-seal-check" style="color: #10b981; font-size: 22px;"></i>
+      </div>
+
+      <!-- SELETOR SE ACESSADO SEM QUERY PARAM -->
+      <div class="input-group" id="group-selecao-restaurante" style="display: none;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">Qual restaurante você trabalha?</label>
+        <select id="reg-restaurante-select" class="login-input" style="padding-left: 16px; font-size: 15px; appearance: auto;">
+          <option value="">Carregando restaurantes...</option>
+        </select>
+      </div>
+
       <div class="input-group">
         <input type="text" id="reg-nome" class="login-input" placeholder="Seu Nome Completo">
         <i class="ph ph-user input-icon"></i>
@@ -281,14 +303,29 @@
       </div>
       
       <div class="input-group">
-        <input type="password" id="reg-pass" class="login-input" placeholder="Crie uma Senha">
+        <input type="password" id="reg-pass" class="login-input" placeholder="Crie uma Senha de Acesso">
         <i class="ph ph-lock-key input-icon"></i>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;">
+        <div class="input-group">
+          <select id="reg-cargo" class="login-input" style="padding: 16px 12px; font-size: 15px; appearance: auto;">
+            <option value="Garçom">Garçom</option>
+            <option value="Caixa">Caixa / PDV</option>
+            <option value="Cozinha">Cozinha / Bar</option>
+            <option value="Gerente">Gerente</option>
+            <option value="Atendente">Atendente</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <input type="password" id="reg-pin" class="login-input" placeholder="PIN (4-6 dígitos)" maxlength="6" style="padding: 16px 12px; font-size: 15px; text-align: center;">
+        </div>
       </div>
       
       <button class="btn-primary" id="btn-register">Enviar Cadastro</button>
       
       <div class="login-link">
-        Já faz parte da equipe? <a href="/painel-funcionario.html">Faça Login</a>
+        Já faz parte da equipe? <a href="/login.html">Faça Login</a>
       </div>
     </div>
 
@@ -299,17 +336,21 @@
           <i class="ph-bold ph-check"></i>
         </div>
       </div>
-      <h2>Tudo Certo!</h2>
-      <p class="subtitle" style="margin-bottom: 40px; line-height: 1.6;">
-        Seu cadastro foi enviado com sucesso.<br>
-        Aguarde o gerente aprovar o seu acesso no painel do caixa.
+      <h2>Cadastro Enviado!</h2>
+      <p class="subtitle" id="success-subtitle" style="margin-bottom: 30px; line-height: 1.6;">
+        Sua solicitação de acesso foi enviada com sucesso.<br>
+        O gerente do restaurante receberá o alerta para aprovar o seu perfil.
       </p>
-      <a href="/painel-funcionario.html" class="btn-secondary">Voltar para o Login</a>
+      <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px 18px; margin-bottom: 26px; text-align: left; width: 100%; box-sizing: border-box;">
+        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Restaurante Vinculado:</div>
+        <div id="success-rest-nome" style="font-size: 16px; font-weight: 800; color: #10b981;">--</div>
+        <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">Status Atual: <span style="color: #f59e0b; font-weight: 700;">Aguardando Aprovação</span></div>
+      </div>
+      <a href="/login.html" class="btn-secondary">Ir para a Tela de Login</a>
     </div>
   </div>
 
 <script src="/fullscreen.js"></script>
-
 <script src="tracking.js"></script>
 <script src="cadastro.js"></script>
 </body>

@@ -729,18 +729,14 @@ window.switchMobileTab = (tabId) => {
   if (!ws) return;
 
   let cleanTab = (tabId || 'mesas').replace('tab-', '');
-
-  // Abas "Mesas" e "Pedido" unificadas no mobile: 'pedido' volta para a aba
-  // unificada com a seção de mesas recolhida (mostra o painel de produtos).
-  if (cleanTab === 'pedido') {
+  if (!['mesas', 'pedido', 'acoes', 'resumo'].includes(cleanTab)) {
     cleanTab = 'mesas';
-    const isMobileView = window.matchMedia('(max-width: 767px)').matches || document.body.classList.contains('force-mobile');
-    if (isMobileView && typeof window.setMesasSectionCollapsed === 'function') {
-      window.setMesasSectionCollapsed(true);
-    }
   }
 
-  ws.classList.remove('active-tab-mesas', 'active-tab-pedido', 'active-tab-acoes', 'active-mesas', 'active-pedido', 'active-acoes');
+  ws.classList.remove(
+    'active-tab-mesas', 'active-tab-pedido', 'active-tab-acoes', 'active-tab-resumo',
+    'active-mesas', 'active-pedido', 'active-acoes', 'active-resumo'
+  );
   ws.classList.add(`active-tab-${cleanTab}`);
 
   document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
@@ -751,7 +747,37 @@ window.switchMobileTab = (tabId) => {
       btn.classList.remove('active');
     }
   });
+
+  // Ajustar rolagem ao trocar de aba no mobile
+  if (cleanTab === 'mesas') {
+    const mg = document.getElementById('orders-grid') || document.querySelector('.mesas-scroll');
+    if (mg) mg.scrollTop = 0;
+  } else if (cleanTab === 'pedido') {
+    const pt = document.getElementById('products-section-container') || document.querySelector('.products-container');
+    if (pt) pt.scrollTop = 0;
+  }
 };
+
+// Ao clicar em uma mesa no mobile, abre a aba Pedido automaticamente
+document.addEventListener('click', (e) => {
+  const tabBtn = e.target.closest('.mobile-tab-btn');
+  if (tabBtn) {
+    e.preventDefault();
+    const tab = tabBtn.getAttribute('data-tab');
+    if (tab) window.switchMobileTab(tab);
+    return;
+  }
+
+  const mesaCard = e.target.closest('.mesa-item');
+  if (mesaCard && !mesaCard.classList.contains('nova-comanda-card')) {
+    const isMobile = window.innerWidth <= 767 || document.body.classList.contains('force-mobile');
+    if (isMobile && typeof window.switchMobileTab === 'function') {
+      setTimeout(() => {
+        window.switchMobileTab('pedido');
+      }, 120);
+    }
+  }
+});
 
 setTimeout(() => {
   document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
@@ -2224,12 +2250,19 @@ function renderOrders() {
   if (btnParcial) {
     btnParcial.onclick = () => {
       if (!window.mesaAtual || window.mesaAtual.isGroup === false) return alert('Selecione uma mesa ou comanda ocupada primeiro.');
-      if (typeof window.switchMobileTab === 'function') window.switchMobileTab('pedido');
-      window.abrirCheckoutModal();
-      setTimeout(() => {
-        const inputVal = document.getElementById('checkout-modal-valor');
-        if (inputVal) inputVal.focus();
-      }, 150);
+      const exec = () => {
+        if (typeof window.switchMobileTab === 'function') window.switchMobileTab('pedido');
+        window.abrirCheckoutModal();
+        setTimeout(() => {
+          const inputVal = document.getElementById('checkout-modal-valor');
+          if (inputVal) inputVal.focus();
+        }, 150);
+      };
+      if (typeof window.exigirOperadorParaAcao === 'function') {
+        window.exigirOperadorParaAcao('receber_pagamento', exec, { descricaoAcao: 'Receber Pagamento Parcial' });
+      } else {
+        exec();
+      }
     };
   }
 
@@ -2237,7 +2270,14 @@ function renderOrders() {
   if (btnConcluir) {
     btnConcluir.onclick = () => {
       if (!window.mesaAtual || window.mesaAtual.isGroup === false) return alert('Selecione uma mesa ocupada primeiro.');
-      window.abrirCheckoutModal();
+      const exec = () => {
+        window.abrirCheckoutModal();
+      };
+      if (typeof window.exigirOperadorParaAcao === 'function') {
+        window.exigirOperadorParaAcao('receber_pagamento', exec, { descricaoAcao: 'Concluir Venda / Fechar Conta' });
+      } else {
+        exec();
+      }
     };
   }
 
@@ -5549,68 +5589,76 @@ let _wizardModoMesas = 'exemplos'; /* 'exemplos' | 'zero' */
 
   if (btnNovo && pdvOverlay) {
     btnNovo.onclick = () => {
-      window.pdvCart = [];
-      window.renderPdvCart();
+      const abrirPdv = () => {
+        window.pdvCart = [];
+        window.renderPdvCart();
 
-      const searchInput = document.getElementById('pdv-search-product');
-      if (searchInput) {
-        searchInput.value = '';
-        window.pdvSearchQuery = '';
-        window.pdvSelectedIndex = 0;
-      }
-
-      window.renderPdvMenu();
-
-      const tipoPedido = document.getElementById('pdv-tipo-pedido');
-      const clienteNomeInput = document.getElementById('pdv-cliente-nome');
-      const pdvTopFields = document.getElementById('pdv-top-fields');
-      const pdvTitleText = document.getElementById('pdv-title-text');
-
-      if (window.mesaAtual && tipoPedido) {
-        tipoPedido.value = 'Mesa';
-        tipoPedido.dispatchEvent(new Event('change'));
-        tipoPedido.disabled = true;
-        const mesaName = window.mesaAtual.nome || window.mesaAtual.mesaName;
-        let clienteName = mesaName;
-        const obsSrc = window.mesaAtual.observacao || (window.mesaAtual.originalMesa && window.mesaAtual.originalMesa.observacao) || '';
-        if (obsSrc) {
-          try {
-            const obsObj = JSON.parse(obsSrc);
-            if (obsObj.cliente) clienteName = obsObj.cliente;
-          } catch (e) { }
-        }
-        if (clienteNomeInput) {
-          clienteNomeInput.value = clienteName;
-          clienteNomeInput.disabled = true;
-        }
-
-        // HIDE READ-ONLY TOP FIELDS WHEN LAUNCHING ITEMS ON A TABLE AND UPDATE TITLE
-        if (pdvTopFields) pdvTopFields.style.display = 'none';
-        if (pdvTitleText) pdvTitleText.innerHTML = `<i class="ph ph-plus-circle" style="color:#fc4b15;"></i> Lançar Pedido — <span style="color:#fc4b15; font-weight:800;">${escHtml(mesaName)}</span>`;
-
-        if (window.mesaAtual.status !== 'Ocupada' && !mesaName.includes('Delivery') && !mesaName.includes('Balcão')) {
-          socket.emit('atualizar_status_mesa', { nome: mesaName, status: 'Ocupada' });
-        }
-      } else if (tipoPedido) {
-        tipoPedido.disabled = false;
-        if (clienteNomeInput) clienteNomeInput.disabled = false;
-        if (tipoPedido.value === 'Mesa') {
-          tipoPedido.value = 'Balcão';
-          tipoPedido.dispatchEvent(new Event('change'));
-        }
-        if (clienteNomeInput) clienteNomeInput.value = '';
-
-        if (pdvTopFields) pdvTopFields.style.display = window.innerWidth <= 768 ? 'grid' : 'flex';
-        if (pdvTitleText) pdvTitleText.innerText = 'Venda Rápida (PDV)';
-      }
-
-      pdvOverlay.style.display = 'flex';
-      setTimeout(() => {
+        const searchInput = document.getElementById('pdv-search-product');
         if (searchInput) {
-          searchInput.focus();
-          searchInput.select();
+          searchInput.value = '';
+          window.pdvSearchQuery = '';
+          window.pdvSelectedIndex = 0;
         }
-      }, 80);
+
+        window.renderPdvMenu();
+
+        const tipoPedido = document.getElementById('pdv-tipo-pedido');
+        const clienteNomeInput = document.getElementById('pdv-cliente-nome');
+        const pdvTopFields = document.getElementById('pdv-top-fields');
+        const pdvTitleText = document.getElementById('pdv-title-text');
+
+        if (window.mesaAtual && tipoPedido) {
+          tipoPedido.value = 'Mesa';
+          tipoPedido.dispatchEvent(new Event('change'));
+          tipoPedido.disabled = true;
+          const mesaName = window.mesaAtual.nome || window.mesaAtual.mesaName;
+          let clienteName = mesaName;
+          const obsSrc = window.mesaAtual.observacao || (window.mesaAtual.originalMesa && window.mesaAtual.originalMesa.observacao) || '';
+          if (obsSrc) {
+            try {
+              const obsObj = JSON.parse(obsSrc);
+              if (obsObj.cliente) clienteName = obsObj.cliente;
+            } catch (e) { }
+          }
+          if (clienteNomeInput) {
+            clienteNomeInput.value = clienteName;
+            clienteNomeInput.disabled = true;
+          }
+
+          // HIDE READ-ONLY TOP FIELDS WHEN LAUNCHING ITEMS ON A TABLE AND UPDATE TITLE
+          if (pdvTopFields) pdvTopFields.style.display = 'none';
+          if (pdvTitleText) pdvTitleText.innerHTML = `<i class="ph ph-plus-circle" style="color:#fc4b15;"></i> Lançar Pedido — <span style="color:#fc4b15; font-weight:800;">${escHtml(mesaName)}</span>`;
+
+          if (window.mesaAtual.status !== 'Ocupada' && !mesaName.includes('Delivery') && !mesaName.includes('Balcão')) {
+            socket.emit('atualizar_status_mesa', { nome: mesaName, status: 'Ocupada' });
+          }
+        } else if (tipoPedido) {
+          tipoPedido.disabled = false;
+          if (clienteNomeInput) clienteNomeInput.disabled = false;
+          if (tipoPedido.value === 'Mesa') {
+            tipoPedido.value = 'Balcão';
+            tipoPedido.dispatchEvent(new Event('change'));
+          }
+          if (clienteNomeInput) clienteNomeInput.value = '';
+
+          if (pdvTopFields) pdvTopFields.style.display = window.innerWidth <= 768 ? 'grid' : 'flex';
+          if (pdvTitleText) pdvTitleText.innerText = 'Venda Rápida (PDV)';
+        }
+
+        pdvOverlay.style.display = 'flex';
+        setTimeout(() => {
+          if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+          }
+        }, 80);
+      };
+
+      if (typeof window.exigirOperadorParaAcao === 'function') {
+        window.exigirOperadorParaAcao('lancar_itens', abrirPdv, { descricaoAcao: 'Lançar Pedidos no PDV' });
+      } else {
+        abrirPdv();
+      }
     };
   }
 
@@ -6475,14 +6523,21 @@ document.addEventListener('DOMContentLoaded', () => {
     btnDesconto.addEventListener('click', () => {
       if (!window.mesaAtual) return alert('Selecione uma mesa primeiro.');
       if (window.mesaAtual.isGroup === false) return alert('Selecione uma mesa com pedidos ativos.');
-      const modal = document.getElementById('modal-aplicar-desconto');
-      if (modal) {
-        document.getElementById('input-desconto-valor').value = '';
-        document.getElementById('select-tipo-desconto').value = 'reais';
-        document.getElementById('select-motivo-desconto').value = 'Cortesia da Casa';
-        document.getElementById('input-motivo-desconto-outro').style.display = 'none';
-        document.getElementById('lbl-tipo-desconto').innerText = 'R$';
-        modal.style.display = 'flex';
+      const abrirModalDesconto = () => {
+        const modal = document.getElementById('modal-aplicar-desconto');
+        if (modal) {
+          document.getElementById('input-desconto-valor').value = '';
+          document.getElementById('select-tipo-desconto').value = 'reais';
+          document.getElementById('select-motivo-desconto').value = 'Cortesia da Casa';
+          document.getElementById('input-motivo-desconto-outro').style.display = 'none';
+          document.getElementById('lbl-tipo-desconto').innerText = 'R$';
+          modal.style.display = 'flex';
+        }
+      };
+      if (typeof window.exigirOperadorParaAcao === 'function') {
+        window.exigirOperadorParaAcao('desconto', abrirModalDesconto, { descricaoAcao: 'Aplicar Desconto' });
+      } else {
+        abrirModalDesconto();
       }
     });
   }
@@ -8939,32 +8994,33 @@ document.addEventListener('keydown', (e) => {
       };
     }
 
-    splitterV.onDblClick = toggleMesasSection;
+    splitterV.ondblclick = toggleMesasSection;
     splitterV.addEventListener('dblclick', toggleMesasSection);
 
     let isDraggingV = false;
     let workspaceRect = null;
+    const prodContainer = document.getElementById('products-section-container');
 
-    const initDragV = () => {
+    const initDragV = (e) => {
       isDraggingV = true;
       splitterV.classList.add('dragging');
       document.body.style.cursor = 'row-resize';
       document.body.style.userSelect = 'none';
       workspaceRect = middleWorkspace.getBoundingClientRect();
+      if (prodContainer) {
+        prodContainer.style.flex = '1 1 0%';
+        prodContainer.style.minHeight = '60px';
+      }
+      if (e && e.pointerId && typeof splitterV.setPointerCapture === 'function') {
+        try { splitterV.setPointerCapture(e.pointerId); } catch(err){}
+      }
     };
-    splitterV.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      initDragV();
-    });
-    splitterV.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) initDragV();
-    }, { passive: true });
 
     const doDragV = (clientY) => {
       if (!isDraggingV || !workspaceRect) return;
       const offsetY = clientY - workspaceRect.top;
       let percent = (offsetY / workspaceRect.height) * 100;
-      if (percent < 10) percent = 10;
+      if (percent < 12) percent = 12;
       if (percent > 85) percent = 85;
 
       savedHeightPercent = percent;
@@ -8976,28 +9032,80 @@ document.addEventListener('keydown', (e) => {
         if (iconToggle) iconToggle.className = 'ph ph-caret-up';
         if (labelToggle) labelToggle.innerText = 'Recolher';
       }
-      mesasContainer.style.flex = `0 0 ${percent}%`;
+      mesasContainer.style.setProperty('flex', `0 0 ${percent}%`, 'important');
+      mesasContainer.style.setProperty('height', `${percent}%`, 'important');
     };
 
-    document.addEventListener('mousemove', (e) => doDragV(e.clientY));
-    document.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 1) doDragV(e.touches[0].clientY);
-    }, { passive: false });
-
-    const stopDragV = () => {
+    const stopDragV = (e) => {
       if (isDraggingV) {
         isDraggingV = false;
         workspaceRect = null;
         splitterV.classList.remove('dragging');
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        if (e && e.pointerId && typeof splitterV.releasePointerCapture === 'function') {
+          try { splitterV.releasePointerCapture(e.pointerId); } catch(err){}
+        }
         if (typeof window.salvarAlturaPainelMesas === 'function') {
           window.salvarAlturaPainelMesas(savedHeightPercent);
         }
       }
     };
-    document.addEventListener('mouseup', stopDragV);
-    document.addEventListener('touchend', stopDragV);
+
+    // PointerEvents com listener em window garante arraste fluido em qualquer velocidade
+    const onPointerMove = (e) => {
+      if (isDraggingV) doDragV(e.clientY);
+    };
+    const onPointerUp = (e) => {
+      stopDragV(e);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+    };
+
+    splitterV.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      initDragV(e);
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    });
+
+    // Fallbacks para mouse e toque legados
+    const onMouseMove = (e) => {
+      if (isDraggingV) doDragV(e.clientY);
+    };
+    const onMouseUp = (e) => {
+      stopDragV(e);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    splitterV.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      initDragV(e);
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    });
+
+    const onTouchMove = (e) => {
+      if (isDraggingV && e.touches.length === 1) {
+        doDragV(e.touches[0].clientY);
+      }
+    };
+    const onTouchEnd = (e) => {
+      stopDragV(e);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+
+    splitterV.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        initDragV(e);
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
+        window.addEventListener('touchend', onTouchEnd);
+      }
+    }, { passive: true });
   }
 
   if (document.readyState === 'loading') {

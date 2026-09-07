@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -439,10 +439,33 @@
       <span class="restaurant-name" id="restaurant-name"
         style="margin-left:auto; font-size:13px; color:#aaa; padding-right:8px;"></span>
 
+      <!-- SELETOR DE VERSÃO DO CAIXA: v1.1.1 (Moderno) vs v1 (Clássico Simples) -->
+      <div class="dropdown-wrapper" id="caixa-version-switcher-wrapper">
+        <span class="menu-trigger caixa-version-badge" data-dropdown="drop-caixa-version" title="Alternar versão da tela do Caixa" style="display:inline-flex; align-items:center; gap:5px; background:rgba(252,75,21,0.12); border:1px solid rgba(252,75,21,0.3); color:#fc4b15; padding:3px 8px; border-radius:6px; font-size:11.5px; font-weight:700; cursor:pointer;">
+          <i class="ph-bold ph-tag"></i> Caixa v1.1.1 <i class="ph ph-caret-down" style="font-size:10px;"></i>
+        </span>
+        <div class="dropdown-menu" id="drop-caixa-version" style="min-width: 230px;">
+          <div class="dropdown-item active" style="display:flex; justify-content:space-between; align-items:center; background:rgba(252,75,21,0.08); font-weight:700;">
+            <span><i class="ph-bold ph-check" style="color:#fc4b15;"></i> <strong>Caixa v1.1.1</strong> (Moderno)</span>
+            <span style="font-size:10px; color:#fc4b15; font-weight:700;">Ativo</span>
+          </div>
+          <div class="dropdown-item" onclick="localStorage.setItem('chef_caixa_versao', 'v1'); location.href='/caixa-classico.html'" style="display:flex; justify-content:space-between; align-items:center;">
+            <span><i class="ph ph-clock-counter-clockwise"></i> <strong>Caixa v1</strong> (Clássico)</span>
+            <span style="font-size:10px; color:#16a34a; font-weight:700;">Simples</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTÃO ALTERNAR TEMA (CLARO / ESCURO) NO CABEÇALHO -->
+      <button type="button" class="topbar-theme-btn" id="btn-theme-toggle-header" onclick="if(window.ChefTheme) window.ChefTheme.toggle()" title="Alternar Tema Claro / Escuro" style="background:var(--bg-card,#fff); border:1.5px solid var(--border-color,#cbd5e1); color:var(--text-main,#1e293b); border-radius:8px; width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; margin-left:8px; font-size:16px; transition:all 0.15s ease; flex-shrink:0;">
+        <i class="ph ph-sun" id="theme-toggle-icon-header"></i>
+      </button>
+
       <!-- Busca de Mesa / Comanda (presente em TODAS as visualizações) -->
       <div class="caixa-ux-search-box" id="caixa-ux-search-box-topbar">
-        <input type="text" id="caixa-ux-search" class="caixa-ux-search-input" placeholder="Buscar mesa ou comanda..." oninput="window.filtrarMesasBusca(this.value)">
-        <span class="caixa-ux-search-badge">F4</span>
+        <input type="text" id="caixa-ux-search" class="caixa-ux-search-input" placeholder="Buscar mesa ou comanda... [F4]" oninput="window.filtrarMesasBusca(this.value)">
+        <button type="button" id="caixa-ux-search-clear" class="caixa-ux-search-clear-btn" onclick="window.limparBuscaCaixa && window.limparBuscaCaixa()" title="Limpar busca (Esc)" style="display:none; position:absolute; right:32px; background:none; border:none; color:var(--text-secondary,#94a3b8); cursor:pointer; font-size:12px; font-weight:bold; padding:2px 4px;">✕</button>
+        <span class="caixa-ux-search-badge" onclick="document.getElementById('caixa-ux-search').focus()">F4</span>
       </div>
 
       <!-- QR CODE PONTO (DESKTOP - DROPDOWN ESTILO COMMUNITY) -->
@@ -491,7 +514,25 @@
     <!-- NAVEGAÇÃO MOBILE: por gestos (swipe), igual ao Garçom Mobile.
          Arraste p/ ESQUERDA → painel de Ações (resumo da direita do desktop).
          Arraste p/ DIREITA → volta para Mesas & Pedido. -->
-    <div id="mobile-workspace-tabs" class="mobile-tabs" style="display:none;" aria-hidden="true"></div>
+    <!-- NAVEGAÇÃO MOBILE: Abas de navegação do Salão do Caixa -->
+    <nav id="mobile-workspace-tabs" class="mobile-tabs" aria-label="Navegação do Salão">
+      <button type="button" class="mobile-tab-btn active" data-tab="tab-mesas" id="mobile-tab-mesas">
+        <i class="ph ph-squares-four"></i>
+        <span>Mesas</span>
+      </button>
+      <button type="button" class="mobile-tab-btn" data-tab="tab-pedido" id="mobile-tab-pedido">
+        <i class="ph ph-receipt"></i>
+        <span>Pedido</span>
+      </button>
+      <button type="button" class="mobile-tab-btn" data-tab="tab-acoes" id="mobile-tab-acoes">
+        <i class="ph ph-sliders"></i>
+        <span>Ações</span>
+      </button>
+      <button type="button" class="mobile-tab-btn" data-tab="tab-resumo" id="mobile-tab-resumo">
+        <i class="ph ph-calculator"></i>
+        <span>Conta</span>
+      </button>
+    </nav>
 
     <!-- BOTÃO HAMBURGER (MOBILE) -->
     <button class="mobile-hamburger-btn" id="mobile-hamburger-btn">
@@ -550,6 +591,10 @@
           <button class="mobile-menu-item mob-card-slate" id="menu-mob-config"
             onclick="window.location.href='configuracoes.html'">
             <i class="ph ph-gear"></i><span>Configurações</span>
+          </button>
+          <button class="mobile-menu-item mob-card-slate" id="menu-mob-theme-toggle"
+            onclick="if(window.ChefTheme) window.ChefTheme.toggle(); window.closeMobileMenu();">
+            <i class="ph ph-sun" id="theme-toggle-icon-mob"></i><span id="theme-toggle-text-mob">Tema Claro / Escuro</span>
           </button>
         </div>
         <div class="mobile-menu-footer">

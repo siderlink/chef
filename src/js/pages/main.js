@@ -717,17 +717,15 @@ window.switchMobileTab = (tabId) => {
 
   let cleanTab = (tabId || 'mesas').replace('tab-', '');
 
-  // Abas "Mesas" e "Pedido" unificadas no mobile: 'pedido' volta para a aba
-  // unificada com a seção de mesas recolhida (mostra o painel de produtos).
-  if (cleanTab === 'pedido') {
+  let cleanTab = (tabId || 'mesas').replace('tab-', '');
+  if (!['mesas', 'pedido', 'acoes', 'resumo'].includes(cleanTab)) {
     cleanTab = 'mesas';
-    const isMobileView = window.matchMedia('(max-width: 767px)').matches || document.body.classList.contains('force-mobile');
-    if (isMobileView && typeof window.setMesasSectionCollapsed === 'function') {
-      window.setMesasSectionCollapsed(true);
-    }
   }
 
-  ws.classList.remove('active-tab-mesas', 'active-tab-pedido', 'active-tab-acoes', 'active-mesas', 'active-pedido', 'active-acoes');
+  ws.classList.remove(
+    'active-tab-mesas', 'active-tab-pedido', 'active-tab-acoes', 'active-tab-resumo',
+    'active-mesas', 'active-pedido', 'active-acoes', 'active-resumo'
+  );
   ws.classList.add(`active-tab-${cleanTab}`);
 
   document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
@@ -738,7 +736,37 @@ window.switchMobileTab = (tabId) => {
       btn.classList.remove('active');
     }
   });
+
+  // Ajustar rolagem ao trocar de aba no mobile
+  if (cleanTab === 'mesas') {
+    const mg = document.getElementById('orders-grid') || document.querySelector('.mesas-scroll');
+    if (mg) mg.scrollTop = 0;
+  } else if (cleanTab === 'pedido') {
+    const pt = document.getElementById('products-section-container') || document.querySelector('.products-container');
+    if (pt) pt.scrollTop = 0;
+  }
 };
+
+// Ao clicar em uma mesa no mobile, abre a aba Pedido automaticamente
+document.addEventListener('click', (e) => {
+  const tabBtn = e.target.closest('.mobile-tab-btn');
+  if (tabBtn) {
+    e.preventDefault();
+    const tab = tabBtn.getAttribute('data-tab');
+    if (tab) window.switchMobileTab(tab);
+    return;
+  }
+
+  const mesaCard = e.target.closest('.mesa-item');
+  if (mesaCard && !mesaCard.classList.contains('nova-comanda-card')) {
+    const isMobile = window.innerWidth <= 767 || document.body.classList.contains('force-mobile');
+    if (isMobile && typeof window.switchMobileTab === 'function') {
+      setTimeout(() => {
+        window.switchMobileTab('pedido');
+      }, 120);
+    }
+  }
+});
 
 setTimeout(() => {
   document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
@@ -8710,28 +8738,76 @@ document.addEventListener('keydown', (e) => {
         if (iconToggle) iconToggle.className = 'ph ph-caret-up';
         if (labelToggle) labelToggle.innerText = 'Recolher';
       }
-      mesasContainer.style.flex = `0 0 ${percent}%`;
+      mesasContainer.style.setProperty('flex', `0 0 ${percent}%`, 'important');
+      mesasContainer.style.setProperty('height', `${percent}%`, 'important');
     };
 
-    document.addEventListener('mousemove', (e) => doDragV(e.clientY));
-    document.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 1) doDragV(e.touches[0].clientY);
-    }, { passive: false });
-
-    const stopDragV = () => {
+    const stopDragV = (e) => {
       if (isDraggingV) {
         isDraggingV = false;
         workspaceRect = null;
         splitterV.classList.remove('dragging');
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        if (e && e.pointerId && typeof splitterV.releasePointerCapture === 'function') {
+          try { splitterV.releasePointerCapture(e.pointerId); } catch(err){}
+        }
         if (typeof window.salvarAlturaPainelMesas === 'function') {
           window.salvarAlturaPainelMesas(savedHeightPercent);
         }
       }
     };
-    document.addEventListener('mouseup', stopDragV);
-    document.addEventListener('touchend', stopDragV);
+
+    const onPointerMove = (e) => {
+      if (isDraggingV) doDragV(e.clientY);
+    };
+    const onPointerUp = (e) => {
+      stopDragV(e);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+    };
+
+    splitterV.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      initDragV();
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    });
+
+    const onMouseMove = (e) => {
+      if (isDraggingV) doDragV(e.clientY);
+    };
+    const onMouseUp = (e) => {
+      stopDragV();
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    splitterV.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      initDragV();
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    });
+
+    const onTouchMove = (e) => {
+      if (isDraggingV && e.touches.length === 1) doDragV(e.touches[0].clientY);
+    };
+    const onTouchEnd = () => {
+      stopDragV();
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+
+    splitterV.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        initDragV();
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
+        window.addEventListener('touchend', onTouchEnd);
+      }
+    }, { passive: true });
   }
 
   if (document.readyState === 'loading') {

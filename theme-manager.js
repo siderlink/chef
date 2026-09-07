@@ -26,9 +26,16 @@
     var text = document.getElementById('theme-toggle-text');
     var iconSuper = document.getElementById('theme-toggle-icon-super');
     var textSuper = document.getElementById('theme-toggle-text-super');
+    var iconHeader = document.getElementById('theme-toggle-icon-header');
+    var iconMob = document.getElementById('theme-toggle-icon-mob');
+    var textMob = document.getElementById('theme-toggle-text-mob');
 
-    if (icon) icon.className = (validTheme === 'dark') ? 'ph ph-moon' : 'ph ph-sun';
+    var iconClass = (validTheme === 'dark') ? 'ph ph-moon' : 'ph ph-sun';
+    if (icon) icon.className = iconClass;
+    if (iconHeader) iconHeader.className = iconClass;
+    if (iconMob) iconMob.className = iconClass;
     if (text) text.textContent = (validTheme === 'dark') ? 'Modo Escuro' : 'Modo Claro';
+    if (textMob) textMob.textContent = (validTheme === 'dark') ? 'Modo Noturno (Ativo)' : 'Modo Claro (Ativo)';
 
     if (iconSuper) iconSuper.className = (validTheme === 'dark') ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
     if (textSuper) textSuper.textContent = (validTheme === 'dark') ? 'Modo Escuro' : 'Modo Claro';
@@ -42,12 +49,19 @@
       document.body.classList.add('theme-' + validTheme);
       document.body.classList.toggle('dark-mode', validTheme === 'dark');
     }
+    var dmLink = document.querySelector('link[href*="dark-mode.css"]');
     if (validTheme === 'dark') {
-      if (!document.querySelector('link[href*="dark-mode.css"]')) {
-        var dmLink = document.createElement('link');
+      if (!dmLink) {
+        dmLink = document.createElement('link');
         dmLink.rel = 'stylesheet';
         dmLink.href = '/dark-mode.css';
         document.head.appendChild(dmLink);
+      } else {
+        dmLink.disabled = false;
+      }
+    } else {
+      if (dmLink) {
+        dmLink.disabled = true;
       }
     }
     document.documentElement.classList.toggle('dark-mode', validTheme === 'dark');
@@ -275,19 +289,11 @@
     var themeVars = buildModeVars(cfg);
 
     if (themeVars.length) {
-      // Paleta escolhida pelo restaurante (Loja de Temas) é a PRÉ-DEFINIÇÃO do
-      // ambiente: vale em AMBOS os modos (claro e escuro) em todas as telas,
-      // independente do toggle de tema do operador.
-      if (cfg.storeTema) {
+      var isDarkBg = !isLightColor(cfg.bgColor || cfg.bgPage);
+      if (isDarkBg) {
         rules.push('[data-theme="dark"], body.theme-dark, body.dark-mode {\n  ' + themeVars.join('\n  ') + '\n}');
-        rules.push('[data-theme="light"], body.theme-light, :root:not([data-theme="dark"]) {\n  ' + themeVars.join('\n  ') + '\n}');
       } else {
-        var isDarkBg = !isLightColor(cfg.bgColor);
-        if (isDarkBg) {
-          rules.push('[data-theme="dark"], body.theme-dark, body.dark-mode {\n  ' + themeVars.join('\n  ') + '\n}');
-        } else {
-          rules.push('[data-theme="light"], body.theme-light, :root:not([data-theme="dark"]) {\n  ' + themeVars.join('\n  ') + '\n}');
-        }
+        rules.push('[data-theme="light"], body.theme-light, :root:not([data-theme="dark"]) {\n  ' + themeVars.join('\n  ') + '\n}');
       }
     }
 
@@ -492,6 +498,13 @@
     },
     applyCustom: applyCustomTheme,
     reloadGlobal: fetchAndApplyGlobalTheme
+  };
+
+  window.toggleTheme = function () {
+    if (window.ChefTheme && typeof window.ChefTheme.toggle === 'function') {
+      return window.ChefTheme.toggle();
+    }
+    return null;
   };
 
   window.ChefViewMode = {

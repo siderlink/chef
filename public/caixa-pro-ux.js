@@ -19,6 +19,20 @@
       return false;
     }
 
+    // ENTER dentro da busca: seleciona/abre a primeira mesa ou comanda encontrada
+    if (e.key === 'Enter' || e.keyCode === 13) {
+      const searchInput = document.getElementById('caixa-ux-search');
+      if (searchInput && document.activeElement === searchInput) {
+        e.preventDefault();
+        const firstMatch = document.querySelector('.mesa-item:not([style*="display: none"]):not(.nova-comanda-card)');
+        if (firstMatch) {
+          firstMatch.click();
+          searchInput.blur();
+        }
+        return false;
+      }
+    }
+
     // ESC dentro da busca: limpa e desfoca
     if (e.key === 'Escape' || e.keyCode === 27) {
       const searchInput = document.getElementById('caixa-ux-search');
@@ -115,7 +129,16 @@
     const setor = window._setorAtivoCaixa || 'todos';
     const cat = window._categoriaAtivaCaixa || null;
     const input = document.getElementById('caixa-ux-search');
-    const term = ((input && input.value) || '').toLowerCase().trim();
+    const rawTerm = ((input && input.value) || '').toLowerCase().trim();
+    // Normalizar termos comuns (ex: 'mesa 5', 'm 5', 'comanda 12', 'c12')
+    const term = rawTerm;
+    const numMatch = rawTerm.replace(/^(mesa|comanda|mesas|comandas|m|c)\s*/i, '').trim();
+
+    // Atualiza visibilidade do botão limpar na busca
+    const clearBtn = document.getElementById('caixa-ux-search-clear');
+    if (clearBtn) {
+      clearBtn.style.display = term ? 'flex' : 'none';
+    }
 
     document.querySelectorAll('.mesa-item').forEach(card => {
       let show = true;
@@ -127,9 +150,31 @@
         else if (cat === 'fechamento') show = st === 'solicitada' || st === 'fechamento';
         else show = true;
       }
-      if (show && term && !((card.innerText || '').toLowerCase()).includes(term)) show = false;
+      if (show && term) {
+        const isNovaComanda = card.classList.contains('nova-comanda-card');
+        if (isNovaComanda) {
+          show = term.includes('comanda') || term.includes('nova') || term.includes('criar');
+        } else {
+          const cardText = (card.innerText || '').toLowerCase();
+          const mesaVal = (card.getAttribute('data-mesa') || card.dataset.mesa || '').toLowerCase();
+          const comandaVal = (card.getAttribute('data-comanda') || card.dataset.comanda || '').toLowerCase();
+          const idEl = card.querySelector('.mesa-id');
+          const idText = (idEl ? idEl.innerText : '').toLowerCase();
+
+          const matchesTerm = cardText.includes(term) || mesaVal.includes(term) || comandaVal.includes(term) || idText.includes(term);
+          const matchesNum = numMatch && (mesaVal === numMatch || comandaVal === numMatch || idText === numMatch || mesaVal.includes(numMatch) || comandaVal.includes(numMatch));
+          show = !!(matchesTerm || matchesNum);
+        }
+      }
       card.style.setProperty('display', show ? 'flex' : 'none', 'important');
     });
+
+    // Ocultar cabeçalhos de categorias (.mesa-category) cujos itens estejam todos ocultos
+    document.querySelectorAll('.mesa-category').forEach(catEl => {
+      const visibleCards = catEl.querySelectorAll('.mesa-item:not([style*="display: none"])');
+      catEl.style.setProperty('display', visibleCards.length > 0 ? '' : 'none');
+    });
+
     document.querySelectorAll('.caixa-ux-stat-badge').forEach(b => {
       b.classList.toggle('caixa-ux-stat-active', b.dataset.cat === cat);
     });
@@ -220,6 +265,15 @@
       if (input) input.value = term;
     }
     window.aplicarFiltrosCaixa();
+  };
+
+  window.limparBuscaCaixa = function () {
+    const input = document.getElementById('caixa-ux-search');
+    if (input) {
+      input.value = '';
+      window.filtrarMesasBusca('');
+      input.focus();
+    }
   };
 
   window.filtrarMesasPorCategoria = function (cat) {
@@ -473,6 +527,51 @@
 
     if (floatRestore) floatRestore.style.display = (desktop && mode === 'hidden') ? 'flex' : 'none';
     try { localStorage.setItem('chef_sidebar_' + side + '_mode', mode); } catch(e){}
+
+    // Sincronizar com as configurações de layout do colaborador
+    try {
+      if (typeof window.obterConfigLayoutColaborador === 'function') {
+        const cfg = window.obterConfigLayoutColaborador();
+        if (side === 'left') {
+          cfg.dock_modo = (mode === 'mini' ? 'compacta' : (mode === 'hidden' ? 'oculta' : 'expandida'));
+        } else {
+          cfg.resumo_modo = (mode === 'mini' ? 'compacto' : (mode === 'hidden' ? 'oculto' : 'expandido'));
+        }
+        const op = localStorage.getItem('chef_operador_nome') || (window.crmPerfil ? window.crmPerfil.nome : null) || localStorage.getItem('crm_usuario') || 'Padrao';
+        localStorage.setItem('chef_layout_user_' + encodeURIComponent(op.replace(/\s+/g, '_')), JSON.stringify(cfg));
+      }
+    } catch(e){}
+
+    // Atualizar botões de modo (tanto nos cabeçalhos quanto em outros lugares)
+    ['expanded', 'mini', 'hidden'].forEach(m => {
+      const btnHeader = document.getElementById(`btn-sidebar-${side}-${m}`);
+      if (btnHeader) {
+        btnHeader.classList.toggle('active', m === mode);
+        if (m === mode) {
+          btnHeader.style.setProperty('background', '#fc4b15', 'important');
+          btnHeader.style.setProperty('color', '#ffffff', 'important');
+        } else {
+          btnHeader.style.background = 'transparent';
+          btnHeader.style.color = 'inherit';
+        }
+      }
+      const btn = document.getElementById(`btn-mode-${side}-${m}`);
+      if (btn) {
+        btn.classList.toggle('active', m === mode);
+        if (m === mode) {
+          btn.style.background = '#fc4b15';
+          btn.style.color = '#ffffff';
+        } else {
+          btn.style.background = side === 'left' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
+          btn.style.color = side === 'left' ? '#cbd5e1' : 'var(--text-secondary, #64748b)';
+        }
+      }
+    });
+
+    if (typeof window.syncFloatRestoreVisibility === 'function') {
+      window.syncFloatRestoreVisibility();
+    }
+
     window.dispatchEvent(new CustomEvent('chef_sidebar_mode_changed', { detail: { side: side, mode: mode } }));
   };
 
@@ -496,24 +595,10 @@
       const panelId = side === 'left' ? 'left-panel' : 'right-panel';
       const panel = document.getElementById(panelId);
       if (!panel) return;
-      panel.classList.remove('mode-expanded', 'mode-mini', 'mode-hidden');
-      panel.classList.add('mode-' + mode);
+      panel.classList.remove('mode-expanded', 'mode-mini', 'mode-hidden', 'sidebar-expanded', 'sidebar-mini', 'sidebar-hidden');
+      panel.classList.add('mode-' + mode, 'sidebar-' + mode);
       try { localStorage.setItem('chef_sidebar_' + side + '_mode', mode); } catch(e){}
     }
-
-    // Atualizar botões de modo
-    ['expanded', 'mini', 'hidden'].forEach(m => {
-      const btn = document.getElementById(`btn-mode-${side}-${m}`);
-      if (btn) {
-        if (m === mode) {
-          btn.style.background = '#fc4b15';
-          btn.style.color = '#ffffff';
-        } else {
-          btn.style.background = side === 'left' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
-          btn.style.color = side === 'left' ? '#cbd5e1' : 'var(--text-secondary, #64748b)';
-        }
-      }
-    });
   };
 
   window.toggleAutoHoverSidebar = function (side) {

@@ -1,79 +1,109 @@
-// auth.js
+// auth.js - Proteção Estrita de Rotas, Validação de Sessão e Controle de Acesso
 (function() {
-  const path = window.location.pathname.toLowerCase();
-  
+  const rawPath = window.location.pathname.toLowerCase();
+  const path = (rawPath === '/' || rawPath === '') ? '/index.html' : rawPath;
+
   // Páginas públicas que não exigem login
   const publicPages = [
-    'site.html',
-    'site',
     'login.html',
+    'cadastro.html',
     'registro.html',
     'ativacao.html',
     'cardapio.html',
     'conta-cliente.html',
     'area-cliente.html',
+    'site.html',
     'site-vendas.html',
     'totem.html',
     'fila-lite.html',
     'garcom-lite.html'
   ];
-  if (publicPages.some(p => path.includes(p))) {
+
+  const isPublic = publicPages.some(p => path.endsWith('/' + p) || path.includes('/' + p));
+  if (isPublic) {
     return;
   }
 
+  // Obter token
   const token = localStorage.getItem('chef_token');
-  let credsStr = localStorage.getItem('chef_session') || localStorage.getItem('chef_credentials') || localStorage.getItem('chef_app_creds');
-  
-  // Se tem token mas não tem creds, criar creds padrão a partir do token
-  if (token && !credsStr) {
+
+  function bloquearERedirecionar(motivo) {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const role = payload.role || 'admin';
-      const defaultCreds = { cargo: role, role: role, restaurante_id: payload.restaurante_id || 1 };
-      localStorage.setItem('chef_credentials', JSON.stringify(defaultCreds));
-      credsStr = JSON.stringify(defaultCreds);
+      document.documentElement.style.display = 'none';
     } catch(e) {}
+    localStorage.removeItem('chef_token');
+    localStorage.removeItem('chef_credentials');
+    localStorage.removeItem('chef_session');
+    if (motivo) console.warn('[Auth Guard]', motivo);
+    window.location.replace('/login.html');
   }
 
-  if (!token && !credsStr) {
-    window.location.href = '/login.html';
+  if (!token || typeof token !== 'string' || token.trim() === '' || token.split('.').length !== 3) {
+    bloquearERedirecionar('Nenhum token JWT válido encontrado na sessão.');
     return;
   }
-  
+
+  // Validação rápida de expiração local no client
   try {
-    const creds = JSON.parse(credsStr || '{}');
-    const cargo = (creds.cargo || creds.funcao || creds.role || 'admin').toLowerCase();
-    
-    // Auth logic based on role
-    const isGarcom = cargo === 'garçom' || cargo === 'garcom';
-    const isCozinha = ['cozinha', 'copa', 'bar'].includes(cargo);
-    const isAdmin = ['admin', 'administrador', 'gerente', 'caixa'].includes(cargo);
-    const isStrictAdmin = ['admin', 'administrador', 'gerente'].includes(cargo);
-    
-    // If accessing config or dashboard, needs strict admin
-    if ((path.includes('configuracoes.html') || path.includes('dashboard.html') || path.includes('totem-config.html')) && !isStrictAdmin) {
-      if (isGarcom) window.location.href = '/garcom.html';
-      else if (isCozinha) window.location.href = '/fila-pedidos.html';
-      else window.location.href = '/index.html';
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && (payload.exp * 1000) < Date.now()) {
+      bloquearERedirecionar('Sessão expirada localmente.');
       return;
     }
-    
-    // If accessing index.html (Caixa), needs Admin or Caixa
-    if (path.includes('index.html') && !isAdmin) {
-      if (isGarcom) window.location.href = '/garcom.html';
-      else if (isCozinha) window.location.href = '/fila-pedidos.html';
-      else window.location.href = '/login.html';
-      return;
+  } catch(e) {
+    bloquearERedirecionar('Formato de token corrompido.');
+    return;
+  }
+
+  // Validação assíncrona em segundo plano com o servidor backend
+  fetch('/api/auth/me', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(res => {
+    if (res.status === 401 || res.status === 403) {
+      bloquearERedirecionar('Sessão rejeitada pelo servidor (' + res.status + ').');
+      return null;
     }
-    
-    // If garçom tries to access fila-pedidos
-    if (path.includes('fila-pedidos.html') && isGarcom) {
-      window.location.href = '/garcom.html';
-      return;
+    return res.json();
+  })
+  .then(data => {
+    if (data && data.success) {
+      if (data.restaurante && data.restaurante.id) {
+        localStorage.setItem('restaurante_id', String(data.restaurante.id));
+        localStorage.setItem('restaurante_nome', data.restaurante.nome || '');
+      }
+      if (data.politica_acesso) {
+        localStorage.setItem('chef_politica_acesso', JSON.stringify(data.politica_acesso));
+      }
+      window.chefSessaoValidada = data;
     }
-    
-  } catch (e) {
-    window.location.href = '/login.html';
+  })
+  .catch(err => {
+    console.warn('[Auth Server Check Offline/Retry]', err);
+  });
+
+  // Controle de acesso por perfil / cargo
+  let credsStr = localStorage.getItem('chef_session') || localStorage.getItem('chef_credentials');
+  if (credsStr) {
+    try {
+      const creds = JSON.parse(credsStr);
+      const cargo = (creds.cargo || creds.funcao || creds.role || '').toLowerCase();
+      const isGarcom = cargo === 'garçom' || cargo === 'garcom' || cargo === 'atendente';
+      const isCozinha = ['cozinha', 'copa', 'bar', 'kds'].includes(cargo);
+      const isStrictAdmin = ['admin', 'administrador', 'gerente', 'dono', 'proprietário'].includes(cargo);
+
+      if ((path.includes('configuracoes.html') || path.includes('dashboard.html') || path.includes('painel-dono.html')) && !isStrictAdmin) {
+        if (isGarcom) window.location.replace('/garcom.html');
+        else if (isCozinha) window.location.replace('/fila-pedidos.html');
+        else window.location.replace('/index.html');
+        return;
+      }
+
+      if (path.includes('fila-pedidos.html') && isGarcom) {
+        window.location.replace('/garcom.html');
+        return;
+      }
+    } catch(e) {}
   }
 })();
 
@@ -84,7 +114,6 @@ if (typeof socket !== 'undefined' && socket.emit) {
   socket.emit('registrar_acesso_pagina', { pagina: currentPath, titulo: pageTitle, autorizado: true });
 }
 
-
 // Ouvinte global para forçar logout de todos os funcionários quando o restaurante é deslogado
 if (typeof window !== 'undefined') {
   window.addEventListener('DOMContentLoaded', () => {
@@ -92,12 +121,12 @@ if (typeof window !== 'undefined') {
       const s = window.socket || (typeof io === 'function' ? io() : null);
       if (s && s.on) {
         s.on('forcar_logout_global', function(data) {
-          const myRestId = localStorage.getItem('restaurante_id') || (localStorage.getItem('chef_credentials') ? JSON.parse(localStorage.getItem('chef_credentials')).restaurante_id : null);
+          const myRestId = localStorage.getItem('restaurante_id');
           if (!data || !data.restaurante_id || String(data.restaurante_id) === String(myRestId)) {
             localStorage.clear();
             sessionStorage.clear();
             alert(data?.motivo || 'A sessão do restaurante foi encerrada pelo administrador. Faça login novamente.');
-            window.location.href = '/login.html';
+            window.location.replace('/login.html');
           }
         });
 
@@ -110,7 +139,7 @@ if (typeof window !== 'undefined') {
             localStorage.clear();
             sessionStorage.clear();
             alert(data?.motivo || 'Esta conta foi conectada em outro dispositivo. Esta sessão foi finalizada.');
-            window.location.href = '/login.html';
+            window.location.replace('/login.html');
           }
         });
       }
