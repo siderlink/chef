@@ -1,5 +1,5 @@
 module.exports = function(socket, io, db, helpers) {
-  const { checkCaixa, activePaymentLocks, broadcastPedidos, mesasFechando, licenseManager, verificarSenhaAdmin, verificarSenhaFuncionario, getLocalTimestamp } = helpers;
+  const { checkCaixa, activePaymentLocks = new Set(), broadcastPedidos, broadcastMesaClientes = () => {}, mesasFechando, licenseManager, verificarSenhaAdmin, verificarSenhaFuncionario, getLocalTimestamp } = helpers;
 
   function fidelidadeNivel(totalGasto, cfg) {
     const prata = parseFloat(cfg.fidelidade_nivel_prata) || 500;
@@ -203,7 +203,7 @@ module.exports = function(socket, io, db, helpers) {
             `UPDATE turnos_caixa SET status = 'Fechado', data_fechamento = datetime('now', 'localtime') WHERE status = 'Aberto'`,
             function (err) {
               if (!err) {
-                global.registrarAuditoria(op, 'FECHAMENTO_CAIXA', 'Caixa fechado (Fechamento Normal)', 'Rotina de Encerramento', 'ALTO');
+                if (typeof global.registrarAuditoria === 'function') { try { global.registrarAuditoria(op, 'FECHAMENTO_CAIXA', 'Caixa fechado (Fechamento Normal)', 'Rotina de Encerramento', 'ALTO'); } catch(eAudit){} }
                 
                 if (autoClosePonto) {
                   db.all(
@@ -365,7 +365,15 @@ module.exports = function(socket, io, db, helpers) {
     });
   });
 
-  socket.on('pagamento_parcial_valor', ({ mesaName, valor, metodo, userName, comTaxa, comandaName, itemIds }) => {
+    function getTaxaServico(callback) {
+    db.get(`SELECT valor FROM configuracoes_global WHERE chave = 'taxa_servico'`, [], (err, row) => {
+      if (err || !row) return callback(10);
+      const taxa = parseFloat(row.valor);
+      callback(isNaN(taxa) ? 10 : taxa);
+    });
+  }
+
+socket.on('pagamento_parcial_valor', ({ mesaName, valor, metodo, userName, comTaxa, comandaName, itemIds, desconto }) => {
     checkCaixa(turno => {
       if (!turno) {
         socket.emit('erro_caixa', 'O caixa está fechado! Abra o caixa antes de receber pagamentos.');
@@ -383,25 +391,71 @@ module.exports = function(socket, io, db, helpers) {
       db.all(`SELECT * FROM pedidos WHERE (localName = ? OR mesa_grupo = ?) AND status != 'Finalizado'`, [mesaName, mesaName], (err, rows) => {
         if (err || !rows) rows = [];
 
-        let consumoBruto = 0;
-        let jaPago = 0;
+        // Espelha EXATAMENTE a fórmula do frontend (calcRestante):
+        // pendente = itens ainda não marcados 'Pago'; abatem apenas os
+        // pagamentos parciais gerais (negativas SEM 'Comanda' no nome —
+        // as de comanda já correspondem aos itens que foram marcados Pago).
+        let pendenteBruto = 0;
+        let consumoBrutoTotal = 0;
+        let jaPagoSemComanda = 0;
+        const idsAbertosMesa = new Set();
         rows.forEach(r => {
           const v = parseFloat(String(r.total).replace(',', '.')) || 0;
+          const nomePg = String(r.productName || '');
           if (v >= 0) {
-            consumoBruto += v;
-          } else if (r.productName && (String(r.productName).indexOf('Pgto Parcial') !== -1 || String(r.productName).indexOf('Pagamento') !== -1)) {
-            jaPago += Math.abs(v);
+            consumoBrutoTotal += v;
+            if (r.status !== 'Pago') {
+              pendenteBruto += v;
+              idsAbertosMesa.add(r.id);
+            }
+          } else if (nomePg.indexOf('Pgto Parcial') !== -1 || nomePg.indexOf('Pagamento') !== -1) {
+            if (nomePg.indexOf('Comanda') === -1) jaPagoSemComanda += Math.abs(v);
           }
         });
 
-        const aplicarTaxa = comTaxa !== false;
-        const totalComTaxa = aplicarTaxa ? (consumoBruto * 1.10) : consumoBruto;
-        const saldoRestante = Math.max(0, totalComTaxa - jaPago);
+        getTaxaServico(taxaPct => {
+          // Taxa decidida pelo caixa (mesas.taxa_manual em R$) tem prioridade.
+          // Proporcional ao pendente para somar exatamente o valor definido no fim.
+          db.get(`SELECT taxa_manual FROM mesas WHERE nome = ?`, [mesaName], (eTx, mTx) => {
+            const taxaManual = (!eTx && mTx && mTx.taxa_manual != null) ? Math.max(0, parseFloat(mTx.taxa_manual) || 0) : null;
+            const aplicarTaxa = comTaxa !== false;
+            let taxaValor;
+            if (!aplicarTaxa) taxaValor = 0;
+            else if (taxaManual != null) taxaValor = consumoBrutoTotal > 0 ? taxaManual * (pendenteBruto / consumoBrutoTotal) : 0;
+            else taxaValor = pendenteBruto * (taxaPct / 100);
+            const brutoComTaxa = pendenteBruto + taxaValor;
+            const descontoAplicado = Math.max(0, Math.min(parseFloat(desconto) || 0, brutoComTaxa));
+            const saldoRestante = Math.max(0, brutoComTaxa - descontoAplicado - jaPagoSemComanda);
 
         if (saldoRestante <= 0.01) {
           activePaymentLocks.delete(lockKey);
           socket.emit('erro_pagamento', 'A conta desta mesa já está totalmente paga!');
           return;
+        }
+
+        // Segurança: só aceita itens que pertencem a esta mesa e estão abertos
+        let validIds = null;
+        if (Array.isArray(itemIds) && itemIds.length > 0) {
+          validIds = itemIds.filter(id => idsAbertosMesa.has(id));
+        }
+
+        if (validIds && validIds.length > 0) {
+          // Segurança do caixa: o recebido não pode ser MENOR que a soma dos
+          // itens selecionados (evita quitar itens cobrando menos).
+          let esperadoBruto = 0;
+          validIds.forEach(id => {
+            const r = rows.find(x => x.id === id);
+            if (r) esperadoBruto += parseFloat(String(r.total).replace(',', '.')) || 0;
+          });
+          const esperado = consumoBrutoTotal > 0 && aplicarTaxa
+            ? esperadoBruto + (esperadoBruto / consumoBrutoTotal) * taxaValor
+            : esperadoBruto;
+          if (metodo !== 'Dinheiro' && valor < esperado - 0.06) {
+            activePaymentLocks.delete(lockKey);
+            socket.emit('erro_pagamento',
+              `Valor recebido (R$ ${Number(valor).toFixed(2).replace('.', ',')}) é menor que o total dos itens selecionados (R$ ${esperado.toFixed(2).replace('.', ',')}). Pagamento bloqueado.`);
+            return;
+          }
         }
 
         if (metodo !== 'Dinheiro' && valor > saldoRestante + 0.05) {
@@ -434,10 +488,19 @@ module.exports = function(socket, io, db, helpers) {
               `INSERT INTO movimentacoes (turno_id, tipo, valor, forma_pagamento, descricao, data) VALUES (?, 'Entrada', ?, ?, ?, datetime('now', 'localtime'))`,
               [turno.id, valorRegistrado, metodo, `Pgto Parcial: ${mesaName}`]
             );
+
+            // Registrar o desconto apenas no pagamento que quita a conta (evita duplicar)
+            const saldoAposPagamento = Math.max(0, saldoRestante - valorRegistrado);
+            if (descontoAplicado > 0 && saldoAposPagamento <= 0.01) {
+              db.run(
+                `INSERT INTO movimentacoes (turno_id, tipo, valor, forma_pagamento, descricao, data) VALUES (?, 'Desconto', ?, ?, ?, datetime('now', 'localtime'))`,
+                [turno.id, descontoAplicado, metodo, `Desconto: ${mesaName}`]
+              );
+            }
             
-            if (Array.isArray(itemIds) && itemIds.length > 0) {
-              const placeholders = itemIds.map(() => '?').join(',');
-              db.run(`UPDATE pedidos SET status = 'Pago', turno_id = ? WHERE id IN (${placeholders})`, [turno.id, ...itemIds], () => {
+            if (validIds && validIds.length > 0) {
+              const placeholders = validIds.map(() => '?').join(',');
+              db.run(`UPDATE pedidos SET status = 'Pago', turno_id = ? WHERE id IN (${placeholders})`, [turno.id, ...validIds], () => {
                 broadcastPedidos();
               });
             } else if (comandaName && String(comandaName).trim()) {
@@ -458,18 +521,88 @@ module.exports = function(socket, io, db, helpers) {
             db.all(`SELECT * FROM pedidos WHERE (localName = ? OR mesa_grupo = ?) AND status != 'Finalizado'`, [mesaName, mesaName], (e, r) => {
                io.emit('itens_mesa_recebidos', { mesaName, items: r || [] });
             });
-            // Notificação em tempo real (caixa ↔ garçom): quem recebe o pagamento e quem
-            // está com o modal aberto na mesa atualiza na hora.
-            io.emit('pagamento_parcial_registrado', {
-              mesaName, valor: valorRegistrado, metodo, userName: userName || 'Caixa',
-              comandaName: comandaName || null, originSocket: socket.id
-            });
             setTimeout(() => io.emit('atualizacao_caixa'), 300);
           }
         );
+          }); // close db.get taxa_manual
+        }); // close getTaxaServico
       });
     });
   });
+
+  // ── TAXA DE SERVIÇO MANUAL POR MESA (R$ exatos definidos pelo caixa) ──
+  
+
+  socket.on('definir_taxa_mesa', ({ mesaName, valor }) => {
+    if (!mesaName) return;
+    const v = (valor === null || valor === undefined || valor === '') ? null : Math.max(0, parseFloat(valor) || 0);
+    db.run(`UPDATE mesas SET taxa_manual = ? WHERE nome = ?`, [v, mesaName], (err) => {
+      if (err) return socket.emit('erro_servidor', 'Falha ao ajustar a taxa da mesa.');
+      socket.emit('taxa_mesa_definida', { mesaName, valor: v });
+      db.all(`SELECT * FROM mesas`, (e, r) => io.emit('mesas_atualizadas', r || []));
+    });
+  });
+
+  socket.on('get_taxa_mesa', ({ mesaName }) => {
+    if (!mesaName) return socket.emit('taxa_mesa_valor', { mesaName, valor: null });
+    db.get(`SELECT taxa_manual FROM mesas WHERE nome = ?`, [mesaName], (err, row) => {
+      socket.emit('taxa_mesa_valor', {
+        mesaName,
+        valor: (!err && row && row.taxa_manual != null) ? parseFloat(row.taxa_manual) : null
+      });
+    });
+  });
+
+  socket.on('marcar_fracionado', ({ mesaName, itemIds }) => {
+    if (!Array.isArray(itemIds) || itemIds.length === 0) return;
+    checkCaixa(turno => {
+      const turnoId = turno ? turno.id : null;
+      db.all(`SELECT id FROM pedidos WHERE (localName = ? OR mesa_grupo = ?) AND status NOT IN ('Finalizado','Cancelado','Pago','Fracionado')`, [mesaName, mesaName], (err, rows) => {
+        if (err) return;
+        const ids = (rows || []).map(r => r.id).filter(id => itemIds.includes(id));
+        if (ids.length === 0) return;
+        const placeholders = ids.map(() => '?').join(',');
+        db.run(`UPDATE pedidos SET status = 'Fracionado', turno_id = COALESCE(turno_id, ?) WHERE id IN (${placeholders})`, [turnoId, ...ids], () => {
+          broadcastPedidos();
+          db.all(`SELECT * FROM pedidos WHERE (localName = ? OR mesa_grupo = ?) AND status != 'Finalizado'`, [mesaName, mesaName], (e, r) => {
+            io.emit('itens_mesa_recebidos', { mesaName, items: r || [] });
+          });
+        });
+      });
+    });
+  });
+
+  socket.on('nova_comanda_crm', ({ nome, telefone }) => {
+    let finalName = (nome || '').trim();
+    if (!finalName) return;
+    if (!finalName.toLowerCase().includes('comanda')) {
+      finalName = `Comanda - ${finalName}`;
+    }
+    const cliNome = (nome || '').trim();
+    db.get(`SELECT * FROM mesas WHERE nome = ?`, [finalName], (err, row) => {
+      if (!row) {
+        db.run(`INSERT INTO mesas (nome, status, observacao) VALUES (?, 'Disponível', ?)`, [finalName, telefone || ''], (err) => {
+          if (!err) {
+            if (cliNome) {
+              db.run(
+                `INSERT INTO mesa_clientes (mesa, cliente_id, cliente_nome, cliente_telefone, updated_at)
+                 VALUES (?, NULL, ?, ?, datetime('now','localtime'))`,
+                [finalName, cliNome, telefone || '']);
+            }
+            db.all(`SELECT * FROM mesas`, (err, rows) => {
+              io.emit('mesas_atualizadas', rows || []);
+              if (cliNome) broadcastMesaClientes();
+              socket.emit('comanda_criada_sucesso', { nomeMesa: finalName });
+            });
+          }
+        });
+      } else {
+        socket.emit('comanda_criada_sucesso', { nomeMesa: finalName });
+      }
+    });
+  });
+
+  
 
   socket.on('marcar_fracionado', ({ mesaName, itemIds }) => {
     if (!Array.isArray(itemIds) || itemIds.length === 0) return;
@@ -512,15 +645,24 @@ module.exports = function(socket, io, db, helpers) {
     });
   });
 
-  socket.on('finalizar_mesa', ({ mesaName, payments, totalValue, emitirNfce, cpfCnpj, clienteNome, customNfceConfig }) => {
+  socket.on('finalizar_mesa', ({ mesaName, payments, totalValue, emitirNfce, cpfCnpj, clienteNome, customNfceConfig, desconto, cliente_id }) => {
+    const closingLockKey = `__closing__${mesaName}`;
+    if (activePaymentLocks.has(closingLockKey)) {
+      socket.emit('erro_caixa', 'Esta mesa está sendo fechada por outro operador. Aguarde.');
+      return;
+    }
+    activePaymentLocks.add(closingLockKey);
+
     checkCaixa(turno => {
       if (!turno) {
+        activePaymentLocks.delete(closingLockKey);
         socket.emit('erro_caixa', 'O caixa está fechado! Abra o caixa antes de finalizar vendas.');
         return;
       }
       
       db.all(`SELECT * FROM pedidos WHERE (localName = ? OR mesa_grupo = ? OR mesa_comanda = ?) AND status != 'Finalizado'`, [mesaName, mesaName, mesaName], (errItems, itemsMesa) => {
         if (errItems) {
+          activePaymentLocks.delete(closingLockKey);
           socket.emit('erro_caixa', 'Erro ao acessar o banco de dados.');
           return;
         }
@@ -537,11 +679,20 @@ module.exports = function(socket, io, db, helpers) {
           }
         });
 
-        const taxaMult = consumoBrutoTotal > 0 ? (totalValue / consumoBrutoTotal) : 1.0;
-        const pendenteComTaxa = Math.max(0, consumoBrutoTotal * taxaMult - pagoParcialTotal);
+        getTaxaServico(taxaPct => {
+          // Taxa manual (R$) definida pelo caixa tem prioridade sobre o % padrão
+          db.get(`SELECT taxa_manual FROM mesas WHERE nome = ?`, [mesaName], (eTx, mTx) => {
+            const taxaManual = (!eTx && mTx && mTx.taxa_manual != null) ? Math.max(0, parseFloat(mTx.taxa_manual) || 0) : null;
+            const taxaTotal = taxaManual != null ? taxaManual : consumoBrutoTotal * (taxaPct / 100);
+            // Desconto concedido no checkout abate da obrigação final (o frontend
+            // já cobrou os parciais com esse desconto embutido — sem isso o
+            // fechamento trava ou grava valores inconsistentes).
+            const descontoFinal = Math.max(0, Math.min(parseFloat(desconto) || 0, consumoBrutoTotal + taxaTotal));
+            const pendenteComTaxa = Math.max(0, consumoBrutoTotal + taxaTotal - pagoParcialTotal - descontoFinal);
 
         const pago = (payments || []).reduce((acc, curr) => acc + (curr.valor || 0), 0);
         if (pago < pendenteComTaxa - 0.05 && pendenteComTaxa > 0) {
+          activePaymentLocks.delete(closingLockKey);
           socket.emit('erro_caixa', 'Pagamento incompleto! A mesa não pode ser fechada sem o pagamento total.');
           return;
         }
@@ -552,6 +703,7 @@ module.exports = function(socket, io, db, helpers) {
           ['Finalizado', primaryMethod, turno.id, mesaName, mesaName],
           function (err) {
             if (err) console.error(err);
+            activePaymentLocks.delete(closingLockKey);
             
             setTimeout(() => io.emit('atualizacao_caixa'), 300);
 
@@ -560,17 +712,36 @@ module.exports = function(socket, io, db, helpers) {
               mesasFechando.delete(mesaName);
               io.emit('sync_mesas_fechando', Array.from(mesasFechando));
               db.all(`SELECT * FROM mesas`, (e, r) => io.emit('mesas_atualizadas', r || []));
+              if (mesaName && mesaName.includes(' + ')) {
+                const nomes = mesaName.split(/\s*\+\s*/).map(s => s.trim()).filter(Boolean);
+                if (nomes.length > 0) {
+                  const ph = nomes.map(() => '?').join(',');
+                  db.run(`DELETE FROM mesa_clientes WHERE mesa IN (${ph})`, nomes, () => broadcastMesaClientes());
+                }
+              } else if (mesaName) {
+                db.run(`DELETE FROM mesa_clientes WHERE mesa = ?`, [mesaName], () => broadcastMesaClientes());
+              }
             };
             if (mesaName && mesaName.includes(' + ')) {
               const nomes = mesaName.split(/\s*\+\s*/).map(s => s.trim()).filter(Boolean);
               if (nomes.length > 0) {
                 const placeholders = nomes.map(() => '?').join(',');
-                db.run(`UPDATE mesas SET status = 'Disponível', observacao = '' WHERE nome IN (${placeholders})`, nomes, liberarMesas);
+                db.run(`UPDATE mesas SET status = 'Disponível', observacao = '', taxa_manual = NULL WHERE nome IN (${placeholders})`, nomes, liberarMesas);
               } else {
                 liberarMesas();
               }
             } else {
-              db.run(`UPDATE mesas SET status = 'Disponível', observacao = '' WHERE nome = ?`, [mesaName], liberarMesas);
+              db.run(`UPDATE mesas SET status = 'Disponível', observacao = '', taxa_manual = NULL WHERE nome = ?`, [mesaName], liberarMesas);
+            }
+
+            // Cliente identificado no fechamento (busca por CPF) vira titular dos pontos
+            const clienteIdFechamento = parseInt(cliente_id, 10);
+            if (Number.isFinite(clienteIdFechamento) && clienteIdFechamento > 0) {
+              db.run(
+                `UPDATE pedidos SET cliente_id = ? WHERE (localName = ? OR mesa_grupo = ?) AND turno_id = ? AND (cliente_id IS NULL OR cliente_id != ?)`,
+                [clienteIdFechamento, mesaName, mesaName, turno.id, clienteIdFechamento],
+                () => { }
+              );
             }
 
             // Lógica de Fidelidade (cashback em pontos + níveis)
@@ -590,6 +761,7 @@ module.exports = function(socket, io, db, helpers) {
                         if (bonus > 0) pontosGanhos += Math.floor(pontosGanhos * bonus / 100);
                         if (pontosGanhos > 0 || cliente.nivel !== nivel) {
                            db.run(`UPDATE clientes SET pontos = pontos + ?, total_gasto = ?, nivel = ? WHERE id = ?`, [pontosGanhos, totalGastoNovo, nivel, row.cliente_id], () => {
+                              db.run(`UPDATE cliente_visitas SET contabilizado = 1, pontos_ganhos = ? WHERE id = (SELECT id FROM cliente_visitas WHERE cliente_id = ? AND contabilizado = 0 LIMIT 1)`, [pontosGanhos, row.cliente_id], () => {});
                               db.all(`SELECT * FROM clientes`, (e, r) => io.emit('clientes_atualizados', r || []));
                            });
                         }
@@ -669,11 +841,15 @@ module.exports = function(socket, io, db, helpers) {
             }
           }
         );
+          }); // close db.get taxa_manual
+        }); // close getTaxaServico
       });
     });
   });
 
 
+
+  
 
   socket.on('finalizar_parcial_mesa', ({ mesaName, pedidoIds, payments }) => {
     if (licenseManager.isRestricted()) {
@@ -713,7 +889,7 @@ module.exports = function(socket, io, db, helpers) {
             [mesaName, mesaName], (err, row) => {
               if (row && row.pendentes === 0) {
                 db.run(`UPDATE pedidos SET status = 'Finalizado' WHERE (localName = ? OR mesa_grupo = ?) AND status != 'Finalizado'`, [mesaName, mesaName], () => {
-                  db.run(`UPDATE mesas SET status = 'Disponível', observacao = '' WHERE nome = ?`, [mesaName], () => {
+                  db.run(`UPDATE mesas SET status = 'Disponível', observacao = '', taxa_manual = NULL WHERE nome = ?`, [mesaName], () => {
                     mesasFechando.delete(mesaName);
                     io.emit('sync_mesas_fechando', Array.from(mesasFechando));
                     db.all(`SELECT * FROM mesas`, (e, r) => io.emit('mesas_atualizadas', r || []));
@@ -891,8 +1067,8 @@ module.exports = function(socket, io, db, helpers) {
             io.emit('itens_mesa_recebidos', { mesaName, items: r || [] });
           });
 
-          global.registrarAuditoria(operador, 'PAGAMENTO_COMANDA_COMPARTILHADOS',
-            `${comanda || mesaName}: comanda R$ ${vComanda.toFixed(2)} + compartilhados R$ ${vComp.toFixed(2)} (${metodoStr})`, 'Financeiro', 'MEDIO');
+          if (typeof global.registrarAuditoria === 'function') try { global.registrarAuditoria(operador, 'PAGAMENTO_COMANDA_COMPARTILHADOS',
+            `${comanda || mesaName}: comanda R$ ${vComanda.toFixed(2)} + compartilhados R$ ${vComp.toFixed(2)} (${metodoStr})`, 'Financeiro', 'MEDIO'); } catch(eAudit){}
 
           fimDaMesa((pendentes) => {
             if (pendentes === 0) {

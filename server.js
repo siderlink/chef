@@ -12683,6 +12683,14 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       ifoodDeps: null
     });
     console.log('👑 Controller do Super Admin carregado com sucesso no servidor principal.');
+
+    // Módulo extra restaurado: Demo, Modalidades, Reporte Suporte, Rescue
+    try {
+      require('./controllers/sistema-extra')(app, masterDb, sqlite3, { verificarToken, getTenantDb, io, JWT_SECRET, bcrypt });
+      console.log('⚙️ Controller Sistema Extra carregado com sucesso.');
+    } catch (eExtra) {
+      console.error('Erro ao carregar o Controller Sistema Extra:', eExtra);
+    }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);
   }

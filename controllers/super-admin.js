@@ -21,6 +21,14 @@ module.exports = function (app, masterDb, sqlite3, options) {
   const ifoodApi = options.ifoodApi;
   const ifoodDeps = options.ifoodDeps;
 
+  // Módulos restaurados de Infraestrutura e Suporte/Vendas
+  try {
+    require('./super-admin-infra')(app, masterDb, sqlite3, options);
+    require('./suporte-vendas')(app, masterDb, sqlite3, options);
+  } catch (errMod) {
+    console.error('[Super Admin Sub-controllers Error]', errMod);
+  }
+
   // Inicializa Controle de Carga
   const loadControl = createLoadControl({ masterDb });
   try {

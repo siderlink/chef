@@ -460,6 +460,32 @@ body.kds-body, .kds-body {
   border-color: #fc4b15;
 }
 
+.fila-settings-row {
+  display: flex !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+.fila-settings-input-row {
+  justify-content: flex-start;
+}
+
+.fila-settings-input {
+  width: 70px !important;
+  padding: 8px 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border-color, #cbd5e1) !important;
+  background: var(--bg-card, #f8fafc) !important;
+  color: var(--text-main, #334155) !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+}
+
+.fila-settings-btn.flex-1,
+.flex-1 {
+  flex: 1 1 0% !important;
+}
+
 @keyframes fadeInModal {
   from { opacity: 0; }
   to { opacity: 1; }

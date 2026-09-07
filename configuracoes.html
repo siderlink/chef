@@ -2553,6 +2553,10 @@
           <i class="ph ph-devices"></i> Dispositivos & Terminais
         </button>
         
+        <button class="admin-tab-btn" data-tab="modulos" style="color: #8b5cf6; font-weight: 800;">
+          <i class="ph ph-puzzle-piece"></i> Módulos & Extensões
+        </button>
+        
         <button class="admin-tab-btn" data-tab="auditoria" style="color:#e11d48;">
           <i class="ph ph-shield-warning"></i> Auditoria &amp; Anti-Fraude
         </button>
@@ -5619,7 +5623,107 @@
         </div>
       </div>
 
-<div id="admin-tab-auditoria" class="admin-tab-content" style="display:none; flex-direction:column; gap:16px;">
+      <!-- ════ ABA CENTRAL DE MÓDULOS, CRIAÇÃO & SUPORTE PLUG-AND-PLAY ════ -->
+<div class="admin-tab-content" id="admin-tab-modulos" style="display:none; flex-direction:column; gap:20px; overflow-y:auto; padding:16px;">
+        
+        <!-- Header com Estatísticas -->
+        <div style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-radius: 20px; padding: 24px; color: white; box-shadow: 0 10px 30px rgba(139, 92, 246, 0.25); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+              <span style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800;">Ecossistema v1.1</span>
+              <span style="font-size: 13px; opacity: 0.9;">100% Plug-and-Play</span>
+            </div>
+            <h2 style="margin: 0; font-size: 24px; font-weight: 900;">Central de Módulos & Extensões</h2>
+            <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 14px; max-width: 540px;">
+              Crie novos módulos em 1 clique, ative ou desative extensões e personalize o Caixa v1.1 e o PDV sem risco de quebrar o sistema.
+            </p>
+          </div>
+          <button onclick="window.carregarListaModulosUI()" style="padding: 12px 20px; border-radius: 12px; background: rgba(255,255,255,0.2); border: 1.5px solid rgba(255,255,255,0.4); color: white; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px);">
+            <i class="ph-bold ph-arrows-clockwise"></i> Atualizar Lista
+          </button>
+        </div>
+
+        <!-- SEÇÃO 1: CRIADOR VISUAL DE MÓDULOS -->
+        <div style="background:var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 18px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 16px; border-bottom: 1px dashed var(--cfg-border); padding-bottom: 12px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:40px; height:40px; border-radius:10px; background:#f3e8ff; color:#8b5cf6; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="ph-bold ph-magic-wand"></i>
+              </div>
+              <div>
+                <h3 style="margin:0; font-size:16.5px; color:var(--cfg-text); font-weight:800;">Criador de Novo Módulo (1 Clique)</h3>
+                <span style="font-size:12px; color:var(--cfg-text-muted);">Gera toda a estrutura na pasta plugins/ com backend, frontend e widget do Caixa v1.1</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom: 16px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">ID do Módulo (sem espaços)</label>
+              <input type="text" id="novo-mod-id" placeholder="ex: controle-estoque" class="form-input" style="padding:10px; border-radius:8px; border:1px solid var(--cfg-border); background:var(--cfg-card-bg); color:var(--cfg-text);">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">Nome Visual do Módulo</label>
+              <input type="text" id="novo-mod-nome" placeholder="ex: Controle de Estoque" class="form-input" style="padding:10px; border-radius:8px; border:1px solid var(--cfg-border); background:var(--cfg-card-bg); color:var(--cfg-text);">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">Ícone Phosphor</label>
+              <input type="text" id="novo-mod-icone" value="ph-puzzle-piece" placeholder="ex: ph-scales, ph-gift" class="form-input" style="padding:10px; border-radius:8px; border:1px solid var(--cfg-border); background:var(--cfg-card-bg); color:var(--cfg-text);">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">Categoria</label>
+              <select id="novo-mod-categoria" class="form-input" style="padding:10px; border-radius:8px; border:1px solid var(--cfg-border); background:var(--cfg-card-bg); color:var(--cfg-text);">
+                <option value="operacao">Operação & Cozinha</option>
+                <option value="hardware">Hardware & Balança</option>
+                <option value="marketing">Marketing & Fidelidade</option>
+                <option value="fiscal">Fiscal & Pagamentos</option>
+                <option value="integracao">Integração Externa</option>
+                <option value="geral">Geral</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end;">
+            <button onclick="window.criarNovoModuloUI()" style="padding:11px 24px; border-radius:10px; background:#8b5cf6; color:white; border:none; font-weight:800; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(139,92,246,0.3);">
+              <i class="ph-bold ph-plus-circle"></i> Criar Módulo Plug-and-Play
+            </button>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 2: CATÁLOGO DE MÓDULOS INSTALADOS -->
+        <div style="background:var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 18px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
+          <h3 style="margin:0 0 16px 0; font-size:16.5px; color:var(--cfg-text); font-weight:800; display:flex; align-items:center; gap:8px;">
+            <i class="ph-bold ph-squares-four" style="color:#8b5cf6;"></i> Módulos Instalados no Sistema
+          </h3>
+          <div id="grid-modulos-instalados" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px;">
+            <div style="text-align:center; padding:30px; color:var(--cfg-text-muted); grid-column:1/-1;">Carregando módulos...</div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 3: GUIA & DOCUMENTAÇÃO DE HOOKS PARA DEVS E SUPORTE -->
+        <div style="background:var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 18px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
+          <h3 style="margin:0 0 12px 0; font-size:16.5px; color:var(--cfg-text); font-weight:800; display:flex; align-items:center; gap:8px;">
+            <i class="ph-bold ph-code" style="color:#0284c7;"></i> Como Desenvolver & Dar Suporte a Módulos
+          </h3>
+          <div style="background:var(--bg-app, #0f172a); color:#f8fafc; border-radius:12px; padding:16px; font-family:monospace; font-size:13px; line-height:1.5; overflow-x:auto;">
+// 1. Injetar Widget no Caixa v1.1 (plugins/meu-modulo/widget.js)
+ChefModules.register({ id: 'meu_modulo', name: 'Meu Módulo' }, ({ registerWidget }) => {
+  registerWidget({
+    id: 'meu_widget',
+    title: 'Meu Widget',
+    icon: 'ph-sparkle',
+    render(container) { container.innerHTML = '<h3>Olá Mundo!</h3>'; }
+  });
+});
+
+// 2. Injetar Botão na Barra Superior (plugins/meu-modulo/client.js)
+ChefModules.registerNavbarAction({ id: 'btn_acao', label: 'Meu Botão', onClick: () => alert('Ação!') });
+          </div>
+        </div>
+
+      </div>
+
+      <div id="admin-tab-auditoria" class="admin-tab-content" style="display:none; flex-direction:column; gap:16px;">
         <div class="tab-form-header">
           <div
             style="background: #fff1f2; padding: 20px; border-radius: 12px; border: 1px solid #fecdd3; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">

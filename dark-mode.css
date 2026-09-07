@@ -702,6 +702,51 @@ body.dark-mode .queue-tipo-btn.active,
 }
 
 /* KDS styling is fully managed in fila.css */
+/* Linha de Item da Fila (Modo Lista)
+   .queue-item NÃO recebe fundo escuro: a cor pastel por tempo de espera
+   (hsl pintado inline pelo fila.js) é mantida nos dois temas para o código
+   de cores continuar legível na cozinha. Texto interno permanece escuro. */
+body.dark-mode .queue-item,
+[data-theme="dark"] .queue-item {
+  color: #1e293b !important;
+}
+body.dark-mode .queue-item .item-produto,
+[data-theme="dark"] .queue-item .item-produto {
+  color: #1e293b !important;
+}
+body.dark-mode .queue-item .item-local,
+[data-theme="dark"] .queue-item .item-local {
+  color: #334155 !important;
+}
+
+/* Quantidade Destaque */
+body.dark-mode .qtd-number,
+[data-theme="dark"] .qtd-number {
+  color: #fc4b15 !important;
+  background: rgba(252, 75, 21, 0.15) !important;
+  border: 2px solid #fc4b15 !important;
+}
+body.dark-mode .qtd-number.is-multiple,
+[data-theme="dark"] .qtd-number.is-multiple {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4) !important;
+}
+
+/* Botões de Ação na Linha da Fila (Pronto / Reverter) */
+body.dark-mode .btn-pronto,
+[data-theme="dark"] .btn-pronto {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  color: #f87171 !important;
+}
+body.dark-mode .btn-pronto:hover,
+[data-theme="dark"] .btn-pronto:hover {
+  background-color: rgba(239, 68, 68, 0.28) !important;
+  color: #ffffff !important;
+}
+
 body.dark-mode .btn-reverter,
 [data-theme="dark"] .btn-reverter {
   background-color: rgba(255,255,255,0.06) !important;
