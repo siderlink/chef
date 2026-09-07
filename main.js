@@ -739,6 +739,42 @@ window.switchMobileTab = (tabId) => {
   );
   ws.classList.add(`active-tab-${cleanTab}`);
 
+  // ── FIX: Remove mode-hidden/mode-mini dos painéis ao ativar no mobile ──
+  // O setSidebarMode pode ter salvo mode-hidden no localStorage e aplicado ao painel.
+  // No mobile, quando o usuário clica na aba, o painel deve ser forçado a aparecer.
+  const isMobileLayout = window.innerWidth <= 767 || document.body.classList.contains('force-mobile');
+  if (isMobileLayout) {
+    if (cleanTab === 'resumo') {
+      // Garante que o right-panel seja visível (remove modo hidden/mini)
+      const rp = document.getElementById('right-panel') || document.querySelector('.right-info');
+      if (rp) {
+        rp.classList.remove('mode-hidden', 'mode-mini', 'sidebar-hidden', 'sidebar-mini', 'mode-expanded');
+        rp.classList.add('mode-mobile-fullscreen');
+        rp.style.removeProperty('display');
+        rp.style.removeProperty('width');
+        rp.style.removeProperty('min-width');
+        rp.style.removeProperty('max-width');
+      }
+    } else if (cleanTab === 'acoes') {
+      // Garante que o left-panel seja visível
+      const lp = document.getElementById('left-panel') || document.querySelector('.left-actions');
+      if (lp) {
+        lp.classList.remove('mode-hidden', 'mode-mini', 'sidebar-hidden', 'sidebar-mini', 'mode-expanded');
+        lp.classList.add('mode-mobile-fullscreen');
+        lp.style.removeProperty('display');
+        lp.style.removeProperty('width');
+        lp.style.removeProperty('min-width');
+        lp.style.removeProperty('max-width');
+      }
+    } else {
+      // Ao sair das abas laterais, limpa a classe de fullscreen mobile
+      const rp = document.getElementById('right-panel') || document.querySelector('.right-info');
+      const lp = document.getElementById('left-panel') || document.querySelector('.left-actions');
+      if (rp) rp.classList.remove('mode-mobile-fullscreen');
+      if (lp) lp.classList.remove('mode-mobile-fullscreen');
+    }
+  }
+
   document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
     const btnTab = (btn.getAttribute('data-tab') || '').replace('tab-', '');
     if (btnTab === cleanTab) {
@@ -756,7 +792,54 @@ window.switchMobileTab = (tabId) => {
     const pt = document.getElementById('products-section-container') || document.querySelector('.products-container');
     if (pt) pt.scrollTop = 0;
   }
+
+  // ── Injetar botão "← Mesas" no topo do painel de Ações (só mobile) ──
+  if (isMobileLayout && cleanTab === 'acoes') {
+    const lp = document.getElementById('left-panel') || document.querySelector('.left-actions');
+    if (lp && !lp.querySelector('#mobile-acoes-back-btn')) {
+      const backBtn = document.createElement('button');
+      backBtn.id = 'mobile-acoes-back-btn';
+      backBtn.type = 'button';
+      backBtn.innerHTML = '<i class="ph ph-arrow-left"></i> Voltar às Mesas';
+      backBtn.style.cssText = [
+        'display:flex', 'align-items:center', 'gap:8px',
+        'background:rgba(255,255,255,0.1)', 'color:#f8fafc',
+        'border:1px solid rgba(255,255,255,0.15)', 'border-radius:10px',
+        'padding:10px 14px', 'font-size:13px', 'font-weight:700',
+        'cursor:pointer', 'width:100%', 'margin-bottom:14px',
+        'touch-action:manipulation', '-webkit-tap-highlight-color:transparent',
+        'transition:background 0.15s ease', 'flex-shrink:0'
+      ].join(';');
+      backBtn.addEventListener('click', () => window.switchMobileTab('mesas'));
+      lp.insertBefore(backBtn, lp.firstChild);
+    }
+  }
+
+  // ── Injetar botão "← Mesas" no topo do painel de Resumo (só mobile) ──
+  if (isMobileLayout && cleanTab === 'resumo') {
+    const rp = document.getElementById('right-panel') || document.querySelector('.right-info');
+    if (rp && !rp.querySelector('#mobile-resumo-back-btn')) {
+      const backBtn = document.createElement('button');
+      backBtn.id = 'mobile-resumo-back-btn';
+      backBtn.type = 'button';
+      backBtn.innerHTML = '<i class="ph ph-arrow-left"></i> Voltar às Mesas';
+      backBtn.style.cssText = [
+        'display:flex', 'align-items:center', 'gap:8px',
+        'background:#f1f5f9', 'color:#475569',
+        'border:1px solid #e2e8f0', 'border-radius:10px',
+        'padding:10px 14px', 'font-size:13px', 'font-weight:700',
+        'cursor:pointer', 'width:100%', 'margin-bottom:14px',
+        'touch-action:manipulation', '-webkit-tap-highlight-color:transparent',
+        'transition:background 0.15s ease', 'flex-shrink:0', 'box-sizing:border-box'
+      ].join(';');
+      backBtn.addEventListener('click', () => window.switchMobileTab('mesas'));
+      const inner = rp.querySelector('#inner-right-panel') || rp.querySelector('.panel-content-inner') || rp;
+      inner.insertBefore(backBtn, inner.firstChild);
+    }
+  }
 };
+
+
 
 // Ao clicar em uma mesa no mobile, abre a aba Pedido automaticamente
 document.addEventListener('click', (e) => {
@@ -804,13 +887,20 @@ setTimeout(() => {
     if (Math.abs(diffX) < 50) return;                // toque comum
     const ws = document.querySelector('.workspace');
     if (!ws) return;
-    const nasAcoes = ws.classList.contains('active-tab-acoes');
-    if (diffX > 0 && !nasAcoes) {
-      window.switchMobileTab('acoes');               // ← esquerda: abre Ações
-    } else if (diffX < 0 && nasAcoes) {
-      window.switchMobileTab('mesas');               // → direita: volta Mesas
+    // Ordem das abas: mesas → pedido → acoes → resumo
+    const tabOrder = ['mesas', 'pedido', 'acoes', 'resumo'];
+    let currentTab = 'mesas';
+    for (const t of tabOrder) {
+      if (ws.classList.contains(`active-tab-${t}`)) { currentTab = t; break; }
+    }
+    const idx = tabOrder.indexOf(currentTab);
+    if (diffX > 0 && idx < tabOrder.length - 1) {
+      window.switchMobileTab(tabOrder[idx + 1]);     // ← swipe esquerda: próxima aba
+    } else if (diffX < 0 && idx > 0) {
+      window.switchMobileTab(tabOrder[idx - 1]);     // → swipe direita: aba anterior
     }
   }, { passive: true });
+
 
   const floatLancar = document.getElementById('float-btn-lancar');
   const floatParcial = document.getElementById('float-btn-parcial');
