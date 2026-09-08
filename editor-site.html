@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor do Site Oficial — Painel de Suporte Chef Cozinha</title>
+  <link rel="icon" href="/icons/icon.ico" type="image/x-icon">
+  
+  <!-- Fontes Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Ícones Phosphor e FontAwesome -->
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css" onerror="this.onerror=null;this.href='https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css';">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css" onerror="this.onerror=null;this.href='https://unpkg.com/@phosphor-icons/web@2.0.3/src/bold/style.css';">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --primary: #fc4b15;
+      --primary-hover: #e03e0b;
+      --primary-glow: rgba(252, 75, 21, 0.35);
+      --bg-main: #060a13;
+      --bg-surface: #0f172a;
+      --bg-card: #131c31;
+      --bg-input: #0b1120;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(252, 75, 21, 0.5);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #38bdf8;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-main);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Topbar */
+    .topbar {
+      height: 64px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+    }
+    .topbar-brand img { width: 34px; height: 34px; border-radius: 9px; }
+    .topbar-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .topbar-tag {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--info);
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: var(--bg-card);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .btn-outline-danger {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+
+    /* Layout principal */
+    .app-body {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 64px);
+      overflow: hidden;
+    }
+
+    /* Sidebar de Navegação de Abas */
+    .sidebar {
+      width: 280px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .sidebar-header {
+      padding: 18px 20px 10px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    .nav-list {
+      list-style: none;
+      padding: 0 10px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .nav-item-btn {
+      width: 100%;
+      text-align: left;
+      padding: 10px 14px;
+      border-radius: 9px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.18s;
+    }
+    .nav-item-btn:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: #fff;
+    }
+    .nav-item-btn.active {
+      background: rgba(252, 75, 21, 0.15);
+      color: #fff;
+      font-weight: 700;
+      border: 1px solid rgba(252, 75, 21, 0.3);
+    }
+    .nav-item-btn i {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+      color: var(--text-muted);
+      transition: color 0.18s;
+    }
+    .nav-item-btn.active i, .nav-item-btn:hover i {
+      color: var(--primary);
+    }
+
+    /* Área Central de Conteúdo */
+    .editor-content {
+      flex: 1;
+      padding: 24px 32px;
+      overflow-y: auto;
+      background: var(--bg-main);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .editor-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .editor-section-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .editor-section-header p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    /* Cards e Formulários */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .form-control {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 13.5px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-glow);
+    }
+    textarea.form-control {
+      min-height: 80px;
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    /* Organizador de Blocos */
+    .bloco-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+    }
+    .bloco-item:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .bloco-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .bloco-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(252, 75, 21, 0.12);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .bloco-text strong {
+      font-size: 14px;
+      display: block;
+      color: #fff;
+    }
+    .bloco-text span {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+    .bloco-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-icon {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    /* Switch toggle */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 22px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.15);
+      transition: .3s;
+      border-radius: 22px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--success);
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Split Preview Panel */
+    .preview-panel {
+      width: 480px;
+      border-left: 1px solid var(--border);
+      background: #020617;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .preview-panel.hidden {
+      width: 0;
+      overflow: hidden;
+      border: none;
+    }
+    .preview-header {
+      height: 48px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .preview-header span {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .preview-iframe-wrap {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+    .preview-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Toast */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      color: #fff;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      animation: slideIn 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .toast.toast-success { border-left-color: var(--success); }
+    .toast.toast-error { border-left-color: var(--danger); }
+
+    @keyframes slideIn {
+      from { transform: translateX(50px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: flex; flex-direction: column; gap: 20px; }
+
+    /* Modal de Login Auxiliar */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+    }
+    .modal-box {
+      width: 400px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <img src="/icons/icon-192.png" alt="Chef Cozinha">
+      <div class="topbar-title">
+        Chef Cozinha
+        <span class="topbar-tag"><i class="fa-solid fa-headset"></i> Editor do Suporte</span>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <a href="/site.html?noredirect=1" target="_blank" class="btn btn-secondary" title="Ver site público oficial">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Site
+      </a>
+      <button class="btn btn-secondary" onclick="togglePreviewPanel()" id="btn-toggle-preview">
+        <i class="fa-solid fa-columns"></i> <span id="txt-preview-btn">Ocultar Preview</span>
+      </button>
+      <button class="btn btn-secondary" onclick="abrirModalHistorico()" title="Histórico das últimas 10 versões publicadas" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
+        <i class="fa-solid fa-clock-rotate-left"></i> Histórico (10 Versões)
+      </button>
+      <button class="btn btn-primary" onclick="salvarConfiguracoesSite()" id="btn-salvar-site">
+        <i class="fa-solid fa-floppy-disk"></i> Salvar Alterações
+      </button>
+      <div style="border-left: 1px solid var(--border); padding-left: 12px; margin-left: 4px; display: flex; align-items: center; gap: 8px;">
+        <span id="colaborador-nome" style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Colaborador</span>
+        <button onclick="fazerLogoutSuporte()" class="btn btn-secondary btn-icon" title="Encerrar Sessão" style="width: 32px; height: 32px;">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <!-- SIDEBAR DE ABAS -->
+    <aside class="sidebar">
+      <div class="sidebar-header">Seções do Site</div>
+      <ul class="nav-list">
+        <li>
+          <button class="nav-item-btn active" data-tab="tab-hero" onclick="switchTab('tab-hero')">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Hero & Textos
+          </button>
+        </li>
+        <li>
+          <button class="nav-item-btn" data-tab="tab-banner" onclick="switchTab('tab-banner')">
+            <i class="fa-solid fa-bullhorn"></i> Banner & Rodapé
+          </button>
+        </li>
+        <li>
+          <button class="nav-item-btn" data-tab="tab-blocos" onclick="switchTab('tab-blocos')">
+            <i class="fa-solid fa-layer-group"></i> Ordem dos 13 Blocos
+          </button>
+        </li>
+        <li>
+          <button class="nav-item-btn" data-tab="tab-planos" onclick="switchTab('tab-planos')">
+            <i class="fa-solid fa-tags"></i> Planos & Preços
+          </button>
+        </li>
+        <li>
+          <button class="nav-item-btn" data-tab="tab-stats" onclick="switchTab('tab-stats')">
+            <i class="fa-solid fa-chart-pie"></i> Métricas do Hero
+          </button>
+        </li>
+        <li>
+          <button class="nav-item-btn" data-tab="tab-faq" onclick="switchTab('tab-faq')">
+            <i class="fa-solid fa-circle-question"></i> Dúvidas (FAQ)
+          </button>
+        </li>
+        <li>
+          <button class="nav-item-btn" data-tab="tab-depoimentos" onclick="switchTab('tab-depoimentos')">
+            <i class="fa-solid fa-comments"></i> Depoimentos
+          </button>
+        </li>
+        <li>
+          <button class="nav-item-btn" data-tab="tab-whatsapp" onclick="switchTab('tab-whatsapp')">
+            <i class="fa-brands fa-whatsapp"></i> WhatsApp Consultor
+          </button>
+        </li>
+        <li>
+          <button class="nav-item-btn" data-tab="tab-seo" onclick="switchTab('tab-seo')">
+            <i class="fa-solid fa-magnifying-glass"></i> SEO & Metatags
+          </button>
+        </li>
+        <li>
+          <button class="nav-item-btn" data-tab="tab-tracking" onclick="switchTab('tab-tracking')">
+            <i class="fa-solid fa-chart-line"></i> Pixels & Analytics
+          </button>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- ÁREA CENTRAL DO EDITOR -->
+    <main class="editor-content">
+
+      <!-- ABA 1: HERO & TEXTOS -->
+      <div class="tab-pane active" id="tab-hero">
+        <div class="editor-section-header">
+          <div>
+            <h2><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary);"></i> Hero & Textos Principais</h2>
+            <p>Edite os textos centrais da primeira tela que o cliente vê ao acessar o site.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-heading"></i> Título de Impacto</div>
+          <div class="form-grid">
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Título Principal (H1)</label>
+              <input type="text" id="site_hero_titulo" class="form-control" placeholder="O Sistema Mais Rápido para Restaurantes, Bares e Pizzarias">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Texto em Destaque (Gradiente Laranja)</label>
+              <input type="text" id="site_hero_destaque" class="form-control" placeholder="Que Nunca Fica Fora do Ar">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Subtítulo do Hero</label>
+              <textarea id="site_hero_subtitulo" class="form-control" rows="3" placeholder="Diga adeus a lentidões, pedidos perdidos e travamentos no caixa..."></textarea>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Badge Superior (Pílula Laranja)</label>
+              <input type="text" id="site_hero_badge" class="form-control" placeholder="Sistema Offline-First & Garçom Mobile Ilimitado">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-play"></i> Botões de Ação (CTAs)</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Texto do Botão Principal (CTA 1)</label>
+              <input type="text" id="site_cta_principal" class="form-control" placeholder="Começar Teste de 14 Dias Grátis">
+            </div>
+            <div class="form-group">
+              <label>Texto do Botão Secundário (CTA 2)</label>
+              <input type="text" id="site_cta_secundario" class="form-control" placeholder="Ver Sistema em Ação">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 2: BANNER & RODAPÉ -->
+      <div class="tab-pane" id="tab-banner">
+        <div class="editor-section-header">
+          <div>
+            <h2><i class="fa-solid fa-bullhorn" style="color:var(--warning);"></i> Banner Promocional & Rodapé</h2>
+            <p>Gerencie o aviso fixo de topo e os dados legais de rodapé.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-bell"></i> Banner Promocional do Topo</div>
+          <div class="form-grid">
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Texto do Banner</label>
+              <input type="text" id="site_banner_texto" class="form-control" placeholder="🔥 Vagas promocionais com 14 Dias Grátis & Atendimento VIP liberadas!">
+            </div>
+            <div class="form-group">
+              <label>Texto do Link de Ação</label>
+              <input type="text" id="site_banner_link_texto" class="form-control" placeholder="Garantir Minha Vaga Grátis →">
+            </div>
+            <div class="form-group">
+              <label>URL ou Ação do Link (vazio = abre modal de teste)</label>
+              <input type="text" id="site_banner_link" class="form-control" placeholder="#planos ou https://...">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-shoe-prints"></i> Texto do Rodapé (Footer)</div>
+          <div class="form-group">
+            <label>Texto de Copyright e Direitos</label>
+            <input type="text" id="site_footer_texto" class="form-control" placeholder="© 2026 Chef Cozinha — Todos os direitos reservados.">
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 3: ORDEM E VISIBILIDADE DOS 13 BLOCOS -->
+      <div class="tab-pane" id="tab-blocos">
+        <div class="editor-section-header">
+          <div>
+            <h2><i class="fa-solid fa-layer-group" style="color:var(--info);"></i> Ordem e Visibilidade dos 13 Blocos</h2>
+            <p>Ative, desative e reordene exatamente quais seções aparecem no site comercial.</p>
+          </div>
+          <button class="btn btn-secondary" onclick="restaurarOrdemBlocosPadrao()">
+            <i class="fa-solid fa-rotate-left"></i> Restaurar Padrão Oficial
+          </button>
+        </div>
+
+        <div class="card">
+          <div id="lista-blocos-container">
+            <!-- Renderizado dinamicamente -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 4: PLANOS & PREÇOS -->
+      <div class="tab-pane" id="tab-planos">
+        <div class="editor-section-header">
+          <div>
+            <h2><i class="fa-solid fa-tags" style="color:var(--success);"></i> Planos & Tabela de Preços</h2>
+            <p>Cadastre planos, valores mensais/anuais, itens inclusos e links de checkout.</p>
+          </div>
+          <button class="btn btn-primary" onclick="adicionarNovoPlano()">
+            <i class="fa-solid fa-plus"></i> Novo Plano
+          </button>
+        </div>
+
+        <div id="planos-cards-container" style="display:flex; flex-direction:column; gap:16px;">
+          <!-- Renderizado dinamicamente -->
+        </div>
+      </div>
+
+      <!-- ABA 5: MÉTRICAS DO HERO (STATS) -->
+      <div class="tab-pane" id="tab-stats">
+        <div class="editor-section-header">
+          <div>
+            <h2><i class="fa-solid fa-chart-pie" style="color:var(--primary);"></i> Cartões de Métricas (Hero Stats)</h2>
+            <p>Defina as 4 métricas principais exibidas logo abaixo dos botões do Hero.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="form-grid" id="stats-inputs-container">
+            <!-- 4 cartões -->
+            <div class="form-group">
+              <label>Card 1: Valor</label>
+              <input type="text" id="stat_val_0" class="form-control" placeholder="+40%">
+              <label style="margin-top:4px;">Card 1: Rótulo</label>
+              <input type="text" id="stat_lbl_0" class="form-control" placeholder="Giro de Mesas">
+            </div>
+
+            <div class="form-group">
+              <label>Card 2: Valor</label>
+              <input type="text" id="stat_val_1" class="form-control" placeholder="0">
+              <label style="margin-top:4px;">Card 2: Rótulo</label>
+              <input type="text" id="stat_lbl_1" class="form-control" placeholder="Erros de Comanda">
+            </div>
+
+            <div class="form-group">
+              <label>Card 3: Valor</label>
+              <input type="text" id="stat_val_2" class="form-control" placeholder="100%">
+              <label style="margin-top:4px;">Card 3: Rótulo</label>
+              <input type="text" id="stat_lbl_2" class="form-control" placeholder="Atalhos de Teclado">
+            </div>
+
+            <div class="form-group">
+              <label>Card 4: Valor</label>
+              <input type="text" id="stat_val_3" class="form-control" placeholder="Offline">
+              <label style="margin-top:4px;">Card 4: Rótulo</label>
+              <input type="text" id="stat_lbl_3" class="form-control" placeholder="Modo Offline-First">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 6: FAQ -->
+      <div class="tab-pane" id="tab-faq">
+        <div class="editor-section-header">
+          <div>
+            <h2><i class="fa-solid fa-circle-question" style="color:var(--info);"></i> Dúvidas Frequentes (FAQ)</h2>
+            <p>Cadastre as perguntas e respostas mais comuns sobre o Chef Cozinha.</p>
+          </div>
+          <button class="btn btn-primary" onclick="adicionarNovoFaq()">
+            <i class="fa-solid fa-plus"></i> Nova Pergunta
+          </button>
+        </div>
+
+        <div id="faq-items-container" style="display:flex; flex-direction:column; gap:12px;">
+          <!-- Renderizado dinamicamente -->
+        </div>
+      </div>
+
+      <!-- ABA 7: DEPOIMENTOS -->
+      <div class="tab-pane" id="tab-depoimentos">
+        <div class="editor-section-header">
+          <div>
+            <h2><i class="fa-solid fa-comments" style="color:var(--warning);"></i> Depoimentos de Restaurantes</h2>
+            <p>Gerencie as avaliações de donos e gerentes exibidas no site.</p>
+          </div>
+          <button class="btn btn-primary" onclick="adicionarNovoDepoimento()">
+            <i class="fa-solid fa-plus"></i> Novo Depoimento
+          </button>
+        </div>
+
+        <div id="depoimentos-items-container" style="display:flex; flex-direction:column; gap:14px;">
+          <!-- Renderizado dinamicamente -->
+        </div>
+      </div>
+
+      <!-- ABA 8: WHATSAPP DO CONSULTOR -->
+      <div class="tab-pane" id="tab-whatsapp">
+        <div class="editor-section-header">
+          <div>
+            <h2><i class="fa-brands fa-whatsapp" style="color:#25d366;"></i> WhatsApp Comercial & Atendimento</h2>
+            <p>Configuração do botão "Falar com Consultor" da barra de navegação e rodapé.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="form-grid">
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Número do WhatsApp com DDD (Ex: 5511999998888)</label>
+              <input type="text" id="site_consultor_whatsapp" class="form-control" placeholder="5511999998888">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Mensagem Padrão Pronta</label>
+              <textarea id="site_consultor_mensagem" class="form-control" rows="3" placeholder="Olá! Gostaria de falar com um consultor sobre o Chef Cozinha..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 9: SEO & METATAGS -->
+      <div class="tab-pane" id="tab-seo">
+        <div class="editor-section-header">
+          <div>
+            <h2><i class="fa-solid fa-magnifying-glass" style="color:var(--info);"></i> Otimização SEO & Metatags</h2>
+            <p>Controle como o site aparece no Google, no WhatsApp e em redes sociais.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="form-grid">
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Título da Aba (Title Tag)</label>
+              <input type="text" id="site_seo_titulo" class="form-control" placeholder="Chef Cozinha — O Sistema Mais Rápido e Completo">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Descrição para o Google (Meta Description)</label>
+              <textarea id="site_seo_descricao" class="form-control" rows="3" placeholder="PDV ultra-rápido Offline-First, KDS Cozinha, Garçom Mobile ilimitado..."></textarea>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Palavras-Chave (Keywords)</label>
+              <input type="text" id="site_seo_keywords" class="form-control" placeholder="sistema para restaurantes, pdv bares, comanda mobile">
+            </div>
+            <div class="form-group">
+              <label>Diretiva de Indexação (Robots)</label>
+              <select id="site_seo_robots" class="form-control">
+                <option value="index, follow">index, follow (Indexar no Google)</option>
+                <option value="noindex, nofollow">noindex, nofollow (Ocultar do Google)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Imagem de Compartilhamento (OpenGraph Image URL)</label>
+              <input type="text" id="site_seo_og_imagem" class="form-control" placeholder="https://cheff.pro/icons/icon-512.png">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 10: PIXELS & ANALYTICS -->
+      <div class="tab-pane" id="tab-tracking">
+        <div class="editor-section-header">
+          <div>
+            <h2><i class="fa-solid fa-chart-line" style="color:var(--success);"></i> Pixels & Rastreamento Comercial</h2>
+            <p>Integrações de tráfego pago e métricas de visitantes.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Google Analytics 4 (Measurement ID)</label>
+              <input type="text" id="site_gtag_id" class="form-control" placeholder="G-XXXXXXXXXX">
+            </div>
+            <div class="form-group">
+              <label>Meta Pixel ID (Facebook Ads)</label>
+              <input type="text" id="site_meta_pixel_id" class="form-control" placeholder="Ex: 123456789012345">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Google Search Console Verification Tag</label>
+              <input type="text" id="site_google_site_verification" class="form-control" placeholder="google-site-verification token...">
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- PAINEL DE PREVIEW AO VIVO -->
+    <aside class="preview-panel" id="preview-panel">
+      <div class="preview-header">
+        <span><i class="fa-solid fa-desktop"></i> Pré-visualização ao Vivo</span>
+        <button class="btn btn-secondary btn-icon" onclick="recarregarPreview()" title="Recarregar Preview" style="width:28px;height:28px;">
+          <i class="fa-solid fa-rotate-right" style="font-size:12px;"></i>
+        </button>
+      </div>
+      <div class="preview-iframe-wrap">
+        <iframe id="preview-frame" class="preview-iframe" src="/site.html?noredirect=1"></iframe>
+      </div>
+    </aside>
+  </div>
+
+  <!-- TOASTS -->
+  <div id="toast-container"></div>
+
+  <!-- MODAL DE LOGIN AUXILIAR (CASO SEM SESSÃO) -->
+  <div class="modal-backdrop" id="modal-login">
+    <div class="modal-box">
+      <div style="text-align:center;">
+        <img src="/icons/icon-192.png" style="width:48px;height:48px;border-radius:12px;margin-bottom:8px;">
+        <h3 style="color:#fff;font-family:'Outfit';">Autenticação de Suporte</h3>
+        <p style="font-size:12.5px;color:var(--text-muted);">Informe suas credenciais da Equipe de Suporte.</p>
+      </div>
+      <div class="form-group">
+        <label>E-mail do Colaborador</label>
+        <input type="email" id="login-email" class="form-control" placeholder="suporte@cheff.pro">
+      </div>
+      <div class="form-group">
+        <label>Senha de Acesso</label>
+        <input type="password" id="login-senha" class="form-control" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" onclick="realizarLoginSuporte()" style="justify-content:center;padding:12px;">
+        Entrar no Editor
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL DE HISTÓRICO DE VERSÕES (ÚLTIMAS 10 SALVAS) -->
+  <div class="modal-backdrop" id="modal-historico">
+    <div class="modal-box" style="width:650px; max-width:95vw; max-height:85vh; display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:8px; background:rgba(56,189,248,0.15); color:#38bdf8; display:flex; align-items:center; justify-content:center; font-size:18px;">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+          </div>
+          <div>
+            <h3 style="color:#fff; font-family:'Outfit'; margin:0; font-size:17px;">Histórico de Versões Publicadas</h3>
+            <span style="font-size:12px; color:var(--text-muted);">Últimas 10 versões salvas com rollback em 1 clique</span>
+          </div>
+        </div>
+        <button onclick="fecharModalHistorico()" class="btn btn-secondary btn-icon" style="width:30px; height:30px;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="lista-versoes-historico" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:10px; padding-right:4px;">
+        <div style="text-align:center; padding:30px; color:var(--text-muted);">
+          <i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Carregando histórico de versões...
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border); padding-top:12px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:12px; color:var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> Restauração segura com recarga imediata</span>
+        <button class="btn btn-secondary" onclick="fecharModalHistorico()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ═════════════════════════════════════════════════════════════════════════
+    // CONSTANTES & METADADOS DOS BLOCOS
+    // ═════════════════════════════════════════════════════════════════════════
+    const SV_BLOCOS_CAT = {
+      banner:          { label: 'Banner Promocional de Topo',       icon: 'fa-bullhorn' },
+      header:          { label: 'Cabeçalho / Navegação & Logo',    icon: 'fa-compass' },
+      hero:            { label: 'Hero Section (Título, CTAs, Stats)', icon: 'fa-wand-magic-sparkles' },
+      demonstracao:    { label: 'Demonstração Interativa',         icon: 'fa-laptop' },
+      'como-funciona': { label: 'Como Funciona (Etapas)',          icon: 'fa-shoe-prints' },
+      funcionalidades: { label: 'Grade de Funcionalidades',        icon: 'fa-cube' },
+      comparativo:     { label: 'Tabela Comparativa de Mercado',   icon: 'fa-scale-balanced' },
+      calculadora:     { label: 'Calculadora de ROI / Economia',   icon: 'fa-calculator' },
+      depoimentos:     { label: 'Depoimentos de Restaurantes',     icon: 'fa-comments' },
+      planos:          { label: 'Tabela de Planos & Preços',       icon: 'fa-tags' },
+      faq:             { label: 'Dúvidas Frequentes (FAQ)',        icon: 'fa-circle-question' },
+      'cta-final':     { label: 'Chamada Final para Ação (CTA)',   icon: 'fa-bullseye' },
+      rodape:          { label: 'Rodapé / Copyright & Links',      icon: 'fa-copyright' }
+    };
+
+    const BLOCOS_DEFAULT = ['banner', 'header', 'hero', 'demonstracao', 'como-funciona', 'funcionalidades', 'comparativo', 'calculadora', 'depoimentos', 'planos', 'faq', 'cta-final', 'rodape'];
+
+    let siteConfigs = {};
+    let blocosAtuais = [];
+    let planosAtuais = [];
+    let faqAtual = [];
+    let depoimentosAtuais = [];
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // TOAST NOTIFICATIONS
+    // ═════════════════════════════════════════════════════════════════════════
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      const icon = type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-circle-xmark' : 'fa-info-circle');
+      toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // NAVEGAÇÃO DE ABAS
+    // ═════════════════════════════════════════════════════════════════════════
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-item-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+      
+      const targetBtn = document.querySelector(`.nav-item-btn[data-tab="${tabId}"]`);
+      const targetPane = document.getElementById(tabId);
+      if (targetBtn) targetBtn.classList.add('active');
+      if (targetPane) targetPane.classList.add('active');
+    }
+
+    // Toggle Preview
+    function togglePreviewPanel() {
+      const panel = document.getElementById('preview-panel');
+      const btnTxt = document.getElementById('txt-preview-btn');
+      panel.classList.toggle('hidden');
+      if (panel.classList.contains('hidden')) {
+        btnTxt.textContent = 'Mostrar Preview';
+      } else {
+        btnTxt.textContent = 'Ocultar Preview';
+      }
+    }
+
+    function recarregarPreview() {
+      const frame = document.getElementById('preview-frame');
+      if (frame) frame.src = '/site.html?noredirect=1&ts=' + Date.now();
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // CARREGAMENTO DAS CONFIGURAÇÕES
+    // ═════════════════════════════════════════════════════════════════════════
+    function obterTokenSuporte() {
+      return localStorage.getItem('chef_suporte_token') || 
+             localStorage.getItem('chef_super_admin_local_token') || 
+             '';
+    }
+
+    async function carregarConfigs() {
+      const token = obterTokenSuporte();
+      const headers = {};
+      if (token) headers['x-suporte-token'] = token;
+
+      try {
+        let res = await fetch('/api/suporte/site-config', { headers });
+        let data = await res.json();
+        
+        if (!data.ok && data.erro && data.erro.includes('Token')) {
+          // Fallback público para exibição inicial
+          const pubRes = await fetch('/api/public/site-config');
+          const pubData = await pubRes.json();
+          if (pubData.ok) {
+            data = pubData;
+          }
+        }
+
+        if (data.ok && data.configs) {
+          siteConfigs = data.configs;
+          popularFormularios(siteConfigs);
+        } else {
+          showToast(data.erro || 'Falha ao carregar configurações', 'error');
+        }
+      } catch (e) {
+        console.error('Erro ao buscar configs:', e);
+        showToast('Erro de conexão ao carregar dados do site', 'error');
+      }
+    }
+
+    function popularFormularios(c) {
+      // 1. Hero
+      setVal('site_hero_titulo', c.site_hero_titulo || '');
+      setVal('site_hero_destaque', c.site_hero_destaque || '');
+      setVal('site_hero_subtitulo', c.site_hero_subtitulo || '');
+      setVal('site_hero_badge', c.site_hero_badge || '');
+      setVal('site_cta_principal', c.site_cta_principal || '');
+      setVal('site_cta_secundario', c.site_cta_secundario || '');
+
+      // 2. Banner & Rodapé
+      setVal('site_banner_texto', c.site_banner_texto || '');
+      setVal('site_banner_link_texto', c.site_banner_link_texto || '');
+      setVal('site_banner_link', c.site_banner_link || '');
+      setVal('site_footer_texto', c.site_footer_texto || '');
+
+      // 3. Stats do Hero
+      let stats = c.site_stats;
+      if (typeof stats === 'string') {
+        try { stats = JSON.parse(stats); } catch(e) {}
+      }
+      if (!Array.isArray(stats) || stats.length < 4) {
+        stats = [
+          { valor: '+40%', label: 'Giro de Mesas' },
+          { valor: '0', label: 'Erros de Comanda' },
+          { valor: '100%', label: 'Atalhos de Teclado' },
+          { valor: 'Offline', label: 'Modo Offline-First' }
+        ];
+      }
+      for (let i = 0; i < 4; i++) {
+        setVal(`stat_val_${i}`, stats[i] ? stats[i].valor : '');
+        setVal(`stat_lbl_${i}`, stats[i] ? stats[i].label : '');
+      }
+
+      // 4. WhatsApp
+      setVal('site_consultor_whatsapp', c.site_consultor_whatsapp || '');
+      setVal('site_consultor_mensagem', c.site_consultor_mensagem || '');
+
+      // 5. SEO & Tracking
+      setVal('site_seo_titulo', c.site_seo_titulo || '');
+      setVal('site_seo_descricao', c.site_seo_descricao || '');
+      setVal('site_seo_keywords', c.site_seo_keywords || '');
+      setVal('site_seo_robots', c.site_seo_robots || 'index, follow');
+      setVal('site_seo_og_imagem', c.site_seo_og_imagem || '');
+      setVal('site_gtag_id', c.site_gtag_id || '');
+      setVal('site_meta_pixel_id', c.site_meta_pixel_id || '');
+      setVal('site_google_site_verification', c.site_google_site_verification || '');
+
+      // 6. Blocos
+      let b = c.site_blocos;
+      if (typeof b === 'string') {
+        try { b = JSON.parse(b); } catch(e) {}
+      }
+      if (Array.isArray(b) && b.length) {
+        blocosAtuais = b.map(x => ({
+          tipo: typeof x === 'object' ? x.tipo : String(x),
+          ativo: typeof x === 'object' ? x.ativo !== false : true
+        }));
+      } else {
+        blocosAtuais = BLOCOS_DEFAULT.map(t => ({ tipo: t, ativo: true }));
+      }
+      renderizarBlocos();
+
+      // 7. Planos
+      let p = c.site_planos;
+      if (typeof p === 'string') {
+        try { p = JSON.parse(p); } catch(e) {}
+      }
+      planosAtuais = Array.isArray(p) && p.length ? p : getPlanosDefault();
+      renderizarPlanos();
+
+      // 8. FAQ
+      let f = c.site_faq;
+      if (typeof f === 'string') {
+        try { f = JSON.parse(f); } catch(e) {}
+      }
+      faqAtual = Array.isArray(f) && f.length ? f : getFaqDefault();
+      renderizarFaq();
+
+      // 9. Depoimentos
+      let dep = c.site_depoimentos;
+      if (typeof dep === 'string') {
+        try { dep = JSON.parse(dep); } catch(e) {}
+      }
+      depoimentosAtuais = Array.isArray(dep) && dep.length ? dep : getDepoimentosDefault();
+      renderizarDepoimentos();
+
+      // Atualiza nome do colaborador
+      const userData = localStorage.getItem('chef_suporte_user') || localStorage.getItem('chef_session');
+      if (userData) {
+        try {
+          const parsed = JSON.parse(userData);
+          const nomeEl = document.getElementById('colaborador-nome');
+          if (nomeEl && parsed.nome) nomeEl.textContent = parsed.nome;
+        } catch(e) {}
+      }
+    }
+
+    function setVal(id, val) {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    }
+    function getVal(id) {
+      const el = document.getElementById(id);
+      return el ? el.value.trim() : '';
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // RENDERIZADORES
+    // ═════════════════════════════════════════════════════════════════════════
+    function renderizarBlocos() {
+      const container = document.getElementById('lista-blocos-container');
+      if (!container) return;
+
+      container.innerHTML = blocosAtuais.map((bloco, idx) => {
+        const meta = SV_BLOCOS_CAT[bloco.tipo] || { label: bloco.tipo, icon: 'fa-cube' };
+        return `
+          <div class="bloco-item" style="opacity: ${bloco.ativo ? '1' : '0.55'};">
+            <div class="bloco-info">
+              <div class="bloco-icon"><i class="fa-solid ${meta.icon}"></i></div>
+              <div class="bloco-text">
+                <strong>${meta.label}</strong>
+                <span>Chave: <code>${bloco.tipo}</code> • ${bloco.ativo ? '✅ Ativo no site' : '❌ Oculto'}</span>
+              </div>
+            </div>
+            <div class="bloco-actions">
+              <button class="btn-icon" onclick="moverBloco(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="Mover para Cima">
+                <i class="fa-solid fa-arrow-up"></i>
+              </button>
+              <button class="btn-icon" onclick="moverBloco(${idx}, 1)" ${idx === blocosAtuais.length - 1 ? 'disabled' : ''} title="Mover para Baixo">
+                <i class="fa-solid fa-arrow-down"></i>
+              </button>
+              <label class="toggle-switch" title="Ativar ou desativar este bloco">
+                <input type="checkbox" ${bloco.ativo ? 'checked' : ''} onchange="toggleBloco(${idx}, this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function moverBloco(idx, direcao) {
+      const novoIdx = idx + direcao;
+      if (novoIdx < 0 || novoIdx >= blocosAtuais.length) return;
+      const item = blocosAtuais.splice(idx, 1)[0];
+      blocosAtuais.splice(novoIdx, 0, item);
+      renderizarBlocos();
+    }
+
+    function toggleBloco(idx, ativo) {
+      if (blocosAtuais[idx]) {
+        blocosAtuais[idx].ativo = ativo;
+        renderizarBlocos();
+      }
+    }
+
+    function restaurarOrdemBlocosPadrao() {
+      if (confirm('Deseja restaurar a ordem oficial dos 13 blocos do site?')) {
+        blocosAtuais = BLOCOS_DEFAULT.map(t => ({ tipo: t, ativo: true }));
+        renderizarBlocos();
+        showToast('Ordem padrão restaurada!');
+      }
+    }
+
+    // PLANOS
+    function renderizarPlanos() {
+      const container = document.getElementById('planos-cards-container');
+      if (!container) return;
+
+      container.innerHTML = planosAtuais.map((plano, idx) => `
+        <div class="card" style="border-left: 4px solid var(--primary);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#fff; font-size:16px;">Plano #${idx + 1}: ${plano.nome || 'Sem Nome'}</strong>
+            <button class="btn btn-outline-danger" onclick="removerPlano(${idx})" style="padding:4px 10px; font-size:12px;">
+              <i class="fa-solid fa-trash"></i> Excluir
+            </button>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nome do Plano</label>
+              <input type="text" class="form-control" value="${plano.nome || ''}" onchange="planosAtuais[${idx}].nome = this.value">
+            </div>
+            <div class="form-group">
+              <label>Preço Mensal (R$)</label>
+              <input type="text" class="form-control" value="${plano.preco_mensal || plano.preco || ''}" onchange="planosAtuais[${idx}].preco_mensal = this.value">
+            </div>
+            <div class="form-group">
+              <label>Preço Anual (R$)</label>
+              <input type="text" class="form-control" value="${plano.preco_anual || ''}" onchange="planosAtuais[${idx}].preco_anual = this.value">
+            </div>
+            <div class="form-group">
+              <label>Badge de Destaque (Ex: MAIS POPULAR)</label>
+              <input type="text" class="form-control" value="${plano.badge || ''}" onchange="planosAtuais[${idx}].badge = this.value">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Recursos Inclusos (Um por linha)</label>
+              <textarea class="form-control" rows="4" onchange="planosAtuais[${idx}].features = this.value.split('\\n').map(s=>s.trim()).filter(Boolean)">${(plano.features || []).join('\n')}</textarea>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function adicionarNovoPlano() {
+      planosAtuais.push({
+        id: 'plano-' + Date.now(),
+        nome: 'Novo Plano',
+        preco_mensal: 'R$ 149',
+        preco_anual: 'R$ 119',
+        badge: '',
+        features: ['PDV Ilimitado', 'Garçom Mobile', 'Trava Antifraude', 'Suporte VIP']
+      });
+      renderizarPlanos();
+      showToast('Novo plano adicionado!');
+    }
+
+    function removerPlano(idx) {
+      if (confirm('Deseja excluir este plano?')) {
+        planosAtuais.splice(idx, 1);
+        renderizarPlanos();
+      }
+    }
+
+    // FAQ
+    function renderizarFaq() {
+      const container = document.getElementById('faq-items-container');
+      if (!container) return;
+
+      container.innerHTML = faqAtual.map((item, idx) => `
+        <div class="card" style="padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="color:var(--info); font-size:13px;">Dúvida #${idx + 1}</strong>
+            <button class="btn btn-outline-danger" onclick="removerFaq(${idx})" style="padding:4px 8px; font-size:11px;">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+          <div class="form-group" style="margin-bottom:8px;">
+            <label>Pergunta</label>
+            <input type="text" class="form-control" value="${item.pergunta || ''}" onchange="faqAtual[${idx}].pergunta = this.value">
+          </div>
+          <div class="form-group">
+            <label>Resposta</label>
+            <textarea class="form-control" rows="2" onchange="faqAtual[${idx}].resposta = this.value">${item.resposta || ''}</textarea>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function adicionarNovoFaq() {
+      faqAtual.push({
+        pergunta: 'Nova dúvida frequente...',
+        resposta: 'Resposta explicativa completa para o cliente...'
+      });
+      renderizarFaq();
+      showToast('Nova dúvida adicionada ao FAQ!');
+    }
+
+    function removerFaq(idx) {
+      faqAtual.splice(idx, 1);
+      renderizarFaq();
+    }
+
+    // DEPOIMENTOS
+    function renderizarDepoimentos() {
+      const container = document.getElementById('depoimentos-items-container');
+      if (!container) return;
+
+      container.innerHTML = depoimentosAtuais.map((item, idx) => `
+        <div class="card" style="padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="color:var(--warning); font-size:13px;">Depoimento #${idx + 1}: ${item.nome || ''}</strong>
+            <button class="btn btn-outline-danger" onclick="removerDepoimento(${idx})" style="padding:4px 8px; font-size:11px;">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nome do Cliente</label>
+              <input type="text" class="form-control" value="${item.nome || ''}" onchange="depoimentosAtuais[${idx}].nome = this.value">
+            </div>
+            <div class="form-group">
+              <label>Restaurante / Cidade</label>
+              <input type="text" class="form-control" value="${item.restaurante || item.cargo || ''}" onchange="depoimentosAtuais[${idx}].restaurante = this.value">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Depoimento</label>
+              <textarea class="form-control" rows="2" onchange="depoimentosAtuais[${idx}].texto = this.value">${item.texto || item.comentario || ''}</textarea>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function adicionarNovoDepoimento() {
+      depoimentosAtuais.push({
+        nome: 'Nome do Proprietário',
+        restaurante: 'Restaurante & Bar',
+        estrelas: 5,
+        texto: 'O Chef Cozinha transformou o atendimento da nossa casa, agilizando os pedidos e eliminando perdas no caixa!'
+      });
+      renderizarDepoimentos();
+      showToast('Novo depoimento adicionado!');
+    }
+
+    function removerDepoimento(idx) {
+      depoimentosAtuais.splice(idx, 1);
+      renderizarDepoimentos();
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // SALVAR CONFIGURAÇÕES NO SERVIDOR
+    // ═════════════════════════════════════════════════════════════════════════
+    function obterTokenSuporte() {
+      return localStorage.getItem('chef_suporte_token') || 
+             localStorage.getItem('token') ||
+             localStorage.getItem('chef_super_admin_local_token') || 
+             localStorage.getItem('chef_token') ||
+             '';
+    }
+
+    async function salvarConfiguracoesSite() {
+      const btn = document.getElementById('btn-salvar-site');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+      btn.disabled = true;
+
+      // Monta stats
+      const stats = [];
+      for (let i = 0; i < 4; i++) {
+        stats.push({
+          valor: getVal(`stat_val_${i}`),
+          label: getVal(`stat_lbl_${i}`)
+        });
+      }
+
+      const payload = {
+        site_hero_titulo: getVal('site_hero_titulo'),
+        site_hero_destaque: getVal('site_hero_destaque'),
+        site_hero_subtitulo: getVal('site_hero_subtitulo'),
+        site_hero_badge: getVal('site_hero_badge'),
+        site_cta_principal: getVal('site_cta_principal'),
+        site_cta_secundario: getVal('site_cta_secundario'),
+
+        site_banner_texto: getVal('site_banner_texto'),
+        site_banner_link_texto: getVal('site_banner_link_texto'),
+        site_banner_link: getVal('site_banner_link'),
+        site_footer_texto: getVal('site_footer_texto'),
+
+        site_stats: stats,
+        site_blocos: blocosAtuais,
+        site_planos: planosAtuais,
+        site_faq: faqAtual,
+        site_depoimentos: depoimentosAtuais,
+
+        site_consultor_whatsapp: getVal('site_consultor_whatsapp'),
+        site_consultor_mensagem: getVal('site_consultor_mensagem'),
+
+        site_seo_titulo: getVal('site_seo_titulo'),
+        site_seo_descricao: getVal('site_seo_descricao'),
+        site_seo_keywords: getVal('site_seo_keywords'),
+        site_seo_robots: getVal('site_seo_robots'),
+        site_seo_og_imagem: getVal('site_seo_og_imagem'),
+
+        site_gtag_id: getVal('site_gtag_id'),
+        site_meta_pixel_id: getVal('site_meta_pixel_id'),
+        site_google_site_verification: getVal('site_google_site_verification')
+      };
+
+      const token = obterTokenSuporte();
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['x-suporte-token'] = token;
+        headers['x-super-admin-token'] = token;
+        headers['Authorization'] = 'Bearer ' + token;
+      }
+
+      try {
+        let salvo = false;
+        let msg = '';
+
+        // 1. Tenta endpoint dedicado de suporte
+        try {
+          const res = await fetch('/api/suporte/site-config', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ configs: payload })
+          });
+          const data = await res.json();
+          if (data && data.ok) {
+            salvo = true;
+            msg = data.mensagem;
+          }
+        } catch(e) {}
+
+        // 2. Se o endpoint de suporte ainda não respondeu, usa endpoint global
+        if (!salvo) {
+          try {
+            const res2 = await fetch('/api/super/config-global', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(payload)
+            });
+            const data2 = await res2.json();
+            if (data2 && data2.ok) {
+              salvo = true;
+              msg = data2.mensagem;
+            } else if (data2 && data2.erro) {
+              msg = data2.erro;
+            }
+          } catch(e) {}
+        }
+
+        if (salvo) {
+          showToast(msg || 'Todas as alterações do site foram salvas com sucesso!', 'success');
+          recarregarPreview();
+        } else {
+          showToast(msg || 'Acesso não autorizado. Faça login com sua conta de suporte.', 'error');
+          document.getElementById('modal-login').style.display = 'flex';
+        }
+      } catch (e) {
+        console.error('Erro ao salvar:', e);
+        showToast('Erro de rede ao salvar configurações', 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // Atalho de teclado Ctrl+S
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        salvarConfiguracoesSite();
+      }
+    });
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // AUTENTICAÇÃO E LOGOUT
+    // ═════════════════════════════════════════════════════════════════════════
+    async function realizarLoginSuporte() {
+      const email = getVal('login-email');
+      const password = getVal('login-senha');
+
+      if (!email || !password) {
+        showToast('Preencha e-mail e senha', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/suporte/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (data.ok && data.token) {
+          localStorage.setItem('chef_suporte_token', data.token);
+          if (data.usuario) {
+            localStorage.setItem('chef_suporte_user', JSON.stringify(data.usuario));
+          }
+          document.getElementById('modal-login').style.display = 'none';
+          showToast('Login de suporte realizado com sucesso!');
+          carregarConfigs();
+        } else {
+          showToast(data.erro || 'Falha ao autenticar', 'error');
+        }
+      } catch (e) {
+        showToast('Erro de comunicação ao autenticar', 'error');
+      }
+    }
+
+    function fazerLogoutSuporte() {
+      if (confirm('Deseja encerrar sua sessão de suporte?')) {
+        localStorage.removeItem('chef_suporte_token');
+        localStorage.removeItem('chef_suporte_user');
+        window.location.reload();
+      }
+    }
+
+    // DEFAULTS
+    function getPlanosDefault() {
+      return [
+        {
+          id: 'start',
+          nome: 'Start / Básico',
+          preco_mensal: 'R$ 119',
+          preco_anual: 'R$ 89',
+          badge: '',
+          features: ['PDV Caixa Rápido', '1 Monitor KDS Cozinha', 'Até 2 Garçons Mobile', 'Controle Básico de Estoque', 'Suporte em Horário Comercial']
+        },
+        {
+          id: 'pro',
+          nome: 'Profissional / Pro',
+          preco_mensal: 'R$ 189',
+          preco_anual: 'R$ 149',
+          badge: 'MAIS ESCOLHIDO',
+          features: ['Tudo do Start', 'Garçom Mobile ILIMITADO', 'Monitores KDS Ilimitados', 'Trava Antifraude no Caixa', 'Ponto Digital por QR Code', 'Suporte Prioritário VIP']
+        },
+        {
+          id: 'premium',
+          nome: 'Enterprise / Redes',
+          preco_mensal: 'R$ 299',
+          preco_anual: 'R$ 239',
+          badge: 'COMPLETO',
+          features: ['Tudo do Pro', 'Multi-unidades / Franquias', 'Integração Fiscal NFC-e', 'IA de Engenharia de Cardápio', 'Gestor de Conta Dedicado']
+        }
+      ];
+    }
+
+    function getFaqDefault() {
+      return [
+        {
+          pergunta: 'O sistema realmente funciona sem internet?',
+          resposta: 'Sim! Nossa arquitetura é 100% Offline-First. Mesmo que sua internet caia, o caixa continua vendendo, os garçons continuam enviando pedidos e a cozinha continua produzindo normalmente. Assim que a conexão volta, tudo é sincronizado automaticamente.'
+        },
+        {
+          pergunta: 'Existe limite de celulares para os garçons?',
+          resposta: 'Não! Você pode conectar quantos smartphones e tablets quiser na mesma rede sem nenhum custo adicional por aparelho.'
+        },
+        {
+          pergunta: 'Preciso cadastrar cartão de crédito para testar?',
+          resposta: 'Não! O teste gratuito de 14 dias é totalmente sem compromisso e não exige nenhum dado de pagamento ou cartão de crédito.'
+        }
+      ];
+    }
+
+    function getDepoimentosDefault() {
+      return [
+        {
+          nome: 'Rodrigo Albuquerque',
+          restaurante: 'Pizzaria & Trattoria Bella Napoli',
+          texto: 'Reduzimos o tempo de atendimento em 40% nas noites de sábado. O garçom lança na mesa e na hora o pedido já está sendo montado no forno!'
+        },
+        {
+          nome: 'Mariana Esteves',
+          restaurante: 'Bar & Espetto 360',
+          texto: 'A trava antifraude acabou de vez com os cancelamentos suspeitos no fechamento de caixa. O sistema se pagou logo no primeiro mês.'
+        }
+      ];
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // HISTÓRICO DE VERSÕES (ROLLBACK EM 1 CLIQUE)
+    // ═════════════════════════════════════════════════════════════════════════
+    function abrirModalHistorico() {
+      document.getElementById('modal-historico').style.display = 'flex';
+      carregarHistoricoVersoes();
+    }
+
+    function fecharModalHistorico() {
+      document.getElementById('modal-historico').style.display = 'none';
+    }
+
+    async function carregarHistoricoVersoes() {
+      const container = document.getElementById('lista-versoes-historico');
+      container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Buscando versões salvas...</div>`;
+
+      const token = localStorage.getItem('chef_suporte_token');
+      try {
+        const res = await fetch('/api/suporte/site-historico', {
+          headers: { 'Authorization': 'Bearer ' + token, 'x-suporte-token': token }
+        });
+        const data = await res.json();
+        if (!data || !data.ok) throw new Error(data.erro || 'Erro ao obter histórico.');
+
+        const versoes = data.versoes || [];
+        if (!versoes.length) {
+          container.innerHTML = `
+            <div style="text-align:center; padding:40px 20px; color:var(--text-muted); background:var(--bg-card); border-radius:12px; border:1px dashed var(--border);">
+              <i class="fa-solid fa-clock-rotate-left fa-2x" style="opacity:0.4; margin-bottom:12px;"></i>
+              <p style="margin:0; font-weight:600;">Nenhuma versão histórica registrada ainda.</p>
+              <span style="font-size:12px;">Ao salvar o site pela primeira vez, sua primeira versão será salva aqui.</span>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = versoes.map((v, idx) => {
+          const isMaisRecente = idx === 0;
+          const dataFormatada = new Date(v.criado_em).toLocaleString('pt-BR');
+          return `
+            <div style="background:var(--bg-surface); border:1px solid ${isMaisRecente ? 'rgba(56,189,248,0.4)' : 'var(--border)'}; border-radius:12px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px; transition:all 0.2s;">
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <strong style="color:#fff; font-size:14px;">${v.titulo || 'Versão #' + v.id}</strong>
+                  ${isMaisRecente ? '<span style="background:rgba(56,189,248,0.15); color:#38bdf8; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">VERSÃO ATUAL</span>' : ''}
+                </div>
+                <div style="font-size:12px; color:var(--text-muted);">
+                  <i class="fa-regular fa-calendar"></i> ${dataFormatada} &nbsp;•&nbsp; 
+                  <i class="fa-regular fa-user"></i> ${v.autor_nome || 'Suporte'}
+                </div>
+                <div style="font-size:12px; color:#cbd5e1; margin-top:2px;">
+                  ${v.resumo || 'Configurações do site oficial'}
+                </div>
+              </div>
+              <button class="btn btn-sm ${isMaisRecente ? 'btn-secondary' : 'btn-primary'}" onclick="restaurarVersaoHistorico(${v.id})" style="padding:8px 14px; font-size:12px; font-weight:700; flex-shrink:0;">
+                <i class="fa-solid fa-rotate-left"></i> Restaurar (1-Clique)
+              </button>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Falha ao carregar histórico: ${e.message}</div>`;
+      }
+    }
+
+    async function restaurarVersaoHistorico(id) {
+      if (!confirm(`Tem certeza que deseja restaurar a versão #${id}? Todas as alterações salvas após essa versão serão substituídas pelo snapshot restaurado.`)) return;
+
+      const token = localStorage.getItem('chef_suporte_token');
+      try {
+        showToast('Restaurando versão em 1 clique...', 'info');
+        const res = await fetch('/api/suporte/site-historico/restaurar/' + id, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'x-suporte-token': token }
+        });
+        const data = await res.json();
+        if (!data || !data.ok) throw new Error(data.erro || 'Erro ao restaurar versão.');
+
+        showToast(data.mensagem || 'Versão restaurada com sucesso!');
+        fecharModalHistorico();
+
+        // Recarrega as configs no formulário e no Live Preview
+        if (data.configs) {
+          siteConfigs = data.configs;
+          preencherFormularios(siteConfigs);
+          atualizarLivePreview();
+        } else {
+          carregarConfigs();
+        }
+      } catch (e) {
+        showToast(e.message || 'Erro ao restaurar versão', 'error');
+      }
+    }
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', () => {
+      carregarConfigs();
+    });
+  </script>
+</body>
+</html>

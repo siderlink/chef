@@ -421,6 +421,9 @@
         <div class="menu-item" data-target="sec-estudio-modulos"><i class="fa-solid fa-puzzle-piece" style="color:#fc4b15;"></i> Estúdio de Módulos (Caixa v1.1)</div>
         <div class="menu-item" data-target="sec-temas-curadoria"><i class="fa-solid fa-palette" style="color:#a78bfa;"></i> Curadoria de Temas</div>
         <div class="menu-item" data-target="sec-site-vendas-modulos"><i class="fa-solid fa-bullhorn" style="color:#38bdf8;"></i> Módulos Site de Vendas</div>
+        <div class="menu-item" onclick="window.open('/editor-site.html', '_blank')" style="background: rgba(252, 75, 21, 0.1); border: 1px solid rgba(252, 75, 21, 0.25); color: #fff; font-weight: 700; cursor: pointer;">
+          <i class="fa-solid fa-pen-ruler" style="color:#fc4b15;"></i> Editor do Site Oficial <span style="font-size:10px; background:#fc4b15; color:#fff; padding:2px 6px; border-radius:4px; margin-left:auto;">NOVO</span>
+        </div>
         <div class="menu-item" data-target="sec-implementacoes"><i class="fa-solid fa-wrench" style="color:#fc4b15;"></i> Implementações</div>
       </div>
 
@@ -998,7 +1001,13 @@
               </h2>
               <p style="color:var(--text-muted);font-size:0.82rem;margin:0.3rem 0 0;">Crie, ative e personalize botões de WhatsApp, banners de urgência, pop-ups de retenção e simuladores para o site comercial.</p>
             </div>
-            <div style="display:flex;gap:0.5rem;">
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <a href="/editor-site.html" target="_blank" class="btn" style="background:#fc4b15;color:#fff;font-weight:700;box-shadow:0 4px 12px rgba(252,75,21,0.25);">
+                <i class="fa-solid fa-pen-ruler"></i> Abrir Editor Completo do Site ↗
+              </a>
+              <button class="btn" style="background:#0284c7;color:#fff;font-weight:700;" onclick="abrirModalHistoricoModulos()">
+                <i class="fa-solid fa-clock-rotate-left"></i> Histórico (10 Versões)
+              </button>
               <button class="btn btn-primary" onclick="abrirModalNovoModuloVendas()">
                 <i class="fa-solid fa-plus"></i> Novo Módulo de Vendas
               </button>
@@ -1829,6 +1838,82 @@
       }
     }
 
+    /* ═══ HISTÓRICO DE VERSÕES DOS MÓDULOS (ROLLBACK EM 1 CLIQUE) ═══ */
+    function abrirModalHistoricoModulos() {
+      var modal = document.getElementById('modal-historico-modulos');
+      if (modal) modal.classList.add('active');
+      carregarHistoricoModulos();
+    }
+
+    function fecharModalHistoricoModulos() {
+      var modal = document.getElementById('modal-historico-modulos');
+      if (modal) modal.classList.remove('active');
+    }
+
+    async function carregarHistoricoModulos() {
+      var box = document.getElementById('lista-historico-modulos-body');
+      if (!box) return;
+      box.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Carregando histórico de versões...</div>';
+
+      var token = localStorage.getItem('token') || window._suporteToken || '';
+      try {
+        var res = await fetch('/api/super/site-vendas/historico', {
+          headers: { 'Authorization': 'Bearer ' + token, 'x-suporte-token': token }
+        });
+        var data = await res.json();
+        if (!data || !data.ok) throw new Error(data.erro || 'Falha ao buscar histórico.');
+
+        var versoes = data.versoes || [];
+        if (!versoes.length) {
+          box.innerHTML = '<div style="text-align:center;padding:2.5rem 1rem;background:#1f2937;border:1px dashed #374151;border-radius:12px;color:var(--text-muted);"><i class="fa-solid fa-clock-rotate-left fa-2x" style="opacity:0.3;margin-bottom:10px;"></i><p style="margin:0;font-weight:700;">Nenhuma versão histórica registrada ainda.</p><span style="font-size:0.75rem;">Ao adicionar ou editar módulos, as 10 últimas versões ficarão salvas aqui.</span></div>';
+          return;
+        }
+
+        box.innerHTML = versoes.map(function(v, idx) {
+          var isAtual = idx === 0;
+          var dataFormatada = new Date(v.criado_em).toLocaleString('pt-BR');
+          return '<div style="background:#1f2937;border:1px solid ' + (isAtual ? '#38bdf8' : '#374151') + ';border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;">'
+            + '<div style="display:flex;flex-direction:column;gap:3px;">'
+            + '<div style="display:flex;align-items:center;gap:8px;">'
+            + '<strong style="color:#f8fafc;font-size:0.9rem;">' + escH(v.titulo || ('Versão #' + v.id)) + '</strong>'
+            + (isAtual ? '<span style="background:rgba(56,189,248,0.2);color:#38bdf8;font-size:0.68rem;font-weight:800;padding:2px 6px;border-radius:6px;">VERSÃO ATUAL</span>' : '')
+            + '</div>'
+            + '<div style="font-size:0.75rem;color:var(--text-muted);">'
+            + '<i class="fa-regular fa-calendar"></i> ' + dataFormatada + ' &nbsp;•&nbsp; <i class="fa-regular fa-user"></i> ' + escH(v.autor_nome || 'Suporte')
+            + '</div>'
+            + '<div style="font-size:0.78rem;color:#cbd5e1;margin-top:2px;">' + escH(v.resumo || 'Módulos do site comercial') + '</div>'
+            + '</div>'
+            + '<button class="btn btn-sm ' + (isAtual ? '' : 'btn-primary') + '" style="' + (isAtual ? 'background:#374151;color:#fff;' : 'background:#38bdf8;color:#0b0f19;font-weight:800;') + 'padding:6px 14px;font-size:0.75rem;flex-shrink:0;" onclick="restaurarVersaoModulos(' + v.id + ')">'
+            + '<i class="fa-solid fa-rotate-left"></i> Restaurar (1-Clique)'
+            + '</button>'
+            + '</div>';
+        }).join('');
+      } catch (e) {
+        box.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> ' + e.message + '</div>';
+      }
+    }
+
+    async function restaurarVersaoModulos(id) {
+      if (!confirm('Deseja restaurar a versão #' + id + ' dos módulos? A configuração atual será substituída pelo snapshot desta versão.')) return;
+      var token = localStorage.getItem('token') || window._suporteToken || '';
+      try {
+        mostrarToastCuradoria('Restaurando versão dos módulos em 1 clique...', 'info');
+        var res = await fetch('/api/super/site-vendas/historico/restaurar/' + id, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'x-suporte-token': token }
+        });
+        var data = await res.json();
+        if (!data || !data.ok) throw new Error(data.erro || 'Falha ao restaurar');
+        mostrarToastCuradoria('✅ ' + (data.mensagem || 'Versão restaurada com sucesso!'), 'success');
+        fecharModalHistoricoModulos();
+        carregarModulosSiteVendas();
+        var iframe = document.getElementById('iframe-site-vendas-preview');
+        if (iframe) setTimeout(function(){ iframe.src = iframe.src; }, 600);
+      } catch (e) {
+        mostrarToastCuradoria('❌ ' + e.message, 'danger');
+      }
+    }
+
     // Auto-load quando abas forem clicadas
     document.addEventListener('DOMContentLoaded', function(){
       document.querySelectorAll('.menu-item[data-target="sec-temas-curadoria"]').forEach(function(btn){
@@ -2018,6 +2103,31 @@
         <button class="btn btn-primary" onclick="salvarModuloVendas()" style="background:#38bdf8;color:#0b0f19;font-weight:800;">
           <i class="fa-solid fa-floppy-disk"></i> Salvar Módulo
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE HISTÓRICO DE VERSÕES DOS MÓDULOS (ÚLTIMAS 10 SALVAS) -->
+  <div class="modal-overlay" id="modal-historico-modulos">
+    <div class="modal-content" style="max-width:650px;background:#111827;border:1px solid #374151;border-radius:14px;">
+      <div class="modal-header" style="background:#1f2937;border-bottom:1px solid #374151;border-radius:14px 14px 0 0;padding:1rem 1.4rem;display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:8px;background:rgba(56,189,248,0.15);color:#38bdf8;display:flex;align-items:center;justify-content:center;font-size:18px;">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+          </div>
+          <div>
+            <h3 style="margin:0;color:#f8fafc;font-size:1.1rem;">Histórico de Módulos do Site de Vendas</h3>
+            <span style="font-size:0.75rem;color:var(--text-muted);">Últimas 10 versões salvas com restauração em 1 clique</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="fecharModalHistoricoModulos()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="padding:1.4rem;max-height:70vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;" id="lista-historico-modulos-body">
+        <div style="text-align:center;padding:2rem;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Carregando histórico...</div>
+      </div>
+      <div class="modal-footer" style="padding:0.9rem 1.4rem;border-top:1px solid #374151;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.75rem;color:var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> Restauração segura com atualização imediata</span>
+        <button class="btn" onclick="fecharModalHistoricoModulos()">Fechar</button>
       </div>
     </div>
   </div>

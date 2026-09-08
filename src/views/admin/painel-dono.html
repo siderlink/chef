@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>Painel do Dono - Chef Cozinha</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
@@ -1072,348 +1072,7 @@
     }
     .feature-toggle input:checked ~ .thumb { left: 23px; }
   
-  /* ════════════════════ iPAD MINI (768x1024 / 1024x768) ════════════════════ */
-  @media screen and (min-width: 700px) and (max-width: 900px) and (orientation: portrait) {
-    header { padding: 14px 18px; }
-    .header-title { font-size: var(--fs-xl); }
-    main { padding: 18px; max-width: 720px; margin: 0 auto; width: 100%; box-sizing: border-box; }
-    .btn-periodo, .btn-reportar-problema { min-height: 44px; }
-    [style*="grid-template-columns"] { grid-template-columns: repeat(2, 1fr) !important; }
-  }
-
-  @media screen and (min-width: 901px) and (max-width: 1100px) and (orientation: landscape) {
-    main { padding: 16px 24px; }
-    .btn-periodo, .btn-reportar-problema { min-height: 42px; }
-  }
-
-  /* ════════════════════ DESKTOP / ULTRAWIDE ════════════════════ */
-
-  /* ─── Desktop padrão (≥1280px): coluna mais larga, modais centrados ─── */
-  @media screen and (min-width: 1280px) {
-    main {
-      max-width: 960px;
-      padding: 24px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px 20px;
-      align-items: start;
-    }
-    /* Emparelhamento das seções em duas colunas */
-    main > div:nth-child(1) { grid-column: 1 / -1; } /* Filtros de período */
-    main > div:nth-child(2) { grid-column: 1 / -1; } /* KPIs */
-    main > div:nth-child(7),
-    main > div:nth-child(8) { grid-column: auto; }
-    main > div:nth-child(9),
-    main > div:nth-child(10) { grid-column: 1 / -1; } /* Funcionalidades + Feed */
-    /* Botões com tamanho mínimo/máximo */
-    .btn-periodo { min-height: 44px; max-height: 56px; padding: 10px 22px; }
-    .btn-primary { max-height: 60px; }
-    .remote-btn { min-height: 96px; max-height: 140px; }
-    /* Bottom sheets viram diálogos centrados no desktop */
-    .modal-overlay { align-items: center !important; }
-    .modal-sheet { max-width: 680px; border-radius: var(--radius-lg); margin: 0 auto; }
-  }
-
-  /* ─── Tier UW1: Ultrawide base (≥1921px / 2560×1080+) ─── */
-  @media screen and (min-width: 1921px) {
-    main { max-width: 1440px; gap: 22px 26px; padding: 28px; }
-    header { padding: 16px 32px; }
-    .header-title { font-size: var(--fs-xl); }
-    /* KPIs: faturamento ocupa a linha toda; mesas e ticket dividem */
-    .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 16px; }
-    .kpi-card.full { grid-column: 1 / -1 !important; }
-    .kpi-grid > .kpi-card:not(.full) { grid-column: span 2 !important; }
-    /* Controle remoto em uma linha de 4 */
-    .remote-grid { grid-template-columns: repeat(4, 1fr) !important; }
-    .remote-btn.full { grid-column: span 2; }
-    /* Cards de formulário lado a lado com altura equilibrada */
-    .form-input { min-height: 52px; max-height: 64px; font-size: var(--fs-lg); }
-    .modal-relato-box { max-width: 560px; }
-    .modal-sheet { max-width: 780px; }
-    .sec-title { font-size: var(--fs-lg); }
-  }
-
-  /* ─── Tier UW2: Super ultrawide (≥2561px / 3440×1440) ─── */
-  @media screen and (min-width: 2561px) {
-    main { max-width: 1760px; gap: 26px 30px; padding: 32px; border-radius: 20px; }
-    header { padding: 18px 40px; }
-    .kpi-grid { gap: 20px !important; }
-    .kpi-value { font-size: clamp(var(--fs-xxl), 3vw, 56px); }
-    .remote-btn { min-height: 120px; }
-    .features-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)) !important; gap: 16px; }
-    .feed-card { max-height: 420px; }
-    .modal-sheet { max-width: 860px; }
-  }
-
-  /* ─── Tier UW3: Super ultrawide duplo 4K (≥3841px) ─── */
-  @media screen and (min-width: 3841px) {
-    main { max-width: 2100px; gap: 30px 36px; padding: 40px; }
-    header { padding: 20px 56px; }
-    .kpi-grid { gap: 24px !important; }
-    .remote-btn { min-height: 150px; max-height: 200px; }
-    .ranking-item, .feed-card { font-size: var(--fs-lg); }
-    .modal-sheet { max-width: 960px; }
-  }
-
-  /* ════════════════════ SELETOR DE LAYOUT DO PAINEL (3 opções configuráveis) ════════════════════ */
-  .layout-switcher {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 12px;
-    flex-wrap: wrap;
-  }
-  .ls-label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    color: var(--text-sub);
-  }
-  .ls-options {
-    display: inline-flex;
-    gap: 4px;
-    padding: 4px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-  }
-  .ls-btn {
-    padding: 8px 14px;
-    border: none;
-    border-radius: 9px;
-    background: transparent;
-    color: var(--text-sub);
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-  }
-  .ls-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
-  .ls-btn.active {
-    background: var(--primary);
-    color: #ffffff;
-    box-shadow: 0 2px 10px rgba(252, 75, 21, 0.35);
-  }
-
-  /* Colaborador vira cartão clicável que abre o modal de funções */
-  .colab-card-click {
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: space-between;
-    cursor: pointer;
-    user-select: none;
-    padding: 12px 16px;
-  }
-  .colab-card-click:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.10); border-color: var(--primary); }
-  .colab-card-click:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-  .colab-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .colab-info strong { font-size: var(--fs-md); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .colab-info span { font-size: var(--fs-xs); color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .colab-chevron { color: var(--text-sub); font-size: 18px; flex-shrink: 0; transition: transform 0.15s ease; }
-  .colab-card-click:hover .colab-chevron { transform: translateX(3px); color: var(--primary); }
-
-  /* LAYOUT COMPACTO: coluna única estreita em qualquer tela grande */
-  @media screen and (min-width: 1280px) {
-    body[data-layout-dono="compacto"] main {
-      display: block;
-      max-width: 780px;
-      padding: 24px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    body[data-layout-dono="compacto"] main > div { grid-column: auto !important; }
-    body[data-layout-dono="compacto"] .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
-    body[data-layout-dono="compacto"] .kpi-card.full,
-    body[data-layout-dono="compacto"] .kpi-grid > .kpi-card:not(.full) { grid-column: span 1 !important; }
-    body[data-layout-dono="compacto"] .modal-sheet { max-width: 640px; }
-  }
-
-  /* LAYOUT DASHBOARD: duas colunas já em telas médias + painel largo */
-  @media screen and (min-width: 1100px) {
-    body[data-layout-dono="dashboard"] main {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px 22px;
-      align-items: start;
-      max-width: 1240px;
-    }
-    body[data-layout-dono="dashboard"] main > div:nth-child(1),
-    body[data-layout-dono="dashboard"] main > div:nth-child(2),
-    body[data-layout-dono="dashboard"] main > div:nth-child(9),
-    body[data-layout-dono="dashboard"] main > div:nth-child(10) { grid-column: 1 / -1; }
-  }
-  @media screen and (min-width: 1280px) {
-    body[data-layout-dono="dashboard"] main { max-width: 1320px; gap: 22px 24px; }
-    body[data-layout-dono="dashboard"] .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 14px; }
-    body[data-layout-dono="dashboard"] .kpi-card.full { grid-column: 1 / -1 !important; }
-    body[data-layout-dono="dashboard"] .kpi-grid > .kpi-card:not(.full) { grid-column: span 2 !important; }
-    body[data-layout-dono="dashboard"] .features-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-  }
-    /* ══════════════════════════════════════════════════════════════════
-       MOTOR MODULAR BENTO GRID PARA PAINEL DO DONO (MOBILE -> ULTRAWIDE)
-       ══════════════════════════════════════════════════════════════════ */
-    :root {
-      --bg: #090d16;
-      --card: #111827;
-      --card2: #1e293b;
-      --border: rgba(255,255,255,0.09);
-      --primary: #fc4b15;
-      --primary-light: rgba(252,75,21,0.15);
-      --green: #10b981;
-      --green-light: rgba(16,185,129,0.15);
-      --blue: #3b82f6;
-      --blue-light: rgba(59,130,246,0.15);
-      --purple: #8b5cf6;
-      --purple-light: rgba(139,92,246,0.15);
-      --text: #f8fafc;
-      --text-sub: #94a3b8;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      zoom: 1 !important;
-    }
-
-    /* Container Principal Fluido & Modular */
-    main {
-      padding: 24px 20px 80px !important;
-      margin: 0 auto !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-      transition: max-width 0.3s ease;
-    }
-
-    /* ─── Mobile (< 768px): Coluna Única Confortável ─── */
-    @media (max-width: 767px) {
-      main {
-        max-width: 600px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 18px !important;
-      }
-      .kpi-grid { grid-template-columns: 1fr 1fr !important; }
-      .remote-grid { grid-template-columns: 1fr 1fr !important; }
-    }
-
-    /* ─── Tablet & Telas Médias (768px a 1199px) ─── */
-    @media (min-width: 768px) and (max-width: 1199px) {
-      main {
-        max-width: 960px !important;
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 20px !important;
-        align-items: start !important;
-      }
-      .grid-span-all,
-      .sec-periodo-wrap,
-      .kpi-grid-container,
-      .features-container {
-        grid-column: 1 / -1 !important;
-      }
-      .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
-      .remote-grid { grid-template-columns: repeat(2, 1fr) !important; }
-    }
-
-    /* ─── Desktop & Monitores Wide (1200px a 1799px) ─── */
-    @media (min-width: 1200px) and (max-width: 1799px) {
-      main {
-        max-width: 1440px !important;
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 22px !important;
-        align-items: start !important;
-      }
-      .grid-span-all,
-      .sec-periodo-wrap,
-      .kpi-grid-container {
-        grid-column: 1 / -1 !important;
-      }
-      .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
-      .remote-grid { grid-template-columns: repeat(4, 1fr) !important; }
-      .features-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important; }
-    }
-
-    /* ─── Monitores Ultrawide & 4K (≥ 1800px) ─── */
-    @media (min-width: 1800px) {
-      main {
-        max-width: 1800px !important;
-        display: grid !important;
-        grid-template-columns: repeat(4, 1fr) !important;
-        gap: 24px !important;
-        align-items: start !important;
-      }
-      .grid-span-all,
-      .sec-periodo-wrap,
-      .kpi-grid-container {
-        grid-column: 1 / -1 !important;
-      }
-      .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
-      .remote-grid { grid-template-columns: repeat(4, 1fr) !important; }
-      .features-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important; }
-    }
-
-    /* Cartões Modulares com Acabamento Premium */
-    .kpi-card,
-    .remote-btn,
-    .colab-card,
-    .caixa-card,
-    .aviso-area,
-    .equipe-card,
-    .ranking-card,
-    .feed-card,
-    .meta-input-card {
-      background: var(--card) !important;
-      border: 1px solid var(--border) !important;
-      border-radius: var(--radius-lg) !important;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2) !important;
-      transition: transform 0.2s, border-color 0.2s !important;
-    }
-
-    .kpi-card:hover,
-    .remote-btn:hover,
-    .colab-card:hover {
-      border-color: rgba(252,75,21,0.4) !important;
-      transform: translateY(-2px) !important;
-    }
-
-    /* Modais Centralizados com Backdrop Blur no Desktop */
-    @media (min-width: 768px) {
-      .modal-overlay {
-        align-items: center !important;
-        justify-content: center !important;
-      }
-      .modal-sheet {
-        border-radius: var(--radius-lg) !important;
-        max-width: 620px !important;
-        margin: auto !important;
-      }
-    }
-
-
-    /* Sistema Responsivo para Painel Dono */
-    @media (max-width: 768px) {
-      div[style*="grid-template-columns: 1fr 1fr"],
-      div[style*="grid-template-columns:1fr 1fr"],
-      div[style*="grid-template-columns: repeat(4, 1fr)"],
-      div[style*="grid-template-columns: repeat(3, 1fr)"] {
-        grid-template-columns: 1fr !important;
-      }
-      table {
-        min-width: 500px !important;
-      }
-    }
-  
-
-    /* ══════════════════════════════════════════════════════════════════
-       SISTEMA DE TEMAS DINÂMICOS (CLARO / ESCURO) & LONG PRESS
-       ══════════════════════════════════════════════════════════════════ */
+  /* ════════════════════ SISTEMA DE TEMAS DINÂMICOS (CLARO / ESCURO) ════════════════════ */
     :root, body[data-theme="light"], body.theme-light {
       --bg: #f8fafc;
       --card: #ffffff;
@@ -1432,7 +1091,7 @@
       --purple: #8b5cf6;
       --purple-light: rgba(139,92,246,0.12);
       --yellow: #f59e0b;
-      --header-bg: #ffffff;
+      --header-bg: rgba(255, 255, 255, 0.95);
       --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
       --shadow-md: 0 8px 24px rgba(0,0,0,0.06);
     }
@@ -1455,7 +1114,7 @@
       --purple: #8b5cf6;
       --purple-light: rgba(139,92,246,0.15);
       --yellow: #f59e0b;
-      --header-bg: linear-gradient(135deg, #111827 0%, #0a0f1e 100%);
+      --header-bg: rgba(17, 24, 39, 0.92);
       --shadow-sm: 0 2px 8px rgba(0,0,0,0.25);
       --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
     }
@@ -1463,118 +1122,154 @@
     body {
       background: var(--bg) !important;
       color: var(--text) !important;
-      transition: background-color 0.2s, color 0.2s;
+      overflow-x: hidden !important;
+      width: 100% !important;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
+    /* ════════════════════ CABEÇALHO RESPONSIVO ════════════════════ */
     header {
       background: var(--header-bg) !important;
+      padding: 10px 16px !important;
       border-bottom: 1px solid var(--border) !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 100 !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      width: 100% !important;
+      max-width: 100vw !important;
+      box-sizing: border-box !important;
     }
-
-    .kpi-card, .card, .chart-card, .ranking-box, .features-grid > div, .modal-sheet {
-      background: var(--card) !important;
-      border-color: var(--border) !important;
-      box-shadow: var(--shadow-sm) !important;
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex-shrink: 1;
     }
-
-    /* ── Feedback Visual de Long Press (Manter Pressionado) ── */
-    .has-long-press {
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .btn-header-action {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-radius: 12px;
       cursor: pointer;
-      user-select: none;
-      -webkit-user-select: none;
-      transition: transform 0.2s, box-shadow 0.2s;
-      position: relative;
+      font-weight: 700;
+      font-size: 13px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+    }
+    @media (max-width: 767px) {
+      header { padding: 8px 12px !important; }
+      .logo-box { width: 38px !important; height: 38px !important; border-radius: 11px !important; }
+      .logo-box i { font-size: 20px !important; }
+      .header-title { font-size: 15px !important; }
+      .header-sub { font-size: 10.5px !important; }
+      .status-pill { padding: 2px 7px !important; font-size: 9.5px !important; }
+      .btn-header-modular .btn-txt,
+      .btn-header-suporte .btn-txt {
+        display: none !important;
+      }
+      .btn-header-action {
+        padding: 8px 10px !important;
+      }
+      #btn-rest-atual {
+        max-width: 80px;
+        display: inline-block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: bottom;
+      }
     }
 
-    .has-long-press:active, .long-press-active {
-      transform: scale(0.97) !important;
-      box-shadow: 0 0 0 3px var(--primary-light), var(--shadow-md) !important;
+    /* ════════════════════ BARRA DE NAVEGAÇÃO INFERIOR (MOBILE & TABLET DOCK) ════════════════════ */
+    .mobile-bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 950;
+      background: rgba(11, 15, 25, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.45);
+      transition: transform 0.25s ease;
     }
-
-    .long-press-badge {
-      position: absolute;
-      top: 10px;
-      right: 12px;
+    body[data-theme="light"] .mobile-bottom-nav,
+    body.theme-light .mobile-bottom-nav {
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.08);
+      border-top-color: #e2e8f0;
+    }
+    @media (min-width: 1200px) {
+      .mobile-bottom-nav { display: none !important; }
+    }
+    .mob-nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: var(--text-sub);
+      padding: 6px 2px;
+      min-height: 48px;
+      cursor: pointer;
+      border-radius: 12px;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+    }
+    .mob-nav-btn i {
+      font-size: 21px;
+      transition: transform 0.15s, color 0.15s;
+    }
+    .mob-nav-btn span {
       font-size: 10.5px;
       font-weight: 700;
-      color: var(--text-sub);
-      background: rgba(0,0,0,0.06);
-      padding: 2px 6px;
-      border-radius: 6px;
-      pointer-events: none;
-      opacity: 0.7;
+      letter-spacing: -0.2px;
+    }
+    .mob-nav-btn:active { transform: scale(0.92); }
+    .mob-nav-btn.active {
+      color: var(--primary);
+    }
+    .mob-nav-btn.active i {
+      transform: translateY(-2px);
+      color: var(--primary);
     }
 
-    /* ── Modos de Layout Visíveis e Impactantes ── */
-    body[data-layout-dono="compacto"] main {
-      display: flex !important;
-      flex-direction: column !important;
-      max-width: 760px !important;
-      margin: 0 auto !important;
-      gap: 14px !important;
-      padding: 16px !important;
-    }
-    body[data-layout-dono="compacto"] .kpi-grid {
-      grid-template-columns: repeat(2, 1fr) !important;
-      gap: 10px !important;
-    }
-    body[data-layout-dono="compacto"] .kpi-card {
-      padding: 14px !important;
-    }
-    body[data-layout-dono="compacto"] .kpi-card .val {
-      font-size: 26px !important;
-    }
-
-    body[data-layout-dono="confortavel"] main {
-      display: grid !important;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)) !important;
-      max-width: 1200px !important;
-      margin: 0 auto !important;
-      gap: 20px !important;
-      padding: 20px !important;
-    }
-
-    body[data-layout-dono="dashboard"] main {
-      display: grid !important;
-      grid-template-columns: repeat(12, 1fr) !important;
-      max-width: 1540px !important;
-      margin: 0 auto !important;
-      gap: 18px !important;
-      padding: 20px !important;
-    }
-    body[data-layout-dono="dashboard"] .dono-sec-full {
-      grid-column: span 12 !important;
-    }
-    body[data-layout-dono="dashboard"] .dono-sec-half {
-      grid-column: span 6 !important;
-    }
-    body[data-layout-dono="dashboard"] .dono-sec-third {
-      grid-column: span 4 !important;
-    }
-
-  
-    /* ══════════════════════════════════════════════════════════════════
-       PERFORMANCE 60/120 FPS & SEÇÕES RECOLHÍVEIS / EXPANSÍVEIS
-       ══════════════════════════════════════════════════════════════════ */
-    * {
-      box-sizing: border-box;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    body {
-      content-visibility: auto;
-      contain: paint;
-    }
-
+    /* ════════════════════ SEÇÕES E CARDS MODULARES ════════════════════ */
     .dono-section {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg, 24px);
+      background: var(--card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: var(--radius-lg, 22px) !important;
       padding: 20px;
       box-shadow: var(--shadow-sm);
       transition: box-shadow 0.2s ease, border-color 0.2s ease;
       contain: layout style;
+      box-sizing: border-box;
     }
 
     .sec-header-row {
@@ -1584,25 +1279,26 @@
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
-      padding: 4px 2px;
-      margin-bottom: 14px;
+      padding: 2px 0;
+      margin-bottom: 12px;
+      gap: 10px;
     }
-
     .sec-title {
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 800;
       color: var(--text);
       margin: 0;
+      flex: 1;
+      min-width: 0;
     }
-
     .sec-title i {
       color: var(--primary);
-      font-size: 22px;
+      font-size: 20px;
+      flex-shrink: 0;
     }
-
     .btn-sec-toggle {
       background: var(--card2);
       border: 1px solid var(--border);
@@ -1615,44 +1311,345 @@
       justify-content: center;
       cursor: pointer;
       font-size: 16px;
-      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s, color 0.15s;
+      flex-shrink: 0;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s;
     }
-
-    .btn-sec-toggle:hover {
-      background: var(--primary-light);
-      color: var(--primary);
-      border-color: var(--primary);
-    }
-
     .dono-section.is-collapsed .btn-sec-toggle {
       transform: rotate(-90deg);
     }
-
     .dono-section.is-collapsed .sec-content {
       display: none !important;
     }
-
-    .dono-section.is-collapsed {
-      padding-bottom: 14px;
-    }
-
     .sec-collapsed-badge {
       display: none;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
       color: var(--text-sub);
       background: var(--card2);
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 8px;
       border: 1px solid var(--border);
+      flex-shrink: 0;
     }
-
     .dono-section.is-collapsed .sec-collapsed-badge {
       display: inline-block;
-      margin-left: auto;
-      margin-right: 12px;
     }
 
+    /* Feedback de Long Press */
+    .has-long-press {
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .has-long-press:active, .long-press-active {
+      transform: scale(0.97) !important;
+      box-shadow: 0 0 0 3px var(--primary-light), var(--shadow-md) !important;
+    }
+
+    /* Colaborador cartão clicável */
+    .colab-card-click {
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      padding: 12px 16px;
+      border-radius: 16px;
+    }
+    .colab-card-click:hover {
+      transform: translateY(-1px);
+      border-color: var(--primary);
+    }
+    .colab-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .colab-info strong { font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .colab-info span { font-size: 12px; color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .colab-chevron { color: var(--text-sub); font-size: 18px; flex-shrink: 0; }
+
+    /* Layout switcher */
+    .layout-switcher {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .ls-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: var(--fs-xs);
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+    .ls-options {
+      display: inline-flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .ls-btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--text-sub);
+      font-size: var(--fs-xs);
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .ls-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+    .ls-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(252, 75, 21, 0.35);
+    }
+
+    /* ════════════════════ MOTOR RESPONSIVO: MOBILE (< 768px) ════════════════════ */
+    @media (max-width: 767px) {
+      main {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+        padding: 12px 12px calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        overflow-x: clip !important;
+        width: 100% !important;
+      }
+      .dono-section {
+        width: 100% !important;
+        padding: 16px 14px !important;
+        border-radius: 18px !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+        overflow-x: clip !important;
+      }
+      .kpi-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+      }
+      .kpi-card {
+        padding: 16px 14px !important;
+        border-radius: 16px !important;
+      }
+      .kpi-card.full {
+        grid-column: 1 / -1 !important;
+      }
+      .kpi-value {
+        font-size: clamp(22px, 6.5vw, 32px) !important;
+        letter-spacing: -0.5px !important;
+      }
+      .remote-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+      }
+      .remote-btn {
+        padding: 16px 10px !important;
+        min-height: 84px !important;
+        border-radius: 16px !important;
+      }
+      .remote-btn .rb-icon {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 22px !important;
+        border-radius: 14px !important;
+      }
+      .remote-btn .rb-label { font-size: 13.5px !important; }
+      .remote-btn .rb-sub { font-size: 10.5px !important; }
+
+      div[style*="grid-template-columns: repeat(3, 1fr)"],
+      .terminal-acoes-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+      }
+      .colab-action-btn {
+        min-height: 48px !important;
+        padding: 10px 6px !important;
+        border-radius: 12px !important;
+      }
+      .caixa-status-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding: 16px !important;
+      }
+      .btn-caixa {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 14px 20px !important;
+        font-size: 16px !important;
+      }
+      .periodo-row {
+        display: flex !important;
+        gap: 8px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scroll-snap-type: x mandatory !important;
+        padding-bottom: 6px !important;
+      }
+      .btn-periodo {
+        scroll-snap-align: start !important;
+        padding: 10px 16px !important;
+        font-size: 12.5px !important;
+        min-height: 42px !important;
+      }
+      .layout-switcher {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+      }
+      .ls-options {
+        display: flex !important;
+        width: 100% !important;
+      }
+      .ls-btn {
+        flex: 1 !important;
+        justify-content: center !important;
+        padding: 8px 6px !important;
+        font-size: 12px !important;
+      }
+      .layout-switcher > div:last-child,
+      .layout-switcher-btns {
+        display: flex !important;
+        gap: 6px !important;
+        width: 100% !important;
+        flex-wrap: wrap !important;
+      }
+      .layout-switcher > button,
+      .layout-switcher-btns button {
+        flex: 1 !important;
+        justify-content: center !important;
+        padding: 10px 12px !important;
+        min-height: 42px !important;
+      }
+      .modal-overlay { align-items: flex-end !important; }
+      .modal-sheet {
+        border-radius: 24px 24px 0 0 !important;
+        max-width: 100vw !important;
+        margin: 0 !important;
+        padding: 18px 16px calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+      }
+    }
+
+    /* ════════════════════ MOTOR RESPONSIVO: TABLET (768px a 1199px) ════════════════════ */
+    @media (min-width: 768px) and (max-width: 1199px) {
+      main {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 16px !important;
+        padding: 20px 18px calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        align-items: start !important;
+      }
+
+      /* Seções que ocupam a largura total no Tablet */
+      #sec-periodo, [data-secao="periodo"],
+      #sec-kpis, [data-secao="kpis"],
+      #sec-remoto-telas, [data-secao="remoto-caixa"],
+      #sec-remoto-equipe, [data-secao="remoto-colabs"],
+      #sec-meta-aviso, [data-secao="meta-aviso"],
+      #sec-atividade, [data-secao="feed"],
+      .dono-section.dono-sec-full {
+        grid-column: 1 / -1 !important;
+      }
+
+      /* Grid de KPIs no tablet: 4 colunas confortáveis */
+      .kpi-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 14px !important;
+      }
+      .kpi-card.full {
+        grid-column: span 2 !important;
+      }
+      .kpi-card:not(.full) {
+        grid-column: span 1 !important;
+      }
+
+      /* Seções que dividem 50%/50% perfeitamente no Tablet */
+      #sec-caixa, [data-secao="caixa"],
+      #sec-equipe, [data-secao="equipe"],
+      #sec-marketing-vip, [data-secao="marketing"],
+      #sec-cupons, [data-secao="cupons"],
+      #sec-ranking, [data-secao="ranking"],
+      #sec-features, [data-secao="funcionalidades"],
+      .dono-section.dono-sec-half {
+        grid-column: span 1 !important;
+      }
+
+      /* Grid de atalhos remotos no tablet */
+      .remote-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 12px !important;
+      }
+      div[style*="grid-template-columns: repeat(3, 1fr)"],
+      .terminal-acoes-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 10px !important;
+      }
+
+      .modal-overlay {
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .modal-sheet {
+        border-radius: var(--radius-lg, 24px) !important;
+        max-width: 580px !important;
+        margin: auto !important;
+      }
+    }
+
+    /* ════════════════════ MOTOR RESPONSIVO: DESKTOP (≥ 1200px) ════════════════════ */
+    @media (min-width: 1200px) {
+      main {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 20px !important;
+        padding: 24px 22px 60px !important;
+        width: 100% !important;
+        max-width: 1440px !important;
+        margin: 0 auto !important;
+        align-items: start !important;
+      }
+      .dono-section.dono-sec-full { grid-column: 1 / -1 !important; }
+      .dono-section.dono-sec-half { grid-column: span 2 !important; }
+      .dono-section.dono-sec-third { grid-column: span 1 !important; }
+
+      .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 14px; }
+      .kpi-card.full { grid-column: span 2 !important; }
+      .remote-grid { grid-template-columns: repeat(4, 1fr) !important; }
+      div[style*="grid-template-columns: repeat(3, 1fr)"] { grid-template-columns: repeat(6, 1fr) !important; }
+
+      /* Modos personalizados pelo dono */
+      body[data-layout-dono="compacto"] main {
+        max-width: 860px !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+      body[data-layout-dono="compacto"] .dono-section.dono-sec-half { grid-column: span 1 !important; }
+
+      body[data-layout-dono="dashboard"] main {
+        max-width: 1600px !important;
+      }
+
+      .modal-overlay {
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .modal-sheet {
+        border-radius: var(--radius-lg, 24px) !important;
+        max-width: 640px !important;
+        margin: auto !important;
+      }
+    }
   </style>
   <script src="/chef-telemetry-clicks.js" defer></script>
 </head>
@@ -1680,17 +1677,17 @@
         </div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      <button class="btn-reportar-problema" onclick="window.abrirModalReordenarSeccoes()" title="Personalizar tamanho, visibilidade e estilo dos cards" style="background:rgba(252,75,21,0.15); border-color:var(--primary); color:var(--primary);">
-        <i class="ph-bold ph-sliders" style="color:var(--primary);"></i> <span>Modularizar Painel</span>
-      </button>
-      <button class="btn-reportar-problema" onclick="abrirTrocarRestaurante()" title="Alternar entre seus restaurantes" style="background:rgba(255,255,255,0.12);">
+    <div class="header-actions">
+      <button class="btn-reportar-problema btn-header-action btn-header-rest" onclick="abrirTrocarRestaurante()" title="Alternar entre seus estabelecimentos" style="background:rgba(255,255,255,0.08);">
         <i class="ph-bold ph-buildings"></i> <span id="btn-rest-atual">Restaurante</span>
       </button>
-      <button class="btn-reportar-problema" onclick="abrirModalRelato()" title="Reportar problema ao suporte">
-        <i class="ph-bold ph-lifebuoy"></i> <span>Suporte</span>
+      <button class="btn-reportar-problema btn-header-action btn-header-modular" onclick="window.abrirModalReordenarSeccoes()" title="Personalizar tamanho e estilo dos cards" style="background:rgba(252,75,21,0.15); border-color:var(--primary); color:var(--primary);">
+        <i class="ph-bold ph-sliders" style="color:var(--primary);"></i> <span class="btn-txt">Modularizar</span>
       </button>
-      <button class="btn-logout" onclick="efetuarLogout()" title="Sair do Painel">
+      <button class="btn-reportar-problema btn-header-action btn-header-suporte" onclick="abrirModalRelato()" title="Reportar problema ao suporte">
+        <i class="ph-bold ph-lifebuoy"></i> <span class="btn-txt">Suporte</span>
+      </button>
+      <button class="btn-logout btn-header-action" onclick="efetuarLogout()" title="Sair do Painel">
         <i class="ph-bold ph-sign-out"></i>
       </button>
     </div>
@@ -1824,7 +1821,7 @@
   <main>
 
     <!-- Filtros de Período -->
-    <div>
+    <div class="dono-section dono-sec-full" data-secao="periodo" title="Período">
       <div class="sec-title">
         <i class="ph-bold ph-calendar"></i>
         <span>Período: <span id="periodo-rotulo-exibicao" style="color: var(--green);">Hoje</span></span>
@@ -1845,8 +1842,8 @@
       </div>
 
       <!-- Seletor de Layout do Painel & Reordenação -->
-      <div class="layout-switcher" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-        <div style="display:flex; align-items:center; gap:8px;">
+      <div class="layout-switcher">
+        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:260px;">
           <span class="ls-label"><i class="ph-bold ph-layout"></i> Layout:</span>
           <div class="ls-options" role="group" aria-label="Escolher layout do painel">
             <button type="button" class="ls-btn" data-ls-layout="compacto" onclick="definirLayoutDono('compacto')" title="Coluna única compacta e densa"><i class="ph-bold ph-rows"></i> Compacto</button>
@@ -1855,16 +1852,17 @@
           </div>
         </div>
 
-        
-        <button type="button" id="btn-toggle-all-sections" onclick="window.toggleTodasSecoes()" style="background:var(--card); border:1.5px solid var(--border); color:var(--text); padding:8px 14px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:var(--shadow-sm); transition:all 0.15s;">
-          <i class="ph-bold ph-caret-double-up" id="icon-toggle-all" style="color:var(--primary); font-size:16px;"></i>
-          <span id="txt-toggle-all">Recolher Tudo</span>
-        </button>
+        <div class="layout-switcher-btns">
+          <button type="button" id="btn-toggle-all-sections" onclick="window.toggleTodasSecoes()" style="background:var(--card2); border:1.5px solid var(--border); color:var(--text); padding:8px 14px; border-radius:12px; font-size:12.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:var(--shadow-sm); transition:all 0.15s;">
+            <i class="ph-bold ph-caret-double-up" id="icon-toggle-all" style="color:var(--primary); font-size:15px;"></i>
+            <span id="txt-toggle-all">Recolher Tudo</span>
+          </button>
 
-        <button type="button" onclick="window.abrirModalReordenarSeccoes()" style="background:var(--card); border:1.5px solid var(--border); color:var(--text); padding:8px 14px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:var(--shadow-sm); transition:all 0.15s;">
-          <i class="ph-bold ph-arrows-down-up" style="color:var(--primary); font-size:16px;"></i>
-          <span>Organizar Seções</span>
-        </button>
+          <button type="button" onclick="window.abrirModalReordenarSeccoes()" style="background:var(--card2); border:1.5px solid var(--border); color:var(--text); padding:8px 14px; border-radius:12px; font-size:12.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:var(--shadow-sm); transition:all 0.15s;">
+            <i class="ph-bold ph-sliders-horizontal" style="color:var(--primary); font-size:15px;"></i>
+            <span>Personalizar</span>
+          </button>
+        </div>
       </div>
 
       <div id="container-datas-custom" style="display:none; flex-direction:column; gap:12px; margin-top:12px; background:var(--card); padding:20px; border-radius:var(--radius-lg); border:1px solid var(--border);">
@@ -1885,7 +1883,7 @@
     </div>
 
     <!-- KPI Grid -->
-    <div>
+    <div class="dono-section dono-sec-full" data-secao="kpis" title="Resumo do Dia">
       <div class="sec-title">
         <i class="ph-bold ph-chart-bar"></i>
         <span>Resumo do Dia</span>
@@ -1935,7 +1933,7 @@
     </div>
 
     <!-- Equipe -->
-    <div class="equipe-card">
+    <div class="equipe-card dono-section dono-sec-half" data-secao="equipe" title="Equipe">
       <div class="equipe-info">
         <div class="equipe-count" id="kpi-equipe">0</div>
         <div class="equipe-label">Colaboradores Ativos</div>
@@ -1948,7 +1946,7 @@
     </div>
 
     <!-- CAIXA — Abrir / Fechar -->
-    <div>
+    <div class="dono-section dono-sec-half" data-secao="caixa" title="Controle do Caixa">
       <div class="sec-title">
         <i class="ph-bold ph-cash-register"></i>
         <span>Controle do Caixa</span>
@@ -1968,7 +1966,7 @@
     </div>
 
     <!-- CONTROLE REMOTO DO CAIXA -->
-    <div>
+    <div class="dono-section dono-sec-full" data-secao="remoto-caixa" title="Controle Remoto do Caixa">
       <div class="sec-title">
         <i class="ph-bold ph-desktop"></i>
         <span>Controle Remoto do Caixa</span>
@@ -2074,16 +2072,111 @@
       </div>
     </div>
 
-    <!-- CONTROLE REMOTO DE CADA COLABORADOR -->
-    <div>
-      <div class="sec-title" style="display: flex; justify-content: space-between; align-items: center;">
+    <!-- CONTROLE REMOTO, APROVAÇÕES E POLÍTICAS DE ACESSO DA EQUIPE -->
+    <div class="dono-section dono-sec-full" data-secao="remoto-colabs" title="Gestão da Equipe & Políticas de Acesso">
+      <div class="sec-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <i class="ph-bold ph-users"></i>
-          <span>Controle Remoto de Colaboradores</span>
+          <i class="ph-bold ph-users" style="color:var(--primary);"></i>
+          <span>Gestão da Equipe & Políticas de Acesso</span>
         </div>
-        <button class="btn-refresh" onclick="carregarFuncionariosControleRemoto()" style="padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text-sub); cursor: pointer; font-size: 12px;">
-          <i class="ph ph-arrows-clockwise"></i> Atualizar
-        </button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="btn-primary" onclick="abrirModalConviteColaboradorDono()" style="padding: 6px 14px; font-size: 13px; border-radius: 10px; gap: 6px;">
+            <i class="ph-bold ph-user-plus"></i> Convidar Colaborador
+          </button>
+          <button class="btn-refresh" onclick="carregarFuncionariosControleRemoto()" style="padding: 6px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text-sub); cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+            <i class="ph ph-arrows-clockwise"></i> Atualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- CARD 1: SOLICITAÇÕES PENDENTES DE APROVAÇÃO -->
+      <div id="dono-box-pendentes" style="background: rgba(245, 158, 11, 0.08); border: 1.5px dashed rgba(245, 158, 11, 0.4); border-radius: 16px; padding: 18px; margin-bottom: 18px; display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; color: #f59e0b; font-size: 15px;">
+            <i class="ph-bold ph-clock-countdown" style="font-size: 20px;"></i>
+            <span>Novos Cadastros Aguardando Sua Aprovação</span>
+            <span id="dono-badge-pendentes-count" style="background: #f59e0b; color: #000; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 900;">0</span>
+          </div>
+        </div>
+        <div id="dono-lista-pendentes" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Itens pendentes injetados via JS -->
+        </div>
+      </div>
+
+      <!-- CARD 2: POLÍTICAS DE ACESSO DA EQUIPE (PERSONALIZÁVEL PELO DONO) -->
+      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="ph-bold ph-shield-check" style="color: var(--primary); font-size: 20px;"></i>
+            <strong style="font-size: 15px; color: var(--text);">Como deve funcionar o acesso dos colaboradores?</strong>
+          </div>
+          <button type="button" class="btn-primary" onclick="salvarPoliticasAcessoDono()" style="padding: 6px 14px; font-size: 12.5px; border-radius: 10px; gap: 6px;">
+            <i class="ph-bold ph-floppy-disk"></i> Salvar Políticas
+          </button>
+        </div>
+        <p style="font-size: 12.5px; color: var(--text-sub); margin-bottom: 16px; line-height: 1.5;">
+          Escolha o nível de segurança e exigência de login para a sua equipe no caixa e nos tablets de salão:
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="font-size: 13.5px; color: var(--text);">Exigir Operador Identificado</strong>
+              <input type="checkbox" id="dono-pol-exigir-op" checked style="width: 18px; height: 18px; cursor: pointer;">
+            </div>
+            <p style="font-size: 11.5px; color: var(--text-sub); margin: 0;">Impede alterações de mesa, pedidos e contas sem que o colaborador faça login.</p>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 14px;">
+            <label style="display: block; font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 6px;">Modo de Identificação</label>
+            <select id="dono-pol-modo-ident" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px;">
+              <option value="pin">PIN Numérico Rápido (4 a 6 dígitos)</option>
+              <option value="senha">Usuário e Senha Completa</option>
+            </select>
+            <p style="font-size: 11.5px; color: var(--text-sub); margin-top: 4px;">PIN agiliza o atendimento direto na tela sensível ao toque.</p>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 14px;">
+            <label style="display: block; font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 6px;">Bloqueio por Inatividade</label>
+            <select id="dono-pol-inatividade" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px;">
+              <option value="0">Desativado (Não bloquear)</option>
+              <option value="2">2 minutos</option>
+              <option value="5">5 minutos</option>
+              <option value="10">10 minutos</option>
+              <option value="15">15 minutos</option>
+              <option value="30">30 minutos</option>
+            </select>
+            <p style="font-size: 11.5px; color: var(--text-sub); margin-top: 4px;">Pede nova identificação quando o operador se ausenta.</p>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 14px; grid-column: 1 / -1;">
+            <strong style="display: block; font-size: 13.5px; color: var(--text); margin-bottom: 8px;">Ações que Exigem Autorização de Gerente (PIN Supervisor)</strong>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer;">
+                <input type="checkbox" id="dono-act-desconto" value="desconto" checked> Aplicar Descontos
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer;">
+                <input type="checkbox" id="dono-act-cancel-item" value="cancelamento_item" checked> Cancelar Itens Lançados
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer;">
+                <input type="checkbox" id="dono-act-cancel-mesa" value="cancelamento_mesa" checked> Cancelar Mesa Inteira
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer;">
+                <input type="checkbox" id="dono-act-sangria" value="sangria" checked> Sangria / Suprimento
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer;">
+                <input type="checkbox" id="dono-act-reabertura" value="reabertura" checked> Reabrir Contas Finalizadas
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 3: LISTA DE COLABORADORES ATIVOS & CONTROLE REMOTO -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <strong style="font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 6px;">
+          <i class="ph ph-users-three"></i> Colaboradores Ativos & Controle Remoto
+        </strong>
       </div>
       <div id="lista-controle-colaboradores" style="display: flex; flex-direction: column; gap: 12px;">
         <div style="text-align: center; color: var(--text-sub); font-size: var(--fs-sm); padding: 16px;">Carregando colaboradores...</div>
@@ -2093,7 +2186,7 @@
     <!-- CUPONS QR & PROMOÇÕES -->
     
     <!-- MÓDULO VIP: MENSAGENS EM MASSA & NOTIFICAÇÕES PUSH PWA (CONTRATAÇÃO À PARTE) -->
-    <div id="sec-marketing-vip" class="dono-section">
+    <div id="sec-marketing-vip" class="dono-section dono-sec-half" data-secao="marketing" title="Mensagens & Notificações Push">
       <div class="sec-title" style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:center; gap:8px;">
           <i class="ph-bold ph-megaphone" style="color:var(--primary);"></i>
@@ -2135,7 +2228,7 @@
       </div>
     </div>
 
-    <div class="cupons-section-dono">
+    <div class="cupons-section-dono dono-section dono-sec-half" data-secao="cupons" title="Cupons QR & Promoções">
       <div class="sec-title" style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; align-items:center; gap:8px;">
           <i class="ph-bold ph-ticket" style="color:var(--primary);"></i>
@@ -2169,7 +2262,7 @@
     </div>
 
     <!-- Painel Rápido: Meta Diária & Aviso à Equipe -->
-    <div style="display:grid; grid-template-columns: 1fr; gap:12px;">
+    <div class="dono-section dono-sec-full" data-secao="meta-aviso" title="Meta & Aviso" style="display:grid; grid-template-columns: 1fr; gap:12px;">
       <!-- Meta de vendas compacta -->
       <div class="meta-input-card" style="padding:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -2203,7 +2296,7 @@
     </div>
 
     <!-- Ranking de produtos -->
-    <div class="ranking-card">
+    <div class="ranking-card dono-section dono-sec-half" data-secao="ranking" title="Produtos Mais Vendidos">
       <div class="ranking-header" onclick="toggleRanking()">
         <div class="ranking-header-left">
           <i class="ph-bold ph-trophy"></i>
@@ -2219,7 +2312,7 @@
     </div>
 
     <!-- Funcionalidades -->
-    <div>
+    <div class="dono-section dono-sec-half" data-secao="funcionalidades" title="Funcionalidades">
       <div class="sec-title">
         <i class="ph-bold ph-toggle-left"></i>
         <span>Funcionalidades</span>
@@ -2228,7 +2321,7 @@
     </div>
 
     <!-- Feed de Atividade -->
-    <div>
+    <div class="dono-section dono-sec-full" data-secao="feed" title="Atividade em Tempo Real">
       <div class="sec-title">
         <i class="ph-bold ph-activity"></i>
         <span>Atividade em Tempo Real</span>
@@ -2723,6 +2816,167 @@
           <i class="ph-bold ph-arrows-clockwise"></i> Atualizar lista
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal: Aprovar Colaborador (Dono) -->
+  <div id="modal-aprovar-colaborador-dono" class="modal-overlay hidden">
+    <div class="modal-sheet" style="max-width: 480px;">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-user-check" style="color:#10b981;"></i> Aprovar Colaborador</span>
+        <button class="modal-close" onclick="fecharModal('modal-aprovar-colaborador-dono')"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <p class="caixa-modal-desc">Defina o cargo oficial e o PIN de acesso rápido deste colaborador no sistema.</p>
+
+      <input type="hidden" id="aprovar-colab-id">
+      
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Nome Completo</label>
+        <input type="text" id="aprovar-colab-nome" class="form-input" readonly style="background: rgba(255,255,255,0.05); font-weight: 700;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Usuário de Login</label>
+        <input type="text" id="aprovar-colab-usuario" class="form-input" readonly style="background: rgba(255,255,255,0.05);">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label" for="aprovar-colab-cargo">Cargo / Função</label>
+        <select id="aprovar-colab-cargo" class="form-input">
+          <option value="Garçom">Garçom / Atendimento</option>
+          <option value="Caixa">Operador de Caixa</option>
+          <option value="Cozinha">Cozinha / KDS</option>
+          <option value="Gerente">Gerente / Supervisor</option>
+          <option value="Atendente">Atendente Balcão</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label class="form-label" for="aprovar-colab-pin">PIN de Identificação Rápida (4 a 6 dígitos)</label>
+        <input type="password" id="aprovar-colab-pin" class="form-input" placeholder="Ex: 1234 (opcional)" inputmode="numeric" maxlength="6" style="letter-spacing: 4px; font-size: 18px; text-align: center;">
+        <span style="font-size: 11px; color: var(--text-sub); display: block; margin-top: 4px;">Usado para login com numpad no caixa e tablets. Se em branco, mantém o PIN fornecido no cadastro.</span>
+      </div>
+
+      <div class="confirm-row">
+        <button class="btn-cancel" onclick="fecharModal('modal-aprovar-colaborador-dono')">Cancelar</button>
+        <button class="btn-confirm" onclick="confirmarAprovacaoColaboradorDono()" style="background: #10b981;">
+          <i class="ph-bold ph-check"></i> Concluir Aprovação
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Convidar Colaborador (Link & QR Code) -->
+  <div id="modal-convite-colaborador-dono" class="modal-overlay hidden">
+    <div class="modal-sheet" style="max-width: 480px;">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-user-plus" style="color:var(--primary);"></i> Convidar Colaborador</span>
+        <button class="modal-close" onclick="fecharModal('modal-convite-colaborador-dono')"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <p class="caixa-modal-desc">Compartilhe este link ou QR Code com o novo funcionário para que ele se cadastre diretamente no seu restaurante:</p>
+
+      <div style="text-align: center; margin: 14px 0;">
+        <div id="convite-colab-qrcode" style="display: inline-block; padding: 12px; background: #fff; border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.15);"></div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label" for="convite-colab-link">Link de Cadastro Direto</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="convite-colab-link" class="form-input" readonly style="font-size: 12px; background: rgba(255,255,255,0.05);">
+          <button type="button" class="btn-secondary" onclick="copiarLinkConviteDono()" style="padding: 10px 14px; font-weight: 700; white-space: nowrap; gap: 4px;">
+            <i class="ph-bold ph-copy"></i> Copiar
+          </button>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-cancel" onclick="fecharModal('modal-convite-colaborador-dono')" style="flex: 1;">Fechar</button>
+        <button class="btn-primary" onclick="compartilharConviteWhatsAppDono()" style="flex: 2; background: #25D366; border-color: #25D366; justify-content: center;">
+          <i class="ph-bold ph-whatsapp-logo"></i> Enviar no WhatsApp
+        </button>
+      </div>
+    </div>
+  <!-- Barra de Navegação Inferior Móvel (Dock Mobile / Tablet) -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Navegação rápida do dono">
+    <button type="button" class="mob-nav-btn active" data-target="sec-kpis" onclick="window.navMobilePara('sec-kpis')">
+      <i class="ph-bold ph-chart-bar"></i>
+      <span>Resumo</span>
+    </button>
+    <button type="button" class="mob-nav-btn" data-target="sec-caixa" onclick="window.navMobilePara('sec-caixa')">
+      <i class="ph-bold ph-cash-register"></i>
+      <span>Caixa</span>
+    </button>
+    <button type="button" class="mob-nav-btn" data-target="sec-remoto-telas" onclick="window.navMobilePara('sec-remoto-telas')">
+      <i class="ph-bold ph-desktop"></i>
+      <span>Remoto</span>
+    </button>
+    <button type="button" class="mob-nav-btn" data-target="sec-remoto-equipe" onclick="window.navMobilePara('sec-remoto-equipe')">
+      <i class="ph-bold ph-users"></i>
+      <span>Equipe</span>
+    </button>
+    <button type="button" class="mob-nav-btn" data-target="sec-mais" onclick="window.abrirMenuMaisDono()">
+      <i class="ph-bold ph-dots-three-outline"></i>
+      <span>Mais</span>
+    </button>
+  </nav>
+
+  <!-- Modal: Menu Rápido "Mais" para Smartphone/Tablet -->
+  <div id="modal-menu-mais-dono" class="modal-overlay hidden">
+    <div class="modal-sheet" style="max-width: 480px;">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-squares-four" style="color:var(--primary);"></i> Menu Rápido</span>
+        <button class="modal-close" onclick="fecharModal('modal-menu-mais-dono')"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <p class="caixa-modal-desc">Acesso rápido a todos os recursos e configurações do seu restaurante.</p>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:14px;">
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-cupons');" style="padding:14px 10px;">
+          <i class="ph-bold ph-ticket" style="font-size:24px; color:var(--primary);"></i>
+          <span style="font-weight:800; font-size:12px;">Cupons QR</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-marketing-vip');" style="padding:14px 10px;">
+          <i class="ph-bold ph-megaphone" style="font-size:24px; color:#3b82f6;"></i>
+          <span style="font-weight:800; font-size:12px;">Mensagens & Push</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-meta-aviso');" style="padding:14px 10px;">
+          <i class="ph-bold ph-target" style="font-size:24px; color:#8b5cf6;"></i>
+          <span style="font-weight:800; font-size:12px;">Meta & Avisos</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-ranking');" style="padding:14px 10px;">
+          <i class="ph-bold ph-trophy" style="font-size:24px; color:#10b981;"></i>
+          <span style="font-weight:800; font-size:12px;">Mais Vendidos</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); abrirTrocarRestaurante();" style="padding:14px 10px;">
+          <i class="ph-bold ph-buildings" style="font-size:24px; color:#f59e0b;"></i>
+          <span style="font-weight:800; font-size:12px;">Trocar Restaurante</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.abrirModalReordenarSeccoes();" style="padding:14px 10px;">
+          <i class="ph-bold ph-sliders" style="font-size:24px; color:var(--primary);"></i>
+          <span style="font-weight:800; font-size:12px;">Modularizar Painel</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); abrirModalRelato();" style="padding:14px 10px;">
+          <i class="ph-bold ph-lifebuoy" style="font-size:24px; color:#0ea5e9;"></i>
+          <span style="font-weight:800; font-size:12px;">Suporte Técnico</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); comandarCaixaAcao('alternar_tema');" style="padding:14px 10px;">
+          <i class="ph-bold ph-moon-stars" style="font-size:24px; color:#ec4899;"></i>
+          <span style="font-weight:800; font-size:12px;">Alternar Tema</span>
+        </button>
+      </div>
+
+      <button class="btn-cancel" onclick="efetuarLogout()" style="width:100%; padding:14px; border-color:rgba(244,63,94,0.3); color:#f43f5e; background:rgba(244,63,94,0.08); font-weight:800;">
+        <i class="ph-bold ph-sign-out"></i> Sair da Conta
+      </button>
     </div>
   </div>
 

@@ -2023,40 +2023,127 @@ window.inicializarSecoesRecolhiveis = function() {
 
     const titleEl = sec.querySelector('.sec-title');
     if (titleEl && !sec.querySelector('.btn-sec-toggle')) {
-      const parentRow = titleEl.parentElement;
-      parentRow.classList.add('sec-header-row');
-      parentRow.setAttribute('onclick', `window.toggleSecao('${secId}')`);
-      parentRow.title = 'Clique para recolher ou expandir esta seção';
+      let headerRow = sec.querySelector('.sec-header-row');
+      if (!headerRow) {
+        headerRow = document.createElement('div');
+        headerRow.className = 'sec-header-row';
+        sec.insertBefore(headerRow, titleEl);
+        headerRow.appendChild(titleEl);
+      }
+
+      headerRow.setAttribute('onclick', `window.toggleSecao('${secId}')`);
+      headerRow.title = 'Clique para recolher ou expandir esta seção';
 
       // Badge de resumo quando recolhido
       const badge = document.createElement('span');
       badge.className = 'sec-collapsed-badge';
       badge.innerText = 'Oculto (Toque para Ver)';
-      parentRow.appendChild(badge);
+      headerRow.appendChild(badge);
 
       // Botão seta
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
       toggleBtn.className = 'btn-sec-toggle';
       toggleBtn.innerHTML = '<i class="ph-bold ph-caret-down"></i>';
-      parentRow.appendChild(toggleBtn);
+      headerRow.appendChild(toggleBtn);
 
-      // Envolver conteúdo restante em .sec-content
-      const contentNodes = Array.from(sec.children).filter(c => c !== parentRow);
-      const contentWrapper = document.createElement('div');
-      contentWrapper.className = 'sec-content';
-      contentNodes.forEach(node => contentWrapper.appendChild(node));
-      sec.appendChild(contentWrapper);
+      // Envolver conteúdo restante em .sec-content se ainda não estiver
+      if (!sec.querySelector('.sec-content')) {
+        const contentNodes = Array.from(sec.children).filter(c => c !== headerRow);
+        const contentWrapper = document.createElement('div');
+        contentWrapper.className = 'sec-content';
+        contentNodes.forEach(node => contentWrapper.appendChild(node));
+        sec.appendChild(contentWrapper);
+      }
     }
   });
 
   window.restaurarEstadoSecoes();
 };
 
+// ════════════════════════════════════════════════════════════════════
+// BARRA DE NAVEGAÇÃO INFERIOR MÓVEL (DOCK) & MENU RÁPIDO DO DONO
+// ════════════════════════════════════════════════════════════════════
+window.navMobilePara = function(targetId) {
+  if (navigator.vibrate) try { navigator.vibrate(10); } catch(e){}
+  
+  let el = document.getElementById(targetId);
+  if (!el && targetId === 'sec-kpis') el = document.querySelector('[data-secao="kpis"]');
+  if (!el && targetId === 'sec-caixa') el = document.querySelector('[data-secao="caixa"]');
+  if (!el && targetId === 'sec-remoto-telas') el = document.querySelector('[data-secao="remoto-caixa"]');
+  if (!el && targetId === 'sec-remoto-equipe') el = document.querySelector('[data-secao="remoto-colabs"]') || document.querySelector('[data-secao="equipe"]');
+  if (!el && targetId === 'sec-cupons') el = document.querySelector('[data-secao="cupons"]');
+  if (!el && targetId === 'sec-marketing-vip') el = document.querySelector('[data-secao="marketing"]');
+  if (!el && targetId === 'sec-meta-aviso') el = document.querySelector('[data-secao="meta-aviso"]');
+  if (!el && targetId === 'sec-ranking') el = document.querySelector('[data-secao="ranking"]');
+
+  if (el) {
+    if (el.classList.contains('is-collapsed')) {
+      el.classList.remove('is-collapsed');
+    }
+    
+    document.querySelectorAll('.mob-nav-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-target') === targetId);
+    });
+    
+    const headerHeight = document.querySelector('header')?.offsetHeight || 64;
+    const topPos = el.getBoundingClientRect().top + window.pageYOffset - headerHeight - 8;
+    window.scrollTo({ top: Math.max(0, topPos), behavior: 'smooth' });
+  }
+};
+
+window.abrirMenuMaisDono = function() {
+  if (navigator.vibrate) try { navigator.vibrate(10); } catch(e){}
+  const modal = document.getElementById('modal-menu-mais-dono');
+  if (modal) modal.classList.remove('hidden');
+};
+
+window.fecharMenuMaisDono = function() {
+  const modal = document.getElementById('modal-menu-mais-dono');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.initMobileNavScrollSpy = function() {
+  const navBtns = document.querySelectorAll('.mob-nav-btn[data-target]');
+  if (!navBtns.length) return;
+
+  const sections = [
+    { id: 'sec-kpis', getEl: () => document.getElementById('sec-kpis') || document.querySelector('[data-secao="kpis"]') },
+    { id: 'sec-caixa', getEl: () => document.getElementById('sec-caixa') || document.querySelector('[data-secao="caixa"]') },
+    { id: 'sec-remoto-telas', getEl: () => document.getElementById('sec-remoto-telas') || document.querySelector('[data-secao="remoto-caixa"]') },
+    { id: 'sec-remoto-equipe', getEl: () => document.getElementById('sec-remoto-equipe') || document.querySelector('[data-secao="remoto-colabs"]') }
+  ];
+
+  window.addEventListener('scroll', () => {
+    const scrollPos = window.scrollY + 160;
+    let activeId = 'sec-kpis';
+
+    for (const s of sections) {
+      const el = s.getEl();
+      if (el) {
+        const top = el.offsetTop;
+        const height = el.offsetHeight;
+        if (scrollPos >= top && scrollPos < top + height) {
+          activeId = s.id;
+          break;
+        }
+      }
+    }
+
+    navBtns.forEach(btn => {
+      const t = btn.getAttribute('data-target');
+      if (t !== 'sec-mais') {
+        btn.classList.toggle('active', t === activeId);
+      }
+    });
+  }, { passive: true });
+};
+
 // Inicialização suave no carregamento
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     if (typeof window.inicializarSecoesRecolhiveis === 'function') window.inicializarSecoesRecolhiveis();
+    if (typeof window.initMobileNavScrollSpy === 'function') window.initMobileNavScrollSpy();
   }, 50);
 });
 

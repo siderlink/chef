@@ -556,6 +556,27 @@
         <label for="cfg-auto-imprimir" style="margin:0; cursor:pointer;">Disparo Automático (Estabilidade 2s)</label>
       </div>
 
+      <!-- Alerta de Demanda para a Cozinha -->
+      <div style="border-top: 1px dashed #334155; padding-top: 14px; margin-top: 14px;">
+        <div style="font-size: 13px; font-weight: 800; color: #fc4b15; margin-bottom: 10px; display:flex; align-items:center; gap:6px;">
+          <i class="ph-bold ph-bell-ringing"></i> Alerta de Demanda para a Cozinha
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="cfg-group">
+            <label>Meta de Pratos:</label>
+            <input type="number" id="cfg-demanda-pratos" value="6">
+          </div>
+          <div class="cfg-group">
+            <label>Intervalo (min):</label>
+            <input type="number" id="cfg-demanda-minutos" value="15">
+          </div>
+        </div>
+        <div class="cfg-group">
+          <label>Chave PIX Restaurante (Área Cliente):</label>
+          <input type="text" id="cfg-chave-pix" placeholder="ex: pix@restaurante.com.br">
+        </div>
+      </div>
+
       <button onclick="salvarAjustesConfig()" style="width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 10px;">
         Salvar Alterações
       </button>
@@ -1003,6 +1024,9 @@
       document.getElementById('cfg-tara').value = config.taraPratoKg;
       document.getElementById('cfg-protocolo').value = config.balancaProtocolo || 'toledo_prix3';
       document.getElementById('cfg-auto-imprimir').checked = !!config.autoImprimirTicket;
+      document.getElementById('cfg-demanda-pratos').value = config.demandaMetaPratos || 6;
+      document.getElementById('cfg-demanda-minutos').value = config.demandaJanelaMinutos || 15;
+      document.getElementById('cfg-chave-pix').value = config.chavePixRestaurante || '';
       document.getElementById('modal-config').style.display = 'flex';
     }
 
@@ -1016,7 +1040,10 @@
         precoLivre: parseFloat(document.getElementById('cfg-preco-livre').value) || config.precoLivre,
         taraPratoKg: parseFloat(document.getElementById('cfg-tara').value) || config.taraPratoKg,
         balancaProtocolo: document.getElementById('cfg-protocolo').value,
-        autoImprimirTicket: document.getElementById('cfg-auto-imprimir').checked
+        autoImprimirTicket: document.getElementById('cfg-auto-imprimir').checked,
+        demandaMetaPratos: parseInt(document.getElementById('cfg-demanda-pratos').value) || 6,
+        demandaJanelaMinutos: parseInt(document.getElementById('cfg-demanda-minutos').value) || 15,
+        chavePixRestaurante: document.getElementById('cfg-chave-pix').value.trim()
       };
 
       fetch('/api/modulo/pesagem-selfservice/config', {
@@ -1030,7 +1057,7 @@
           config = d.config;
           fecharModalConfig();
           carregarConfig();
-          alert('Configurações salvas com sucesso!');
+          alert('Configurações e Limiares de Demanda salvos com sucesso!');
         }
       });
     }

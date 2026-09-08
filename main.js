@@ -2914,12 +2914,19 @@ function renderOrders() {
           const isPaid = order.status === 'Pago';
           const semTaxa = window._checkoutItensSemTaxa && order.id != null && window._checkoutItensSemTaxa.has(order.id);
           const isFracionado = order.status === 'Fracionado' || (order.productName && order.productName.includes('/'));
-          const pctPago = isPaid ? 100 : (isFracionado ? 50 : 0);
-          
+          const nomeLimpo = (order.productName || 'Produto').replace(/"/g, '&quot;');
+          const canSelect = !isPaid && order.id != null;
+
           modalItemsHTML += `
                  <tr style="${isPaid ? 'opacity: 0.6; background: var(--bg-secondary);' : ''}">
+                   <td style="padding: 8px 4px; text-align: center;">
+                     ${canSelect ? `
+                       <input type="checkbox" class="chk-checkout-item" data-id="${order.id}" data-nome="${nomeLimpo}" data-emoji="${order.productEmoji || '🍽️'}" data-total="${totalVal}" data-qtd="${order.quantity || 1}" onchange="window.onCheckoutItemSelectionChange()" style="width: 15px; height: 15px; accent-color: #ea580c; cursor: pointer;">
+                     ` : '—'}
+                   </td>
                    <td style="padding: 8px 4px; ${isPaid ? 'text-decoration: line-through;' : ''}">
-                     <div>${order.productEmoji || ''} ${order.productName || 'Produto'} ${isPaid ? '<strong style="color: #10b981; margin-left: 6px; font-size:11px; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px;">(PAGO)</strong>' : (semTaxa ? '<span style="color:#e53e3e;font-size:10px;margin-left:6px;">(s/ taxa)</span>' : '')}</div>
+                     <div style="font-weight: 600; color: var(--text-primary);">${order.productEmoji || ''} ${order.productName || 'Produto'} ${isPaid ? '<strong style="color: #10b981; margin-left: 6px; font-size:11px; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px;">(PAGO)</strong>' : (semTaxa ? '<span style="color:#e53e3e;font-size:10px;margin-left:6px;">(s/ taxa)</span>' : '')}</div>
+                     ${order.mesa_comanda ? `<span style="font-size: 10.5px; background: rgba(37,99,235,0.1); color: #2563eb; padding: 1px 6px; border-radius: 4px; font-weight: 700;">👤 ${order.mesa_comanda}</span>` : ''}
                      ${isFracionado && !isPaid ? `
                        <div style="margin-top:4px; display:flex; align-items:center; gap:6px;">
                          <div style="flex:1; height:5px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
@@ -2930,8 +2937,15 @@ function renderOrders() {
                      ` : ''}
                    </td>
                    <td style="padding: 8px 4px; text-align: center;">${order.quantity || 1}</td>
-                   <td style="padding: 8px 4px; text-align: center;">${(!isPaid && order.id != null) ? `<input type="checkbox" ${semTaxa ? '' : 'checked'} title="Cobrar taxa de serviço neste item?" onchange="window.checkoutItemTaxaToggle(${order.id}, this.checked)" style="width:15px;height:15px;accent-color:#fc4b15;cursor:pointer;">` : '—'}</td>
-                   <td style="padding: 8px 4px; text-align: right; font-weight: 600; color: #3ab55b;">R$ ${totalVal.toFixed(2).replace('.', ',')}</td>
+                   <td style="padding: 8px 4px; text-align: center;">${canSelect ? `<input type="checkbox" ${semTaxa ? '' : 'checked'} title="Cobrar taxa de serviço neste item?" onchange="window.checkoutItemTaxaToggle(${order.id}, this.checked)" style="width:15px;height:15px;accent-color:#fc4b15;cursor:pointer;">` : '—'}</td>
+                   <td style="padding: 8px 4px; text-align: right; font-weight: 700; color: #3ab55b;">R$ ${totalVal.toFixed(2).replace('.', ',')}</td>
+                   <td style="padding: 8px 4px; text-align: center;">
+                     ${canSelect ? `
+                       <button type="button" onclick="window.abrirSubmodalFracionamentoCheckout(${order.id})" title="Fracionar este item em frações (½, ⅓, etc.)" style="background: rgba(234,88,12,0.12); color: #ea580c; border: 1px solid rgba(234,88,12,0.35); border-radius: 7px; padding: 3px 7px; font-size: 11.5px; cursor: pointer; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s;">
+                         <i class="ph-bold ph-scissors"></i>
+                       </button>
+                     ` : '—'}
+                   </td>
                  </tr>
                `;
         });
@@ -7696,6 +7710,416 @@ window.abrirCheckoutModal = () => {
 window.fecharCheckoutModal = () => {
   const overlay = document.getElementById('checkout-modal-overlay');
   if (overlay) overlay.style.display = 'none';
+};
+
+// ═════════════════════════════════════════════════════════════════════
+// ✂️ SUBMODAL DE FRACIONAMENTO E ALOCAÇÃO DE ITENS NO MODAL DE CHECKOUT
+// ═════════════════════════════════════════════════════════════════════
+let submodalModoAtivo = 'fracionar'; // 'fracionar' | 'alocar'
+let submodalItemFracaoAtual = null;
+let submodalPresetFracoesAtual = 2;
+
+window.onCheckoutItemSelectionChange = () => {
+  const checkboxes = document.querySelectorAll('#checkout-modal-items-tbody .chk-checkout-item');
+  const checked = document.querySelectorAll('#checkout-modal-items-tbody .chk-checkout-item:checked');
+  const badge = document.getElementById('badge-checkout-sel-count');
+  const chkAll = document.getElementById('chk-checkout-select-all');
+
+  if (badge) {
+    if (checked.length > 0) {
+      badge.innerText = checked.length;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  if (chkAll && checkboxes.length > 0) {
+    chkAll.checked = (checked.length === checkboxes.length);
+  }
+};
+
+window.toggleCheckoutSelectAll = (checkedState) => {
+  const checkboxes = document.querySelectorAll('#checkout-modal-items-tbody .chk-checkout-item');
+  checkboxes.forEach(chk => {
+    chk.checked = !!checkedState;
+  });
+  window.onCheckoutItemSelectionChange();
+};
+
+window.abrirSubmodalFracionamentoCheckout = (itemIdOpcional) => {
+  const submodal = document.getElementById('submodal-checkout-fracionamento');
+  if (!submodal) return;
+
+  if (!window.mesaAtual || !Array.isArray(window.mesaAtual.items)) {
+    return alert('Nenhum item encontrado na conta ativa.');
+  }
+
+  // Obter itens não pagos da mesa atual
+  const itensNaoPagos = window.mesaAtual.items.filter(o => o.status !== 'Pago');
+  if (itensNaoPagos.length === 0) {
+    return alert('Todos os itens desta conta já estão pagos.');
+  }
+
+  // Preencher dropdown de seleção de item para o Modo Fracionar
+  const selectItemFracionar = document.getElementById('submodal-select-item-fracionar');
+  if (selectItemFracionar) {
+    selectItemFracionar.innerHTML = itensNaoPagos.map(o => {
+      const tot = parseFloat(String(o.total || 0).replace(',', '.'));
+      return `<option value="${o.id}">${o.productEmoji || '🍽️'} ${o.productName || 'Item'} - R$ ${tot.toFixed(2).replace('.', ',')} (${o.quantity || 1}x)</option>`;
+    }).join('');
+  }
+
+  // Extrair comandas ativas na mesa atual
+  const comandasAtivas = [];
+  window.mesaAtual.items.forEach(o => {
+    const c = (o.mesa_comanda || '').trim();
+    if (c && !comandasAtivas.includes(c)) comandasAtivas.push(c);
+  });
+
+  // Preencher dropdown de comanda destino do Modo Alocar
+  const selectAlocarDestino = document.getElementById('submodal-alocar-comanda-destino');
+  if (selectAlocarDestino) {
+    selectAlocarDestino.innerHTML = `
+      <option value="">🪑 Compartilhado na Mesa</option>
+      ${comandasAtivas.map(c => `<option value="${c}">👤 Comanda: ${c}</option>`).join('')}
+      <option value="__NOVA__">➕ Criar Nova Comanda...</option>
+    `;
+  }
+  const inputNovaAlocar = document.getElementById('submodal-alocar-nova-comanda-input');
+  if (inputNovaAlocar) {
+    inputNovaAlocar.style.display = 'none';
+    inputNovaAlocar.value = '';
+  }
+
+  // Se passou itemId específico pelo botão na linha
+  if (itemIdOpcional) {
+    const chks = document.querySelectorAll('#checkout-modal-items-tbody .chk-checkout-item');
+    chks.forEach(c => {
+      c.checked = (String(c.getAttribute('data-id')) === String(itemIdOpcional));
+    });
+    window.onCheckoutItemSelectionChange();
+    if (selectItemFracionar) selectItemFracionar.value = String(itemIdOpcional);
+    window.onSubmodalItemFracionarChange(itemIdOpcional);
+    window.alternarModoSubmodalCheckout('fracionar');
+  } else {
+    // Verifica quais checkboxes estão marcados
+    const checked = Array.from(document.querySelectorAll('#checkout-modal-items-tbody .chk-checkout-item:checked'));
+    if (checked.length > 1) {
+      window.carregarGrupoSubmodalAlocar(checked);
+      window.alternarModoSubmodalCheckout('alocar');
+    } else if (checked.length === 1) {
+      const singleId = checked[0].getAttribute('data-id');
+      if (selectItemFracionar) selectItemFracionar.value = singleId;
+      window.onSubmodalItemFracionarChange(singleId);
+      window.alternarModoSubmodalCheckout('fracionar');
+    } else {
+      // Nenhum marcado: seleciona o primeiro item disponível
+      const primeiroItem = itensNaoPagos[0];
+      if (selectItemFracionar && primeiroItem) {
+        selectItemFracionar.value = String(primeiroItem.id);
+        window.onSubmodalItemFracionarChange(primeiroItem.id);
+      }
+      window.alternarModoSubmodalCheckout('fracionar');
+    }
+  }
+
+  submodal.style.display = 'flex';
+};
+
+window.fecharSubmodalFracionamentoCheckout = () => {
+  const submodal = document.getElementById('submodal-checkout-fracionamento');
+  if (submodal) submodal.style.display = 'none';
+};
+
+window.alternarModoSubmodalCheckout = (modo) => {
+  submodalModoAtivo = modo;
+  const btnFrac = document.getElementById('tab-btn-submodal-fracionar');
+  const btnAloc = document.getElementById('tab-btn-submodal-alocar');
+  const corpoFrac = document.getElementById('corpo-submodal-fracionar');
+  const corpoAloc = document.getElementById('corpo-submodal-alocar');
+
+  if (modo === 'fracionar') {
+    if (btnFrac) {
+      btnFrac.style.background = 'var(--bg-card, #fff)';
+      btnFrac.style.color = '#ea580c';
+      btnFrac.style.fontWeight = '800';
+    }
+    if (btnAloc) {
+      btnAloc.style.background = 'transparent';
+      btnAloc.style.color = 'var(--text-secondary, #64748b)';
+      btnAloc.style.fontWeight = '600';
+    }
+    if (corpoFrac) corpoFrac.style.display = 'flex';
+    if (corpoAloc) corpoAloc.style.display = 'none';
+  } else {
+    if (btnAloc) {
+      btnAloc.style.background = 'var(--bg-card, #fff)';
+      btnAloc.style.color = '#2563eb';
+      btnAloc.style.fontWeight = '800';
+    }
+    if (btnFrac) {
+      btnFrac.style.background = 'transparent';
+      btnFrac.style.color = 'var(--text-secondary, #64748b)';
+      btnFrac.style.fontWeight = '600';
+    }
+    if (corpoFrac) corpoFrac.style.display = 'none';
+    if (corpoAloc) corpoAloc.style.display = 'flex';
+
+    // Recarregar itens marcados para alocar
+    const checked = Array.from(document.querySelectorAll('#checkout-modal-items-tbody .chk-checkout-item:checked'));
+    window.carregarGrupoSubmodalAlocar(checked);
+  }
+};
+
+window.onSubmodalItemFracionarChange = (itemId) => {
+  if (!window.mesaAtual || !Array.isArray(window.mesaAtual.items)) return;
+  const item = window.mesaAtual.items.find(o => String(o.id) === String(itemId));
+  if (!item) return;
+
+  const totalVal = parseFloat(String(item.total || 0).replace(',', '.'));
+  const qty = parseFloat(String(item.quantity || 1).replace(',', '.'));
+
+  submodalItemFracaoAtual = {
+    id: item.id,
+    nome: item.productName || 'Item',
+    emoji: item.productEmoji || '🍽️',
+    total: totalVal,
+    qty: qty
+  };
+
+  const emojiEl = document.getElementById('submodal-fracao-emoji');
+  if (emojiEl) emojiEl.innerText = submodalItemFracaoAtual.emoji;
+  const nomeEl = document.getElementById('submodal-fracao-nome');
+  if (nomeEl) nomeEl.innerText = submodalItemFracaoAtual.nome;
+  const qtdEl = document.getElementById('submodal-fracao-qtd');
+  if (qtdEl) qtdEl.innerText = `Qtd: ${submodalItemFracaoAtual.qty} un`;
+  const totalEl = document.getElementById('submodal-fracao-total');
+  if (totalEl) totalEl.innerText = `R$ ${submodalItemFracaoAtual.total.toFixed(2).replace('.', ',')}`;
+
+  window.selecionarSubmodalPresetFracao(submodalPresetFracoesAtual || 2);
+};
+
+window.selecionarSubmodalPresetFracao = (qtd) => {
+  const isCustom = qtd === 'custom';
+  submodalPresetFracoesAtual = isCustom ? parseInt(document.getElementById('submodal-custom-num-fracoes').value || 5, 10) : qtd;
+
+  document.querySelectorAll('#grid-submodal-preset-fracoes .btn-submodal-preset').forEach(btn => {
+    btn.style.borderColor = 'var(--border-color, #cbd5e1)';
+    btn.style.background = 'var(--bg-card, #ffffff)';
+    btn.style.color = 'var(--text-primary, #0f172a)';
+    btn.classList.remove('active');
+  });
+
+  const activeBtnId = isCustom ? 'btn-sub-preset-custom' : `btn-sub-preset-${qtd}`;
+  const activeBtn = document.getElementById(activeBtnId);
+  if (activeBtn) {
+    activeBtn.style.borderColor = '#ea580c';
+    activeBtn.style.background = 'rgba(252,75,21,0.1)';
+    activeBtn.style.color = '#ea580c';
+    activeBtn.classList.add('active');
+  }
+
+  const customBox = document.getElementById('submodal-custom-qtd-box');
+  if (customBox) customBox.style.display = isCustom ? 'block' : 'none';
+
+  window.gerarSubmodalCamposFracoes(submodalPresetFracoesAtual);
+};
+
+window.gerarSubmodalCamposFracoes = (numPartes) => {
+  const container = document.getElementById('submodal-container-lista-fracoes');
+  if (!container || !submodalItemFracaoAtual) return;
+
+  const n = Math.max(2, Math.min(20, numPartes || 2));
+  submodalPresetFracoesAtual = n;
+
+  const totalItem = submodalItemFracaoAtual.total;
+  const valorBase = Math.floor((totalItem / n) * 100) / 100;
+  const diferencaCentavos = Math.round((totalItem - (valorBase * n)) * 100) / 100;
+  const qtdPorParte = parseFloat((submodalItemFracaoAtual.qty / n).toFixed(2));
+
+  // Extrair comandas ativas
+  const comandasAtivas = [];
+  if (window.mesaAtual && Array.isArray(window.mesaAtual.items)) {
+    window.mesaAtual.items.forEach(o => {
+      const c = (o.mesa_comanda || '').trim();
+      if (c && !comandasAtivas.includes(c)) comandasAtivas.push(c);
+    });
+  }
+
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    const fracaoStr = n === 2 ? '½' : (n === 3 ? '⅓' : (n === 4 ? '¼' : `${i + 1}/${n}`));
+    // Ajusta o centavo de sobra na última fração para garantir precisão
+    const valorEstaFracao = (i === n - 1) ? (valorBase + diferencaCentavos) : valorBase;
+    const suggestedComanda = comandasAtivas[i] || '';
+
+    html += `
+      <div style="background: var(--bg-card, #ffffff); border: 1.5px solid var(--border-color, #e2e8f0); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: 800; font-size: 13px; color: var(--text-primary, #0f172a); display: flex; align-items: center; gap: 6px;">
+            <span style="background: #ea580c; color: white; border-radius: 6px; padding: 2px 7px; font-size: 11.5px; font-weight: 800;">${fracaoStr}</span>
+            Fração ${i + 1} de ${n}
+          </span>
+          <strong style="color: #10b981; font-size: 14px;">R$ ${valorEstaFracao.toFixed(2).replace('.', ',')}</strong>
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <select class="submodal-select-fracao-comanda" data-index="${i}" data-fracao="${fracaoStr}" data-valor="${valorEstaFracao}" data-qtd="${qtdPorParte}" onchange="window.onSubmodalFracaoComandaChange(this, ${i})" style="flex: 1; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border-color, #cbd5e1); font-size: 12.5px; font-weight: 600; background: var(--bg-secondary, #f8fafc); color: var(--text-primary, #0f172a);">
+            <option value="" ${!suggestedComanda ? 'selected' : ''}>🪑 Manter Compartilhado na Mesa</option>
+            ${comandasAtivas.map(c => `<option value="${c}" ${c === suggestedComanda ? 'selected' : ''}>👤 Comanda: ${c}</option>`).join('')}
+            <option value="__NOVA__">➕ Criar Nova Comanda...</option>
+          </select>
+          <input type="text" class="submodal-input-nova-comanda" id="submodal-nova-comanda-${i}" placeholder="Nome do cliente/comanda" style="display: none; flex: 1; padding: 7px 10px; border-radius: 8px; border: 1.5px solid #ea580c; font-size: 12.5px; font-weight: 700; color: #ea580c; background: #fff7ed;">
+        </div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+};
+
+window.onSubmodalFracaoComandaChange = (sel, idx) => {
+  const inp = document.getElementById(`submodal-nova-comanda-${idx}`);
+  if (!inp) return;
+  if (sel.value === '__NOVA__') {
+    inp.style.display = 'block';
+    setTimeout(() => inp.focus(), 50);
+  } else {
+    inp.style.display = 'none';
+  }
+};
+
+window.carregarGrupoSubmodalAlocar = (checkedCheckboxes) => {
+  const containerLista = document.getElementById('submodal-alocar-lista-itens');
+  const txtQtd = document.getElementById('submodal-alocar-qtd-txt');
+  const txtTotal = document.getElementById('submodal-alocar-total-txt');
+
+  if (!checkedCheckboxes || checkedCheckboxes.length === 0) {
+    if (txtQtd) txtQtd.innerText = '0 itens selecionados';
+    if (txtTotal) txtTotal.innerText = 'R$ 0,00';
+    if (containerLista) containerLista.innerHTML = '<div style="color: var(--text-secondary); font-size: 12px; text-align: center; padding: 12px;">Selecione um ou mais itens na tabela de consumo.</div>';
+    return;
+  }
+
+  let totalGrupo = 0;
+  let htmlItens = '';
+
+  checkedCheckboxes.forEach(chk => {
+    const nome = chk.getAttribute('data-nome') || 'Produto';
+    const emoji = chk.getAttribute('data-emoji') || '🍽️';
+    const totalVal = parseFloat(chk.getAttribute('data-total') || 0);
+    const qtd = chk.getAttribute('data-qtd') || 1;
+    totalGrupo += totalVal;
+
+    htmlItens += `
+      <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card, #fff); padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); font-size: 12.5px;">
+        <span style="display: flex; align-items: center; gap: 6px; font-weight: 600;">
+          <span>${emoji}</span>
+          <span>${nome} (${qtd}x)</span>
+        </span>
+        <strong style="color: #2563eb; font-weight: 700;">R$ ${totalVal.toFixed(2).replace('.', ',')}</strong>
+      </div>
+    `;
+  });
+
+  if (txtQtd) txtQtd.innerText = `${checkedCheckboxes.length} itens marcados`;
+  if (txtTotal) txtTotal.innerText = `R$ ${totalGrupo.toFixed(2).replace('.', ',')}`;
+  if (containerLista) containerLista.innerHTML = htmlItens;
+};
+
+window.onSubmodalAlocarDestinoChange = (val) => {
+  const inp = document.getElementById('submodal-alocar-nova-comanda-input');
+  if (!inp) return;
+  if (val === '__NOVA__') {
+    inp.style.display = 'block';
+    setTimeout(() => inp.focus(), 50);
+  } else {
+    inp.style.display = 'none';
+  }
+};
+
+window.confirmarSubmodalFracionamentoCheckout = () => {
+  if (!window.mesaAtual) return;
+  const mesaNome = window.mesaAtual.nome || window.mesaAtual.mesaName;
+  const operadorNome = window.crmPerfil ? window.crmPerfil.nome : 'Caixa';
+
+  // 1. MODO FRACIONAR ITEM ÚNICO
+  if (submodalModoAtivo === 'fracionar') {
+    if (!submodalItemFracaoAtual) return alert('Selecione um item para fracionar.');
+
+    const rows = document.querySelectorAll('#submodal-container-lista-fracoes .submodal-select-fracao-comanda');
+    if (rows.length < 2) return alert('É necessário dividir em pelo menos 2 frações.');
+
+    const fracoes = [];
+    for (let i = 0; i < rows.length; i++) {
+      const sel = rows[i];
+      const fracaoStr = sel.getAttribute('data-fracao') || `${i + 1}/${rows.length}`;
+      const valor = parseFloat(sel.getAttribute('data-valor') || 0);
+      const qtd = parseFloat(sel.getAttribute('data-qtd') || 1);
+
+      let comanda = sel.value;
+      if (comanda === '__NOVA__') {
+        const inp = document.getElementById(`submodal-nova-comanda-${i}`);
+        comanda = (inp && inp.value) ? inp.value.trim() : `Comanda ${i + 1}`;
+      }
+
+      fracoes.push({
+        fracaoStr,
+        valor,
+        qtd,
+        comandaName: comanda || null
+      });
+    }
+
+    if (typeof socket !== 'undefined' && socket) {
+      socket.emit('dividir_item_fracoes', {
+        itemId: submodalItemFracaoAtual.id,
+        fracoes,
+        operador: operadorNome,
+        mesaName: mesaNome
+      });
+    }
+
+    window.fecharSubmodalFracionamentoCheckout();
+    if (typeof showToast === 'function') {
+      showToast('✨ Item fracionado e comandas atualizadas!', '#10b981');
+    }
+  }
+  // 2. MODO ALOCAR GRUPO DE ITENS SELECIONADOS
+  else {
+    const checked = Array.from(document.querySelectorAll('#checkout-modal-items-tbody .chk-checkout-item:checked'));
+    if (checked.length === 0) return alert('Selecione ao menos 1 item para alocar.');
+
+    const selDestino = document.getElementById('submodal-alocar-comanda-destino');
+    let comandaAlvo = selDestino ? selDestino.value : '';
+    if (comandaAlvo === '__NOVA__') {
+      const inp = document.getElementById('submodal-alocar-nova-comanda-input');
+      comandaAlvo = inp ? inp.value.trim() : '';
+      if (!comandaAlvo) return alert('Por favor, informe o nome da nova comanda.');
+    }
+
+    const itemIds = checked.map(c => parseInt(c.getAttribute('data-id'))).filter(id => !isNaN(id));
+
+    if (typeof socket !== 'undefined' && socket) {
+      socket.emit('atribuir_comanda_itens_lote', {
+        itemIds,
+        comandaName: comandaAlvo || null,
+        operador: operadorNome,
+        mesaName: mesaNome
+      });
+    }
+
+    window.fecharSubmodalFracionamentoCheckout();
+    if (typeof showToast === 'function') {
+      showToast(`📦 ${itemIds.length} itens alocados para "${comandaAlvo || 'Mesa Compartilhada'}"!`, '#2563eb');
+    }
+  }
+
+  // Recalcular saldo da conta imediatamente
+  setTimeout(() => {
+    if (window.calcRestante) window.calcRestante();
+  }, 120);
 };
 
 window.checkoutModalAddPagamento = () => {

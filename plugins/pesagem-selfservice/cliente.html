@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Minha Comanda & Pagamento | Chef Cozinha</title>
+  
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/vendor/qrcode/qrcode-generator.js"></script>
+  <script src="/vendor/html5-qrcode/html5-qrcode.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #fc4b15;
+      --primary-hover: #e03e09;
+      --success: #10b981;
+      --success-hover: #059669;
+      --bg: #090d16;
+      --surface: #121927;
+      --card: #1a2336;
+      --border: #28354f;
+      --text: #f8fafc;
+      --text-sub: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; font-family: 'Inter', system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Top Bar Mobile */
+    .client-header {
+      background: rgba(18, 25, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 9px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .client-logo { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 900; color: var(--primary); }
+    .client-badge { font-size: 10.5px; background: rgba(252, 75, 21, 0.15); color: var(--primary); padding: 3px 8px; border-radius: 10px; font-weight: 800; }
+
+    .client-container {
+      flex: 1;
+      padding: 10px 14px;
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Tela de Busca de Comanda */
+    .scan-btn {
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #fc4b15 0%, #ea580c 100%);
+      color: white;
+      border: none;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 8px 20px rgba(252, 75, 21, 0.3);
+      margin-bottom: 10px;
+    }
+    .scan-btn:active { transform: scale(0.98); }
+
+    .manual-input-box {
+      display: flex;
+      gap: 8px;
+    }
+    .manual-input {
+      flex: 1;
+      padding: 11px 14px;
+      border-radius: 10px;
+      background: #0b0f19;
+      border: 1px solid var(--border);
+      color: #fff;
+      font-size: 14.5px;
+      font-weight: 700;
+      outline: none;
+    }
+    .btn-buscar {
+      padding: 11px 16px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* Itens da Comanda */
+    .items-list {
+      margin: 10px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(40, 53, 79, 0.5);
+    }
+    .item-info { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
+    .item-price { font-size: 14px; font-weight: 800; color: #10b981; }
+
+    /* Totalizador */
+    .total-box {
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 16px;
+      text-align: center;
+      margin: 10px 0;
+    }
+    .total-label { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-sub); letter-spacing: 1px; }
+    .total-val { font-size: 30px; font-weight: 900; color: #10b981; margin: 2px 0; font-family: monospace; letter-spacing: -1px; }
+
+    /* Botões de Ação para Pagamento */
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .btn-action {
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: 12px;
+      border: none;
+      font-size: 14.5px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.15s;
+    }
+    .btn-action:active { transform: scale(0.98); }
+    .btn-pix { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
+    .btn-caixa { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3); }
+
+    /* Modal / Bottom Sheet */
+    .sheet-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 999;
+    }
+    .sheet-content {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-radius: 28px 28px 0 0;
+      padding: 24px 20px 34px;
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    .qr-container {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 16px;
+      display: inline-block;
+      margin: 14px 0;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    .pix-copy-box {
+      background: #0b0f19;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 12px 0 16px;
+      font-size: 12px;
+      color: #94a3b8;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="client-header">
+    <div class="client-logo">
+      <i class="ph-bold ph-scales"></i>
+      <span>Chef Cozinha</span>
+    </div>
+    <div class="client-badge" id="header-badge">Área do Cliente</div>
+  </header>
+
+  <main class="client-container">
+
+    <!-- SEÇÃO 1: BUSCA E IDENTIFICAÇÃO DA COMANDA (Inicial) -->
+    <div id="sec-identificacao" class="card">
+      <h2 style="font-size: 20px; font-weight: 900; margin-bottom: 6px;">Consulte sua Comanda</h2>
+      <p style="color: var(--text-sub); font-size: 13.5px; margin-bottom: 18px;">
+        Acompanhe o consumo do buffet e faça o pagamento pelo seu celular.
+      </p>
+
+      <button class="scan-btn" onclick="iniciarLeitorWebcam()">
+        <i class="ph-bold ph-camera" style="font-size: 24px;"></i>
+        <span>Escanear QR Code da Comanda</span>
+      </button>
+
+      <!-- Leitor de Câmera (Oculto até acionado) -->
+      <div id="webcam-reader-wrap" style="display: none; margin-bottom: 16px; border-radius: 14px; overflow: hidden;">
+        <div id="reader-cliente" style="width: 100%;"></div>
+        <button onclick="pararLeitorWebcam()" style="width: 100%; padding: 10px; background: #334155; color: #fff; border: none; font-weight: 700; cursor: pointer;">
+          Cancelar Câmera
+        </button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+        <span style="font-size: 12px; font-weight: 700; color: var(--text-sub);">OU DIGITE O NÚMERO</span>
+        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+      </div>
+
+      <div class="manual-input-box">
+        <input type="text" id="input-comanda-busca" class="manual-input" placeholder="Ex: 15, Mesa 2 ou PESO-123456">
+        <button class="btn-buscar" onclick="buscarComandaManual()">Ver Conta</button>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 2: EXTRATO DA COMANDA (Após localizar) -->
+    <div id="sec-extrato" class="card" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+        <div>
+          <span style="font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase;">Extrato em Tempo Real</span>
+          <h2 id="comanda-titulo" style="font-size: 20px; font-weight: 900;">Comanda #15</h2>
+        </div>
+        <button onclick="voltarParaBusca()" style="background: none; border: 1px solid var(--border); color: var(--text-sub); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer;">
+          Trocar
+        </button>
+      </div>
+
+      <!-- Lista de Itens -->
+      <div class="items-list" id="lista-itens-comanda"></div>
+
+      <!-- Card do Total -->
+      <div class="total-box">
+        <div class="total-label">Total a Pagar</div>
+        <div class="total-val" id="comanda-total-valor">R$ 0,00</div>
+        <span style="font-size: 12px; color: #10b981; font-weight: 700;">
+          <i class="ph-bold ph-shield-check"></i> Pagamento Seguro & Imediato
+        </span>
+      </div>
+
+      <!-- Ações de Pagamento -->
+      <div class="action-buttons">
+        <button class="btn-action btn-pix" onclick="abrirModalPix()">
+          <i class="ph-bold ph-lightning" style="font-size: 22px;"></i>
+          <span>1. Pagar Agora via PIX</span>
+        </button>
+
+        <button class="btn-action btn-caixa" onclick="abrirModalQrCaixa()">
+          <i class="ph-bold ph-qr-code" style="font-size: 22px;"></i>
+          <span>2. Pagar no Caixa (Apresentar QR)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 3: RECIBO CONCLUÍDO / PAGO & QR CODE DA CATRACA DE SAÍDA -->
+    <div id="sec-sucesso" class="card" style="display: none; text-align: center; padding: 26px 20px;">
+      <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: #10b981; margin-bottom: 12px;">
+        <i class="ph-bold ph-check" style="font-size: 34px;"></i>
+      </div>
+      <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 4px; color: #fff;">Pagamento Confirmado!</h2>
+      <p style="color: var(--text-sub); font-size: 13.5px; margin-bottom: 18px;">
+        Sua conta foi quitada com sucesso. Apresente o QR Code abaixo para liberar a catraca de saída.
+      </p>
+
+      <!-- CARD DESTACADO DA CATRACA DE SAÍDA -->
+      <div style="background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%); border: 2px solid #10b981; border-radius: 20px; padding: 20px 16px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 800; color: #10b981; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+          <i class="ph-bold ph-door"></i> Liberação da Catraca de Saída
+        </div>
+
+        <div class="qr-container" style="background: #ffffff; padding: 12px; border-radius: 14px; margin: 0 auto 12px; display: inline-block;">
+          <div id="catraca-qrcode-display"></div>
+        </div>
+
+        <div style="font-size: 18px; font-weight: 900; color: #ffffff; font-family: monospace;" id="catraca-codigo-legivel">
+          CATRACA-15
+        </div>
+
+        <!-- Cronômetro de Tolerância -->
+        <div style="margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; background: rgba(252, 75, 21, 0.12); border: 1px solid rgba(252, 75, 21, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 800; color: #fb923c;">
+          <i class="ph-bold ph-timer"></i>
+          <span>Tolerância de Saída: <strong id="catraca-timer-txt">15:00</strong></span>
+        </div>
+
+        <div id="catraca-status-feedback" style="margin-top: 12px; font-size: 12px; color: #94a3b8; font-weight: 600;">
+          <i class="ph-bold ph-arrows-clockwise" style="animation: spin 2s infinite linear; display: inline-block;"></i>
+          Aproxime o leitor da catraca para liberar sua saída...
+        </div>
+
+        <!-- Botão de Demonstração / Teste de Liberação -->
+        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.1);">
+          <button type="button" onclick="testarLiberacaoCatraca()" style="background: rgba(37, 99, 235, 0.15); border: 1px solid rgba(37, 99, 235, 0.35); color: #93c5fd; padding: 6px 12px; border-radius: 10px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="ph-bold ph-fingerprint"></i> Simular Giro da Catraca
+          </button>
+        </div>
+      </div>
+
+      <!-- Resumo do Recibo -->
+      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; text-align: left; font-size: 13px; margin-bottom: 18px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: var(--text-sub);">Identificador:</span>
+          <strong id="recibo-id" style="color: #fff;">Comanda #15</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: var(--text-sub);">Pagamento:</span>
+          <strong id="recibo-metodo" style="color: #10b981;">PIX</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-top: 1px dashed var(--border); padding-top: 6px; font-size: 14.5px;">
+          <span style="font-weight: 700;">Total Pago:</span>
+          <strong id="recibo-total" style="color: #10b981;">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <button onclick="voltarParaBusca()" style="width: 100%; padding: 12px; background: #334155; color: white; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 14px;">
+        Concluir e Voltar ao Início
+      </button>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM SHEET 1: PAGAMENTO PIX NO CELULAR -->
+  <div id="modal-pix" class="sheet-overlay">
+    <div class="sheet-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+          <i class="ph-bold ph-lightning" style="color: #10b981;"></i> Pagamento via PIX
+        </h3>
+        <button onclick="fecharModalPix()" style="background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer;">✕</button>
+      </div>
+
+      <p style="font-size: 13px; color: var(--text-sub);">Escaneie o QR Code abaixo ou copie o código PIX:</p>
+
+      <div class="qr-container">
+        <div id="pix-qrcode-display"></div>
+      </div>
+
+      <div style="font-size: 22px; font-weight: 900; color: #10b981; margin-bottom: 6px;" id="pix-modal-valor">
+        R$ 0,00
+      </div>
+
+      <div class="pix-copy-box">
+        <span id="pix-code-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px;">00020126...</span>
+        <button onclick="copiarPixCodigo()" style="background: #2563eb; color: #fff; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 11px; cursor: pointer;">
+          Copiar
+        </button>
+      </div>
+
+      <button onclick="confirmarPagamentoPix()" class="btn-action btn-pix">
+        <i class="ph-bold ph-check"></i>
+        <span>Confirmar Pagamento Realizado</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- BOTTOM SHEET 2: QR CODE PARA APRESENTAR NO CAIXA -->
+  <div id="modal-qr-caixa" class="sheet-overlay">
+    <div class="sheet-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+          <i class="ph-bold ph-qr-code" style="color: #2563eb;"></i> Pagar no Caixa
+        </h3>
+        <button onclick="fecharModalQrCaixa()" style="background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer;">✕</button>
+      </div>
+
+      <p style="font-size: 13px; color: var(--text-sub);">Apresente este QR Code ao operador de caixa para dar baixa:</p>
+
+      <div class="qr-container">
+        <div id="caixa-qrcode-display"></div>
+      </div>
+
+      <div style="font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 4px;" id="qr-caixa-comanda-txt">
+        Comanda #15
+      </div>
+      <div style="font-size: 16px; font-weight: 800; color: #10b981; margin-bottom: 14px;" id="qr-caixa-total-txt">
+        Total: R$ 0,00
+      </div>
+
+      <div style="background: rgba(37, 99, 235, 0.12); border: 1px solid rgba(37, 99, 235, 0.3); border-radius: 12px; padding: 12px; font-size: 12.5px; color: #93c5fd; font-weight: 600;">
+        <i class="ph-bold ph-arrows-clockwise" style="animation: spin 2s infinite linear; display: inline-block;"></i>
+        Aguardando leitura do caixa... esta tela será atualizada automaticamente!
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+  </style>
+
+  <script>
+    // --- ESTADO GLOBAL ---
+    let comandaAtual = null;
+    let html5QrScanner = null;
+    let socket = null;
+    let pixStringAtual = '';
+
+    // Conexão Socket.io para atualização em tempo real quando o caixa der baixa
+    try {
+      socket = io();
+      socket.on('comanda_paga_cliente', (dados) => {
+        if (!comandaAtual) return;
+        const idAlvo = String(dados.identificador || '').toUpperCase();
+        const idAtual = String(comandaAtual.identificador || '').toUpperCase();
+        
+        if (idAlvo === idAtual || idAlvo.includes(idAtual) || idAtual.includes(idAlvo)) {
+          fecharModalPix();
+          fecharModalQrCaixa();
+          exibirTelaSucesso(dados.metodo || 'Caixa');
+        }
+      });
+    } catch (e) {
+      console.warn('Socket indisponível:', e);
+    }
+
+    // Carregar parâmetros da URL se existirem (ex: ?c=15 ou ?ticket=PESO-123456)
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const c = params.get('c') || params.get('comanda') || params.get('ticket') || params.get('m') || params.get('mesa');
+      if (c) {
+        buscarComanda(c);
+      }
+    });
+
+    function buscarComandaManual() {
+      const val = document.getElementById('input-comanda-busca').value.trim();
+      if (!val) return alert('Por favor, informe o número da sua comanda ou código do ticket.');
+      buscarComanda(val);
+    }
+
+    function buscarComanda(id) {
+      fetch(`/api/modulo/pesagem-selfservice/comanda/${encodeURIComponent(id)}/extrato`)
+        .then(r => r.json())
+        .then(res => {
+          if (res && res.sucesso) {
+            comandaAtual = res;
+            renderizarExtrato();
+          } else {
+            alert(res.error || 'Não encontramos consumo em aberto para este identificador.');
+          }
+        })
+        .catch(e => alert('Erro de conexão ao buscar comanda: ' + e.message));
+    }
+
+    function renderizarExtrato() {
+      document.getElementById('sec-identificacao').style.display = 'none';
+      document.getElementById('sec-sucesso').style.display = 'none';
+      document.getElementById('sec-extrato').style.display = 'block';
+
+      const titulo = comandaAtual.tipo === 'ticket' ? `Ticket ${comandaAtual.identificador}` : `Comanda / Mesa #${comandaAtual.identificador}`;
+      document.getElementById('comanda-titulo').innerText = titulo;
+      document.getElementById('comanda-total-valor').innerText = `R$ ${comandaAtual.total.toFixed(2).replace('.', ',')}`;
+
+      const container = document.getElementById('lista-itens-comanda');
+      container.innerHTML = comandaAtual.itens.map(item => `
+        <div class="item-row">
+          <div class="item-info">
+            <span style="font-size: 18px;">${item.emoji || '🍽️'}</span>
+            <div>
+              <div>${item.nome}</div>
+              <small style="color: var(--text-sub);">${item.quantidade}x R$ ${item.precoUnitario.toFixed(2)}</small>
+            </div>
+          </div>
+          <div class="item-price">R$ ${item.subtotal.toFixed(2).replace('.', ',')}</div>
+        </div>
+      `).join('');
+    }
+
+    function voltarParaBusca() {
+      comandaAtual = null;
+      document.getElementById('sec-extrato').style.display = 'none';
+      document.getElementById('sec-sucesso').style.display = 'none';
+      document.getElementById('sec-identificacao').style.display = 'block';
+    }
+
+    // --- LEITOR WEBCAM DE QR CODE ---
+    function iniciarLeitorWebcam() {
+      const wrap = document.getElementById('webcam-reader-wrap');
+      wrap.style.display = 'block';
+
+      if (typeof Html5Qrcode !== 'undefined') {
+        html5QrScanner = new Html5Qrcode("reader-cliente");
+        html5QrScanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 220, height: 220 } },
+          (decodedText) => {
+            pararLeitorWebcam();
+            // Processa código lido
+            let id = decodedText;
+            if (id.includes('|')) {
+              const parts = id.split('|');
+              id = parts[1] || parts[0];
+            }
+            buscarComanda(id);
+          },
+          () => {}
+        ).catch(err => {
+          alert('Câmera não permitida ou indisponível.');
+          wrap.style.display = 'none';
+        });
+      }
+    }
+
+    function pararLeitorWebcam() {
+      if (html5QrScanner && html5QrScanner.isScanning) {
+        html5QrScanner.stop().then(() => {
+          html5QrScanner.clear();
+          document.getElementById('webcam-reader-wrap').style.display = 'none';
+        });
+      } else {
+        document.getElementById('webcam-reader-wrap').style.display = 'none';
+      }
+    }
+
+    // --- FORMA 1: PAGAMENTO PIX ---
+    function abrirModalPix() {
+      if (!comandaAtual) return;
+      document.getElementById('pix-modal-valor').innerText = `R$ ${comandaAtual.total.toFixed(2).replace('.', ',')}`;
+
+      fetch(`/api/modulo/pesagem-selfservice/comanda/${encodeURIComponent(comandaAtual.identificador)}/gerar-pix`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ valor: comandaAtual.total })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res && res.sucesso) {
+          pixStringAtual = res.pixCopiaECola;
+          document.getElementById('pix-code-text').innerText = res.pixCopiaECola;
+
+          const qrEl = document.getElementById('pix-qrcode-display');
+          qrEl.innerHTML = '';
+          if (typeof qrcode !== 'undefined') {
+            const qr = qrcode(4, 'M');
+            qr.addData(res.pixCopiaECola);
+            qr.make();
+            qrEl.innerHTML = qr.createImgTag(5, 8);
+          }
+
+          document.getElementById('modal-pix').style.display = 'flex';
+        } else {
+          alert('Erro ao gerar PIX: ' + (res.error || 'Tente novamente.'));
+        }
+      });
+    }
+
+    function fecharModalPix() {
+      document.getElementById('modal-pix').style.display = 'none';
+    }
+
+    function copiarPixCodigo() {
+      if (!pixStringAtual) return;
+      navigator.clipboard.writeText(pixStringAtual).then(() => {
+        alert('Código PIX Copia e Cola copiado para a área de transferência!');
+      }).catch(() => {
+        alert('Copie o código manualmente.');
+      });
+    }
+
+    function confirmarPagamentoPix() {
+      if (!comandaAtual) return;
+      fetch(`/api/modulo/pesagem-selfservice/comanda/${encodeURIComponent(comandaAtual.identificador)}/pagar-pix`, {
+        method: 'POST'
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res && res.sucesso) {
+          fecharModalPix();
+          exibirTelaSucesso('PIX (Aplicativo Celular)');
+        } else {
+          alert('Aviso: ' + (res.error || 'Não foi possível confirmar o pagamento.'));
+        }
+      });
+    }
+
+    // --- FORMA 2: QR CODE PARA CAIXA ---
+    function abrirModalQrCaixa() {
+      if (!comandaAtual) return;
+      document.getElementById('qr-caixa-comanda-txt').innerText = `Comanda #${comandaAtual.identificador}`;
+      document.getElementById('qr-caixa-total-txt').innerText = `Total: R$ ${comandaAtual.total.toFixed(2).replace('.', ',')}`;
+
+      const payload = `PAGAR|COMANDA|${comandaAtual.identificador}|${comandaAtual.total.toFixed(2)}`;
+      const qrEl = document.getElementById('caixa-qrcode-display');
+      qrEl.innerHTML = '';
+      if (typeof qrcode !== 'undefined') {
+        const qr = qrcode(4, 'M');
+        qr.addData(payload);
+        qr.make();
+        qrEl.innerHTML = qr.createImgTag(6, 10);
+      }
+
+      document.getElementById('modal-qr-caixa').style.display = 'flex';
+    }
+
+    function fecharModalQrCaixa() {
+      document.getElementById('modal-qr-caixa').style.display = 'none';
+    }
+
+    let catracaTimerInterval = null;
+    let payloadCatracaAtual = '';
+
+    // Socket: escuta giro/liberação de catraca em tempo real
+    if (socket) {
+      socket.on('catraca_liberada', (dados) => {
+        if (!comandaAtual) return;
+        const idAlvo = String(dados.identificador || '').toUpperCase();
+        const idAtual = String(comandaAtual.identificador || '').toUpperCase();
+        if (idAlvo === idAtual || idAlvo.includes(idAtual) || idAtual.includes(idAlvo)) {
+          const feedbackEl = document.getElementById('catraca-status-feedback');
+          if (feedbackEl) {
+            feedbackEl.innerHTML = `
+              <span style="color: #10b981; font-weight: 800; font-size: 13.5px;">
+                <i class="ph-bold ph-check-circle"></i> Acesso Liberado! Catraca destravada às ${dados.hora || 'agora'}.
+              </span>
+            `;
+          }
+        }
+      });
+    }
+
+    function exibirTelaSucesso(metodo) {
+      document.getElementById('sec-extrato').style.display = 'none';
+      document.getElementById('sec-identificacao').style.display = 'none';
+      document.getElementById('recibo-id').innerText = comandaAtual ? comandaAtual.identificador : '-';
+      document.getElementById('recibo-metodo').innerText = metodo;
+      document.getElementById('recibo-total').innerText = comandaAtual ? `R$ ${comandaAtual.total.toFixed(2).replace('.', ',')}` : '-';
+      document.getElementById('sec-sucesso').style.display = 'block';
+
+      // Gerar QR Code da Catraca de Saída
+      if (comandaAtual) {
+        const idLimpo = comandaAtual.identificador;
+        payloadCatracaAtual = `CATRACA|LIBERAR|${idLimpo}|${Date.now()}`;
+        document.getElementById('catraca-codigo-legivel').innerText = `SAÍDA #${idLimpo}`;
+
+        const qrCatracaEl = document.getElementById('catraca-qrcode-display');
+        qrCatracaEl.innerHTML = '';
+        if (typeof qrcode !== 'undefined') {
+          const qr = qrcode(4, 'M');
+          qr.addData(payloadCatracaAtual);
+          qr.make();
+          qrCatracaEl.innerHTML = qr.createImgTag(5, 8);
+        }
+
+        // Iniciar cronômetro de tolerância (15 minutos = 900 segundos)
+        iniciarTimerTolerancia(900);
+      }
+    }
+
+    function iniciarTimerTolerancia(segundosTotais) {
+      if (catracaTimerInterval) clearInterval(catracaTimerInterval);
+      let restante = segundosTotais;
+      const el = document.getElementById('catraca-timer-txt');
+
+      function atualizar() {
+        const min = Math.floor(restante / 60);
+        const sec = restante % 60;
+        if (el) el.innerText = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        if (restante <= 0) {
+          clearInterval(catracaTimerInterval);
+          if (el) el.innerText = 'EXPIRADO';
+          const feedback = document.getElementById('catraca-status-feedback');
+          if (feedback) feedback.innerHTML = '<span style="color:#ef4444;">⚠️ Prazo expirado. Favor procurar o caixa para revalidar.</span>';
+        }
+        restante--;
+      }
+
+      atualizar();
+      catracaTimerInterval = setInterval(atualizar, 1000);
+    }
+
+    function testarLiberacaoCatraca() {
+      if (!payloadCatracaAtual) return alert('Nenhum código ativo no momento.');
+      fetch('/api/modulo/pesagem-selfservice/catraca/validar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo: payloadCatracaAtual })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.liberado) {
+          alert(`✅ SUCESSO CATRACA!\n\n${res.mensagem}\nStatus: Destravada com sucesso.`);
+        } else {
+          alert(`❌ CATRACA BLOQUEADA:\n\n${res.erro}`);
+        }
+      })
+      .catch(e => alert('Erro ao testar catraca: ' + e.message));
+    }
+  </script>
+</body>
+</html>

@@ -234,35 +234,96 @@
   }
 
   // ─── FULLSCREEN LOGIC ────────────────────────────────────────────────────────
-  function toggleFullScreen(e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(function(err) {
-        console.log('Erro ao tentar fullscreen: ' + err.message);
-      });
-      btn.innerHTML = SVG_FS_OUT;
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-        btn.innerHTML = SVG_FS_IN;
+  function getFsElement() {
+    return document.fullscreenElement ||
+           document.webkitFullscreenElement ||
+           document.mozFullScreenElement ||
+           document.msFullscreenElement || null;
+  }
+
+  function enterFullscreen(elem) {
+    elem = elem || document.documentElement;
+    var rfs = elem.requestFullscreen ||
+              elem.webkitRequestFullscreen ||
+              elem.mozRequestFullScreen ||
+              elem.msRequestFullscreen;
+    if (rfs) {
+      try {
+        var p = rfs.call(elem);
+        if (p && typeof p.then === 'function') {
+          return p.catch(function(err) {
+            console.log('Fullscreen info:', err && err.message);
+          });
+        }
+      } catch (err) {
+        console.log('Fullscreen erro síncrono:', err && err.message);
       }
     }
   }
 
-  btn.addEventListener('click', toggleFullScreen);
-
-  // Auto-fullscreen on mobile upon first interaction
-  if (window.innerWidth <= 768) {
-    let hasAttempted = false;
-    const autoFullscreen = () => {
-      if (!hasAttempted && !document.fullscreenElement) {
-        hasAttempted = true;
-        document.documentElement.requestFullscreen().catch(function(e) {});
-      }
-    };
-    document.addEventListener('click', autoFullscreen, {capture: true, once: true});
-    document.addEventListener('touchstart', autoFullscreen, {capture: true, once: true});
+  function exitFullscreen() {
+    var efs = document.exitFullscreen ||
+              document.webkitExitFullscreen ||
+              document.mozCancelFullScreen ||
+              document.msExitFullscreen;
+    if (efs) {
+      try {
+        var p = efs.call(document);
+        if (p && typeof p.then === 'function') {
+          return p.catch(function(err) {
+            console.log('Exit fullscreen info:', err && err.message);
+          });
+        }
+      } catch (err) {}
+    }
   }
+
+  function updateFsIcon() {
+    if (btn) {
+      btn.innerHTML = getFsElement() ? SVG_FS_OUT : SVG_FS_IN;
+      btn.title = getFsElement() ? 'Sair da Tela Cheia' : 'Tela Cheia';
+    }
+  }
+
+  function toggleFullScreen(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!getFsElement()) {
+      enterFullscreen();
+      btn.innerHTML = SVG_FS_OUT;
+    } else {
+      exitFullscreen();
+      btn.innerHTML = SVG_FS_IN;
+    }
+  }
+
+  btn.addEventListener('click', toggleFullScreen);
+  btn.addEventListener('touchend', function(e) {
+    toggleFullScreen(e);
+  });
+
+  // Keep icon in sync when fullscreen status changes (via ESC or gestures)
+  ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(function(evt) {
+    document.addEventListener(evt, updateFsIcon);
+  });
+
+  // Auto-fullscreen ao primeiro toque ou clique na página (qualquer dispositivo/largura)
+  var hasAttemptedAutoFs = false;
+  function onFirstUserGesture(e) {
+    if (hasAttemptedAutoFs) return;
+    // Se o clique foi no próprio botão de fullscreen, deixa o toggleFullScreen tratar
+    if (e && e.target && (e.target === btn || btn.contains(e.target))) return;
+    hasAttemptedAutoFs = true;
+    if (!getFsElement()) {
+      enterFullscreen();
+    }
+    // Remove os listeners uma vez tentado
+    window.removeEventListener('pointerdown', onFirstUserGesture, true);
+    window.removeEventListener('touchstart', onFirstUserGesture, true);
+    window.removeEventListener('click', onFirstUserGesture, true);
+  }
+  window.addEventListener('pointerdown', onFirstUserGesture, { capture: true, passive: true });
+  window.addEventListener('touchstart', onFirstUserGesture, { capture: true, passive: true });
+  window.addEventListener('click', onFirstUserGesture, { capture: true, passive: true });
 
   // ─── MODO ESPERA: modal fica expandido até a primeira interação ────────────
   // Usado pelo Zoom do QR do Ponto nas telas de caixa. Enquanto ninguém

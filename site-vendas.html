@@ -167,16 +167,16 @@
     .btn-header:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(252, 75, 21, 0.5); background: var(--primary-hover); }
 
     /* ═══ HERO ═══ */
-    .hero { padding: 100px 5% 80px; max-width: 1280px; margin: 0 auto; text-align: center; position: relative; overflow: hidden; }
+    .hero { padding: 48px 5% 60px; max-width: 1280px; margin: 0 auto; text-align: center; position: relative; overflow: hidden; }
     .hero::before { content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%); width: 800px; height: 800px; background: radial-gradient(circle, rgba(252, 75, 21, 0.08) 0%, transparent 60%); pointer-events: none; }
-    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(252, 75, 21, 0.08); border: 1px solid rgba(252, 75, 21, 0.2); color: var(--primary); padding: 8px 20px; border-radius: 30px; font-size: 13px; font-weight: 700; margin-bottom: 28px; opacity: 0; }
-    .hero h1 { font-size: clamp(36px, 5vw, 60px); line-height: 1.1; font-weight: 900; margin-bottom: 24px; background: linear-gradient(180deg, #ffffff 20%, #b0c4de 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(252, 75, 21, 0.08); border: 1px solid rgba(252, 75, 21, 0.2); color: var(--primary); padding: 8px 20px; border-radius: 30px; font-size: 13px; font-weight: 700; margin-bottom: 24px; opacity: 1; }
+    .hero h1 { font-size: clamp(36px, 5vw, 60px); line-height: 1.15; font-weight: 900; margin-bottom: 20px; background: linear-gradient(180deg, #ffffff 20%, #b0c4de 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .hero h1 span { background: linear-gradient(90deg, #fc4b15, #ff9100, #fc4b15); background-size: 200% 100%; animation: gradient-shift 3s ease infinite; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .hero-char { display: inline-block; position: relative; } /* For GSAP Split explosion */
-    .hero p { font-size: 18px; color: var(--text-muted); max-width: 780px; margin: 0 auto 40px; opacity: 0; }
+    .hero p { font-size: 18px; color: var(--text-muted); max-width: 780px; margin: 0 auto 36px; opacity: 1; }
 
     /* ═══ CTA BUTTONS ═══ */
-    .hero-actions { display: flex; justify-content: center; align-items: center; gap: 16px; margin-bottom: 60px; flex-wrap: wrap; opacity: 0; }
+    .hero-actions { display: flex; justify-content: center; align-items: center; gap: 16px; margin-bottom: 48px; flex-wrap: wrap; opacity: 1; }
     .btn-cta-primary { padding: 18px 40px; background: linear-gradient(135deg, var(--primary), #e03e0b); color: #ffffff; border-radius: 16px; font-size: 17px; font-weight: 800; border: none; cursor: pointer; position: relative; overflow: hidden; box-shadow: 0 10px 30px var(--primary-glow); transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 10px; }
     .btn-cta-primary::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent); animation: shimmer 3s infinite; }
     .btn-cta-primary:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 16px 40px rgba(252, 75, 21, 0.5); }
@@ -184,7 +184,7 @@
     .btn-cta-secondary:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
 
     /* ═══ STATS ═══ */
-    .hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 1000px; margin: 0 auto; opacity: 0; }
+    .hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 1000px; margin: 0 auto; opacity: 1; }
     .stat-card { background: var(--card-bg); border: 1px solid var(--card-border); padding: 24px 16px; border-radius: 20px; text-align: center; backdrop-filter: blur(12px); transition: all 0.3s; }
     .stat-card:hover { transform: translateY(-4px); border-color: rgba(252, 75, 21, 0.3); }
     .stat-number { font-size: 34px; font-weight: 800; color: #ffffff; font-family: 'Outfit'; }
@@ -385,16 +385,7 @@
 <body>
   <!-- Add no-js class via JS immediately; <noscript> keeps it if JS is disabled -->
   <script>document.documentElement.classList.remove('no-js');</script>
-  <noscript><style>.no-js .animate-on-scroll{opacity:1!important;transform:none!important}</style></noscript>
-
-  <!-- Preloader Elegante -->
-    <div id="site-preloader" style="position:fixed;top:0;left:0;width:100%;height:100%;background-color:var(--dark-bg);z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);">
-      <div class="logo-icon" style="width:160px;height:160px;margin-bottom:30px;animation:epic-spin-pulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; border-radius:30px;"><img src="/icons/icon-192.png" alt="Chef Cozinha" style="width:120px;height:120px;border-radius:24px;"></div>
-      <div style="color:var(--text-main);font-family:'Outfit';font-size:32px;font-weight:900;letter-spacing:4px;margin-bottom:12px; text-shadow: 0px 4px 20px rgba(252,75,21,0.4);">CHEF COZINHA</div>
-      <div style="color:var(--primary);font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase; animation:float 2s ease infinite;">Preparando a Cozinha...</div>
-    </div>
-
-    <!-- Top Banner -->
+  <!-- Top Banner -->
   <div class="top-promo-bar" id="top-banner">
     <span id="banner-text">🔥 ATENÇÃO: Preço promocional válido apenas até atingirmos 85% da capacidade dos servidores (Uso atual: 57%). Garanta sua vaga!</span>
     <a id="banner-link" onclick="abrirSetupModal()">Garantir Teste Grátis →</a>
@@ -973,34 +964,7 @@
     }
 
     // ═══ GSAP & ANIMATIONS ═══
-    function splitToSpans(el) {
-      const chars = [];
-      function process(node) {
-        if (node.nodeType === 3) {
-          const text = node.nodeValue;
-          const frag = document.createDocumentFragment();
-          for (let i = 0; i < text.length; i++) {
-            if (text[i] === ' ') {
-              frag.appendChild(document.createTextNode(' '));
-            } else {
-              const span = document.createElement('span');
-              span.className = 'hero-char';
-              span.textContent = text[i];
-              frag.appendChild(span);
-              chars.push(span);
-            }
-          }
-          node.parentNode.replaceChild(frag, node);
-        } else if (node.nodeType === 1) {
-          Array.from(node.childNodes).forEach(process);
-        }
-      }
-      process(el);
-      return chars;
-    }
-
     function initAnimations() {
-      // Carrega GSAP dinamicamente APENAS se tiver 4GB de RAM ou mais.
       let mem = navigator.deviceMemory;
       if (mem === undefined || mem >= 4) {
         if (!window.gsapLoaded) {
@@ -1016,73 +980,25 @@
             
             scrollS.onload = function() {
               gsap.registerPlugin(ScrollTrigger);
-              
-              // Forçamos a visibilidade do CSS base antes da animação
               document.body.classList.add('gsap-active');
               
-              // ── 1. Particionar título em Spans ──
-              const heroTitle = document.getElementById('hero-titulo');
-              const heroChars = splitToSpans(heroTitle);
-              
-              // ── 2. Timeline GSAP: Explosão em Pixels + Montagem Um a Um ──
-              const tl = gsap.timeline();
-
-              // Etapa A: Explosão do centro da tela para pixels aleatórios visíveis na resolução atual
-              tl.fromTo(heroChars, 
-                { 
-                  opacity: 0, 
-                  scale: 0.1, 
-                  x: function(index, target) {
-                     const rect = target.getBoundingClientRect();
-                     return (window.innerWidth / 2) - (rect.left + rect.width / 2);
-                  },
-                  y: function(index, target) {
-                     const rect = target.getBoundingClientRect();
-                     return (window.innerHeight / 2) - (rect.top + rect.height / 2);
-                  },
-                  rotationZ: () => Math.random() * 720 - 360
-                }, 
-                { 
-                  opacity: 1, 
-                  scale: () => Math.random() * 0.4 + 0.8, 
-                  x: function(index, target) {
-                     const rect = target.getBoundingClientRect();
-                     const randomScreenX = Math.random() * (window.innerWidth - 120) + 60;
-                     return randomScreenX - (rect.left + rect.width / 2);
-                  },
-                  y: function(index, target) {
-                     const rect = target.getBoundingClientRect();
-                     const randomScreenY = Math.random() * (window.innerHeight - 120) + 60;
-                     return randomScreenY - (rect.top + rect.height / 2);
-                  },
-                  rotationZ: () => Math.random() * 360 - 180,
-                  duration: 0.6, 
-                  stagger: 0.015, 
-                  ease: "power3.out"
-                }
-              )
-              // Etapa B: Reorganização "um a um" mais lenta até o local correto formando a frase
-              .to(heroChars, {
-                x: 0,
-                y: 0,
-                scale: 1,
-                rotationZ: 0,
-                duration: 1.2,
-                stagger: {
-                  amount: 2.0,
-                  from: "start"
-                },
+              // Animação suave e instantânea de entrada do Hero
+              gsap.from(".hero-badge, #hero-titulo, #hero-subtitulo, .hero-actions", {
+                y: 25,
+                opacity: 0,
+                duration: 0.6,
+                stagger: 0.1,
                 ease: "power2.out"
-              }, "+=0.15")
-              
-              // Etapa C: Surgimento dos outros elementos do Hero (inicia JUNTO com a montagem das letras)
-              .to(".hero-badge, #hero-subtitulo, .hero-actions, .hero-stats", {
-                opacity: 1,
-                y: 0,
-                duration: 1.0,
-                stagger: 0.12,
-                ease: "power3.out"
-              }, "<+=0.2");
+              });
+
+              gsap.from(".hero-stats .stat-card", {
+                y: 20,
+                opacity: 0,
+                duration: 0.5,
+                stagger: 0.08,
+                delay: 0.2,
+                ease: "power2.out"
+              });
 
               // Scroll Animations para as seções de baixo
               gsap.utils.toArray('.animate-on-scroll').forEach(function(el) {
@@ -1132,43 +1048,12 @@
       loadSetupDraft();
     });
 
-    // Usar window.onload garante que fontes, CSS e imagens estejam totalmente carregados
+    // Inicialização instantânea sem preloader travando a tela
     window.addEventListener('load', function() {
-      window.scrollTo(0, 0); // Garante que começa no topo após tudo carregar
-      
       const pl = document.getElementById('site-preloader');
-      if (pl) {
-        const logoIcon = pl.querySelector('.logo-icon');
-        const texts = pl.querySelectorAll('div:not(.logo-icon)');
-
-        setTimeout(() => {
-          // 1. Textos e imagem interna somem rapidamente
-          texts.forEach(t => t.classList.add('fade-out-fast'));
-          
-          // 2. A cor de fundo da logo expande para cobrir a tela inteira com a cor primária (duração: 0.8s)
-          if (logoIcon) logoIcon.classList.add('logo-expand-exit');
-          
-          // 3. Após a expansão da logo (0.75s), dispara o fade-out do preloader
-          setTimeout(() => {
-            pl.style.opacity = '0';
-            
-            // 4. Quase imediatamente (100ms), dispara a explosão do GSAP!
-            setTimeout(() => {
-              initAnimations();
-            }, 100);
-            
-            // 5. Remove o preloader do DOM após o fade-out (450ms)
-            setTimeout(() => {
-              pl.remove();
-              setTimeout(() => { if (window.ScrollTrigger) ScrollTrigger.refresh(); }, 100);
-              setTimeout(() => { if (window.ScrollTrigger) ScrollTrigger.refresh(); }, 1000);
-            }, 450);
-          }, 750); // tempo de expansão da logo ajustado para 0.8s
-        }, 1200);
-      } else {
-        initAnimations();
-        setTimeout(() => { if (window.ScrollTrigger) ScrollTrigger.refresh(); }, 500);
-      }
+      if (pl) pl.remove();
+      initAnimations();
+      setTimeout(() => { if (window.ScrollTrigger) ScrollTrigger.refresh(); }, 200);
     });
 
     // ═══ SETUP MODAL LOGIC ═══
@@ -1447,15 +1332,14 @@
           if (mod.tipo === 'urgencia_bar') {
             const bar = document.createElement('div');
             bar.id = 'dynamic-urgencia-bar';
-            bar.style.cssText = `position: fixed; top: 0; left: 0; right: 0; z-index: 10000; background: ${cfg.cor_fundo || '#dc2626'}; color: #fff; padding: 10px 16px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);`;
+            bar.style.cssText = `position: relative; z-index: 1001; background: ${cfg.cor_fundo || '#dc2626'}; color: #fff; padding: 10px 16px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.25);`;
             bar.innerHTML = `
               <span>${cfg.texto || '🔥 PROMOÇÃO EXCLUSIVA DE LANÇAMENTO:'}</span>
               ${cfg.cupom ? `<span style="background: rgba(0,0,0,0.25); padding: 3px 8px; border-radius: 4px; border: 1px dashed rgba(255,255,255,0.6); font-family: monospace; font-size: 14px;">${cfg.cupom}</span>` : ''}
               <a href="#planos" style="background: #fff; color: #111827; padding: 4px 12px; border-radius: 20px; text-decoration: none; font-size: 12px; font-weight: 900; letter-spacing: 0.5px;">${cfg.texto_botao || 'APROVEITAR AGORA'}</a>
-              <button onclick="this.parentElement.remove();document.body.style.paddingTop='0';" style="background: none; border: none; color: #fff; font-size: 16px; cursor: pointer; opacity: 0.8; margin-left: 8px;">✕</button>
+              <button onclick="this.parentElement.remove();" style="background: none; border: none; color: #fff; font-size: 16px; cursor: pointer; opacity: 0.8; margin-left: 8px;">✕</button>
             `;
             document.body.prepend(bar);
-            document.body.style.paddingTop = '42px';
           }
 
           // 3. POP-UP DE RETENÇÃO NA SAÍDA (EXIT INTENT)

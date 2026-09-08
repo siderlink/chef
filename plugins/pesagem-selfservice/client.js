@@ -28,5 +28,15 @@
         window.open('/plugins/pesagem-selfservice/relatorio', '_blank');
       }
     });
+
+    // 3. Área do Cliente (Self-Checkout no Celular)
+    registerNavbarAction({
+      id: 'navbar_area_cliente_comanda',
+      label: 'Área Cliente',
+      icon: 'ph-device-mobile-camera',
+      onClick() {
+        window.open('/cliente-comanda', '_blank');
+      }
+    });
   });
 })();

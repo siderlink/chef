@@ -689,6 +689,9 @@ app.use((req, res, next) => {
 });
 
 const staticOpts = { extensions: ['html'] };
+if (!isPkg) {
+  app.use(express.static(BASE_DIR, staticOpts));
+}
 app.use(express.static(DIST_DIR, staticOpts));
 app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'caixa'), staticOpts));
 app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'garcom'), staticOpts));
@@ -696,7 +699,9 @@ app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'cozinha'), staticOpt
 app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'admin'), staticOpts));
 app.use(express.static(path.join(BASE_DIR, 'src', 'views', 'autoatendimento'), staticOpts));
 app.use(express.static(path.join(BASE_DIR, 'public'), staticOpts));
-app.use(express.static(BASE_DIR, staticOpts));
+if (isPkg) {
+  app.use(express.static(BASE_DIR, staticOpts));
+}
 
 const https = require('https');
 const tls = require('tls');
@@ -4234,6 +4239,36 @@ io.on('connection', (socket) => {
         broadcastPedidos();
       } else {
         console.error('Erro ao atribuir comanda ao item:', err);
+      }
+    });
+  });
+
+  // ── ATRIBUIR / ALOCAR GRUPO DE ITENS EM LOTE PARA UMA COMANDA ──
+  socket.on('atribuir_comanda_itens_lote', ({ itemIds, comandaName, operador, mesaName }) => {
+    if (!Array.isArray(itemIds) || itemIds.length === 0) return;
+    const comandaVal = (comandaName && String(comandaName).trim()) ? String(comandaName).trim() : null;
+    const placeholders = itemIds.map(() => '?').join(',');
+
+    db.run(`UPDATE pedidos SET mesa_comanda = ? WHERE id IN (${placeholders})`, [comandaVal, ...itemIds], (err) => {
+      if (!err) {
+        global.registrarAuditoria(
+          operador || 'Sistema',
+          'ATRIBUICAO_COMANDA_LOTE',
+          `${itemIds.length} itens associados à comanda: ${comandaVal || 'Compartilhado na Mesa'}`,
+          'Operação de Salão',
+          'MEDIO'
+        );
+        broadcastPedidos();
+
+        const mesaRef = mesaName;
+        if (mesaRef) {
+          db.all(`SELECT * FROM pedidos WHERE (localName = ? OR mesa_grupo = ?) AND status != 'Finalizado'`, [mesaRef, mesaRef], (e2, rows) => {
+            io.emit('itens_mesa_recebidos', { mesaName: mesaRef, items: rows || [] });
+          });
+        }
+        socket.emit('itens_alocados_sucesso', { totalItens: itemIds.length, comanda: comandaVal });
+      } else {
+        console.error('Erro ao atribuir comanda em lote aos itens:', err);
       }
     });
   });

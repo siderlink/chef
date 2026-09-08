@@ -718,6 +718,65 @@ module.exports = function ({ app, db, masterDb, io, options, log }) {
     });
   }));
 
+  // Helper para registrar versão no histórico (últimas 10 versões salvas)
+  async function salvarSnapshotModulos(motivo, autorNome, autorId) {
+    try {
+      const rows = await dbAll(`SELECT * FROM site_vendas_modulos ORDER BY ordem ASC`);
+      const snapshot = rows.map(r => ({ ...r, config: JSON.parse(r.config_json || '{}') }));
+      const titulo = `Versão Módulos ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      const resumo = motivo || `${rows.length} módulo(s) configurado(s)`;
+      await dbRun(
+        `INSERT INTO site_versoes_historico (tipo, titulo, resumo, snapshot_json, autor_nome, autor_id) VALUES ('site_vendas_modulos', ?, ?, ?, ?, ?)`,
+        [titulo, resumo, JSON.stringify(snapshot), autorNome || 'Suporte', autorId || null]
+      );
+      await dbRun(`DELETE FROM site_versoes_historico WHERE tipo = 'site_vendas_modulos' AND id NOT IN (SELECT id FROM site_versoes_historico WHERE tipo = 'site_vendas_modulos' ORDER BY id DESC LIMIT 10)`);
+    } catch (e) {
+      log('Erro ao salvar snapshot de módulos:', e.message);
+    }
+  }
+
+  // GET /api/super/site-vendas/historico — Listar últimas 10 versões salvas dos módulos
+  app.get('/api/super/site-vendas/historico', authCuradoria, safe(async (req, res) => {
+    const rows = await dbAll(
+      `SELECT id, tipo, titulo, resumo, autor_nome, autor_id, criado_em, length(snapshot_json) as tamanho_bytes
+       FROM site_versoes_historico
+       WHERE tipo = 'site_vendas_modulos'
+       ORDER BY id DESC LIMIT 10`
+    );
+    res.json({ ok: true, versoes: rows || [] });
+  }));
+
+  // POST /api/super/site-vendas/historico/restaurar/:id — Restaurar versão dos módulos em 1 clique
+  app.post('/api/super/site-vendas/historico/restaurar/:id', authCuradoria, safe(async (req, res) => {
+    const versaoId = parseInt(req.params.id);
+    if (!versaoId) return res.json({ ok: false, erro: 'ID de versão inválido.' });
+    const row = await dbGet(`SELECT * FROM site_versoes_historico WHERE id = ? AND tipo = 'site_vendas_modulos'`, [versaoId]);
+    if (!row) return res.json({ ok: false, erro: 'Versão de módulos não encontrada.' });
+
+    let modulos = [];
+    try {
+      modulos = JSON.parse(row.snapshot_json || '[]');
+    } catch (e) {
+      return res.json({ ok: false, erro: 'Snapshot corrompido.' });
+    }
+
+    await dbRun(`DELETE FROM site_vendas_modulos`);
+    for (const m of modulos) {
+      await dbRun(
+        `INSERT INTO site_vendas_modulos (id, tipo, titulo, ativo, ordem, config_json, atualizado_em) VALUES (?,?,?,?,?,?,datetime('now','localtime'))`,
+        [m.id, m.tipo, m.titulo, m.ativo ? 1 : 0, parseInt(m.ordem) || 0, typeof m.config === 'object' ? JSON.stringify(m.config) : (m.config_json || '{}')]
+      );
+    }
+
+    await dbRun(
+      `INSERT INTO site_versoes_historico (tipo, titulo, resumo, snapshot_json, autor_nome, autor_id) VALUES ('site_vendas_modulos', ?, ?, ?, ?, ?)`,
+      [`Restaurado da v#${row.id}`, `Rollback para snapshot de ${row.criado_em}`, row.snapshot_json, 'Suporte', null]
+    );
+    await dbRun(`DELETE FROM site_versoes_historico WHERE tipo = 'site_vendas_modulos' AND id NOT IN (SELECT id FROM site_versoes_historico WHERE tipo = 'site_vendas_modulos' ORDER BY id DESC LIMIT 10)`);
+
+    res.json({ ok: true, mensagem: `Versão #${row.id} de módulos restaurada e publicada com sucesso!` });
+  }));
+
   // GET /api/super/site-vendas/modulos — Listagem completa para o painel de suporte
   app.get('/api/super/site-vendas/modulos', authCuradoria, safe(async (req, res) => {
     const rows = await dbAll(`SELECT * FROM site_vendas_modulos ORDER BY ordem ASC`);
@@ -741,6 +800,7 @@ module.exports = function ({ app, db, masterDb, io, options, log }) {
       ordem=excluded.ordem, config_json=excluded.config_json, atualizado_em=datetime('now','localtime')`,
       [modId, tipo, titulo, ativo ? 1 : 0, parseInt(ordem) || 0, typeof config === 'object' ? JSON.stringify(config) : (config || '{}')]
     );
+    await salvarSnapshotModulos(`Módulo "${titulo}" adicionado/atualizado`, req.headers['x-suporte-nome'] || 'Suporte');
     res.json({ ok: true, id: modId });
   }));
 
@@ -760,12 +820,14 @@ module.exports = function ({ app, db, masterDb, io, options, log }) {
     params.push(req.params.id);
 
     await dbRun(`UPDATE site_vendas_modulos SET ${updates.join(',')} WHERE id=?`, params);
+    await salvarSnapshotModulos(`Módulo ID ${req.params.id} atualizado`, req.headers['x-suporte-nome'] || 'Suporte');
     res.json({ ok: true });
   }));
 
   // DELETE /api/super/site-vendas/modulos/:id — Excluir ou desativar módulo
   app.delete('/api/super/site-vendas/modulos/:id', authCuradoria, safe(async (req, res) => {
     await dbRun(`DELETE FROM site_vendas_modulos WHERE id=?`, [req.params.id]);
+    await salvarSnapshotModulos(`Módulo ID ${req.params.id} excluído`, req.headers['x-suporte-nome'] || 'Suporte');
     res.json({ ok: true });
   }));
 

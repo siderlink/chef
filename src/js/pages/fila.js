@@ -893,6 +893,35 @@ socket.on('validacao_pedido_necessaria', ({ id, mesa, mesa_origem, cliente_nome 
   setTimeout(() => toast.remove(), 6500);
 });
 
+// Alerta de Demanda do Buffet para a Cozinha
+socket.on('alerta_buffet_cozinha', (dados) => {
+  try {
+    const audio = new Audio('/sounds/bell.mp3');
+    audio.play().catch(() => {});
+  } catch (e) {}
+
+  const antigo = document.getElementById('alerta-buffet-banner');
+  if (antigo) antigo.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'alerta-buffet-banner';
+  banner.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg, #dc2626 0%, #991b1b 100%);color:white;padding:22px 28px;border-radius:20px;font-size:15px;font-weight:800;z-index:99999;box-shadow:0 20px 50px rgba(220,38,38,0.6);border:2px solid #fca5a5;max-width:560px;width:92%;text-align:center;animation:popIn 0.3s ease-out;';
+  banner.innerHTML = `
+    <div style="font-size: 22px; font-weight: 900; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span>🚨</span> <span>ATENÇÃO COZINHA: REPOR BUFFET!</span>
+    </div>
+    <div style="font-size: 14.5px; line-height: 1.5; color: #fee2e2; margin-bottom: 16px;">
+      ${dados.mensagem || 'Demanda alta no buffet! Favor conferir reposição de cubas.'}
+    </div>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <button onclick="document.getElementById('alerta-buffet-banner').remove()" style="padding: 12px 26px; background: white; color: #991b1b; border: none; border-radius: 12px; font-weight: 900; font-size: 14.5px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
+        👍 Ciente / Buffet Conferido
+      </button>
+    </div>
+  `;
+  document.body.appendChild(banner);
+});
+
 
 
 window.filtrarFila = function(statusText) {

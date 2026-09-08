@@ -11,5 +11,18 @@
   "produtoQuiloId": null,
   "produtoLivreId": null,
   "balancaProtocolo": "toledo_prix3",
-  "balancaBaudRate": 9600
+  "balancaBaudRate": 9600,
+  "alertaDemandaAtivo": true,
+  "demandaMetaPratos": 3,
+  "demandaJanelaMinutos": 15,
+  "demandaMetaKg": 3.5,
+  "demandaCooldownMinutos": 1,
+  "ultimoAlertaDemanda": 1788830203256,
+  "chavePixRestaurante": "restaurante@pix.com.br",
+  "nomeBeneficiarioPix": "CHEF COZINHA RESTAURANTE",
+  "cidadePix": "SAO PAULO",
+  "catracaAtiva": true,
+  "toleranciaSaidaMinutos": 15,
+  "catracaMensagemLiberado": "Acesso Liberado! Obrigado e volte sempre.",
+  "catracaMensagemBloqueado": "Acesso bloqueado: comanda não paga ou prazo expirado."
 }

@@ -156,11 +156,41 @@
           };
         }
 
-        // 3. Validação Antifraude de Ticket (Bip ou Digitação)
+        // 3. Validação Antifraude de Ticket ou Baixa de Comanda via QR do Cliente
         function validarTicket() {
           const raw = (inputTicket.value || '').trim();
           if (!raw) return;
 
+          // Se for QR Code gerado pelo celular do cliente para pagar no Caixa (PAGAR|COMANDA|15|...)
+          if (raw.startsWith('PAGAR|') || raw.toLowerCase().startsWith('comanda')) {
+            fetch('/api/modulo/pesagem-selfservice/comanda/baixa-caixa', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ codigoQr: raw, metodoPagamento: 'Caixa' })
+            })
+            .then(r => r.json().then(data => ({ status: r.status, data })))
+            .then(({ status, data }) => {
+              inputTicket.value = '';
+              if (data && data.sucesso) {
+                if (typeof Swal !== 'undefined') {
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Comanda Baixada no Caixa!',
+                    text: data.mensagem || 'A comanda foi quitada com sucesso e o cliente já recebeu o comprovante no celular.',
+                    confirmButtonColor: '#10b981'
+                  });
+                } else {
+                  alert(data.mensagem);
+                }
+              } else {
+                alert(data.error || 'Erro ao dar baixa na comanda.');
+              }
+            })
+            .catch(e => alert('Erro de rede: ' + e.message));
+            return;
+          }
+
+          // Se for Ticket de Pesagem (PESO-...)
           fetch(`/api/modulo/pesagem-selfservice/ticket/${encodeURIComponent(raw)}/resgatar`, {
             method: 'POST'
           })
