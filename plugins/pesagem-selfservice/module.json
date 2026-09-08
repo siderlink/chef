@@ -7,7 +7,7 @@
   "icon": "ph-scales",
   "enabled": true,
   "description": "Pesagem automática de buffet/self-service com impressão instantânea de comanda e abertura por QR Code.",
-  "targets": ["caixa", "pdv", "configuracoes", "totem", "all"],
+  "targets": ["caixa", "caixa_v11", "pdv", "configuracoes", "totem", "dashboard", "all"],
   "hooks": {
     "server": "index.js",
     "client": "client.js",

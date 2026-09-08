@@ -3,147 +3,288 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Totem de Pesagem Automática | Chef Cozinha</title>
+  <title>Totem de Pesagem Automática & Autoatendimento | Chef Cozinha</title>
+  
+  <!-- Estilos e Ícones -->
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <script src="/socket.io/socket.io.js"></script>
-  <!-- QR Code Local -->
+  <!-- QR Code Generator e Scanner de Webcam -->
   <script src="/vendor/qrcode/qrcode-generator.js"></script>
+  <script src="/vendor/html5-qrcode/html5-qrcode.min.js"></script>
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Inter', system-ui, sans-serif; }
-    body { background: #090d16; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    :root {
+      --primary: #fc4b15;
+      --primary-hover: #e03e09;
+      --primary-light: rgba(252, 75, 21, 0.15);
+      --success: #10b981;
+      --success-dark: #059669;
+      --surface-dark: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    body { background: #0b0f19; color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
 
     /* Top Bar */
     .totem-topbar {
-      background: #111827;
-      border-bottom: 1.5px solid #1f2937;
-      padding: 16px 24px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1.5px solid var(--card-border);
+      padding: 14px 28px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    .totem-logo { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 900; color: #fc4b15; }
+    .totem-logo { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 900; color: var(--primary); letter-spacing: -0.5px; }
+    
+    .topbar-actions { display: flex; align-items: center; gap: 12px; }
     .totem-status-badge {
       display: flex;
       align-items: center;
       gap: 8px;
-      background: rgba(16, 185, 129, 0.15);
-      color: #10b981;
-      padding: 6px 14px;
+      padding: 7px 16px;
       border-radius: 20px;
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 800;
+      transition: all 0.3s;
     }
+    .status-conectada { background: rgba(16, 185, 129, 0.16); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-simulada { background: rgba(245, 158, 11, 0.16); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .status-desconectada { background: rgba(239, 68, 68, 0.16); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
 
-    /* Main Container */
+    .btn-topbar-tool {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-topbar-tool:hover { background: #334155; color: #fff; }
+
+    /* Layout Principal */
     .totem-main {
       flex: 1;
       display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 24px;
-      padding: 24px;
-      max-width: 1200px;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 28px;
+      padding: 28px;
+      max-width: 1280px;
       margin: 0 auto;
       width: 100%;
       align-items: center;
     }
 
-    @media (max-width: 900px) {
-      .totem-main { grid-template-columns: 1fr; overflow-y: auto; }
+    @media (max-width: 960px) {
+      .totem-main { grid-template-columns: 1fr; padding: 20px; overflow-y: auto; }
     }
 
-    /* Display Card */
+    /* Cartão Principal da Balança */
     .scale-card {
-      background: #131b2e;
-      border: 2px solid #1e293b;
-      border-radius: 24px;
-      padding: 32px;
+      background: linear-gradient(180deg, #162032 0%, #0f172a 100%);
+      border: 2px solid var(--card-border);
+      border-radius: 28px;
+      padding: 36px 32px;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
       position: relative;
     }
 
-    .scale-label { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 8px; }
-    .scale-weight {
-      font-size: 64px;
-      font-weight: 900;
-      color: #f8fafc;
-      font-family: monospace;
-      letter-spacing: -2px;
-      margin: 10px 0;
-      text-shadow: 0 0 30px rgba(252, 75, 21, 0.3);
+    .scale-label {
+      font-size: 13.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .scale-weight small { font-size: 24px; color: #fc4b15; font-weight: 700; margin-left: 6px; }
+
+    /* Display do Peso */
+    .scale-weight-box {
+      margin: 16px 0;
+      position: relative;
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: center;
+    }
+    .scale-weight {
+      font-size: 80px;
+      font-weight: 900;
+      color: #ffffff;
+      font-family: 'JetBrains Mono', monospace, sans-serif;
+      letter-spacing: -2px;
+      text-shadow: 0 0 35px rgba(252, 75, 21, 0.35);
+    }
+    .scale-weight small {
+      font-size: 28px;
+      color: var(--primary);
+      font-weight: 800;
+      margin-left: 8px;
+    }
 
     .scale-price-calc {
-      font-size: 40px;
+      font-size: 46px;
       font-weight: 900;
+      color: var(--success);
+      margin-bottom: 24px;
+      letter-spacing: -1px;
+    }
+
+    /* Indicador de Estabilidade e Auto-Print */
+    .stability-container {
+      width: 100%;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 12px 18px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .stability-info { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #cbd5e1; }
+    .auto-print-badge {
+      font-size: 12px;
+      background: rgba(16, 185, 129, 0.2);
       color: #10b981;
-      margin: 12px 0 24px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 800;
+    }
+    .countdown-bar-wrap {
+      width: 100%;
+      height: 6px;
+      background: #334155;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+      display: none;
+    }
+    .countdown-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #10b981, #fc4b15);
+      transition: width 0.1s linear;
     }
 
     .scale-info-pills {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
       justify-content: center;
       margin-bottom: 24px;
     }
     .info-pill {
-      background: #1f293d;
-      padding: 6px 14px;
-      border-radius: 12px;
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid #334155;
+      padding: 7px 16px;
+      border-radius: 14px;
       font-size: 13px;
       color: #cbd5e1;
       font-weight: 700;
     }
 
-    /* Actions Panel */
+    /* Barra de Simulação Rápida / Testes */
+    .sim-bar {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      border-top: 1px dashed #334155;
+      padding-top: 18px;
+    }
+    .btn-sim {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-sim:hover { background: #334155; color: #fff; }
+    .btn-zerar {
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Painel de Ações do Cliente */
     .actions-panel {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 18px;
     }
 
     .totem-btn {
-      padding: 20px;
-      border-radius: 18px;
+      padding: 22px 24px;
+      border-radius: 20px;
       border: none;
-      font-size: 18px;
+      font-size: 19px;
       font-weight: 900;
       cursor: pointer;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 12px;
-      transition: transform 0.15s, filter 0.15s;
+      justify-content: flex-start;
+      gap: 18px;
+      transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+      position: relative;
+      overflow: hidden;
+      text-align: left;
     }
-    .totem-btn:active { transform: scale(0.97); }
+    .totem-btn:active { transform: scale(0.98); }
+    .totem-btn i { font-size: 36px; flex-shrink: 0; }
+    .totem-btn-text small { display: block; font-size: 13px; font-weight: 600; opacity: 0.85; margin-top: 2px; }
 
     .btn-print {
       background: linear-gradient(135deg, #fc4b15 0%, #ea580c 100%);
       color: white;
-      box-shadow: 0 10px 25px rgba(252, 75, 21, 0.4);
+      box-shadow: 0 12px 28px rgba(252, 75, 21, 0.4);
     }
     .btn-scan {
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
       color: white;
-      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.35);
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.35);
     }
     .btn-buffet-livre {
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: white;
-      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
+      box-shadow: 0 12px 28px rgba(16, 185, 129, 0.35);
     }
 
-    /* Ticket Modal / Feedback */
-    #modal-ticket {
+    /* Modal Genérico */
+    .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.85);
+      background: rgba(0, 0, 0, 0.85);
       backdrop-filter: blur(8px);
       display: none;
       align-items: center;
@@ -151,42 +292,122 @@
       z-index: 9999;
       padding: 20px;
     }
-    .ticket-box {
-      background: #ffffff;
-      color: #111827;
-      border-radius: 20px;
-      padding: 28px;
+    .modal-box {
+      background: #1e293b;
+      color: var(--text-main);
+      border: 1px solid #334155;
+      border-radius: 24px;
+      padding: 30px;
       width: 100%;
-      max-width: 380px;
-      text-align: center;
+      max-width: 440px;
       box-shadow: 0 25px 60px rgba(0,0,0,0.6);
-      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
     }
-    @keyframes popIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+    /* Modal do Ticket */
+    .ticket-view {
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 16px;
+      padding: 24px;
+      margin: 16px 0;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    /* Estilo de Impressão Térmica (58mm / 80mm) */
+    @media print {
+      body * { visibility: hidden !important; }
+      #printable-ticket, #printable-ticket * { visibility: visible !important; }
+      #printable-ticket {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: 80mm;
+        margin: 0;
+        padding: 6mm;
+        color: #000;
+        background: #fff;
+        font-family: monospace;
+        font-size: 13px;
+        line-height: 1.35;
+      }
+      @page { margin: 0; size: auto; }
+    }
+
+    /* Inputs de Configuração */
+    .cfg-group { margin-bottom: 16px; }
+    .cfg-group label { display: block; font-size: 12.5px; font-weight: 700; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; }
+    .cfg-group input, .cfg-group select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #fff;
+      font-size: 14.5px;
+      font-weight: 700;
+      outline: none;
+    }
   </style>
 </head>
 <body>
 
+  <!-- Top Bar -->
   <header class="totem-topbar">
     <div class="totem-logo">
       <i class="ph-bold ph-scales"></i>
-      <span>Balança Autoatendimento</span>
+      <span>Chef Cozinha <small style="font-size:14px; color:#94a3b8; font-weight:600;">| Totem Buffet</small></span>
     </div>
-    <div class="totem-status-badge">
-      <i class="ph-fill ph-circle" style="font-size: 8px;"></i>
-      <span>Balança Conectada</span>
+
+    <div class="topbar-actions">
+      <!-- Status da Balança -->
+      <div id="totem-status-badge" class="totem-status-badge status-simulada" onclick="abrirConfigSerial()" title="Clique para conectar porta serial">
+        <i class="ph-fill ph-circle" style="font-size: 10px;"></i>
+        <span id="totem-status-texto">Balança Simulada</span>
+      </div>
+
+      <!-- Botão Configurações Gerente -->
+      <button class="btn-topbar-tool" onclick="solicitarPinConfig()">
+        <i class="ph-bold ph-gear"></i>
+        <span>Ajustes</span>
+      </button>
+
+      <!-- Botão Tela Cheia -->
+      <button class="btn-topbar-tool" onclick="toggleFullscreen()" title="Alternar Tela Cheia">
+        <i class="ph-bold ph-arrows-out"></i>
+      </button>
     </div>
   </header>
 
+  <!-- Layout Principal -->
   <main class="totem-main">
-    <!-- Display da Balança -->
+    
+    <!-- Display Card da Balança -->
     <div class="scale-card">
-      <span class="scale-label">Peso Líquido do Prato</span>
-      <div class="scale-weight" id="totem-peso">
-        0.000 <small>kg</small>
+      <span class="scale-label">
+        <i class="ph-bold ph-scales"></i> Peso Líquido do Prato
+      </span>
+
+      <div class="scale-weight-box">
+        <div class="scale-weight" id="totem-peso">0.000<small>kg</small></div>
       </div>
-      <div class="scale-price-calc" id="totem-valor">
-        R$ 0,00
+
+      <div class="scale-price-calc" id="totem-valor">R$ 0,00</div>
+
+      <!-- Barra de Estabilidade & Auto-Print -->
+      <div class="stability-container">
+        <div class="stability-info">
+          <i id="stability-icon" class="ph-bold ph-arrows-clockwise" style="font-size: 18px; color: #f59e0b;"></i>
+          <span id="stability-status-text">Aguardando Prato...</span>
+        </div>
+        <div id="auto-print-label" class="auto-print-badge">Auto-Print: 2s</div>
+      </div>
+      <div class="countdown-bar-wrap" id="countdown-wrap">
+        <div class="countdown-bar-fill" id="countdown-fill"></div>
       </div>
 
       <div class="scale-info-pills">
@@ -194,69 +415,234 @@
         <div class="info-pill" id="pill-tara">Tara Prato: 450g</div>
       </div>
 
-      <div style="display:flex; gap:10px; width:100%;">
-        <button onclick="simularPeso(0.380)" style="flex:1; padding:10px; border-radius:10px; background:#1e293b; color:#94a3b8; border:none; font-weight:700; font-size:12px; cursor:pointer;">
-          ⚡ Simular 380g
-        </button>
-        <button onclick="simularPeso(0.620)" style="flex:1; padding:10px; border-radius:10px; background:#1e293b; color:#94a3b8; border:none; font-weight:700; font-size:12px; cursor:pointer;">
-          ⚡ Simular 620g
-        </button>
-        <button onclick="zerarPeso()" style="padding:10px 14px; border-radius:10px; background:#ef4444; color:white; border:none; font-weight:700; font-size:12px; cursor:pointer;">
-          Zerar
-        </button>
+      <!-- Barra de Simulação para Testes -->
+      <div class="sim-bar">
+        <button class="btn-sim" onclick="simularPeso(0.380)">⚡ 380g</button>
+        <button class="btn-sim" onclick="simularPeso(0.550)">⚡ 550g</button>
+        <button class="btn-sim" onclick="simularPeso(0.720)">⚡ 720g</button>
+        <button class="btn-sim" onclick="digitarPesoManual()">✏️ Digitar</button>
+        <button class="btn-zerar" onclick="zerarPeso()">Zerar</button>
       </div>
     </div>
 
     <!-- Painel de Ações do Cliente -->
     <div class="actions-panel">
-      <button class="totem-btn btn-print" onclick="finalizarPesagem('imprimir')">
-        <i class="ph-bold ph-printer" style="font-size: 26px;"></i>
-        <span>1. Imprimir Comanda de Peso</span>
+      <button class="totem-btn btn-print" onclick="dispararPesagem('imprimir')">
+        <i class="ph-bold ph-printer"></i>
+        <div class="totem-btn-text">
+          <span>1. Imprimir Ticket de Peso</span>
+          <small>Retire o comprovante térmico para pagar no caixa</small>
+        </div>
       </button>
 
-      <button class="totem-btn btn-scan" onclick="solicitarQrComanda()">
-        <i class="ph-bold ph-qr-code" style="font-size: 26px;"></i>
-        <span>2. Escanear QR da Minha Comanda</span>
+      <button class="totem-btn btn-scan" onclick="abrirLeitorComanda()">
+        <i class="ph-bold ph-qr-code"></i>
+        <div class="totem-btn-text">
+          <span>2. Identificar Minha Comanda / Mesa</span>
+          <small>Aproxime seu cartão QR ou bipe o código de barras</small>
+        </div>
       </button>
 
-      <button class="totem-btn btn-buffet-livre" onclick="finalizarPesagem('livre')">
-        <i class="ph-bold ph-fork-knife" style="font-size: 26px;"></i>
-        <span id="btn-livre-label">3. Buffet Livre (R$ 35,00)</span>
+      <button class="totem-btn btn-buffet-livre" onclick="dispararPesagem('livre')">
+        <i class="ph-bold ph-fork-knife"></i>
+        <div class="totem-btn-text">
+          <span id="btn-livre-label">3. Buffet Livre (R$ 35,00)</span>
+          <small>Consumo à vontade com valor fixo</small>
+        </div>
       </button>
     </div>
+
   </main>
 
-  <!-- Modal do Ticket Impresso -->
-  <div id="modal-ticket">
-    <div class="ticket-box">
-      <i class="ph-bold ph-check-circle" style="font-size: 52px; color: #10b981; margin-bottom: 8px;"></i>
-      <h3 style="margin-bottom: 4px; font-size: 20px;">Comanda Gerada!</h3>
-      <p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">Retire seu ticket e apresente no caixa.</p>
-      
-      <div id="ticket-qrcode-container" style="display:flex; justify-content:center; margin-bottom: 16px;"></div>
+  <!-- Modal do Ticket Impresso / Concluído -->
+  <div id="modal-ticket" class="modal-backdrop">
+    <div class="modal-box" style="text-align: center;">
+      <i class="ph-bold ph-check-circle" style="font-size: 56px; color: #10b981; margin-bottom: 6px;"></i>
+      <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 4px;">Comanda Gerada!</h2>
+      <p style="color: #94a3b8; font-size: 13.5px; margin-bottom: 12px;">Retire seu cupom impresso e apresente no caixa.</p>
 
-      <div style="background:#f8fafc; border-radius:12px; padding:14px; text-align:left; font-size:13.5px; margin-bottom: 16px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-          <span>Código:</span> <strong id="ticket-id">PESO-123456</strong>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-          <span>Peso Líquido:</span> <strong id="ticket-peso">0.500 kg</strong>
-        </div>
-        <div style="display:flex; justify-content:space-between; font-size:16px; color:#fc4b15; margin-top:8px; border-top:1px dashed #cbd5e1; padding-top:8px;">
-          <span>Total:</span> <strong id="ticket-total">R$ 34,95</strong>
+      <div class="ticket-view">
+        <div id="ticket-qrcode-container" style="display: flex; justify-content: center; margin-bottom: 12px;"></div>
+        <div style="font-size: 13px; line-height: 1.6; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+          <div style="display: flex; justify-content: space-between;"><span>Ticket:</span> <strong id="ticket-id-txt">PESO-123456</strong></div>
+          <div style="display: flex; justify-content: space-between;"><span>Peso Líquido:</span> <strong id="ticket-peso-txt">0.500 kg</strong></div>
+          <div style="display: flex; justify-content: space-between; font-size: 17px; color: #fc4b15; font-weight: 900; margin-top: 6px; border-top: 1px solid #e2e8f0; padding-top: 6px;">
+            <span>Total:</span> <span id="ticket-total-txt">R$ 34,95</span>
+          </div>
         </div>
       </div>
 
-      <button onclick="fecharTicket()" style="width:100%; padding:14px; background:#111827; color:white; border:none; border-radius:12px; font-weight:800; font-size:15px; cursor:pointer;">
-        Concluir
+      <div style="display: flex; gap: 10px;">
+        <button onclick="reimprimirCupom()" style="flex: 1; padding: 14px; background: #334155; color: white; border: none; border-radius: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <i class="ph-bold ph-printer"></i> Imprimir Novamente
+        </button>
+        <button onclick="fecharModalTicket()" style="flex: 1; padding: 14px; background: #10b981; color: white; border: none; border-radius: 14px; font-weight: 800; cursor: pointer;">
+          Concluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Leitor de Comanda (Câmera / Teclado) -->
+  <div id="modal-leitor" class="modal-backdrop">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+          <i class="ph-bold ph-qr-code" style="color: #3b82f6;"></i> Identificar Comanda
+        </h3>
+        <button onclick="fecharLeitorComanda()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+      </div>
+
+      <!-- Preview de Webcam para QR -->
+      <div id="qr-reader" style="width: 100%; border-radius: 14px; overflow: hidden; background: #0f172a; margin-bottom: 14px; min-height: 200px; display: flex; align-items: center; justify-content: center;">
+        <span style="color: #64748b; font-size: 13px;">Iniciando leitor de QR Code...</span>
+      </div>
+
+      <!-- Entrada manual ou leitor USB -->
+      <div style="margin-top: 10px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">OU DIGITE O NÚMERO DA COMANDA / MESA:</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="input-comanda-manual" placeholder="Ex: 12 ou Mesa 4" style="flex: 1; padding: 12px; border-radius: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; font-size: 15px; font-weight: 800;">
+          <button onclick="confirmarComandaManual()" style="padding: 12px 18px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer;">
+            Lançar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajustes do Gerente (PIN) -->
+  <div id="modal-config" class="modal-backdrop">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+          <i class="ph-bold ph-gear" style="color: #fc4b15;"></i> Ajustes de Pesagem
+        </h3>
+        <button onclick="fecharModalConfig()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+      </div>
+
+      <div class="cfg-group">
+        <label>Preço por Quilo (R$/Kg):</label>
+        <input type="number" id="cfg-preco-kg" step="0.10" value="69.90">
+      </div>
+
+      <div class="cfg-group">
+        <label>Preço Buffet Livre (R$):</label>
+        <input type="number" id="cfg-preco-livre" step="0.50" value="35.00">
+      </div>
+
+      <div class="cfg-group">
+        <label>Tara do Prato (Kg - ex: 0.450):</label>
+        <input type="number" id="cfg-tara" step="0.010" value="0.450">
+      </div>
+
+      <div class="cfg-group">
+        <label>Balança Física (Porta Serial):</label>
+        <div style="display:flex; gap:8px;">
+          <select id="cfg-protocolo" style="flex:1;">
+            <option value="toledo_prix3">Toledo Prix 3 / 4 / 5 (9600)</option>
+            <option value="filizola">Filizola Platina / CS (9600)</option>
+            <option value="elgin">Elgin DP-30 / SA-110 (9600)</option>
+            <option value="urano">Urano Pop-Z (9600)</option>
+          </select>
+          <button type="button" onclick="conectarPortaSerial()" style="padding: 10px 14px; background: #fc4b15; color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer;">
+            Conectar
+          </button>
+        </div>
+      </div>
+
+      <div class="cfg-group" style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="cfg-auto-imprimir" style="width:20px; height:20px;">
+        <label for="cfg-auto-imprimir" style="margin:0; cursor:pointer;">Disparo Automático (Estabilidade 2s)</label>
+      </div>
+
+      <button onclick="salvarAjustesConfig()" style="width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 10px;">
+        Salvar Alterações
       </button>
     </div>
   </div>
 
-  <script>
-    let config = { precoKg: 69.90, precoLivre: 35.00, taraPratoKg: 0.450 };
-    let pesoBrutoAtual = 0;
+  <!-- Elemento Oculto de Impressão Térmica ESC/POS (@media print) -->
+  <div id="printable-ticket" style="display: none;">
+    <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 5px; margin-bottom: 8px;">
+      <h2 style="font-size: 18px; margin: 0; font-weight: 900;">CHEF COZINHA</h2>
+      <p style="font-size: 12px; margin: 2px 0;">AUTOATENDIMENTO BUFFET</p>
+      <p id="prn-data-hora" style="font-size: 11px; margin: 0;">07/09/2026 12:30:00</p>
+    </div>
 
+    <div style="font-size: 14px; margin-bottom: 8px;">
+      <p><strong>CÓDIGO: </strong><span id="prn-ticket-id">PESO-123456</span></p>
+      <p><strong>MODO: </strong><span id="prn-modo">POR QUILO</span></p>
+      <p><strong>PESO BRUTO: </strong><span id="prn-bruto">0.950 kg</span></p>
+      <p><strong>TARA PRATO: </strong><span id="prn-tara">0.450 kg</span></p>
+      <p style="font-size: 16px; margin: 4px 0;"><strong>PESO LÍQUIDO: </strong><span id="prn-liquido">0.500 kg</span></p>
+      <p><strong>PREÇO/KG: </strong><span id="prn-preco-kg">R$ 69,90</span></p>
+      <div style="border-top: 1.5px solid #000; border-bottom: 1.5px solid #000; padding: 6px 0; margin: 6px 0; font-size: 18px; font-weight: 900; text-align: right;">
+        TOTAL: <span id="prn-total">R$ 34,95</span>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin: 10px 0;">
+      <div id="prn-qrcode" style="display: inline-block;"></div>
+      <p style="font-size: 10px; margin-top: 4px;">APRESENTE AO OPERADOR DE CAIXA</p>
+    </div>
+  </div>
+
+  <script>
+    // --- ESTADO GLOBAL ---
+    let config = {
+      precoKg: 69.90,
+      precoLivre: 35.00,
+      taraPratoKg: 0.450,
+      autoImprimirTicket: true,
+      segundosAutoImprimir: 2,
+      balancaProtocolo: 'toledo_prix3',
+      balancaBaudRate: 9600
+    };
+
+    let pesoBrutoAtual = 0;
+    let serialPort = null;
+    let serialReader = null;
+    let ultimoRegistro = null;
+    let html5QrCode = null;
+
+    // Detecção de Estabilidade
+    let historicoPesos = [];
+    let tempoEstavelInicio = null;
+    let contagemRegressivaInterval = null;
+    let pesoJaProcessado = false;
+
+    // --- SÍNTESE DE ÁUDIO VIA WEB AUDIO API ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playBeep(freq = 1200, type = 'sine', duration = 0.12) {
+      try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playSuccessChime() {
+      playBeep(880, 'triangle', 0.09);
+      setTimeout(() => playBeep(1320, 'triangle', 0.18), 100);
+    }
+
+    // --- CARREGAMENTO DE CONFIGURAÇÃO ---
     function carregarConfig() {
       fetch('/api/modulo/pesagem-selfservice/config')
         .then(r => r.json())
@@ -268,30 +654,186 @@
             document.getElementById('btn-livre-label').innerText = `3. Buffet Livre (R$ ${config.precoLivre.toFixed(2).replace('.', ',')})`;
             atualizarCalculo();
           }
-        });
+        })
+        .catch(e => console.warn('Erro ao carregar config:', e));
+    }
+
+    // --- ATUALIZAÇÃO DO DISPLAY DE PESO ---
+    function atualizarCalculo() {
+      const liquido = Math.max(0, pesoBrutoAtual - config.taraPratoKg);
+      const valor = liquido * config.precoKg;
+      document.getElementById('totem-peso').innerHTML = `${liquido.toFixed(3)}<small>kg</small>`;
+      document.getElementById('totem-valor').innerText = `R$ ${valor.toFixed(2).replace('.', ',')}`;
+
+      verificarEstabilidade(liquido);
     }
 
     function simularPeso(bruto) {
       pesoBrutoAtual = bruto;
+      pesoJaProcessado = false;
       atualizarCalculo();
     }
 
     function zerarPeso() {
       pesoBrutoAtual = 0;
+      pesoJaProcessado = false;
+      cancelarCountdown();
       atualizarCalculo();
+      document.getElementById('stability-status-text').innerText = 'Aguardando Prato...';
+      document.getElementById('stability-icon').className = 'ph-bold ph-arrows-clockwise';
+      document.getElementById('stability-icon').style.color = '#f59e0b';
     }
 
-    function atualizarCalculo() {
-      const liquido = Math.max(0, pesoBrutoAtual - config.taraPratoKg);
-      const valor = liquido * config.precoKg;
-      document.getElementById('totem-peso').innerHTML = `${liquido.toFixed(3)} <small>kg</small>`;
-      document.getElementById('totem-valor').innerText = `R$ ${valor.toFixed(2).replace('.', ',')}`;
+    function digitarPesoManual() {
+      const valor = prompt('Digite o peso bruto do prato em gramas ou kg (Ex: 520 para 520g ou 0.520):');
+      if (!valor) return;
+      let num = parseFloat(valor.replace(',', '.'));
+      if (num > 20) num = num / 1000; // Converte gramas para kg
+      if (!isNaN(num) && num >= 0) {
+        simularPeso(num);
+      }
     }
 
-    function finalizarPesagem(tipo) {
+    // --- ALGORITMO DE ESTABILIDADE E AUTO-DISPARO ---
+    function verificarEstabilidade(pesoLiquido) {
+      if (pesoLiquido <= 0.030) {
+        // Balança vazia ou peso menor que 30g
+        cancelarCountdown();
+        document.getElementById('stability-status-text').innerText = 'Aguardando Prato...';
+        document.getElementById('stability-icon').className = 'ph-bold ph-arrows-clockwise';
+        document.getElementById('stability-icon').style.color = '#f59e0b';
+        pesoJaProcessado = false;
+        return;
+      }
+
+      if (pesoJaProcessado) return;
+
+      const agora = Date.now();
+      historicoPesos.push({ peso: pesoLiquido, tempo: agora });
+      // Mantém últimos 2 segundos
+      historicoPesos = historicoPesos.filter(h => agora - h.tempo <= 2000);
+
+      if (historicoPesos.length >= 4) {
+        const minP = Math.min(...historicoPesos.map(h => h.peso));
+        const maxP = Math.max(...historicoPesos.map(h => h.peso));
+        const variacao = maxP - minP;
+
+        if (variacao <= 0.005) { // Variação menor que 5 gramas = Estável!
+          document.getElementById('stability-status-text').innerText = 'Peso Estabilizado!';
+          document.getElementById('stability-icon').className = 'ph-bold ph-check-circle';
+          document.getElementById('stability-icon').style.color = '#10b981';
+
+          if (config.autoImprimirTicket && !contagemRegressivaInterval) {
+            iniciarCountdown();
+          }
+          return;
+        }
+      }
+
+      // Se oscilar, cancela countdown
+      document.getElementById('stability-status-text').innerText = 'Estabilizando...';
+      cancelarCountdown();
+    }
+
+    function iniciarCountdown() {
+      const wrap = document.getElementById('countdown-wrap');
+      const fill = document.getElementById('countdown-fill');
+      wrap.style.display = 'block';
+
+      let duracao = (config.segundosAutoImprimir || 2) * 1000;
+      let inicio = Date.now();
+      playBeep(950, 'sine', 0.08);
+
+      contagemRegressivaInterval = setInterval(() => {
+        let decorrido = Date.now() - inicio;
+        let pct = Math.min(100, (decorrido / duracao) * 100);
+        fill.style.width = pct + '%';
+
+        if (decorrido >= duracao) {
+          cancelarCountdown();
+          pesoJaProcessado = true;
+          dispararPesagem('imprimir');
+        }
+      }, 50);
+    }
+
+    function cancelarCountdown() {
+      if (contagemRegressivaInterval) {
+        clearInterval(contagemRegressivaInterval);
+        contagemRegressivaInterval = null;
+      }
+      const wrap = document.getElementById('countdown-wrap');
+      const fill = document.getElementById('countdown-fill');
+      if (wrap) wrap.style.display = 'none';
+      if (fill) fill.style.width = '0%';
+    }
+
+    // --- COMUNICAÇÃO WEB SERIAL API (Balanças Toledo, Filizola, Elgin, Urano) ---
+    async function conectarPortaSerial() {
+      if (!('serial' in navigator)) {
+        alert('Seu navegador não suporta Web Serial API. Recomendamos Google Chrome ou Microsoft Edge.');
+        return;
+      }
+
+      try {
+        serialPort = await navigator.serial.requestPort();
+        const baudRate = config.balancaBaudRate || 9600;
+        await serialPort.open({ baudRate, dataBits: 8, stopBits: 1, parity: 'none' });
+
+        atualizarBadgeStatus('conectada', `Serial Conectada (${baudRate})`);
+        lerStreamSerial();
+      } catch (err) {
+        console.error('Erro ao abrir porta serial:', err);
+        atualizarBadgeStatus('desconectada', 'Falha ao Conectar Serial');
+      }
+    }
+
+    async function lerStreamSerial() {
+      let buffer = '';
+      while (serialPort && serialPort.readable) {
+        serialReader = serialPort.readable.getReader();
+        try {
+          while (true) {
+            const { value, done } = await serialReader.read();
+            if (done) break;
+            if (value) {
+              const texto = new TextDecoder().decode(value);
+              buffer += texto;
+
+              // Decodificador Toledo / Filizola / Elgin (Busca padrão de peso: STX...ETX ou regex de float)
+              const match = buffer.match(/(?:\x02|^)(?:[^\d\n\r]*?)(\d{1,2}[\.,]\d{3})(?:[^\d\n\r]*?)(?:\x03|\r|\n|$)/);
+              if (match) {
+                const pesoFloat = parseFloat(match[1].replace(',', '.'));
+                if (!isNaN(pesoFloat)) {
+                  pesoBrutoAtual = pesoFloat;
+                  atualizarCalculo();
+                }
+                buffer = buffer.slice(buffer.indexOf(match[0]) + match[0].length);
+              }
+              if (buffer.length > 256) buffer = buffer.slice(-64);
+            }
+          }
+        } catch (e) {
+          console.warn('Erro leitura serial:', e);
+        } finally {
+          serialReader.releaseLock();
+        }
+      }
+    }
+
+    function atualizarBadgeStatus(tipo, texto) {
+      const badge = document.getElementById('totem-status-badge');
+      const txt = document.getElementById('totem-status-texto');
+      badge.className = `totem-status-badge status-${tipo}`;
+      txt.innerText = texto;
+    }
+
+    // --- DISPARAR REGISTRO DE PESAGEM (TICKET OU LIVRE) ---
+    function dispararPesagem(tipo, comandaId = null) {
       const payload = {
         modo: tipo === 'livre' ? 'livre' : 'peso',
-        pesoBruto: pesoBrutoAtual
+        pesoBruto: pesoBrutoAtual,
+        comandaId: comandaId || null
       };
 
       fetch('/api/modulo/pesagem-selfservice/pesar', {
@@ -302,57 +844,206 @@
       .then(r => r.json())
       .then(res => {
         if (res && res.sucesso) {
-          exibirTicketModal(res.registro);
+          playSuccessChime();
+          ultimoRegistro = res.registro;
+
+          if (comandaId) {
+            alert(`✅ Sucesso! O valor de R$ ${res.registro.valorTotal.toFixed(2).replace('.', ',')} foi lançado na comanda/mesa ${comandaId}!`);
+            zerarPeso();
+          } else {
+            exibirModalTicket(res.registro);
+            imprimirCupomTermico(res.registro);
+          }
         } else {
-          alert('Erro ao registrar pesagem.');
+          alert('Erro ao registrar pesagem: ' + (res.error || 'Tente novamente.'));
         }
-      });
-    }
-
-    function solicitarQrComanda() {
-      const comanda = prompt('Aproxime o leitor de QR Code ou digite o número da sua comanda/mesa:');
-      if (!comanda) return;
-
-      fetch('/api/modulo/pesagem-selfservice/pesar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          modo: 'peso',
-          pesoBruto: pesoBrutoAtual,
-          comandaId: comanda
-        })
       })
-      .then(r => r.json())
-      .then(res => {
-        if (res && res.sucesso) {
-          alert(`✅ Sucesso! O valor de R$ ${res.registro.valorTotal.toFixed(2)} foi lançado diretamente na Comanda #${comanda}!`);
-          zerarPeso();
-        }
-      });
+      .catch(e => alert('Erro de comunicação com o servidor: ' + e.message));
     }
 
-    function exibirTicketModal(reg) {
-      document.getElementById('ticket-id').innerText = reg.id;
-      document.getElementById('ticket-peso').innerText = `${reg.pesoLiquido.toFixed(3)} kg`;
-      document.getElementById('ticket-total').innerText = `R$ ${reg.valorTotal.toFixed(2).replace('.', ',')}`;
+    // --- GERAÇÃO DE QR CODE E EXIBIÇÃO DO TICKET ---
+    function exibirModalTicket(reg) {
+      document.getElementById('ticket-id-txt').innerText = reg.id;
+      document.getElementById('ticket-peso-txt').innerText = `${reg.pesoLiquido.toFixed(3)} kg`;
+      document.getElementById('ticket-total-txt').innerText = `R$ ${reg.valorTotal.toFixed(2).replace('.', ',')}`;
 
       const container = document.getElementById('ticket-qrcode-container');
       container.innerHTML = '';
       if (typeof qrcode !== 'undefined') {
         const qr = qrcode(4, 'M');
-        qr.addData(`PESO|${reg.id}|${reg.valorTotal}`);
+        qr.addData(`PESO|${reg.id}|${reg.valorTotal.toFixed(2)}|${reg.pesoLiquido.toFixed(3)}`);
         qr.make();
-        container.innerHTML = qr.createImgTag(4, 8);
+        container.innerHTML = qr.createImgTag(5, 10);
       }
 
       document.getElementById('modal-ticket').style.display = 'flex';
     }
 
-    function fecharTicket() {
+    function fecharModalTicket() {
       document.getElementById('modal-ticket').style.display = 'none';
       zerarPeso();
     }
 
+    function reimprimirCupom() {
+      if (ultimoRegistro) imprimirCupomTermico(ultimoRegistro);
+    }
+
+    function imprimirCupomTermico(reg) {
+      document.getElementById('prn-ticket-id').innerText = reg.id;
+      document.getElementById('prn-modo').innerText = reg.modo === 'livre' ? 'BUFFET LIVRE' : 'POR QUILO';
+      document.getElementById('prn-bruto').innerText = `${reg.pesoBruto.toFixed(3)} kg`;
+      document.getElementById('prn-tara').innerText = `${reg.tara.toFixed(3)} kg`;
+      document.getElementById('prn-liquido').innerText = `${reg.pesoLiquido.toFixed(3)} kg`;
+      document.getElementById('prn-preco-kg').innerText = `R$ ${reg.precoKg.toFixed(2).replace('.', ',')}`;
+      document.getElementById('prn-total').innerText = `R$ ${reg.valorTotal.toFixed(2).replace('.', ',')}`;
+      document.getElementById('prn-data-hora').innerText = new Date().toLocaleString('pt-BR');
+
+      const prnQr = document.getElementById('prn-qrcode');
+      prnQr.innerHTML = '';
+      if (typeof qrcode !== 'undefined') {
+        const qr = qrcode(4, 'M');
+        qr.addData(`PESO|${reg.id}|${reg.valorTotal.toFixed(2)}`);
+        qr.make();
+        prnQr.innerHTML = qr.createImgTag(4, 4);
+      }
+
+      const prnEl = document.getElementById('printable-ticket');
+      prnEl.style.display = 'block';
+      setTimeout(() => {
+        window.print();
+        prnEl.style.display = 'none';
+      }, 250);
+    }
+
+    // --- LEITOR DE QR CODE WEBCAM & CÓDIGO DE BARRAS USB ---
+    function abrirLeitorComanda() {
+      document.getElementById('modal-leitor').style.display = 'flex';
+      iniciarScannerWebcam();
+    }
+
+    function fecharLeitorComanda() {
+      pararScannerWebcam();
+      document.getElementById('modal-leitor').style.display = 'none';
+    }
+
+    function iniciarScannerWebcam() {
+      if (typeof Html5Qrcode !== 'undefined') {
+        try {
+          html5QrCode = new Html5Qrcode("qr-reader");
+          html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 220, height: 220 } },
+            (decodedText) => {
+              playBeep(1200, 'sine', 0.1);
+              fecharLeitorComanda();
+              processarComandaIdentificada(decodedText);
+            },
+            (errorMessage) => {}
+          ).catch(e => {
+            console.warn('Webcam não encontrada ou sem permissão:', e);
+            document.getElementById('qr-reader').innerHTML = `
+              <div style="text-align:center; padding:20px; color:#94a3b8;">
+                <i class="ph-bold ph-camera-slash" style="font-size:32px; color:#f59e0b; margin-bottom:6px;"></i>
+                <p style="font-size:13px;">Câmera indisponível. Utilize o campo abaixo ou bipe com leitor USB.</p>
+              </div>`;
+          });
+        } catch (e) {}
+      }
+    }
+
+    function pararScannerWebcam() {
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => {});
+      }
+    }
+
+    function confirmarComandaManual() {
+      const val = document.getElementById('input-comanda-manual').value.trim();
+      if (!val) return;
+      fecharLeitorComanda();
+      processarComandaIdentificada(val);
+    }
+
+    function processarComandaIdentificada(codigo) {
+      let comanda = codigo.replace(/^COM(?:ANDA)?[-_]?/i, '').replace(/^MESA[-_]?/i, '').trim();
+      dispararPesagem('peso', comanda);
+    }
+
+    // Listener Global de Leitor USB de Código de Barras
+    let bufferUsb = '';
+    let ultimoTempoTecla = 0;
+    window.addEventListener('keydown', (e) => {
+      const agora = Date.now();
+      if (agora - ultimoTempoTecla > 120) bufferUsb = '';
+      ultimoTempoTecla = agora;
+
+      if (e.key === 'Enter') {
+        if (bufferUsb.length >= 2) {
+          processarComandaIdentificada(bufferUsb);
+          bufferUsb = '';
+        }
+      } else if (e.key.length === 1) {
+        bufferUsb += e.key;
+      }
+    });
+
+    // --- CONFIGURAÇÕES DO GERENTE ---
+    function solicitarPinConfig() {
+      const pin = prompt('Digite a senha de administrador (Padrão: 1234):');
+      if (pin === '1234') {
+        abrirModalConfig();
+      } else if (pin !== null) {
+        alert('Senha incorreta.');
+      }
+    }
+
+    function abrirModalConfig() {
+      document.getElementById('cfg-preco-kg').value = config.precoKg;
+      document.getElementById('cfg-preco-livre').value = config.precoLivre;
+      document.getElementById('cfg-tara').value = config.taraPratoKg;
+      document.getElementById('cfg-protocolo').value = config.balancaProtocolo || 'toledo_prix3';
+      document.getElementById('cfg-auto-imprimir').checked = !!config.autoImprimirTicket;
+      document.getElementById('modal-config').style.display = 'flex';
+    }
+
+    function fecharModalConfig() {
+      document.getElementById('modal-config').style.display = 'none';
+    }
+
+    function salvarAjustesConfig() {
+      const novos = {
+        precoKg: parseFloat(document.getElementById('cfg-preco-kg').value) || config.precoKg,
+        precoLivre: parseFloat(document.getElementById('cfg-preco-livre').value) || config.precoLivre,
+        taraPratoKg: parseFloat(document.getElementById('cfg-tara').value) || config.taraPratoKg,
+        balancaProtocolo: document.getElementById('cfg-protocolo').value,
+        autoImprimirTicket: document.getElementById('cfg-auto-imprimir').checked
+      };
+
+      fetch('/api/modulo/pesagem-selfservice/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(novos)
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.sucesso) {
+          config = d.config;
+          fecharModalConfig();
+          carregarConfig();
+          alert('Configurações salvas com sucesso!');
+        }
+      });
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    // Inicialização
     carregarConfig();
   </script>
 </body>

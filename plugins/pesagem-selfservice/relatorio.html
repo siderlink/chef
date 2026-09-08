@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios & Análise de Buffet | Chef Cozinha</title>
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
+  <script src="/vendor/qrcode/qrcode-generator.js"></script>
+
+  <style>
+    :root {
+      --primary: #fc4b15;
+      --success: #10b981;
+      --bg: #0b0f19;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-sub: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 24px; min-height: 100vh; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+    }
+    .header-actions { display: flex; gap: 10px; }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 13.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+
+    /* Filtros */
+    .filter-bar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .filter-group { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; color: var(--text-sub); }
+    .filter-group select, .filter-group input {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    /* Grid de Métricas */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .metric-title { font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text-sub); letter-spacing: 0.5px; }
+    .metric-value { font-size: 28px; font-weight: 900; color: #fff; margin: 8px 0 4px; }
+    .metric-sub { font-size: 12px; font-weight: 600; color: var(--text-sub); }
+
+    /* Tabela de Pesagens */
+    .table-container {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .table-header {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .table-header h3 { font-size: 16px; font-weight: 800; }
+
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px; }
+    th { background: #0f172a; padding: 14px 18px; color: var(--text-sub); font-weight: 800; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    td { padding: 14px 18px; border-bottom: 1px solid rgba(51, 65, 85, 0.4); color: #cbd5e1; }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+    .badge-pendente { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-utilizado { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-cancelado { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* Estilo de Impressão */
+    @media print {
+      body * { visibility: hidden !important; }
+      #printable-ticket, #printable-ticket * { visibility: visible !important; }
+      #printable-ticket { position: fixed; left: 0; top: 0; width: 80mm; font-family: monospace; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <h1>
+      <i class="ph-bold ph-scales" style="color: var(--primary);"></i>
+      Relatórios & Gestão de Buffet por Quilo
+    </h1>
+    <div class="header-actions">
+      <button class="btn btn-secondary" onclick="window.open('/plugins/pesagem-selfservice/totem', '_blank')">
+        <i class="ph-bold ph-arrow-square-out"></i> Abrir Totem
+      </button>
+      <button class="btn btn-success" onclick="exportarExcel()">
+        <i class="ph-bold ph-file-xls"></i> Exportar Excel (XLSX)
+      </button>
+      <button class="btn btn-primary" onclick="carregarRelatorio()">
+        <i class="ph-bold ph-arrows-clockwise"></i> Atualizar
+      </button>
+    </div>
+  </header>
+
+  <!-- Barra de Filtros -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Período:</label>
+      <select id="filtro-periodo" onchange="aoMudarPeriodo()">
+        <option value="hoje">Hoje</option>
+        <option value="7dias">Últimos 7 dias</option>
+        <option value="mes">Este Mês</option>
+        <option value="custom">Data Específica</option>
+      </select>
+    </div>
+
+    <div class="filter-group" id="group-data-custom" style="display: none;">
+      <label>Data:</label>
+      <input type="date" id="filtro-data" onchange="carregarRelatorio()">
+    </div>
+
+    <div style="flex: 1;"></div>
+    <span id="label-ultima-atualizacao" style="font-size: 12px; color: var(--text-sub); font-weight: 600;"></span>
+  </div>
+
+  <!-- Métricas Rápidas -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <span class="metric-title">Total em Kg Pesados</span>
+      <div class="metric-value" id="m-total-kg" style="color: #38bdf8;">0.000 kg</div>
+      <span class="metric-sub" id="m-peso-medio">Média: 0.000 kg / prato</span>
+    </div>
+
+    <div class="metric-card">
+      <span class="metric-title">Faturamento Total</span>
+      <div class="metric-value" id="m-faturamento" style="color: #10b981;">R$ 0,00</div>
+      <span class="metric-sub" id="m-ticket-medio">Ticket Médio: R$ 0,00</span>
+    </div>
+
+    <div class="metric-card">
+      <span class="metric-title">Buffet Quilo vs Livre</span>
+      <div class="metric-value" id="m-divisao-buffet" style="font-size: 20px; margin-top: 14px;">
+        <span style="color: #fc4b15;" id="m-fat-kg">R$ 0</span> / <span style="color: #10b981;" id="m-fat-livre">R$ 0</span>
+      </div>
+      <span class="metric-sub">Por Quilo vs Livre</span>
+    </div>
+
+    <div class="metric-card">
+      <span class="metric-title">Total de Pratos / Clientes</span>
+      <div class="metric-value" id="m-total-pratos">0</div>
+      <span class="metric-sub" id="m-tickets-status">0 pagos • 0 pendentes</span>
+    </div>
+  </div>
+
+  <!-- Tabela de Pesagens -->
+  <div class="table-container">
+    <div class="table-header">
+      <h3>Histórico Detalhado de Pesagens</h3>
+      <span id="contagem-tabela" style="font-size: 13px; color: var(--text-sub); font-weight: 700;">0 registros</span>
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket / ID</th>
+            <th>Data e Hora</th>
+            <th>Modo</th>
+            <th>Peso Líquido</th>
+            <th>Valor (R$)</th>
+            <th>Comanda / Mesa</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-corpo">
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 30px; color: var(--text-sub);">
+              Carregando dados de pesagem...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal de 2ª Via de Ticket -->
+  <div id="printable-ticket" style="display: none;">
+    <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 5px; margin-bottom: 8px;">
+      <h2 style="font-size: 18px; margin: 0;">CHEF COZINHA</h2>
+      <p style="font-size: 12px; margin: 2px 0;">2ª VIA - BUFFET</p>
+      <p id="prn-data-hora" style="font-size: 11px; margin: 0;"></p>
+    </div>
+    <div style="font-size: 14px; margin-bottom: 8px;">
+      <p><strong>CÓDIGO: </strong><span id="prn-ticket-id"></span></p>
+      <p><strong>PESO LÍQUIDO: </strong><span id="prn-liquido"></span></p>
+      <div style="border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 4px 0; margin: 4px 0; font-size: 16px; font-weight: 900; text-align: right;">
+        TOTAL: <span id="prn-total"></span>
+      </div>
+    </div>
+    <div style="text-align: center;">
+      <div id="prn-qrcode" style="display: inline-block;"></div>
+    </div>
+  </div>
+
+  <script>
+    let dadosAtuais = [];
+
+    function aoMudarPeriodo() {
+      const p = document.getElementById('filtro-periodo').value;
+      document.getElementById('group-data-custom').style.display = p === 'custom' ? 'flex' : 'none';
+      if (p !== 'custom') carregarRelatorio();
+    }
+
+    function carregarRelatorio() {
+      const periodo = document.getElementById('filtro-periodo').value;
+      const data = document.getElementById('filtro-data').value;
+
+      let url = '/api/modulo/pesagem-selfservice/relatorio?';
+      if (periodo === 'custom' && data) {
+        url += `data=${data}`;
+      } else {
+        url += `periodo=${periodo}`;
+      }
+
+      fetch(url)
+        .then(r => r.json())
+        .then(res => {
+          if (res && res.sucesso) {
+            renderizarMetricas(res.resumo);
+            renderizarTabela(res.pesagens);
+            document.getElementById('label-ultima-atualizacao').innerText = `Atualizado às ${new Date().toLocaleTimeString('pt-BR')}`;
+          }
+        })
+        .catch(e => console.error('Erro ao carregar relatório:', e));
+    }
+
+    function renderizarMetricas(r) {
+      document.getElementById('m-total-kg').innerText = `${r.totalKg.toFixed(3)} kg`;
+      document.getElementById('m-peso-medio').innerText = `Média: ${r.pesoMedioPrato.toFixed(3)} kg / prato`;
+      document.getElementById('m-faturamento').innerText = `R$ ${r.faturamentoTotal.toFixed(2).replace('.', ',')}`;
+      document.getElementById('m-ticket-medio').innerText = `Ticket Médio: R$ ${r.ticketMedioValor.toFixed(2).replace('.', ',')}`;
+      document.getElementById('m-fat-kg').innerText = `R$ ${r.faturamentoQuilo.toFixed(0)}`;
+      document.getElementById('m-fat-livre').innerText = `R$ ${r.faturamentoLivre.toFixed(0)}`;
+      document.getElementById('m-total-pratos').innerText = r.totalPratos;
+      document.getElementById('m-tickets-status').innerText = `${r.ticketsUtilizados} pagos • ${r.ticketsPendentes} pendentes`;
+    }
+
+    function renderizarTabela(pesagens) {
+      dadosAtuais = pesagens || [];
+      const tbody = document.getElementById('tabela-corpo');
+      document.getElementById('contagem-tabela').innerText = `${dadosAtuais.length} registros`;
+
+      if (dadosAtuais.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--text-sub);">Nenhuma pesagem encontrada para o período.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = dadosAtuais.map(p => {
+        const badgeClass = p.status === 'utilizado' ? 'badge-utilizado' : (p.status === 'cancelado' ? 'badge-cancelado' : 'badge-pendente');
+        const modoNome = p.modo === 'livre' ? 'Buffet Livre' : 'Por Quilo';
+        const comandaStr = p.comanda_id ? `Comanda #${p.comanda_id}` : (p.mesa_id ? `Mesa #${p.mesa_id}` : 'Avulso');
+
+        return `
+          <tr>
+            <td><strong style="color: #fff; font-family: monospace;">${p.id}</strong></td>
+            <td>${new Date(p.timestamp).toLocaleString('pt-BR')}</td>
+            <td><span style="font-weight: 700;">${modoNome}</span></td>
+            <td>${p.modo === 'livre' ? '-' : `${p.peso_liquido.toFixed(3)} kg`}</td>
+            <td><strong style="color: #10b981;">R$ ${p.valor_total.toFixed(2).replace('.', ',')}</strong></td>
+            <td>${comandaStr}</td>
+            <td><span class="badge ${badgeClass}">${p.status}</span></td>
+            <td>
+              <button onclick="reimprimir('${p.id}')" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                🖨️ 2ª Via
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function reimprimir(id) {
+      const p = dadosAtuais.find(x => x.id === id);
+      if (!p) return;
+
+      document.getElementById('prn-ticket-id').innerText = p.id;
+      document.getElementById('prn-liquido').innerText = `${p.peso_liquido.toFixed(3)} kg`;
+      document.getElementById('prn-total').innerText = `R$ ${p.valor_total.toFixed(2).replace('.', ',')}`;
+      document.getElementById('prn-data-hora').innerText = new Date(p.timestamp).toLocaleString('pt-BR');
+
+      const prnQr = document.getElementById('prn-qrcode');
+      prnQr.innerHTML = '';
+      if (typeof qrcode !== 'undefined') {
+        const qr = qrcode(4, 'M');
+        qr.addData(`PESO|${p.id}|${p.valor_total.toFixed(2)}`);
+        qr.make();
+        prnQr.innerHTML = qr.createImgTag(3, 3);
+      }
+
+      const prnEl = document.getElementById('printable-ticket');
+      prnEl.style.display = 'block';
+      setTimeout(() => {
+        window.print();
+        prnEl.style.display = 'none';
+      }, 200);
+    }
+
+    function exportarExcel() {
+      const periodo = document.getElementById('filtro-periodo').value;
+      const data = document.getElementById('filtro-data').value;
+      let url = '/api/modulo/pesagem-selfservice/exportar-excel?';
+      if (periodo === 'custom' && data) url += `data=${data}`;
+      else url += `periodo=${periodo}`;
+
+      window.location.href = url;
+    }
+
+    // Inicializar data com hoje
+    document.getElementById('filtro-data').value = new Date().toISOString().slice(0, 10);
+    carregarRelatorio();
+  </script>
+</body>
+</html>

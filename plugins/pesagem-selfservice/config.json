@@ -1,0 +1,15 @@
+{
+  "precoKg": 74.9,
+  "precoLivre": 35,
+  "taraPratoKg": 0.4,
+  "modoPadrao": "peso",
+  "autoImprimirTicket": true,
+  "segundosAutoImprimir": 2,
+  "exigirQrComanda": false,
+  "nomeProdutoBalanca": "Buffet por Quilo",
+  "nomeProdutoLivre": "Buffet Livre",
+  "produtoQuiloId": null,
+  "produtoLivreId": null,
+  "balancaProtocolo": "toledo_prix3",
+  "balancaBaudRate": 9600
+}
