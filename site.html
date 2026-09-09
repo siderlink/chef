@@ -33,6 +33,24 @@
       } catch (e) {}
     })();
   </script>
+  
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('chef_site_theme') || localStorage.getItem('theme');
+        if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+          savedTheme = 'light';
+        }
+        if (savedTheme === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+          document.documentElement.classList.add('theme-light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.classList.remove('theme-light');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title">Chef Cozinha — O Sistema Mais Rápido e Completo para Restaurantes e Bares</title>
@@ -1547,6 +1565,555 @@
       .setup-grid-2 { grid-template-columns: 1fr; gap: 12px; }
       .footer-grid { grid-template-columns: 1fr; }
     }
+  
+    /* ══════════════════════════════════════════════════════════════════════════
+       SISTEMA DE TEMA CLARO (LIGHT THEME) — CHEF COZINHA WEBSITE
+       ══════════════════════════════════════════════════════════════════════════ */
+
+    /* Variáveis de Tema Claro */
+    html[data-theme="light"],
+    body.theme-light {
+      --dark-bg: #f8fafc;
+      --dark-bg-2: #ffffff;
+      --dark-bg-3: #f1f5f9;
+      --card-bg: #ffffff;
+      --card-bg-hover: #f8fafc;
+      --card-border: #e2e8f0;
+      --card-border-glow: rgba(252, 75, 21, 0.35);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #64748b;
+      --primary-glow: rgba(252, 75, 21, 0.22);
+      --secondary-glow: rgba(16, 185, 129, 0.2);
+    }
+
+    /* Botão de Alternância de Tema */
+    .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      color: #f8fafc;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      flex-shrink: 0;
+    }
+    .theme-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+      transform: translateY(-2px) scale(1.05);
+      border-color: var(--primary);
+      color: #fc4b15;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+    .mobile-nav-theme-item {
+      display: none;
+      list-style: none;
+      margin-top: 10px;
+    }
+    .mobile-theme-toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    @media (max-width: 820px) {
+      .mobile-nav-theme-item { display: block; }
+    }
+
+    /* Regras Específicas do Tema Claro */
+    html[data-theme="light"] body,
+    body.theme-light {
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] header {
+      background: rgba(255, 255, 255, 0.88) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
+    }
+
+    html[data-theme="light"] .logo-container {
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .nav-links a {
+      color: #475569 !important;
+    }
+    html[data-theme="light"] .nav-links a:hover {
+      color: #fc4b15 !important;
+    }
+
+    html[data-theme="light"] .btn-login {
+      color: #475569 !important;
+    }
+    html[data-theme="light"] .btn-login:hover {
+      color: #0f172a !important;
+      background: #f1f5f9 !important;
+    }
+
+    html[data-theme="light"] .theme-toggle-btn {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #0f172a !important;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05) !important;
+    }
+    html[data-theme="light"] .theme-toggle-btn:hover {
+      background: #f8fafc !important;
+      border-color: #fc4b15 !important;
+      color: #fc4b15 !important;
+      box-shadow: 0 4px 14px rgba(252, 75, 21, 0.2) !important;
+    }
+
+    html[data-theme="light"] .mobile-menu-btn {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+
+    /* Hero Section */
+    html[data-theme="light"] .hero-glow-bg {
+      background: radial-gradient(circle, rgba(252, 75, 21, 0.09) 0%, rgba(252, 75, 21, 0.02) 50%, transparent 70%) !important;
+    }
+
+    html[data-theme="light"] .hero-badge {
+      background: rgba(252, 75, 21, 0.08) !important;
+      border: 1px solid rgba(252, 75, 21, 0.25) !important;
+      color: #fc4b15 !important;
+    }
+
+    html[data-theme="light"] .hero h1 {
+      background: linear-gradient(180deg, #0f172a 20%, #334155 100%) !important;
+      background-clip: text !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+    }
+
+    html[data-theme="light"] .hero p {
+      color: #475569 !important;
+    }
+
+    html[data-theme="light"] .btn-cta-secondary {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #0f172a !important;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04) !important;
+    }
+    html[data-theme="light"] .btn-cta-secondary:hover {
+      background: #f8fafc !important;
+      border-color: #94a3b8 !important;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08) !important;
+    }
+
+    html[data-theme="light"] .hero-guarantee-badges {
+      color: #475569 !important;
+    }
+
+    html[data-theme="light"] .stat-card {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04) !important;
+    }
+    html[data-theme="light"] .stat-card:hover {
+      background: #f8fafc !important;
+      border-color: rgba(252, 75, 21, 0.4) !important;
+      box-shadow: 0 10px 28px -4px rgba(252, 75, 21, 0.12) !important;
+    }
+
+    html[data-theme="light"] .stat-number {
+      color: #0f172a !important;
+    }
+    html[data-theme="light"] .stat-number.accent-orange { color: #fc4b15 !important; }
+    html[data-theme="light"] .stat-number.accent-green { color: #10b981 !important; }
+    html[data-theme="light"] .stat-number.accent-blue { color: #3b82f6 !important; }
+    html[data-theme="light"] .stat-number.accent-cyan { color: #06b6d4 !important; }
+
+        /* Títulos e Cabeçalhos das Seções no Tema Claro */
+    html[data-theme="light"] .section-header h2,
+    html[data-theme="light"] .section-header h3,
+    html[data-theme="light"] .showcase-content h3,
+    html[data-theme="light"] .how-section h2,
+    html[data-theme="light"] .features-section h2,
+    html[data-theme="light"] .comparison-section h2,
+    html[data-theme="light"] .calculator-section h2,
+    html[data-theme="light"] .testimonials-section h2,
+    html[data-theme="light"] .pricing-section h2,
+    html[data-theme="light"] .faq-section h2,
+    html[data-theme="light"] .final-cta h2,
+    html[data-theme="light"] h1,
+    html[data-theme="light"] h2,
+    html[data-theme="light"] h3,
+    html[data-theme="light"] h4 {
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .section-header p,
+    html[data-theme="light"] .showcase-content p,
+    html[data-theme="light"] .calculator-section p,
+    html[data-theme="light"] .comparison-section > p {
+      color: #475569 !important;
+    }
+
+    /* Mockups interativos no Tema Claro */
+    html[data-theme="light"] .mockup-body div[style*="background:rgba(0,0,0"],
+    html[data-theme="light"] .mockup-body div[style*="background: rgba(0,0,0"],
+    html[data-theme="light"] .mockup-body div[style*="background:rgba(255,255,255,0.05)"],
+    html[data-theme="light"] .mockup-body div[style*="background: rgba(255,255,255,0.05)"] {
+      background: #f1f5f9 !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+    html[data-theme="light"] .mockup-body div[style*="border-top:1px solid rgba(255,255,255"] {
+      border-top: 1px solid #e2e8f0 !important;
+    }
+    html[data-theme="light"] .mockup-body div[style*="border-top: 1px solid rgba(255,255,255"] {
+      border-top: 1px solid #e2e8f0 !important;
+    }
+
+    html[data-theme="light"] .stat-label {
+      color: #64748b !important;
+    }
+
+    /* Wave Divider */
+    html[data-theme="light"] .wave-divider svg path {
+      fill: #ffffff !important;
+    }
+
+    /* Showcase & Interactive Demo */
+    html[data-theme="light"] .showcase-tabs {
+      background: #f1f5f9 !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+
+    html[data-theme="light"] .showcase-tab-btn {
+      background: transparent !important;
+      border: 1px solid transparent !important;
+      color: #475569 !important;
+    }
+    html[data-theme="light"] .showcase-tab-btn:hover {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+    }
+    html[data-theme="light"] .showcase-tab-btn.active {
+      background: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      color: #fc4b15 !important;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08) !important;
+      font-weight: 700 !important;
+    }
+
+    html[data-theme="light"] .mockup-frame {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08) !important;
+    }
+
+    html[data-theme="light"] .mockup-header {
+      background: #f8fafc !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      color: #475569 !important;
+    }
+    html[data-theme="light"] .mockup-title {
+      color: #475569 !important;
+    }
+
+    html[data-theme="light"] .kds-card-demo {
+      background: #f8fafc !important;
+      border: 1px solid #e2e8f0 !important;
+      border-left: 4px solid #10b981 !important;
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .showcase-points li {
+      color: #334155 !important;
+    }
+
+    /* Sections Backgrounds & Borders */
+    html[data-theme="light"] .how-section,
+    html[data-theme="light"] .comparison-section,
+    html[data-theme="light"] .testimonials-section {
+      background: #ffffff !important;
+      border-top: 1px solid #e2e8f0 !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+
+    html[data-theme="light"] .step-card,
+    html[data-theme="light"] .feature-card,
+    html[data-theme="light"] .testimonial-card,
+    html[data-theme="light"] .price-card,
+    html[data-theme="light"] .faq-item {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04) !important;
+    }
+
+    html[data-theme="light"] .step-card:hover,
+    html[data-theme="light"] .feature-card:hover,
+    html[data-theme="light"] .testimonial-card:hover {
+      background: #ffffff !important;
+      border-color: rgba(252, 75, 21, 0.35) !important;
+      box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.09) !important;
+    }
+
+    html[data-theme="light"] .step-card h3,
+    html[data-theme="light"] .feature-card h3,
+    html[data-theme="light"] .testimonial-card h4,
+    html[data-theme="light"] .price-card h3 {
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .step-card p,
+    html[data-theme="light"] .feature-card p,
+    html[data-theme="light"] .testimonial-text,
+    html[data-theme="light"] .price-card .desc {
+      color: #475569 !important;
+    }
+
+    html[data-theme="light"] .feature-icon-box {
+      background: #f8fafc !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+
+    /* Comparison Section */
+    html[data-theme="light"] .comparison-table-wrapper {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05) !important;
+    }
+
+    html[data-theme="light"] .comparison-table th {
+      background: #f8fafc !important;
+      color: #0f172a !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+
+    html[data-theme="light"] .comparison-table td {
+      border-bottom: 1px solid #e2e8f0 !important;
+      color: #334155 !important;
+    }
+
+    html[data-theme="light"] .comparison-table tr:hover td {
+      background: #f8fafc !important;
+    }
+
+    html[data-theme="light"] .comparison-table .highlight-col {
+      background: rgba(252, 75, 21, 0.03) !important;
+    }
+
+    /* ROI Calculator */
+    html[data-theme="light"] .calc-container {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06) !important;
+    }
+
+    html[data-theme="light"] .calc-controls label {
+      color: #475569 !important;
+    }
+
+    html[data-theme="light"] .calc-controls label span:last-child {
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .calc-slider {
+      background: #e2e8f0 !important;
+    }
+
+    html[data-theme="light"] .calc-result-box {
+      background: #f8fafc !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+
+    html[data-theme="light"] .calc-result-sub {
+      color: #64748b !important;
+    }
+
+    /* Pricing Section */
+    html[data-theme="light"] .billing-toggle {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+
+    html[data-theme="light"] .toggle-switch {
+      background: #cbd5e1 !important;
+    }
+    html[data-theme="light"] .toggle-switch.active {
+      background: #fc4b15 !important;
+    }
+
+    html[data-theme="light"] .price-value {
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .price-value span {
+      color: #64748b !important;
+    }
+
+    html[data-theme="light"] .price-features li {
+      color: #334155 !important;
+    }
+
+    html[data-theme="light"] .btn-plan-secondary {
+      background: #f1f5f9 !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+    html[data-theme="light"] .btn-plan-secondary:hover {
+      background: #e2e8f0 !important;
+      border-color: #94a3b8 !important;
+    }
+
+    html[data-theme="light"] .price-card.popular {
+      background: #ffffff !important;
+      border: 2px solid #fc4b15 !important;
+      box-shadow: 0 16px 40px rgba(252, 75, 21, 0.16) !important;
+    }
+
+    /* FAQ Accordion */
+    html[data-theme="light"] .faq-item {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+    html[data-theme="light"] .faq-item:hover {
+      border-color: rgba(252, 75, 21, 0.4) !important;
+    }
+
+    html[data-theme="light"] .faq-question {
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .faq-answer {
+      color: #475569 !important;
+      border-top: 1px solid #f1f5f9 !important;
+    }
+
+    /* Final CTA */
+    html[data-theme="light"] .final-cta {
+      background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%) !important;
+      border-top: 1px solid #e2e8f0 !important;
+    }
+
+    html[data-theme="light"] .final-cta h2 {
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .final-cta p {
+      color: #475569 !important;
+    }
+
+    /* Footer */
+    html[data-theme="light"] footer {
+      background: #f8fafc !important;
+      border-top: 1px solid #e2e8f0 !important;
+      color: #475569 !important;
+    }
+
+    html[data-theme="light"] footer .logo-container {
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] footer h4 {
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] footer a {
+      color: #475569 !important;
+    }
+    html[data-theme="light"] footer a:hover {
+      color: #fc4b15 !important;
+    }
+
+    html[data-theme="light"] .footer-bottom {
+      border-top: 1px solid #e2e8f0 !important;
+      color: #64748b !important;
+    }
+
+    /* Setup Modal */
+    html[data-theme="light"] .setup-modal-overlay {
+      background: rgba(15, 23, 42, 0.65) !important;
+    }
+
+    html[data-theme="light"] .setup-modal {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.18) !important;
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .setup-modal-header {
+      background: #f8fafc !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .setup-modal-close {
+      color: #64748b !important;
+    }
+    html[data-theme="light"] .setup-modal-close:hover {
+      color: #0f172a !important;
+      background: #f1f5f9 !important;
+    }
+
+    html[data-theme="light"] .setup-step-item {
+      color: #64748b !important;
+      background: #f8fafc !important;
+    }
+
+    html[data-theme="light"] .setup-step-item.active {
+      color: #fc4b15 !important;
+      background: #fff5f0 !important;
+      border: 1px solid rgba(252, 75, 21, 0.25) !important;
+    }
+
+    html[data-theme="light"] .setup-input-wrapper input {
+      background: #f8fafc !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    html[data-theme="light"] .setup-input-wrapper input:focus {
+      background: #ffffff !important;
+      border-color: #fc4b15 !important;
+      box-shadow: 0 0 0 3px rgba(252, 75, 21, 0.15) !important;
+    }
+
+    html[data-theme="light"] .setup-input-wrapper i {
+      color: #64748b !important;
+    }
+
+    html[data-theme="light"] .btn-setup-outline {
+      border: 1px solid #cbd5e1 !important;
+      color: #334155 !important;
+    }
+    html[data-theme="light"] .btn-setup-outline:hover {
+      background: #f1f5f9 !important;
+    }
+
+    html[data-theme="light"] .equipe-card-mini {
+      background: #f8fafc !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+
   </style>
   <script src="/anti-tamper.js" defer></script>
 </head>
@@ -1579,6 +2146,9 @@
     </ul>
 
     <div class="header-actions">
+      <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleSiteTheme()" aria-label="Alternar tema claro/escuro" title="Alternar tema">
+        <i class="ph ph-sun" id="theme-toggle-icon"></i>
+      </button>
       <a href="/index.html" class="btn-login">Entrar</a>
       <button class="btn-header" id="btn-consultor" onclick="falarConsultor()">
         <i class="ph ph-whatsapp-logo" style="font-size: 18px;"></i>
@@ -2326,6 +2896,61 @@
   <script>
     // ═══ CONFIGURAÇÕES E ESTADO DO SITE (SINCRONIZADO COM SUPER ADMIN) ═══
     let siteConfig = {};
+
+    // ═══ GERENCIAMENTO DE TEMA (CLARO / ESCURO) ═══
+    function initSiteTheme() {
+      var saved = localStorage.getItem('chef_site_theme') || localStorage.getItem('theme');
+      if (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        saved = 'light';
+      }
+      applySiteTheme(saved === 'light' ? 'light' : 'dark');
+    }
+
+    function toggleSiteTheme() {
+      var current = document.documentElement.getAttribute('data-theme') || 'dark';
+      var next = current === 'light' ? 'dark' : 'light';
+      applySiteTheme(next);
+      localStorage.setItem('chef_site_theme', next);
+      localStorage.setItem('theme', next);
+    }
+
+    function applySiteTheme(theme) {
+      var isLight = theme === 'light';
+      if (isLight) {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.add('theme-light');
+        if (document.body) document.body.classList.add('theme-light');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.remove('theme-light');
+        if (document.body) document.body.classList.remove('theme-light');
+      }
+      
+      var icon = document.getElementById('theme-toggle-icon');
+      var mIcon = document.getElementById('mobile-theme-icon');
+      var mText = document.getElementById('mobile-theme-text');
+      var btn = document.getElementById('theme-toggle-btn');
+      
+      if (icon) {
+        icon.className = isLight ? 'ph ph-moon' : 'ph ph-sun';
+        icon.style.color = isLight ? '#0f172a' : '#f59e0b';
+      }
+      if (mIcon) {
+        mIcon.className = isLight ? 'ph ph-moon' : 'ph ph-sun';
+        mIcon.style.color = isLight ? '#0f172a' : '#f59e0b';
+      }
+      if (mText) {
+        mText.textContent = isLight ? 'Modo Escuro' : 'Modo Claro';
+      }
+      if (btn) {
+        btn.setAttribute('title', isLight ? 'Alternar para Modo Escuro' : 'Alternar para Modo Claro');
+        btn.setAttribute('aria-label', isLight ? 'Alternar para Modo Escuro' : 'Alternar para Modo Claro');
+      }
+    }
+
+    // Inicializa o tema assim que o script carregar
+    initSiteTheme();
+
     let consultorWhatsapp = '';
     let consultorMensagem = 'Olá! Gostaria de saber mais sobre o Chef Cozinha e iniciar o teste grátis.';
     let planoSelecionado = 'profissional';
@@ -2752,7 +3377,7 @@
         nav.style.top = '100%';
         nav.style.left = '0';
         nav.style.width = '100%';
-        nav.style.background = 'rgba(6, 10, 19, 0.98)';
+        var isLightMode = document.documentElement.getAttribute('data-theme') === 'light'; nav.style.background = isLightMode ? 'rgba(255, 255, 255, 0.98)' : 'rgba(6, 10, 19, 0.98)';
         nav.style.padding = '24px';
         nav.style.borderBottom = '1px solid var(--card-border)';
       }

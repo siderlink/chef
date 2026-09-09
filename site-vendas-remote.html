@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="pt-BR" class="no-js">
 <head>
+  
+  <script>
+    (function() {
+      try {
+        var saved = localStorage.getItem('chef_site_theme') || localStorage.getItem('theme');
+        if (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+          saved = 'light';
+        }
+        if (saved === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+          document.documentElement.classList.add('theme-light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.classList.remove('theme-light');
+        }
+      } catch(e) {}
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chef Cozinha — O Sistema Completo e Mais Rápido para Restaurantes, Bares e Pubs</title>
@@ -347,6 +365,125 @@
       .setup-grid-2 { grid-template-columns: 1fr; gap: 12px; }
       .setup-modal { max-height: 95vh; }
     }
+  
+    /* ══════════════════════════════════════════════════════════════════════════
+       SISTEMA DE TEMA CLARO (LIGHT THEME) — CHEF COZINHA
+       ══════════════════════════════════════════════════════════════════════════ */
+    html[data-theme="light"],
+    body.theme-light {
+      --dark-bg: #f8fafc;
+      --dark-bg-2: #ffffff;
+      --dark-bg-3: #f1f5f9;
+      --card-bg: #ffffff;
+      --card-bg-hover: #f8fafc;
+      --card-border: #e2e8f0;
+      --card-border-glow: rgba(252, 75, 21, 0.35);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #64748b;
+      --primary-glow: rgba(252, 75, 21, 0.22);
+      --secondary-glow: rgba(16, 185, 129, 0.2);
+    }
+
+    .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      color: #f8fafc;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      margin-right: 12px;
+    }
+    .theme-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+      transform: translateY(-2px) scale(1.05);
+      border-color: var(--primary);
+      color: #fc4b15;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+
+    html[data-theme="light"] body,
+    body.theme-light {
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+    }
+    html[data-theme="light"] header {
+      background: rgba(255, 255, 255, 0.88) !important;
+      backdrop-filter: blur(20px) !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+    html[data-theme="light"] .logo-container { color: #0f172a !important; }
+    html[data-theme="light"] .nav-links a { color: #475569 !important; }
+    html[data-theme="light"] .nav-links a:hover { color: #fc4b15 !important; }
+    html[data-theme="light"] .theme-toggle-btn {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #0f172a !important;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05) !important;
+    }
+    html[data-theme="light"] .hero-glow-bg {
+      background: radial-gradient(circle, rgba(252, 75, 21, 0.09) 0%, rgba(252, 75, 21, 0.02) 50%, transparent 70%) !important;
+    }
+    html[data-theme="light"] .hero h1 {
+      background: linear-gradient(180deg, #0f172a 20%, #334155 100%) !important;
+      background-clip: text !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+    }
+    html[data-theme="light"] .hero p { color: #475569 !important; }
+    html[data-theme="light"] .btn-cta-secondary {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    html[data-theme="light"] .stat-card {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04) !important;
+    }
+    html[data-theme="light"] .stat-number { color: #0f172a !important; }
+    html[data-theme="light"] .stat-label { color: #64748b !important; }
+    html[data-theme="light"] .section-header h2,
+    html[data-theme="light"] h2,
+    html[data-theme="light"] h3,
+    html[data-theme="light"] h4 {
+      color: #0f172a !important;
+    }
+    html[data-theme="light"] .section-header p { color: #475569 !important; }
+    html[data-theme="light"] .how-section,
+    html[data-theme="light"] .comparison-section,
+    html[data-theme="light"] .testimonials-section {
+      background: #ffffff !important;
+      border-top: 1px solid #e2e8f0 !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+    html[data-theme="light"] .step-card,
+    html[data-theme="light"] .feature-card,
+    html[data-theme="light"] .price-card,
+    html[data-theme="light"] .faq-item {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04) !important;
+    }
+    html[data-theme="light"] .price-value { color: #0f172a !important; }
+    html[data-theme="light"] .price-features li { color: #334155 !important; }
+    html[data-theme="light"] footer {
+      background: #f8fafc !important;
+      border-top: 1px solid #e2e8f0 !important;
+      color: #475569 !important;
+    }
+    html[data-theme="light"] footer h4 { color: #0f172a !important; }
+    html[data-theme="light"] footer a { color: #475569 !important; }
+    html[data-theme="light"] .footer-bottom { border-top: 1px solid #e2e8f0 !important; color: #64748b !important; }
+  
   </style>
   
   <!-- locales.js / i18n.js moved to end of body with defer to avoid render-blocking -->
@@ -384,6 +521,10 @@
       <li><a href="#planos">Planos & Preços</a></li>
       <li><a href="#faq">Dúvidas</a></li>
     </ul>
+    
+    <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleSiteTheme()" aria-label="Alternar tema" title="Alternar tema">
+      <i class="ph ph-sun" id="theme-toggle-icon"></i>
+    </button>
     <button class="btn-header" id="btn-consultor" onclick="falarConsultor()">
       <i class="ph ph-whatsapp-logo" style="font-size: 18px;"></i>
       Falar com Consultor
@@ -1221,5 +1362,43 @@
   <script src="/locales.js" defer></script>
   <script src="/i18n.js" defer></script>
 
+
+  <script>
+    function toggleSiteTheme() {
+      var current = document.documentElement.getAttribute('data-theme') || 'dark';
+      var next = current === 'light' ? 'dark' : 'light';
+      applySiteTheme(next);
+      localStorage.setItem('chef_site_theme', next);
+      localStorage.setItem('theme', next);
+    }
+    function applySiteTheme(theme) {
+      var isLight = theme === 'light';
+      if (isLight) {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.add('theme-light');
+        if (document.body) document.body.classList.add('theme-light');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.remove('theme-light');
+        if (document.body) document.body.classList.remove('theme-light');
+      }
+      var icon = document.getElementById('theme-toggle-icon');
+      var btn = document.getElementById('theme-toggle-btn');
+      if (icon) {
+        icon.className = isLight ? 'ph ph-moon' : 'ph ph-sun';
+        icon.style.color = isLight ? '#0f172a' : '#f59e0b';
+      }
+      if (btn) {
+        btn.setAttribute('title', isLight ? 'Alternar para Modo Escuro' : 'Alternar para Modo Claro');
+      }
+    }
+    (function() {
+      var saved = localStorage.getItem('chef_site_theme') || localStorage.getItem('theme');
+      if (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        saved = 'light';
+      }
+      applySiteTheme(saved === 'light' ? 'light' : 'dark');
+    })();
+  </script>
 </body>
 </html>

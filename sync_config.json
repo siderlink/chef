@@ -1,0 +1,7 @@
+{
+  "cloud_url": "https://hub.chefcozinha.com.br",
+  "local_port": 8080,
+  "poll_interval_seconds": 10,
+  "minimize_to_tray": true,
+  "auto_start": false
+}

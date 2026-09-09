@@ -463,6 +463,7 @@ module.exports = {
   initialize,
   isConnected: () => connected,
   getInstanceId: () => instanceId,
+  flushOutbox,
   enqueueData: async function (messageType, payload) {
     try {
       await run(

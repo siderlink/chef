@@ -10,7 +10,7 @@
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
-  --border-color: var(--border-color);
+  --border-color: #e2e8f0;
   --accent-orange: #f38f18;
   --accent-hover: #ffedd5;
   --primary: #fc4b15;
@@ -2057,6 +2057,19 @@ body {
   display: none;
 }
 
+/* Tablet: esconde a sidebar de Ações no painel de Mesas para dar mais espaço */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .left-actions {
+    display: none !important;
+  }
+  .workspace .main-workspace,
+  #mesas-section-container,
+  .mesas-container {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+}
+
 @media (max-width: 767px) {
 
   .workspace.active-tab-mesas .left-actions,
@@ -3494,7 +3507,7 @@ body {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, #1e293b 100%) !important;
   border-top-color: #334155 !important;
   border-right-color: #334155 !important;
-  border-bottom-color: #334155 !important;
+  border-bottom-color: #334155 !important;
 }
 
 /* TABELA DE ITENS DO PEDIDO NO MODO ESCURO */
@@ -3528,6 +3541,53 @@ body {
   border-color: #334155 !important;
   color: #f8fafc !important;
 }
+[data-theme="light"] .work-area,
+[data-theme="light"] .workspace,
+[data-theme="light"] .right-info,
+[data-theme="light"] #right-panel,
+[data-theme="light"] .left-panel-content,
+[data-theme="light"] .main-content,
+[data-theme="light"] .main-workspace,
+[data-theme="light"] .mesas-container,
+[data-theme="light"] .mesas-scroll,
+[data-theme="light"] #mesas-section-container {
+  background-color: var(--bg-secondary) !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .top-header,
+[data-theme="light"] .header-top,
+[data-theme="light"] .top-menu-bar,
+[data-theme="light"] .top-toolbar,
+[data-theme="light"] .left-panel,
+[data-theme="light"] .left-actions,
+[data-theme="light"] .action-group,
+[data-theme="light"] .card-mesa,
+[data-theme="light"] .info-group,
+[data-theme="light"] .info-group.summary,
+[data-theme="light"] .products-container,
+[data-theme="light"] #products-section-container,
+[data-theme="light"] .products-table-wrapper,
+[data-theme="light"] .products-table,
+[data-theme="light"] .products-table td,
+[data-theme="light"] .status-bar,
+[data-theme="light"] .modal-content,
+[data-theme="light"] .mesas-header,
+[data-theme="light"] #mesa-selecionada-banner,
+[data-theme="light"] .mobile-mesa-info-card,
+[data-theme="light"] #mobile-mesa-info-card,
+[data-theme="light"] .checkout-sticky-footer,
+[data-theme="light"] .mobile-detail-item,
+[data-theme="light"] .products-header {
+  background-color: var(--bg-card) !important;
+  color: #0f172a !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .checkout-sticky-footer {
+  background-color: #ffffff !important;
+  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.05) !important;
+}
 
 /* SOMBRA E BRILHO DOS BOTÕES DE CONCLUIR/FINALIZAR */
 #btn-finalizar-venda,
@@ -3560,7 +3620,7 @@ body {
   --text-secondary: #475569;
   --text-header: #0f172a;
   --text-sidebar: #0f172a;
-  --border-color: var(--border-color);
+  --border-color: #e2e8f0;
 }
 
 [data-theme="light"] .chef-app,
@@ -6438,4 +6498,24 @@ body:not(.dark-mode) .left-actions .btn-action {
   overflow-y: auto !important;
   flex: 1 1 auto !important;
   padding-right: 4px;
+}
+
+/* Drag & Drop Visual Feedback */
+.mesa-item[draggable="true"] {
+  cursor: grab;
+}
+.mesa-item[draggable="true"]:active {
+  cursor: grabbing;
+}
+.mesa-item.dragging-chef {
+  opacity: 0.4 !important;
+  transform: scale(0.96);
+  border: 2px dashed #fc4b15 !important;
+}
+.mesa-item.drag-over {
+  border: 2px solid #fc4b15 !important;
+  background: rgba(252, 75, 21, 0.12) !important;
+  box-shadow: 0 0 16px rgba(252, 75, 21, 0.4) !important;
+  transform: scale(1.04);
+  transition: all 0.15s ease;
 }

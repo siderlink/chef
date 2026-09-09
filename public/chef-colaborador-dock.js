@@ -19,9 +19,9 @@
 
     const dockBtn = document.createElement('button');
     dockBtn.id = 'chef-colab-global-dock-btn';
-    dockBtn.title = 'Minha Área de Colaborador / Trocar de Estação';
-    dockBtn.style.cssText = 'position:fixed; bottom:18px; right:18px; z-index:9999; display:flex; align-items:center; gap:8px; padding:8px 14px; background:#0f172a; color:#ffffff; border:1.5px solid rgba(255,255,255,0.15); border-radius:30px; box-shadow:0 8px 24px rgba(0,0,0,0.3); font-size:12.5px; font-weight:700; cursor:pointer; backdrop-filter:blur(8px); transition:transform 0.15s, background 0.15s;';
-    dockBtn.innerHTML = '<span style="width:24px; height:24px; border-radius:50%; background:#fc4b15; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;"><i class="ph-bold ph-user"></i></span> <span>' + nome.split(' ')[0] + ' (' + cargo + ')</span>';
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light' || document.body.classList.contains('theme-light') || (!document.body.classList.contains('dark-mode') && !document.body.classList.contains('theme-dark'));
+    dockBtn.style.cssText = 'position:fixed; bottom:18px; right:18px; z-index:9999; display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:30px; font-size:12.5px; font-weight:700; cursor:pointer; backdrop-filter:blur(8px); transition:transform 0.15s, background 0.15s;' + (isLight ? 'background:#ffffff; color:#0f172a; border:1.5px solid #cbd5e1; box-shadow:0 8px 24px rgba(0,0,0,0.12);' : 'background:#0f172a; color:#ffffff; border:1.5px solid rgba(255,255,255,0.15); box-shadow:0 8px 24px rgba(0,0,0,0.3);');
+    dockBtn.innerHTML = '<span style="width:24px; height:24px; border-radius:50%; background:#fc4b15; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px;"><i class="ph-bold ph-user"></i></span> <span style="' + (isLight ? 'color:#0f172a;' : 'color:#ffffff;') + '">' + nome.split(' ')[0] + ' (' + cargo + ')</span>';
 
     dockBtn.onclick = window.abrirAreaColaboradorModal;
     document.body.appendChild(dockBtn);

@@ -3272,6 +3272,24 @@ io.on('connection', (socket) => {
     });
   };
 
+  // --- PROPAGAÇÃO DE TEMA DO RESTAURANTE (LOJA / STUDIO) ---
+  socket.on('tema_restaurante_aplicar', (data) => {
+    if (!data) return;
+    const tid = data.restaurante_id || socketTenantId || 1;
+    const room = `restaurante_${tid}`;
+    io.to(room).emit('tema_global_atualizado', data.cfg);
+    io.to(room).emit('tema_aplicado', { tema_id: data.tema ? data.tema.id : data.tema_id, cfg: data.cfg });
+    io.emit('tema_restaurante_atualizado', { restaurante_id: tid, cfg: data.cfg, tema_id: data.tema ? data.tema.id : data.tema_id });
+  });
+
+  socket.on('tema_global_aplicar', (data) => {
+    if (!data) return;
+    const tid = (data && data.restaurante_id) || socketTenantId || 1;
+    const room = `restaurante_${tid}`;
+    io.to(room).emit('tema_global_atualizado', data);
+    io.emit('tema_restaurante_atualizado', { restaurante_id: tid, cfg: data, tema_id: data.id || '' });
+  });
+
   let mpPollInterval = null;
 
   // --- CAPTURA AUTOMÁTICA DE TODOS OS LOGS DE SOCKET.IO + AÇÕES DO USUÁRIO ---
@@ -3325,24 +3343,6 @@ io.on('connection', (socket) => {
   });
 
   // --- AUDITORIA DE ACESSO E NAVEGAÇÃO DE PÁGINAS ---
-    // --- PROPAGAÇÃO DE TEMA DO RESTAURANTE (LOJA / STUDIO) ---
-  socket.on('tema_restaurante_aplicar', (data) => {
-    if (!data) return;
-    const tid = data.restaurante_id || socketTenantId || 1;
-    const room = `restaurante_${tid}`;
-    io.to(room).emit('tema_global_atualizado', data.cfg);
-    io.to(room).emit('tema_aplicado', { tema_id: data.tema ? data.tema.id : data.tema_id, cfg: data.cfg });
-    io.emit('tema_restaurante_atualizado', { restaurante_id: tid, cfg: data.cfg, tema_id: data.tema ? data.tema.id : data.tema_id });
-  });
-
-  socket.on('tema_global_aplicar', (data) => {
-    if (!data) return;
-    const tid = (data && data.restaurante_id) || socketTenantId || 1;
-    const room = `restaurante_${tid}`;
-    io.to(room).emit('tema_global_atualizado', data);
-    io.emit('tema_restaurante_atualizado', { restaurante_id: tid, cfg: data, tema_id: data.id || '' });
-  });
-
   socket.on('registrar_acesso_pagina', (data) => {
     if (!data) return;
     const { pagina, titulo, autorizado, motivo } = data;
@@ -7982,6 +7982,175 @@ if (deploymentConfig.isOnPremise()) {
   });
   console.log('[Sync] Servidor sync (cloud) inicializado.');
 }
+
+// --- API DE STATUS E MONITORAMENTO LOCAL (SYNC.EXE / OFFLINE-FIRST) ---
+app.get('/api/sync/status', async (req, res) => {
+  try {
+    let isConn = false;
+    let instId = 'local-instance';
+    if (deploymentConfig && deploymentConfig.isOnPremise()) {
+      try {
+        const syncAgent = require('./sync-agent');
+        isConn = syncAgent.isConnected();
+        instId = syncAgent.getInstanceId() || 'local-instance';
+      } catch (e) {}
+    } else {
+      isConn = true;
+      instId = 'cloud-hub';
+    }
+
+    let outboxPending = 0;
+    try {
+      const row = await new Promise((resolve, reject) => {
+        db.get("SELECT COUNT(*) as cnt FROM sync_outbox WHERE status = 'pending'", (err, r) => {
+          if (err) reject(err);
+          else resolve(r);
+        });
+      });
+      outboxPending = row ? (row.cnt || 0) : 0;
+    } catch (e) {}
+
+    res.json({
+      success: true,
+      online: isConn,
+      instanceId: instId,
+      outboxPending,
+      deployMode: deploymentConfig ? deploymentConfig.getDeployMode() : 'standalone',
+      version: deploymentConfig ? deploymentConfig.getSoftwareVersion() : '1.0.0',
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/sync/flush', async (req, res) => {
+  try {
+    if (deploymentConfig && deploymentConfig.isOnPremise()) {
+      const syncAgent = require('./sync-agent');
+      if (syncAgent && typeof syncAgent.flushOutbox === 'function') {
+        await syncAgent.flushOutbox();
+      }
+    }
+    res.json({ success: true, message: 'Flush disparado com sucesso' });
+
+app.post('/api/sync/activate', async (req, res) => {
+  const { type, chave_ativacao, email, senha, instance_id, machine_id, hostname } = req.body || {};
+  const bcrypt = require('bcrypt');
+
+  try {
+    const targetDb = (typeof masterDb !== 'undefined' && masterDb) ? masterDb : db;
+
+    if (type === 'key' || chave_ativacao) {
+      const chave = String(chave_ativacao || '').trim().toUpperCase();
+      if (!chave) return res.status(400).json({ ok: false, success: false, error: 'Chave de ativação é obrigatória.' });
+
+      const row = await new Promise((resolve, reject) => {
+        targetDb.get(
+          `SELECT * FROM restaurantes 
+           WHERE UPPER(TRIM(COALESCE(chave_ativacao, ''))) = ? 
+              OR UPPER(TRIM('CHEF-LOCAL-' || printf('%04d', id))) = ?
+              OR UPPER(TRIM('CHEF-' || printf('%04d', id))) = ?
+           LIMIT 1`,
+          [chave, chave, chave],
+          (err, r) => err ? reject(err) : resolve(r)
+        );
+      });
+
+      if (!row) {
+        return res.status(404).json({ ok: false, success: false, error: 'Chave de ativação inválida ou não encontrada.' });
+      }
+
+      if (row.ativo === 0) {
+        return res.status(403).json({ ok: false, success: false, error: 'Este restaurante está inativo no sistema.' });
+      }
+
+      const instId = instance_id || ('inst_' + row.id + '_' + Date.now());
+      const finalKey = row.chave_ativacao || ('CHEF-LOCAL-' + String(row.id).padStart(4, '0'));
+
+      return res.json({
+        ok: true,
+        success: true,
+        restaurant_id: row.id,
+        restaurant_name: row.nome,
+        activation_key: finalKey,
+        plan: row.licenca || 'premium',
+        instance_id: instId,
+        message: `Restaurante '${row.nome}' ativado com sucesso via chave!`
+      });
+    }
+    else if (type === 'login' || (email && senha)) {
+      const userLogin = String(email || '').trim().toLowerCase();
+      const userPass = String(senha || '');
+
+      if (!userLogin || !userPass) {
+        return res.status(400).json({ ok: false, success: false, error: 'Preencha usuário/e-mail e senha.' });
+      }
+
+      const user = await new Promise((resolve, reject) => {
+        targetDb.get(
+          `SELECT u.*, r.id as r_id, r.nome as r_nome, r.chave_ativacao as r_chave, r.ativo as r_ativo, r.licenca as r_licenca, r.dono_email
+           FROM usuarios u
+           JOIN restaurantes r ON u.restaurante_id = r.id
+           WHERE (LOWER(u.username) = ? OR LOWER(COALESCE(r.dono_email, '')) = ?) AND u.ativo = 1
+           ORDER BY u.id ASC LIMIT 1`,
+          [userLogin, userLogin],
+          (err, r) => err ? reject(err) : resolve(r)
+        );
+      });
+
+      if (!user) {
+        return res.status(401).json({ ok: false, success: false, error: 'Usuário não encontrado ou inativo.' });
+      }
+
+      if (user.r_ativo === 0) {
+        return res.status(403).json({ ok: false, success: false, error: 'Este restaurante está inativo no sistema.' });
+      }
+
+      const match = await bcrypt.compare(userPass, user.password_hash);
+      if (!match) {
+        return res.status(401).json({ ok: false, success: false, error: 'Senha incorreta.' });
+      }
+
+      const instId = instance_id || ('inst_' + user.r_id + '_' + Date.now());
+      const finalKey = user.r_chave || ('CHEF-LOCAL-' + String(user.r_id).padStart(4, '0'));
+
+      return res.json({
+        ok: true,
+        success: true,
+        restaurant_id: user.r_id,
+        restaurant_name: user.r_nome,
+        activation_key: finalKey,
+        account_email: user.username,
+        plan: user.r_licenca || 'premium',
+        instance_id: instId,
+        message: `Restaurante '${user.r_nome}' logado e ativado com sucesso!`
+      });
+    }
+    else {
+      return res.status(400).json({ ok: false, success: false, error: 'Informe a chave de ativação ou usuário e senha.' });
+    }
+  } catch (err) {
+    console.error('[Sync] Erro no endpoint /api/sync/activate:', err.message);
+    return res.status(500).json({ ok: false, success: false, error: 'Erro interno ao processar ativação: ' + err.message });
+  }
+});
+
+app.post('/api/sync/activate-local', async (req, res) => {
+  try {
+    const { restaurant_id, restaurant_name, activation_key } = req.body || {};
+    console.log(`[Sync Local] Restaurante ativado localmente: ${restaurant_name} (ID: ${restaurant_id})`);
+    res.json({ success: true, message: 'Ativação local registrada' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 // --- RETRO API PARA ANDROID 3.2 ---
 app.get('/api/retro/mesas', (req, res) => {

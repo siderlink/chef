@@ -286,6 +286,132 @@ function initialize(deps) {
       }
     });
 
+    // POST /api/sync/activate — ativação da instância via chave de ativação ou login/senha
+    ctx.app.post('/api/sync/activate', async (req, res) => {
+      const { type, chave_ativacao, email, senha, instance_id, machine_id, hostname } = req.body || {};
+      const bcrypt = require('bcrypt');
+
+      try {
+        if (type === 'key' || chave_ativacao) {
+          const chave = String(chave_ativacao || '').trim().toUpperCase();
+          if (!chave) return res.status(400).json({ ok: false, success: false, error: 'Chave de ativação é obrigatória.' });
+
+          // Localiza restaurante por chave_ativacao ou fallback formatado CHEF-LOCAL-000X / CHEF-000X
+          const row = await dbGet(
+            `SELECT * FROM restaurantes 
+             WHERE UPPER(TRIM(COALESCE(chave_ativacao, ''))) = ? 
+                OR UPPER(TRIM('CHEF-LOCAL-' || printf('%04d', id))) = ?
+                OR UPPER(TRIM('CHEF-' || printf('%04d', id))) = ?
+             LIMIT 1`,
+            [chave, chave, chave]
+          );
+
+          if (!row) {
+            return res.status(404).json({ ok: false, success: false, error: 'Chave de ativação inválida ou não encontrada.' });
+          }
+
+          if (row.ativo === 0) {
+            return res.status(403).json({ ok: false, success: false, error: 'Este restaurante está inativo no sistema.' });
+          }
+
+          const instId = instance_id || ('inst_' + row.id + '_' + Date.now());
+          const instName = row.nome || ('Restaurante #' + row.id);
+
+          const existing = await dbGet(`SELECT id FROM instance_registry WHERE instance_id = ?`, [instId]);
+          if (existing) {
+            await dbRun(
+              `UPDATE instance_registry SET tenant_id = ?, instance_name = ?, status = 'online', last_heartbeat_at = datetime('now','localtime'), os_info = ?, ip_address = ? WHERE instance_id = ?`,
+              [row.id, instName, hostname || machine_id || '', req.ip, instId]
+            );
+          } else {
+            await dbRun(
+              `INSERT INTO instance_registry (instance_id, tenant_id, instance_name, software_version, os_info, ip_address, status, last_heartbeat_at)
+               VALUES (?, ?, ?, '1.0.0', ?, ?, 'online', datetime('now','localtime'))`,
+              [instId, row.id, instName, hostname || machine_id || '', req.ip]
+            );
+          }
+
+          const finalKey = row.chave_ativacao || ('CHEF-LOCAL-' + String(row.id).padStart(4, '0'));
+          return res.json({
+            ok: true,
+            success: true,
+            restaurant_id: row.id,
+            restaurant_name: row.nome,
+            activation_key: finalKey,
+            plan: row.licenca || 'premium',
+            instance_id: instId,
+            message: `Restaurante '${row.nome}' ativado com sucesso via chave!`
+          });
+        }
+        else if (type === 'login' || (email && senha)) {
+          const userLogin = String(email || '').trim().toLowerCase();
+          const userPass = String(senha || '');
+
+          if (!userLogin || !userPass) {
+            return res.status(400).json({ ok: false, success: false, error: 'Preencha usuário/e-mail e senha.' });
+          }
+
+          const user = await dbGet(
+            `SELECT u.*, r.id as r_id, r.nome as r_nome, r.chave_ativacao as r_chave, r.ativo as r_ativo, r.licenca as r_licenca, r.dono_email
+             FROM usuarios u
+             JOIN restaurantes r ON u.restaurante_id = r.id
+             WHERE (LOWER(u.username) = ? OR LOWER(COALESCE(r.dono_email, '')) = ?) AND u.ativo = 1
+             ORDER BY u.id ASC LIMIT 1`,
+            [userLogin, userLogin]
+          );
+
+          if (!user) {
+            return res.status(401).json({ ok: false, success: false, error: 'Usuário não encontrado ou inativo.' });
+          }
+
+          if (user.r_ativo === 0) {
+            return res.status(403).json({ ok: false, success: false, error: 'Este restaurante está inativo no sistema.' });
+          }
+
+          const match = await bcrypt.compare(userPass, user.password_hash);
+          if (!match) {
+            return res.status(401).json({ ok: false, success: false, error: 'Senha incorreta.' });
+          }
+
+          const instId = instance_id || ('inst_' + user.r_id + '_' + Date.now());
+          const instName = user.r_nome || ('Restaurante #' + user.r_id);
+
+          const existing = await dbGet(`SELECT id FROM instance_registry WHERE instance_id = ?`, [instId]);
+          if (existing) {
+            await dbRun(
+              `UPDATE instance_registry SET tenant_id = ?, instance_name = ?, status = 'online', last_heartbeat_at = datetime('now','localtime'), os_info = ?, ip_address = ? WHERE instance_id = ?`,
+              [user.r_id, instName, hostname || machine_id || '', req.ip, instId]
+            );
+          } else {
+            await dbRun(
+              `INSERT INTO instance_registry (instance_id, tenant_id, instance_name, software_version, os_info, ip_address, status, last_heartbeat_at)
+               VALUES (?, ?, ?, '1.0.0', ?, ?, 'online', datetime('now','localtime'))`,
+              [instId, user.r_id, instName, hostname || machine_id || '', req.ip]
+            );
+          }
+
+          const finalKey = user.r_chave || ('CHEF-LOCAL-' + String(user.r_id).padStart(4, '0'));
+          return res.json({
+            ok: true,
+            success: true,
+            restaurant_id: user.r_id,
+            restaurant_name: user.r_nome,
+            activation_key: finalKey,
+            account_email: user.username,
+            plan: user.r_licenca || 'premium',
+            instance_id: instId,
+            message: `Restaurante '${user.r_nome}' logado e ativado com sucesso!`
+          });
+        }
+        else {
+          return res.status(400).json({ ok: false, success: false, error: 'Informe a chave de ativação ou usuário e senha.' });
+        }
+      } catch (err) {
+        console.error('[Sync Server] Erro no endpoint /api/sync/activate:', err.message);
+        return res.status(500).json({ ok: false, success: false, error: 'Erro interno ao processar ativação: ' + err.message });
+      }
+    });
+
     // GET /api/sync/poll — on-premise polls for pending commands/data
     ctx.app.get('/api/sync/poll', async (req, res) => {
       const { instance_id } = req.query;

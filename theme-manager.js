@@ -62,13 +62,82 @@
     } else {
       if (dmLink) {
         dmLink.disabled = true;
+        try { if (dmLink.parentNode) dmLink.parentNode.removeChild(dmLink); } catch (e) { }
       }
     }
     document.documentElement.classList.toggle('dark-mode', validTheme === 'dark');
     try { localStorage.setItem(STORAGE_KEY, validTheme); } catch (e) { }
     try { localStorage.setItem('chef_garcom_theme', validTheme); } catch (e) { }
     updateThemeUI(validTheme);
-    if (_lastCfg) applyCustomTheme(_lastCfg);
+
+    var baseStyleEl = document.getElementById('chef-mode-base-vars');
+    if (!baseStyleEl) {
+      baseStyleEl = document.createElement('style');
+      baseStyleEl.id = 'chef-mode-base-vars';
+      document.head.appendChild(baseStyleEl);
+    }
+    if (validTheme === 'light') {
+      baseStyleEl.textContent = [
+        ':root, html, body, [data-theme="light"], body.theme-light {',
+        '  --bg-slate: #f8fafc !important;',
+        '  --bg-slate-card: #ffffff !important;',
+        '  --bg-color: #f8fafc !important;',
+        '  --bg-main: #f8fafc !important;',
+        '  --bg-page: #f8fafc !important;',
+        '  --bg-card: #ffffff !important;',
+        '  --bg-panel: #ffffff !important;',
+        '  --bg-sidebar: #f8fafc !important;',
+        '  --bg-header: #ffffff !important;',
+        '  --text-primary: #0f172a !important;',
+        '  --text-main: #0f172a !important;',
+        '  --text-secondary: #64748b !important;',
+        '  --text-muted: #64748b !important;',
+        '  --border-color: #e2e8f0 !important;',
+        '  --border-light: #e2e8f0 !important;',
+        '  --border-subtle: #e2e8f0 !important;',
+        '}'
+      ].join('\n');
+    } else {
+      baseStyleEl.textContent = [
+        ':root, html, body, [data-theme="dark"], body.theme-dark, body.dark-mode {',
+        '  --bg-slate: #0f172a !important;',
+        '  --bg-slate-card: #1e293b !important;',
+        '  --bg-color: #0b0f19 !important;',
+        '  --bg-main: #090d16 !important;',
+        '  --bg-page: #0b0f19 !important;',
+        '  --bg-card: #1e293b !important;',
+        '  --bg-panel: #0f172a !important;',
+        '  --bg-sidebar: #0b1120 !important;',
+        '  --bg-header: #0f172a !important;',
+        '  --text-primary: #f8fafc !important;',
+        '  --text-main: #f8fafc !important;',
+        '  --text-secondary: #94a3b8 !important;',
+        '  --text-muted: #94a3b8 !important;',
+        '  --border-color: rgba(255, 255, 255, 0.08) !important;',
+        '  --border-light: rgba(255, 255, 255, 0.08) !important;',
+        '  --border-subtle: rgba(255, 255, 255, 0.08) !important;',
+        '}'
+      ].join('\n');
+    }
+
+    if (_lastCfg) {
+      if (_lastCfg.storeTema) {
+        if (validTheme === 'light' && !isLightColor(_lastCfg.bgColor || _lastCfg.bgPage)) {
+          _lastCfg.bgColor = '#f8fafc';
+          _lastCfg.bgCard = '#ffffff';
+          _lastCfg.borderColor = '#e2e8f0';
+          _lastCfg.textPrimary = '#0f172a';
+          _lastCfg.textSecondary = '#64748b';
+        } else if (validTheme === 'dark' && isLightColor(_lastCfg.bgColor || _lastCfg.bgPage)) {
+          _lastCfg.bgColor = '#0b0f19';
+          _lastCfg.bgCard = '#1e293b';
+          _lastCfg.borderColor = '#1f2937';
+          _lastCfg.textPrimary = '#f3f4f6';
+          _lastCfg.textSecondary = '#94a3b8';
+        }
+      }
+      applyCustomTheme(_lastCfg);
+    }
     window.dispatchEvent(new CustomEvent('chef_theme_changed', { detail: { theme: validTheme } }));
   }
 
@@ -243,16 +312,18 @@
       '--bg-color: ' + bg + ' !important;',
       '--bg-main: ' + bg + ' !important;',
       '--bg-page: ' + bg + ' !important;',
-      '--bg-slate: ' + bg + ' !important;',
+      '--bg-slate: ' + (isDarkBg ? (cfg.bgSlate || '#0f172a') : '#f8fafc') + ' !important;',
       '--cfg-bg: ' + bg + ' !important;',
       '--cfg-subtle-bg: ' + bg + ' !important;',
+      '--surface-sidebar: ' + (cfg.bgSidebar || (isDarkBg ? '#0b1120' : '#f8fafc')) + ' !important;',
+      '--surface-panel: ' + (isDarkBg ? cardBg : '#ffffff') + ' !important;',
 
       // Painéis e Cards
       '--bg-card: ' + cardBg + ' !important;',
-      '--bg-slate-card: ' + cardBg + ' !important;',
+      '--bg-slate-card: ' + (isDarkBg ? (cfg.bgSlateCard || '#1e293b') : '#ffffff') + ' !important;',
       '--bg-panel: ' + cardBg + ' !important;',
-      '--bg-sidebar: ' + (cfg.bgSidebar || cardBg) + ' !important;',
-      '--bg-header: ' + (cfg.bgHeader || cardBg) + ' !important;',
+      '--bg-sidebar: ' + (cfg.bgSidebar || (isDarkBg ? cardBg : '#f8fafc')) + ' !important;',
+      '--bg-header: ' + (cfg.bgHeader || (isDarkBg ? cardBg : '#ffffff')) + ' !important;',
       '--cfg-card-bg: ' + cardBg + ' !important;',
       '--cfg-card-alt: ' + cardBg + ' !important;',
       '--cfg-sidebar-bg: ' + (cfg.bgSidebar || cardBg) + ' !important;',

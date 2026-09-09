@@ -72,6 +72,19 @@ export default defineConfig({
   ],
   server: {
     host: true,
+    watch: {
+      ignored: [
+        '**/*.TMP',
+        '**/*.tmp',
+        '**/*.exe',
+        '**/*.sqlite*',
+        '**/installer/**',
+        '**/.git/**',
+        '**/dist/**',
+        '**/dist.full/**',
+        '**/CSC*.TMP'
+      ]
+    },
     proxy: {
       '/socket.io': {
         target: `http://127.0.0.1:${BACKEND_PORT}`,

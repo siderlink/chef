@@ -312,6 +312,8 @@ const fs = require('fs');
 const multer = require('multer');
 const nfceService = require('./nfce-service');
 const iaService = require('./ia-service');
+const synccheffSecurity = require('./synccheff-security');
+const redeLocalController = require('./controllers/rede-local-controller');
 
 // Carrega variáveis do arquivo .env (sem dependência externa)
 try {
@@ -1375,6 +1377,11 @@ function verificarSenhaAdmin(senha) {
       });
     });
   });
+}
+
+// Inicializa tabelas de segurança e auditoria do SyncCheff no masterDb
+if (synccheffSecurity && typeof synccheffSecurity.initSyncCheffDb === 'function') {
+  synccheffSecurity.initSyncCheffDb(masterDb);
 }
 
 // ════════════ SUPER ADMIN LOCAL (login + gerenciamento de certificados) ════════════

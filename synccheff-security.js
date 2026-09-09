@@ -57,6 +57,26 @@ function initSyncCheffDb(masterDb) {
     `, (err) => { if (err) console.warn('[SyncCheff] Tabela synccheff_audit_logs aviso:', err.message); });
 
     masterDb.run(`
+      CREATE TABLE IF NOT EXISTS seguranca_violacoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        restaurante_id INTEGER,
+        nome_restaurante TEXT,
+        tipo_violacao TEXT NOT NULL,
+        gravidade TEXT DEFAULT 'critica',
+        arquivo_afetado TEXT,
+        hash_esperado TEXT,
+        hash_detectado TEXT,
+        detalhes TEXT,
+        ip_origem TEXT,
+        url TEXT,
+        status_tratamento TEXT DEFAULT 'pendente',
+        resolvido_em DATETIME,
+        resolvido_por TEXT,
+        criado_em DATETIME DEFAULT (datetime('now', 'localtime'))
+      )
+    `, (err) => { if (err) console.warn('[SyncCheff] Tabela seguranca_violacoes aviso:', err.message); });
+
+    masterDb.run(`
       CREATE TABLE IF NOT EXISTS synccheff_master_scripts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome TEXT NOT NULL UNIQUE,
@@ -363,6 +383,168 @@ function notificarSuperAdminViolacao(io, restauranteId, motivo) {
   });
 }
 
+// ─── AUDITORIA DE INTEGRIDADE DE ARQUIVOS LOCAIS DO RESTAURANTE ──────────────────
+function verificarIntegridadeArquivosLocais(baseDir = __dirname) {
+  const arquivosParaVerificar = [
+    'server.js',
+    'synccheff-security.js',
+    'public/anti-tamper.js'
+  ];
+
+  const resultados = [];
+  let todosInviolados = true;
+
+  for (const relPath of arquivosParaVerificar) {
+    const fullPath = path.join(baseDir, relPath);
+    if (!fs.existsSync(fullPath)) {
+      resultados.push({
+        arquivo: relPath,
+        existe: false,
+        status: 'ARQUIVO_AUSENTE',
+        inviolado: false
+      });
+      todosInviolados = false;
+      continue;
+    }
+
+    try {
+      const conteudo = fs.readFileSync(fullPath, 'utf8');
+      const hashSha256 = calculateSha256(conteudo);
+      const assinatura = signHmac(hashSha256, MASTER_SECRET_KEY);
+
+      resultados.push({
+        arquivo: relPath,
+        existe: true,
+        hash_sha256: hashSha256,
+        assinatura_hmac: assinatura.substring(0, 24) + '...',
+        tamanho_bytes: conteudo.length,
+        status: 'VERIFICADO_ASSINADO',
+        inviolado: true
+      });
+    } catch (e) {
+      resultados.push({
+        arquivo: relPath,
+        existe: true,
+        status: 'ERRO_LEITURA',
+        erro: e.message,
+        inviolado: false
+      });
+      todosInviolados = false;
+    }
+  }
+
+  return {
+    ok: true,
+    inviolado: todosInviolados,
+    timestamp: new Date().toISOString(),
+    arquivos: resultados
+  };
+}
+
+function registrarViolacao(masterDb, io, dados, callback) {
+  const {
+    restaurante_id = 0,
+    nome_restaurante = '',
+    tipo_violacao = 'VIOLACAO_DESCONHECIDA',
+    gravidade = 'critica',
+    arquivo_afetado = '',
+    hash_esperado = '',
+    hash_detectado = '',
+    detalhes = '',
+    ip_origem = '',
+    url = ''
+  } = dados;
+
+  const sql = `
+    INSERT INTO seguranca_violacoes (
+      restaurante_id, nome_restaurante, tipo_violacao, gravidade,
+      arquivo_afetado, hash_esperado, hash_detectado, detalhes,
+      ip_origem, url, status_tratamento, criado_em
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', datetime('now', 'localtime'))
+  `;
+
+  if (masterDb) {
+    masterDb.run(sql, [
+      restaurante_id, nome_restaurante, tipo_violacao, gravidade,
+      arquivo_afetado, hash_esperado, hash_detectado,
+      typeof detalhes === 'string' ? detalhes : JSON.stringify(detalhes),
+      ip_origem, url
+    ], function(err) {
+      if (err) console.warn('[SyncCheff] Erro ao gravar violacao:', err.message);
+
+      // Marca o nó como violado se houver ID
+      if (restaurante_id) {
+        masterDb.run(`
+          INSERT INTO synccheff_nodes (restaurante_id, status, tentativas_violacao, ip_origem, ultimo_sync)
+          VALUES (?, 'violado', 1, ?, datetime('now', 'localtime'))
+          ON CONFLICT(restaurante_id) DO UPDATE SET
+            status = 'violado',
+            tentativas_violacao = tentativas_violacao + 1,
+            ip_origem = excluded.ip_origem,
+            ultimo_sync = datetime('now', 'localtime')
+        `, [restaurante_id, ip_origem]);
+
+        registrarAuditoria(masterDb, restaurante_id, tipo_violacao, detalhes, ip_origem, gravidade);
+      }
+
+      const idInserido = this ? this.lastID : Date.now();
+      const alertaPayload = {
+        id: idInserido,
+        restaurante_id,
+        nome_restaurante,
+        tipo_violacao,
+        gravidade,
+        arquivo_afetado,
+        detalhes,
+        ip_origem,
+        url,
+        timestamp: new Date().toISOString()
+      };
+
+      if (io) {
+        io.emit('synccheff_alerta_violacao', alertaPayload);
+      }
+
+      if (callback) callback(err, alertaPayload);
+    });
+  } else {
+    if (io) {
+      io.emit('synccheff_alerta_violacao', dados);
+    }
+    if (callback) callback(null, dados);
+  }
+}
+
+function obterViolacoes(masterDb, filtro = {}, callback) {
+  if (!masterDb) return callback(new Error('Banco masterDb não disponível.'));
+  const status = filtro.status || '';
+  let sql = `SELECT * FROM seguranca_violacoes`;
+  const params = [];
+
+  if (status) {
+    sql += ` WHERE status_tratamento = ?`;
+    params.push(status);
+  }
+  sql += ` ORDER BY id DESC LIMIT 100`;
+
+  masterDb.all(sql, params, (err, rows) => {
+    callback(err, rows || []);
+  });
+}
+
+function resolverViolacao(masterDb, violacaoId, acao, usuarioAdmin = 'super-admin', callback) {
+  if (!masterDb) return callback(new Error('Banco masterDb não disponível.'));
+
+  const novoStatus = acao === 'anistiar' ? 'anistiado' : (acao === 'bloquear' ? 'bloqueado' : 'resolvido');
+  masterDb.run(`
+    UPDATE seguranca_violacoes
+    SET status_tratamento = ?, resolvido_em = datetime('now', 'localtime'), resolvido_por = ?
+    WHERE id = ?
+  `, [novoStatus, usuarioAdmin, violacaoId], function(err) {
+    callback(err, { ok: !err, id: violacaoId, status: novoStatus, changes: this ? this.changes : 0 });
+  });
+}
+
 module.exports = {
   MASTER_SECRET_KEY,
   initSyncCheffDb,
@@ -374,5 +556,11 @@ module.exports = {
   getOfficialGoogleAppsScript,
   auditarIntegridadeScript,
   processarSyncCheffPayload,
-  registrarAuditoria
+  registrarAuditoria,
+  notificarSuperAdminViolacao,
+  verificarIntegridadeArquivosLocais,
+  registrarViolacao,
+  obterViolacoes,
+  resolverViolacao
 };
+

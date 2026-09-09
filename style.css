@@ -10,7 +10,7 @@
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
-  --border-color: var(--border-color);
+  --border-color: #e2e8f0;
   --accent-orange: #f38f18;
   --accent-hover: #ffedd5;
   --primary: #fc4b15;
@@ -3507,7 +3507,7 @@ body {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, #1e293b 100%) !important;
   border-top-color: #334155 !important;
   border-right-color: #334155 !important;
-  border-bottom-color: #334155 !important;
+  border-bottom-color: #334155 !important;
 }
 
 /* TABELA DE ITENS DO PEDIDO NO MODO ESCURO */
@@ -3541,6 +3541,53 @@ body {
   border-color: #334155 !important;
   color: #f8fafc !important;
 }
+[data-theme="light"] .work-area,
+[data-theme="light"] .workspace,
+[data-theme="light"] .right-info,
+[data-theme="light"] #right-panel,
+[data-theme="light"] .left-panel-content,
+[data-theme="light"] .main-content,
+[data-theme="light"] .main-workspace,
+[data-theme="light"] .mesas-container,
+[data-theme="light"] .mesas-scroll,
+[data-theme="light"] #mesas-section-container {
+  background-color: var(--bg-secondary) !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .top-header,
+[data-theme="light"] .header-top,
+[data-theme="light"] .top-menu-bar,
+[data-theme="light"] .top-toolbar,
+[data-theme="light"] .left-panel,
+[data-theme="light"] .left-actions,
+[data-theme="light"] .action-group,
+[data-theme="light"] .card-mesa,
+[data-theme="light"] .info-group,
+[data-theme="light"] .info-group.summary,
+[data-theme="light"] .products-container,
+[data-theme="light"] #products-section-container,
+[data-theme="light"] .products-table-wrapper,
+[data-theme="light"] .products-table,
+[data-theme="light"] .products-table td,
+[data-theme="light"] .status-bar,
+[data-theme="light"] .modal-content,
+[data-theme="light"] .mesas-header,
+[data-theme="light"] #mesa-selecionada-banner,
+[data-theme="light"] .mobile-mesa-info-card,
+[data-theme="light"] #mobile-mesa-info-card,
+[data-theme="light"] .checkout-sticky-footer,
+[data-theme="light"] .mobile-detail-item,
+[data-theme="light"] .products-header {
+  background-color: var(--bg-card) !important;
+  color: #0f172a !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .checkout-sticky-footer {
+  background-color: #ffffff !important;
+  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.05) !important;
+}
 
 /* SOMBRA E BRILHO DOS BOTÕES DE CONCLUIR/FINALIZAR */
 #btn-finalizar-venda,
@@ -3573,7 +3620,7 @@ body {
   --text-secondary: #475569;
   --text-header: #0f172a;
   --text-sidebar: #0f172a;
-  --border-color: var(--border-color);
+  --border-color: #e2e8f0;
 }
 
 [data-theme="light"] .chef-app,
