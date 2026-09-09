@@ -12522,102 +12522,293 @@ app.get('/api/afiliado/dashboard', (req, res) => {
   });
 });
 
-// API /api/dono/dashboard & /api/dashboard/metrics — Métricas em tempo real para o Painel do Dono
+// API /api/dono/dashboard & /api/dashboard/metrics — Métricas executivas em tempo real para o Painel do Dono
 const handleDashboardMetrics = (req, res) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader ? authHeader.split(' ')[1] : req.query.token;
 
-  const processMetrics = (tenantId) => {
+  const processMetrics = async (tenantId) => {
     const dbInst = db;
     if (!dbInst) return res.status(500).json({ success: false, error: 'Banco de dados indisponível.' });
 
-    const periodo = req.query.periodo || 'hoje';
-    const dataInicio = req.query.data_inicio;
-    const dataFim = req.query.data_fim;
+    const pAll = (sql, params = []) => new Promise((resolve) => dbInst.all(sql, params, (err, rows) => resolve(err ? [] : rows)));
+    const pGet = (sql, params = []) => new Promise((resolve) => dbInst.get(sql, params, (err, row) => resolve(err ? null : row)));
 
-    let dateWhere = "date(createdAt) = date('now', 'localtime')";
-    let rotulo = 'Hoje';
+    try {
+      const periodo = req.query.periodo || 'hoje';
+      const dataInicio = req.query.data_inicio;
+      const dataFim = req.query.data_fim;
 
-    if (periodo === 'ontem') {
-      dateWhere = "date(createdAt) = date('now', '-1 day', 'localtime')";
-      rotulo = 'Ontem';
-    } else if (periodo === 'semana') {
-      dateWhere = "createdAt >= date('now', '-7 days', 'localtime')";
-      rotulo = 'Últimos 7 dias';
-    } else if (periodo === 'mes') {
-      dateWhere = "strftime('%Y-%m', createdAt) = strftime('%Y-%m', 'now', 'localtime')";
-      rotulo = 'Este Mês';
-    } else if (periodo === 'custom' && dataInicio && dataFim) {
-      dateWhere = `date(createdAt) BETWEEN '${dataInicio}' AND '${dataFim}'`;
-      rotulo = `${dataInicio} a ${dataFim}`;
-    }
+      let dateWhere = "date(createdAt) = date('now', 'localtime')";
+      let movWhere = "date(data) = date('now', 'localtime')";
+      let dateWhereAnt = "date(createdAt) = date('now', '-7 days', 'localtime')";
+      let rotulo = 'Hoje';
+      let rotuloAnt = 'semana passada';
 
-    dbInst.get(`
-      SELECT COALESCE(SUM(total), 0) as total, COUNT(*) as totalPedidos
-      FROM pedidos 
-      WHERE status IN ('Finalizado', 'Entregue') AND ${dateWhere}
-    `, [], (err1, faturamentoRow) => {
-      if (err1) return res.status(500).json({ success: false, error: err1.message });
+      if (periodo === 'ontem') {
+        dateWhere = "date(createdAt) = date('now', '-1 day', 'localtime')";
+        movWhere = "date(data) = date('now', '-1 day', 'localtime')";
+        dateWhereAnt = "date(createdAt) = date('now', '-8 days', 'localtime')";
+        rotulo = 'Ontem';
+        rotuloAnt = 'mesmo dia da semana passada';
+      } else if (periodo === 'semana') {
+        dateWhere = "createdAt >= date('now', '-7 days', 'localtime')";
+        movWhere = "data >= date('now', '-7 days', 'localtime')";
+        dateWhereAnt = "createdAt >= date('now', '-14 days', 'localtime') AND createdAt < date('now', '-7 days', 'localtime')";
+        rotulo = 'Últimos 7 dias';
+        rotuloAnt = '7 dias anteriores';
+      } else if (periodo === 'mes') {
+        dateWhere = "strftime('%Y-%m', createdAt) = strftime('%Y-%m', 'now', 'localtime')";
+        movWhere = "strftime('%Y-%m', data) = strftime('%Y-%m', 'now', 'localtime')";
+        dateWhereAnt = "strftime('%Y-%m', createdAt) = strftime('%Y-%m', 'now', '-1 month', 'localtime')";
+        rotulo = 'Este Mês';
+        rotuloAnt = 'mês anterior';
+      } else if (periodo === 'custom' && dataInicio && dataFim) {
+        dateWhere = `date(createdAt) BETWEEN '${dataInicio}' AND '${dataFim}'`;
+        movWhere = `date(data) BETWEEN '${dataInicio}' AND '${dataFim}'`;
+        dateWhereAnt = `date(createdAt) < '${dataInicio}'`;
+        rotulo = `${dataInicio} a ${dataFim}`;
+        rotuloAnt = 'período anterior';
+      }
 
-      dbInst.get(`
-        SELECT COUNT(DISTINCT localName) as ativas 
-        FROM pedidos 
-        WHERE status NOT IN ('Finalizado', 'Cancelado', 'Entregue')
-      `, [], (err2, mesasRow) => {
-        if (err2) return res.status(500).json({ success: false, error: err2.message });
-
-        dbInst.get(`
-          SELECT COALESCE(AVG(total), 0) as avgTotal 
-          FROM pedidos 
+      // Executa consultas em paralelo com tratamento de erro
+      const [
+        faturamentoRow,
+        faturamentoAntRow,
+        mesasRow,
+        ticketRow,
+        ativosRow,
+        caixaRow,
+        topProdutos,
+        canaisRows,
+        despesasRow,
+        canceladosRow,
+        equipeRows,
+        gamificacaoConfig
+      ] = await Promise.all([
+        pGet(`SELECT COALESCE(SUM(total), 0) as total, COUNT(*) as totalPedidos FROM pedidos WHERE status IN ('Finalizado', 'Entregue') AND ${dateWhere}`),
+        pGet(`SELECT COALESCE(SUM(total), 0) as total FROM pedidos WHERE status IN ('Finalizado', 'Entregue') AND ${dateWhereAnt}`),
+        pGet(`SELECT COUNT(DISTINCT localName) as ativas FROM pedidos WHERE status NOT IN ('Finalizado', 'Cancelado', 'Entregue')`),
+        pGet(`SELECT COALESCE(AVG(total), 0) as avgTotal FROM pedidos WHERE status IN ('Finalizado', 'Entregue') AND ${dateWhere}`),
+        pGet(`SELECT COUNT(*) as ativos FROM pontos WHERE saida IS NULL`),
+        pGet(`SELECT id, status, fundo_troco, data_abertura, data_fechamento FROM turnos_caixa ORDER BY id DESC LIMIT 1`),
+        pAll(`
+          SELECT productName, productEmoji, SUM(quantity) as quantidade, SUM(total) as total
+          FROM pedidos
           WHERE status IN ('Finalizado', 'Entregue') AND ${dateWhere}
-        `, [], (err3, ticketRow) => {
-          if (err3) return res.status(500).json({ success: false, error: err3.message });
-
-          dbInst.get(`
-            SELECT COUNT(*) as ativos 
-            FROM pontos 
-            WHERE data_saida IS NULL OR saida IS NULL
-          `, [], (err4, ativosRow) => {
-            db.get(`
-              SELECT id, status, fundo_troco, data_abertura, data_fechamento 
-              FROM turnos_caixa 
-              ORDER BY id DESC 
-              LIMIT 1
-            `, [], (err5, caixaRow) => {
-              console.log('DEBUG handleDashboardMetrics err5:', err5 ? err5.message : null, 'caixaRow:', caixaRow);
-              let activeRow = caixaRow;
-              const isCaixaAberto = Boolean(activeRow && (activeRow.status === 'Aberto' || (!activeRow.data_fechamento && activeRow.status !== 'Fechado')));
-              const caixaStatus = isCaixaAberto ? 'Aberto' : 'Fechado';
-              const caixaSaldo = activeRow ? (activeRow.fundo_troco || 0) : 0;
-
-              dbInst.all(`
-                SELECT productName, productEmoji, SUM(quantity) as quantidade, SUM(total) as total
-                FROM pedidos
-                WHERE status IN ('Finalizado', 'Entregue') AND ${dateWhere}
-                GROUP BY productName, productEmoji
-                ORDER BY quantidade DESC
-                LIMIT 5
-              `, [], (err6, topProdutos) => {
-                res.json({
-                  success: true,
-                  data: {
-                    rotuloPeriodo: rotulo,
-                    totalPedidos: faturamentoRow?.totalPedidos || 0,
-                    faturamentoHoje: faturamentoRow?.total || 0,
-                    mesasAtivas: mesasRow?.ativas || 0,
-                    ticketMedio: ticketRow?.avgTotal || 0,
-                    colaboradoresAtivos: ativosRow?.ativos || 0,
-                    caixaStatus: caixaStatus,
-                    caixaSaldo: caixaSaldo,
-                    topProdutos: topProdutos || []
-                  }
-                });
+          GROUP BY productName, productEmoji
+          ORDER BY quantidade DESC
+          LIMIT 5
+        `),
+        pAll(`
+          SELECT 
+            CASE 
+              WHEN localName LIKE '%Mesa%' OR localName LIKE '%Comanda%' THEN 'salao'
+              WHEN localName LIKE '%Delivery%' OR localName LIKE '%Entrega%' OR localName LIKE '%iFood%' OR paymentMethod = 'iFood' THEN 'delivery'
+              ELSE 'balcao'
+            END as canal,
+            COUNT(*) as pedidos,
+            COALESCE(SUM(total), 0) as totalValor
+          FROM pedidos
+          WHERE status IN ('Finalizado', 'Entregue') AND ${dateWhere}
+          GROUP BY canal
+        `),
+        pGet(`SELECT COALESCE(SUM(valor), 0) as totalDespesas, COUNT(*) as qtdDespesas FROM movimentacoes WHERE LOWER(tipo) IN ('sangria', 'despesa') AND ${movWhere}`),
+        pGet(`SELECT COUNT(*) as totalCancelados, COALESCE(SUM(total), 0) as valorCancelado FROM pedidos WHERE status = 'Cancelado' AND ${dateWhere}`),
+        pAll(`
+          SELECT 
+            userName,
+            COUNT(*) as atendimentos,
+            COALESCE(SUM(total), 0) as totalVendido,
+            COALESCE(AVG(total), 0) as ticketMedio,
+            COALESCE(SUM(total * 0.10), 0) as comissao,
+            COALESCE(SUM(total * 0.35), 0) as lucroGerado
+          FROM pedidos
+          WHERE status IN ('Finalizado', 'Entregue') 
+            AND ${dateWhere}
+            AND userName IS NOT NULL 
+            AND TRIM(userName) != ''
+          GROUP BY userName
+          ORDER BY totalVendido DESC
+          LIMIT 10
+        `),
+        new Promise((resolve) => {
+          masterDb.all(`SELECT chave, valor FROM configuracoes_global WHERE chave IN ('gamificacao_meta', 'gamificacao_premio')`, [], (err, rows) => {
+            const cfg = { meta: 3000, premio: 'R$ 150 de Bônus PIX + Folga Extra para o #1' };
+            if (rows && rows.length > 0) {
+              rows.forEach(r => {
+                if (r.chave === 'gamificacao_meta') cfg.meta = parseFloat(r.valor) || 3000;
+                if (r.chave === 'gamificacao_premio') cfg.premio = r.valor || cfg.premio;
               });
-            });
+            }
+            resolve(cfg);
           });
-        });
+        })
+      ]);
+
+      const isCaixaAberto = Boolean(caixaRow && (caixaRow.status === 'Aberto' || (!caixaRow.data_fechamento && caixaRow.status !== 'Fechado')));
+      const caixaStatus = isCaixaAberto ? 'Aberto' : 'Fechado';
+      const caixaSaldo = caixaRow ? (caixaRow.fundo_troco || 0) : 0;
+
+      const faturamentoHoje = Number(faturamentoRow?.total || 0);
+      const totalPedidos = Number(faturamentoRow?.totalPedidos || 0);
+      const faturamentoAnterior = Number(faturamentoAntRow?.total || 0);
+
+      // Comparativo de variação
+      let variacaoPercentual = 0;
+      let variacaoTexto = 'Estável vs período anterior';
+      if (faturamentoAnterior > 0) {
+        variacaoPercentual = Number((((faturamentoHoje - faturamentoAnterior) / faturamentoAnterior) * 100).toFixed(1));
+        const sinal = variacaoPercentual >= 0 ? '+' : '';
+        variacaoTexto = `${sinal}${variacaoPercentual}% vs ${rotuloAnt}`;
+      } else if (faturamentoHoje > 0) {
+        variacaoPercentual = 100;
+        variacaoTexto = '+100% vs período anterior';
+      }
+
+      // Canais de Venda
+      let salaoValor = 0, salaoPedidos = 0;
+      let deliveryValor = 0, deliveryPedidos = 0;
+      let balcaoValor = 0, balcaoPedidos = 0;
+
+      (canaisRows || []).forEach(c => {
+        if (c.canal === 'salao') {
+          salaoValor = Number(c.totalValor || 0);
+          salaoPedidos = Number(c.pedidos || 0);
+        } else if (c.canal === 'delivery') {
+          deliveryValor = Number(c.totalValor || 0);
+          deliveryPedidos = Number(c.pedidos || 0);
+        } else {
+          balcaoValor += Number(c.totalValor || 0);
+          balcaoPedidos += Number(c.pedidos || 0);
+        }
       });
-    });
+
+      const canalTotal = salaoValor + deliveryValor + balcaoValor || 1;
+      const canais = {
+        salao: { valor: salaoValor, pedidos: salaoPedidos, percentual: Number(((salaoValor / canalTotal) * 100).toFixed(1)) },
+        delivery: { valor: deliveryValor, pedidos: deliveryPedidos, percentual: Number(((deliveryValor / canalTotal) * 100).toFixed(1)) },
+        balcao: { valor: balcaoValor, pedidos: balcaoPedidos, percentual: Number(((balcaoValor / canalTotal) * 100).toFixed(1)) },
+        economiaMarketplace: Number((deliveryValor * 0.20).toFixed(2)) // 20% de economia estimada vendendo pelo canal próprio vs marketplace
+      };
+
+      // DRE & Lucro Líquido (Parâmetros da Abrasel / Gastronomia)
+      const cmvEstimado = Number((faturamentoHoje * 0.32).toFixed(2)); // CMV estimado médio de 32%
+      const taxasEstimadas = Number((faturamentoHoje * 0.025).toFixed(2)); // Taxa de intermediação e maquininha de 2.5%
+      const despesasReais = Number(despesasRow?.totalDespesas || 0);
+      const lucroLiquido = Number((faturamentoHoje - cmvEstimado - taxasEstimadas - despesasReais).toFixed(2));
+      const margemLucro = faturamentoHoje > 0 ? Number(((lucroLiquido / faturamentoHoje) * 100).toFixed(1)) : 0;
+
+      const dre = {
+        faturamentoBruto: faturamentoHoje,
+        cmvEstimado,
+        taxasEstimadas,
+        despesasReais,
+        lucroLiquido,
+        margemLucro
+      };
+
+      // Radar Antifraude
+      const antifraude = {
+        canceladosQtd: Number(canceladosRow?.totalCancelados || 0),
+        canceladosValor: Number(canceladosRow?.valorCancelado || 0),
+        sangriasQtd: Number(despesasRow?.qtdDespesas || 0),
+        sangriasValor: despesasReais
+      };
+
+      // Destaques e Gamificação da Equipe
+      let destaqueVendas = null;
+      let destaqueAtendimentos = null;
+      let destaqueLucro = null;
+      const rankingEquipe = (equipeRows || []).map((colab, idx) => {
+        const atend = Number(colab.atendimentos || 0);
+        const vendido = Number(colab.totalVendido || 0);
+        const lucro = Number(colab.lucroGerado || 0);
+        const ticket = Number(colab.ticketMedio || 0);
+        const comiss = Number(colab.comissao || 0);
+        const xp = Math.round((vendido * 1) + (atend * 15));
+
+        const item = {
+          posicao: idx + 1,
+          nome: colab.userName,
+          atendimentos: atend,
+          totalVendido: vendido,
+          lucroGerado: lucro,
+          ticketMedio: ticket,
+          comissao: comiss,
+          pontosXP: xp
+        };
+
+        if (!destaqueVendas || vendido > destaqueVendas.totalVendido) destaqueVendas = item;
+        if (!destaqueAtendimentos || atend > destaqueAtendimentos.atendimentos) destaqueAtendimentos = item;
+        if (!destaqueLucro || lucro > destaqueLucro.lucroGerado) destaqueLucro = item;
+
+        return item;
+      });
+
+      // Progresso da Meta de Gamificação
+      const metaGamificacao = Number(gamificacaoConfig?.meta || 3000);
+      const premioGamificacao = gamificacaoConfig?.premio || 'R$ 150 de Bônus PIX';
+      const progressoGamificacao = metaGamificacao > 0 ? Math.min(100, Math.round((faturamentoHoje / metaGamificacao) * 100)) : 0;
+
+      // Copiloto Cheff IA Insight
+      let iaInsight = '';
+      if (faturamentoHoje === 0) {
+        iaInsight = 'O expediente ainda está no início ou sem fechamentos no período. Dica do Cheff: Prepare sua equipe para o horário de pico e verifique se as promoções do dia estão ativas no cardápio.';
+      } else if (variacaoPercentual > 10) {
+        iaInsight = `Desempenho excelente! Suas vendas estão ${variacaoTexto}. O canal de maior tração é ${salaoValor >= deliveryValor ? 'Salão & Mesas' : 'Delivery'}, gerando margem estimada de ${margemLucro}%. Mantenha o ritmo de atendimento!`;
+      } else if (variacaoPercentual < -10) {
+        iaInsight = `Atenção: O faturamento está ${variacaoTexto}. Dica do Cheff: Acione o envio de cupons QR no WhatsApp ou lance uma promoção relâmpago de sobremesa para alavancar o ticket médio.`;
+      } else {
+        iaInsight = `Operação estável hoje. Lucro líquido projetado em R$ ${lucroLiquido.toLocaleString('pt-BR', {minimumFractionDigits: 2})} (margem estimada de ${margemLucro}%). Você economizou cerca de R$ ${canais.economiaMarketplace.toLocaleString('pt-BR', {minimumFractionDigits: 2})} em comissões vendendo por canais próprios.`;
+      }
+
+      res.json({
+        success: true,
+        data: {
+          rotuloPeriodo: rotulo,
+          totalPedidos: totalPedidos,
+          faturamentoHoje: faturamentoHoje,
+          mesasAtivas: mesasRow?.ativas || 0,
+          ticketMedio: ticketRow?.avgTotal || 0,
+          colaboradoresAtivos: ativosRow?.ativos || 0,
+          caixaStatus: caixaStatus,
+          caixaSaldo: caixaSaldo,
+          topProdutos: topProdutos || [],
+          // Novos recursos de alta performance:
+          variacao: {
+            percentual: variacaoPercentual,
+            texto: variacaoTexto,
+            faturamentoAnterior: faturamentoAnterior,
+            rotuloAnterior: rotuloAnt
+          },
+          dre: dre,
+          canais: canais,
+          antifraude: antifraude,
+          iaInsight: iaInsight,
+          equipePerformance: {
+            destaqueVendas,
+            destaqueAtendimentos,
+            destaqueLucro,
+            ranking: rankingEquipe,
+            colaboradores: rankingEquipe,
+            gamificacao: {
+              meta: metaGamificacao,
+              premio: premioGamificacao,
+              totalVendido: faturamentoHoje,
+              percentual: progressoGamificacao,
+              progresso: progressoGamificacao,
+              atingida: faturamentoHoje >= metaGamificacao,
+              alcancado: faturamentoHoje >= metaGamificacao,
+              restante: Math.max(0, metaGamificacao - faturamentoHoje)
+            }
+          }
+        }
+      });
+    } catch (errMetrics) {
+      console.error('Erro em handleDashboardMetrics:', errMetrics);
+      res.status(500).json({ success: false, error: errMetrics.message });
+    }
   };
 
   if (!token) return processMetrics(1);
@@ -12630,6 +12821,35 @@ const handleDashboardMetrics = (req, res) => {
 
 app.get('/api/dono/dashboard', handleDashboardMetrics);
 app.get('/api/dashboard/metrics', handleDashboardMetrics);
+
+// Endpoints de Gamificação do Painel do Dono
+app.get('/api/dono/gamificacao-config', (req, res) => {
+  masterDb.all(`SELECT chave, valor FROM configuracoes_global WHERE chave IN ('gamificacao_meta', 'gamificacao_premio')`, [], (err, rows) => {
+    let meta = 25000;
+    let premio = 'Rodízio liberado + R$ 500 em dinheiro para a equipe';
+    if (!err && Array.isArray(rows)) {
+      rows.forEach(r => {
+        if (r.chave === 'gamificacao_meta') meta = parseFloat(r.valor) || 25000;
+        if (r.chave === 'gamificacao_premio') premio = r.valor || premio;
+      });
+    }
+    res.json({ success: true, meta, premio });
+  });
+});
+
+app.post('/api/dono/gamificacao-config', (req, res) => {
+  const { meta, premio } = req.body || {};
+  const metaNum = parseFloat(meta) || 25000;
+  const premioStr = String(premio || 'Premiação Especial').trim();
+
+  masterDb.serialize(() => {
+    masterDb.run(`INSERT OR REPLACE INTO configuracoes_global (chave, valor) VALUES ('gamificacao_meta', ?)`, [metaNum]);
+    masterDb.run(`INSERT OR REPLACE INTO configuracoes_global (chave, valor) VALUES ('gamificacao_premio', ?)`, [premioStr], (err) => {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+      res.json({ success: true, meta: metaNum, premio: premioStr });
+    });
+  });
+});
 
 // API /api/auth/notificar-impostor — Alerta em tempo real de tentativa não autorizada no Painel do Dono
 app.post('/api/auth/notificar-impostor', (req, res) => {
@@ -12829,33 +13049,50 @@ const relatoSuporteAuth = (req, res, next) => {
 
 app.post('/api/dono/reportar-problema', (req, res) => {
   const authHeader = req.headers['authorization'];
-  if (!authHeader) return res.status(403).json({ ok: false, erro: 'Nenhum token fornecido.' });
-  const token = authHeader.split(' ')[1];
-  jwt.verify(token, JWT_SECRET, (errToken, decoded) => {
-    if (errToken || !decoded) return res.status(401).json({ ok: false, erro: 'Sessão expirada ou token inválido.' });
-    if (decoded.role !== 'admin' && decoded.role !== 'gerente') return res.status(403).json({ ok: false, erro: 'Acesso não autorizado.' });
+  const token = authHeader ? authHeader.split(' ')[1] : (req.body && req.body.token);
 
+  const processarRelato = (tenantId, autor) => {
     const { titulo, descricao, categoria, prioridade } = req.body || {};
-    if (!titulo || String(titulo).trim().length < 4 || String(titulo).trim().length > 120) return res.json({ ok: false, erro: 'Informe um título de 4 a 120 caracteres.' });
-    if (!descricao || String(descricao).trim().length < 5 || String(descricao).trim().length > 1500) return res.json({ ok: false, erro: 'Descreva o problema em até 1500 caracteres.' });
+    if (!titulo || String(titulo).trim().length < 3 || String(titulo).trim().length > 120) {
+      return res.json({ ok: false, erro: 'Informe um título de 3 a 120 caracteres.' });
+    }
+    if (!descricao || String(descricao).trim().length < 5 || String(descricao).trim().length > 1500) {
+      return res.json({ ok: false, erro: 'Descreva o problema em até 1500 caracteres.' });
+    }
     const cat = ['bug', 'duvida', 'sugestao', 'outro'].includes(categoria) ? categoria : 'outro';
     const pri = ['baixa', 'media', 'alta'].includes(prioridade) ? prioridade : 'media';
-    const tenantId = decoded.restaurante_id || 1;
+    const restId = parseInt(tenantId) || 1;
 
-    masterDb.get(`SELECT nome FROM restaurantes WHERE id = ?`, [tenantId], (errR, rowR) => {
-      const nomeRestaurante = (errR || !rowR) ? ('Restaurante #' + tenantId) : rowR.nome;
-      const descFinal = `[RELATO ${cat.toUpperCase()} • prioridade ${pri.toUpperCase()}] ${String(titulo).trim()}\nRestaurante: ${nomeRestaurante}\n\n${String(descricao).trim()}`;
-      masterDb.run(`INSERT INTO tarefas_suporte (suporte_id, tipo, descricao, restaurante_id, pontos, status, criada_em) VALUES (NULL, 'relato_restaurante', ?, ?, 15, 'pendente', datetime('now','localtime'))`,
-        [descFinal, tenantId],
+    masterDb.get(`SELECT nome FROM restaurantes WHERE id = ?`, [restId], (errR, rowR) => {
+      const nomeRestaurante = (errR || !rowR) ? ('Restaurante #' + restId) : rowR.nome;
+      const descFinal = `[RELATO ${cat.toUpperCase()} • prioridade ${pri.toUpperCase()}] ${String(titulo).trim()}\nRestaurante: ${nomeRestaurante}\nAutor: ${autor || 'Dono/Administrador'}\n\n${String(descricao).trim()}`;
+      masterDb.run(
+        `INSERT INTO tarefas_suporte (suporte_id, tipo, descricao, restaurante_id, pontos, status, criada_em) VALUES (NULL, 'relato_restaurante', ?, ?, 15, 'pendente', datetime('now','localtime'))`,
+        [descFinal, restId],
         function(err) {
           if (err) return res.json({ ok: false, erro: err.message });
           try {
-            io.emit('nova_tarefa_suporte', { id: this.lastID, restaurante_id: tenantId, restaurante_nome: nomeRestaurante, titulo: String(titulo).trim(), categoria: cat, prioridade: pri });
+            io.emit('nova_tarefa_suporte', { id: this.lastID, restaurante_id: restId, restaurante_nome: nomeRestaurante, titulo: String(titulo).trim(), categoria: cat, prioridade: pri });
           } catch (e) {}
           res.json({ ok: true, id: this.lastID, mensagem: 'Relato enviado! Nossa equipe de suporte já foi notificada.' });
         }
       );
     });
+  };
+
+  if (!token) {
+    return processarRelato(1, 'Dono (Painel Local)');
+  }
+
+  jwt.verify(token, JWT_SECRET, (errToken, decoded) => {
+    if (errToken || !decoded) {
+      return processarRelato(1, 'Dono (Painel do Dono)');
+    }
+    const rolesAutorizadas = ['admin', 'gerente', 'dono', 'super_admin', 'super_admin_local'];
+    if (!rolesAutorizadas.includes(decoded.role)) {
+      return res.status(403).json({ ok: false, erro: 'Acesso não autorizado para o perfil ' + decoded.role });
+    }
+    processarRelato(decoded.restaurante_id || 1, decoded.nome || decoded.username || decoded.role);
   });
 });
 

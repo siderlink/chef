@@ -146,11 +146,108 @@ async function carregarMetricas() {
       const subPed = document.getElementById('kpi-sub-total-pedidos');
       if (subPed) subPed.innerText = `${data.totalPedidos || 0} pedidos finalizados`;
 
-      // KPIs
+      // KPIs Principais
       if (faturamentoEl) faturamentoEl.innerText = formatCurrency(data.faturamentoHoje);
       if (mesasEl)       mesasEl.innerText = data.mesasAtivas || '0';
       if (ticketEl)      ticketEl.innerText = formatCurrency(data.ticketMedio);
       if (equipeEl)      equipeEl.innerText = data.colaboradoresAtivos || '0';
+
+      // ── Copiloto Cheff IA Insight ──
+      const iaText = document.getElementById('ia-insight-text');
+      if (iaText) {
+        iaText.innerText = data.iaInsight || 'Operação estável. Acompanhe os indicadores em tempo real para otimizar suas vendas.';
+      }
+
+      // ── Comparativo vs Período Anterior ──
+      const badgeVar = document.getElementById('kpi-badge-variacao');
+      if (badgeVar && data.variacao) {
+        const isPos = data.variacao.percentual >= 0;
+        badgeVar.style.background = isPos ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)';
+        badgeVar.style.color = isPos ? '#22c55e' : '#ef4444';
+        badgeVar.innerHTML = `<i class="ph-bold ph-trend-${isPos ? 'up' : 'down'}"></i> ${escHtml(data.variacao.texto)}`;
+      }
+
+      // ── Lucro Líquido & DRE ──
+      if (data.dre) {
+        const lucroEl = document.getElementById('kpi-lucro-liquido');
+        if (lucroEl) lucroEl.innerText = formatCurrency(data.dre.lucroLiquido);
+
+        const margemBadge = document.getElementById('kpi-margem-lucro-badge');
+        if (margemBadge) margemBadge.innerText = `Margem: ${data.dre.margemLucro}%`;
+
+        const cmvEl = document.getElementById('dre-cmv');
+        if (cmvEl) cmvEl.innerText = formatCurrency(data.dre.cmvEstimado);
+
+        const taxasEl = document.getElementById('dre-taxas');
+        if (taxasEl) taxasEl.innerText = formatCurrency(data.dre.taxasEstimadas);
+
+        const despesasEl = document.getElementById('dre-despesas');
+        if (despesasEl) despesasEl.innerText = formatCurrency(data.dre.despesasReais);
+      }
+
+      // ── Canais de Venda & Economia Marketplace ──
+      if (data.canais) {
+        const c = data.canais;
+        const valEcon = document.getElementById('val-economia-marketplace');
+        if (valEcon) valEcon.innerText = formatCurrency(c.economiaMarketplace || 0);
+
+        const barSalao = document.getElementById('bar-canal-salao');
+        const barDelivery = document.getElementById('bar-canal-delivery');
+        const barBalcao = document.getElementById('bar-canal-balcao');
+        if (barSalao) barSalao.style.width = `${Math.max(c.salao.percentual, 2)}%`;
+        if (barDelivery) barDelivery.style.width = `${Math.max(c.delivery.percentual, 2)}%`;
+        if (barBalcao) barBalcao.style.width = `${Math.max(c.balcao.percentual, 2)}%`;
+
+        const valSalao = document.getElementById('val-canal-salao');
+        if (valSalao) valSalao.innerText = formatCurrency(c.salao.valor);
+        const pctSalao = document.getElementById('pct-canal-salao');
+        if (pctSalao) pctSalao.innerText = `${c.salao.percentual}%`;
+        const pedSalao = document.getElementById('ped-canal-salao');
+        if (pedSalao) pedSalao.innerText = `${c.salao.pedidos} pedidos`;
+
+        const valDeliv = document.getElementById('val-canal-delivery');
+        if (valDeliv) valDeliv.innerText = formatCurrency(c.delivery.valor);
+        const pctDeliv = document.getElementById('pct-canal-delivery');
+        if (pctDeliv) pctDeliv.innerText = `${c.delivery.percentual}%`;
+        const pedDeliv = document.getElementById('ped-canal-delivery');
+        if (pedDeliv) pedDeliv.innerText = `${c.delivery.pedidos} entregas (100% margem)`;
+
+        const valBalc = document.getElementById('val-canal-balcao');
+        if (valBalc) valBalc.innerText = formatCurrency(c.balcao.valor);
+        const pctBalc = document.getElementById('pct-canal-balcao');
+        if (pctBalc) pctBalc.innerText = `${c.balcao.percentual}%`;
+        const pedBalc = document.getElementById('ped-canal-balcao');
+        if (pedBalc) pedBalc.innerText = `${c.balcao.pedidos} retiradas`;
+      }
+
+      // ── Radar Antifraude ──
+      if (data.antifraude) {
+        const af = data.antifraude;
+        const cancVal = document.getElementById('antifraude-cancelados-val');
+        if (cancVal) cancVal.innerText = formatCurrency(af.canceladosValor);
+        const cancQtd = document.getElementById('antifraude-cancelados-qtd');
+        if (cancQtd) cancQtd.innerText = `${af.canceladosQtd} pedidos cancelados`;
+
+        const sangVal = document.getElementById('antifraude-sangrias-val');
+        if (sangVal) sangVal.innerText = formatCurrency(af.sangriasValor);
+        const sangQtd = document.getElementById('antifraude-sangrias-qtd');
+        if (sangQtd) sangQtd.innerText = `${af.sangriasQtd} saídas de caixa`;
+
+        const badgeFraude = document.getElementById('badge-status-fraude');
+        if (badgeFraude) {
+          if (af.canceladosValor > 150 || af.canceladosQtd >= 4) {
+            badgeFraude.style.background = 'rgba(239,68,68,0.15)';
+            badgeFraude.style.color = '#ef4444';
+            badgeFraude.style.borderColor = 'rgba(239,68,68,0.3)';
+            badgeFraude.innerHTML = '⚠ Atenção aos Desvios';
+          } else {
+            badgeFraude.style.background = 'rgba(34,197,94,0.12)';
+            badgeFraude.style.color = '#22c55e';
+            badgeFraude.style.borderColor = 'rgba(34,197,94,0.3)';
+            badgeFraude.innerHTML = '✓ Operação Segura';
+          }
+        }
+      }
 
       // Meta
       if (metaInput) metaInput.value = metaVendas;
@@ -203,6 +300,14 @@ async function carregarMetricas() {
           rankingList.innerHTML = `<div style="text-align:center;color:var(--text-sub);padding:24px;font-size:var(--fs-md);">Nenhuma venda (${escHtml(data.rotuloPeriodo || 'período')}).</div>`;
         }
       }
+
+      // ─── Destaques da Equipe & Batalha de Vendas (Gamificação) ───
+      if (data.equipePerformance) {
+        renderizarEquipePerformance(data.equipePerformance);
+      }
+
+      // ─── Programa Indique & Ganhe Parceiros ───
+      initIndicacaoParceiros();
     }
   } catch (error) {
     console.error('Erro ao carregar métricas:', error);
@@ -211,6 +316,216 @@ async function carregarMetricas() {
     setLoader(false);
   }
 }
+
+// ═════════════════════════════════════════════════════════════════════
+// 🏆 DESTAQUES DA EQUIPE, GAMIFICAÇÃO & INDIQUE E GANHE
+// ═════════════════════════════════════════════════════════════════════
+let _cachedGamificacao = { meta: 25000, premio: 'Premiação especial para a equipe' };
+
+function renderizarEquipePerformance(perf) {
+  if (!perf) return;
+
+  // 1. Destaque Lucro
+  const dLucroNome = document.getElementById('destaque-lucro-nome');
+  const dLucroVal  = document.getElementById('destaque-lucro-val');
+  const dLucroSub  = document.getElementById('destaque-lucro-sub');
+  if (dLucroNome && dLucroVal) {
+    if (perf.destaqueLucro) {
+      dLucroNome.innerText = perf.destaqueLucro.nome;
+      dLucroVal.innerText  = formatCurrency(perf.destaqueLucro.lucroGerado);
+      if (dLucroSub) dLucroSub.innerText = `${perf.destaqueLucro.atendimentos} atendimentos concluídos`;
+    } else {
+      dLucroNome.innerText = 'Sem vendas no período';
+      dLucroVal.innerText  = 'R$ 0,00';
+      if (dLucroSub) dLucroSub.innerText = 'Aguardando pedidos fechados';
+    }
+  }
+
+  // 2. Destaque Atendimentos
+  const dAtendNome = document.getElementById('destaque-atendimentos-nome');
+  const dAtendVal  = document.getElementById('destaque-atendimentos-val');
+  const dAtendSub  = document.getElementById('destaque-atendimentos-sub');
+  if (dAtendNome && dAtendVal) {
+    if (perf.destaqueAtendimentos) {
+      dAtendNome.innerText = perf.destaqueAtendimentos.nome;
+      dAtendVal.innerText  = `${perf.destaqueAtendimentos.atendimentos} atendimentos`;
+      if (dAtendSub) dAtendSub.innerText = `Ticket médio de ${formatCurrency(perf.destaqueAtendimentos.ticketMedio)}`;
+    } else {
+      dAtendNome.innerText = 'Sem atendimentos';
+      dAtendVal.innerText  = '0 atendimentos';
+      if (dAtendSub) dAtendSub.innerText = 'Aguardando lançamentos da equipe';
+    }
+  }
+
+  // 3. Destaque Vendas (Volume Total)
+  const dVendasNome = document.getElementById('destaque-vendas-nome');
+  const dVendasVal  = document.getElementById('destaque-vendas-val');
+  const dVendasSub  = document.getElementById('destaque-vendas-sub');
+  if (dVendasNome && dVendasVal) {
+    if (perf.destaqueVendas) {
+      dVendasNome.innerText = perf.destaqueVendas.nome;
+      dVendasVal.innerText  = formatCurrency(perf.destaqueVendas.totalVendido);
+      if (dVendasSub) dVendasSub.innerText = `Comissão estimada: ${formatCurrency(perf.destaqueVendas.comissao)}`;
+    } else {
+      dVendasNome.innerText = 'Sem vendas no período';
+      dVendasVal.innerText  = 'R$ 0,00';
+      if (dVendasSub) dVendasSub.innerText = 'Volume total de faturamento';
+    }
+  }
+
+  // 4. Termômetro da Gamificação & Meta Coletiva
+  if (perf.gamificacao) {
+    _cachedGamificacao = perf.gamificacao;
+    const g = perf.gamificacao;
+    const badgeEl = document.getElementById('gamificacao-badge-percent');
+    const fillEl  = document.getElementById('gamificacao-progress-fill');
+    const atualEl = document.getElementById('gamificacao-atual-val');
+    const metaEl  = document.getElementById('gamificacao-meta-val');
+    const premioEl= document.getElementById('gamificacao-premio-txt');
+    const descEl  = document.getElementById('gamificacao-status-desc');
+
+    if (badgeEl) badgeEl.innerText = `${g.percentual}% Concluído`;
+    if (fillEl)  fillEl.style.width = `${Math.min(100, Math.max(g.percentual, 3))}%`;
+    if (atualEl) atualEl.innerText = formatCurrency(g.totalVendido);
+    if (metaEl)  metaEl.innerText  = formatCurrency(g.meta);
+    if (premioEl)premioEl.innerText= g.premio || 'Não configurado';
+
+    if (descEl) {
+      if (g.atingida) {
+        descEl.innerHTML = '<span style="color:#10b981; font-weight:800;">🎉 META CONQUISTADA! Prêmio desbloqueado para a equipe!</span>';
+      } else {
+        descEl.innerHTML = `Faltam apenas <strong style="color:var(--text);">${formatCurrency(g.restante)}</strong> para a equipe desbloquear o prêmio!`;
+      }
+    }
+  }
+
+  // 5. Ranking Individual de Produtividade dos Colaboradores
+  const containerRanking = document.getElementById('lista-ranking-colaboradores');
+  if (containerRanking) {
+    const colabs = perf.colaboradores || [];
+    if (colabs.length > 0) {
+      containerRanking.innerHTML = colabs.map((c, idx) => {
+        const medalhas = ['🥇', '🥈', '🥉'];
+        const medalha = medalhas[idx] || `${idx + 1}º`;
+        const corMedalha = idx === 0 ? '#f59e0b' : (idx === 1 ? '#94a3b8' : (idx === 2 ? '#b45309' : 'var(--text-sub)'));
+        const inicial = (c.nome || '?').charAt(0).toUpperCase();
+
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--border); gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 180px;">
+              <span style="font-size: 16px; font-weight: 900; color: ${corMedalha}; width: 24px; text-align: center;">${medalha}</span>
+              <div style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #fc4b15, #ff8c00); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; flex-shrink: 0;">
+                ${inicial}
+              </div>
+              <div style="min-width: 0;">
+                <div style="font-size: 14px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">${escHtml(c.nome)}</div>
+                <div style="font-size: 11.5px; color: var(--text-sub); display: flex; align-items: center; gap: 6px;">
+                  <span>${c.atendimentos} atendimentos</span>
+                  <span>•</span>
+                  <span>Ticket: ${formatCurrency(c.ticketMedio)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 18px; text-align: right; flex-wrap: wrap;">
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase;">Total Vendido</div>
+                <div style="font-size: 14.5px; font-weight: 800; color: var(--text);">${formatCurrency(c.totalVendido)}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #10b981; text-transform: uppercase;">Lucro Gerado</div>
+                <div style="font-size: 14.5px; font-weight: 900; color: #10b981;">${formatCurrency(c.lucroGerado)}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #f59e0b; text-transform: uppercase;">Comissão Est.</div>
+                <div style="font-size: 14.5px; font-weight: 800; color: #f59e0b;">${formatCurrency(c.comissao)}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      containerRanking.innerHTML = '<div style="text-align:center; color:var(--text-sub); padding:24px; font-size:13px;">Nenhum atendimento finalizado pela equipe no período selecionado.</div>';
+    }
+  }
+}
+
+window.abrirModalGamificacao = async function() {
+  const metaInp = document.getElementById('input-gamificacao-meta');
+  const premioInp = document.getElementById('input-gamificacao-premio');
+  if (metaInp && _cachedGamificacao.meta) metaInp.value = _cachedGamificacao.meta;
+  if (premioInp && _cachedGamificacao.premio) premioInp.value = _cachedGamificacao.premio;
+
+  try {
+    const res = await fetch('/api/dono/gamificacao-config', { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success) {
+        if (metaInp && data.meta) metaInp.value = data.meta;
+        if (premioInp && data.premio) premioInp.value = data.premio;
+      }
+    }
+  } catch (e) {}
+
+  abrirModal('modal-gamificacao-config');
+};
+
+window.salvarConfigGamificacao = async function() {
+  const metaVal = parseFloat(document.getElementById('input-gamificacao-meta')?.value) || 0;
+  const premioVal = (document.getElementById('input-gamificacao-premio')?.value || '').trim();
+
+  if (metaVal <= 0) {
+    return showToast('Informe uma meta válida em reais.', 'ph-warning');
+  }
+
+  try {
+    const res = await fetch('/api/dono/gamificacao-config', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ meta: metaVal, premio: premioVal })
+    });
+    const data = await res.json();
+    if (data.success) {
+      fecharModal('modal-gamificacao-config');
+      showToast('Gamificação salva com sucesso!', 'ph-check-circle', 'success');
+      carregarMetricas();
+    } else {
+      showToast(data.error || 'Erro ao salvar gamificação', 'ph-x-circle', 'error');
+    }
+  } catch (e) {
+    showToast('Erro de conexão ao salvar', 'ph-wifi-slash', 'error');
+  }
+};
+
+window.initIndicacaoParceiros = function() {
+  const restId = localStorage.getItem('restaurante_id') || '1';
+  const linkEl = document.getElementById('link-indicacao-parceiro-dono');
+  if (linkEl) {
+    linkEl.value = `${window.location.origin}/cadastro.html?ref=PARCEIRO-${restId}`;
+  }
+};
+
+window.copiarLinkIndicacaoDono = function() {
+  const linkEl = document.getElementById('link-indicacao-parceiro-dono');
+  if (!linkEl) return;
+  linkEl.select();
+  navigator.clipboard.writeText(linkEl.value).then(() => {
+    showToast('Link de indicação copiado com sucesso!', 'ph-copy', 'success');
+  }).catch(() => {
+    showToast('Não foi possível copiar automaticamente.', 'ph-warning');
+  });
+};
+
+window.compartilharIndicacaoWhatsAppDono = function() {
+  const restId = localStorage.getItem('restaurante_id') || '1';
+  const refLink = `${window.location.origin}/cadastro.html?ref=PARCEIRO-${restId}`;
+  const msg = encodeURIComponent(`Olá amigo! Tudo bem?\n\nEstou usando o sistema Chef Cozinha aqui no meu restaurante e recomendo muito para controle de mesas, comanda digital, delivery e fechamento de caixa sem erros.\n\nConsegui um convite exclusivo com 15 dias de teste 100% grátis e implantação prioritária para você:\n👉 ${refLink}\n\nVale muito a pena conhecer!`);
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
+};
+
+window.abrirModalRegrasIndicacao = function() {
+  abrirModal('modal-regras-indicacao');
+};
 
 // ─── Period Filters ───────────────────────────────────────────
 window.selecionarPeriodoDono = function(periodo, btnEl) {
@@ -2381,8 +2696,10 @@ const DONO_SECOES_DEF = [
   { id: 'sec-remoto-equipe', nome: '📱 Controle Remoto de Colaboradores', icon: 'ph-users', larguraDef: 'large' },
   { id: 'sec-marketing-vip', nome: '📢 Mensagens em Massa & Push (Marketing VIP)', icon: 'ph-megaphone', larguraDef: 'medium' },
   { id: 'sec-cupons', nome: '🎟️ Cupons QR & Promoções', icon: 'ph-ticket', larguraDef: 'medium' },
+  { id: 'sec-gamificacao-equipe', nome: '⚔️ Batalha de Vendas & Gamificação da Equipe', icon: 'ph-trophy', larguraDef: 'large' },
   { id: 'sec-meta-aviso', nome: '🎯 Meta Diária & Aviso à Equipe', icon: 'ph-target', larguraDef: 'large' },
-  { id: 'sec-ranking', nome: '🏆 Ranking de Produtos Mais Vendidos', icon: 'ph-trophy', larguraDef: 'medium' },
+  { id: 'sec-ranking', nome: '🏆 Ranking de Produtos Mais Vendidos', icon: 'ph-chart-line-up', larguraDef: 'medium' },
+  { id: 'sec-indicacao-parceiros', nome: '🤝 Indique & Ganhe Mensalidades Grátis', icon: 'ph-gift', larguraDef: 'large' },
   { id: 'sec-features', nome: '⚙️ Funcionalidades & Módulos Ativos', icon: 'ph-toggle-left', larguraDef: 'medium' },
   { id: 'sec-atividade', nome: '⚡ Feed de Atividade em Tempo Real', icon: 'ph-activity', larguraDef: 'large' }
 ];
@@ -2513,8 +2830,10 @@ window.aplicarDonoModularConfig = function(cfg = null) {
     'remoto-colabs': 'sec-remoto-equipe',
     'marketing': 'sec-marketing-vip',
     'cupons': 'sec-cupons',
+    'gamificacao-equipe': 'sec-gamificacao-equipe',
     'meta-aviso': 'sec-meta-aviso',
     'ranking': 'sec-ranking',
+    'indicacao-parceiros': 'sec-indicacao-parceiros',
     'funcionalidades': 'sec-features',
     'feed': 'sec-atividade'
   };

@@ -2057,6 +2057,19 @@ body {
   display: none;
 }
 
+/* Tablet: esconde a sidebar de Ações no painel de Mesas para dar mais espaço */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .left-actions {
+    display: none !important;
+  }
+  .workspace .main-workspace,
+  #mesas-section-container,
+  .mesas-container {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+}
+
 @media (max-width: 767px) {
 
   .workspace.active-tab-mesas .left-actions,

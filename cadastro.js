@@ -1,142 +1,142 @@
-// cadastro.js - Cadastro de Colaborador com Vínculo Explícito ao Restaurante
-let _targetRestauranteId = null;
-let _targetRestauranteNome = '';
+// cadastro.js — Cadastro de Colaborador via QR Code de Convite
+// O restaurante vem EXCLUSIVAMENTE do parâmetro na URL gerado pelo QR Code.
+// O colaborador NÃO escolhe cargo nem restaurante; isso é definido pelo gerente ao aprovar.
 
-const urlParams = new URLSearchParams(window.location.search);
-const ridFromUrl = urlParams.get('restaurante_id') || urlParams.get('id') || urlParams.get('codigo') || urlParams.get('slug');
+(function () {
+  'use strict';
 
-const socket = io();
+  /* ── Variáveis de estado ── */
+  let _restauranteId   = null;
+  let _restauranteNome = '';
 
-// Carregar e validar restaurante
-async function inicializarRestaurante() {
-  const badge = document.getElementById('badge-restaurante-alvo');
-  const groupSelect = document.getElementById('group-selecao-restaurante');
-  const labelNome = document.getElementById('label-restaurante-nome');
-  const select = document.getElementById('reg-restaurante-select');
+  /* ── Elementos DOM ── */
+  const elBadge      = document.getElementById('badge-restaurante');
+  const elBadgeErro  = document.getElementById('badge-erro-qr');
+  const elLabelNome  = document.getElementById('label-restaurante-nome');
+  const elCampos     = document.getElementById('campos-cadastro');
+  const elBtnReg     = document.getElementById('btn-register');
 
-  if (ridFromUrl) {
+  /* ── Socket.IO ── */
+  const socket = io();
+
+  /* ────────────────────────────────────────────
+     INICIALIZAÇÃO: lê o QR-code param e valida
+  ─────────────────────────────────────────────*/
+  async function inicializar() {
+    const params   = new URLSearchParams(window.location.search);
+    // Parâmetros suportados no link de convite
+    const ridRaw   = params.get('restaurante_id')
+                  || params.get('rid')
+                  || params.get('id')
+                  || params.get('codigo')
+                  || params.get('slug');
+
+    if (!ridRaw) {
+      // Sem parâmetro → exibe erro, esconde formulário
+      mostrarErroQR();
+      return;
+    }
+
     try {
-      const res = await fetch('/api/restaurante/info-publica?id=' + encodeURIComponent(ridFromUrl));
+      const res  = await fetch('/api/restaurante/info-publica?id=' + encodeURIComponent(ridRaw));
       const data = await res.json();
-      if (data && data.success && data.restaurante) {
-        _targetRestauranteId = data.restaurante.id;
-        _targetRestauranteNome = data.restaurante.nome;
-        localStorage.setItem('restaurante_id', String(_targetRestauranteId));
 
-        if (badge) badge.style.display = 'flex';
-        if (groupSelect) groupSelect.style.display = 'none';
-        if (labelNome) {
-          labelNome.innerHTML = `${_targetRestauranteNome} <span style="font-size:11px; color:#10b981; font-weight:700; margin-left:6px;">(Unidade #${_targetRestauranteId})</span>`;
-        }
+      if (data && data.success && data.restaurante) {
+        _restauranteId   = data.restaurante.id;
+        _restauranteNome = data.restaurante.nome;
+        localStorage.setItem('restaurante_id', String(_restauranteId));
+
+        if (elLabelNome) elLabelNome.textContent = _restauranteNome;
+        if (elBadge)     elBadge.style.display   = 'flex';
+        if (elBadgeErro) elBadgeErro.style.display = 'none';
+        if (elCampos)    elCampos.style.display   = 'block';
+      } else {
+        mostrarErroQR();
+      }
+    } catch (err) {
+      console.warn('[Cadastro] Erro ao consultar restaurante:', err);
+      mostrarErroQR();
+    }
+  }
+
+  function mostrarErroQR() {
+    if (elBadge)     elBadge.style.display    = 'none';
+    if (elBadgeErro) elBadgeErro.style.display = 'flex';
+    if (elCampos)    elCampos.style.display    = 'none';
+  }
+
+  /* ────────────────────────────────────────────
+     ENVIO DO CADASTRO
+  ─────────────────────────────────────────────*/
+  if (elBtnReg) {
+    elBtnReg.addEventListener('click', () => {
+      const nome    = (document.getElementById('reg-nome')?.value  || '').trim();
+      const usuario = (document.getElementById('reg-user')?.value  || '').trim();
+      const senha   = (document.getElementById('reg-pass')?.value  || '').trim();
+
+      if (!_restauranteId) {
+        alert('Link de convite inválido. Use o QR Code do seu restaurante.');
         return;
       }
-    } catch(e) {
-      console.warn('[Cadastro] Erro ao buscar dados do restaurante da URL:', e);
-    }
-  }
 
-  // Se não veio na URL ou falhou, exibe seletor de restaurantes
-  try {
-    const res = await fetch('/api/restaurante/info-publica?todos=1');
-    const data = await res.json();
-    if (select && data && data.restaurantes && data.restaurantes.length > 0) {
-      select.innerHTML = '<option value="">-- Escolha o Restaurante / Empresa --</option>';
-      data.restaurantes.forEach(r => {
-        select.innerHTML += `<option value="${r.id}">${r.nome} (Código #${r.id})</option>`;
-      });
-
-      if (badge) badge.style.display = 'none';
-      if (groupSelect) groupSelect.style.display = 'block';
-
-      select.addEventListener('change', () => {
-        const val = select.value;
-        if (val) {
-          _targetRestauranteId = parseInt(val, 10);
-          _targetRestauranteNome = select.options[select.selectedIndex].text.split('(')[0].trim();
-          localStorage.setItem('restaurante_id', String(_targetRestauranteId));
-        } else {
-          _targetRestauranteId = null;
-          _targetRestauranteNome = '';
-        }
-      });
-
-      // Se há apenas 1 restaurante no sistema, pré-seleciona
-      if (data.restaurantes.length === 1) {
-        select.value = data.restaurantes[0].id;
-        _targetRestauranteId = data.restaurantes[0].id;
-        _targetRestauranteNome = data.restaurantes[0].nome;
+      if (!nome || !usuario || !senha) {
+        alert('Preencha nome, usuário e senha antes de continuar.');
+        return;
       }
-    } else {
-      if (groupSelect) groupSelect.style.display = 'block';
-      if (select) select.innerHTML = '<option value="1">Restaurante Principal (Unidade #1)</option>';
-      _targetRestauranteId = 1;
-      _targetRestauranteNome = 'Restaurante Principal';
+
+      if (senha.length < 4) {
+        alert('A senha deve ter pelo menos 4 caracteres.');
+        return;
+      }
+
+      // Desabilita botão e mostra loading
+      elBtnReg.disabled   = true;
+      elBtnReg.innerHTML  = '<span class="spin" style="display:inline-block;animation:spin 0.8s infinite linear;"><i class="ph ph-spinner-gap"></i></span> Enviando...';
+
+      // O cargo será definido pelo gerente na aprovação
+      socket.emit('cadastro_funcionario', {
+        nome,
+        usuario,
+        senha,
+        cargo: 'Colaborador',   // placeholder; gerente define ao aprovar
+        pin: null,
+        restaurante_id: _restauranteId
+      });
+    });
+  }
+
+  /* ────────────────────────────────────────────
+     RESPOSTAS DO SERVIDOR
+  ─────────────────────────────────────────────*/
+  socket.on('cadastro_sucesso', (data) => {
+    const nomeRest = (data && data.restaurante_nome) || _restauranteNome || 'Restaurante #' + _restauranteId;
+
+    // Atualiza view de sucesso
+    const elSuccessNome = document.getElementById('success-rest-nome');
+    const elSubtitle    = document.getElementById('success-subtitle');
+
+    if (elSuccessNome) elSuccessNome.textContent = nomeRest;
+    if (elSubtitle) {
+      elSubtitle.innerHTML =
+        `Sua solicitação foi enviada com sucesso para <strong>${nomeRest}</strong>.<br>
+         Aguarde o gerente aprovar seu acesso para conseguir entrar.`;
     }
-  } catch (err) {
-    if (groupSelect) groupSelect.style.display = 'block';
-    if (select) select.innerHTML = '<option value="1">Restaurante Principal (Unidade #1)</option>';
-    _targetRestauranteId = 1;
-    _targetRestauranteNome = 'Restaurante Principal';
-  }
-}
 
-document.addEventListener('DOMContentLoaded', inicializarRestaurante);
-
-document.getElementById('btn-register').onclick = () => {
-  const nome = document.getElementById('reg-nome').value.trim();
-  const usuario = document.getElementById('reg-user').value.trim();
-  const senha = document.getElementById('reg-pass').value.trim();
-  const cargo = document.getElementById('reg-cargo') ? document.getElementById('reg-cargo').value : 'Garçom';
-  const pin = document.getElementById('reg-pin') ? document.getElementById('reg-pin').value.trim() : '';
-
-  if (!_targetRestauranteId) {
-    alert('Por favor, selecione para qual restaurante você está se cadastrando!');
-    document.getElementById('reg-restaurante-select')?.focus();
-    return;
-  }
-
-  if (!nome || !usuario || !senha) {
-    alert('Por favor, preencha nome, usuário e senha!');
-    return;
-  }
-
-  if (pin && (pin.length < 4 || isNaN(pin))) {
-    alert('O PIN deve conter entre 4 e 6 números!');
-    return;
-  }
-
-  const btn = document.getElementById('btn-register');
-  btn.innerHTML = '<i class="ph ph-spinner-gap" style="animation: spin 1s infinite linear;"></i> ENVIANDO...';
-  btn.disabled = true;
-
-  socket.emit('cadastro_funcionario', {
-    nome,
-    usuario,
-    senha,
-    cargo,
-    pin: pin || null,
-    restaurante_id: _targetRestauranteId
+    // Troca de view
+    const viewReg     = document.getElementById('register-view');
+    const viewSuccess = document.getElementById('success-view');
+    if (viewReg)     viewReg.style.display     = 'none';
+    if (viewSuccess) viewSuccess.style.display = 'flex';
   });
-};
 
-socket.on('cadastro_sucesso', (data) => {
-  document.getElementById('register-view').style.display = 'none';
-  document.getElementById('success-view').style.display = 'flex';
-  
-  const restNome = (data && data.restaurante_nome) || _targetRestauranteNome || 'Restaurante #' + _targetRestauranteId;
-  const elRestNome = document.getElementById('success-rest-nome');
-  if (elRestNome) {
-    elRestNome.textContent = restNome;
-  }
-  const sub = document.getElementById('success-subtitle');
-  if (sub) {
-    sub.innerHTML = `Sua solicitação de acesso foi enviada com sucesso para <strong>${restNome}</strong>.<br>Aguarde o gerente ou caixa aprovar o seu perfil para entrar.`;
-  }
-});
+  socket.on('cadastro_erro', (msg) => {
+    alert('❌ ' + (msg || 'Ocorreu um erro. Tente novamente.'));
+    if (elBtnReg) {
+      elBtnReg.disabled  = false;
+      elBtnReg.innerHTML = 'Enviar Cadastro';
+    }
+  });
 
-socket.on('cadastro_erro', (msg) => {
-  alert('❌ ' + msg);
-  const btn = document.getElementById('btn-register');
-  btn.innerHTML = 'Enviar Cadastro';
-  btn.disabled = false;
-});
+  /* ── Inicializa ao carregar ── */
+  document.addEventListener('DOMContentLoaded', inicializar);
+})();

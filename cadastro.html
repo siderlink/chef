@@ -3,18 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cadastro - Garçom</title>
+  <title>Cadastro de Colaborador - Chef Cozinha</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="icon" href="/icons/icon.ico">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#fc4b15">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Chef Cozinha">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    
-    body { 
-      font-family: 'Inter', sans-serif; 
+
+    body {
+      font-family: 'Inter', sans-serif;
       background-color: #0b0f19;
       color: #ffffff;
       min-height: 100dvh;
@@ -61,14 +68,14 @@
       flex-direction: column;
       justify-content: center;
     }
-    
+
     .glass-panel {
       background: rgba(255, 255, 255, 0.03);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 20px;
-      padding: 28px 20px;
+      padding: 32px 24px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
       display: flex;
       flex-direction: column;
@@ -77,14 +84,14 @@
     }
 
     .logo-container {
-      width: 60px;
-      height: 60px;
+      width: 64px;
+      height: 64px;
       background: linear-gradient(135deg, #ff6b3d 0%, #fc4b15 100%);
-      border-radius: 16px;
+      border-radius: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
       box-shadow: 0 10px 25px rgba(252, 75, 21, 0.4);
       transform: rotate(-5deg);
       transition: transform 0.3s;
@@ -97,10 +104,10 @@
       color: white;
     }
 
-    h2 { 
-      font-size: 36px; 
-      font-weight: 700; 
-      margin-bottom: 8px; 
+    h2 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 6px;
       text-align: center;
       background: linear-gradient(to right, #ffffff, #a0aec0);
       -webkit-background-clip: text;
@@ -108,61 +115,103 @@
     }
     p.subtitle {
       color: #94a3b8;
-      font-size: 18px;
-      margin-bottom: 28px;
+      font-size: 16px;
+      margin-bottom: 24px;
       text-align: center;
+      line-height: 1.5;
     }
-    
+
+    /* Restaurant badge */
+    .rest-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      background: rgba(16,185,129,0.08);
+      border: 1.5px solid rgba(16,185,129,0.25);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 22px;
+    }
+    .rest-badge-icon {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: rgba(16,185,129,0.15);
+      display: flex; align-items: center; justify-content: center;
+      color: #10b981; font-size: 22px;
+      flex-shrink: 0;
+    }
+    .rest-badge-info { flex: 1; min-width: 0; }
+    .rest-badge-label { font-size: 10px; color: #10b981; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .rest-badge-nome { color: #ffffff; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Error badge when no QR */
+    .error-badge {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      width: 100%;
+      background: rgba(239,68,68,0.08);
+      border: 1.5px solid rgba(239,68,68,0.25);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 22px;
+    }
+    .error-badge i { color: #ef4444; font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+    .error-badge-text { font-size: 13px; color: #fca5a5; line-height: 1.5; }
+    .error-badge-text strong { color: #f87171; display: block; margin-bottom: 3px; font-size: 14px; }
+
     .input-group {
       width: 100%;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       position: relative;
     }
-    
+
     .input-icon {
       position: absolute;
       left: 18px;
       top: 50%;
       transform: translateY(-50%);
       color: #64748b;
-      font-size: 28px;
+      font-size: 26px;
       transition: color 0.3s;
+      pointer-events: none;
     }
 
     .login-input {
       width: 100%;
-      padding: 20px 16px 20px 56px;
+      padding: 18px 16px 18px 54px;
       background: rgba(0, 0, 0, 0.2);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 16px;
+      border-radius: 14px;
       color: #ffffff;
-      font-size: 20px;
+      font-size: 18px;
       font-family: 'Inter', sans-serif;
       outline: none;
       transition: all 0.3s ease;
     }
     .login-input::placeholder { color: #64748b; }
-    .login-input:focus { 
+    .login-input:focus {
       border-color: #fc4b15;
       background: rgba(0, 0, 0, 0.4);
       box-shadow: 0 0 0 4px rgba(252, 75, 21, 0.1);
     }
-    .login-input:focus + .input-icon, 
-    .login-input:not(:placeholder-shown) + .input-icon {
+    .login-input:focus ~ .input-icon,
+    .login-input:not(:placeholder-shown) ~ .input-icon {
       color: #fc4b15;
     }
-    
+
     .btn-primary {
       width: 100%;
-      padding: 20px;
+      padding: 18px;
       background: linear-gradient(135deg, #ff6b3d 0%, #fc4b15 100%);
       color: white;
       border: none;
-      border-radius: 16px;
-      font-size: 22px;
+      border-radius: 14px;
+      font-size: 20px;
       font-weight: 700;
       cursor: pointer;
-      margin-top: 10px;
+      margin-top: 8px;
       box-shadow: 0 10px 20px rgba(252, 75, 21, 0.3);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
@@ -172,21 +221,25 @@
       content: '';
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+      background: linear-gradient(to bottom, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
       opacity: 0;
       transition: opacity 0.3s;
     }
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 15px 25px rgba(252, 75, 21, 0.4);
-    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 25px rgba(252, 75, 21, 0.4); }
     .btn-primary:hover::after { opacity: 1; }
     .btn-primary:active { transform: translateY(1px); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .spin { display: inline-block; animation: spin 0.8s infinite linear; }
 
     .login-link {
-      margin-top: 24px;
+      margin-top: 22px;
       color: #94a3b8;
-      font-size: 17px;
+      font-size: 15px;
     }
     .login-link a {
       color: #fc4b15;
@@ -196,9 +249,9 @@
     }
     .login-link a:hover { color: #ff8560; text-decoration: underline; }
 
-    /* Success View Animations */
+    /* Success View */
     #success-view { display: none; }
-    
+
     .success-icon-container {
       position: relative;
       width: 100px; height: 100px;
@@ -212,7 +265,7 @@
       animation: pulse-green 2s infinite;
     }
     .success-circle i {
-      font-size: 50px;
+      font-size: 52px;
       color: #3ab55b;
       animation: pop-in 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
       opacity: 0;
@@ -228,104 +281,97 @@
       to { opacity: 1; transform: scale(1); }
     }
 
+    .info-box {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      text-align: left;
+      width: 100%;
+    }
+    .info-box-label { font-size: 11px; color: #94a3b8; margin-bottom: 4px; }
+    .info-box-value { font-size: 16px; font-weight: 800; color: #10b981; }
+    .info-box-status { font-size: 11px; color: #94a3b8; margin-top: 8px; }
+    .info-box-status span { color: #f59e0b; font-weight: 700; }
+
     .btn-secondary {
-      padding: 16px 32px;
-      background: rgba(255, 255, 255, 0.1);
+      display: inline-block;
+      padding: 14px 28px;
+      background: rgba(255, 255, 255, 0.08);
       color: #ffffff;
       text-decoration: none;
-      border-radius: 16px;
+      border-radius: 14px;
       font-weight: 600;
+      font-size: 15px;
       transition: all 0.3s;
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.14);
       transform: translateY(-2px);
     }
-
   </style>
-  <script src="/locales.js"></script>
-  <script src="/i18n.js"></script>
-<link rel="icon" href="/icons/icon.ico">
-  <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#fc4b15">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Chef Cozinha">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
   <script src="/socket.io.min.js"></script>
-  </head>
+</head>
 <body>
-  
-<body>
-  
+
   <div class="bg-orb orb-1"></div>
   <div class="bg-orb orb-2"></div>
 
   <div id="app">
-    
+
     <!-- REGISTER VIEW -->
     <div id="register-view" class="glass-panel">
       <div class="logo-container">
         <i class="ph-bold ph-chef-hat"></i>
       </div>
-      <h2>Criar Conta</h2>
-      <p class="subtitle">Junte-se à equipe de atendimento</p>
-      
-      <!-- IDENTIFICAÇÃO DO RESTAURANTE DESTINO -->
-      <div id="badge-restaurante-alvo" style="background: rgba(16,185,129,0.1); border: 1.5px solid rgba(16,185,129,0.3); border-radius: 14px; padding: 12px 14px; margin-bottom: 18px; width: 100%; display: none; align-items: center; gap: 12px; box-sizing: border-box;">
-        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16,185,129,0.2); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 20px; flex-shrink: 0;">
+      <h2>Entrar para a Equipe</h2>
+      <p class="subtitle">Cadastro exclusivo para colaboradores</p>
+
+      <!-- Badge do Restaurante (vem do QR Code) -->
+      <div class="rest-badge" id="badge-restaurante">
+        <div class="rest-badge-icon">
           <i class="ph-bold ph-storefront"></i>
         </div>
-        <div style="flex: 1; min-width: 0;">
-          <div style="font-size: 11px; color: #10b981; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Vincular ao Restaurante</div>
-          <div id="label-restaurante-nome" style="color: #ffffff; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Identificando...</div>
+        <div class="rest-badge-info">
+          <div class="rest-badge-label">Você está se cadastrando em</div>
+          <div class="rest-badge-nome" id="label-restaurante-nome">Identificando...</div>
         </div>
-        <i class="ph-bold ph-seal-check" style="color: #10b981; font-size: 22px;"></i>
+        <i class="ph-bold ph-seal-check" style="color:#10b981;font-size:22px;"></i>
       </div>
 
-      <!-- SELETOR SE ACESSADO SEM QUERY PARAM -->
-      <div class="input-group" id="group-selecao-restaurante" style="display: none;">
-        <label style="display: block; font-size: 12px; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">Qual restaurante você trabalha?</label>
-        <select id="reg-restaurante-select" class="login-input" style="padding-left: 16px; font-size: 15px; appearance: auto;">
-          <option value="">Carregando restaurantes...</option>
-        </select>
+      <!-- Erro: sem QR Code -->
+      <div class="error-badge" id="badge-erro-qr" style="display:none;">
+        <i class="ph-bold ph-warning"></i>
+        <div class="error-badge-text">
+          <strong>Link de convite inválido</strong>
+          Use o QR Code de convite do seu restaurante para acessar esta página. Peça ao gerente o link correto.
+        </div>
       </div>
 
-      <div class="input-group">
-        <input type="text" id="reg-nome" class="login-input" placeholder="Seu Nome Completo">
-        <i class="ph ph-user input-icon"></i>
-      </div>
-      
-      <div class="input-group">
-        <input type="text" id="reg-user" class="login-input" placeholder="Usuário para Login">
-        <i class="ph ph-identification-badge input-icon"></i>
-      </div>
-      
-      <div class="input-group">
-        <input type="password" id="reg-pass" class="login-input" placeholder="Crie uma Senha de Acesso">
-        <i class="ph ph-lock-key input-icon"></i>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;">
+      <!-- Campos simplificados: apenas Nome, Usuário e Senha -->
+      <div id="campos-cadastro" style="width:100%;">
         <div class="input-group">
-          <select id="reg-cargo" class="login-input" style="padding: 16px 12px; font-size: 15px; appearance: auto;">
-            <option value="Garçom">Garçom</option>
-            <option value="Caixa">Caixa / PDV</option>
-            <option value="Cozinha">Cozinha / Bar</option>
-            <option value="Gerente">Gerente</option>
-            <option value="Atendente">Atendente</option>
-          </select>
+          <input type="text" id="reg-nome" class="login-input" placeholder="Seu Nome Completo" autocomplete="name">
+          <i class="ph ph-user input-icon"></i>
         </div>
+
         <div class="input-group">
-          <input type="password" id="reg-pin" class="login-input" placeholder="PIN (4-6 dígitos)" maxlength="6" style="padding: 16px 12px; font-size: 15px; text-align: center;">
+          <input type="text" id="reg-user" class="login-input" placeholder="Usuário para Login" autocomplete="username" autocorrect="off" autocapitalize="none">
+          <i class="ph ph-identification-badge input-icon"></i>
         </div>
+
+        <div class="input-group">
+          <input type="password" id="reg-pass" class="login-input" placeholder="Crie uma Senha de Acesso" autocomplete="new-password">
+          <i class="ph ph-lock-key input-icon"></i>
+        </div>
+
+        <button class="btn-primary" id="btn-register">Enviar Cadastro</button>
       </div>
-      
-      <button class="btn-primary" id="btn-register">Enviar Cadastro</button>
-      
+
       <div class="login-link">
-        Já faz parte da equipe? <a href="/login.html">Faça Login</a>
+        Já faz parte da equipe? <a href="/painel-funcionario.html">Faça Login</a>
       </div>
     </div>
 
@@ -337,22 +383,21 @@
         </div>
       </div>
       <h2>Cadastro Enviado!</h2>
-      <p class="subtitle" id="success-subtitle" style="margin-bottom: 30px; line-height: 1.6;">
-        Sua solicitação de acesso foi enviada com sucesso.<br>
-        O gerente do restaurante receberá o alerta para aprovar o seu perfil.
+      <p class="subtitle" id="success-subtitle" style="margin-bottom: 28px; line-height: 1.6;">
+        Sua solicitação foi enviada com sucesso.<br>
+        Aguarde o gerente aprovar seu acesso.
       </p>
-      <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px 18px; margin-bottom: 26px; text-align: left; width: 100%; box-sizing: border-box;">
-        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Restaurante Vinculado:</div>
-        <div id="success-rest-nome" style="font-size: 16px; font-weight: 800; color: #10b981;">--</div>
-        <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">Status Atual: <span style="color: #f59e0b; font-weight: 700;">Aguardando Aprovação</span></div>
+      <div class="info-box">
+        <div class="info-box-label">Restaurante Vinculado:</div>
+        <div class="info-box-value" id="success-rest-nome">--</div>
+        <div class="info-box-status">Status: <span>Aguardando Aprovação</span></div>
       </div>
-      <a href="/login.html" class="btn-secondary">Ir para a Tela de Login</a>
+      <a href="/painel-funcionario.html" class="btn-secondary">Ir para o Login</a>
     </div>
+
   </div>
 
-<script src="/fullscreen.js"></script>
-<script src="tracking.js"></script>
-<script src="cadastro.js"></script>
+  <script src="/fullscreen.js"></script>
+  <script src="cadastro.js"></script>
 </body>
 </html>
-

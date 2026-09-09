@@ -1624,20 +1624,173 @@
       .dono-section.dono-sec-half { grid-column: span 2 !important; }
       .dono-section.dono-sec-third { grid-column: span 1 !important; }
 
-      .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 14px; }
+      .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) !important; gap: 14px; }
       .kpi-card.full { grid-column: span 2 !important; }
-      .remote-grid { grid-template-columns: repeat(4, 1fr) !important; }
-      div[style*="grid-template-columns: repeat(3, 1fr)"] { grid-template-columns: repeat(6, 1fr) !important; }
+      .remote-grid { grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)) !important; }
+      .terminal-acoes-grid,
+      div[style*="grid-template-columns: repeat(3, 1fr)"] {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+        gap: 10px !important;
+      }
 
-      /* Modos personalizados pelo dono */
+      /* ─── Modos Personalizados de Layout do Dono (Sem Cortes) ─── */
+      /* Modo Compacto: densidade perfeita sem cortar textos ou valores */
+      body[data-layout-dono="compacto"] {
+        --fs-kpi: 22px;
+      }
       body[data-layout-dono="compacto"] main {
-        max-width: 860px !important;
-        grid-template-columns: repeat(2, 1fr) !important;
+        max-width: 940px !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+        padding: 16px 14px 60px !important;
+      }
+      body[data-layout-dono="compacto"] .dono-section {
+        padding: 14px !important;
+        border-radius: 16px !important;
       }
       body[data-layout-dono="compacto"] .dono-section.dono-sec-half { grid-column: span 1 !important; }
+      body[data-layout-dono="compacto"] .dono-section.dono-sec-full { grid-column: 1 / -1 !important; }
+      body[data-layout-dono="compacto"] .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+      }
+      body[data-layout-dono="compacto"] .kpi-card {
+        padding: 12px 14px !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+      }
+      body[data-layout-dono="compacto"] .kpi-card.full {
+        grid-column: 1 / -1 !important;
+      }
+      body[data-layout-dono="compacto"] .kpi-label {
+        font-size: 10.5px !important;
+        margin-bottom: 4px !important;
+      }
+      body[data-layout-dono="compacto"] .kpi-icon {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 15px !important;
+      }
+      body[data-layout-dono="compacto"] .kpi-value {
+        font-size: clamp(16px, 2vw, 22px) !important;
+        letter-spacing: -0.5px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      body[data-layout-dono="compacto"] .kpi-sub {
+        font-size: 11px !important;
+      }
+      body[data-layout-dono="compacto"] .remote-grid {
+        grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)) !important;
+        gap: 8px !important;
+      }
+      body[data-layout-dono="compacto"] .remote-btn {
+        padding: 12px 8px !important;
+        min-height: 68px !important;
+      }
+      body[data-layout-dono="compacto"] .remote-btn .rb-label {
+        font-size: 12px !important;
+      }
+      body[data-layout-dono="compacto"] .remote-btn .rb-sub {
+        display: none !important;
+      }
+      body[data-layout-dono="compacto"] .terminal-acoes-grid,
+      body[data-layout-dono="compacto"] div[style*="grid-template-columns: repeat(3, 1fr)"] {
+        grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)) !important;
+        gap: 8px !important;
+      }
+      body[data-layout-dono="compacto"] .colab-action-btn {
+        padding: 8px 4px !important;
+        min-height: 48px !important;
+      }
+      body[data-layout-dono="compacto"] .colab-action-btn span {
+        font-size: 10.5px !important;
+        line-height: 1.2 !important;
+      }
 
+      /* Modo Confortável: proporção visual elegante e equilibrada */
+      body[data-layout-dono="confortavel"] {
+        --fs-kpi: 28px;
+      }
+      body[data-layout-dono="confortavel"] main {
+        max-width: 1400px !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 18px !important;
+      }
+      @media (min-width: 1360px) {
+        body[data-layout-dono="confortavel"] main {
+          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+      }
+      body[data-layout-dono="confortavel"] .dono-section.dono-sec-half { grid-column: span 1 !important; }
+      @media (min-width: 1360px) {
+        body[data-layout-dono="confortavel"] .dono-section.dono-sec-half { grid-column: span 2 !important; }
+      }
+      body[data-layout-dono="confortavel"] .dono-section.dono-sec-full { grid-column: 1 / -1 !important; }
+      body[data-layout-dono="confortavel"] .kpi-grid {
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) !important;
+        gap: 14px !important;
+      }
+      body[data-layout-dono="confortavel"] .kpi-card {
+        padding: 16px 18px !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+      }
+      body[data-layout-dono="confortavel"] .kpi-value {
+        font-size: clamp(18px, 2.2vw, 28px) !important;
+        letter-spacing: -0.5px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      body[data-layout-dono="confortavel"] .remote-grid {
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+        gap: 12px !important;
+      }
+      body[data-layout-dono="confortavel"] .terminal-acoes-grid,
+      body[data-layout-dono="confortavel"] div[style*="grid-template-columns: repeat(3, 1fr)"] {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+        gap: 10px !important;
+      }
+
+      /* Modo Dashboard: tela cheia executiva */
       body[data-layout-dono="dashboard"] main {
         max-width: 1600px !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 20px !important;
+      }
+      body[data-layout-dono="dashboard"] .kpi-value {
+        font-size: clamp(20px, 2.5vw, 32px) !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+
+      /* Proteção Geral Contra Cortes de Texto e Overflow */
+      .kpi-card, .dono-section, .remote-btn, .colab-action-btn {
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+      }
+      .kpi-value {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        min-width: 0 !important;
+      }
+      .colab-action-btn {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        word-break: break-word !important;
+        min-width: 0 !important;
+      }
+      .colab-action-btn span {
+        white-space: normal !important;
+        word-break: break-word !important;
       }
 
       .modal-overlay {
@@ -1882,11 +2035,35 @@
       </div>
     </div>
 
+    <!-- Copiloto Cheff IA — Briefing Executivo -->
+    <div class="dono-section dono-sec-full" data-secao="ia-briefing" title="Copiloto Cheff IA" style="background: linear-gradient(135deg, rgba(252,75,21,0.08) 0%, rgba(139,92,246,0.12) 100%); border: 1.5px solid rgba(139,92,246,0.3); border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #fc4b15, #8b5cf6); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; box-shadow: 0 4px 12px rgba(252,75,21,0.3);">
+            <i class="ph-bold ph-sparkle"></i>
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <strong style="font-size: 15px; color: var(--text);">Copiloto Cheff IA</strong>
+              <span style="background: rgba(139,92,246,0.2); color: #c084fc; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid rgba(139,92,246,0.3);">Inteligência Ativa</span>
+            </div>
+            <span style="font-size: 12px; color: var(--text-sub);">Diagnóstico e recomendações preditivas em tempo real</span>
+          </div>
+        </div>
+        <button type="button" onclick="carregarMetricas()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-sub); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          <i class="ph-bold ph-arrows-clockwise"></i> Atualizar Análise
+        </button>
+      </div>
+      <p id="ia-insight-text" style="font-size: 13.5px; color: var(--text); line-height: 1.6; margin: 0; background: rgba(0,0,0,0.18); padding: 12px 14px; border-radius: 10px; border-left: 3px solid var(--primary);">
+        Analisando histórico de vendas, fluxo de caixa e comportamento dos pedidos...
+      </p>
+    </div>
+
     <!-- KPI Grid -->
     <div class="dono-section dono-sec-full" data-secao="kpis" title="Resumo do Dia">
       <div class="sec-title">
         <i class="ph-bold ph-chart-bar"></i>
-        <span>Resumo do Dia</span>
+        <span>Resumo do Dia & Lucro Real</span>
       </div>
       <div class="kpi-grid">
 
@@ -1894,7 +2071,12 @@
         <div class="kpi-card full">
           <div class="kpi-label">
             <span id="kpi-title-faturamento">💰 Faturamento Hoje</span>
-            <div class="kpi-icon green"><i class="ph-fill ph-currency-dollar"></i></div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span id="kpi-badge-variacao" style="font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; background: rgba(34,197,94,0.15); color: #22c55e;">
+                ▲ 0% vs anterior
+              </span>
+              <div class="kpi-icon green"><i class="ph-fill ph-currency-dollar"></i></div>
+            </div>
           </div>
           <div id="kpi-faturamento" class="kpi-value" style="color: var(--green);">R$ 0,00</div>
           <div id="kpi-sub-total-pedidos" class="kpi-sub">0 pedidos finalizados</div>
@@ -1906,6 +2088,25 @@
             <div class="progress-bg">
               <div id="kpi-progress-fill" class="progress-fill"></div>
             </div>
+          </div>
+        </div>
+
+        <!-- Lucro Líquido & DRE -->
+        <div class="kpi-card full" style="border: 1px solid rgba(59,130,246,0.3); background: linear-gradient(135deg, var(--card) 0%, rgba(59,130,246,0.05) 100%);">
+          <div class="kpi-label">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span>💎 Lucro Líquido Estimado</span>
+              <span id="kpi-margem-lucro-badge" style="font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: rgba(59,130,246,0.15); color: var(--blue);">Margem: 0%</span>
+            </div>
+            <div class="kpi-icon blue"><i class="ph-fill ph-scales"></i></div>
+          </div>
+          <div id="kpi-lucro-liquido" class="kpi-value" style="color: var(--blue);">R$ 0,00</div>
+          <div id="kpi-sub-dre" class="kpi-sub" style="font-size: 11.5px; color: var(--text-sub); display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
+            <span>CMV Est.: <strong id="dre-cmv" style="color:var(--text);">R$ 0,00</strong></span>
+            <span>•</span>
+            <span>Taxas: <strong id="dre-taxas" style="color:var(--text);">R$ 0,00</strong></span>
+            <span>•</span>
+            <span>Despesas: <strong id="dre-despesas" style="color:var(--text);">R$ 0,00</strong></span>
           </div>
         </div>
 
@@ -1929,6 +2130,101 @@
           <div class="kpi-sub">Por pedido</div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- CANAIS DE VENDA -->
+    <div class="dono-section dono-sec-full" data-secao="canais-venda" title="Canais de Venda">
+      <div class="sec-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i class="ph-bold ph-storefront" style="color:var(--primary);"></i>
+          <span>Canais de Venda & Economia de Marketplace</span>
+        </div>
+        <div id="badge-economia-marketplace" style="background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: flex; align-items: center; gap: 6px;">
+          <i class="ph-bold ph-piggy-bank"></i>
+          <span>Economia Canal Próprio: <strong id="val-economia-marketplace">R$ 0,00</strong></span>
+        </div>
+      </div>
+
+      <!-- Barra de Distribuição Visual -->
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; height: 16px; overflow: hidden; display: flex; margin-bottom: 16px;">
+        <div id="bar-canal-salao" title="Salão / Mesas" style="background: #fc4b15; width: 33.3%; transition: width 0.4s ease;"></div>
+        <div id="bar-canal-delivery" title="Delivery Próprio" style="background: #3b82f6; width: 33.3%; transition: width 0.4s ease;"></div>
+        <div id="bar-canal-balcao" title="Balcão / Retirada" style="background: #10b981; width: 33.4%; transition: width 0.4s ease;"></div>
+      </div>
+
+      <!-- Grid de Cards dos 3 Canais -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+        <!-- Salão -->
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; border-left: 4px solid #fc4b15;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <strong style="font-size: 13.5px; color: var(--text); display: flex; align-items: center; gap: 6px;">
+              <i class="ph-bold ph-armchair" style="color: #fc4b15;"></i> Salão & Mesas
+            </strong>
+            <span id="pct-canal-salao" style="font-size: 12px; font-weight: 800; color: #fc4b15;">0%</span>
+          </div>
+          <div id="val-canal-salao" style="font-size: 18px; font-weight: 900; color: var(--text); margin-bottom: 2px;">R$ 0,00</div>
+          <span id="ped-canal-salao" style="font-size: 11.5px; color: var(--text-sub);">0 pedidos</span>
+        </div>
+
+        <!-- Delivery -->
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; border-left: 4px solid #3b82f6;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <strong style="font-size: 13.5px; color: var(--text); display: flex; align-items: center; gap: 6px;">
+              <i class="ph-bold ph-moped" style="color: #3b82f6;"></i> Delivery Próprio
+            </strong>
+            <span id="pct-canal-delivery" style="font-size: 12px; font-weight: 800; color: #3b82f6;">0%</span>
+          </div>
+          <div id="val-canal-delivery" style="font-size: 18px; font-weight: 900; color: var(--text); margin-bottom: 2px;">R$ 0,00</div>
+          <span id="ped-canal-delivery" style="font-size: 11.5px; color: var(--text-sub);">0 entregas (100% margem)</span>
+        </div>
+
+        <!-- Balcão -->
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; border-left: 4px solid #10b981;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <strong style="font-size: 13.5px; color: var(--text); display: flex; align-items: center; gap: 6px;">
+              <i class="ph-bold ph-handbag" style="color: #10b981;"></i> Balcão & Retirada
+            </strong>
+            <span id="pct-canal-balcao" style="font-size: 12px; font-weight: 800; color: #10b981;">0%</span>
+          </div>
+          <div id="val-canal-balcao" style="font-size: 18px; font-weight: 900; color: var(--text); margin-bottom: 2px;">R$ 0,00</div>
+          <span id="ped-canal-balcao" style="font-size: 11.5px; color: var(--text-sub);">0 retiradas rápidas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RADAR ANTIFRAUDE & PREVENÇÃO DE PERDAS -->
+    <div class="dono-section dono-sec-half" data-secao="antifraude" title="Radar Antifraude & Prevenção">
+      <div class="sec-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i class="ph-bold ph-shield-warning" style="color: #f59e0b;"></i>
+          <span>Radar Antifraude</span>
+        </div>
+        <span id="badge-status-fraude" style="background: rgba(34,197,94,0.12); color: #22c55e; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(34,197,94,0.3);">
+          ✓ Operação Segura
+        </span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <!-- Cancelamentos -->
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--text-sub);">Cancelamentos</span>
+            <i class="ph-bold ph-x-circle" style="color: #ef4444; font-size: 16px;"></i>
+          </div>
+          <div id="antifraude-cancelados-val" style="font-size: 16px; font-weight: 900; color: #ef4444;">R$ 0,00</div>
+          <span id="antifraude-cancelados-qtd" style="font-size: 11px; color: var(--text-sub);">0 pedidos</span>
+        </div>
+
+        <!-- Sangrias e Retiradas -->
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--text-sub);">Sangrias</span>
+            <i class="ph-bold ph-arrow-circle-up-right" style="color: #f59e0b; font-size: 16px;"></i>
+          </div>
+          <div id="antifraude-sangrias-val" style="font-size: 16px; font-weight: 900; color: #f59e0b;">R$ 0,00</div>
+          <span id="antifraude-sangrias-qtd" style="font-size: 11px; color: var(--text-sub);">0 saídas</span>
+        </div>
       </div>
     </div>
 
@@ -2261,6 +2557,121 @@
       </div>
     </div>
 
+    <!-- ═════════════════════════════════════════════════════════════════════
+         ⚔️ DESTAQUES DA EQUIPE & BATALHA DE VENDAS (GAMIFICAÇÃO & METAS)
+         ═════════════════════════════════════════════════════════════════════ -->
+    <div id="sec-gamificacao-equipe" class="dono-section dono-sec-full" data-secao="gamificacao-equipe" title="Batalha de Vendas & Gamificação da Equipe">
+      <div class="sec-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ph-bold ph-trophy"></i>
+          </div>
+          <div>
+            <span style="font-size: 16px; font-weight: 800; color: var(--text);">Destaques da Equipe & Batalha de Vendas</span>
+            <div style="font-size: 12px; color: var(--text-sub); font-weight: 600;">Quem mais vendeu, atendeu e gerou lucro no período</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="btn-primary" onclick="abrirModalGamificacao()" style="padding: 8px 14px; font-size: 13px; font-weight: 800; border-radius: 12px; gap: 6px; background: linear-gradient(135deg, #f59e0b, #ea580c); border: none; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);">
+            <i class="ph-bold ph-gear-six"></i> Configurar Meta & Prêmio
+          </button>
+        </div>
+      </div>
+
+      <!-- Pódios de Destaque Executivo (3 Cards de Honra) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 14px; margin-bottom: 16px;">
+        <!-- Destaque 1: Mais Lucro Gerado -->
+        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.04) 100%); border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: 18px; padding: 16px; position: relative; overflow: hidden; min-width: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 24px;">🏆</span>
+              <div>
+                <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #10b981; letter-spacing: 0.5px;">Mais Lucrativo</span>
+                <div id="destaque-lucro-nome" style="font-size: 15px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">Aguardando...</div>
+              </div>
+            </div>
+            <span style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 20px;">Top Lucro</span>
+          </div>
+          <div id="destaque-lucro-val" style="font-size: 22px; font-weight: 900; color: #10b981; letter-spacing: -0.5px; margin-bottom: 2px;">R$ 0,00</div>
+          <div id="destaque-lucro-sub" style="font-size: 11.5px; color: var(--text-sub);">Lucro estimado gerado para a casa</div>
+        </div>
+
+        <!-- Destaque 2: Mais Atendimentos Feitos -->
+        <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.04) 100%); border: 1.5px solid rgba(59, 130, 246, 0.35); border-radius: 18px; padding: 16px; position: relative; overflow: hidden; min-width: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 24px;">⚡</span>
+              <div>
+                <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #3b82f6; letter-spacing: 0.5px;">Mais Rápido & Ativo</span>
+                <div id="destaque-atendimentos-nome" style="font-size: 15px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">Aguardando...</div>
+              </div>
+            </div>
+            <span style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 20px;">Top Atendimentos</span>
+          </div>
+          <div id="destaque-atendimentos-val" style="font-size: 22px; font-weight: 900; color: #3b82f6; letter-spacing: -0.5px; margin-bottom: 2px;">0 atendimentos</div>
+          <div id="destaque-atendimentos-sub" style="font-size: 11.5px; color: var(--text-sub);">Mesas e pedidos concluídos</div>
+        </div>
+
+        <!-- Destaque 3: Campeão de Vendas (Volume Total) -->
+        <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.04) 100%); border: 1.5px solid rgba(245, 158, 11, 0.35); border-radius: 18px; padding: 16px; position: relative; overflow: hidden; min-width: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 24px;">🎯</span>
+              <div>
+                <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #f59e0b; letter-spacing: 0.5px;">Maior Volume Bruto</span>
+                <div id="destaque-vendas-nome" style="font-size: 15px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">Aguardando...</div>
+              </div>
+            </div>
+            <span style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 20px;">Top Vendas</span>
+          </div>
+          <div id="destaque-vendas-val" style="font-size: 22px; font-weight: 900; color: #f59e0b; letter-spacing: -0.5px; margin-bottom: 2px;">R$ 0,00</div>
+          <div id="destaque-vendas-sub" style="font-size: 11.5px; color: var(--text-sub);">Volume total faturado</div>
+        </div>
+      </div>
+
+      <!-- Termômetro de Gamificação & Prêmio Coletivo -->
+      <div style="background: var(--card2); border: 1px solid var(--border); border-radius: 18px; padding: 18px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="ph-bold ph-target" style="color: var(--primary); font-size: 22px;"></i>
+            <div>
+              <strong style="font-size: 14.5px; color: var(--text);">Termômetro da Meta da Equipe</strong>
+              <div id="gamificacao-status-desc" style="font-size: 12px; color: var(--text-sub);">Progresso coletivo para a conquista do prêmio</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="gamificacao-badge-percent" style="background: rgba(252, 75, 21, 0.15); color: var(--primary); font-size: 13px; font-weight: 900; padding: 4px 12px; border-radius: 20px;">0% Concluído</span>
+          </div>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.06); border-radius: 20px; height: 16px; overflow: hidden; position: relative; margin-bottom: 12px;">
+          <div id="gamificacao-progress-fill" style="background: linear-gradient(90deg, #fc4b15, #f59e0b, #10b981); width: 0%; height: 100%; border-radius: 20px; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12.5px;">
+          <div>Vendido Equipe: <strong id="gamificacao-atual-val" style="color: var(--text); font-weight: 800;">R$ 0,00</strong></div>
+          <div id="gamificacao-premio-box" style="background: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.4); border-radius: 10px; padding: 6px 14px; color: #f59e0b; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+            <i class="ph-bold ph-gift"></i>
+            <span>Prêmio Definido: <strong id="gamificacao-premio-txt">Carregando...</strong></span>
+          </div>
+          <div>Meta da Rodada: <strong id="gamificacao-meta-val" style="color: var(--text); font-weight: 800;">R$ 0,00</strong></div>
+        </div>
+      </div>
+
+      <!-- Ranking Detalhado da Equipe -->
+      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden;">
+        <div style="padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <strong style="font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 8px;">
+            <i class="ph-bold ph-medal"></i> Ranking Individual de Produtividade & Comissões
+          </strong>
+          <span style="font-size: 11.5px; color: var(--text-sub);">Atualizado em tempo real</span>
+        </div>
+        <div id="lista-ranking-colaboradores" style="display: flex; flex-direction: column;">
+          <div style="text-align: center; color: var(--text-sub); padding: 24px; font-size: 13px;">Carregando ranking da equipe...</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Painel Rápido: Meta Diária & Aviso à Equipe -->
     <div class="dono-section dono-sec-full" data-secao="meta-aviso" title="Meta & Aviso" style="display:grid; grid-template-columns: 1fr; gap:12px;">
       <!-- Meta de vendas compacta -->
@@ -2318,6 +2729,49 @@
         <span>Funcionalidades</span>
       </div>
       <div class="features-grid" id="features-grid-dono"></div>
+    </div>
+
+    <!-- ═════════════════════════════════════════════════════════════════════
+         🤝 INDIQUE UM AMIGO / PARCEIRO (PROGRAMA DE BENEFÍCIOS DO DONO)
+         ═════════════════════════════════════════════════════════════════════ -->
+    <div id="sec-indicacao-parceiros" class="dono-section dono-sec-full" data-secao="indicacao-parceiros" title="Indique e Ganhe Mensalidades Grátis">
+      <div style="background: linear-gradient(135deg, rgba(252, 75, 21, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%); border: 1.5px solid rgba(252, 75, 21, 0.35); border-radius: 20px; padding: 22px; position: relative; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, #fc4b15, #ff8c00); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 6px 20px rgba(252, 75, 21, 0.35); flex-shrink: 0;">
+              <i class="ph-bold ph-gift"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 style="font-size: 18px; font-weight: 900; color: var(--text); margin: 0;">Programa Indique & Ganhe Parceiros</h3>
+                <span style="background: #10b981; color: #fff; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 20px;">VANTAGEM EXCLUSIVA</span>
+              </div>
+              <p style="font-size: 13.5px; color: var(--text-sub); margin: 4px 0 0 0; max-width: 680px; line-height: 1.4;">
+                Indique outros donos de bares, restaurantes e pizzarias. Para cada parceiro que ativar nosso sistema, você ganha <strong>1 Mensalidade 100% Grátis</strong> (ou R$ 150 em bônus direto na sua fatura) e seu parceiro ganha <strong>15 dias grátis + setup prioritário</strong>!
+              </p>
+            </div>
+          </div>
+          <button type="button" onclick="abrirModalRegrasIndicacao()" style="background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <i class="ph-bold ph-info"></i> Como Funciona
+          </button>
+        </div>
+
+        <!-- Box do Link de Indicação e Botões de Ação -->
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div style="flex: 1; min-width: 240px;">
+            <label style="display: block; font-size: 11.5px; font-weight: 800; text-transform: uppercase; color: var(--text-sub); margin-bottom: 4px; letter-spacing: 0.5px;">Seu Link de Parceiro Oficial</label>
+            <input type="text" id="link-indicacao-parceiro-dono" readonly value="Carregando..." style="width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 700; color: var(--primary); outline: none;">
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn-primary" onclick="copiarLinkIndicacaoDono()" style="padding: 10px 16px; font-size: 13px; font-weight: 800; border-radius: 10px; gap: 6px; background: var(--card2); border: 1px solid var(--border); color: var(--text);">
+              <i class="ph-bold ph-copy"></i> Copiar Link
+            </button>
+            <button type="button" class="btn-primary" onclick="compartilharIndicacaoWhatsAppDono()" style="padding: 10px 18px; font-size: 13px; font-weight: 800; border-radius: 10px; gap: 6px; background: #25d366; color: #fff; border: none; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3);">
+              <i class="ph-bold ph-whatsapp-logo" style="font-size: 17px;"></i> Indicar no WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Feed de Atividade -->
@@ -2898,6 +3352,69 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- Modal: Configuração de Gamificação e Prêmio -->
+  <div id="modal-gamificacao-config" class="modal-overlay hidden">
+    <div class="modal-sheet" style="max-width: 480px;">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-trophy" style="color:#f59e0b;"></i> Configurar Gamificação</span>
+        <button class="modal-close" onclick="fecharModal('modal-gamificacao-config')"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 16px; line-height: 1.4;">
+        Defina a meta coletiva de vendas do período e o prêmio que seus colaboradores irão ganhar ao atingi-la.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label" for="input-gamificacao-meta">🎯 Meta Coletiva de Vendas (R$)</label>
+        <input type="number" id="input-gamificacao-meta" class="form-input" placeholder="Ex: 25000" style="font-size: 20px; font-weight: 800;">
+        <span style="font-size: 11.5px; color: var(--text-sub); display: block; margin-top: 4px;">Valor em vendas brutas a ser batido pela equipe.</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="input-gamificacao-premio">🏆 Prêmio para a Equipe</label>
+        <input type="text" id="input-gamificacao-premio" class="form-input" maxlength="150" placeholder="Ex: Rodízio comemorativo pago + R$ 500 em dinheiro dividido" style="font-size: 14px;">
+        <span style="font-size: 11.5px; color: var(--text-sub); display: block; margin-top: 4px;">Ex: Bônus em dinheiro, folga coletiva, rodízio/jantar da vitória pago pela casa.</span>
+      </div>
+
+      <div class="confirm-row">
+        <button type="button" class="btn-cancel" onclick="fecharModal('modal-gamificacao-config')">Cancelar</button>
+        <button type="button" class="btn-confirm" onclick="salvarConfigGamificacao()" style="background: linear-gradient(135deg, #f59e0b, #ea580c); color: #fff;">
+          <i class="ph-bold ph-floppy-disk"></i> Salvar Gamificação
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Regras do Programa de Indicação -->
+  <div id="modal-regras-indicacao" class="modal-overlay hidden">
+    <div class="modal-sheet" style="max-width: 520px;">
+      <div class="modal-drag"></div>
+      <div class="modal-title-row">
+        <span class="modal-title"><i class="ph-bold ph-gift" style="color:var(--primary);"></i> Como Funciona o Indique & Ganhe</span>
+        <button class="modal-close" onclick="fecharModal('modal-regras-indicacao')"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px; font-size: 13.5px; color: var(--text); line-height: 1.5; margin: 12px 0 20px;">
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">1</div>
+          <div><strong>Envie o seu link exclusivo</strong> para donos de restaurantes, bares, cafeterias ou pizzarias parceiras.</div>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--blue-light); color: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">2</div>
+          <div><strong>Seu amigo ganha benefícios na hora:</strong> 15 dias de teste grátis sem nenhum compromisso e suporte de implantação prioritário.</div>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--green-light); color: var(--green); display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">3</div>
+          <div><strong>Você ganha mensalidades grátis:</strong> Assim que seu amigo ativar a assinatura, é creditado 1 mês 100% grátis (ou R$ 150 em desconto/bônus) direto na sua conta. Indicando 12 amigos, seu sistema funciona de graça o ano inteiro!</div>
+        </div>
+      </div>
+      <button type="button" class="btn-confirm" onclick="fecharModal('modal-regras-indicacao'); compartilharIndicacaoWhatsAppDono();" style="width: 100%; background: #25d366; color: #fff; border: none;">
+        <i class="ph-bold ph-whatsapp-logo"></i> Indicar Amigo pelo WhatsApp Agora
+      </button>
+    </div>
+  </div>
+
   <!-- Barra de Navegação Inferior Móvel (Dock Mobile / Tablet) -->
   <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Navegação rápida do dono">
     <button type="button" class="mob-nav-btn active" data-target="sec-kpis" onclick="window.navMobilePara('sec-kpis')">
@@ -2933,6 +3450,21 @@
       <p class="caixa-modal-desc">Acesso rápido a todos os recursos e configurações do seu restaurante.</p>
 
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:14px;">
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-ia-briefing');" style="padding:14px 10px;">
+          <i class="ph-bold ph-sparkle" style="font-size:24px; color:#c084fc;"></i>
+          <span style="font-weight:800; font-size:12px;">Copiloto IA</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-canais-venda');" style="padding:14px 10px;">
+          <i class="ph-bold ph-storefront" style="font-size:24px; color:#3b82f6;"></i>
+          <span style="font-weight:800; font-size:12px;">Canais Venda</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-antifraude');" style="padding:14px 10px;">
+          <i class="ph-bold ph-shield-warning" style="font-size:24px; color:#f59e0b;"></i>
+          <span style="font-weight:800; font-size:12px;">Antifraude</span>
+        </button>
+
         <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-cupons');" style="padding:14px 10px;">
           <i class="ph-bold ph-ticket" style="font-size:24px; color:var(--primary);"></i>
           <span style="font-weight:800; font-size:12px;">Cupons QR</span>
@@ -2941,6 +3473,16 @@
         <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-marketing-vip');" style="padding:14px 10px;">
           <i class="ph-bold ph-megaphone" style="font-size:24px; color:#3b82f6;"></i>
           <span style="font-weight:800; font-size:12px;">Mensagens & Push</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-gamificacao-equipe');" style="padding:14px 10px;">
+          <i class="ph-bold ph-medal" style="font-size:24px; color:#f59e0b;"></i>
+          <span style="font-weight:800; font-size:12px;">Gamificação</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-indicacao-parceiros');" style="padding:14px 10px;">
+          <i class="ph-bold ph-gift" style="font-size:24px; color:#fc4b15;"></i>
+          <span style="font-weight:800; font-size:12px;">Indique & Ganhe</span>
         </button>
 
         <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-meta-aviso');" style="padding:14px 10px;">

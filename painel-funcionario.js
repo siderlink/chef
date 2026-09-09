@@ -399,7 +399,7 @@ socket.on('login_success', (user) => {
         return;
       }
       if (user.cargo === 'Garçom') window.location.href = '/garcom.html';
-      else if (user.cargo === 'Caixa') window.location.href = '/index.html';
+      else if (user.cargo === 'Caixa') window.location.href = '/caixa-classico.html';
       else window.location.href = '/fila-pedidos.html';
     };
   }
@@ -1238,6 +1238,51 @@ window.responderAtipico = function(id, acao) {
 };
 
 // ==========================================
+// CAIXA VERSION PICKER (para colaboradores cargo=Caixa)
+// ==========================================
+function showCaixaPicker() {
+  const existing = document.getElementById('caixa-picker-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'caixa-picker-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:20000;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;padding:24px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <h3 style="margin:0;font-size:18px;color:#2c3e50;"><i class="ph ph-cash-register"></i> Qual versão do Caixa?</h3>
+        <button id="caixa-picker-close" style="background:none;border:none;font-size:24px;cursor:pointer;color:#aaa;"><i class="ph ph-x"></i></button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button onclick="window.location.href='/caixa-classico.html'"
+          style="display:flex;align-items:center;gap:14px;padding:16px;background:#f8f9fa;border:2px solid #9b59b6;border-radius:14px;cursor:pointer;text-align:left;font-family:inherit;font-size:inherit;width:100%;transition:background 0.15s;">
+          <i class="ph ph-cash-register" style="font-size:28px;color:#9b59b6;"></i>
+          <div style="flex:1;">
+            <div style="font-weight:700;color:#2c3e50;font-size:15px;">Caixa v1 — Clássico</div>
+            <div style="font-size:12px;color:#7f8c8d;margin-top:2px;">Interface tradicional de vendas</div>
+          </div>
+          <i class="ph ph-caret-right" style="color:#9b59b6;"></i>
+        </button>
+        <button onclick="window.location.href='/index.html'"
+          style="display:flex;align-items:center;gap:14px;padding:16px;background:#f8f9fa;border:1px solid #e9ecef;border-radius:14px;cursor:pointer;text-align:left;font-family:inherit;font-size:inherit;width:100%;transition:background 0.15s;">
+          <i class="ph ph-currency-circle-dollar" style="font-size:28px;color:#7f8c8d;"></i>
+          <div style="flex:1;">
+            <div style="font-weight:600;color:#2c3e50;font-size:15px;">Caixa v11 — Moderno</div>
+            <div style="font-size:12px;color:#7f8c8d;margin-top:2px;">PDV com mesas, delivery e mais</div>
+          </div>
+          <i class="ph ph-caret-right" style="color:#adb5bd;"></i>
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  document.getElementById('caixa-picker-close').onclick = () => overlay.remove();
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+}
+
+// ==========================================
 // SYSTEM PICKER MODAL
 // ==========================================
 function showSystemPicker() {
@@ -1252,7 +1297,8 @@ function showSystemPicker() {
   box.style.cssText = 'background:white;border-radius:20px;padding:24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
 
   const systems = [
-    { label: 'PDV / Caixa', icon: 'ph ph-currency-circle-dollar', href: '/index.html', desc: 'Sistema principal de vendas e mesas' },
+    { label: 'Caixa v11 (Moderno)', icon: 'ph ph-currency-circle-dollar', href: '/index.html', desc: 'PDV moderno com mesas e delivery' },
+    { label: 'Caixa v1 (Clássico)', icon: 'ph ph-cash-register', href: '/caixa-classico.html', desc: 'Sistema clássico de vendas' },
     { label: 'Garçom', icon: 'ph ph-note-pencil', href: '/garcom.html', desc: 'Comandas e pedidos para garçons' },
     { label: 'Fila de Pedidos', icon: 'ph ph-list-bullets', href: '/fila-pedidos.html', desc: 'Visualização da fila de produção' },
     { label: 'Cardápio Digital', icon: 'ph ph-qr-code', href: '/cardapio.html', desc: 'Cardápio online para clientes' },
