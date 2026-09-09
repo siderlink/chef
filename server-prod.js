@@ -11106,10 +11106,20 @@ app.get('/api/plugins/admin', (req, res) => {
 
 // ─── Funções do Sistema (módulos) — liberadas pelo Super Admin e ativadas pelo restaurante ───
 const FUNCOES_MODULOS = [
-  { chave: 'jogos', nome: 'Jogos / Premiações', desc: 'Jogos na mesa e sistema de premiação para os clientes duelarem entre si.', icone: 'ph-game-controller', categorias: ['Entretenimento'] },
-  { chave: 'hub_delivery', nome: 'Hub Delivery', desc: 'Hub de pedidos agregados de marketplaces (iFood, Rappi, Uber Eats, Mucho) e delivery próprio.', icone: 'ph-scooter', categorias: ['Delivery'] },
-  { chave: 'reservas', nome: 'Reservas Futuras', desc: 'Reservas de mesas com calendário, prazos e aprovação do restaurante.', icone: 'ph-calendar-check', categorias: ['Operação'] },
-  { chave: 'fila_espera', nome: 'Fila de Espera', desc: 'Fila de espera de clientes por mesas, com chamada e alocação automática.', icone: 'ph-users-three', categorias: ['Operação'] }
+  { chave: 'totem', nome: 'Totem de Autoatendimento Kiosk', desc: 'Quiosque touchscreen com bloqueio kiosk, montagem de pedidos e Pix na tela.', icone: 'ph-device-tablet', categorias: ['Hardware', 'Vendas'], preco: 'R$ 99/mês', roi: 'Reduz filas e custos com atendentes', badge: 'Alta Demanda' },
+  { chave: 'pesagem_selfservice', nome: 'Pesagem Automática & Balança Self-Service', desc: 'Integração direta com balanças Toledo/Filizola/Urano, cálculo de tara e totem de pesagem.', icone: 'ph-scales', categorias: ['Hardware', 'Operação'], preco: 'R$ 69/mês', roi: 'Elimina erros de pesagem em buffets', badge: 'Novo' },
+  { chave: 'fidelidade', nome: 'Clube Fidelidade & Cashback', desc: 'Programa de pontuação por compra, resgate de cashback no caixa e cupons automatizados.', icone: 'ph-gift', categorias: ['Vendas', 'Marketing'], preco: 'R$ 59/mês', roi: '+30% de retorno de clientes', badge: 'Mais Vendido' },
+  { chave: 'whatsapp_bot', nome: 'WhatsApp Bot Notificador de Pedidos', desc: 'Avisos automáticos de status de entrega, rota do motoboy em tempo real e cupom de recompra.', icone: 'ph-whatsapp-logo', categorias: ['Marketing', 'Delivery'], preco: 'R$ 79/mês', roi: '-80% de chamadas de suporte', badge: 'Destaque' },
+  { chave: 'rh', nome: 'Gestão de RH, Escalas & Comissões', desc: 'Escalas semanais, folgas, ponto eletrônico e rateio automático dos 10% e comissões da equipe.', icone: 'ph-users', categorias: ['Gestão', 'Equipe'], preco: 'R$ 49/mês', roi: 'Fechamento de comissões sem erro', badge: 'Produtividade' },
+  { chave: 'cheff_ai', nome: 'Copiloto Cheff IA & Previsão de Demanda', desc: 'Inteligência preditiva de movimento, sugestão de compras de insumos e alerta anti-desperdício.', icone: 'ph-sparkle', categorias: ['Inteligência', 'Gestão'], preco: 'R$ 89/mês', roi: 'Reduz desperdício de insumos em 25%', badge: 'IA Exclusiva' },
+  { chave: 'estoque_avancado', nome: 'Controle de Estoque com Ficha Técnica', desc: 'Baixa automática de gramaturas a cada prato vendido e cálculo analítico de CMV por receita.', icone: 'ph-package', categorias: ['Financeiro', 'Operação'], preco: 'R$ 69/mês', roi: 'Controle total do lucro real', badge: 'Financeiro' },
+  { chave: 'kds_avancado', nome: 'KDS Multi-Praças Cozinha & Bar', desc: 'Monitor de produção dividido por setores (cozinha, bar, frios) com alertas de tempo e sonoros.', icone: 'ph-cooking-pot', categorias: ['Operação', 'Cozinha'], preco: 'R$ 59/mês', roi: 'Zera atrasos e perda de comandas', badge: 'Operacional' },
+  { chave: 'hub_delivery', nome: 'Hub Delivery Multi-Canais', desc: 'Central de pedidos agregados de marketplaces (iFood, Rappi, WhatsApp) e frota própria.', icone: 'ph-moped', categorias: ['Delivery'], preco: 'R$ 79/mês', roi: 'Centraliza todos os pedidos em 1 tela', badge: 'Delivery' },
+  { chave: 'reservas', nome: 'Reservas Futuras de Mesas', desc: 'Reservas online de mesas com calendário, aprovação e bloqueio automático no salão.', icone: 'ph-calendar-check', categorias: ['Operação', 'Vendas'], preco: 'R$ 49/mês', roi: 'Otimiza lotação em dias de pico', badge: 'Salão' },
+  { chave: 'fila_espera', nome: 'Fila de Espera Digital', desc: 'Fila digital de clientes com estimativa de tempo e chamada automática no celular.', icone: 'ph-users-three', categorias: ['Operação'], preco: 'R$ 39/mês', roi: 'Retém clientes em horários de pico', badge: 'Atendimento' },
+  { chave: 'jogos', nome: 'Jogos / Batalha de Mesas', desc: 'Quizzes interativos na mesa e premiação para clientes duelarem e aumentarem o consumo.', icone: 'ph-game-controller', categorias: ['Entretenimento'], preco: 'R$ 39/mês', roi: 'Aumenta consumo de bebidas e permanência', badge: 'Engajamento' },
+  { chave: 'ifood', nome: 'Integração Oficial iFood', desc: 'Sincronização bidirecional de cardápio, pedidos e status com a rede iFood.', icone: 'ph-storefront', categorias: ['Delivery'], preco: 'Incluso no Pro/Premium', roi: 'Importação automática de pedidos', badge: 'Oficial' },
+  { chave: 'nfce', nome: 'Emissão Fiscal NFC-e / SAT', desc: 'Emissão de cupom fiscal eletrônico na hora da venda com contingência offline automática.', icone: 'ph-receipt', categorias: ['Fiscal'], preco: 'Incluso no Pro/Premium', roi: 'Conformidade fiscal garantida', badge: 'Fiscal' }
 ];
 
 // Config de ativação de cada módulo (restaurante liga/desliga; padrão ligado quando disponível)
@@ -11150,12 +11160,7 @@ app.get('/api/funcoes', (req, res) => {
             statusImpl = 'liberada';
           } else if (sol) {
             if (sol.status === 'em_implementacao') { statusImpl = 'em_implementacao'; responsavel = sol.responsavel_nome; }
-            else if (sol.status === 'implementada') { statusImpl = 'implementada'; responsavel = sol.responsavel_nome; }
-            else if (sol.status === 'aprovada') { statusImpl = 'implementada'; responsavel = sol.responsavel_nome; }
-            else if (sol.status === 'recusada') { statusImpl = 'recusada'; }
-            else { statusImpl = 'solicitada'; }
-          } else if (sol) {
-            if (sol.status === 'em_implementacao') { statusImpl = 'em_implementacao'; responsavel = sol.responsavel_nome; }
+            else if (sol.status === 'implementada' || sol.status === 'aprovada') { statusImpl = 'implementada'; responsavel = sol.responsavel_nome; }
             else if (sol.status === 'recusada') { statusImpl = 'recusada'; }
             else { statusImpl = 'solicitada'; }
           }
@@ -11165,6 +11170,9 @@ app.get('/api/funcoes', (req, res) => {
             desc: f.desc,
             icone: f.icone || null,
             categorias: f.categorias || [],
+            preco: f.preco || 'Consulte',
+            roi: f.roi || null,
+            badge: f.badge || null,
             available: available,
             enabled: !!enabled,
             override: available,
@@ -12730,6 +12738,22 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       console.log('⚙️ Controller Sistema Extra carregado com sucesso.');
     } catch (eExtra) {
       console.error('Erro ao carregar o Controller Sistema Extra:', eExtra);
+    }
+
+    // Loader de Plugins & Dev Hub para a Equipe de Suporte & Engenharia
+    try {
+      if (typeof require('./plugin-loader') === 'function') {
+        require('./plugin-loader')({ app, db, masterDb, io, options: {} });
+      }
+    } catch (ePlugins) {
+      console.error('Erro ao carregar o plugin-loader:', ePlugins);
+    }
+
+    try {
+      require('./controllers/dev-hub')(app, { db, masterDb, io, sqlite3, verificarToken, getTenantDb, JWT_SECRET });
+      console.log('🛠️ Controller Dev Hub & APIs Internas carregado com sucesso.');
+    } catch (eDev) {
+      console.error('Erro ao carregar o Controller Dev Hub:', eDev);
     }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);

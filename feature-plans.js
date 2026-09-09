@@ -1,4 +1,4 @@
-﻿/**
+/**
  * feature-plans.js
  * Definição dos planos e features habilitáveis por tenant.
  * Usado pelo servidor (server.js) e pelo painel Super Admin.
@@ -7,21 +7,27 @@
  */
 'use strict';
 
-// Features disponíveis para controle (as que mais consomem recursos do servidor)
+// Features disponíveis para controle e add-ons contratáveis
 const FEATURES = [
-  { chave: 'tempo_real', nome: 'Tempo real (sockets)', desc: 'Dashboards, cozinha e fila atualizados em tempo real. Desligar reduz drasticamente o uso de sockets e broadcasts.' },
-  { chave: 'ifood', nome: 'Integração iFood', desc: 'Poller de pedidos do iFood (consulta a cada 30s por tenant autorizado).' },
-  { chave: 'cardapio', nome: 'Cardápio QR', desc: 'Cardápio digital acessado por QR no balcão.' },
-  { chave: 'bi', nome: 'BI / Financeiro', desc: 'Relatórios financeiros e BI (consultas agregadas no banco).' },
-  { chave: 'delivery', nome: 'Delivery / Entregas', desc: 'Gestão de entregas e motoboys.' },
-  { chave: 'fidelidade', nome: 'Fidelidade / Pontos', desc: 'Programa de fidelidade e pontos de clientes.' },
-  { chave: 'nfce', nome: 'NFC-e (Nota Fiscal)', desc: 'Emissão de notas fiscais eletrônicas.' },
-  { chave: 'telemetria', nome: 'Telemetria / Hub', desc: 'Envio de telemetria e sincronização com o hub.' },
-  { chave: 'totem', nome: 'Totem de Autoatendimento', desc: 'Upsell: quiosque de autoatendimento com bloqueio kiosk, pedidos e Pix. Desligado por padrão em todos os planos; ativado por tenant pelo Super Admin.' },
-  { chave: 'jogos', nome: 'Jogos / Premiações', desc: 'Jogos na mesa e sistema de premiação para os clientes duelarem entre si.' },
-  { chave: 'hub_delivery', nome: 'Hub Delivery', desc: 'Hub de pedidos agregados de marketplaces (iFood, Rappi, Uber Eats, Mucho) e delivery próprio.' },
-  { chave: 'reservas', nome: 'Reservas Futuras', desc: 'Reservas de mesas com calendário, prazos e aprovação do restaurante.' },
-  { chave: 'fila_espera', nome: 'Fila de Espera', desc: 'Fila de espera de clientes por mesas, com chamada e alocação automática.' }
+  { chave: 'tempo_real', nome: 'Tempo real (sockets)', desc: 'Dashboards, cozinha e fila atualizados em tempo real. Desligar reduz drasticamente o uso de sockets e broadcasts.', categoria: 'Operação' },
+  { chave: 'ifood', nome: 'Integração iFood', desc: 'Poller de pedidos do iFood (consulta a cada 30s por tenant autorizado).', categoria: 'Delivery' },
+  { chave: 'cardapio', nome: 'Cardápio QR', desc: 'Cardápio digital acessado por QR no balcão e mesas.', categoria: 'Vendas' },
+  { chave: 'bi', nome: 'BI / Financeiro', desc: 'Relatórios financeiros, fluxo de caixa e DRE gerencial.', categoria: 'Financeiro' },
+  { chave: 'delivery', nome: 'Delivery / Entregas', desc: 'Gestão de entregas, despacho e motoboys.', categoria: 'Delivery' },
+  { chave: 'fidelidade', nome: 'Clube Fidelidade & Cashback', desc: 'Programa de pontos, cashback no pagamento e cupons de recompra.', categoria: 'Vendas', preco: 'R$ 59/mês', roi: '+30% de retenção de clientes' },
+  { chave: 'nfce', nome: 'NFC-e (Nota Fiscal)', desc: 'Emissão de notas fiscais eletrônicas e contingência offline.', categoria: 'Fiscal' },
+  { chave: 'telemetria', nome: 'Telemetria / Hub', desc: 'Envio de telemetria e sincronização com o hub central.', categoria: 'Infraestrutura' },
+  { chave: 'totem', nome: 'Totem de Autoatendimento Kiosk', desc: 'Quiosque de autoatendimento com bloqueio kiosk, pedidos e Pix na tela.', categoria: 'Hardware', preco: 'R$ 99/mês', roi: 'Reduz filas e custos com atendentes' },
+  { chave: 'jogos', nome: 'Jogos / Batalha de Mesas', desc: 'Jogos interativos na mesa e premiação para engajamento de clientes.', categoria: 'Entretenimento', preco: 'R$ 39/mês', roi: 'Aumenta consumo de bebidas no salão' },
+  { chave: 'hub_delivery', nome: 'Hub Delivery Central', desc: 'Central agregadora de pedidos de marketplaces (iFood, Rappi, WhatsApp) e frota própria.', categoria: 'Delivery', preco: 'R$ 79/mês', roi: 'Unifica todos os canais de entrega' },
+  { chave: 'reservas', nome: 'Reservas Futuras de Mesas', desc: 'Reservas antecipadas com calendário, lotação e confirmação automática.', categoria: 'Operação', preco: 'R$ 49/mês', roi: 'Otimiza taxa de ocupação do salão' },
+  { chave: 'fila_espera', nome: 'Fila de Espera Digital', desc: 'Fila de clientes por mesas com notificação automática e estimativa de tempo.', categoria: 'Operação', preco: 'R$ 39/mês', roi: 'Evita desistências na entrada' },
+  { chave: 'pesagem_selfservice', nome: 'Pesagem Automática & Self-Service', desc: 'Integração com balança Toledo/Filizola/Urano, tara automática e totem de pesagem.', categoria: 'Hardware', preco: 'R$ 69/mês', roi: 'Elimina erros de pesagem em até 100%' },
+  { chave: 'whatsapp_bot', nome: 'WhatsApp Bot Notificador', desc: 'Disparos automáticos de status de entrega, link do motoboy e cupom pós-venda.', categoria: 'Marketing', preco: 'R$ 79/mês', roi: '-80% de chamados de suporte' },
+  { chave: 'rh', nome: 'RH, Escalas & Comissões', desc: 'Controle de turnos, folgas, ponto e cálculo de 10% e comissões da equipe.', categoria: 'Gestão', preco: 'R$ 49/mês', roi: 'Fechamento de folha automático' },
+  { chave: 'cheff_ai', nome: 'Copiloto Cheff IA & Previsão', desc: 'Previsão de movimento, sugestão de compras e análise preditiva anti-desperdício.', categoria: 'Inteligência', preco: 'R$ 89/mês', roi: 'Reduz desperdício em até 25%' },
+  { chave: 'estoque_avancado', nome: 'Estoque com Ficha Técnica', desc: 'Baixa automática de ingredientes por receita vendida e cálculo de CMV analítico.', categoria: 'Financeiro', preco: 'R$ 69/mês', roi: 'Controle cirúrgico de custos' },
+  { chave: 'kds_avancado', nome: 'KDS Multi-Praças Cozinha & Bar', desc: 'Monitor de produção com divisão de setores, tempos de preparo e alertas sonoros.', categoria: 'Operação', preco: 'R$ 59/mês', roi: 'Fim dos atrasos e pedidos perdidos' }
 ];
 
 // Features padrão por plano
@@ -39,7 +45,13 @@ const FEATURE_PLANS = {
     jogos: false,
     hub_delivery: false,
     reservas: false,
-    fila_espera: false
+    fila_espera: false,
+    pesagem_selfservice: false,
+    whatsapp_bot: false,
+    rh: false,
+    cheff_ai: false,
+    estoque_avancado: false,
+    kds_avancado: false
   },
   pro: {
     tempo_real: true,
@@ -54,7 +66,13 @@ const FEATURE_PLANS = {
     jogos: true,
     hub_delivery: true,
     reservas: true,
-    fila_espera: true
+    fila_espera: true,
+    pesagem_selfservice: false,
+    whatsapp_bot: false,
+    rh: true,
+    cheff_ai: false,
+    estoque_avancado: false,
+    kds_avancado: true
   },
   premium: {
     tempo_real: true,
@@ -69,7 +87,13 @@ const FEATURE_PLANS = {
     jogos: true,
     hub_delivery: true,
     reservas: true,
-    fila_espera: true
+    fila_espera: true,
+    pesagem_selfservice: true,
+    whatsapp_bot: true,
+    rh: true,
+    cheff_ai: true,
+    estoque_avancado: true,
+    kds_avancado: true
   }
 };
 

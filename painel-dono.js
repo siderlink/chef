@@ -3081,6 +3081,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.aplicarDonoModularConfig === 'function') window.aplicarDonoModularConfig();
     // Carrega a configuração do dono salva no servidor (segue entre dispositivos)
     if (typeof window._carregarConfigServidor === 'function') window._carregarConfigServidor();
+    // Carrega o catálogo de módulos ativos e add-ons contratáveis
+    if (typeof window.carregarModulosDono === 'function') window.carregarModulosDono();
   }, 200);
 });
 
@@ -3097,5 +3099,340 @@ if (typeof socket === 'object' && socket && typeof socket.on === 'function') {
   });
   socket.on('connect', () => {
     if (typeof window._carregarConfigServidor === 'function') window._carregarConfigServidor();
+    if (typeof window.carregarModulosDono === 'function') window.carregarModulosDono();
+  });
+  // Notificação em tempo real quando o Super Admin aprovar um módulo solicitado
+  socket.on('funcao_aprovada', (data) => {
+    if (typeof showToast === 'function') {
+      showToast('🎉 Um novo módulo foi aprovado e ativado para o seu restaurante!', 'ph-rocket-launch', 'success');
+    }
+    if (typeof window.carregarModulosDono === 'function') window.carregarModulosDono(true);
   });
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   CENTRAL DE MÓDULOS & ADD-ONS DO RESTAURANTE (STORE & CONTROLE)
+   ══════════════════════════════════════════════════════════════════ */
+let _cachedModulosDono = [];
+let _filtroModuloAtual = 'todos';
+let _termoBuscaModulo = '';
+
+window.carregarModulosDono = async function(forcar = false) {
+  const grid = document.getElementById('features-grid-dono');
+  const badgeContador = document.getElementById('badge-contador-modulos-ativos');
+  const iconRefresh = document.getElementById('icon-refresh-modulos');
+
+  if (iconRefresh) iconRefresh.classList.add('spin');
+  if (grid && (!_cachedModulosDono.length || forcar)) {
+    grid.innerHTML = `
+      <div style="text-align:center; color:var(--text-sub); padding:30px; grid-column:1/-1;">
+        <i class="ph-bold ph-spinner-gap spin" style="font-size: 26px; color: var(--primary);"></i>
+        <div style="margin-top: 8px; font-size: 13px;">Carregando módulos disponíveis...</div>
+      </div>
+    `;
+  }
+
+  try {
+    const res = await fetch('/api/funcoes', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (data && data.success && Array.isArray(data.features)) {
+      _cachedModulosDono = data.features;
+      const ativosCount = _cachedModulosDono.filter(m => m.enabled && m.available).length;
+      if (badgeContador) {
+        badgeContador.textContent = `${ativosCount} Ativos no seu Plano`;
+      }
+      window.renderizarGridModulosDono();
+    } else {
+      if (grid) grid.innerHTML = '<div style="text-align:center; color:#ef4444; padding:24px; grid-column:1/-1;">Não foi possível carregar os módulos.</div>';
+    }
+  } catch (err) {
+    if (grid) grid.innerHTML = '<div style="text-align:center; color:var(--text-sub); padding:24px; grid-column:1/-1;">Erro de conexão ao buscar módulos.</div>';
+  } finally {
+    if (iconRefresh) iconRefresh.classList.remove('spin');
+  }
+};
+
+window.renderizarGridModulosDono = function() {
+  const grid = document.getElementById('features-grid-dono');
+  if (!grid) return;
+
+  let filtrados = _cachedModulosDono.slice();
+
+  // Filtro de aba
+  if (_filtroModuloAtual === 'ativos') {
+    filtrados = filtrados.filter(m => m.enabled && m.available);
+  } else if (_filtroModuloAtual === 'addons') {
+    filtrados = filtrados.filter(m => !m.available);
+  } else if (_filtroModuloAtual !== 'todos') {
+    filtrados = filtrados.filter(m => (m.categorias || []).includes(_filtroModuloAtual));
+  }
+
+  // Filtro de busca
+  if (_termoBuscaModulo) {
+    const t = _termoBuscaModulo.toLowerCase();
+    filtrados = filtrados.filter(m =>
+      (m.nome || '').toLowerCase().includes(t) ||
+      (m.desc || '').toLowerCase().includes(t) ||
+      (m.roi || '').toLowerCase().includes(t) ||
+      (m.categorias || []).some(c => c.toLowerCase().includes(t))
+    );
+  }
+
+  if (filtrados.length === 0) {
+    grid.innerHTML = `
+      <div style="text-align:center; color:var(--text-sub); padding:36px; grid-column:1/-1;">
+        <i class="ph-bold ph-magnifying-glass" style="font-size: 32px; opacity: 0.5;"></i>
+        <div style="font-weight: 800; font-size: 14px; margin-top: 8px; color: var(--text);">Nenhum módulo encontrado</div>
+        <div style="font-size: 12px; margin-top: 4px;">Tente remover filtros ou buscar por outros termos.</div>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = filtrados.map(m => {
+    const isAtivo = !!(m.enabled && m.available);
+    const isLiberado = !!m.available;
+    const statusImpl = m.status_impl; // 'liberada' | 'em_implementacao' | 'implementada' | 'solicitada' | 'recusada' | null
+    const icone = m.icone || 'ph-puzzle-piece';
+    const preco = m.preco || 'Sob consulta';
+    const roi = m.roi || null;
+    const badge = m.badge || null;
+
+    let badgeStatus = '';
+    let acaoBotao = '';
+
+    if (isLiberado) {
+      badgeStatus = isAtivo
+        ? `<span style="font-size: 10.5px; font-weight: 900; background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;"><i class="ph-fill ph-check-circle"></i> ATIVO</span>`
+        : `<span style="font-size: 10.5px; font-weight: 800; background: var(--card); color: var(--text-sub); border: 1px solid var(--border); padding: 3px 8px; border-radius: 12px;">DESATIVADO</span>`;
+
+      acaoBotao = `
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px;">
+          <span style="font-size: 11.5px; font-weight: 700; color: ${isAtivo ? '#10b981' : 'var(--text-sub)'};">
+            ${isAtivo ? 'Módulo operando' : 'Módulo pausado'}
+          </span>
+          <label style="position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer;">
+            <input type="checkbox" ${isAtivo ? 'checked' : ''} onchange="window.alternarAtivacaoModuloDono('${m.chave}', this.checked, this)" style="opacity: 0; width: 0; height: 0;">
+            <span style="position: absolute; inset: 0; background: ${isAtivo ? '#10b981' : 'var(--border)'}; border-radius: 24px; transition: .25s;"></span>
+            <span style="position: absolute; height: 18px; width: 18px; left: ${isAtivo ? '22px' : '3px'}; bottom: 3px; background: #fff; border-radius: 50%; transition: .25s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></span>
+          </label>
+        </div>
+      `;
+    } else if (statusImpl === 'em_implementacao') {
+      badgeStatus = `<span style="font-size: 10.5px; font-weight: 900; background: #ede9fe; color: #7c3aed; padding: 3px 8px; border-radius: 12px;"><i class="ph-bold ph-gear spin"></i> EM IMPLANTAÇÃO</span>`;
+      acaoBotao = `
+        <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px; width: 100%;">
+          <div style="font-size: 11.5px; color: #7c3aed; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+            <i class="ph-bold ph-clock"></i> Nossa equipe já está configurando seu módulo.
+          </div>
+        </div>
+      `;
+    } else if (statusImpl === 'solicitada') {
+      badgeStatus = `<span style="font-size: 10.5px; font-weight: 900; background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 12px;"><i class="ph-bold ph-hourglass"></i> SOLICITADO</span>`;
+      acaoBotao = `
+        <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px; width: 100%; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11.5px; color: #b45309; font-weight: 700;">Aguardando liberação</span>
+          <button type="button" onclick="abrirModalSolicitarModulo('${m.chave}')" style="background: none; border: none; color: var(--primary); font-size: 11px; font-weight: 800; cursor: pointer;">
+            Atualizar mensagem
+          </button>
+        </div>
+      `;
+    } else {
+      // Add-on contratável
+      badgeStatus = `<span style="font-size: 10.5px; font-weight: 900; background: rgba(252, 75, 21, 0.12); color: var(--primary); padding: 3px 8px; border-radius: 12px;">ADD-ON OPCIONAL</span>`;
+      acaoBotao = `
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px; gap: 8px; flex-wrap: wrap;">
+          <div>
+            <div style="font-size: 10px; font-weight: 800; color: var(--text-sub); text-transform: uppercase;">Investimento</div>
+            <div style="font-size: 13.5px; font-weight: 900; color: #10b981;">${preco}</div>
+          </div>
+          <button type="button" onclick="abrirModalSolicitarModulo('${m.chave}')" style="padding: 8px 14px; border-radius: 10px; background: linear-gradient(135deg, #fc4b15, #ff8c00); color: #fff; border: none; font-weight: 800; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(252, 75, 21, 0.25);">
+            <i class="ph-bold ph-rocket-launch"></i> Quero Ativar
+          </button>
+        </div>
+      `;
+    }
+
+    const roiHtml = roi
+      ? `<div style="font-size: 11px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.08); padding: 4px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; margin-top: 6px;">
+          <i class="ph-bold ph-lightning"></i> ${escHtml(roi)}
+        </div>`
+      : '';
+
+    const badgeDestaque = badge
+      ? `<span style="font-size: 9.5px; font-weight: 900; background: linear-gradient(135deg, #8b5cf6, #ec4899); color: #fff; padding: 2px 6px; border-radius: 6px; margin-left: 6px; text-transform: uppercase; letter-spacing: 0.3px;">${escHtml(badge)}</span>`
+      : '';
+
+    return `
+      <div style="background: var(--card2); border: 1.5px solid ${isAtivo ? 'rgba(16, 185, 129, 0.35)' : 'var(--border)'}; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.03); transition: transform 0.2s, border-color 0.2s;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: ${isAtivo ? 'rgba(16, 185, 129, 0.12)' : 'rgba(252, 75, 21, 0.12)'}; color: ${isAtivo ? '#10b981' : 'var(--primary)'}; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+              <i class="ph-bold ${icone}"></i>
+            </div>
+            ${badgeStatus}
+          </div>
+
+          <div style="display: flex; align-items: center; flex-wrap: wrap;">
+            <h4 style="margin: 0; font-size: 14.5px; font-weight: 900; color: var(--text); line-height: 1.3;">${escHtml(m.nome)}</h4>
+            ${badgeDestaque}
+          </div>
+
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-sub); margin: 3px 0 6px 0;">
+            ${(m.categorias || []).join(' • ')}
+          </div>
+
+          <p style="margin: 0; font-size: 12px; color: var(--text-sub); line-height: 1.4; min-height: 34px;">
+            ${escHtml(m.desc)}
+          </p>
+
+          ${roiHtml}
+        </div>
+
+        ${acaoBotao}
+      </div>
+    `;
+  }).join('');
+};
+
+window.filtrarModulosDono = function(categoria, btn) {
+  _filtroModuloAtual = categoria;
+  document.querySelectorAll('#filtros-modulos-dono .modulo-tab-btn').forEach(b => {
+    b.style.background = 'var(--bg)';
+    b.style.color = 'var(--text-sub)';
+    b.style.fontWeight = '700';
+  });
+  if (btn) {
+    btn.style.background = 'var(--primary)';
+    btn.style.color = '#fff';
+    btn.style.fontWeight = '800';
+  }
+  window.renderizarGridModulosDono();
+};
+
+window.filtrarModulosDonoPorTexto = function(termo) {
+  _termoBuscaModulo = (termo || '').trim();
+  window.renderizarGridModulosDono();
+};
+
+window.alternarAtivacaoModuloDono = async function(chave, ativar, chk) {
+  try {
+    const res = await fetch('/api/funcoes/ativar', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ feature: chave, enabled: !!ativar })
+    });
+    const data = await res.json();
+    if (data && data.success) {
+      showToast(ativar ? 'Módulo ativado com sucesso!' : 'Módulo desativado.', 'ph-check-circle', 'success');
+      // Atualiza estado no cache local
+      const mod = _cachedModulosDono.find(m => m.chave === chave);
+      if (mod) mod.enabled = !!ativar;
+      const badgeContador = document.getElementById('badge-contador-modulos-ativos');
+      if (badgeContador) {
+        const ativosCount = _cachedModulosDono.filter(m => m.enabled && m.available).length;
+        badgeContador.textContent = `${ativosCount} Ativos no seu Plano`;
+      }
+      window.renderizarGridModulosDono();
+    } else {
+      if (chk) chk.checked = !ativar;
+      showToast(data.error || 'Não foi possível alterar o status do módulo.', 'ph-warning', 'error');
+    }
+  } catch (err) {
+    if (chk) chk.checked = !ativar;
+    showToast('Falha na comunicação com o servidor.', 'ph-wifi-slash', 'error');
+  }
+};
+
+window.abrirModalSolicitarModulo = function(chave) {
+  const mod = _cachedModulosDono.find(m => m.chave === chave);
+  if (!mod) return;
+
+  const elChave = document.getElementById('modal-sol-mod-chave');
+  const elTitulo = document.getElementById('modal-sol-mod-titulo');
+  const elNome = document.getElementById('modal-sol-mod-nome');
+  const elPreco = document.getElementById('modal-sol-mod-preco');
+  const elDesc = document.getElementById('modal-sol-mod-desc');
+  const elRoi = document.getElementById('modal-sol-mod-roi-texto');
+  const elIcon = document.getElementById('modal-sol-mod-icon');
+
+  if (elChave) elChave.value = mod.chave;
+  if (elTitulo) elTitulo.innerHTML = `<i class="ph-bold ph-rocket-launch" style="color:var(--primary);"></i> Contratar ${escHtml(mod.nome)}`;
+  if (elNome) elNome.textContent = mod.nome;
+  if (elPreco) elPreco.textContent = mod.preco || 'Sob consulta';
+  if (elDesc) elDesc.textContent = mod.desc;
+  if (elRoi) elRoi.textContent = mod.roi || 'Mais eficiência para seu negócio';
+  if (elIcon) elIcon.className = `ph-bold ${mod.icone || 'ph-puzzle-piece'}`;
+
+  abrirModal('modal-solicitar-modulo');
+};
+
+window.abrirModalSolicitarModuloGenerico = function() {
+  const elChave = document.getElementById('modal-sol-mod-chave');
+  const elTitulo = document.getElementById('modal-sol-mod-titulo');
+  const elNome = document.getElementById('modal-sol-mod-nome');
+  const elPreco = document.getElementById('modal-sol-mod-preco');
+  const elDesc = document.getElementById('modal-sol-mod-desc');
+  const elRoi = document.getElementById('modal-sol-mod-roi-texto');
+  const elIcon = document.getElementById('modal-sol-mod-icon');
+
+  if (elChave) elChave.value = 'modulo_sob_medida';
+  if (elTitulo) elTitulo.innerHTML = `<i class="ph-bold ph-plus-circle" style="color:var(--primary);"></i> Solicitar Módulo Sob Medida`;
+  if (elNome) elNome.textContent = 'Módulo ou Integração Personalizada';
+  if (elPreco) elPreco.textContent = 'Sob orçamento';
+  if (elDesc) elDesc.textContent = 'Descreva a função, equipamento ou integração que seu restaurante precisa.';
+  if (elRoi) elRoi.textContent = 'Desenvolvimento prioritário para a sua operação';
+  if (elIcon) elIcon.className = 'ph-bold ph-sparkle';
+
+  abrirModal('modal-solicitar-modulo');
+};
+
+window.enviarSolicitacaoModuloDono = async function() {
+  const chave = document.getElementById('modal-sol-mod-chave')?.value || 'nova_solicitacao';
+  const whatsapp = (document.getElementById('modal-sol-mod-whatsapp')?.value || '').trim();
+  const obs = (document.getElementById('modal-sol-mod-obs')?.value || '').trim();
+  const btn = document.getElementById('btn-confirmar-sol-mod');
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph-bold ph-spinner-gap spin"></i> Enviando...';
+  }
+
+  try {
+    const res = await fetch('/api/funcoes/solicitar', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        feature: chave,
+        telefone: whatsapp,
+        mensagem: obs
+      })
+    });
+    const data = await res.json();
+    if (data && data.success) {
+      fecharModal('modal-solicitar-modulo');
+      showToast(data.mensagem || 'Solicitação enviada! Nossa equipe já foi notificada.', 'ph-check-circle', 'success');
+      // Limpa inputs
+      if (document.getElementById('modal-sol-mod-obs')) document.getElementById('modal-sol-mod-obs').value = '';
+      window.carregarModulosDono(true);
+    } else {
+      showToast(data.error || 'Erro ao enviar solicitação.', 'ph-warning', 'error');
+    }
+  } catch (err) {
+    showToast('Falha na comunicação ao enviar solicitação.', 'ph-wifi-slash', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ph-bold ph-paper-plane-tilt"></i> Confirmar Solicitação';
+    }
+  }
+};

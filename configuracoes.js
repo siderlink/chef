@@ -5170,10 +5170,12 @@ async function carregarFuncoesSistema() {
         nota = '<span style="font-size:11px; font-weight:700; color:#dc2626; margin-top:6px; display:inline-block;"><i class="ph ph-x-circle"></i> A solicitação foi recusada.</span>';
         botoes = `<button onclick="solicitarFuncao('${f.chave}')" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;"><i class="ph ph-paper-plane-tilt"></i> Solicitar novamente</button>`;
       } else {
-        // não solicitado
-        statusBadge = '<span style="font-size:11px;font-weight:800;color:#64748b;background:#e2e8f0;border-radius:999px;padding:3px 10px;">INDISPONÍVEL</span>';
-        nota = '<span style="font-size:11px; font-weight:700; color:#64748b; margin-top:6px; display:inline-block;"><i class="ph ph-info"></i> Não contratado. Solicite a implementação e nossa equipe cuida de tudo.</span>';
-        botoes = `<button onclick="solicitarFuncao('${f.chave}')" style="background:#fc4b15;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="ph ph-storefront"></i> Solicitar implementação</button>`;
+        // não contratado (add-on)
+        const precoLabel = f.preco ? `<span style="font-size:11.5px; font-weight:800; color:#10b981; background:#dcfce7; padding:2px 8px; border-radius:6px; margin-left:6px;">${escHtml(f.preco)}</span>` : '';
+        statusBadge = `<span style="font-size:11px;font-weight:800;color:#64748b;background:#e2e8f0;border-radius:999px;padding:3px 10px;">ADD-ON</span> ${precoLabel}`;
+        const roiLabel = f.roi ? `<div style="font-size:11px; font-weight:700; color:#f59e0b; margin-top:4px;"><i class="ph ph-lightning"></i> ${escHtml(f.roi)}</div>` : '';
+        nota = `<span style="font-size:11px; font-weight:700; color:#64748b; margin-top:6px; display:inline-block;"><i class="ph ph-info"></i> Não contratado no plano atual. Solicite a ativação e nossa equipe cuida de tudo.</span>${roiLabel}`;
+        botoes = `<button onclick="solicitarFuncao('${f.chave}')" style="background:#fc4b15;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="ph ph-storefront"></i> Solicitar ativação</button>`;
       }
 
       html += `<div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; padding:14px 16px; display:flex; justify-content:space-between; gap:14px; align-items:center; flex-wrap:wrap;">

@@ -120,6 +120,8 @@ function switchTabSuporte(targetId) {
   else if (targetId === 'sec-ranking') carregarRanking();
   else if (targetId === 'sec-temas-curadoria') { if (typeof carregarCuradoriaTemas === 'function') carregarCuradoriaTemas(); }
   else if (targetId === 'sec-site-vendas-modulos') { if (typeof carregarModulosSiteVendas === 'function') carregarModulosSiteVendas(); }
+  else if (targetId === 'sec-estudio-modulos') { if (typeof carregarModulosSuporte === 'function') carregarModulosSuporte(); }
+  else if (targetId === 'sec-dev-api-hub') { if (typeof carregarDevHub === 'function') carregarDevHub(); }
 }
 
 function entrarPainel() {
@@ -1348,3 +1350,544 @@ window.salvarPresetLayout = async function() {
 document.addEventListener('DOMContentLoaded', () => {
   window.carregarRestaurantesParaStudio();
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DEV STUDIO & HUB DE APIS INTERNAS (SUPORTE & ENGENHARIA)
+// ═══════════════════════════════════════════════════════════════════════════
+
+var _devCatalogCache = [];
+var _devSelectedCat = 'todos';
+var _devTemplatesCache = [];
+var _devActiveTemplate = null;
+var _devActiveScaffoldFileType = 'json';
+var _devScaffoldFiles = {};
+
+window.carregarDevHub = function() {
+  window.carregarCatalogoDev();
+  window.carregarTemplatesDev();
+  window.popularTenantsSandbox();
+};
+
+window.switchDevHubTab = function(tabName) {
+  var tabs = ['catalog', 'sandbox', 'scaffolder', 'sdk'];
+  tabs.forEach(function(t) {
+    var view = document.getElementById('dev-view-' + t);
+    var btn = document.getElementById('dev-tab-btn-' + t);
+    if (view) view.style.display = (t === tabName) ? 'block' : 'none';
+    if (btn) {
+      if (t === tabName) {
+        btn.style.background = 'rgba(0,242,254,0.15)';
+        btn.style.borderColor = '#00f2fe';
+        btn.style.color = '#00f2fe';
+        btn.style.fontWeight = '700';
+      } else {
+        btn.style.background = 'var(--bg-tertiary)';
+        btn.style.borderColor = 'var(--border-color)';
+        btn.style.color = 'var(--text-primary)';
+        btn.style.fontWeight = '600';
+      }
+    }
+  });
+};
+
+window.popularTenantsSandbox = function() {
+  var sel = document.getElementById('dev-sb-tenant');
+  if (!sel) return;
+  if (_restaurantesCache && _restaurantesCache.length > 0) {
+    sel.innerHTML = '<option value="">Nenhum (Global / Master)</option>' +
+      _restaurantesCache.map(function(r) {
+        return '<option value="' + r.id + '">#' + r.id + ' - ' + esc(r.nome) + '</option>';
+      }).join('');
+  } else {
+    apiGet('/api/suporte/restaurantes', function(err, data) {
+      if (!err && data && data.ok && Array.isArray(data.restaurantes)) {
+        _restaurantesCache = data.restaurantes;
+        sel.innerHTML = '<option value="">Nenhum (Global / Master)</option>' +
+          _restaurantesCache.map(function(r) {
+            return '<option value="' + r.id + '">#' + r.id + ' - ' + esc(r.nome) + '</option>';
+          }).join('');
+      }
+    });
+  }
+};
+
+// ── 1. CATÁLOGO DE APIS & ROTAS ──
+
+window.carregarCatalogoDev = async function() {
+  var container = document.getElementById('dev-catalog-list');
+  var catsContainer = document.getElementById('dev-catalog-categories');
+  if (!container) return;
+
+  try {
+    var res = await fetch('/api/dev/catalog');
+    var data = await res.json();
+    if (!data.sucesso || !Array.isArray(data.endpoints)) throw new Error(data.error || 'Erro ao carregar catálogo');
+
+    _devCatalogCache = data.endpoints;
+
+    // Categorias
+    if (catsContainer && data.categories) {
+      var h = '<button class="btn btn-sm" onclick="selecionarCategoriaDev(\'todos\')" id="dev-cat-todos" style="font-size:0.75rem; background:#0284c7; color:#fff;">Todos (' + data.endpoints.length + ')</button>';
+      data.categories.forEach(function(cat) {
+        var count = data.endpoints.filter(function(e) { return e.category === cat; }).length;
+        h += '<button class="btn btn-sm" onclick="selecionarCategoriaDev(\'' + esc(cat) + '\')" id="dev-cat-' + cat.replace(/[^a-zA-Z0-9]/g, '-') + '" style="font-size:0.75rem;">' + esc(cat) + ' (' + count + ')</button>';
+      });
+      catsContainer.innerHTML = h;
+    }
+
+    window.filtrarCatalogoDev();
+  } catch (err) {
+    container.innerHTML = '<div class="empty-state" style="padding:2rem; color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i><p>' + esc(err.message) + '</p></div>';
+  }
+};
+
+window.selecionarCategoriaDev = function(cat) {
+  _devSelectedCat = cat;
+  var btns = document.querySelectorAll('#dev-catalog-categories .btn');
+  btns.forEach(function(b) {
+    b.style.background = 'var(--bg-tertiary)';
+    b.style.borderColor = 'var(--border-color)';
+    b.style.color = 'var(--text-primary)';
+  });
+  var activeBtn = document.getElementById('dev-cat-' + (cat === 'todos' ? 'todos' : cat.replace(/[^a-zA-Z0-9]/g, '-')));
+  if (activeBtn) {
+    activeBtn.style.background = '#0284c7';
+    activeBtn.style.color = '#fff';
+  }
+  window.filtrarCatalogoDev();
+};
+
+window.filtrarCatalogoDev = function() {
+  var container = document.getElementById('dev-catalog-list');
+  if (!container) return;
+
+  var q = (document.getElementById('dev-catalog-search')?.value || '').toLowerCase().trim();
+  var filtered = _devCatalogCache.filter(function(item) {
+    var matchCat = (_devSelectedCat === 'todos') || (item.category === _devSelectedCat);
+    var matchSearch = !q || 
+      item.title.toLowerCase().includes(q) || 
+      item.path.toLowerCase().includes(q) || 
+      item.description.toLowerCase().includes(q) ||
+      item.category.toLowerCase().includes(q) ||
+      item.method.toLowerCase().includes(q);
+    return matchCat && matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty-state" style="padding:2rem;"><i class="fa-solid fa-filter"></i><p>Nenhuma rota encontrada para o filtro atual.</p></div>';
+    return;
+  }
+
+  var methodColors = {
+    'GET': { bg: 'rgba(56,189,248,0.15)', border: '#38bdf8', text: '#38bdf8' },
+    'POST': { bg: 'rgba(34,197,94,0.15)', border: '#22c55e', text: '#22c55e' },
+    'PUT': { bg: 'rgba(245,158,11,0.15)', border: '#f59e0b', text: '#f59e0b' },
+    'DELETE': { bg: 'rgba(239,68,68,0.15)', border: '#ef4444', text: '#ef4444' },
+    'PATCH': { bg: 'rgba(168,85,247,0.15)', border: '#a855f7', text: '#a855f7' },
+    'SOCKET (EMIT)': { bg: 'rgba(236,72,153,0.15)', border: '#ec4899', text: '#ec4899' }
+  };
+
+  container.innerHTML = filtered.map(function(item, idx) {
+    var c = methodColors[item.method] || { bg: '#334155', border: '#64748b', text: '#fff' };
+    var cardId = 'dev-card-' + idx;
+
+    return '<div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:1.2rem; transition:border-color 0.2s;" onmouseover="this.style.borderColor=\'#00f2fe\'" onmouseout="this.style.borderColor=\'var(--border-color)\'">' +
+      '<div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:8px;">' +
+        '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">' +
+          '<span style="background:' + c.bg + '; border:1px solid ' + c.border + '; color:' + c.text + '; font-weight:800; font-family:monospace; font-size:0.75rem; padding:3px 8px; border-radius:6px;">' + esc(item.method) + '</span>' +
+          '<code style="font-size:0.95rem; font-weight:700; color:#fff; background:var(--bg-tertiary); padding:3px 8px; border-radius:6px;">' + esc(item.path) + '</code>' +
+          '<span style="font-size:0.75rem; color:var(--text-muted); background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:12px;">' + esc(item.category) + '</span>' +
+        '</div>' +
+        '<div style="display:flex; gap:6px;">' +
+          (item.method.startsWith('SOCKET') ? '' : '<button class="btn btn-sm" onclick="window.abrirNoSandboxByIndex(' + idx + ')" style="background:#0284c7; color:#fff; font-weight:700; font-size:0.75rem;"><i class="fa-solid fa-play"></i> Testar no Sandbox</button>') +
+        '</div>' +
+      '</div>' +
+
+      '<h4 style="margin:0 0 4px 0; font-size:0.95rem; color:#f8fafc;">' + esc(item.title) + '</h4>' +
+      '<p style="margin:0 0 10px 0; font-size:0.82rem; color:var(--text-muted); line-height:1.4;">' + esc(item.description) + '</p>' +
+
+      '<div style="display:flex; gap:16px; font-size:0.75rem; color:#94a3b8; margin-bottom:8px; flex-wrap:wrap;">' +
+        '<span><strong style="color:#e2e8f0;">Autenticação:</strong> ' + esc(item.auth) + '</span>' +
+        (item.headers && Object.keys(item.headers).length > 0 ? '<span><strong style="color:#e2e8f0;">Headers Requeridos:</strong> ' + esc(Object.keys(item.headers).join(', ')) + '</span>' : '') +
+      '</div>' +
+
+      '<details style="font-size:0.78rem; margin-top:8px;">' +
+        '<summary style="cursor:pointer; color:#38bdf8; font-weight:600;"><i class="fa-solid fa-code"></i> Ver Exemplo de Payload & Resposta</summary>' +
+        '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:10px; margin-top:8px;">' +
+          '<div>' +
+            '<span style="font-size:0.7rem; color:var(--text-muted); font-weight:700;">Exemplo de Request (Body):</span>' +
+            '<pre style="background:#090d16; border:1px solid var(--border-color); border-radius:8px; padding:8px; color:#22c55e; margin:4px 0 0 0; overflow-x:auto;">' + esc(item.sampleBody ? JSON.stringify(item.sampleBody, null, 2) : 'null (sem corpo)') + '</pre>' +
+          '</div>' +
+          '<div>' +
+            '<span style="font-size:0.7rem; color:var(--text-muted); font-weight:700;">Exemplo de Response (200 OK):</span>' +
+            '<pre style="background:#090d16; border:1px solid var(--border-color); border-radius:8px; padding:8px; color:#38bdf8; margin:4px 0 0 0; overflow-x:auto;">' + esc(item.sampleResponse ? JSON.stringify(item.sampleResponse, null, 2) : '{}') + '</pre>' +
+          '</div>' +
+        '</div>' +
+      '</details>' +
+    '</div>';
+  }).join('');
+};
+
+window.abrirNoSandboxByIndex = function(idx) {
+  var item = _devCatalogCache[idx];
+  if (!item) return;
+
+  window.switchDevHubTab('sandbox');
+  document.getElementById('dev-sb-method').value = item.method;
+  document.getElementById('dev-sb-url').value = item.path.replace(':id', '1').replace(':txid', 'CHEF_EXEMPLO').replace(':numero', '1');
+
+  var headers = Object.assign({}, item.headers || {});
+  if (item.auth && item.auth.includes('x-suporte-token') && suporteToken) {
+    headers['x-suporte-token'] = suporteToken;
+  }
+  document.getElementById('dev-sb-headers').value = JSON.stringify(headers, null, 2);
+  document.getElementById('dev-sb-body').value = item.sampleBody ? JSON.stringify(item.sampleBody, null, 2) : '';
+  showToast('Endpoint carregado no Sandbox!', 'success');
+};
+
+// ── 2. SANDBOX & CONSOLE DE TESTES ──
+
+window.aplicarPresetSandbox = function(key) {
+  if (!key) return;
+  var presets = {
+    'get_restaurantes': { method: 'GET', url: '/api/suporte/restaurantes', body: '' },
+    'get_catalog': { method: 'GET', url: '/api/dev/catalog', body: '' },
+    'get_modules': { method: 'GET', url: '/api/modules/all', body: '' },
+    'get_caixa_status': { method: 'GET', url: '/api/caixa/status', body: '' },
+    'post_pix': { method: 'POST', url: '/api/pix/gerar', body: JSON.stringify({ valor: 45.00, descricao: 'Teste Sandbox Dev' }, null, 2) },
+    'post_pedido': { method: 'POST', url: '/api/pedidos', body: JSON.stringify({ tipo: 'balcao', cliente: 'Cliente Teste', itens: [{ produto_id: 1, quantidade: 1 }] }, null, 2) },
+    'post_reload': { method: 'POST', url: '/api/modules/reload', body: '{}' }
+  };
+
+  var p = presets[key];
+  if (!p) return;
+
+  document.getElementById('dev-sb-method').value = p.method;
+  document.getElementById('dev-sb-url').value = p.url;
+  document.getElementById('dev-sb-body').value = p.body;
+  window.injetarAuthHeadersSandbox();
+};
+
+window.injetarAuthHeadersSandbox = function() {
+  var headers = { 'Content-Type': 'application/json' };
+  if (suporteToken) {
+    headers['x-suporte-token'] = suporteToken;
+  }
+  document.getElementById('dev-sb-headers').value = JSON.stringify(headers, null, 2);
+};
+
+window.formatarJsonBodySandbox = function() {
+  var bodyEl = document.getElementById('dev-sb-body');
+  if (!bodyEl || !bodyEl.value.trim()) return;
+  try {
+    var parsed = JSON.parse(bodyEl.value);
+    bodyEl.value = JSON.stringify(parsed, null, 2);
+  } catch (e) {
+    alert('JSON Inválido: ' + e.message);
+  }
+};
+
+window.limparSandbox = function() {
+  document.getElementById('dev-sb-method').value = 'GET';
+  document.getElementById('dev-sb-url').value = '/api/dev/catalog';
+  document.getElementById('dev-sb-headers').value = '{"Content-Type": "application/json"}';
+  document.getElementById('dev-sb-body').value = '';
+  document.getElementById('dev-sb-res-status').textContent = 'Aguardando';
+  document.getElementById('dev-sb-res-status').style.background = '#334155';
+  document.getElementById('dev-sb-res-status').style.color = '#94a3b8';
+  document.getElementById('dev-sb-res-time').textContent = '-- ms';
+  document.getElementById('dev-sb-res-output').textContent = '// Console limpo.';
+  document.getElementById('dev-sb-res-headers').textContent = '';
+};
+
+window.executarChamadaSandbox = async function() {
+  var btn = document.getElementById('btn-run-sandbox');
+  var method = document.getElementById('dev-sb-method').value;
+  var url = document.getElementById('dev-sb-url').value.trim();
+  var tenantId = document.getElementById('dev-sb-tenant').value;
+  var headersRaw = document.getElementById('dev-sb-headers').value.trim();
+  var bodyRaw = document.getElementById('dev-sb-body').value.trim();
+
+  if (!url) return alert('Informe a URL / Rota a ser executada.');
+
+  var headers = {};
+  if (headersRaw) {
+    try { headers = JSON.parse(headersRaw); } catch(e) { return alert('Headers JSON inválido: ' + e.message); }
+  }
+
+  var body = null;
+  if (bodyRaw && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+    try { body = JSON.parse(bodyRaw); } catch(e) { return alert('Body JSON inválido: ' + e.message); }
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Executando...';
+
+  document.getElementById('dev-sb-res-status').textContent = 'Enviando...';
+  document.getElementById('dev-sb-res-time').textContent = '...';
+
+  try {
+    var res = await fetch('/api/dev/execute-test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        method: method,
+        url: url,
+        headers: headers,
+        body: body,
+        tenantId: tenantId || null
+      })
+    });
+
+    var data = await res.json();
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-play"></i> Enviar Requisição';
+
+    var statusBadge = document.getElementById('dev-sb-res-status');
+    var timeBadge = document.getElementById('dev-sb-res-time');
+    var outputEl = document.getElementById('dev-sb-res-output');
+    var headersEl = document.getElementById('dev-sb-res-headers');
+
+    timeBadge.textContent = (data.timeMs || 0) + ' ms';
+
+    var code = data.statusCode || 200;
+    statusBadge.textContent = code + ' ' + (data.statusText || '');
+    if (code >= 200 && code < 300) {
+      statusBadge.style.background = 'rgba(34,197,94,0.2)';
+      statusBadge.style.color = '#22c55e';
+    } else if (code >= 400 && code < 500) {
+      statusBadge.style.background = 'rgba(245,158,11,0.2)';
+      statusBadge.style.color = '#f59e0b';
+    } else {
+      statusBadge.style.background = 'rgba(239,68,68,0.2)';
+      statusBadge.style.color = '#ef4444';
+    }
+
+    var bodyDisplay = data.data !== undefined ? data.data : data;
+    outputEl.textContent = (typeof bodyDisplay === 'object') ? JSON.stringify(bodyDisplay, null, 2) : String(bodyDisplay);
+    headersEl.textContent = JSON.stringify(data.headers || {}, null, 2);
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-play"></i> Enviar Requisição';
+    document.getElementById('dev-sb-res-status').textContent = 'Erro de Conexão';
+    document.getElementById('dev-sb-res-status').style.background = 'rgba(239,68,68,0.2)';
+    document.getElementById('dev-sb-res-status').style.color = '#ef4444';
+    document.getElementById('dev-sb-res-output').textContent = 'Erro: ' + err.message;
+  }
+};
+
+window.copiarRespostaSandbox = function() {
+  var text = document.getElementById('dev-sb-res-output')?.textContent;
+  if (text) {
+    navigator.clipboard.writeText(text).then(function() {
+      showToast('Payload copiado para a área de transferência!', 'success');
+    });
+  }
+};
+
+// ── 3. SCAFFOLDER DE PLUGINS & MÓDULOS ──
+
+window.carregarTemplatesDev = async function() {
+  var grid = document.getElementById('dev-templates-grid');
+  if (!grid) return;
+
+  try {
+    var res = await fetch('/api/dev/templates');
+    var data = await res.json();
+    if (!data.sucesso || !Array.isArray(data.templates)) return;
+
+    _devTemplatesCache = data.templates;
+
+    grid.innerHTML = data.templates.map(function(t) {
+      return '<div style="background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:10px; padding:12px; cursor:pointer; transition:all 0.2s;" onclick="selecionarTemplateScaffold(\'' + esc(t.templateKey) + '\')" onmouseover="this.style.borderColor=\'#fc4b15\';this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.borderColor=\'var(--border-color)\';this.style.transform=\'none\'">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">' +
+          '<strong style="color:#fff; font-size:0.85rem;"><i class="fa-solid fa-cube" style="color:#fc4b15;"></i> ' + esc(t.name) + '</strong>' +
+          '<span class="badge" style="font-size:0.65rem;">Tier ' + t.tier + '</span>' +
+        '</div>' +
+        '<p style="font-size:0.75rem; color:var(--text-muted); margin:0 0 8px 0; line-height:1.3;">' + esc(t.description) + '</p>' +
+        '<div style="font-size:0.7rem; color:#38bdf8; font-weight:700;"><i class="fa-solid fa-arrow-right"></i> Usar este Arquétipo</div>' +
+      '</div>';
+    }).join('');
+
+    // Seleciona o primeiro por padrão
+    if (data.templates.length > 0 && !_devActiveTemplate) {
+      window.selecionarTemplateScaffold(data.templates[0].templateKey);
+    }
+  } catch(e) {
+    console.warn('Erro ao carregar templates dev:', e.message);
+  }
+};
+
+window.selecionarTemplateScaffold = function(key) {
+  var t = _devTemplatesCache.find(function(item) { return item.templateKey === key; });
+  if (!t) return;
+
+  _devActiveTemplate = t;
+  document.getElementById('scaffold-id').value = t.id;
+  document.getElementById('scaffold-nome').value = t.name;
+  document.getElementById('scaffold-cat').value = t.category;
+  document.getElementById('scaffold-tier').value = String(t.tier || 2);
+  document.getElementById('scaffold-targets').value = (t.targets || ['caixa_v11']).join(', ');
+  document.getElementById('scaffold-desc').value = t.description;
+
+  window.atualizarScaffoldPreview();
+  showToast('Arquétipo [' + t.name + '] carregado no formulário!', 'success');
+};
+
+window.atualizarScaffoldPreview = function() {
+  var id = document.getElementById('scaffold-id').value.trim() || 'meu-modulo';
+  var name = document.getElementById('scaffold-nome').value.trim() || 'Meu Novo Módulo';
+  var cat = document.getElementById('scaffold-cat').value;
+  var tier = parseInt(document.getElementById('scaffold-tier').value, 10) || 2;
+  var targets = document.getElementById('scaffold-targets').value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  var desc = document.getElementById('scaffold-desc').value.trim() || 'Módulo operacional plug-and-play';
+
+  _devScaffoldFiles = {
+    'json': JSON.stringify({
+      id: id,
+      name: name,
+      version: '1.0.0',
+      author: 'Chef Suporte Dev Team',
+      description: desc,
+      category: cat,
+      icon: 'ph-puzzle-piece',
+      enabled: true,
+      tier: tier,
+      targets: targets,
+      hooks: { server: 'index.js', client: 'client.js', widget: 'widget.js', style: 'style.css' }
+    }, null, 2),
+
+    'backend': `/**
+ * Backend do Módulo: ${name} (${id})
+ */
+module.exports = function ({ app, db, masterDb, io, log }) {
+  log('⚡ [${id}] Backend do módulo ${name} inicializado.');
+
+  app.get('/api/modulo/${id}/status', (req, res) => {
+    res.json({
+      modulo: '${id}',
+      nome: '${name}',
+      status: 'online',
+      tier: ${tier},
+      timestamp: Date.now()
+    });
+  });
+};`,
+
+    'widget': `/**
+ * Widget do Módulo: ${name} (${id})
+ */
+(function () {
+  if (!window.ChefModules) window.ChefModules = { register: function(m) { (window._chefModQueue = window._chefModQueue || []).push(m); } };
+
+  window.ChefModules.register({
+    id: '${id}',
+    name: '${name}',
+    category: '${cat}',
+    icon: 'ph-puzzle-piece',
+    defaultSize: 'sz-m',
+    render: function (container) {
+      container.innerHTML = \`
+        <div style="background:#161a2b;border:1px solid #2a2d3e;border-radius:12px;padding:14px;">
+          <strong style="color:#00f2fe;"><i class="ph ph-puzzle-piece"></i> ${name}</strong>
+          <p style="font-size:0.8rem;color:#94a3b8;margin:6px 0 0 0;">${desc}</p>
+        </div>
+      \`;
+    }
+  });
+})();`,
+
+    'style': `/* Estilo customizado do módulo ${name} */
+.mod-${id} {
+  background: #161a2b;
+  border-radius: 12px;
+}`
+  };
+
+  var previewEl = document.getElementById('scaffold-code-preview');
+  if (previewEl) {
+    previewEl.value = _devScaffoldFiles[_devActiveScaffoldFileType] || '';
+  }
+};
+
+window.trocarAbaArquivoScaffold = function(fileType) {
+  _devActiveScaffoldFileType = fileType;
+  var types = ['json', 'backend', 'widget', 'style'];
+  types.forEach(function(t) {
+    var btn = document.getElementById('btn-tab-file-' + t);
+    if (btn) {
+      if (t === fileType) {
+        btn.style.background = '#0284c7';
+        btn.style.color = '#fff';
+      } else {
+        btn.style.background = 'var(--bg-tertiary)';
+        btn.style.color = 'var(--text-primary)';
+      }
+    }
+  });
+
+  var previewEl = document.getElementById('scaffold-code-preview');
+  if (previewEl && _devScaffoldFiles[fileType]) {
+    previewEl.value = _devScaffoldFiles[fileType];
+  }
+};
+
+window.salvarScaffoldNoDisco = async function() {
+  var id = document.getElementById('scaffold-id').value.trim();
+  var name = document.getElementById('scaffold-nome').value.trim();
+  var category = document.getElementById('scaffold-cat').value;
+  var tier = document.getElementById('scaffold-tier').value;
+  var targets = document.getElementById('scaffold-targets').value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  var description = document.getElementById('scaffold-desc').value.trim();
+  var templateKey = _devActiveTemplate ? _devActiveTemplate.templateKey : 'widget_caixa';
+  var customCode = (_devActiveScaffoldFileType === 'widget') ? document.getElementById('scaffold-code-preview').value : null;
+
+  if (!id || !name) return alert('Preencha o ID e o Nome do módulo.');
+
+  try {
+    var res = await fetch('/api/dev/scaffold', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        templateKey: templateKey,
+        id: id,
+        name: name,
+        category: category,
+        tier: tier,
+        targets: targets,
+        description: description,
+        customCode: customCode
+      })
+    });
+
+    var data = await res.json();
+    if (data.sucesso) {
+      showToast('🚀 Módulo criado e publicado com sucesso em plugins/' + data.id, 'success');
+      alert('✅ Módulo [' + data.name + '] scaffolded e pronto!\nArquivos gerados: ' + (data.filesCreated || []).join(', ') + '\n\nExecutando Hot-Reload automático...');
+      window.executarHotReloadPlugins();
+      if (typeof carregarModulosSuporte === 'function') carregarModulosSuporte();
+    } else {
+      alert('Erro ao criar módulo: ' + (data.error || 'Falha no servidor.'));
+    }
+  } catch (err) {
+    alert('Erro de conexão ao salvar módulo: ' + err.message);
+  }
+};
+
+window.executarHotReloadPlugins = async function() {
+  try {
+    var res = await fetch('/api/modules/reload', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    var data = await res.json();
+    if (data.sucesso) {
+      showToast('⚡ Hot-Reload efetuado! Total: ' + data.total_ativos + ' módulos ativos (' + data.novos_carregados + ' novos)', 'success');
+      if (typeof carregarModulosSuporte === 'function') carregarModulosSuporte();
+      window.carregarCatalogoDev();
+    } else {
+      showToast('Erro no hot-reload: ' + (data.error || 'Falha'), 'danger');
+    }
+  } catch(e) {
+    showToast('Erro de rede no hot-reload: ' + e.message, 'danger');
+  }
+};
+
