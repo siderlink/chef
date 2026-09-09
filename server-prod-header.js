@@ -185,6 +185,7 @@ if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 const upload = multer({ dest: UPLOAD_DIR });
 
 const app  = express();
+app.disable('x-powered-by');
 
 app.use(cors());
 app.use(express.json());
@@ -229,30 +230,83 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.static(DIST_DIR));
+// ── Hardening de Segurança: Headers HTTP e Proteção Anti-Sniffing/Clickjacking ──
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.removeHeader('X-Powered-By');
+  next();
+});
 
-// (Segurança) Rejeita path traversal ANTES de qualquer static/rota. O fallback
-// SPA abaixo usa path.join(DIST_DIR, req.path) e, sem este guard, um path com
-// ".." escaparia da pasta dist e serviria arquivos do projeto (server.js,
-// master.sqlite, cert.pfx...). Blocklist de extensões sensíveis como reforço.
-const PROD_BLOCKED_STATIC_EXTS = [
-  '.sqlite', '.sqlite-wal', '.sqlite-shm', '.db', '.db-wal', '.db-shm',
-  '.pfx', '.p12', '.pem', '.crt', '.key', '.cer', '.env', '.log', '.ini',
-  '.bat', '.cmd', '.ps1', '.sh', '.zip', '.rar', '.7z', '.gz', '.tgz', '.tar',
-  '.exe', '.msi', '.jar', '.apk', '.dll', '.so', '.dylib', '.deb', '.pkg',
-  '.dmg', '.iso', '.war', '.ear', '.jks', '.keystore'
+// ── Firewall Estático: Bloqueia acesso direto a arquivos de servidor, bancos, chaves e git ──
+const PROD_BLOCKED_DIRECTORIES = [
+  '/controllers', '/scratch', '/node_modules', '/installer', '/migrations',
+  '/src', '/hub-server', '/iniciodoprojetorestaura', '/bin', '/.git', '/.vscode', '/.idea'
 ];
+
+const PROD_BLOCKED_EXACT_FILES = new Set([
+  'server.js', 'server-prod.js', 'server_test.js', 'watchdog.js', 'boot.js',
+  'obfuscate.js', 'sync-prod.js', 'setup-quiz.js', 'copy-super-admin.js',
+  'package.json', 'package-lock.json', 'chef-modules.json', 'tsconfig.json',
+  'ecosystem.config.js', 'vite.config.js', 'build-hub.ps1', 'build-pkg.ps1',
+  'server-prod-header.js'
+]);
+
+const PROD_BLOCKED_STATIC_EXTS = [
+  '.sqlite', '.sqlite-wal', '.sqlite-shm', '.sqlite3', '.db', '.db-wal', '.db-shm',
+  '.sql', '.bak', '.backup', '.dump',
+  '.pfx', '.p12', '.pem', '.crt', '.key', '.cer', '.jks', '.keystore',
+  '.env', '.log', '.ini', '.conf', '.cfg',
+  '.bat', '.cmd', '.ps1', '.sh',
+  '.zip', '.rar', '.7z', '.gz', '.tgz', '.tar',
+  '.exe', '.msi', '.jar', '.apk', '.dll', '.so', '.dylib', '.deb', '.pkg',
+  '.dmg', '.iso', '.war', '.ear',
+  '.map'
+];
+
 app.use((req, res, next) => {
   if (req.method !== 'GET' && req.method !== 'HEAD') return next();
   let raw = (req.url || '/').split('?')[0];
   let decoded = '';
   try { decoded = decodeURIComponent(raw); } catch (e) { decoded = raw; }
   decoded = decoded.replace(/\\/g, '/');
-  if (decoded.split('/').includes('..')) return res.status(403).send('Acesso negado.');
+
+  // 1. Path traversal
+  const segments = decoded.split('/').filter(Boolean);
+  if (segments.includes('..')) return res.status(403).send('Acesso negado.');
+
+  // 2. Arquivos ou pastas ocultas (ex: /.git, /.env, /.vscode)
+  if (segments.some(s => s.startsWith('.') && s !== '.')) return res.status(403).send('Acesso negado.');
+
   const lower = decoded.toLowerCase();
-  if (PROD_BLOCKED_STATIC_EXTS.some(b => lower.endsWith(b))) return res.status(403).send('Acesso negado.');
+
+  // 3. Diretórios backend protegidos
+  if (PROD_BLOCKED_DIRECTORIES.some(d => lower.startsWith(d.toLowerCase()))) {
+    return res.status(403).send('Acesso negado.');
+  }
+
+  // 4. Arquivos de servidor restritos na raiz
+  const filename = segments.length ? segments[segments.length - 1].toLowerCase() : '';
+  if (PROD_BLOCKED_EXACT_FILES.has(filename)) {
+    return res.status(403).send('Acesso negado.');
+  }
+
+  // 5. Extensões restritas
+  if (PROD_BLOCKED_STATIC_EXTS.some(b => lower.endsWith(b))) {
+    return res.status(403).send('Acesso negado.');
+  }
+
+  // 6. Arquivos .json que não sejam manifest.json ou plugins autorizados
+  if (lower.endsWith('.json') && filename !== 'manifest.json' && !lower.startsWith('/plugins/')) {
+    return res.status(403).send('Acesso negado.');
+  }
+
   next();
 });
+
+app.use(express.static(DIST_DIR));
 
 // SPA fallback - qualquer rota nǜo encontrada vai para index.html (exceto /api)
 app.get(/^(?!\/api).*/, (req, res) => {

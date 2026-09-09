@@ -2790,10 +2790,31 @@
           if (draft.eqGerenNome) document.getElementById('eqGerenNome').value = draft.eqGerenNome;
         }
       } catch(e) {}
+      
+      // Auto-preenche chave do afiliado se veio por link de indicação (?ref=...)
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const refUrl = urlParams.get('ref') || urlParams.get('r');
+        if (refUrl && refUrl.trim()) {
+          localStorage.setItem('chef_ref_afiliado', refUrl.trim().toUpperCase());
+        }
+        const savedRef = localStorage.getItem('chef_ref_afiliado');
+        const inpChave = document.getElementById('setupChave');
+        if (savedRef && inpChave && !inpChave.value) {
+          inpChave.value = savedRef;
+        }
+      } catch(e) {}
     }
 
     function abrirSetupModal(plano = 'profissional') {
       planoSelecionado = plano;
+      try {
+        const savedRef = localStorage.getItem('chef_ref_afiliado');
+        const inpChave = document.getElementById('setupChave');
+        if (savedRef && inpChave && !inpChave.value) {
+          inpChave.value = savedRef;
+        }
+      } catch(e) {}
       document.getElementById('setupModalOverlay').classList.add('active');
       updateSetupUI();
     }

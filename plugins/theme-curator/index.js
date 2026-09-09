@@ -78,21 +78,45 @@ module.exports = function ({ app, db, masterDb, io, options, log }) {
     catch (e) { console.error('[theme-curator]', e.message); res.status(500).json({ ok: false, erro: e.message }); }
   };
 
+  // Helper para garantir ID de restaurante consistente
+  function extrairRid(req) {
+    const rid = req.restaurante_id ||
+      (req.user && (req.user.restaurante_id || req.user.id)) ||
+      req.headers['x-restaurante-id'] ||
+      (req.body && req.body.restaurante_id) ||
+      (req.query && req.query.restaurante_id) ||
+      1;
+    return parseInt(rid, 10) || 1;
+  }
+
   // Converte um tema da loja (cores da paleta) na configuração consumida pelo
   // theme-manager.js (applyCustomTheme) — usado para aplicar de verdade no salão.
   function themeToCfg(tema) {
-    const c = (tema && tema.cores) || (tema && typeof tema.cores === 'string' ? JSON.parse(tema.cores || '{}') : {}) || {};
+    let c = {};
+    try {
+      if (tema && typeof tema.cores === 'string') {
+        c = JSON.parse(tema.cores || '{}');
+      } else if (tema && typeof tema.cores === 'object' && tema.cores !== null) {
+        c = tema.cores;
+      } else if (tema && typeof tema === 'object') {
+        c = tema;
+      }
+    } catch (e) { c = {}; }
+
     return {
       storeTema: true,
       primary: c.primary || '#fc4b15',
-      bgColor: c.bgPage || '#0b0f19',
+      bgColor: c.bgPage || c.bgColor || '#0b0f19',
+      bgPage: c.bgPage || c.bgColor || '#0b0f19',
       bgCard: c.bgCard || '#111827',
       borderColor: c.borderColor || '#1f2937',
-      textPrimary: c.textMain || '#f3f4f6',
+      textPrimary: c.textMain || c.textPrimary || '#f3f4f6',
+      textMain: c.textMain || c.textPrimary || '#f3f4f6',
       statusOcupada: c.statusOcupada || '#ef4444',
       statusLivre: c.statusLivre || '#10b981',
-      css_custom: (tema && tema.css_custom) || '',
-      tema_nome: (tema && tema.nome) || ''
+      css_custom: (tema && (tema.css_custom || tema.customCss)) || '',
+      tema_nome: (tema && (tema.nome || tema.name)) || '',
+      tema_id: (tema && (tema.id || tema.tema_id)) || ''
     };
   }
 
@@ -514,7 +538,7 @@ module.exports = function ({ app, db, masterDb, io, options, log }) {
   // POST /api/modulo/temas/aplicar — Aplicar tema no restaurante (persiste no salão em tempo real)
   app.post('/api/modulo/temas/aplicar', authRestaurante, safe(async (req, res) => {
     const { tema_id, tema_json } = req.body || {};
-    const rid = req.restaurante_id || (req.user && req.user.restaurante_id);
+    const rid = extrairRid(req);
     if (!tema_id) return res.json({ ok: false, erro: 'tema_id obrigatório.' });
 
     await dbRun(`INSERT INTO temas_aplicados (restaurante_id, tema_id, tema_json) VALUES (?,?,?)
@@ -525,10 +549,16 @@ module.exports = function ({ app, db, masterDb, io, options, log }) {
     // Constrói a configuração visual real e persiste por tenant (tenant_temas).
     // /api/public/theme passa a devolvê-la, então o tema sobrevive a reloads.
     const catalogado = await dbGet(`SELECT * FROM temas_catalogo WHERE id = ?`, [tema_id]).catch(() => null);
-    const fonte = (catalogado && catalogado.cores) ? catalogado : tema_json;
+    const fonte = tema_json || catalogado;
     let cfg = null;
     if (fonte) {
-      cfg = themeToCfg(Object.assign({}, fonte, { css_custom: (fonte.css_custom || (catalogado && catalogado.css_custom) || '') }));
+      const merged = Object.assign({}, catalogado || {}, fonte);
+      if (catalogado && catalogado.cores && (!fonte.cores || Object.keys(fonte.cores).length === 0)) {
+        merged.cores = catalogado.cores;
+      }
+      if (catalogado && catalogado.nome && !merged.nome) merged.nome = catalogado.nome;
+      merged.css_custom = (fonte.css_custom || (catalogado && catalogado.css_custom) || '');
+      cfg = themeToCfg(merged);
       if (masterDb) {
         await new Promise((resolve, reject) => masterDb.run(
           `INSERT INTO tenant_temas (restaurante_id, tema_json) VALUES (?,?)
@@ -538,46 +568,54 @@ module.exports = function ({ app, db, masterDb, io, options, log }) {
     }
 
     // Propaga em tempo real para todas as telas do restaurante
-    if (io && rid) {
+    if (io) {
       const room = `restaurante_${rid}`;
       io.to(room).emit('tema_global_atualizado', cfg);
-      io.to(room).emit('tema_aplicado', { tema_id });
+      io.to(room).emit('tema_aplicado', { tema_id, cfg });
+      io.emit('tema_restaurante_atualizado', { restaurante_id: rid, cfg, tema_id });
     }
-    res.json({ ok: true, cfg, tema_id });
+    res.json({ ok: true, cfg, tema_id, restaurante_id: rid });
   }));
 
   // DELETE /api/modulo/temas/aplicar — Remover tema aplicado (volta ao tema padrão/global)
   app.delete('/api/modulo/temas/aplicar', authRestaurante, safe(async (req, res) => {
-    const rid = req.restaurante_id || (req.user && req.user.restaurante_id);
+    const rid = extrairRid(req);
     await dbRun(`DELETE FROM temas_aplicados WHERE restaurante_id = ?`, [rid]);
     if (masterDb) {
       await new Promise((resolve) => masterDb.run(`DELETE FROM tenant_temas WHERE restaurante_id = ?`, [rid], () => resolve()));
     }
-    if (io && rid) {
+    if (io) {
       const room = `restaurante_${rid}`;
       io.to(room).emit('tema_global_atualizado', null);
       io.to(room).emit('tema_aplicado', { tema_id: '' });
+      io.emit('tema_restaurante_atualizado', { restaurante_id: rid, cfg: null, tema_id: '' });
     }
     res.json({ ok: true });
   }));
 
   // GET /api/modulo/temas/ativo — Tema atualmente aplicado no restaurante
   app.get('/api/modulo/temas/ativo', authRestaurante, safe(async (req, res) => {
-    const rid = req.restaurante_id || (req.user && req.user.restaurante_id);
-    const row = await dbGet(`SELECT ta.tema_id, ta.tema_json, t.nome, t.nicho, t.emoji_nicho, t.descricao, t.badge
+    const rid = extrairRid(req);
+    const row = await dbGet(`SELECT ta.tema_id, ta.tema_json, t.nome, t.nicho, t.emoji_nicho, t.descricao, t.badge, t.cores AS cat_cores
       FROM temas_aplicados ta LEFT JOIN temas_catalogo t ON ta.tema_id = t.id
       WHERE ta.restaurante_id = ?`, [rid]);
     if (!row) return res.json({ ok: true, tema: null });
+    let savedJson = {};
+    try { savedJson = JSON.parse(row.tema_json || '{}'); } catch (e) { }
+    let parsedCores = savedJson.cores;
+    if (!parsedCores && row.cat_cores) {
+      try { parsedCores = typeof row.cat_cores === 'string' ? JSON.parse(row.cat_cores) : row.cat_cores; } catch (e) { }
+    }
     res.json({
       ok: true,
       tema: {
         tema_id: row.tema_id,
-        nome: row.nome || (row.tema_json ? (JSON.parse(row.tema_json || '{}').nome || row.tema_id) : row.tema_id),
+        nome: row.nome || savedJson.nome || row.tema_id,
         nicho: row.nicho,
         emoji_nicho: row.emoji_nicho,
         descricao: row.descricao,
         badge: row.badge,
-        cores: row.tema_json ? ((JSON.parse(row.tema_json).cores) || {}) : {}
+        cores: parsedCores || {}
       }
     });
   }));

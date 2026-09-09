@@ -210,6 +210,98 @@ document.addEventListener('DOMContentLoaded', () => {
         temaSelect.value = (lo === 'v11' || lo === 'classico') ? lo : 'pro_ux';
       }
     }
+    function salvarLayoutCaixa(novo) {
+      try { localStorage.setItem('chef_caixa_tema', novo); } catch (err) { }
+      try { socket.emit('save_restaurante_config', { caixa_tema: novo }); } catch (err) { }
+      fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(typeof authHeaders === 'function' ? authHeaders() : {}) },
+        body: JSON.stringify({ caixa_tema: novo })
+      }).catch(() => { });
+    }
+
+    async function limparTemaLoja() {
+      try {
+        await fetch('/api/modulo/temas/aplicar', { method: 'DELETE', headers: { 'Authorization': tokenTemas() } });
+      } catch (e) { }
+    }
+
+    temaSelect.addEventListener('change', async (e) => {
+      const val = e.target.value || 'pro_ux';
+
+      if (val.startsWith('store:')) {
+        const id = val.slice(6);
+        const t = _lojaTemas.find(x => x.id === id);
+        try {
+          const rid = localStorage.getItem('restaurante_id') || '1';
+          const res = await fetch('/api/modulo/temas/aplicar', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': tokenTemas(),
+              'x-restaurante-id': rid
+            },
+            body: JSON.stringify({
+              tema_id: id,
+              tema_json: t || { id: id, nome: _storeAtivoNome },
+              restaurante_id: rid
+            })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (data && data.ok === false) throw new Error(data.erro || 'erro');
+          if (data && data.cfg && window.ChefTheme && typeof window.ChefTheme.applyCustom === 'function') {
+            window.ChefTheme.applyCustom(data.cfg);
+          }
+          window.showToast(`🎨 Tema "${t ? t.nome : id}" aplicado em todas as telas!`, 'success');
+        } catch (err) {
+          window.showToast('Erro ao aplicar o tema da loja.', 'error');
+        }
+        carregarEstadoTemaCaixa();
+        return;
+      }
+
+      const novo = (val === 'v11') ? 'v11' : (val === 'classico' ? 'classico' : 'pro_ux');
+      salvarLayoutCaixa(novo);
+      await limparTemaLoja();
+      if (window.ChefTheme && typeof window.ChefTheme.clearCustom === 'function') {
+        window.ChefTheme.clearCustom();
+      }
+      window.showToast(
+        novo === 'v11'
+          ? 'Tema v1.1 ativado! A tela do caixa abrirá o painel modular.'
+          : novo === 'classico'
+            ? 'Tema clássico restaurado para a tela do caixa.'
+            : 'Caixa Moderno UX Pro ativado!',
+        'success');
+      carregarEstadoTemaCaixa();
+    });
+
+    window.addEventListener('message', function (ev) {
+      if (ev && ev.data) {
+        if (ev.data === 'fechar_theme_studio') {
+          window.fecharModalLojaTemas();
+        } else if (ev.data.action === 'chef_tema_aplicado') {
+          if (ev.data.cfg && window.ChefTheme && typeof window.ChefTheme.applyCustom === 'function') {
+            window.ChefTheme.applyCustom(ev.data.cfg);
+          }
+          carregarEstadoTemaCaixa();
+        }
+      }
+    });
+
+    try {
+      if (window.socket && window.socket.on) {
+        window.socket.on('tema_aplicado', () => carregarEstadoTemaCaixa());
+        window.socket.on('tema_global_atualizado', () => carregarEstadoTemaCaixa());
+        window.socket.on('tema_restaurante_atualizado', () => carregarEstadoTemaCaixa());
+      } else if (socket && socket.on) {
+        socket.on('tema_aplicado', () => carregarEstadoTemaCaixa());
+        socket.on('tema_global_atualizado', () => carregarEstadoTemaCaixa());
+        socket.on('tema_restaurante_atualizado', () => carregarEstadoTemaCaixa());
+      }
+    } catch (e) { }
+
+    carregarEstadoTemaCaixa();
 
     function salvarLayoutCaixa(novo) {
       try { localStorage.setItem('chef_caixa_tema', novo); } catch (err) { }

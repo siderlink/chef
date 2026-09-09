@@ -35,13 +35,15 @@ const CLIENT_OPTIONS = {
   deadCodeInjection: false,
   identifierNamesGenerator: 'hexadecimal',
   renameGlobals: false,
-  selfDefending: false,
+  selfDefending: true,             // Blindagem ativa contra crackers: trava/quebra se o código for formatado ou alterado
+  debugProtection: true,           // Trava DevTools quando breakpoints são acionados
+  debugProtectionInterval: 2500,   // Loop anti-debugger contínuo a cada 2.5s
   simplify: true,
   stringArray: true,
   stringArrayEncoding: ['base64'],
   stringArrayRotate: true,
   stringArrayShuffle: true,
-  stringArrayThreshold: 0.5,
+  stringArrayThreshold: 0.75,      // 75% das strings são ofuscadas em base64
   numbersToExpressions: false,
   splitStrings: false,
   transformObjectKeys: false,

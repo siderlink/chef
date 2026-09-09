@@ -113,7 +113,7 @@ function switchTabSuporte(targetId) {
     sections[j].className = sections[j].id === targetId ? 'content-section active' : 'content-section';
   }
   if (targetId === 'sec-dashboard') carregarDashboardSuporte();
-  else if (targetId === 'sec-vendas') carregarFinanceiroSuporte();
+  else if (targetId === 'sec-vendas') carregarPortalAfiliadoCompleto();
   else if (targetId === 'sec-restaurantes') carregarRestaurantesSuporte();
   else if (targetId === 'sec-cardapio') { if (_restauranteAtual) carregarProdutos(); }
   else if (targetId === 'sec-tarefas') carregarAtividades();
@@ -487,6 +487,445 @@ function atualizarDadosUsuario() {
     }
   });
 }
+/* ═══════════════════════════════════════════════════════════════════════ */
+/* ═══ PORTAL DO AFILIADO: PLANO DE CARREIRA, PITCHS, LINKS & METAS ═════ */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+var portalAfiliadoData = null;
+var _qrCodeUrlAtual = '';
+
+function carregarPortalAfiliadoCompleto() {
+  apiGet('/api/afiliado/carreira-dashboard', function(err, data) {
+    if (err || !data || !data.ok) {
+      // Fallback para carregamento financeiro legado
+      carregarFinanceiroSuporte();
+      return;
+    }
+
+    portalAfiliadoData = data;
+    renderCarreiraDashboard(data);
+    renderPaginasVendas(data.paginas_vendas || [], data.afiliado ? data.afiliado.codigo_ref : 'CHEF');
+    renderPitchsEScripts(data.pitchs_e_scripts || []);
+    renderMetasEBonificacoes(data.metas || [], data.bonificacoes || {});
+    calcularEconomiaCliente();
+    carregarMinhasVendas();
+  });
+}
+
+function trocarTabPortalAfiliado(tab) {
+  var views = document.querySelectorAll('.afil-view-content');
+  views.forEach(function(v) { v.style.display = 'none'; });
+
+  var target = document.getElementById('afil-view-' + tab);
+  if (target) target.style.display = 'block';
+
+  var tabs = ['carreira', 'links', 'pitchs', 'calculadora', 'metas', 'vendas'];
+  tabs.forEach(function(t) {
+    var btn = document.getElementById('tab-btn-' + t);
+    if (!btn) return;
+    if (t === tab) {
+      btn.style.background = 'rgba(252,75,21,0.2)';
+      btn.style.color = '#fc4b15';
+      btn.style.borderColor = 'rgba(252,75,21,0.4)';
+      btn.style.fontWeight = '700';
+    } else {
+      btn.style.background = 'rgba(255,255,255,0.04)';
+      btn.style.color = 'var(--text-muted)';
+      btn.style.borderColor = 'rgba(255,255,255,0.08)';
+      btn.style.fontWeight = '600';
+    }
+  });
+
+  if (tab === 'calculadora') calcularEconomiaCliente();
+}
+
+function renderCarreiraDashboard(data) {
+  var c = data.carreira || {};
+  var m = data.metricas || {};
+  var a = data.afiliado || {};
+
+  // Atualiza código ref exibido
+  var refEl = document.getElementById('meu-codigo-ref');
+  if (refEl) refEl.textContent = a.codigo_ref || 'CHEF-PARCEIRO';
+
+  // Hero Card
+  var hero = document.getElementById('carreira-hero-card');
+  if (hero) {
+    hero.style.border = '1.5px solid ' + (c.badgeBorder || '#ffd700');
+    if (c.badgeBg) hero.style.background = c.badgeBg;
+  }
+
+  var badgeNivel = document.getElementById('carreira-nivel-badge');
+  if (badgeNivel) {
+    badgeNivel.textContent = '👑 ' + (c.titulo || 'Plano de Carreira').toUpperCase();
+    badgeNivel.style.background = c.cor || '#ffd700';
+  }
+
+  var vivendoBadge = document.getElementById('carreira-vivendo-badge');
+  if (vivendoBadge) {
+    if (c.vivendoDisso) {
+      vivendoBadge.textContent = c.seloVivendoDisso || '🔥 VIVENDO DE CHEF COZINHA';
+      vivendoBadge.style.display = 'inline-block';
+    } else {
+      vivendoBadge.style.display = 'none';
+    }
+  }
+
+  setTextById('carreira-titulo', c.titulo || 'Afiliado Chef Cozinha');
+  setTextById('carreira-status-desc', c.statusTexto || c.descricao || '');
+  setTextById('carreira-comissao-pct', (c.comissaoPct || 20) + '%');
+
+  // Progresso para o próximo nível
+  var progLabel = document.getElementById('carreira-progresso-label');
+  var progFaltam = document.getElementById('carreira-progresso-faltam');
+  var progBar = document.getElementById('carreira-progress-bar');
+
+  if (c.proximoNivel) {
+    if (progLabel) progLabel.textContent = 'Rumo ao ' + c.proximoNivel;
+    if (progFaltam) progFaltam.textContent = 'Faltam ' + c.faltamClientes + ' cliente(s) ativo(s) (' + (c.progressoPct || 0) + '%)';
+    if (progBar) progBar.style.width = (c.progressoPct || 0) + '%';
+  } else {
+    if (progLabel) progLabel.textContent = '🏆 Nível Máximo Atingido — Parabéns!';
+    if (progFaltam) progFaltam.textContent = 'Você conquistou a graduação mais alta do ecossistema';
+    if (progBar) progBar.style.width = '100%';
+  }
+
+  // Cards numéricos
+  setTextById('c-clientes-ativos', m.clientes_ativos || 0);
+  setTextById('c-mrr-projetado', 'R$ ' + formatMoney(m.mrr_projetado || 0));
+  setTextById('c-total-comissoes', 'R$ ' + formatMoney(m.total_comissoes || 0));
+  setTextById('c-total-faturado-rotulo', 'Em R$ ' + formatMoney(m.total_faturado || 0) + ' de faturamento');
+  setTextById('c-bonus-proximo', 'R$ ' + formatMoney(c.bonusGraduacao || 500));
+}
+
+function renderPaginasVendas(paginas, codigoRef) {
+  var grid = document.getElementById('grid-paginas-vendas');
+  if (!grid) return;
+
+  if (!paginas || paginas.length === 0) {
+    grid.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted); grid-column:1/-1;">Nenhuma página configurada.</div>';
+    return;
+  }
+
+  var iconesNichos = {
+    geral: 'fa-globe',
+    pizzaria: 'fa-pizza-slice',
+    hamburgueria: 'fa-burger',
+    buffet: 'fa-utensils',
+    bar: 'fa-beer-mug-empty',
+    cadastro: 'fa-rocket'
+  };
+
+  var coresNichos = {
+    geral: '#3b82f6',
+    pizzaria: '#ef4444',
+    hamburgueria: '#f59e0b',
+    buffet: '#10b981',
+    bar: '#a855f7',
+    cadastro: '#fc4b15'
+  };
+
+  var html = '';
+  for (var i = 0; i < paginas.length; i++) {
+    var p = paginas[i];
+    var icone = iconesNichos[p.nicho] || 'fa-store';
+    var cor = coresNichos[p.nicho] || '#fc4b15';
+    var whatsUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(p.whatsappMsg || p.url);
+
+    html += '<div class="card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:18px; display:flex; flex-direction:column; justify-content:space-between;">' +
+      '<div>' +
+        '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">' +
+          '<div style="width:40px; height:40px; border-radius:10px; background:' + cor + '22; color:' + cor + '; display:flex; align-items:center; justify-content:center; font-size:20px;">' +
+            '<i class="fa-solid ' + icone + '"></i>' +
+          '</div>' +
+          '<span style="font-size:10px; font-weight:800; text-transform:uppercase; background:rgba(255,255,255,0.05); color:var(--text-muted); padding:3px 8px; border-radius:6px;">' + esc(p.nicho) + '</span>' +
+        '</div>' +
+        '<h4 style="font-family:Outfit,sans-serif; color:#fff; font-size:1.1rem; margin:0 0 4px 0;">' + esc(p.titulo) + '</h4>' +
+        '<p style="font-size:0.82rem; color:var(--text-muted); margin:0 0 12px 0; line-height:1.4;">' + esc(p.descricao) + '</p>' +
+        '<div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 10px; display:flex; align-items:center; gap:8px; margin-bottom:14px;">' +
+          '<input type="text" readonly value="' + esc(p.url) + '" id="url-nicho-' + i + '" style="background:none; border:none; color:#94a3b8; font-size:0.75rem; width:100%; outline:none; font-family:monospace;">' +
+          '<button onclick="copiarTexto(document.getElementById(\'url-nicho-' + i + '\').value, \'Link copiado!\')" class="btn btn-sm" style="padding:4px 8px; font-size:11px; white-space:nowrap;"><i class="fa-solid fa-copy"></i></button>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex; gap:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px;">' +
+        '<a href="' + whatsUrl + '" target="_blank" class="btn btn-sm" style="flex:1; background:#25d366; color:#fff; font-weight:700; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px; text-decoration:none;">' +
+          '<i class="fa-brands fa-whatsapp"></i> Compartilhar' +
+        '</a>' +
+        '<button onclick="abrirModalQrCodeAfiliado(\'' + escJs(p.titulo) + '\', \'' + escJs(p.url) + '\')" class="btn btn-sm" style="background:rgba(255,255,255,0.08); color:#fff;" title="Gerar QR Code">' +
+          '<i class="fa-solid fa-qrcode"></i> QR Code' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  grid.innerHTML = html;
+}
+
+function renderPitchsEScripts(pitchs) {
+  var grid = document.getElementById('grid-pitchs-scripts');
+  if (!grid) return;
+
+  if (!pitchs || pitchs.length === 0) {
+    grid.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted); grid-column:1/-1;">Nenhum script configurado.</div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < pitchs.length; i++) {
+    var sc = pitchs[i];
+    var whatsUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(sc.texto);
+
+    html += '<div class="card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:18px; display:flex; flex-direction:column; justify-content:space-between;">' +
+      '<div>' +
+        '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">' +
+          '<span style="background:rgba(59,130,246,0.15); color:#93c5fd; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; text-transform:uppercase;">' + esc(sc.categoria) + '</span>' +
+          '<i class="fa-solid ' + (sc.icone || 'fa-comment-dots') + '" style="color:#60a5fa; font-size:16px;"></i>' +
+        '</div>' +
+        '<h4 style="font-family:Outfit,sans-serif; color:#fff; font-size:1.1rem; margin:0 0 6px 0;">' + esc(sc.titulo) + '</h4>' +
+        '<p style="font-size:0.8rem; color:var(--text-muted); margin:0 0 12px 0;">' + esc(sc.descricao) + '</p>' +
+        '<div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:12px; font-size:0.82rem; color:#cbd5e1; line-height:1.5; white-space:pre-wrap; max-height:220px; overflow-y:auto; font-family:inherit; margin-bottom:14px;" id="script-texto-' + i + '">' +
+          esc(sc.texto) +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex; gap:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px;">' +
+        '<button onclick="copiarTexto(document.getElementById(\'script-texto-' + i + '\').innerText, \'Script copiado com sucesso!\')" class="btn btn-sm btn-primary" style="flex:1; font-weight:700;">' +
+          '<i class="fa-solid fa-copy"></i> Copiar Script' +
+        '</button>' +
+        '<a href="' + whatsUrl + '" target="_blank" class="btn btn-sm" style="background:#25d366; color:#fff; display:flex; align-items:center; justify-content:center; padding:0 14px; text-decoration:none;" title="Abrir no WhatsApp">' +
+          '<i class="fa-brands fa-whatsapp"></i>' +
+        '</a>' +
+      '</div>' +
+    '</div>';
+  }
+
+  grid.innerHTML = html;
+}
+
+function calcularEconomiaCliente() {
+  var fatEl = document.getElementById('calc-faturamento');
+  var taxaEl = document.getElementById('calc-taxa');
+
+  var faturamento = fatEl ? (parseFloat(fatEl.value) || 30000) : 30000;
+  var taxa = taxaEl ? (parseFloat(taxaEl.value) || 27) : 27;
+
+  var taxaPaga = faturamento * (taxa / 100);
+  var mensalidadeChef = 199;
+  var economiaMes = Math.max(0, taxaPaga - mensalidadeChef);
+  var economiaAno = economiaMes * 12;
+
+  setTextById('res-taxa-paga', 'R$ ' + formatMoney(taxaPaga));
+  setTextById('res-economia-mes', 'R$ ' + formatMoney(economiaMes));
+  setTextById('res-economia-ano', 'R$ ' + formatMoney(economiaAno));
+}
+
+function gerarMensagemCalculoWhatsApp() {
+  var faturamento = parseFloat(document.getElementById('calc-faturamento').value) || 30000;
+  var taxa = parseFloat(document.getElementById('calc-taxa').value) || 27;
+  var taxaPaga = faturamento * (taxa / 100);
+  var economiaMes = Math.max(0, taxaPaga - 199);
+  var economiaAno = economiaMes * 12;
+
+  var refCode = (portalAfiliadoData && portalAfiliadoData.afiliado) ? portalAfiliadoData.afiliado.codigo_ref : 'CHEF';
+  var siteUrl = window.location.origin + '/?ref=' + refCode;
+
+  return "Fala chef! Fiz uma simulação rápida de faturamento para o seu restaurante:\n\n" +
+    "📊 Faturamento no Delivery: R$ " + formatMoney(faturamento) + "/mês\n" +
+    "💸 Taxas pagas para marketplaces (" + taxa + "%): R$ " + formatMoney(taxaPaga) + "/mês\n\n" +
+    "🚀 Com o Chef Cozinha (cardápio digital próprio sem taxa por pedido), sua economia será de:\n" +
+    "💰 R$ " + formatMoney(economiaMes) + " A MAIS NO SEU BOLSO TODO MÊS\n" +
+    "🏆 R$ " + formatMoney(economiaAno) + " de economia ao longo de 1 ano!\n\n" +
+    "Ative 14 dias de teste grátis sem nenhum compromisso aqui: " + siteUrl;
+}
+
+function copiarCalculoParaWhatsApp() {
+  var texto = gerarMensagemCalculoWhatsApp();
+  copiarTexto(texto, 'Cálculo copiado! Pronto para enviar no WhatsApp do restaurante.');
+}
+
+function abrirWhatsAppComCalculo() {
+  var texto = gerarMensagemCalculoWhatsApp();
+  window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(texto), '_blank');
+}
+
+function renderMetasEBonificacoes(metas, bonificacoes) {
+  var grid = document.getElementById('grid-metas-afiliado');
+  if (grid) {
+    if (!metas || metas.length === 0) {
+      grid.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted); grid-column:1/-1; background:rgba(255,255,255,0.02); border-radius:12px;">Nenhuma campanha de meta ativa no momento.</div>';
+    } else {
+      var html = '';
+      for (var i = 0; i < metas.length; i++) {
+        var m = metas[i];
+        var perc = m.percentual_progresso || 0;
+        var bateu = m.concluida;
+
+        html += '<div class="card" style="background:rgba(255,255,255,0.02); border:1px solid ' + (bateu ? 'rgba(16,185,129,0.4)' : 'rgba(168,85,247,0.3)') + '; border-radius:14px; padding:18px; display:flex; flex-direction:column; justify-content:space-between;">' +
+          '<div>' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+              '<span style="background:' + (bateu ? '#10b98122' : '#a855f722') + '; color:' + (bateu ? '#10b981' : '#c084fc') + '; font-size:11px; font-weight:800; padding:3px 8px; border-radius:6px;">' +
+                (bateu ? '🎉 META CONCLUÍDA!' : 'EM ANDAMENTO') +
+              '</span>' +
+              '<strong style="color:var(--success); font-size:18px;">R$ ' + formatMoney(m.recompensa_valor) + ' PIX</strong>' +
+            '</div>' +
+            '<h4 style="font-family:Outfit,sans-serif; color:#fff; font-size:1.15rem; margin:0 0 4px 0;">' + esc(m.titulo) + '</h4>' +
+            '<p style="font-size:0.85rem; color:var(--text-muted); margin:0 0 12px 0;">' + esc(m.descricao || 'Bata a meta de novos restaurantes e receba o bônus.') + '</p>' +
+            '<div style="margin-bottom:12px;">' +
+              '<div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#cbd5e1; margin-bottom:4px;">' +
+                '<span>Progresso: ' + m.progresso_atual + ' / ' + m.meta_qtd + ' clientes</span>' +
+                '<span><strong>' + perc + '%</strong></span>' +
+              '</div>' +
+              '<div style="background:rgba(255,255,255,0.1); height:8px; border-radius:8px; overflow:hidden;">' +
+                '<div style="background:' + (bateu ? '#10b981' : 'linear-gradient(90deg, #7c3aed, #ec4899)') + '; height:100%; width:' + perc + '%;"></div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:12px; display:flex; justify-content:space-between; align-items:center;">' +
+            '<small style="color:var(--text-muted); font-size:0.75rem;">' + (m.data_fim ? 'Até ' + new Date(m.data_fim).toLocaleDateString('pt-BR') : 'Campanha contínua') + '</small>' +
+            (bateu 
+              ? '<button onclick="abrirModalResgateBonusComMeta(' + m.id + ', ' + m.recompensa_valor + ', \'' + escJs(m.titulo) + '\')" class="btn btn-sm" style="background:#10b981; color:#fff; font-weight:800;"><i class="fa-solid fa-money-bill-wave"></i> Resgatar Bônus</button>'
+              : '<button class="btn btn-sm" style="opacity:0.6; cursor:not-allowed;" disabled>Acelere as vendas</button>') +
+          '</div>' +
+        '</div>';
+      }
+      grid.innerHTML = html;
+    }
+  }
+
+  // Histórico de Bonificações
+  var tbody = document.getElementById('bonificacoes-afiliado-body');
+  if (tbody) {
+    var hist = (bonificacoes && bonificacoes.historico) ? bonificacoes.historico : [];
+    setTextById('bonificacoes-total-pago', 'R$ ' + formatMoney(bonificacoes.total_pago || 0));
+
+    if (hist.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">Nenhum bônus resgatado ainda.</td></tr>';
+    } else {
+      var hHist = '';
+      for (var j = 0; j < hist.length; j++) {
+        var bh = hist[j];
+        var isPago = bh.status === 'pago';
+        var statusBadge = isPago 
+          ? '<span class="badge" style="background:#10b98122; color:#10b981; border:1px solid #10b98144; font-weight:700;">Pago via PIX ✓</span>'
+          : '<span class="badge" style="background:#f59e0b22; color:#f59e0b; border:1px solid #f59e0b44; font-weight:700;">Em Processamento</span>';
+
+        hHist += '<tr>' +
+          '<td><code>#' + bh.id + '</code></td>' +
+          '<td><strong style="color:#fff;">' + esc(bh.descricao || 'Bônus de Meta') + '</strong></td>' +
+          '<td><strong style="color:var(--success);">R$ ' + formatMoney(bh.valor) + '</strong></td>' +
+          '<td><code style="background:#000; color:#10b981; padding:2px 6px; border-radius:4px;">' + esc(bh.comprovante_pix ? 'PIX' : 'Pendente') + '</code></td>' +
+          '<td><small>' + (bh.criada_em ? new Date(bh.criada_em).toLocaleDateString('pt-BR') : '—') + '</small></td>' +
+          '<td>' + statusBadge + '</td>' +
+          '<td><small style="color:var(--text-muted);">' + esc(bh.comprovante_pix || 'Aguardando TED/PIX') + '</small></td>' +
+        '</tr>';
+      }
+      tbody.innerHTML = hHist;
+    }
+  }
+}
+
+function abrirModalQrCodeAfiliado(titulo, url) {
+  _qrCodeUrlAtual = url;
+  document.getElementById('modal-qrcode-titulo').textContent = 'QR Code — ' + titulo;
+  document.getElementById('modal-qrcode-link-texto').textContent = url;
+
+  var qrApi = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=10&data=' + encodeURIComponent(url);
+  var container = document.getElementById('qrcode-img-container');
+  if (container) {
+    container.innerHTML = '<img src="' + qrApi + '" alt="QR Code" style="width:260px; height:260px; display:block; border-radius:8px;">';
+  }
+
+  var dlBtn = document.getElementById('btn-download-qrcode');
+  if (dlBtn) dlBtn.href = qrApi;
+
+  document.getElementById('modal-qrcode-afiliado').classList.add('active');
+}
+
+function fecharModalQrCodeAfiliado() {
+  document.getElementById('modal-qrcode-afiliado').classList.remove('active');
+}
+
+function copiarTextoQrCodeAtual() {
+  if (_qrCodeUrlAtual) copiarTexto(_qrCodeUrlAtual, 'Link do QR Code copiado!');
+}
+
+function abrirModalResgateBonus() {
+  var sel = document.getElementById('resgate-meta-id');
+  if (sel) {
+    var opts = '<option value="">🎁 Bônus de Carreira / Meta Batida</option>';
+    if (portalAfiliadoData && portalAfiliadoData.metas) {
+      portalAfiliadoData.metas.forEach(function(m) {
+        opts += '<option value="' + m.id + '" data-val="' + m.recompensa_valor + '">' + (m.concluida ? '✓ ' : '') + esc(m.titulo) + ' (R$ ' + formatMoney(m.recompensa_valor) + ')</option>';
+      });
+    }
+    sel.innerHTML = opts;
+  }
+
+  var pixInput = document.getElementById('resgate-pix-chave');
+  if (pixInput && portalAfiliadoData && portalAfiliadoData.afiliado) {
+    pixInput.value = portalAfiliadoData.afiliado.pix_chave || '';
+  }
+
+  document.getElementById('modal-resgate-bonus-afiliado').classList.add('active');
+}
+
+function abrirModalResgateBonusComMeta(metaId, valor, titulo) {
+  abrirModalResgateBonus();
+  var sel = document.getElementById('resgate-meta-id');
+  if (sel) sel.value = metaId;
+  var valInput = document.getElementById('resgate-valor');
+  if (valInput) valInput.value = valor;
+}
+
+function fecharModalResgateBonus() {
+  document.getElementById('modal-resgate-bonus-afiliado').classList.remove('active');
+}
+
+function enviarSolicitacaoResgateBonus() {
+  var metaId = document.getElementById('resgate-meta-id').value;
+  var valor = parseFloat(document.getElementById('resgate-valor').value) || 0;
+  var pixChave = document.getElementById('resgate-pix-chave').value.trim();
+
+  if (valor <= 0) return showToast('Informe um valor válido de bônus.', 'warning');
+  if (!pixChave) return showToast('Informe sua chave PIX para transferência.', 'warning');
+
+  apiPost('/api/afiliado/resgatar-bonus', {
+    meta_id: metaId ? parseInt(metaId) : null,
+    valor: valor,
+    tipo: 'meta_atingida',
+    descricao: 'Resgate de Bônus de Meta de Vendas'
+  }, function(err, data) {
+    if (err || !data || !data.ok) return showToast(data && data.erro ? data.erro : 'Erro ao solicitar bônus.', 'danger');
+    showToast(data.mensagem || 'Solicitação de bonificação enviada com sucesso!', 'success');
+    fecharModalResgateBonus();
+    carregarPortalAfiliadoCompleto();
+  });
+}
+
+function copiarTexto(texto, msgToast) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(function() {
+      showToast(msgToast || 'Copiado para a área de transferência!', 'success');
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = texto;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast(msgToast || 'Copiado!', 'success');
+  }
+}
+
+function formatMoney(num) {
+  return parseFloat(num || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function setTextById(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
 /* ═══ VENDAS & ONBOARDING ═══ */
 function carregarMinhasVendas() {
   apiGet('/api/suporte/minhas-vendas', function(err, data) {
@@ -795,6 +1234,16 @@ function initSuporteRealtimeSockets() {
     _suporteSocket.on('nova_tarefa_suporte', function(data) {
       showToast('Novo relato de ' + (data.restaurante_nome || 'restaurante') + ': ' + data.titulo, 'warning');
       carregarRelatosRestaurantes();
+    });
+    _suporteSocket.on('nova_meta_afiliados', function(data) {
+      showToast('🎯 NOVA META LANÇADA: ' + (data.titulo || 'Meta') + ' (Bônus R$ ' + parseFloat(data.recompensa_valor || 0).toFixed(2) + ' PIX)', 'info');
+      if (_currentTab === 'sec-vendas') carregarPortalAfiliadoCompleto();
+    });
+    _suporteSocket.on('bonificacao_paga_pix', function(data) {
+      if (suporteUser && data.suporte_id === suporteUser.id) {
+        showToast('🎉 SEU PIX CHEGOU! Bônus de R$ ' + parseFloat(data.valor || 0).toFixed(2) + ' pago com sucesso!', 'success');
+        if (_currentTab === 'sec-vendas') carregarPortalAfiliadoCompleto();
+      }
     });
   } catch(e) { console.error('Erro ao conectar socket de suporte:', e); }
 }

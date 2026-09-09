@@ -744,7 +744,7 @@ function switchTab(targetId) {
    else if (targetId === 'sec-recuperar-acesso') carregarUsuariosRecovery();
    else if (targetId === 'sec-tarefas') { if (typeof carregarTarefas === 'function') carregarTarefas(); }
    else if (targetId === 'sec-site-vendas') carregarSiteVendas();
-   else if (targetId === 'sec-afiliados') carregarAfiliados();
+   else if (targetId === 'sec-afiliados') carregarPainelAfiliadosCompleto();
    else if (targetId === 'sec-seguranca-waf') carregarConfigSeguranca();
    else if (targetId === 'sec-deploy-updates') { carregarCommitsGit(); carregarGitStatus(); }
    else if (targetId === 'sec-plugins-modulos') carregarPlugins();
@@ -5593,10 +5593,370 @@ function salvarSiteConsultor() {
 
 
 /* ═══════════════════════════════════════════════════════════════════════ */
-/* ═══ AFILIADOS & PARCEIROS — GERENCIAMENTO & MÉTRICAS ════════════════ */
+/* ═══ AFILIADOS, TOP PERFORMERS, METAS & BONIFICAÇÕES ═════════════════ */
 /* ═══════════════════════════════════════════════════════════════════════ */
 
 var afiliadosData = [];
+var topPerformersData = [];
+var metasAfiliadosData = [];
+var bonificacoesPixData = [];
+
+function carregarPainelAfiliadosCompleto() {
+  carregarTopPerformers();
+  carregarMetasAfiliados();
+  carregarBonificacoesPix();
+  carregarAfiliados();
+}
+
+function trocarSubtabAfiliados(tab) {
+  var subviews = document.querySelectorAll('.afil-subview');
+  subviews.forEach(function(v) { v.style.display = 'none'; });
+
+  var targetView = document.getElementById('afil-subview-' + tab);
+  if (targetView) targetView.style.display = 'block';
+
+  var tabs = ['top', 'metas', 'pix', 'todos'];
+  tabs.forEach(function(t) {
+    var btn = document.getElementById('subtab-btn-' + t);
+    if (!btn) return;
+    if (t === tab) {
+      btn.style.background = 'rgba(255,87,34,0.2)';
+      btn.style.color = '#ff7a45';
+      btn.style.borderColor = 'rgba(255,87,34,0.4)';
+      btn.style.fontWeight = '700';
+    } else {
+      btn.style.background = 'rgba(255,255,255,0.04)';
+      btn.style.color = 'var(--text-muted)';
+      btn.style.borderColor = 'rgba(255,255,255,0.08)';
+      btn.style.fontWeight = '600';
+    }
+  });
+
+  if (tab === 'top') carregarTopPerformers();
+  else if (tab === 'metas') carregarMetasAfiliados();
+  else if (tab === 'pix') carregarBonificacoesPix();
+  else if (tab === 'todos') carregarAfiliados();
+}
+
+function carregarTopPerformers() {
+  var tbody = document.getElementById('top-performers-tbody');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Atualizando ranking de Top Performers...</td></tr>';
+  }
+
+  apiGet('/api/super/afiliados/ranking-performers', function(err, data) {
+    if (err || !data || !data.ok) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--danger);">Erro ao carregar ranking.</td></tr>';
+      return;
+    }
+
+    topPerformersData = data.ranking || [];
+    var resumo = data.resumo || {};
+
+    setTextById('afil-stat-vivendo', resumo.afiliados_vivendo_disso || 0);
+    setTextById('afil-stat-mrr', 'R$ ' + formatMoney(resumo.mrr_recorrente_total || 0));
+    
+    var totalClientes = 0;
+    topPerformersData.forEach(function(p) { totalClientes += (p.clientes_ativos || 0); });
+    setTextById('afil-stat-clientes', totalClientes);
+
+    renderTopPerformers();
+  });
+}
+
+function renderTopPerformers() {
+  var tbody = document.getElementById('top-performers-tbody');
+  if (!tbody) return;
+
+  if (topPerformersData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--text-muted);">Nenhum afiliado cadastrado ainda.</td></tr>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < topPerformersData.length; i++) {
+    var p = topPerformersData[i];
+    
+    // Rank medalhas
+    var rankDisplay = '#' + p.posicao;
+    if (p.posicao === 1) rankDisplay = '<span style="font-size:18px;">🥇</span> #1';
+    else if (p.posicao === 2) rankDisplay = '<span style="font-size:18px;">🥈</span> #2';
+    else if (p.posicao === 3) rankDisplay = '<span style="font-size:18px;">🥉</span> #3';
+
+    // Badge de carreira
+    var nivelBadge = '';
+    if (p.carreira_nivel === 'black') {
+      nivelBadge = '<span style="background:linear-gradient(135deg, #18181b, #000); border:1px solid #ffd700; color:#ffd700; padding:4px 8px; border-radius:8px; font-weight:800; font-size:11px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-crown" style="color:#ffd700;"></i> Black Embaixador</span>';
+    } else if (p.carreira_nivel === 'ouro') {
+      nivelBadge = '<span style="background:linear-gradient(135deg, #78350f, #b45309); border:1px solid #f59e0b; color:#fef08a; padding:4px 8px; border-radius:8px; font-weight:700; font-size:11px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-trophy" style="color:#f59e0b;"></i> Afiliado Ouro</span>';
+    } else if (p.carreira_nivel === 'prata') {
+      nivelBadge = '<span style="background:rgba(148,163,184,0.15); border:1px solid #94a3b8; color:#cbd5e1; padding:4px 8px; border-radius:8px; font-weight:600; font-size:11px;">Afiliado Prata</span>';
+    } else {
+      nivelBadge = '<span style="background:rgba(234,88,12,0.15); border:1px solid #ea580c; color:#fdba74; padding:4px 8px; border-radius:8px; font-weight:600; font-size:11px;">Afiliado Bronze</span>';
+    }
+
+    // Selo "Vivendo Disso"
+    var seloVivendo = '<span style="color:var(--text-muted); font-size:12px;">Em crescimento</span>';
+    if (p.vivendo_disso) {
+      seloVivendo = '<span style="background:linear-gradient(135deg, #b45309, #78350f); border:1px solid #f59e0b; color:#fef08a; font-size:11px; font-weight:800; padding:4px 10px; border-radius:12px; box-shadow:0 0 12px rgba(245,158,11,0.5); display:inline-flex; align-items:center; gap:5px; animation:pulse 2s infinite;"><i class="fa-solid fa-fire" style="color:#fc4b15;"></i> VIVENDO DISSO</span>';
+    }
+
+    var whatsappLink = p.telefone ? 'https://wa.me/' + p.telefone.replace(/[^0-9]/g, '') : null;
+
+    html += '<tr>' +
+      '<td style="text-align:center; font-weight:700; color:#fff;">' + rankDisplay + '</td>' +
+      '<td>' +
+        '<div style="font-weight:700; color:#fff; font-size:14px;">' + esc(p.nome) + '</div>' +
+        '<div style="font-size:12px; color:var(--text-muted);">' + esc(p.email) + (p.telefone ? ' • ' + esc(p.telefone) : '') + '</div>' +
+      '</td>' +
+      '<td><code style="background:rgba(255,87,34,0.15); color:var(--primary); padding:3px 8px; border-radius:6px; font-weight:700; font-size:12px;">' + esc(p.codigo_ref) + '</code></td>' +
+      '<td>' + nivelBadge + '</td>' +
+      '<td style="text-align:center;"><strong style="font-size:16px; color:#fff;">' + p.clientes_ativos + '</strong></td>' +
+      '<td><strong style="color:var(--success); font-size:14px;">R$ ' + formatMoney(p.mrr_estimado) + '</strong><br><small style="color:var(--text-muted); font-size:10px;">/mês recorrente</small></td>' +
+      '<td><strong style="color:#fdba74;">' + p.comissao_pct + '%</strong></td>' +
+      '<td>R$ ' + formatMoney(p.total_comissoes) + '</td>' +
+      '<td style="text-align:center;">' + seloVivendo + '</td>' +
+      '<td>' +
+        '<div style="display:flex; gap:6px;">' +
+          (whatsappLink ? '<a href="' + whatsappLink + '" target="_blank" class="btn-action" style="padding:5px 8px; font-size:12px; background:#22c55e; color:#fff;" title="Chamar no WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>' : '') +
+          '<button onclick="verMetricasAfiliado(' + p.id + ')" class="btn-action" style="padding:5px 8px; font-size:12px;" title="Ver detalhes"><i class="fa-solid fa-chart-pie"></i></button>' +
+        '</div>' +
+      '</td>' +
+    '</tr>';
+  }
+
+  tbody.innerHTML = html;
+}
+
+function carregarMetasAfiliados() {
+  var grid = document.getElementById('metas-afiliados-grid');
+  if (grid) {
+    grid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted); grid-column:1/-1;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando metas...</div>';
+  }
+
+  apiGet('/api/super/afiliados/metas', function(err, data) {
+    if (err || !data || !data.ok) {
+      if (grid) grid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--danger); grid-column:1/-1;">Erro ao carregar campanhas.</div>';
+      return;
+    }
+
+    metasAfiliadosData = data.metas || [];
+    renderMetasAfiliados();
+  });
+}
+
+function renderMetasAfiliados() {
+  var grid = document.getElementById('metas-afiliados-grid');
+  if (!grid) return;
+
+  if (metasAfiliadosData.length === 0) {
+    grid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted); grid-column:1/-1; background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.1); border-radius:12px;">' +
+      '<i class="fa-solid fa-bullseye" style="font-size:32px; color:#a855f7; margin-bottom:10px; display:block;"></i>' +
+      '<h4 style="color:#fff; margin-bottom:4px;">Nenhuma meta ativa no momento</h4>' +
+      '<p style="font-size:13px; margin:0;">Crie agora uma campanha de aceleração para desafiar seus afiliados e impulsionar vendas!</p>' +
+      '<button onclick="abrirModalNovaMetaAfiliado()" class="btn-action btn-primary-action" style="margin-top:16px; background:linear-gradient(135deg, #7c3aed, #a855f7);"><i class="fa-solid fa-plus"></i> Criar Primeira Meta</button>' +
+    '</div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < metasAfiliadosData.length; i++) {
+    var m = metasAfiliadosData[i];
+    var isAtiva = m.status === 'ativa';
+    var badgeStatus = isAtiva 
+      ? '<span class="badge badge-ativo" style="background:#22c55e22; color:#22c55e; border:1px solid #22c55e44;">Campanha Ativa</span>'
+      : '<span class="badge badge-bloqueado">Encerrada</span>';
+
+    var publico = m.afiliado_especifico_nome ? '👤 Exclusivo para: ' + esc(m.afiliado_especifico_nome) : '📢 Toda a Rede de Afiliados (Global)';
+
+    html += '<div class="card" style="background:rgba(255,255,255,0.03); border:1px solid ' + (isAtiva ? 'rgba(168,85,247,0.3)' : 'rgba(255,255,255,0.06)') + '; border-radius:14px; padding:18px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">' +
+      (isAtiva ? '<div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, #7c3aed, #ec4899);"></div>' : '') +
+      '<div>' +
+        '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px;">' +
+          badgeStatus +
+          '<div style="text-align:right;">' +
+            '<span style="font-size:11px; color:var(--text-muted); display:block;">Recompensa PIX:</span>' +
+            '<strong style="color:#22c55e; font-size:18px;">R$ ' + formatMoney(m.recompensa_valor) + '</strong>' +
+          '</div>' +
+        '</div>' +
+        '<h4 style="font-size:16px; color:#fff; margin:0 0 6px 0;">' + esc(m.titulo) + '</h4>' +
+        '<p style="font-size:13px; color:var(--text-muted); margin:0 0 12px 0; line-height:1.4;">' + esc(m.descricao || 'Sem descrição cadastrada.') + '</p>' +
+        '<div style="background:rgba(0,0,0,0.25); padding:10px 12px; border-radius:8px; font-size:12px; margin-bottom:12px;">' +
+          '<div><strong>Meta Alvo:</strong> ' + m.meta_qtd + ' novos restaurantes ativos</div>' +
+          '<div style="color:var(--text-muted); margin-top:3px;">' + publico + '</div>' +
+          (m.data_fim ? '<div style="color:#f59e0b; margin-top:3px;"><i class="fa-regular fa-clock"></i> Até ' + new Date(m.data_fim).toLocaleDateString('pt-BR') + '</div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px; margin-top:8px;">' +
+        (isAtiva ? '<button class="btn-action" style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); font-size:12px;" onclick="encerrarMetaAfiliado(' + m.id + ')"><i class="fa-solid fa-ban"></i> Encerrar Meta</button>' : '') +
+      '</div>' +
+    '</div>';
+  }
+
+  grid.innerHTML = html;
+}
+
+function abrirModalNovaMetaAfiliado() {
+  document.getElementById('meta-titulo').value = '';
+  document.getElementById('meta-descricao').value = '';
+  document.getElementById('meta-qtd').value = '5';
+  document.getElementById('meta-recompensa').value = '500';
+  document.getElementById('meta-data-inicio').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('meta-data-fim').value = '';
+
+  // Popula select de afiliados
+  var sel = document.getElementById('meta-afiliado-id');
+  if (sel) {
+    var opts = '<option value="">📢 Toda a Rede de Afiliados (Campanha Global)</option>';
+    topPerformersData.forEach(function(af) {
+      opts += '<option value="' + af.id + '">👤 ' + esc(af.nome) + ' (' + esc(af.codigo_ref) + ')</option>';
+    });
+    sel.innerHTML = opts;
+  }
+
+  document.getElementById('modal-nova-meta-afiliado').classList.add('active');
+}
+
+function fecharModalNovaMetaAfiliado() {
+  document.getElementById('modal-nova-meta-afiliado').classList.remove('active');
+}
+
+function salvarNovaMetaAfiliado() {
+  var titulo = document.getElementById('meta-titulo').value.trim();
+  var descricao = document.getElementById('meta-descricao').value.trim();
+  var meta_qtd = parseInt(document.getElementById('meta-qtd').value) || 5;
+  var recompensa_valor = parseFloat(document.getElementById('meta-recompensa').value) || 500;
+  var afiliado_id = document.getElementById('meta-afiliado-id').value;
+  var data_inicio = document.getElementById('meta-data-inicio').value;
+  var data_fim = document.getElementById('meta-data-fim').value;
+
+  if (!titulo) return showToast('Informe o título da meta.', 'warning');
+
+  apiPost('/api/super/afiliados/metas', {
+    titulo: titulo,
+    descricao: descricao,
+    meta_qtd: meta_qtd,
+    recompensa_valor: recompensa_valor,
+    afiliado_id: afiliado_id ? parseInt(afiliado_id) : null,
+    data_inicio: data_inicio,
+    data_fim: data_fim || null
+  }, function(err, data) {
+    if (err || !data || !data.ok) return showToast(data && data.erro ? data.erro : 'Erro ao criar meta.', 'danger');
+    showToast(data.mensagem || 'Campanha criada com sucesso!', 'success');
+    fecharModalNovaMetaAfiliado();
+    carregarMetasAfiliados();
+  });
+}
+
+function encerrarMetaAfiliado(id) {
+  if (!confirm('Deseja realmente encerrar esta campanha de metas?')) return;
+  apiDelete('/api/super/afiliados/metas/' + id, function(err, data) {
+    if (err || !data || !data.ok) return showToast('Erro ao encerrar meta.', 'danger');
+    showToast('Meta encerrada.', 'success');
+    carregarMetasAfiliados();
+  });
+}
+
+function carregarBonificacoesPix() {
+  var tbody = document.getElementById('bonificacoes-pix-tbody');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Carregando solicitações de bonificação...</td></tr>';
+  }
+
+  apiGet('/api/super/afiliados/bonificacoes', function(err, data) {
+    if (err || !data || !data.ok) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--danger);">Erro ao carregar bonificações.</td></tr>';
+      return;
+    }
+
+    bonificacoesPixData = data.bonificacoes || [];
+    var pendentes = bonificacoesPixData.filter(function(b) { return b.status === 'pendente'; });
+    
+    var badge = document.getElementById('badge-pix-pendentes');
+    if (badge) {
+      if (pendentes.length > 0) {
+        badge.textContent = pendentes.length;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    renderBonificacoesPix();
+  });
+}
+
+function renderBonificacoesPix() {
+  var tbody = document.getElementById('bonificacoes-pix-tbody');
+  if (!tbody) return;
+
+  if (bonificacoesPixData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);">Nenhuma solicitação de bonificação ou saque registrada.</td></tr>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < bonificacoesPixData.length; i++) {
+    var b = bonificacoesPixData[i];
+    var isPendente = b.status === 'pendente';
+    var statusBadge = isPendente 
+      ? '<span class="badge" style="background:#f59e0b22; color:#f59e0b; border:1px solid #f59e0b44; font-weight:700;">Aguardando PIX</span>'
+      : '<span class="badge" style="background:#10b98122; color:#10b981; border:1px solid #10b98144; font-weight:700;">Pago ✓</span>';
+
+    var dataStr = b.criada_em ? new Date(b.criada_em).toLocaleDateString('pt-BR', { hour:'2-digit', minute:'2-digit' }) : '—';
+
+    html += '<tr>' +
+      '<td><code style="opacity:0.7;">#' + b.id + '</code></td>' +
+      '<td>' +
+        '<div style="font-weight:700; color:#fff;">' + esc(b.afiliado_nome || 'Afiliado #' + (b.suporte_id || b.afiliado_id)) + '</div>' +
+        '<div style="font-size:12px; color:var(--text-muted);">' + esc(b.email || '') + '</div>' +
+      '</td>' +
+      '<td>' + esc(b.descricao || 'Bônus de Meta') + '</td>' +
+      '<td><strong style="color:var(--success); font-size:15px;">R$ ' + formatMoney(b.valor) + '</strong></td>' +
+      '<td><code style="background:#000; color:#10b981; padding:3px 8px; border-radius:6px; font-weight:700;">' + esc(b.pix_chave || 'Não cadastrada') + '</code></td>' +
+      '<td><small style="color:var(--text-muted);">' + dataStr + '</small></td>' +
+      '<td>' + statusBadge + '</td>' +
+      '<td>' +
+        (isPendente 
+          ? '<button onclick="abrirModalPagarBonificacao(' + b.id + ', ' + JSON.stringify(b.afiliado_nome || '') + ', ' + b.valor + ', ' + JSON.stringify(b.pix_chave || '') + ')" class="btn-action" style="background:#10b981; color:#fff; font-weight:700; font-size:12px; padding:6px 12px;"><i class="fa-solid fa-money-bill-transfer"></i> Pagar PIX</button>'
+          : '<small style="color:var(--text-muted);">' + esc(b.comprovante_pix || 'Pago') + '</small>') +
+      '</td>' +
+    '</tr>';
+  }
+
+  tbody.innerHTML = html;
+}
+
+function abrirModalPagarBonificacao(id, afiliadoNome, valor, pixChave) {
+  document.getElementById('pagar-bonus-id').value = id;
+  document.getElementById('pagar-bonus-afiliado-nome').textContent = afiliadoNome || 'Afiliado';
+  document.getElementById('pagar-bonus-valor').textContent = 'R$ ' + formatMoney(valor);
+  document.getElementById('pagar-bonus-pix-chave').textContent = pixChave || 'Chave não informada';
+  document.getElementById('pagar-bonus-comprovante').value = 'Transferência PIX Realizada em ' + new Date().toLocaleDateString('pt-BR');
+
+  document.getElementById('modal-pagar-bonificacao-pix').classList.add('active');
+}
+
+function fecharModalPagarBonificacao() {
+  document.getElementById('modal-pagar-bonificacao-pix').classList.remove('active');
+}
+
+function confirmarPagamentoPixBonificacao() {
+  var id = document.getElementById('pagar-bonus-id').value;
+  var comprovante = document.getElementById('pagar-bonus-comprovante').value.trim();
+
+  apiPost('/api/super/afiliados/bonificacoes/pagar', {
+    id: id,
+    comprovante_pix: comprovante
+  }, function(err, data) {
+    if (err || !data || !data.ok) return showToast(data && data.erro ? data.erro : 'Erro ao confirmar pagamento.', 'danger');
+    showToast(data.mensagem || 'Pagamento confirmado e notificação enviada!', 'success');
+    fecharModalPagarBonificacao();
+    carregarBonificacoesPix();
+    carregarTopPerformers();
+  });
+}
+
 
 function carregarAfiliados() {
   var tbody = document.getElementById('afil-tbody');

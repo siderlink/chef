@@ -965,15 +965,100 @@
       }
     }
 
-    // Stubs de segurança: funções do Estúdio que ainda não têm corpo não podem
-    // travar a Loja de Temas aberta pelo restaurante.
-    ['aplicarEstilosPreview', 'initDragAndDrop', 'salvarSnapshotHistorico', 'aplicarTemaNoRestauranteAtivo',
-      'exportarPacoteTemaJson', 'importarPacoteTemaJson', 'publicarTemaCompletoDoStudio'
-    ].forEach(function (fn) {
-      if (typeof window[fn] !== 'function') {
-        window[fn] = function () { };
+    function aplicarEstilosPreview() {
+      const container = document.getElementById('interactive-card');
+      if (!container) return;
+
+      const w = document.getElementById('rng-card-width') ? document.getElementById('rng-card-width').value : 360;
+      const r = document.getElementById('rng-card-radius') ? document.getElementById('rng-card-radius').value : 16;
+      const p = document.getElementById('rng-card-pad') ? document.getElementById('rng-card-pad').value : 14;
+      const g = document.getElementById('rng-card-gap') ? document.getElementById('rng-card-gap').value : 8;
+      const clrPrim = document.getElementById('clr-prim') ? document.getElementById('clr-prim').value : '#fc4b15';
+      const clrCard = document.getElementById('clr-card-bg') ? document.getElementById('clr-card-bg').value : '#1e293b';
+      const clrBorder = document.getElementById('clr-border-color') ? document.getElementById('clr-border-color').value : '#334155';
+      const fxGlass = document.getElementById('chk-fx-glass') && document.getElementById('chk-fx-glass').checked;
+      const fxNeon = document.getElementById('chk-fx-neon') && document.getElementById('chk-fx-neon').checked;
+
+      container.style.width = w + 'px';
+      container.style.borderRadius = r + 'px';
+      container.style.padding = p + 'px';
+      container.style.gap = g + 'px';
+      container.style.backgroundColor = fxGlass ? 'rgba(30, 41, 59, 0.65)' : clrCard;
+      container.style.borderColor = clrBorder;
+      if (fxGlass) {
+        container.style.backdropFilter = 'blur(16px)';
+      } else {
+        container.style.backdropFilter = 'none';
       }
-    });
+      if (fxNeon) {
+        container.style.boxShadow = `0 0 25px ${clrPrim}55, 0 10px 30px rgba(0,0,0,0.5)`;
+      } else {
+        container.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3)';
+      }
+
+      const totalTxt = document.getElementById('txt-card-total');
+      if (totalTxt) totalTxt.style.color = clrPrim;
+
+      const btnFechar = document.getElementById('block-btn-fechar');
+      if (btnFechar) {
+        btnFechar.style.borderColor = clrPrim;
+        const icon = btnFechar.querySelector('i');
+        if (icon) icon.style.color = clrPrim;
+      }
+
+      document.documentElement.style.setProperty('--primary-color', clrPrim);
+    }
+
+    function initDragAndDrop() {
+      const container = document.getElementById('interactive-card');
+      if (!container) return;
+      const blocks = container.querySelectorAll('.draggable-block');
+
+      blocks.forEach(block => {
+        block.setAttribute('draggable', 'true');
+        block.addEventListener('dragstart', (e) => {
+          block.classList.add('dragging');
+          e.dataTransfer.setData('text/plain', block.id);
+        });
+        block.addEventListener('dragend', () => {
+          block.classList.remove('dragging');
+          salvarSnapshotHistorico();
+        });
+      });
+
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const dragging = container.querySelector('.dragging');
+        if (!dragging) return;
+        const afterElement = getDragAfterElement(container, e.clientY);
+        if (afterElement == null) {
+          container.appendChild(dragging);
+        } else {
+          container.insertBefore(dragging, afterElement);
+        }
+      });
+    }
+
+    function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll('.draggable-block:not(.dragging)')];
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function removerBloco(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.remove();
+        salvarSnapshotHistorico();
+      }
+    }
 
     function chefTokenAuth() {
       const t = localStorage.getItem('chef_token') || localStorage.getItem('token');
@@ -1339,18 +1424,73 @@ historyStack.push(proximoEstado);
     }
 
     async function aplicarTemaLoja(tema) {
-      try { localStorage.setItem('chef_custom_theme_active', JSON.stringify(tema)); } catch (e) {}
-      try { socket.emit('tema_global_aplicar', tema); } catch (e) {}
+      if (!tema) return;
+      const c = tema.cores || {};
+      const cfg = {
+        storeTema: true,
+        tema_id: tema.id,
+        tema_nome: tema.nome,
+        primary: c.primary || '#fc4b15',
+        bgColor: c.bgPage || '#0b0f19',
+        bgPage: c.bgPage || '#0b0f19',
+        bgCard: c.bgCard || '#111827',
+        borderColor: c.borderColor || '#1f2937',
+        textPrimary: c.textMain || '#f3f4f6',
+        textMain: c.textMain || '#f3f4f6',
+        statusOcupada: c.statusOcupada || '#ef4444',
+        statusLivre: c.statusLivre || '#10b981',
+        css_custom: tema.css_custom || ''
+      };
+
+      // 1. Salva nas chaves de cache local para carregamento instantâneo em todas as abas
       try {
-        await fetch('/api/modulo/temas/aplicar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': chefTokenAuth() },
-          body: JSON.stringify({ tema_id: tema.id, tema_json: tema })
-        });
+        localStorage.setItem('chef_custom_theme_config', JSON.stringify(cfg));
+        localStorage.setItem('chef_custom_theme_active', JSON.stringify(tema));
+        localStorage.setItem('chef_tema_ativo_id', tema.id);
       } catch (e) {}
-      notificarToast(`✅ Tema "${tema.nome}" aplicado em todas as telas!`, 'ok');
-      // Reflete "Em uso" na loja e avisa o seletor das configurações
-      carregarTemaAtivo();
+
+      // 2. Aplica imediatamente no documento atual e janela pai se estiver em iframe
+      if (window.ChefTheme && typeof window.ChefTheme.applyCustom === 'function') {
+        window.ChefTheme.applyCustom(cfg);
+      }
+      if (window.parent && window.parent !== window && window.parent.ChefTheme && typeof window.parent.ChefTheme.applyCustom === 'function') {
+        window.parent.ChefTheme.applyCustom(cfg);
+      }
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ action: 'chef_tema_aplicado', cfg: cfg, tema: tema, tema_id: tema.id }, '*');
+      }
+
+      // 3. Persiste no servidor (/api/modulo/temas/aplicar)
+      const rid = localStorage.getItem('restaurante_id') || '1';
+      try {
+        const res = await fetch('/api/modulo/temas/aplicar', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': chefTokenAuth(),
+            'x-restaurante-id': rid
+          },
+          body: JSON.stringify({ tema_id: tema.id, tema_json: tema, restaurante_id: rid })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data && data.cfg) {
+          if (window.ChefTheme) window.ChefTheme.applyCustom(data.cfg);
+          if (window.parent && window.parent.ChefTheme) window.parent.ChefTheme.applyCustom(data.cfg);
+        }
+      } catch (e) {
+        console.warn('[theme-store] Erro ao sincronizar backend:', e);
+      }
+
+      // 4. WebSocket para propagação instantânea nas outras telas do restaurante
+      try {
+        if (socket) {
+          socket.emit('tema_restaurante_aplicar', { restaurante_id: rid, tema: tema, cfg: cfg });
+        }
+      } catch (e) {}
+
+      notificarToast(`✅ Tema "${tema.nome}" aplicado com sucesso em todas as telas!`, 'ok');
+      _temaAtivoId = tema.id;
+      renderizarTemasLoja(_temasCache);
     }
 
     // ── LAYOUT PRESETS ────────────────────────────────────────────
@@ -1518,6 +1658,92 @@ historyStack.push(proximoEstado);
         customCss: document.getElementById('txt-custom-css').value,
         customJs: isThemeCustomMode ? '' : document.getElementById('txt-custom-js').value
       };
+    }
+
+    async function aplicarTemaNoRestauranteAtivo() {
+      const pacote = coletarPacoteTemaCompleto();
+      const customId = 'studio_custom_' + Date.now();
+      const tema = {
+        id: customId,
+        nome: 'Tema Customizado (Estúdio Pro)',
+        nicho: 'Estúdio de Criação',
+        emoji_nicho: '🎨',
+        descricao: 'Tema criado e refinado no Estúdio Pro do Chef Cozinha.',
+        badge: 'novo',
+        cores: pacote.cores,
+        css_custom: pacote.customCss,
+        dimensoes: pacote.dimensoes
+      };
+      await aplicarTemaLoja(tema);
+    }
+
+    function exportarPacoteTemaJson() {
+      const pacote = coletarPacoteTemaCompleto();
+      const str = JSON.stringify(pacote, null, 2);
+      const blob = new Blob([str], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `chef-tema-custom-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      notificarToast('📦 Pacote de tema exportado com sucesso!', 'ok');
+    }
+
+    function importarPacoteTemaJson(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (data.cores) {
+            if (data.cores.primary && document.getElementById('clr-prim')) document.getElementById('clr-prim').value = data.cores.primary;
+            if (data.cores.bgCard && document.getElementById('clr-card-bg')) document.getElementById('clr-card-bg').value = data.cores.bgCard;
+            if (data.cores.borderColor && document.getElementById('clr-border-color')) document.getElementById('clr-border-color').value = data.cores.borderColor;
+          }
+          if (data.dimensoes) {
+            if (data.dimensoes.width && document.getElementById('rng-card-width')) document.getElementById('rng-card-width').value = data.dimensoes.width;
+            if (data.dimensoes.radius && document.getElementById('rng-card-radius')) document.getElementById('rng-card-radius').value = data.dimensoes.radius;
+            if (data.dimensoes.padding && document.getElementById('rng-card-pad')) document.getElementById('rng-card-pad').value = data.dimensoes.padding;
+            if (data.dimensoes.gap && document.getElementById('rng-card-gap')) document.getElementById('rng-card-gap').value = data.dimensoes.gap;
+          }
+          if (data.customCss && document.getElementById('txt-custom-css')) {
+            document.getElementById('txt-custom-css').value = data.customCss;
+          }
+          aplicarEstilosPreview();
+          salvarSnapshotHistorico();
+          notificarToast('✨ Pacote importado com sucesso para o Estúdio!', 'ok');
+        } catch (err) {
+          notificarToast('Arquivo de tema JSON inválido.', 'erro');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    async function publicarTemaCompletoDoStudio() {
+      const nome = prompt('Qual o nome do tema para publicar na Loja?', 'Meu Tema Personalizado');
+      if (!nome || !nome.trim()) return;
+      const pacote = coletarPacoteTemaCompleto();
+      const novoTema = {
+        id: 'studio_' + Date.now(),
+        nome: nome.trim(),
+        nicho: 'Estúdio Pro',
+        emoji_nicho: '🚀',
+        descricao: 'Tema criado diretamente via Estúdio Pro do restaurante.',
+        badge: 'lancamento',
+        desconto: 0,
+        estrelas: 5.0,
+        votos: 1,
+        novo: 1,
+        cores: pacote.cores,
+        css_custom: pacote.customCss
+      };
+      _temasCache.unshift(novoTema);
+      renderizarTemasLoja(_temasCache);
+      setMainRoleView('store');
+      await aplicarTemaLoja(novoTema);
+      notificarToast(`🚀 Tema "${nome}" publicado e aplicado com sucesso!`, 'ok');
     }
 
     document.addEventListener('DOMContentLoaded', () => {

@@ -411,7 +411,7 @@
     <div class="main-layout">
       <div class="sidebar">
         <div class="menu-item active" data-target="sec-dashboard"><i class="fa-solid fa-chart-simple"></i> Dashboard</div>
-        <div class="menu-item" data-target="sec-vendas"><i class="fa-solid fa-key" style="color:var(--warning);"></i> Minhas Vendas</div>
+        <div class="menu-item" data-target="sec-vendas" id="menu-item-portal-afiliado"><i class="fa-solid fa-briefcase" style="color:#f59e0b;"></i> Portal do Afiliado & Vendas <span style="font-size:10px; background:#f59e0b; color:#000; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:auto;">CARREIRA</span></div>
         <div class="menu-item" data-target="sec-restaurantes"><i class="fa-solid fa-store"></i> Restaurantes</div>
         <div class="menu-item" data-target="sec-cardapio" id="menu-cardapio" style="display:none;"><i class="fa-solid fa-book"></i> Cardápio</div>
         <div class="menu-item" data-target="sec-tarefas"><i class="fa-solid fa-list-check"></i> Atividades</div>
@@ -1103,91 +1103,376 @@
           </div>
         </div>
 
-        <!-- Minhas Vendas, Comissões & Onboarding -->
+        <!-- PORTAL DO AFILIADO: PLANO DE CARREIRA, PITCHS, LINKS & METAS -->
         <div class="content-section" id="sec-vendas">
-          <div class="card-header">
+          <div class="card-header" style="flex-wrap:wrap; gap:12px; align-items:center;">
             <div>
-              <h2 style="font-family:'Outfit',sans-serif;"><i class="fa-solid fa-hand-holding-dollar" style="color:var(--warning);"></i> Minhas Vendas, Comissões & Onboarding</h2>
-              <p style="color:var(--text-muted);font-size:0.85rem;">Acompanhe suas vendas, comissões acumuladas, saldo para saque, metas do mês e eficiência de conversão.</p>
+              <h2 style="font-family:'Outfit',sans-serif; margin:0; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-crown" style="color:#ffd700;"></i> Portal do Afiliado &amp; Aceleração de Vendas
+              </h2>
+              <p style="color:var(--text-muted); font-size:0.85rem; margin:4px 0 0 0;">
+                Seu cockpit de alta conversão: plano de carreira com comissões progressivas, links comissionados por nicho, pitchs mastigados e simulador de economia.
+              </p>
             </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn" style="background:#8b5cf6;color:white;" onclick="abrirModalAdiantamento()"><i class="fa-solid fa-piggy-bank"></i> Solicitar Adiantamento</button>
-              <button class="btn btn-primary" onclick="abrirModalNovaVenda()"><i class="fa-solid fa-cart-plus"></i> Registrar Nova Venda</button>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-sm" onclick="carregarPortalAfiliadoCompleto()"><i class="fa-solid fa-rotate"></i> Atualizar Portal</button>
+              <button class="btn btn-sm" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-weight:700;" onclick="abrirModalResgateBonus()"><i class="fa-solid fa-money-bill-wave"></i> Resgatar Bônus PIX</button>
+              <button class="btn btn-sm btn-primary" onclick="abrirModalNovaVenda()"><i class="fa-solid fa-cart-plus"></i> Registrar Nova Venda</button>
             </div>
           </div>
 
-          <!-- CARDS FINANCEIROS & METAS DO VENDEDOR -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:1rem;margin-bottom:1rem;" id="vendor-finance-cards">
-            <div class="card" style="padding:1rem;">
-              <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;font-weight:600;">Saldo Disponível</div>
-              <div style="font-size:1.6rem;font-weight:800;color:var(--success);margin-top:4px;" id="v-saldo-liquido">R$ 0,00</div>
-              <small style="color:var(--text-muted);font-size:0.7rem;">Comissões + Bônus - Adiantamentos</small>
-            </div>
+          <!-- SUB-TABS DO PORTAL DO AFILIADO -->
+          <div style="display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,0.08); margin-top:1.2rem; margin-bottom:1.2rem; padding-bottom:8px; overflow-x:auto;">
+            <button class="btn btn-sm portal-afil-tab active" id="tab-btn-carreira" onclick="trocarTabPortalAfiliado('carreira')" style="border-radius:20px; font-weight:700; background:rgba(252,75,21,0.2); color:#fc4b15; border:1px solid rgba(252,75,21,0.4);">
+              <i class="fa-solid fa-trophy"></i> 🏆 Plano de Carreira &amp; MRR
+            </button>
+            <button class="btn btn-sm portal-afil-tab" id="tab-btn-links" onclick="trocarTabPortalAfiliado('links')" style="border-radius:20px; font-weight:600; background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08);">
+              <i class="fa-solid fa-link"></i> 🌐 Links &amp; Nichos de Vendas
+            </button>
+            <button class="btn btn-sm portal-afil-tab" id="tab-btn-pitchs" onclick="trocarTabPortalAfiliado('pitchs')" style="border-radius:20px; font-weight:600; background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08);">
+              <i class="fa-solid fa-comments"></i> 🎯 Scripts &amp; Pitchs Mastigados
+            </button>
+            <button class="btn btn-sm portal-afil-tab" id="tab-btn-calculadora" onclick="trocarTabPortalAfiliado('calculadora')" style="border-radius:20px; font-weight:600; background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08);">
+              <i class="fa-solid fa-calculator"></i> 🧮 Calculadora de Economia Real
+            </button>
+            <button class="btn btn-sm portal-afil-tab" id="tab-btn-metas" onclick="trocarTabPortalAfiliado('metas')" style="border-radius:20px; font-weight:600; background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08);">
+              <i class="fa-solid fa-bullseye"></i> 🎁 Metas &amp; Bonificações Ativas
+            </button>
+            <button class="btn btn-sm portal-afil-tab" id="tab-btn-vendas" onclick="trocarTabPortalAfiliado('vendas')" style="border-radius:20px; font-weight:600; background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08);">
+              <i class="fa-solid fa-list-check"></i> 📜 Minhas Vendas &amp; Comissões
+            </button>
+          </div>
 
-            <div class="card" style="padding:1rem;">
-              <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;font-weight:600;">Comissões Acumuladas</div>
-              <div style="font-size:1.6rem;font-weight:800;color:var(--warning);margin-top:4px;" id="v-total-comissoes">R$ 0,00</div>
-              <small style="color:var(--text-muted);font-size:0.7rem;" id="v-total-vendas-valor">Em R$ 0,00 em vendas</small>
-            </div>
-
-            <div class="card" style="padding:1rem;">
-              <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;font-weight:600;">Meta de Vendas (Mês)</div>
-              <div style="font-size:1.4rem;font-weight:800;color:white;margin-top:4px;" id="v-meta-status">0 / 5</div>
-              <div style="background:rgba(255,255,255,0.1);height:6px;border-radius:10px;margin-top:6px;overflow:hidden;">
-                <div id="v-meta-progress-bar" style="background:var(--accent);height:100%;width:0%;"></div>
+          <!-- ════ ABA 1: PLANO DE CARREIRA DO AFILIADO & MRR RECORRENTE ════ -->
+          <div id="afil-view-carreira" class="afil-view-content">
+            <!-- HERO BANNER DO NÍVEL ATUAL -->
+            <div id="carreira-hero-card" style="background:linear-gradient(135deg, #18181b, #09090b); border:1px solid #ffd700; border-radius:16px; padding:1.5rem; position:relative; overflow:hidden; margin-bottom:1.2rem; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; position:relative; z-index:2;">
+                <div>
+                  <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                    <span id="carreira-nivel-badge" style="background:#ffd700; color:#000; font-weight:900; font-size:0.75rem; padding:3px 10px; border-radius:20px; letter-spacing:0.5px; text-transform:uppercase;">
+                      👑 NÍVEL ATUAL
+                    </span>
+                    <span id="carreira-vivendo-badge" style="display:none; background:linear-gradient(135deg, #b45309, #78350f); border:1px solid #f59e0b; color:#fef08a; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; box-shadow:0 0 10px rgba(245,158,11,0.5);">
+                      🔥 VIVENDO DE CHEF COZINHA
+                    </span>
+                  </div>
+                  <h1 id="carreira-titulo" style="font-family:'Outfit',sans-serif; color:#fff; font-size:1.8rem; margin:0 0 4px 0;">
+                    Carregando plano de carreira...
+                  </h1>
+                  <p id="carreira-status-desc" style="color:#cbd5e1; font-size:0.9rem; max-width:650px; margin:0; line-height:1.4;">
+                    Identificando sua graduação e benefícios de comissão recorrente vitalícia.
+                  </p>
+                </div>
+                <div style="text-align:right; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 18px;">
+                  <span style="font-size:0.75rem; color:var(--text-muted); display:block;">Sua Comissão Recorrente:</span>
+                  <div id="carreira-comissao-pct" style="font-size:2.2rem; font-weight:900; color:#ffd700; font-family:'Outfit',sans-serif; line-height:1;">
+                    0%
+                  </div>
+                  <small style="color:#86efac; font-size:0.75rem;">Vitalícia sobre todas as contas</small>
+                </div>
               </div>
-              <small style="color:var(--text-muted);font-size:0.7rem;" id="v-bonificacao-label">Bônus Meta: R$ 200,00</small>
+
+              <!-- BARRA DE PROGRESSO PARA O PRÓXIMO NÍVEL -->
+              <div style="margin-top:1.4rem; position:relative; z-index:2;">
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#cbd5e1; margin-bottom:6px;">
+                  <span><strong id="carreira-progresso-label">Progresso para o próximo nível</strong></span>
+                  <span id="carreira-progresso-faltam" style="color:#fdba74; font-weight:700;">-</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.1); height:10px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+                  <div id="carreira-progress-bar" style="background:linear-gradient(90deg, #fc4b15, #ffd700); height:100%; width:0%; transition:width 0.8s ease; border-radius:10px;"></div>
+                </div>
+              </div>
             </div>
 
-            <div class="card" style="padding:1rem;">
-              <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;font-weight:600;">Eficiência de Conversão</div>
-              <div style="font-size:1.6rem;font-weight:800;color:#3b82f6;margin-top:4px;" id="v-eficiencia">0%</div>
-              <small style="color:var(--text-muted);font-size:0.7rem;" id="v-conversao-detalhe">Fechados vs Contatos</small>
+            <!-- 4 CARDS FINANCEIROS & METAS DO AFILIADO -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:1.5rem;">
+              <div class="card" style="padding:1.1rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Clientes Ativos na Base</div>
+                <div style="font-size:1.8rem; font-weight:900; color:#fff; margin-top:4px;" id="c-clientes-ativos">0</div>
+                <small style="color:#94a3b8; font-size:0.7rem;">Restaurantes pagantes gerando comissão</small>
+              </div>
+
+              <div class="card" style="padding:1.1rem; background:rgba(255,255,255,0.03); border:1px solid rgba(34,197,94,0.25);">
+                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">MRR Recorrente Projetado</div>
+                <div style="font-size:1.8rem; font-weight:900; color:#4ade80; margin-top:4px;" id="c-mrr-projetado">R$ 0,00</div>
+                <small style="color:#86efac; font-size:0.7rem;">Renda mensal que cai todo mês no PIX</small>
+              </div>
+
+              <div class="card" style="padding:1.1rem; background:rgba(255,255,255,0.03); border:1px solid rgba(245,158,11,0.25);">
+                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Comissões Acumuladas</div>
+                <div style="font-size:1.8rem; font-weight:900; color:#fbbf24; margin-top:4px;" id="c-total-comissoes">R$ 0,00</div>
+                <small style="color:#94a3b8; font-size:0.7rem;" id="c-total-faturado-rotulo">Em R$ 0,00 de faturamento</small>
+              </div>
+
+              <div class="card" style="padding:1.1rem; background:rgba(255,255,255,0.03); border:1px solid rgba(168,85,247,0.25);">
+                <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Bônus ao Subir de Nível</div>
+                <div style="font-size:1.8rem; font-weight:900; color:#c084fc; margin-top:4px;" id="c-bonus-proximo">R$ 500,00</div>
+                <small style="color:#94a3b8; font-size:0.7rem;">Prêmio extra em dinheiro via PIX</small>
+              </div>
+            </div>
+
+            <!-- ESTRUTURA DO PLANO DE CARREIRA: OS 4 NÍVEIS -->
+            <div class="card" style="padding:1.4rem; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:16px;">
+              <h3 style="font-family:'Outfit',sans-serif; color:#fff; font-size:1.2rem; margin:0 0 6px 0; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-stairs" style="color:#fc4b15;"></i> Escada de Crescimento do Afiliado Chef
+              </h3>
+              <p style="color:var(--text-muted); font-size:0.85rem; margin:0 0 1.2rem 0;">
+                Veja exatamente o que você ganha em cada nível de carteira ativa. As comissões são recorrentes mensais enquanto os restaurantes permanecerem ativos.
+              </p>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:14px;">
+                <!-- BRONZE -->
+                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(234,88,12,0.3); border-radius:12px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                      <span style="background:rgba(234,88,12,0.2); color:#fdba74; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800;">0 - 4 CLIENTES</span>
+                      <strong style="color:#ea580c; font-size:18px;">20%</strong>
+                    </div>
+                    <h4 style="color:#fff; margin:0 0 4px 0; font-size:15px;"><i class="fa-solid fa-shield-halved" style="color:#ea580c;"></i> Bronze (Iniciante)</h4>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0 0 8px 0;">Primeiros passos no mercado. Ganhe 20% recorrente desde a primeira venda.</p>
+                  </div>
+                  <div style="font-size:11px; color:#94a3b8; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
+                    ✓ Links comissionados prontos<br>
+                    ✓ Scripts de vendas mastigados
+                  </div>
+                </div>
+
+                <!-- PRATA -->
+                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(148,163,184,0.3); border-radius:12px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                      <span style="background:rgba(148,163,184,0.2); color:#cbd5e1; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800;">5 - 14 CLIENTES</span>
+                      <strong style="color:#cbd5e1; font-size:18px;">30%</strong>
+                    </div>
+                    <h4 style="color:#fff; margin:0 0 4px 0; font-size:15px;"><i class="fa-solid fa-medal" style="color:#cbd5e1;"></i> Prata (Consolidado)</h4>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0 0 8px 0;">Carteira recorrente estável. Aumento automático da comissão para 30%.</p>
+                  </div>
+                  <div style="font-size:11px; color:#94a3b8; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
+                    🎁 <strong>Bônus de Graduação:</strong> R$ 500 no PIX<br>
+                    ✓ Materiais de alta conversão
+                  </div>
+                </div>
+
+                <!-- OURO -->
+                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(245,158,11,0.4); border-radius:12px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; position:relative;">
+                  <span style="position:absolute; top:-8px; right:12px; background:#f59e0b; color:#000; font-size:9px; font-weight:900; padding:1px 6px; border-radius:10px;">ALTA PERFORMANCE</span>
+                  <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                      <span style="background:rgba(245,158,11,0.2); color:#fef08a; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800;">15 - 29 CLIENTES</span>
+                      <strong style="color:#f59e0b; font-size:18px;">40%</strong>
+                    </div>
+                    <h4 style="color:#fff; margin:0 0 4px 0; font-size:15px;"><i class="fa-solid fa-trophy" style="color:#f59e0b;"></i> Ouro (Elite)</h4>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0 0 8px 0;">Você já tem uma renda sólida e expressiva. Selo oficial de Alta Performance.</p>
+                  </div>
+                  <div style="font-size:11px; color:#fef08a; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
+                    🎁 <strong>Bônus de Graduação:</strong> R$ 1.500 no PIX<br>
+                    🔥 Rumo à Liberdade Financeira
+                  </div>
+                </div>
+
+                <!-- BLACK EMBAIXADOR -->
+                <div style="background:linear-gradient(135deg, rgba(255,215,0,0.08), rgba(0,0,0,0.5)); border:1.5px solid #ffd700; border-radius:12px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; position:relative; box-shadow:0 0 15px rgba(255,215,0,0.15);">
+                  <span style="position:absolute; top:-8px; right:12px; background:#ffd700; color:#000; font-size:9px; font-weight:900; padding:1px 6px; border-radius:10px;">VIVENDO DISSO</span>
+                  <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                      <span style="background:#ffd700; color:#000; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:900;">30+ CLIENTES</span>
+                      <strong style="color:#ffd700; font-size:20px;">50%</strong>
+                    </div>
+                    <h4 style="color:#fff; margin:0 0 4px 0; font-size:15px;"><i class="fa-solid fa-crown" style="color:#ffd700;"></i> Black Embaixador</h4>
+                    <p style="font-size:12px; color:#cbd5e1; margin:0 0 8px 0;">O topo do ecossistema. Metade de todo o faturamento da sua carteira é seu para sempre.</p>
+                  </div>
+                  <div style="font-size:11px; color:#ffd700; border-top:1px solid rgba(255,215,0,0.2); padding-top:8px;">
+                    🎁 <strong>Bônus de Graduação:</strong> R$ 3.000 no PIX<br>
+                    👑 <strong>50% Vitalício Recorrente</strong>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- BANNER PROMOÇÕES SURPRESA & SUPER BONIFICAÇÕES -->
-          <div style="background:linear-gradient(135deg, #1e1b4b, #311b92);border:1px solid #6366f1;border-radius:16px;padding:1.2rem;margin-top:1rem;margin-bottom:1rem;position:relative;overflow:hidden;">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <!-- ════ ABA 2: LINKS & PÁGINAS DE VENDAS POR NICHO ════ -->
+          <div id="afil-view-links" class="afil-view-content" style="display:none;">
+            <!-- CARD DE CÓDIGO DE REFERÊNCIA -->
+            <div style="background:rgba(252,75,21,0.08); border:1px solid rgba(252,75,21,0.3); border-radius:14px; padding:1.2rem; margin-bottom:1.4rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
               <div>
-                <h3 style="color:#fbbf24;font-size:1.2rem;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
-                  <i class="fa-solid fa-fire" style="color:#fc4b15;"></i> PROMOÇÕES SURPRESA & SUPER BONIFICAÇÕES
-                </h3>
-                <p style="color:#cbd5e1;font-size:0.85rem;margin:0;">Missões relâmpago ativas com bônus direto em dinheiro para quem faz acontecer!</p>
+                <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Seu Código Oficial de Afiliado</span>
+                <div style="display:flex; align-items:center; gap:10px; margin-top:4px;">
+                  <code id="meu-codigo-ref" style="background:#000; color:var(--primary); font-size:1.4rem; font-weight:900; padding:4px 12px; border-radius:8px; border:1px solid rgba(252,75,21,0.4); letter-spacing:1px;">CHEF-PARCEIRO</code>
+                  <button class="btn btn-sm" onclick="copiarTexto(document.getElementById('meu-codigo-ref').textContent, 'Código copiado!')"><i class="fa-solid fa-copy"></i> Copiar Código</button>
+                </div>
               </div>
-              <button class="btn btn-sm" style="background:#6366f1;color:white;" onclick="carregarMissoesSurpresa()"><i class="fa-solid fa-rotate"></i> Atualizar Missões</button>
+              <p style="color:#cbd5e1; font-size:0.85rem; margin:0; max-width:480px;">
+                Qualquer restaurante que acessar nossos links com o seu código ou digitar seu código na hora do cadastro fica <strong>vinculado à sua carteira permanentemente</strong>.
+              </p>
             </div>
-            <div id="container-missoes-surpresa" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:1rem;">
-              <div style="background:rgba(255,255,255,0.05);padding:1rem;border-radius:12px;border:1px dashed #6366f1;text-align:center;color:#94a3b8;font-size:0.85rem;">
-                Nenhuma promoção relâmpago ativa no momento. Fique atento às notificações!
+
+            <!-- GRID DE LINKS POR NICHO -->
+            <h3 style="font-family:'Outfit',sans-serif; margin-bottom:0.8rem; font-size:1.2rem; color:#fff;">
+              <i class="fa-solid fa-bullseye" style="color:#fc4b15;"></i> Páginas Segmentadas de Alta Conversão
+            </h3>
+            <div id="grid-paginas-vendas" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:14px;">
+              <div style="text-align:center; padding:40px; color:var(--text-muted); grid-column:1/-1;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando páginas de vendas...</div>
+            </div>
+          </div>
+
+          <!-- ════ ABA 3: SCRIPTS & PITCHS MASTIGADOS ════ -->
+          <div id="afil-view-pitchs" class="afil-view-content" style="display:none;">
+            <div style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.25); border-radius:14px; padding:1.2rem; margin-bottom:1.4rem;">
+              <h3 style="color:#93c5fd; margin:0 0 4px 0; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Copie, Cole e Venda — Textos Testados e Validados
+              </h3>
+              <p style="color:#cbd5e1; font-size:0.85rem; margin:0;">
+                Estes scripts foram desenvolvidos por especialistas em vendas B2B para o mercado gastronômico. Basta clicar em <strong>"Copiar Script"</strong> e disparar para os donos de restaurantes.
+              </p>
+            </div>
+
+            <div id="grid-pitchs-scripts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:16px;">
+              <div style="text-align:center; padding:40px; color:var(--text-muted); grid-column:1/-1;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando scripts de alta conversão...</div>
+            </div>
+          </div>
+
+          <!-- ════ ABA 4: CALCULADORA DE ECONOMIA REAL (FECHAMENTO NA HORA) ════ -->
+          <div id="afil-view-calculadora" class="afil-view-content" style="display:none;">
+            <div class="card" style="padding:1.6rem; background:linear-gradient(135deg, rgba(16,185,129,0.06), rgba(59,130,246,0.04)); border:1px solid rgba(16,185,129,0.3); border-radius:16px; margin-bottom:1.5rem;">
+              <div style="max-width:750px;">
+                <h3 style="color:#34d399; font-size:1.4rem; margin:0 0 6px 0; font-family:'Outfit',sans-serif; display:flex; align-items:center; gap:10px;">
+                  <i class="fa-solid fa-calculator"></i> Simulador de Economia Real para o Dono do Restaurante
+                </h3>
+                <p style="color:#cbd5e1; font-size:0.88rem; margin:0 0 1.4rem 0;">
+                  O maior argumento de venda para qualquer dono de restaurante é <strong>lucro no bolso</strong>. Digite os dados dele abaixo e mostre o quanto ele está perdendo em taxas de aplicativos todo mês:
+                </p>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:1.5rem;">
+                  <div class="form-group">
+                    <label style="font-size:0.8rem; font-weight:700; color:#94a3b8;">Faturamento no Delivery/iFood (Mês) *</label>
+                    <div style="position:relative;">
+                      <span style="position:absolute; left:12px; top:10px; color:var(--text-muted); font-weight:700;">R$</span>
+                      <input type="number" id="calc-faturamento" value="30000" step="1000" min="1000" oninput="calcularEconomiaCliente()" style="padding-left:36px; font-weight:800; font-size:1.1rem; color:#fff;">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label style="font-size:0.8rem; font-weight:700; color:#94a3b8;">Taxa Média do Marketplace (%) *</label>
+                    <div style="position:relative;">
+                      <input type="number" id="calc-taxa" value="27" step="1" min="5" max="40" oninput="calcularEconomiaCliente()" style="font-weight:800; font-size:1.1rem; color:#fff;">
+                      <span style="position:absolute; right:14px; top:10px; color:var(--text-muted); font-weight:700;">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- RESULTADOS DA SIMULAÇÃO -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:1.5rem;">
+                  <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:12px; padding:14px;">
+                    <span style="font-size:0.75rem; color:#fca5a5; text-transform:uppercase; font-weight:700;">Taxa Paga para Apps Hoje:</span>
+                    <div id="res-taxa-paga" style="font-size:1.6rem; font-weight:900; color:#ef4444; margin-top:4px;">R$ 8.100,00</div>
+                    <small style="color:#f87171; font-size:0.75rem;">Dinheiro que sai do caixa todo mês</small>
+                  </div>
+
+                  <div style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.4); border-radius:12px; padding:14px;">
+                    <span style="font-size:0.75rem; color:#86efac; text-transform:uppercase; font-weight:700;">Economia com Chef Cozinha:</span>
+                    <div id="res-economia-mes" style="font-size:1.8rem; font-weight:900; color:#10b981; margin-top:4px;">R$ 7.901,00</div>
+                    <small style="color:#86efac; font-size:0.75rem;">Lucro líquido a mais por mês no bolso</small>
+                  </div>
+
+                  <div style="background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3); border-radius:12px; padding:14px;">
+                    <span style="font-size:0.75rem; color:#fef08a; text-transform:uppercase; font-weight:700;">Economia Acumulada no Ano:</span>
+                    <div id="res-economia-ano" style="font-size:1.8rem; font-weight:900; color:#ffd700; margin-top:4px;">R$ 94.812,00</div>
+                    <small style="color:#fef08a; font-size:0.75rem;">Dá para comprar equipamentos novos!</small>
+                  </div>
+                </div>
+
+                <!-- BOTÃO COPIAR ARGUMENTO PARA WHATSAPP -->
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <button class="btn btn-primary" onclick="copiarCalculoParaWhatsApp()" style="background:linear-gradient(135deg, #10b981, #059669); font-weight:700; padding:10px 18px;">
+                    <i class="fa-brands fa-whatsapp"></i> Copiar Argumento Pronto para Mandar no WhatsApp
+                  </button>
+                  <button class="btn" onclick="abrirWhatsAppComCalculo()" style="background:#25d366; color:#fff; font-weight:700; padding:10px 18px;">
+                    <i class="fa-solid fa-paper-plane"></i> Enviar Direto no WhatsApp
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="card" style="padding:0;overflow:hidden;margin-top:1rem;">
-            <div style="padding:1rem;background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
-              <h4 style="margin:0;"><i class="fa-solid fa-list"></i> Histórico de Vendas & Comissões Atribuídas</h4>
-              <button class="btn btn-sm" onclick="carregarFinanceiroSuporte()"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+          <!-- ════ ABA 5: METAS & BONIFICAÇÕES ATIVAS DA DIRETORIA ════ -->
+          <div id="afil-view-metas" class="afil-view-content" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:1rem;">
+              <div>
+                <h3 style="font-family:'Outfit',sans-serif; margin:0; font-size:1.2rem; color:#fff;">
+                  <i class="fa-solid fa-gift" style="color:#c084fc;"></i> Desafios &amp; Campanhas da Diretoria
+                </h3>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin:2px 0 0 0;">
+                  Bata metas de vendas e ganhe bonificações em dinheiro transferidas diretamente para a sua chave PIX.
+                </p>
+              </div>
+              <button class="btn btn-sm" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-weight:700;" onclick="abrirModalResgateBonus()">
+                <i class="fa-solid fa-money-bill-transfer"></i> Solicitar Resgate de Bônus
+              </button>
             </div>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Chave Emitida</th>
-                    <th>Restaurante</th>
-                    <th>Plano / Valor</th>
-                    <th>Comissão (%)</th>
-                    <th>Comissão (R$)</th>
-                    <th>Fator / Objeção</th>
-                    <th>Data</th>
-                  </tr>
-                </thead>
-                <tbody id="minhas-vendas-body">
-                  <tr><td colspan="7" style="text-align:center;color:var(--text-muted);">Carregando suas vendas...</td></tr>
-                </tbody>
-              </table>
+
+            <!-- GRID DE METAS ATIVAS -->
+            <div id="grid-metas-afiliado" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:14px; margin-bottom:1.5rem;">
+              <div style="text-align:center; padding:40px; color:var(--text-muted); grid-column:1/-1;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando metas ativas...</div>
+            </div>
+
+            <!-- HISTÓRICO DE BONIFICAÇÕES -->
+            <div class="card" style="padding:0; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+              <div style="padding:1rem; background:rgba(255,255,255,0.03); border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                <h4 style="margin:0; font-size:0.95rem; color:#fff;"><i class="fa-solid fa-clock-rotate-left"></i> Histórico de Resgates e Bônus PIX</h4>
+                <div style="font-size:0.8rem; color:var(--text-muted);">
+                  Total Pago: <strong style="color:var(--success);" id="bonificacoes-total-pago">R$ 0,00</strong>
+                </div>
+              </div>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Descrição / Meta</th>
+                      <th>Valor Bônus</th>
+                      <th>Chave PIX</th>
+                      <th>Data Solicitação</th>
+                      <th>Status</th>
+                      <th>Comprovante</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bonificacoes-afiliado-body">
+                    <tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">Carregando histórico de bônus...</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+
+          <!-- ════ ABA 6: MINHAS VENDAS & COMISSÕES ════ -->
+          <div id="afil-view-vendas" class="afil-view-content" style="display:none;">
+            <div class="card" style="padding:0; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+              <div style="padding:1rem; background:rgba(255,255,255,0.03); border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                <h4 style="margin:0; font-size:0.95rem; color:#fff;"><i class="fa-solid fa-list"></i> Histórico de Vendas &amp; Comissões Atribuídas</h4>
+                <button class="btn btn-sm" onclick="carregarFinanceiroSuporte()"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+              </div>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Chave Emitida</th>
+                      <th>Restaurante</th>
+                      <th>Plano / Valor</th>
+                      <th>Comissão (%)</th>
+                      <th>Comissão (R$)</th>
+                      <th>Fator / Objeção</th>
+                      <th>Data</th>
+                    </tr>
+                  </thead>
+                  <tbody id="minhas-vendas-body">
+                    <tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">Carregando suas vendas...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- Ranking -->
@@ -2445,6 +2730,60 @@
       <div class="modal-footer" style="padding:0.9rem 1.4rem;border-top:1px solid #374151;display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:0.75rem;color:var(--text-muted);"><i class="fa-solid fa-shield-halved"></i> Restauração segura com atualização imediata</span>
         <button class="btn" onclick="fecharModalHistoricoModulos()">Fechar</button>
+      </div>
+    </div>
+  </div>
+  <!-- MODAL: QR CODE DO LINK DE AFILIADO -->
+  <div class="modal-overlay" id="modal-qrcode-afiliado">
+    <div class="modal-content" style="max-width:440px; text-align:center; background:#111827; border:1px solid #374151; border-radius:16px;">
+      <div class="modal-header" style="justify-content:space-between;">
+        <h3 id="modal-qrcode-titulo" style="margin:0; font-size:1.1rem; color:#fff;">QR Code de Vendas</h3>
+        <button class="modal-close" onclick="fecharModalQrCodeAfiliado()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="padding:1.5rem;">
+        <div id="qrcode-img-container" style="background:#fff; padding:16px; border-radius:12px; display:inline-block; margin-bottom:1rem; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+          <!-- QR Code Image -->
+        </div>
+        <p id="modal-qrcode-link-texto" style="font-size:0.8rem; color:#94a3b8; word-break:break-all; margin:0 0 1rem 0;"></p>
+        <div style="display:flex; gap:8px; justify-content:center;">
+          <button class="btn btn-primary" onclick="copiarTextoQrCodeAtual()"><i class="fa-solid fa-copy"></i> Copiar Link</button>
+          <a id="btn-download-qrcode" href="#" download="qrcode-chef-cozinha.png" target="_blank" class="btn" style="background:#374151; color:#fff;"><i class="fa-solid fa-download"></i> Baixar QR Code</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SOLICITAR RESGATE DE BÔNUS PIX -->
+  <div class="modal-overlay" id="modal-resgate-bonus-afiliado">
+    <div class="modal-content" style="max-width:480px; background:#111827; border:1px solid #374151; border-radius:16px;">
+      <div class="modal-header">
+        <h3 style="margin:0; font-size:1.1rem; color:#10b981; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-money-bill-transfer"></i> Solicitar Resgate de Bônus PIX
+        </h3>
+        <button class="modal-close" onclick="fecharModalResgateBonus()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="padding:1.4rem;">
+        <div class="form-group">
+          <label style="font-size:0.8rem; color:#94a3b8;">Campanha / Motivo do Bônus *</label>
+          <select id="resgate-meta-id" style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; color:#fff; border-radius:8px; font-size:0.85rem;">
+            <option value="">Selecione a campanha ou bônus de carreira...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem; color:#94a3b8;">Valor do Resgate (R$) *</label>
+          <input type="number" id="resgate-valor" value="500" min="10" step="50" style="background:#1f2937; border:1px solid #374151; color:#fff; border-radius:8px; padding:10px; font-size:1.1rem; font-weight:700;">
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem; color:#94a3b8;">Sua Chave PIX Cadastrada *</label>
+          <input type="text" id="resgate-pix-chave" placeholder="CPF, Email, Telefone ou Aleatória" style="background:#1f2937; border:1px solid #374151; color:#10b981; border-radius:8px; padding:10px; font-weight:700;">
+          <small style="color:var(--text-muted); font-size:0.75rem;">O valor será transferido diretamente para esta chave pela diretoria.</small>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding:1rem 1.4rem; border-top:1px solid #374151; display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn" onclick="fecharModalResgateBonus()">Cancelar</button>
+        <button class="btn btn-primary" style="background:#10b981; border-color:#10b981;" onclick="enviarSolicitacaoResgateBonus()">
+          <i class="fa-solid fa-paper-plane"></i> Enviar Solicitação de PIX
+        </button>
       </div>
     </div>
   </div>

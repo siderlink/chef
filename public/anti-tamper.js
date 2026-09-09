@@ -80,4 +80,27 @@
       keepalive: true
     }).catch(function () {});
   }
+
+  // 5. Anti-Debugging Ativo (detecta pausa maliciosa por DevTools / breakpoints)
+  (function antiDebugLoop() {
+    function testDebugger() {
+      const start = performance.now();
+      try {
+        (function() {}).constructor('debugger')();
+      } catch (e) {}
+      const diff = performance.now() - start;
+      if (diff > 120) {
+        reportarViolacao('DEBUGGER_ATIVO');
+      }
+    }
+    setInterval(testDebugger, 2500);
+  })();
+
+  // 6. Proteção de Console contra extração de dados sensíveis em produção
+  try {
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      const noop = function () {};
+      console.debug = noop;
+    }
+  } catch (e) {}
 })();

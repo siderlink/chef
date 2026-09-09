@@ -9,7 +9,27 @@ const jwt = require('jsonwebtoken');
 
 module.exports = function(app, masterDb, sqlite3, options) {
   const { superAdminAuth, io } = options || {};
-  const suporteJwtSecret = process.env.SUPORTE_JWT_SECRET || 'chef-suporte-secret-key-2026';
+  const suporteJwtSecret = process.env.SUPORTE_JWT_SECRET || (options && options.suporteJwtSecret) || 'chef-suporte-secret-key-2026';
+
+  // Anti-brute-force rate limiter para login de suporte
+  const suporteLoginAttempts = new Map();
+  function checkSuporteRateLimit(ip) {
+    const rec = suporteLoginAttempts.get(ip);
+    if (!rec) return true;
+    if (Date.now() - rec.inicio > 15 * 60 * 1000) {
+      suporteLoginAttempts.delete(ip);
+      return true;
+    }
+    return rec.falhas < 5;
+  }
+  function registrarFalhaSuporte(ip) {
+    const rec = suporteLoginAttempts.get(ip);
+    if (!rec || Date.now() - rec.inicio > 15 * 60 * 1000) {
+      suporteLoginAttempts.set(ip, { inicio: Date.now(), falhas: 1 });
+    } else {
+      rec.falhas++;
+    }
+  }
 
   // Inicializa tabelas se não existirem
   masterDb.serialize(() => {
@@ -44,6 +64,36 @@ module.exports = function(app, masterDb, sqlite3, options) {
       UNIQUE(suporte_id, conquista)
     )`);
 
+    masterDb.run(`CREATE TABLE IF NOT EXISTS afiliados_metas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      titulo TEXT NOT NULL,
+      descricao TEXT,
+      meta_qtd INTEGER DEFAULT 5,
+      recompensa_valor REAL DEFAULT 500,
+      afiliado_id INTEGER,
+      data_inicio DATETIME,
+      data_fim DATETIME,
+      status TEXT DEFAULT 'ativa',
+      criada_em DATETIME DEFAULT (datetime('now','localtime'))
+    )`);
+
+    masterDb.run(`CREATE TABLE IF NOT EXISTS afiliados_bonificacoes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      afiliado_id INTEGER,
+      suporte_id INTEGER,
+      afiliado_nome TEXT,
+      meta_id INTEGER,
+      valor REAL NOT NULL,
+      tipo TEXT DEFAULT 'meta_atingida',
+      descricao TEXT,
+      status TEXT DEFAULT 'pendente',
+      pago_em DATETIME,
+      comprovante_pix TEXT,
+      criada_em DATETIME DEFAULT (datetime('now','localtime'))
+    )`);
+
+    masterDb.run(`ALTER TABLE equipe_suporte ADD COLUMN codigo_ref TEXT`, () => {});
+
     masterDb.run(`CREATE TABLE IF NOT EXISTS suporte_vendas (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       suporte_id INTEGER,
@@ -68,29 +118,22 @@ module.exports = function(app, masterDb, sqlite3, options) {
       suporte_id INTEGER,
       valor REAL DEFAULT 0,
       descricao TEXT,
-      status TEXT DEFAULT 'aprovado',
-      data_solicitacao DATETIME DEFAULT (datetime('now','localtime'))
+      status TEXT DEFAULT 'pendente',
+      data_solicitacao DATETIME DEFAULT (datetime('now','localtime')),
+      data_resposta DATETIME
     )`);
 
     masterDb.run(`CREATE TABLE IF NOT EXISTS suporte_logs_audit (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      suporte_id INTEGER,
-      suporte_nome TEXT,
-      acao TEXT,
-      detalhes TEXT,
-      ip TEXT,
+      suporte_id INTEGER, operador_nome TEXT, acao TEXT, detalhes TEXT, ip TEXT,
       data_acao DATETIME DEFAULT (datetime('now','localtime'))
     )`);
 
     masterDb.run(`CREATE TABLE IF NOT EXISTS suporte_missoes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      titulo TEXT,
-      descricao TEXT,
-      xp_recompensa INTEGER DEFAULT 50,
-      icone TEXT DEFAULT 'fa-trophy',
-      categoria TEXT DEFAULT 'geral',
-      ativa INTEGER DEFAULT 1,
-      criada_em DATETIME DEFAULT (datetime('now','localtime'))
+      titulo TEXT, descricao TEXT, xp_recompensa INTEGER DEFAULT 50,
+      icone TEXT DEFAULT 'fa-trophy', categoria TEXT DEFAULT 'geral',
+      ativa INTEGER DEFAULT 1
     )`);
 
     masterDb.run(`CREATE TABLE IF NOT EXISTS site_versoes_historico (
@@ -105,63 +148,48 @@ module.exports = function(app, masterDb, sqlite3, options) {
     )`);
   });
 
+  // Middleware de Autenticação do Suporte
   function suporteAuth(req, res, next) {
     const authHeader = req.headers['authorization'];
-    const token = req.headers['x-suporte-token'] || (authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null) || req.query.token;
-    const superToken = req.headers['x-super-admin-token'] || req.query.super_token;
+    if (!authHeader) return res.status(401).json({ ok: false, erro: 'Token de suporte não fornecido.' });
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || parts[0] !== 'Bearer') return res.status(401).json({ ok: false, erro: 'Formato de token inválido.' });
 
-    if (superToken) {
-      req.suporteId = 1;
-      req.suporteData = { id: 1, nome: 'Super Admin', cargo: 'Super Admin' };
-      return next();
-    }
-
-    if (!token) return res.json({ ok: false, erro: 'Token de suporte não fornecido.' });
     try {
-      const decoded = jwt.verify(token, suporteJwtSecret);
+      const decoded = jwt.verify(parts[1], suporteJwtSecret, { algorithms: ['HS256'] });
       req.suporteId = decoded.id;
       req.suporteData = decoded;
       next();
     } catch (e) {
-      res.json({ ok: false, erro: 'Sessão de suporte inválida ou expirada.' });
+      return res.status(401).json({ ok: false, erro: 'Sessão expirada ou token inválido. Faça login novamente.' });
     }
   }
 
-  function registrarAuditLog(suporteId, suporteNome, acao, detalhes, req) {
-    const clientIp = req ? (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1') : '127.0.0.1';
+  function registrarAuditLog(suporteId, operadorNome, acao, detalhes, req) {
+    const rawIp = req ? (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '127.0.0.1') : '127.0.0.1';
+    const ip = String(rawIp).replace('::ffff:', '');
     masterDb.run(
-      `INSERT INTO suporte_logs_audit (suporte_id, suporte_nome, acao, detalhes, ip) VALUES (?, ?, ?, ?, ?)`,
-      [suporteId || null, suporteNome || 'Anônimo', acao, detalhes, String(clientIp)]
+      `INSERT INTO suporte_logs_audit (suporte_id, operador_nome, acao, detalhes, ip) VALUES (?, ?, ?, ?, ?)`,
+      [suporteId || null, operadorNome || 'Sistema', acao, detalhes || '', ip]
     );
   }
 
   function gerarXP(suporteId, pontos, tipo, descricao, restauranteId) {
-    masterDb.run(`UPDATE equipe_suporte SET xp = COALESCE(xp,0) + ? WHERE id = ?`, [pontos, suporteId]);
-    masterDb.run(
-      `INSERT INTO tarefas_suporte (suporte_id, tipo, descricao, restaurante_id, pontos, status, concluida_em) VALUES (?, ?, ?, ?, ?, 'concluida', datetime('now','localtime'))`,
-      [suporteId, tipo, descricao, restauranteId || null, pontos]
-    );
-    
     masterDb.get(`SELECT xp, nivel FROM equipe_suporte WHERE id = ?`, [suporteId], (err, row) => {
-      if (row) {
-        const novoNivel = Math.floor((row.xp || 0) / 100) + 1;
+      if (!err && row) {
+        const novoXp = (row.xp || 0) + pontos;
+        const novoNivel = Math.floor(novoXp / 100) + 1;
+        masterDb.run(`UPDATE equipe_suporte SET xp = ?, nivel = ? WHERE id = ?`, [novoXp, novoNivel, suporteId]);
+        masterDb.run(
+          `INSERT INTO tarefas_suporte (suporte_id, tipo, descricao, restaurante_id, pontos, status, concluida_em)
+           VALUES (?, ?, ?, ?, ?, 'concluida', datetime('now','localtime'))`,
+          [suporteId, tipo, descricao, restauranteId || null, pontos]
+        );
+
         if (novoNivel > (row.nivel || 1)) {
-          masterDb.run(`UPDATE equipe_suporte SET nivel = ? WHERE id = ?`, [novoNivel, suporteId]);
           masterDb.run(
             `INSERT OR IGNORE INTO conquistas_suporte (suporte_id, conquista, icone, descricao) VALUES (?, ?, ?, ?)`,
             [suporteId, `level_${novoNivel}`, 'fa-star', `Atingiu o nível ${novoNivel}!`]
-          );
-        }
-        if ((row.xp || 0) + pontos >= 100 && (row.xp || 0) < 100) {
-          masterDb.run(
-            `INSERT OR IGNORE INTO conquistas_suporte (suporte_id, conquista, icone, descricao) VALUES (?, 'primeiros_100', 'fa-bolt', 'Acumulou 100 XP!')`,
-            [suporteId]
-          );
-        }
-        if ((row.xp || 0) + pontos >= 500 && (row.xp || 0) < 500) {
-          masterDb.run(
-            `INSERT OR IGNORE INTO conquistas_suporte (suporte_id, conquista, icone, descricao) VALUES (?, 'primeiros_500', 'fa-fire', 'Acumulou 500 XP!')`,
-            [suporteId]
           );
         }
       }
@@ -192,13 +220,21 @@ module.exports = function(app, masterDb, sqlite3, options) {
     }
   });
 
-  // POST /api/suporte/login — Login do painel de suporte
+  // POST /api/suporte/login — Login do painel de suporte (com proteção anti-força bruta)
   app.post('/api/suporte/login', (req, res) => {
+    const rawIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1').replace('::ffff:', '');
+    if (!checkSuporteRateLimit(rawIp)) {
+      return res.status(429).json({ ok: false, erro: 'Muitas tentativas incorretas. Acesso bloqueado por 15 minutos por segurança.' });
+    }
+
     const { email, senha } = req.body || {};
     if (!email || !senha) return res.json({ ok: false, erro: 'Email e senha são obrigatórios.' });
 
     masterDb.get(`SELECT * FROM equipe_suporte WHERE email = ?`, [email.trim().toLowerCase()], async (err, row) => {
-      if (err || !row) return res.json({ ok: false, erro: 'Email ou senha inválidos.' });
+      if (err || !row) {
+        registrarFalhaSuporte(rawIp);
+        return res.json({ ok: false, erro: 'Email ou senha inválidos.' });
+      }
 
       if (row.status_aprovacao === 'pendente') {
         return res.json({ ok: false, erro: 'Sua conta ainda está em análise pelo Administrador Master. Você será notificado assim que aprovada.' });
@@ -208,8 +244,12 @@ module.exports = function(app, masterDb, sqlite3, options) {
       }
 
       const match = await bcrypt.compare(senha, row.password_hash);
-      if (!match) return res.json({ ok: false, erro: 'Email ou senha inválidos.' });
+      if (!match) {
+        registrarFalhaSuporte(rawIp);
+        return res.json({ ok: false, erro: 'Email ou senha inválidos.' });
+      }
 
+      suporteLoginAttempts.delete(rawIp);
       masterDb.run(`UPDATE equipe_suporte SET status = 'disponivel' WHERE id = ?`, [row.id]);
 
       const token = jwt.sign(
@@ -700,6 +740,553 @@ module.exports = function(app, masterDb, sqlite3, options) {
           res.json({ ok: true, mensagem: `Versão #${row.id} restaurada e publicada com sucesso!`, configs: snapshot });
         });
       });
+    });
+  });
+
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  /* ═══ PORTAL DE ACELERAÇÃO DE VENDAS & PLANO DE CARREIRA DO AFILIADO ═══ */
+  /* ═══════════════════════════════════════════════════════════════════════ */
+
+  function calcularPlanoCarreira(clientesAtivos, faturamentoTotal) {
+    const count = Math.max(0, parseInt(clientesAtivos) || 0);
+    const fat = Math.max(0, parseFloat(faturamentoTotal) || 0);
+
+    if (count >= 30 || fat >= 12000) {
+      return {
+        nivel: 'black',
+        titulo: 'Black Embaixador',
+        icone: 'fa-crown',
+        cor: '#ffd700',
+        badgeBg: 'linear-gradient(135deg, #18181b, #09090b)',
+        badgeBorder: '#ffd700',
+        comissaoPct: 50,
+        clientesMin: 30,
+        proximoNivel: null,
+        faltamClientes: 0,
+        progressoPct: 100,
+        bonusGraduacao: 3000,
+        vivendoDisso: true,
+        seloVivendoDisso: '🔥 VIVENDO DE CHEF COZINHA',
+        statusTexto: 'Elite Absoluta — Você construiu uma carteira sólida e vive exclusivamente das comissões recorrentes do Chef Cozinha!',
+        beneficios: [
+          '50% de comissão recorrente mensal vitalícia sobre todos os restaurantes',
+          'Acesso prioritário a novos módulos e betas exclusivos',
+          'Canal direto com os fundadores e diretoria executiva',
+          'Selo Oficial de Embaixador no diretório e materiais de imprensa'
+        ]
+      };
+    } else if (count >= 15 || fat >= 5000) {
+      const faltam = Math.max(0, 30 - count);
+      return {
+        nivel: 'ouro',
+        titulo: 'Afiliado Ouro',
+        icone: 'fa-trophy',
+        cor: '#f59e0b',
+        badgeBg: 'linear-gradient(135deg, #451a03, #78350f)',
+        badgeBorder: '#f59e0b',
+        comissaoPct: 40,
+        clientesMin: 15,
+        proximoNivel: 'Black Embaixador (30 clientes)',
+        faltamClientes: faltam,
+        progressoPct: Math.min(99, Math.round(((count - 15) / 15) * 100)),
+        bonusGraduacao: 1500,
+        vivendoDisso: true,
+        seloVivendoDisso: '🔥 RUMO À LIBERDADE FINANCEIRA',
+        statusTexto: 'Alta Performance — Mais de 15 restaurantes parceiros. Renda recorrente mensal expressiva.',
+        beneficios: [
+          '40% de comissão recorrente mensal por restaurante ativo',
+          'Bônus de R$ 1.500 liberado ao atingir o nível Ouro',
+          'Suporte VIP na negociação de redes e franquias'
+        ]
+      };
+    } else if (count >= 5 || fat >= 1500) {
+      const faltam = Math.max(0, 15 - count);
+      return {
+        nivel: 'prata',
+        titulo: 'Afiliado Prata',
+        icone: 'fa-medal',
+        cor: '#cbd5e1',
+        badgeBg: 'linear-gradient(135deg, #1e293b, #334155)',
+        badgeBorder: '#94a3b8',
+        comissaoPct: 30,
+        clientesMin: 5,
+        proximoNivel: 'Afiliado Ouro (15 clientes)',
+        faltamClientes: faltam,
+        progressoPct: Math.min(99, Math.round(((count - 5) / 10) * 100)),
+        bonusGraduacao: 500,
+        vivendoDisso: false,
+        seloVivendoDisso: null,
+        statusTexto: 'Consolidação de Carteira — 30% de comissão recorrente mensal garantida todo mês.',
+        beneficios: [
+          '30% de comissão recorrente mensal',
+          'Bônus de R$ 500 liberado ao atingir 5 clientes ativos',
+          'Materiais de marketing de alta conversão'
+        ]
+      };
+    } else {
+      const faltam = Math.max(0, 5 - count);
+      return {
+        nivel: 'bronze',
+        titulo: 'Afiliado Bronze',
+        icone: 'fa-shield-halved',
+        cor: '#f97316',
+        badgeBg: 'linear-gradient(135deg, #271306, #431407)',
+        badgeBorder: '#ea580c',
+        comissaoPct: 20,
+        clientesMin: 0,
+        proximoNivel: 'Afiliado Prata (5 clientes)',
+        faltamClientes: faltam,
+        progressoPct: Math.min(99, Math.round((count / 5) * 100)),
+        bonusGraduacao: 0,
+        vivendoDisso: false,
+        seloVivendoDisso: null,
+        statusTexto: 'Início de Carreira — Comece a prospectar e receba 20% de comissão recorrente já na 1ª venda.',
+        beneficios: [
+          '20% de comissão recorrente mensal',
+          'Links dinâmicos de vendas com rastreamento por nicho',
+          'Scripts completos para WhatsApp e abordagem presencial'
+        ]
+      };
+    }
+  }
+
+  // GET /api/afiliado/carreira-dashboard — Dashboard completo do afiliado logado
+  app.get('/api/afiliado/carreira-dashboard', suporteAuth, (req, res) => {
+    const userId = req.suporteId;
+    const host = req.headers.host || 'localhost:8080';
+    const protocol = req.protocol || 'http';
+    const baseUrl = `${protocol}://${host}`;
+
+    // Busca dados do usuário de suporte ou afiliado
+    masterDb.get(`SELECT * FROM equipe_suporte WHERE id = ?`, [userId], (errUser, user) => {
+      if (errUser || !user) {
+        return res.json({ ok: false, erro: 'Cadastro de afiliado/suporte não encontrado.' });
+      }
+
+      // Garante que o usuário possua um código ref limpo e único
+      let refCode = user.codigo_ref;
+      if (!refCode || refCode.trim() === '') {
+        const cleanName = (user.nome || 'AF').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 4);
+        refCode = `CHEF-${cleanName}${user.id}`;
+        masterDb.run(`UPDATE equipe_suporte SET codigo_ref = ? WHERE id = ?`, [refCode, userId]);
+      }
+
+      // Busca estatísticas de vendas registradas
+      masterDb.all(
+        `SELECT * FROM suporte_vendas WHERE suporte_id = ? ORDER BY data_venda DESC`,
+        [userId],
+        (errVendas, vendasRows) => {
+          const vendas = vendasRows || [];
+          const vendasFechadas = vendas.filter(v => (v.status_venda || 'fechado') === 'fechado');
+          const clientesAtivos = vendasFechadas.length;
+          
+          let totalFaturado = 0;
+          let totalComissoes = 0;
+          vendasFechadas.forEach(v => {
+            totalFaturado += (parseFloat(v.valor_venda) || 0);
+            totalComissoes += (parseFloat(v.comissao_valor) || 0);
+          });
+
+          // Projeção do Plano de Carreira
+          const carreira = calcularPlanoCarreira(clientesAtivos, totalFaturado);
+          
+          // Ticket médio estimado R$ 199/mês por restaurante ativo
+          const mensalidadeMedia = 199;
+          const mrrProjetado = (clientesAtivos * mensalidadeMedia) * (carreira.comissaoPct / 100);
+
+          // Busca Metas Ativas da Diretoria
+          masterDb.all(
+            `SELECT * FROM afiliados_metas 
+             WHERE status = 'ativa' AND (afiliado_id IS NULL OR afiliado_id = ?)
+             ORDER BY id DESC`,
+            [userId],
+            (errMetas, metasRows) => {
+              const metas = (metasRows || []).map(m => {
+                const progresso = Math.min(clientesAtivos, m.meta_qtd);
+                const bateu = clientesAtivos >= m.meta_qtd;
+                const perc = m.meta_qtd > 0 ? Math.min(100, Math.round((progresso / m.meta_qtd) * 100)) : 0;
+                return {
+                  ...m,
+                  progresso_atual: progresso,
+                  concluida: bateu,
+                  percentual_progresso: perc
+                };
+              });
+
+              // Busca Bonificações do Afiliado
+              masterDb.all(
+                `SELECT * FROM afiliados_bonificacoes 
+                 WHERE suporte_id = ? OR afiliado_id = ?
+                 ORDER BY id DESC`,
+                [userId, userId],
+                (errBonus, bonusRows) => {
+                  const bonificacoes = bonusRows || [];
+                  let bonusTotalPago = 0;
+                  let bonusTotalPendente = 0;
+
+                  bonificacoes.forEach(b => {
+                    const val = parseFloat(b.valor) || 0;
+                    if (b.status === 'pago') bonusTotalPago += val;
+                    else if (b.status === 'pendente') bonusTotalPendente += val;
+                  });
+
+                  // Links prontos por nicho
+                  const paginasVendas = [
+                    {
+                      nicho: 'geral',
+                      titulo: 'Página Geral Oficial',
+                      descricao: 'Apresentação completa de todas as funcionalidades para qualquer restaurante.',
+                      url: `${baseUrl}/?ref=${refCode}`,
+                      whatsappMsg: `Olá! Conheça o Chef Cozinha, o sistema definitivo para gerenciar pedidos, mesas e delivery sem taxas abusivas: ${baseUrl}/?ref=${refCode}`
+                    },
+                    {
+                      nicho: 'pizzaria',
+                      titulo: 'Pizzarias & Delivery',
+                      descricao: 'Foco em pedidos rápidos de pizza meio a meio, bordas recheadas e delivery integrado.',
+                      url: `${baseUrl}/?nicho=pizzaria&ref=${refCode}`,
+                      whatsappMsg: `Olá amigo pizzaiolo! Sabia que você pode economizar milhares de reais por mês eliminando as taxas do iFood com nosso cardápio delivery próprio? Veja uma demo aqui: ${baseUrl}/?nicho=pizzaria&ref=${refCode}`
+                    },
+                    {
+                      nicho: 'hamburgueria',
+                      titulo: 'Hamburguerias & Fast Food',
+                      descricao: 'Customização ágil de lanches (combos, adicionais, pontos da carne) e comanda rápida.',
+                      url: `${baseUrl}/?nicho=hamburgueria&ref=${refCode}`,
+                      whatsappMsg: `Fala chef! Quer acelerar a saída de pedidos da sua hamburgueria e receber direto no WhatsApp sem pagar comissão por lanche? Confira: ${baseUrl}/?nicho=hamburgueria&ref=${refCode}`
+                    },
+                    {
+                      nicho: 'buffet',
+                      titulo: 'Buffets & Restaurante a Quilo / Balança',
+                      descricao: 'Integração de balança com checkout de peso em milissegundos e controle de mesas.',
+                      url: `${baseUrl}/?nicho=buffet&ref=${refCode}`,
+                      whatsappMsg: `Olá! Seu restaurante a quilo ou buffet precisa de agilidade na balança e fechamento de mesas sem fila? Veja como funciona o Chef Cozinha: ${baseUrl}/?nicho=buffet&ref=${refCode}`
+                    },
+                    {
+                      nicho: 'bar',
+                      titulo: 'Bares, Pubs & Chopperias',
+                      descricao: 'Comandas individuais, controle de garçons, chopps em dobro e fechamento dividido.',
+                      url: `${baseUrl}/?nicho=bar&ref=${refCode}`,
+                      whatsappMsg: `Olá! Acabe com as confusões de comandas e filas no caixa do seu bar com o nosso sistema de atendimento na mesa: ${baseUrl}/?nicho=bar&ref=${refCode}`
+                    },
+                    {
+                      nicho: 'cadastro',
+                      titulo: 'Cadastro Direto de Restaurante',
+                      descricao: 'Leva o restaurante diretamente para a tela de cadastro atribuindo seu código de afiliado.',
+                      url: `${baseUrl}/cadastro.html?ref=${refCode}`,
+                      whatsappMsg: `Crie agora sua conta no Chef Cozinha e comece o teste grátis de 14 dias sem compromisso: ${baseUrl}/cadastro.html?ref=${refCode}`
+                    }
+                  ];
+
+                  // Pitchs e Scripts Mastigados
+                  const pitchsEScripts = [
+                    {
+                      id: 'script-whatsapp-frio',
+                      categoria: 'WhatsApp - Abordagem Inicial',
+                      titulo: 'Abertura Direta: O Fim das Taxas Abusivas',
+                      icone: 'fa-whatsapp',
+                      descricao: 'Ideal para abordar donos de restaurantes que você pegou o contato no Google Maps ou Instagram.',
+                      texto: `Olá [Nome do Dono/Restaurante], tudo bem?\n\nEstava olhando o perfil do seu restaurante e achei o cardápio incrível! Parabéns pelo trabalho.\n\nTe mandei essa mensagem rápida porque ajudamos restaurantes da sua região a economizarem entre R$ 1.500 e R$ 8.000 todo mês, reduzindo a dependência das taxas de 27% do iFood através de um sistema próprio de delivery e cardápio digital.\n\nVocê teria 3 minutinhos amanhã para eu te mostrar como funciona na prática sem custo nenhum?`,
+                    },
+                    {
+                      id: 'script-objecao-ja-tenho',
+                      categoria: 'Quebra de Objeção',
+                      titulo: '"Já tenho outro sistema"',
+                      icone: 'fa-shield-halved',
+                      descricao: 'Como contornar quando o dono diz que já utiliza outro software.',
+                      texto: `Perfeito, [Nome]! A maioria dos nossos clientes de maior sucesso já usava outro sistema antes de nos conhecerem.\n\nA grande diferença é que com o Chef Cozinha você não paga mensalidades abusivas por módulos separados, não cobramos NENHUMA taxa sobre seus pedidos delivery e o suporte responde em minutos por WhatsApp direto com humanos.\n\nQue tal colocarmos o Chef Cozinha para rodar por 14 dias em paralelo para sua equipe testar na prática sem você pagar 1 real?`,
+                    },
+                    {
+                      id: 'script-objecao-sem-tempo',
+                      categoria: 'Quebra de Objeção',
+                      titulo: '"Não tenho tempo para cadastrar tudo"',
+                      icone: 'fa-clock',
+                      descricao: 'Elimina o medo da transição e da complicação técnica.',
+                      texto: `Eu entendo perfeitamente, a rotina de cozinha é super puxada! Justamente por isso nosso time de onboarding faz praticamente tudo para você: nós mesmos importamos seu cardápio, fotos e configuramos suas impressoras.\n\nVocê só aperta um botão e o sistema já está pronto para receber pedidos no mesmo dia!`,
+                    },
+                    {
+                      id: 'script-pitch-presencial',
+                      categoria: 'Visita Presencial / Balcão',
+                      titulo: 'Roteiro de 3 Minutos no Olho no Olho',
+                      icone: 'fa-person-walking-dashed-line-arrow-right',
+                      descricao: 'Perfeito para quando você vai almoçar ou jantar e quer fechar o dono na hora.',
+                      texto: `1. Elogie a comida: "Parabéns pelo prato, estava excelente!"\n2. Peça para falar com o responsável: "Você é o proprietário? Trabalho com tecnologia para gastronomia e estava observando o movimento de vocês."\n3. Toque na dor: "Vocês atendem muito por delivery ou mais no salão? Já calcularam quanto deixam de lucro líquido em taxas de marketplace por mês?"\n4. Apresente a solução: "Nós implantamos o Chef Cozinha aqui em poucos minutos, com cardápio QR Code na mesa e delivery próprio sem nenhuma taxa por pedido."\n5. Fechamento: "Deixa eu ativar 14 dias de degustação aqui no seu celular agora mesmo para você ver a mágica acontecer."`,
+                    },
+                    {
+                      id: 'script-fechamento-urgencia',
+                      categoria: 'Fechamento com Urgência',
+                      titulo: 'Gatilho de Vaga / Condição Especial',
+                      icone: 'fa-bolt',
+                      descricao: 'Para donos que ficaram de pensar e precisam do empurrão final.',
+                      texto: `Oi [Nome]! Conseguimos liberar hoje com a diretoria do Chef Cozinha 3 vagas com suporte de implantação 100% gratuito e 14 dias de acesso completo sem compromisso.\n\nComo conversamos ontem, reservei uma dessas vagas para você. Posso mandar seu link de ativação agora para não perder essa condição?`,
+                    }
+                  ];
+
+                  res.json({
+                    ok: true,
+                    afiliado: {
+                      id: user.id,
+                      nome: user.nome,
+                      email: user.email,
+                      telefone: user.telefone,
+                      pix_chave: user.pix_chave,
+                      codigo_ref: refCode
+                    },
+                    metricas: {
+                      clientes_ativos: clientesAtivos,
+                      vendas_total: vendas.length,
+                      total_faturado: totalFaturado,
+                      total_comissoes: totalComissoes,
+                      mrr_projetado: mrrProjetado,
+                      ticket_medio_estimado: mensalidadeMedia
+                    },
+                    carreira,
+                    metas,
+                    bonificacoes: {
+                      historico: bonificacoes,
+                      total_pago: bonusTotalPago,
+                      total_pendente: bonusTotalPendente
+                    },
+                    paginas_vendas: paginasVendas,
+                    pitchs_e_scripts: pitchsEScripts
+                  });
+                }
+              );
+            }
+          );
+        }
+      );
+    });
+  });
+
+  // POST /api/afiliado/resgatar-bonus — Solicitação de saque/PIX de bonificação de meta
+  app.post('/api/afiliado/resgatar-bonus', suporteAuth, (req, res) => {
+    const userId = req.suporteId;
+    const { meta_id, valor, tipo, descricao } = req.body || {};
+
+    const valorFloat = parseFloat(valor);
+    if (!valorFloat || valorFloat <= 0) {
+      return res.json({ ok: false, erro: 'Informe um valor válido para resgate da bonificação.' });
+    }
+
+    masterDb.get(`SELECT id, nome, pix_chave FROM equipe_suporte WHERE id = ?`, [userId], (errUser, user) => {
+      if (errUser || !user) return res.json({ ok: false, erro: 'Usuário não encontrado.' });
+      if (!user.pix_chave || user.pix_chave.trim() === '') {
+        return res.json({ ok: false, erro: 'Cadastre sua chave PIX no seu perfil antes de solicitar o resgate.' });
+      }
+
+      masterDb.run(
+        `INSERT INTO afiliados_bonificacoes (suporte_id, afiliado_id, afiliado_nome, meta_id, valor, tipo, descricao, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'pendente')`,
+        [userId, userId, user.nome, meta_id || null, valorFloat, tipo || 'meta_atingida', descricao || `Solicitação de Bônus de R$ ${valorFloat.toFixed(2)}`],
+        function(errIns) {
+          if (errIns) return res.json({ ok: false, erro: errIns.message });
+
+          const solicitacaoId = this.lastID;
+          registrarAuditLog(userId, user.nome, 'SOLICITACAO_BONIFICACAO', `Solicitou saque de bônus de R$ ${valorFloat.toFixed(2)} via PIX: ${user.pix_chave}`, req);
+
+          if (io) {
+            io.emit('nova_solicitacao_bonificacao', {
+              id: solicitacaoId,
+              afiliado_nome: user.nome,
+              valor: valorFloat,
+              pix_chave: user.pix_chave,
+              descricao: descricao || 'Bônus de Meta de Vendas',
+              data: new Date().toISOString()
+            });
+          }
+
+          res.json({
+            ok: true,
+            mensagem: 'Solicitação de bonificação enviada com sucesso! A diretoria fará o pagamento via PIX em breve.',
+            id: solicitacaoId
+          });
+        }
+      );
+    });
+  });
+
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  /* ═══ SUPER ADMIN: RANKING TOP AFILIADOS ("VIVENDO DISSO") & METAS ═════ */
+  /* ═══════════════════════════════════════════════════════════════════════ */
+
+  // GET /api/super/afiliados/ranking-performers — Melhores afiliados e os que estão vivendo disso
+  app.get('/api/super/afiliados/ranking-performers', superAdminAuth, (req, res) => {
+    masterDb.all(
+      `SELECT s.id, s.nome, s.email, s.telefone, s.cargo, s.pix_chave, s.codigo_ref, s.xp, s.nivel,
+              COUNT(DISTINCT CASE WHEN v.status_venda = 'fechado' THEN v.id END) as clientes_ativos,
+              COUNT(DISTINCT v.id) as total_vendas,
+              COALESCE(SUM(CASE WHEN v.status_venda = 'fechado' THEN v.valor_venda ELSE 0 END), 0) as total_faturado,
+              COALESCE(SUM(CASE WHEN v.status_venda = 'fechado' THEN v.comissao_valor ELSE 0 END), 0) as total_comissoes
+       FROM equipe_suporte s
+       LEFT JOIN suporte_vendas v ON s.id = v.suporte_id
+       WHERE s.status_aprovacao = 'aprovado'
+       GROUP BY s.id
+       ORDER BY clientes_ativos DESC, total_comissoes DESC, total_faturado DESC`,
+      [],
+      (err, rows) => {
+        if (err) return res.json({ ok: false, erro: err.message });
+
+        const performers = (rows || []).map((p, idx) => {
+          const clientes = parseInt(p.clientes_ativos) || 0;
+          const faturado = parseFloat(p.total_faturado) || 0;
+          const comissoes = parseFloat(p.total_comissoes) || 0;
+          const carreira = calcularPlanoCarreira(clientes, faturado);
+          
+          // MRR estimado recorrente
+          const mrrEstimado = (clientes * 199) * (carreira.comissaoPct / 100);
+
+          return {
+            posicao: idx + 1,
+            id: p.id,
+            nome: p.nome,
+            email: p.email,
+            telefone: p.telefone,
+            codigo_ref: p.codigo_ref || `CHEF-${p.id}`,
+            pix_chave: p.pix_chave,
+            clientes_ativos: clientes,
+            total_vendas: p.total_vendas,
+            total_faturado: faturado,
+            total_comissoes: comissoes,
+            mrr_estimado: mrrEstimado,
+            carreira_nivel: carreira.nivel,
+            carreira_titulo: carreira.titulo,
+            comissao_pct: carreira.comissaoPct,
+            vivendo_disso: carreira.vivendoDisso,
+            selo_destaque: carreira.seloVivendoDisso
+          };
+        });
+
+        // Contadores gerais
+        const vivendoDissoCount = performers.filter(p => p.vivendo_disso).length;
+        const totalMrrGerado = performers.reduce((acc, p) => acc + p.mrr_estimado, 0);
+
+        res.json({
+          ok: true,
+          ranking: performers,
+          resumo: {
+            total_afiliados: performers.length,
+            afiliados_vivendo_disso: vivendoDissoCount,
+            mrr_recorrente_total: totalMrrGerado
+          }
+        });
+      }
+    );
+  });
+
+  // GET /api/super/afiliados/metas — Listar campanhas de metas criadas
+  app.get('/api/super/afiliados/metas', superAdminAuth, (req, res) => {
+    masterDb.all(
+      `SELECT m.*, s.nome as afiliado_especifico_nome 
+       FROM afiliados_metas m
+       LEFT JOIN equipe_suporte s ON m.afiliado_id = s.id
+       ORDER BY m.id DESC`,
+      [],
+      (err, rows) => {
+        if (err) return res.json({ ok: false, erro: err.message });
+        res.json({ ok: true, metas: rows || [] });
+      }
+    );
+  });
+
+  // POST /api/super/afiliados/metas — Criar nova meta e bonificação para a rede de afiliados
+  app.post('/api/super/afiliados/metas', superAdminAuth, (req, res) => {
+    const { titulo, descricao, meta_qtd, recompensa_valor, afiliado_id, data_inicio, data_fim } = req.body || {};
+
+    if (!titulo) return res.json({ ok: false, erro: 'Título da meta é obrigatório.' });
+    const qtd = parseInt(meta_qtd) || 5;
+    const recompensa = parseFloat(recompensa_valor) || 500;
+
+    masterDb.run(
+      `INSERT INTO afiliados_metas (titulo, descricao, meta_qtd, recompensa_valor, afiliado_id, data_inicio, data_fim, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'ativa')`,
+      [
+        titulo.trim(),
+        descricao || '',
+        qtd,
+        recompensa,
+        afiliado_id ? parseInt(afiliado_id) : null,
+        data_inicio || new Date().toISOString().slice(0, 10),
+        data_fim || null
+      ],
+      function(err) {
+        if (err) return res.json({ ok: false, erro: err.message });
+
+        const metaCriadaId = this.lastID;
+        if (io) {
+          io.emit('nova_meta_afiliados', {
+            id: metaCriadaId,
+            titulo: titulo.trim(),
+            meta_qtd: qtd,
+            recompensa_valor: recompensa,
+            afiliado_id: afiliado_id || null
+          });
+        }
+
+        res.json({
+          ok: true,
+          id: metaCriadaId,
+          mensagem: 'Campanha de meta e bonificação lançada com sucesso para os afiliados!'
+        });
+      }
+    );
+  });
+
+  // DELETE /api/super/afiliados/metas/:id — Encerrar ou excluir meta
+  app.delete('/api/super/afiliados/metas/:id', superAdminAuth, (req, res) => {
+    const metaId = parseInt(req.params.id);
+    masterDb.run(`UPDATE afiliados_metas SET status = 'encerrada' WHERE id = ?`, [metaId], function(err) {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true, mensagem: 'Meta encerrada com sucesso.' });
+    });
+  });
+
+  // GET /api/super/afiliados/bonificacoes — Listar histórico de bonificações e pendências
+  app.get('/api/super/afiliados/bonificacoes', superAdminAuth, (req, res) => {
+    masterDb.all(
+      `SELECT b.*, s.nome as afiliado_nome, s.email, s.pix_chave, s.telefone
+       FROM afiliados_bonificacoes b
+       LEFT JOIN equipe_suporte s ON b.suporte_id = s.id
+       ORDER BY b.status ASC, b.id DESC`,
+      [],
+      (err, rows) => {
+        if (err) return res.json({ ok: false, erro: err.message });
+        res.json({ ok: true, bonificacoes: rows || [] });
+      }
+    );
+  });
+
+  // POST /api/super/afiliados/bonificacoes/pagar — Confirmar pagamento via PIX de bonificação
+  app.post('/api/super/afiliados/bonificacoes/pagar', superAdminAuth, (req, res) => {
+    const { id, comprovante_pix } = req.body || {};
+    const bonusId = parseInt(id);
+
+    if (!bonusId) return res.json({ ok: false, erro: 'ID da bonificação inválido.' });
+
+    masterDb.get(`SELECT * FROM afiliados_bonificacoes WHERE id = ?`, [bonusId], (errGet, bonus) => {
+      if (errGet || !bonus) return res.json({ ok: false, erro: 'Bonificação não encontrada.' });
+
+      masterDb.run(
+        `UPDATE afiliados_bonificacoes 
+         SET status = 'pago', pago_em = datetime('now','localtime'), comprovante_pix = ?
+         WHERE id = ?`,
+        [comprovante_pix || 'Transferência PIX Realizada com Sucesso', bonusId],
+        function(errUpd) {
+          if (errUpd) return res.json({ ok: false, erro: errUpd.message });
+
+          if (io) {
+            io.emit('bonificacao_paga_pix', {
+              suporte_id: bonus.suporte_id,
+              valor: bonus.valor,
+              descricao: bonus.descricao,
+              comprovante: comprovante_pix || 'PIX Confirmado'
+            });
+          }
+
+          res.json({
+            ok: true,
+            mensagem: `Pagamento de R$ ${bonus.valor.toFixed(2)} registrado e confirmado!`
+          });
+        }
+      );
     });
   });
 

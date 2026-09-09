@@ -3364,9 +3364,6 @@
                 <input type="text" id="tarefa-titulo" placeholder="Ex: Configurar dominio para Pizzaria XYZ" style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; background:var(--input-bg, #0f172a); color:var(--text); box-sizing:border-box;">
               </div>
               <div>
-                <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Descrição</label>
-                <textarea id="tarefa-descricao" rows="3" placeholder="Detalhes da tarefa..." style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; background:var(--input-bg, #0f172a); color:var(--text); resize:vertical; box-sizing:border-box;"></textarea>
-              </div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div>
                   <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Prioridade</label>
@@ -3388,8 +3385,6 @@
                     <option value="treinamento">Treinamento</option>
                   </select>
                 </div>
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div>
                   <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Atribuir para</label>
                   <select id="tarefa-atribuido" style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; background:var(--input-bg, #0f172a); color:var(--text);">
@@ -3418,13 +3413,15 @@
               style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
               <div>
                 <h2 style="margin-bottom:4px; font-size:22px;"><i class="fa-solid fa-handshake"
-                    style="color:var(--primary);"></i> Programa de Afiliados & Parceiros</h2>
-                <p style="color:var(--text-muted); font-size:13.5px;">Gerencie revendedores, acompanhe vendas por código
-                  de referência e comissões em tempo real.</p>
+                    style="color:var(--primary);"></i> Programa de Afiliados, Top Performers & Metas</h2>
+                <p style="color:var(--text-muted); font-size:13.5px;">Monitore quem são os melhores afiliados, quem está vivendo exclusivamente de Chef Cozinha, crie campanhas de metas e aprove bonificações via PIX.</p>
               </div>
-              <div style="display:flex; gap:10px;">
-                <button onclick="carregarAfiliados()" class="btn-action" style="padding:9px 16px;">
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button onclick="carregarPainelAfiliadosCompleto()" class="btn-action" style="padding:9px 16px;">
                   <i class="fa-solid fa-rotate"></i> Atualizar
+                </button>
+                <button onclick="abrirModalNovaMetaAfiliado()" class="btn-action" style="padding:9px 16px; background:linear-gradient(135deg, #7c3aed, #a855f7); color:#fff; border:none; font-weight:700;">
+                  <i class="fa-solid fa-bullseye"></i> Nova Meta / Bônus
                 </button>
                 <button onclick="abrirModalNovoAfiliado()" class="btn-action btn-primary-action"
                   style="padding:9px 18px;">
@@ -3433,75 +3430,194 @@
               </div>
             </div>
 
-            <!-- Cards de Métricas Gerais de Afiliados -->
+            <!-- Sub-navegação em Abas do Painel de Afiliados -->
+            <div style="display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:20px; padding-bottom:8px; overflow-x:auto;">
+              <button class="btn-action afil-subtab active" id="subtab-btn-top" onclick="trocarSubtabAfiliados('top')" style="border-radius:20px; padding:7px 16px; font-size:13px; font-weight:700; background:rgba(255,87,34,0.2); color:#ff7a45; border:1px solid rgba(255,87,34,0.4);">
+                <i class="fa-solid fa-fire"></i> 🔥 Top Performers ("Vivendo Disso")
+              </button>
+              <button class="btn-action afil-subtab" id="subtab-btn-metas" onclick="trocarSubtabAfiliados('metas')" style="border-radius:20px; padding:7px 16px; font-size:13px; font-weight:600; background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08);">
+                <i class="fa-solid fa-trophy"></i> Metas & Campanhas
+              </button>
+              <button class="btn-action afil-subtab" id="subtab-btn-pix" onclick="trocarSubtabAfiliados('pix')" style="border-radius:20px; padding:7px 16px; font-size:13px; font-weight:600; background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08);">
+                <i class="fa-solid fa-money-bill-wave"></i> Fila de Pagamentos PIX <span id="badge-pix-pendentes" style="background:#ef4444; color:#fff; padding:1px 6px; border-radius:10px; font-size:10px; margin-left:4px; display:none;">0</span>
+              </button>
+              <button class="btn-action afil-subtab" id="subtab-btn-todos" onclick="trocarSubtabAfiliados('todos')" style="border-radius:20px; padding:7px 16px; font-size:13px; font-weight:600; background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08);">
+                <i class="fa-solid fa-users"></i> Todos Afiliados Cadastrados
+              </button>
+            </div>
+
+            <!-- Cards de Métricas Gerais e Status de Vivendo Disso -->
             <div class="stats-grid" style="margin-bottom: 24px;">
-              <div class="stat-card">
+              <div class="stat-card" style="position:relative; overflow:hidden;">
                 <div class="stat-icon" style="background:rgba(255,87,34,0.15); color:var(--primary);"><i
-                    class="fa-solid fa-users"></i></div>
+                    class="fa-solid fa-crown"></i></div>
                 <div class="stat-meta">
-                  <span>Total de Afiliados</span>
-                  <h3 id="afil-stat-total">0</h3>
+                  <span>Vivendo de Chef Cozinha</span>
+                  <h3 id="afil-stat-vivendo" style="color:#ffd700; text-shadow:0 0 12px rgba(255,215,0,0.4);">0</h3>
+                  <small style="color:var(--text-muted); font-size:11px;">15+ clientes ou &gt;R$ 2.000/mês</small>
                 </div>
               </div>
               <div class="stat-card">
                 <div class="stat-icon" style="background:rgba(16,185,129,0.15); color:var(--success);"><i
-                    class="fa-solid fa-bag-shopping"></i></div>
+                    class="fa-solid fa-chart-line"></i></div>
                 <div class="stat-meta">
-                  <span>Vendas por Afiliados</span>
-                  <h3 id="afil-stat-vendas">0</h3>
+                  <span>MRR Recorrente Gerado</span>
+                  <h3 id="afil-stat-mrr" style="color:var(--success);">R$ 0,00</h3>
+                  <small style="color:var(--text-muted); font-size:11px;">Faturamento mensal da rede</small>
                 </div>
               </div>
               <div class="stat-card">
                 <div class="stat-icon" style="background:rgba(59,130,246,0.15); color:var(--info);"><i
-                    class="fa-solid fa-chart-line"></i></div>
+                    class="fa-solid fa-bag-shopping"></i></div>
                 <div class="stat-meta">
-                  <span>Faturamento Gerado</span>
-                  <h3 id="afil-stat-faturamento">R$ 0,00</h3>
+                  <span>Total Clientes Ativos</span>
+                  <h3 id="afil-stat-clientes">0</h3>
+                  <small style="color:var(--text-muted); font-size:11px;">Restaurantes ativos na base</small>
                 </div>
               </div>
               <div class="stat-card">
                 <div class="stat-icon" style="background:rgba(245,158,11,0.15); color:var(--warning);"><i
                     class="fa-solid fa-hand-holding-dollar"></i></div>
                 <div class="stat-meta">
-                  <span>Comissões Geradas</span>
+                  <span>Total Comissões Pagas</span>
                   <h3 id="afil-stat-comissoes">R$ 0,00</h3>
+                  <small style="color:var(--text-muted); font-size:11px;">Repassado aos parceiros</small>
                 </div>
               </div>
             </div>
 
-            <!-- Tabela de Afiliados -->
-            <div class="table-container">
-              <div class="table-controls">
-                <div class="search-bar">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                  <input type="text" id="afil-search" onkeyup="filtrarTabelaAfiliados()"
-                    placeholder="Buscar por nome, email ou código ref...">
+            <!-- SUB-VIEW 1: TOP PERFORMERS & QUEM ESTÁ VIVENDO DISSO -->
+            <div id="afil-subview-top" class="afil-subview">
+              <div class="card" style="background:linear-gradient(135deg, rgba(255,215,0,0.06), rgba(255,87,34,0.04)); border:1px solid rgba(255,215,0,0.25); border-radius:14px; padding:18px; margin-bottom:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                  <div>
+                    <h3 style="color:#ffd700; margin:0 0 4px; font-size:17px; display:flex; align-items:center; gap:8px;">
+                      <i class="fa-solid fa-fire" style="color:#fc4b15;"></i> Quadro de Honra — Afiliados de Alta Performance
+                    </h3>
+                    <p style="color:#cbd5e1; font-size:13px; margin:0;">Estes parceiros atingiram os níveis <strong>Ouro</strong> e <strong>Black Embaixador</strong>. Estão colhendo lucros recorrentes e vivendo dos resultados gerados.</p>
+                  </div>
+                  <span style="background:rgba(255,215,0,0.15); color:#ffd700; border:1px solid rgba(255,215,0,0.4); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:800; letter-spacing:0.5px;">
+                    👑 ELITE CHEF COZINHA
+                  </span>
                 </div>
               </div>
-              <div style="overflow-x:auto;">
-                <table class="custom-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Afiliado</th>
-                      <th>Código Ref.</th>
-                      <th>Comissão %</th>
-                      <th>Vendas</th>
-                      <th>Faturado</th>
-                      <th>Comissões</th>
-                      <th>Status</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody id="afil-tbody">
-                    <tr>
-                      <td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">Carregando
-                        afiliados...</td>
-                    </tr>
-                  </tbody>
-                </table>
+
+              <div class="table-container">
+                <div style="overflow-x:auto;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th style="width:60px; text-align:center;">Rank</th>
+                        <th>Afiliado / Parceiro</th>
+                        <th>Código Ref</th>
+                        <th>Nível de Carreira</th>
+                        <th style="text-align:center;">Clientes Ativos</th>
+                        <th>MRR Estimado</th>
+                        <th>Comissão %</th>
+                        <th>Total Ganho</th>
+                        <th style="text-align:center;">Selo "Vivendo Disso"</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="top-performers-tbody">
+                      <tr>
+                        <td colspan="10" style="text-align:center; padding:30px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Carregando Top Performers...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
+
+            <!-- SUB-VIEW 2: METAS E CAMPANHAS DA DIRETORIA -->
+            <div id="afil-subview-metas" class="afil-subview" style="display:none;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                  <h3 style="font-size:18px; margin-bottom:4px;"><i class="fa-solid fa-bullseye" style="color:#a855f7;"></i> Campanhas & Desafios de Vendas</h3>
+                  <p style="font-size:13px; color:var(--text-muted); margin:0;">Incentive sua rede a bater metas semanais e mensais com prêmios em dinheiro direto no PIX.</p>
+                </div>
+                <button onclick="abrirModalNovaMetaAfiliado()" class="btn-action btn-primary-action" style="background:linear-gradient(135deg, #7c3aed, #a855f7);">
+                  <i class="fa-solid fa-plus"></i> Criar Nova Meta
+                </button>
+              </div>
+
+              <div id="metas-afiliados-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px;">
+                <div style="text-align:center; padding:40px; color:var(--text-muted); grid-column:1/-1;">
+                  <i class="fa-solid fa-spinner fa-spin"></i> Carregando metas ativas...
+                </div>
+              </div>
+            </div>
+
+            <!-- SUB-VIEW 3: FILA DE PAGAMENTOS PIX (BONIFICAÇÕES) -->
+            <div id="afil-subview-pix" class="afil-subview" style="display:none;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                  <h3 style="font-size:18px; margin-bottom:4px;"><i class="fa-solid fa-money-bill-transfer" style="color:var(--success);"></i> Solicitações de Saque de Bônus</h3>
+                  <p style="font-size:13px; color:var(--text-muted); margin:0;">Afiliados que bateram metas e solicitaram o resgate do prêmio para a chave PIX cadastrada.</p>
+                </div>
+              </div>
+
+              <div class="table-container">
+                <div style="overflow-x:auto;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Afiliado</th>
+                        <th>Motivo / Meta</th>
+                        <th>Valor do Bônus</th>
+                        <th>Chave PIX</th>
+                        <th>Data Pedido</th>
+                        <th>Status</th>
+                        <th>Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody id="bonificacoes-pix-tbody">
+                      <tr>
+                        <td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Carregando solicitações de bonificação...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUB-VIEW 4: TODOS OS AFILIADOS CADASTRADOS (TABELA GERAL) -->
+            <div id="afil-subview-todos" class="afil-subview" style="display:none;">
+              <div class="table-container">
+                <div class="table-controls">
+                  <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="afil-search" onkeyup="filtrarTabelaAfiliados()"
+                      placeholder="Buscar por nome, email ou código ref...">
+                  </div>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Afiliado</th>
+                        <th>Código Ref.</th>
+                        <th>Comissão %</th>
+                        <th>Vendas</th>
+                        <th>Faturado</th>
+                        <th>Comissões</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="afil-tbody">
+                      <tr>
+                        <td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">Carregando
+                          afiliados...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -5450,6 +5566,97 @@
       </div>
       <div class="modal-footer">
         <button class="btn-action" onclick="fecharModalAfiliadoDetalhes()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVA META & BONIFICAÇÃO PARA AFILIADOS -->
+  <div class="modal-overlay" id="modal-nova-meta-afiliado">
+    <div class="modal-content" style="max-width:560px; width:92%;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-bullseye" style="color:#a855f7;"></i> Nova Campanha de Meta & Bonificação</h3>
+        <button class="modal-close" onclick="fecharModalNovaMetaAfiliado()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Título da Campanha / Desafio *</label>
+          <input type="text" id="meta-titulo" placeholder="Ex: Corrida dos 5 Primeiros Clientes no Mês">
+        </div>
+        <div class="form-group">
+          <label>Descrição & Regras do Bônus</label>
+          <textarea id="meta-descricao" rows="3" placeholder="Ex: Feche 5 novos restaurantes ativos até o final do mês e garanta um bônus especial de R$ 500 direto na sua chave PIX!" style="width:100%; padding:10px; background:#111; border:1px solid #333; color:#fff; border-radius:8px; font-size:13px;"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Meta de Vendas / Clientes *</label>
+            <input type="number" id="meta-qtd" value="5" min="1" max="1000">
+          </div>
+          <div class="form-group">
+            <label>Bônus em Dinheiro (R$ PIX) *</label>
+            <input type="number" id="meta-recompensa" value="500" min="0" step="50">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Público-Alvo da Campanha</label>
+          <select id="meta-afiliado-id" style="width:100%; padding:10px; background:#111; border:1px solid #333; color:#fff; border-radius:8px; font-size:13px;">
+            <option value="">📢 Toda a Rede de Afiliados (Campanha Global)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data de Início</label>
+            <input type="date" id="meta-data-inicio">
+          </div>
+          <div class="form-group">
+            <label>Data de Término (Opcional)</label>
+            <input type="date" id="meta-data-fim">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-action" onclick="fecharModalNovaMetaAfiliado()">Cancelar</button>
+        <button class="btn-action btn-primary-action" style="background:linear-gradient(135deg, #7c3aed, #a855f7);" onclick="salvarNovaMetaAfiliado()">
+          <i class="fa-solid fa-rocket"></i> Lançar Campanha & Notificar Rede
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMAR PAGAMENTO PIX DE BONIFICAÇÃO -->
+  <div class="modal-overlay" id="modal-pagar-bonificacao-pix">
+    <div class="modal-content" style="max-width:520px; width:92%;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-money-bill-transfer" style="color:var(--success);"></i> Confirmar Transferência PIX</h3>
+        <button class="modal-close" onclick="fecharModalPagarBonificacao()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="pagar-bonus-id">
+        <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:16px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="color:var(--text-muted); font-size:12px;">Afiliado Beneficiário:</span>
+            <strong id="pagar-bonus-afiliado-nome" style="color:#fff;">-</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="color:var(--text-muted); font-size:12px;">Valor da Bonificação:</span>
+            <strong id="pagar-bonus-valor" style="color:var(--success); font-size:18px;">R$ 0,00</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="color:var(--text-muted); font-size:12px;">Chave PIX Cadastrada:</span>
+            <code id="pagar-bonus-pix-chave" style="background:#000; color:#10b981; padding:4px 8px; border-radius:6px; font-weight:700; font-size:13px;">-</code>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Comprovante / Código de Autenticação PIX</label>
+          <input type="text" id="pagar-bonus-comprovante" placeholder="Ex: E20260908123456789... ou Transferência Realizada Banco Inter">
+          <small style="color:var(--text-muted); font-size:11px;">Ao confirmar, o status mudará para 'Pago' e o afiliado receberá notificação em tempo real.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-action" onclick="fecharModalPagarBonificacao()">Voltar</button>
+        <button class="btn-action btn-primary-action" style="background:#10b981; border-color:#10b981;" onclick="confirmarPagamentoPixBonificacao()">
+          <i class="fa-solid fa-check-double"></i> Confirmar Pagamento & Notificar
+        </button>
       </div>
     </div>
   </div>

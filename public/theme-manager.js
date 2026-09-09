@@ -173,8 +173,15 @@
 
   function applyCustomTheme(cfg) {
     if (!cfg || typeof cfg !== 'object') return;
+    // Se vier embrulhado em cores ou objeto tema
+    if (cfg.cores && typeof cfg.cores === 'object') {
+      cfg = Object.assign({}, cfg, cfg.cores);
+    }
     _lastCfg = cfg;
     try { localStorage.setItem(CUSTOM_THEME_KEY, JSON.stringify(cfg)); } catch (e) { }
+    if (cfg.tema_id) {
+      try { localStorage.setItem('chef_tema_ativo_id', cfg.tema_id); } catch (e) { }
+    }
 
     var styleEl = document.getElementById('chef-custom-theme-vars');
     if (!styleEl) {
@@ -183,70 +190,123 @@
       document.head.appendChild(styleEl);
     }
 
-    var rules = [];
+    var prim = cfg.primary || '#fc4b15';
+    var primRgb = hexToRgb(prim);
+    var primHov = cfg.primaryHover || prim;
+    var bg = cfg.bgColor || cfg.bgPage || '#0b0f19';
+    var cardBg = cfg.bgCard || '#111827';
+    var border = cfg.borderColor || '#1f2937';
+    var textMain = cfg.textPrimary || cfg.textMain || '#f3f4f6';
+    var isDarkBg = !isLightColor(bg);
+    var textSec = cfg.textSecondary || (isDarkBg ? '#94a3b8' : '#64748b');
+    var stOcup = cfg.statusOcupada || '#ef4444';
+    var stLiv = cfg.statusLivre || '#10b981';
 
-    // 1. Variáveis globais no :root, body e html
-    var rootVars = [];
-    if (cfg.primary) {
-      rootVars.push('--primary: ' + cfg.primary + ' !important;');
-      rootVars.push('--primary-rgb: ' + hexToRgb(cfg.primary) + ' !important;');
-      rootVars.push('--btn-primary-bg: ' + (cfg.btnPrimaryBg || cfg.primary) + ' !important;');
-    }
-    if (cfg.primaryHover) {
-      rootVars.push('--primary-hover: ' + cfg.primaryHover + ' !important;');
-    }
-    if (cfg.btnPrimaryText) {
-      rootVars.push('--btn-primary-text: ' + cfg.btnPrimaryText + ' !important;');
-    }
-    if (cfg.fontBody) {
-      rootVars.push('--font-family: "' + cfg.fontBody + '", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;');
-    }
-    if (cfg.fontHeading) {
-      rootVars.push('--font-heading: "' + cfg.fontHeading + '", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif !important;');
-    }
-    if (cfg.borderRadius) {
-      rootVars.push('--radius-lg: ' + cfg.borderRadius + ' !important;');
-      rootVars.push('--radius-md: ' + cfg.borderRadius + ' !important;');
-      rootVars.push('--border-radius-base: ' + cfg.borderRadius + ' !important;');
-    }
-    if (cfg.fontSizeScale) rootVars.push('--fs-scale: ' + cfg.fontSizeScale + ';');
-    if (cfg.btnScale) rootVars.push('--btn-scale: ' + cfg.btnScale + ';');
-    if (cfg.cardPadY) rootVars.push('--card-pad-y: ' + cfg.cardPadY + ';');
-    if (cfg.cardPadX) rootVars.push('--card-pad-x: ' + cfg.cardPadX + ';');
-    if (cfg.modalWidth) rootVars.push('--modal-max-w: ' + cfg.modalWidth + ';');
-    if (cfg.modalPosition) rootVars.push('--modal-align: ' + cfg.modalPosition + ';');
-
-    if (rootVars.length) {
-      rules.push(':root, body, html {\n  ' + rootVars.join('\n  ') + '\n}');
-    }
-
-    // 2. Cores específicas de fundo / texto
-    var themeVars = [];
-    if (cfg.bgHeader) themeVars.push('--bg-header: ' + cfg.bgHeader + ';');
-    if (cfg.textHeader) themeVars.push('--text-header: ' + cfg.textHeader + ';');
-    if (cfg.bgSidebar) themeVars.push('--bg-sidebar: ' + cfg.bgSidebar + ';');
-    if (cfg.textSidebar) themeVars.push('--text-sidebar: ' + cfg.textSidebar + ';');
-    if (cfg.bgColor) themeVars.push('--bg-color: ' + cfg.bgColor + '; --bg-main: ' + cfg.bgColor + ';');
-    if (cfg.bgCard) themeVars.push('--bg-card: ' + cfg.bgCard + ';');
-    if (cfg.textPrimary) themeVars.push('--text-primary: ' + cfg.textPrimary + '; --text-main: ' + cfg.textPrimary + ';');
-    if (cfg.textSecondary) themeVars.push('--text-secondary: ' + cfg.textSecondary + '; --text-muted: ' + cfg.textSecondary + ';');
-    if (cfg.borderColor) themeVars.push('--border-color: ' + cfg.borderColor + ';');
-    // Chaves amigáveis usadas pela Loja de Temas (catálogo / App Store)
-    if (cfg.bgPage) themeVars.push('--bg-page: ' + cfg.bgPage + ';');
-    if (cfg.textMain && !cfg.textPrimary) themeVars.push('--text-main: ' + cfg.textMain + '; --text-primary: ' + cfg.textMain + ';');
-    if (cfg.statusOcupada) themeVars.push('--status-ocupada: ' + cfg.statusOcupada + ';');
-    if (cfg.statusLivre) themeVars.push('--status-livre: ' + cfg.statusLivre + ';');
-
-    if (themeVars.length) {
-      var isDarkBg = !isLightColor(cfg.bgColor || cfg.bgPage);
+    // Se o tema veio da loja (storeTema), sincroniza modo claro/escuro
+    if (cfg.storeTema) {
+      var modoTema = isDarkBg ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', modoTema);
+      if (document.body) {
+        document.body.classList.remove('theme-dark', 'theme-light');
+        document.body.classList.add('theme-' + modoTema);
+        document.body.classList.toggle('dark-mode', isDarkBg);
+      }
+      var dmLink = document.querySelector('link[href*="dark-mode.css"]');
       if (isDarkBg) {
-        rules.push('[data-theme="dark"], body.theme-dark, body.dark-mode {\n  ' + themeVars.join('\n  ') + '\n}');
-      } else {
-        rules.push('[data-theme="light"], body.theme-light, :root:not([data-theme="dark"]) {\n  ' + themeVars.join('\n  ') + '\n}');
+        if (!dmLink) {
+          dmLink = document.createElement('link');
+          dmLink.rel = 'stylesheet';
+          dmLink.href = '/dark-mode.css';
+          document.head.appendChild(dmLink);
+        } else {
+          dmLink.disabled = false;
+        }
+      } else if (dmLink) {
+        dmLink.disabled = true;
       }
     }
 
-    // 3. CSS customizado (continuação do tema vindo da curadoria / estúdio)
+    var cssVars = [
+      // Primárias e Acentos
+      '--primary: ' + prim + ' !important;',
+      '--primary-rgb: ' + primRgb + ' !important;',
+      '--primary-hover: ' + primHov + ' !important;',
+      '--btn-primary-bg: ' + (cfg.btnPrimaryBg || prim) + ' !important;',
+      '--primary-orange: ' + prim + ' !important;',
+      '--primary-orange-hover: ' + primHov + ' !important;',
+      '--accent-orange: ' + prim + ' !important;',
+      '--primary-glow: rgba(' + primRgb + ', 0.35) !important;',
+      '--cfg-primary: ' + prim + ' !important;',
+      '--cfg-primary-soft: rgba(' + primRgb + ', 0.16) !important;',
+
+      // Fundos
+      '--bg-color: ' + bg + ' !important;',
+      '--bg-main: ' + bg + ' !important;',
+      '--bg-page: ' + bg + ' !important;',
+      '--bg-slate: ' + bg + ' !important;',
+      '--cfg-bg: ' + bg + ' !important;',
+      '--cfg-subtle-bg: ' + bg + ' !important;',
+
+      // Painéis e Cards
+      '--bg-card: ' + cardBg + ' !important;',
+      '--bg-slate-card: ' + cardBg + ' !important;',
+      '--bg-panel: ' + cardBg + ' !important;',
+      '--bg-sidebar: ' + (cfg.bgSidebar || cardBg) + ' !important;',
+      '--bg-header: ' + (cfg.bgHeader || cardBg) + ' !important;',
+      '--cfg-card-bg: ' + cardBg + ' !important;',
+      '--cfg-card-alt: ' + cardBg + ' !important;',
+      '--cfg-sidebar-bg: ' + (cfg.bgSidebar || cardBg) + ' !important;',
+      '--cfg-header-bg: ' + (cfg.bgHeader || cardBg) + ' !important;',
+
+      // Tipografia e Cores de Texto
+      '--text-primary: ' + textMain + ' !important;',
+      '--text-main: ' + textMain + ' !important;',
+      '--text-header: ' + (cfg.textHeader || textMain) + ' !important;',
+      '--cfg-text: ' + textMain + ' !important;',
+      '--cfg-heading: ' + textMain + ' !important;',
+      '--cfg-header-text: ' + (cfg.textHeader || textMain) + ' !important;',
+      '--text-secondary: ' + textSec + ' !important;',
+      '--text-muted: ' + textSec + ' !important;',
+      '--cfg-text-muted: ' + textSec + ' !important;',
+      '--cfg-sidebar-text: ' + (cfg.textSidebar || textSec) + ' !important;',
+
+      // Bordas
+      '--border-color: ' + border + ' !important;',
+      '--border-panel: ' + border + ' !important;',
+      '--border-light: ' + border + ' !important;',
+      '--border-dark: ' + border + ' !important;',
+      '--cfg-border: ' + border + ' !important;',
+      '--cfg-field-border: ' + border + ' !important;',
+
+      // Status
+      '--status-ocupada: ' + stOcup + ' !important;',
+      '--status-livre: ' + stLiv + ' !important;',
+      '--danger: ' + stOcup + ' !important;',
+      '--success: ' + stLiv + ' !important;'
+    ];
+
+    if (cfg.fontBody) {
+      cssVars.push('--font-family: "' + cfg.fontBody + '", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;');
+    }
+    if (cfg.fontHeading) {
+      cssVars.push('--font-heading: "' + cfg.fontHeading + '", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif !important;');
+    }
+    if (cfg.borderRadius) {
+      cssVars.push('--radius-lg: ' + cfg.borderRadius + ' !important;');
+      cssVars.push('--radius-md: ' + cfg.borderRadius + ' !important;');
+      cssVars.push('--border-radius-base: ' + cfg.borderRadius + ' !important;');
+    }
+    if (cfg.fontSizeScale) cssVars.push('--fs-scale: ' + cfg.fontSizeScale + ';');
+    if (cfg.btnScale) cssVars.push('--btn-scale: ' + cfg.btnScale + ';');
+    if (cfg.cardPadY) cssVars.push('--card-pad-y: ' + cfg.cardPadY + ';');
+    if (cfg.cardPadX) cssVars.push('--card-pad-x: ' + cfg.cardPadX + ';');
+    if (cfg.modalWidth) cssVars.push('--modal-max-w: ' + cfg.modalWidth + ';');
+    if (cfg.modalPosition) cssVars.push('--modal-align: ' + cfg.modalPosition + ';');
+
+    var universalSelector = ':root, html, body, [data-theme="dark"], [data-theme="light"], body.theme-dark, body.theme-light, body.dark-mode';
+    var rules = [universalSelector + ' {\n  ' + cssVars.join('\n  ') + '\n}'];
+
+    // 3. CSS customizado
     if (cfg.css_custom && String(cfg.css_custom).trim()) {
       var cssEl = document.getElementById('chef-custom-theme-css');
       if (!cssEl) {
@@ -262,7 +322,7 @@
 
     styleEl.innerHTML = rules.join('\n\n');
 
-    // Fontes do Google
+    // Fontes Google
     if (cfg.fontBody && !document.getElementById('font-body-' + cfg.fontBody)) {
       var fontLink = document.createElement('link');
       fontLink.id = 'font-body-' + cfg.fontBody;
@@ -478,6 +538,13 @@
 
   fetchAndApplyGlobalTheme();
 
+  // Sincronização via postMessage (entre iframe e janela principal)
+  window.addEventListener('message', function (ev) {
+    if (ev && ev.data && ev.data.action === 'chef_tema_aplicado' && ev.data.cfg) {
+      applyCustomTheme(ev.data.cfg);
+    }
+  });
+
   // Propagação WebSocket em tempo real
   var temaSocketTries = 0;
   function bindTemaSocket() {
@@ -494,6 +561,17 @@
         } else {
           clearCustomTheme();
         }
+      });
+      sock.on('tema_restaurante_atualizado', function (data) {
+        var myRid = String(localStorage.getItem('restaurante_id') || '1');
+        if (!data || !data.restaurante_id || String(data.restaurante_id) === myRid) {
+          if (data && data.cfg && typeof data.cfg === 'object') {
+            applyCustomTheme(data.cfg);
+          }
+        }
+      });
+      sock.on('tema_aplicado', function (data) {
+        if (data && data.cfg) applyCustomTheme(data.cfg);
       });
     } catch (e) { }
   }

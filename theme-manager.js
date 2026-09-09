@@ -114,24 +114,6 @@
     });
   }
 
-  /* No modo Desktop Forçado, fixa o layout viewport em largura de desktop.
-     Mesmo aparelhos com tela de 480px renderizam a versão completa — o
-     navegador reduz tudo para caber (como o "versão desktop" dos celulares).
-     Nos outros modos, viewport normal responsiva. */
-  function aplicarViewportModo(mode) {
-    var meta = document.querySelector('meta[name="viewport"]');
-    if (!meta) {
-      meta = document.createElement('meta');
-      meta.setAttribute('name', 'viewport');
-      (document.head || document.documentElement).appendChild(meta);
-    }
-    if (mode === 'desktop') {
-      meta.setAttribute('content', 'width=1280');
-    } else {
-      meta.setAttribute('content', 'width=device-width, initial-scale=1.0');
-    }
-  }
-
   function applyViewMode(mode) {
     var validMode = (mode === 'mobile' || mode === 'desktop') ? mode : 'auto';
     var docEl = document.documentElement;
@@ -143,16 +125,12 @@
     if (validMode === 'mobile') {
       docEl.classList.add('force-mobile');
       if (body) body.classList.add('force-mobile');
-      aplicarViewportModo('mobile');
       if (typeof window.switchMobileTab === 'function') {
         setTimeout(function () { window.switchMobileTab('mesas'); }, 50);
       }
     } else if (validMode === 'desktop') {
       docEl.classList.add('force-desktop');
       if (body) body.classList.add('force-desktop');
-      aplicarViewportModo('desktop');
-    } else {
-      aplicarViewportModo('auto');
     }
 
     try { localStorage.setItem(VIEW_MODE_KEY, validMode); } catch (e) { }
@@ -183,91 +161,27 @@
 
   var _lastCfg = null;
 
-  /* Variáveis globais independentes do modo (fontes, raios, primária) */
-  function buildGlobalVars(cfg) {
-    var v = [];
-    if (cfg.primary) {
-      v.push('--primary: ' + cfg.primary + ' !important;');
-      v.push('--primary-rgb: ' + hexToRgb(cfg.primary) + ' !important;');
-      v.push('--btn-primary-bg: ' + (cfg.btnPrimaryBg || cfg.primary) + ' !important;');
-    }
-    if (cfg.primaryHover) {
-      v.push('--primary-hover: ' + cfg.primaryHover + ' !important;');
-    }
-    if (cfg.btnPrimaryText) {
-      v.push('--btn-primary-text: ' + cfg.btnPrimaryText + ' !important;');
-    }
-    if (cfg.fontBody) {
-      v.push('--font-family: "' + cfg.fontBody + '", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;');
-    }
-    if (cfg.fontHeading) {
-      v.push('--font-heading: "' + cfg.fontHeading + '", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif !important;');
-    }
-    if (cfg.borderRadius) {
-      v.push('--radius-lg: ' + cfg.borderRadius + ' !important;');
-      v.push('--radius-md: ' + cfg.borderRadius + ' !important;');
-      v.push('--border-radius-base: ' + cfg.borderRadius + ' !important;');
-    }
-    if (cfg.fontSizeScale) v.push('--fs-scale: ' + cfg.fontSizeScale + ';');
-    if (cfg.btnScale) v.push('--btn-scale: ' + cfg.btnScale + ';');
-    if (cfg.cardPadY) v.push('--card-pad-y: ' + cfg.cardPadY + ';');
-    if (cfg.cardPadX) v.push('--card-pad-x: ' + cfg.cardPadX + ';');
-    if (cfg.modalWidth) v.push('--modal-max-w: ' + cfg.modalWidth + ';');
-    if (cfg.modalPosition) v.push('--modal-align: ' + cfg.modalPosition + ';');
-    return v;
-  }
-
-  /* Cores específicas de um modo (fundo, cartões, textos) */
-  function buildModeVars(cfg) {
-    var v = [];
-    if (cfg.bgHeader) v.push('--bg-header: ' + cfg.bgHeader + ';');
-    if (cfg.textHeader) v.push('--text-header: ' + cfg.textHeader + ';');
-    if (cfg.bgSidebar) v.push('--bg-sidebar: ' + cfg.bgSidebar + ';');
-    if (cfg.textSidebar) v.push('--text-sidebar: ' + cfg.textSidebar + ';');
-    if (cfg.bgColor) v.push('--bg-color: ' + cfg.bgColor + '; --bg-main: ' + cfg.bgColor + ';');
-    if (cfg.bgCard) v.push('--bg-card: ' + cfg.bgCard + ';');
-    if (cfg.textPrimary) v.push('--text-primary: ' + cfg.textPrimary + '; --text-main: ' + cfg.textPrimary + ';');
-    if (cfg.textSecondary) v.push('--text-secondary: ' + cfg.textSecondary + '; --text-muted: ' + cfg.textSecondary + ';');
-    if (cfg.borderColor) v.push('--border-color: ' + cfg.borderColor + ';');
-    return v;
+  function clearCustomTheme() {
+    _lastCfg = null;
+    try { localStorage.removeItem(CUSTOM_THEME_KEY); } catch (e) { }
+    var styleEl = document.getElementById('chef-custom-theme-vars');
+    if (styleEl && styleEl.parentNode) styleEl.parentNode.removeChild(styleEl);
+    var cssEl = document.getElementById('chef-custom-theme-css');
+    if (cssEl && cssEl.parentNode) cssEl.parentNode.removeChild(cssEl);
+    window.dispatchEvent(new CustomEvent('chef_custom_theme_cleared'));
   }
 
   function applyCustomTheme(cfg) {
     if (!cfg || typeof cfg !== 'object') return;
-
-    /* Formato DUAL novo: { modo_dual:true, claro:{...}, escuro:{...}, coringa? }
-       Cada modo recebe suas próprias variáveis sob o seletor de tema certo
-       (corrige o bug antigo em que UMA paleta era jogada para claro OU escuro). */
-    if (cfg.modo_dual && cfg.claro && cfg.escuro) {
-      _lastCfg = cfg;
-      try { localStorage.setItem(CUSTOM_THEME_KEY, JSON.stringify(cfg)); } catch (e) { }
-
-      var styleDual = document.getElementById('chef-custom-theme-vars');
-      if (!styleDual) {
-        styleDual = document.createElement('style');
-        styleDual.id = 'chef-custom-theme-vars';
-        document.head.appendChild(styleDual);
-      }
-
-      var g = buildGlobalVars(cfg);
-      var c = buildModeVars(cfg.claro || {});
-      var e = buildModeVars(cfg.escuro || {});
-      var out = [];
-      if (g.length) out.push(':root, body, html {\n  ' + g.join('\n  ') + '\n}');
-      if (c.length) out.push('[data-theme="light"], html[data-theme="light"] body.theme-light, body.theme-light:not(.dark-mode):not([data-theme="dark"]) {\n  ' + c.join('\n  ') + '\n}');
-      if (e.length) out.push('[data-theme="dark"], body.theme-dark, body.dark-mode {\n  ' + e.join('\n  ') + '\n}');
-      styleDual.innerHTML = out.join('\n\n');
-
-      carregarFontesGoogle(cfg);
-      aplicarFlagTamanhos(cfg);
-      var coringaDual = cfg.coringa || (cfg.claro && cfg.claro.coringa) || (cfg.escuro && cfg.escuro.coringa);
-      renderCoringa(coringaDual ? Object.assign({}, cfg, { coringa: coringaDual }) : cfg);
-      window.dispatchEvent(new CustomEvent('chef_custom_theme_applied', { detail: cfg }));
-      return;
+    // Se vier embrulhado em cores ou objeto tema
+    if (cfg.cores && typeof cfg.cores === 'object') {
+      cfg = Object.assign({}, cfg, cfg.cores);
     }
-
     _lastCfg = cfg;
     try { localStorage.setItem(CUSTOM_THEME_KEY, JSON.stringify(cfg)); } catch (e) { }
+    if (cfg.tema_id) {
+      try { localStorage.setItem('chef_tema_ativo_id', cfg.tema_id); } catch (e) { }
+    }
 
     var styleEl = document.getElementById('chef-custom-theme-vars');
     if (!styleEl) {
@@ -276,37 +190,139 @@
       document.head.appendChild(styleEl);
     }
 
-    var rules = [];
+    var prim = cfg.primary || '#fc4b15';
+    var primRgb = hexToRgb(prim);
+    var primHov = cfg.primaryHover || prim;
+    var bg = cfg.bgColor || cfg.bgPage || '#0b0f19';
+    var cardBg = cfg.bgCard || '#111827';
+    var border = cfg.borderColor || '#1f2937';
+    var textMain = cfg.textPrimary || cfg.textMain || '#f3f4f6';
+    var isDarkBg = !isLightColor(bg);
+    var textSec = cfg.textSecondary || (isDarkBg ? '#94a3b8' : '#64748b');
+    var stOcup = cfg.statusOcupada || '#ef4444';
+    var stLiv = cfg.statusLivre || '#10b981';
 
-    // 1. Variáveis globais no :root, body e html
-    var rootVars = buildGlobalVars(cfg);
-
-    if (rootVars.length) {
-      rules.push(':root, body, html {\n  ' + rootVars.join('\n  ') + '\n}');
+    // Se o tema veio da loja (storeTema), sincroniza modo claro/escuro
+    if (cfg.storeTema) {
+      var modoTema = isDarkBg ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', modoTema);
+      if (document.body) {
+        document.body.classList.remove('theme-dark', 'theme-light');
+        document.body.classList.add('theme-' + modoTema);
+        document.body.classList.toggle('dark-mode', isDarkBg);
+      }
+      var dmLink = document.querySelector('link[href*="dark-mode.css"]');
+      if (isDarkBg) {
+        if (!dmLink) {
+          dmLink = document.createElement('link');
+          dmLink.rel = 'stylesheet';
+          dmLink.href = '/dark-mode.css';
+          document.head.appendChild(dmLink);
+        } else {
+          dmLink.disabled = false;
+        }
+      } else if (dmLink) {
+        dmLink.disabled = true;
+      }
     }
 
-    // 2. Cores específicas de fundo / texto
-    var themeVars = buildModeVars(cfg);
+    var cssVars = [
+      // Primárias e Acentos
+      '--primary: ' + prim + ' !important;',
+      '--primary-rgb: ' + primRgb + ' !important;',
+      '--primary-hover: ' + primHov + ' !important;',
+      '--btn-primary-bg: ' + (cfg.btnPrimaryBg || prim) + ' !important;',
+      '--primary-orange: ' + prim + ' !important;',
+      '--primary-orange-hover: ' + primHov + ' !important;',
+      '--accent-orange: ' + prim + ' !important;',
+      '--primary-glow: rgba(' + primRgb + ', 0.35) !important;',
+      '--cfg-primary: ' + prim + ' !important;',
+      '--cfg-primary-soft: rgba(' + primRgb + ', 0.16) !important;',
 
-    if (themeVars.length) {
-      var isDarkBg = !isLightColor(cfg.bgColor || cfg.bgPage);
-      if (isDarkBg) {
-        rules.push('[data-theme="dark"], body.theme-dark, body.dark-mode {\n  ' + themeVars.join('\n  ') + '\n}');
-      } else {
-        rules.push('[data-theme="light"], body.theme-light, :root:not([data-theme="dark"]) {\n  ' + themeVars.join('\n  ') + '\n}');
+      // Fundos
+      '--bg-color: ' + bg + ' !important;',
+      '--bg-main: ' + bg + ' !important;',
+      '--bg-page: ' + bg + ' !important;',
+      '--bg-slate: ' + bg + ' !important;',
+      '--cfg-bg: ' + bg + ' !important;',
+      '--cfg-subtle-bg: ' + bg + ' !important;',
+
+      // Painéis e Cards
+      '--bg-card: ' + cardBg + ' !important;',
+      '--bg-slate-card: ' + cardBg + ' !important;',
+      '--bg-panel: ' + cardBg + ' !important;',
+      '--bg-sidebar: ' + (cfg.bgSidebar || cardBg) + ' !important;',
+      '--bg-header: ' + (cfg.bgHeader || cardBg) + ' !important;',
+      '--cfg-card-bg: ' + cardBg + ' !important;',
+      '--cfg-card-alt: ' + cardBg + ' !important;',
+      '--cfg-sidebar-bg: ' + (cfg.bgSidebar || cardBg) + ' !important;',
+      '--cfg-header-bg: ' + (cfg.bgHeader || cardBg) + ' !important;',
+
+      // Tipografia e Cores de Texto
+      '--text-primary: ' + textMain + ' !important;',
+      '--text-main: ' + textMain + ' !important;',
+      '--text-header: ' + (cfg.textHeader || textMain) + ' !important;',
+      '--cfg-text: ' + textMain + ' !important;',
+      '--cfg-heading: ' + textMain + ' !important;',
+      '--cfg-header-text: ' + (cfg.textHeader || textMain) + ' !important;',
+      '--text-secondary: ' + textSec + ' !important;',
+      '--text-muted: ' + textSec + ' !important;',
+      '--cfg-text-muted: ' + textSec + ' !important;',
+      '--cfg-sidebar-text: ' + (cfg.textSidebar || textSec) + ' !important;',
+
+      // Bordas
+      '--border-color: ' + border + ' !important;',
+      '--border-panel: ' + border + ' !important;',
+      '--border-light: ' + border + ' !important;',
+      '--border-dark: ' + border + ' !important;',
+      '--cfg-border: ' + border + ' !important;',
+      '--cfg-field-border: ' + border + ' !important;',
+
+      // Status
+      '--status-ocupada: ' + stOcup + ' !important;',
+      '--status-livre: ' + stLiv + ' !important;',
+      '--danger: ' + stOcup + ' !important;',
+      '--success: ' + stLiv + ' !important;'
+    ];
+
+    if (cfg.fontBody) {
+      cssVars.push('--font-family: "' + cfg.fontBody + '", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;');
+    }
+    if (cfg.fontHeading) {
+      cssVars.push('--font-heading: "' + cfg.fontHeading + '", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif !important;');
+    }
+    if (cfg.borderRadius) {
+      cssVars.push('--radius-lg: ' + cfg.borderRadius + ' !important;');
+      cssVars.push('--radius-md: ' + cfg.borderRadius + ' !important;');
+      cssVars.push('--border-radius-base: ' + cfg.borderRadius + ' !important;');
+    }
+    if (cfg.fontSizeScale) cssVars.push('--fs-scale: ' + cfg.fontSizeScale + ';');
+    if (cfg.btnScale) cssVars.push('--btn-scale: ' + cfg.btnScale + ';');
+    if (cfg.cardPadY) cssVars.push('--card-pad-y: ' + cfg.cardPadY + ';');
+    if (cfg.cardPadX) cssVars.push('--card-pad-x: ' + cfg.cardPadX + ';');
+    if (cfg.modalWidth) cssVars.push('--modal-max-w: ' + cfg.modalWidth + ';');
+    if (cfg.modalPosition) cssVars.push('--modal-align: ' + cfg.modalPosition + ';');
+
+    var universalSelector = ':root, html, body, [data-theme="dark"], [data-theme="light"], body.theme-dark, body.theme-light, body.dark-mode';
+    var rules = [universalSelector + ' {\n  ' + cssVars.join('\n  ') + '\n}'];
+
+    // 3. CSS customizado
+    if (cfg.css_custom && String(cfg.css_custom).trim()) {
+      var cssEl = document.getElementById('chef-custom-theme-css');
+      if (!cssEl) {
+        cssEl = document.createElement('style');
+        cssEl.id = 'chef-custom-theme-css';
+        document.head.appendChild(cssEl);
       }
+      cssEl.textContent = String(cfg.css_custom);
+    } else {
+      var oldCssEl = document.getElementById('chef-custom-theme-css');
+      if (oldCssEl && oldCssEl.parentNode) oldCssEl.parentNode.removeChild(oldCssEl);
     }
 
     styleEl.innerHTML = rules.join('\n\n');
 
-    carregarFontesGoogle(cfg);
-    aplicarFlagTamanhos(cfg);
-
-    renderCoringa(cfg);
-    window.dispatchEvent(new CustomEvent('chef_custom_theme_applied', { detail: cfg }));
-  }
-
-  function carregarFontesGoogle(cfg) {
+    // Fontes Google
     if (cfg.fontBody && !document.getElementById('font-body-' + cfg.fontBody)) {
       var fontLink = document.createElement('link');
       fontLink.id = 'font-body-' + cfg.fontBody;
@@ -321,9 +337,7 @@
       fontLinkH.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(cfg.fontHeading) + ':wght@600;700;800&display=swap';
       document.head.appendChild(fontLinkH);
     }
-  }
 
-  function aplicarFlagTamanhos(cfg) {
     var tamanhosCustom = (cfg.fontSizeScale && cfg.fontSizeScale !== '1') ||
       (cfg.btnScale && cfg.btnScale !== '1') ||
       (cfg.cardPadY && cfg.cardPadY !== '10px') ||
@@ -333,6 +347,9 @@
       document.documentElement.setAttribute('data-chef-sizes', tamanhosCustom ? 'on' : 'off');
       if (document.body) document.body.classList.toggle('chef-sizes-on', !!tamanhosCustom);
     } catch (e) { }
+
+    renderCoringa(cfg);
+    window.dispatchEvent(new CustomEvent('chef_custom_theme_applied', { detail: cfg }));
   }
 
   function hexToRgb(hex) {
@@ -412,6 +429,8 @@
       .then(function (data) {
         if (data && data.ok && data.theme) {
           applyCustomTheme(data.theme);
+        } else if (data && data.ok) {
+          clearCustomTheme();
         }
       })
       .catch(function () { });
@@ -457,7 +476,6 @@
     if (typeof window.fecharModalEnviarAvisoSuporte === 'function') window.fecharModalEnviarAvisoSuporte();
     if (typeof window.fecharModalCriarMissaoSurpresa === 'function') window.fecharModalCriarMissaoSurpresa();
     if (typeof window.fecharModalSenhaAdmin === 'function') window.fecharModalSenhaAdmin();
-    if (typeof window.fecharModalDelegarSuporte === 'function') window.fecharModalDelegarSuporte();
     if (typeof window.fecharModalLoginFuncionarioMobile === 'function') window.fecharModalLoginFuncionarioMobile();
   }
 
@@ -470,16 +488,20 @@
   });
 
   /* ═══ 6. INICIALIZAÇÃO ═══ */
+  // Aplica o tema completo já no parse do <head>: injeta dark-mode.css e, quando
+  // o body existir, as classes theme-dark/dark-mode — evita página escura quebrada no refresh.
   var initialTheme = getSavedTheme();
   document.documentElement.setAttribute('data-theme', initialTheme);
+  applyTheme(initialTheme);
 
   var initialViewMode = getViewMode();
   if (initialViewMode === 'mobile') document.documentElement.classList.add('force-mobile');
   else if (initialViewMode === 'desktop') document.documentElement.classList.add('force-desktop');
 
   document.addEventListener('DOMContentLoaded', function () {
-    var saved = getSavedTheme();
-    updateThemeUI(saved);
+    // Re-aplica quando o body existe (classes body.dark-mode/theme-dark, dark-mode.css,
+    // custom theme e coringa) — idempotente, mesmo estado do toggle de tema.
+    applyTheme(getSavedTheme());
     applyViewMode(getViewMode());
 
     if (_lastCfg) {
@@ -497,6 +519,7 @@
       return next;
     },
     applyCustom: applyCustomTheme,
+    clearCustom: clearCustomTheme,
     reloadGlobal: fetchAndApplyGlobalTheme
   };
 
@@ -515,6 +538,13 @@
 
   fetchAndApplyGlobalTheme();
 
+  // Sincronização via postMessage (entre iframe e janela principal)
+  window.addEventListener('message', function (ev) {
+    if (ev && ev.data && ev.data.action === 'chef_tema_aplicado' && ev.data.cfg) {
+      applyCustomTheme(ev.data.cfg);
+    }
+  });
+
   // Propagação WebSocket em tempo real
   var temaSocketTries = 0;
   function bindTemaSocket() {
@@ -526,7 +556,22 @@
     }
     try {
       sock.on('tema_global_atualizado', function (theme) {
-        applyCustomTheme(theme);
+        if (theme && typeof theme === 'object') {
+          applyCustomTheme(theme);
+        } else {
+          clearCustomTheme();
+        }
+      });
+      sock.on('tema_restaurante_atualizado', function (data) {
+        var myRid = String(localStorage.getItem('restaurante_id') || '1');
+        if (!data || !data.restaurante_id || String(data.restaurante_id) === myRid) {
+          if (data && data.cfg && typeof data.cfg === 'object') {
+            applyCustomTheme(data.cfg);
+          }
+        }
+      });
+      sock.on('tema_aplicado', function (data) {
+        if (data && data.cfg) applyCustomTheme(data.cfg);
       });
     } catch (e) { }
   }

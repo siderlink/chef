@@ -379,6 +379,7 @@ if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 const upload = multer({ dest: UPLOAD_DIR });
 
 const app  = express();
+app.disable('x-powered-by');
 
 app.use(cors());
 app.use(express.json());
@@ -477,23 +478,79 @@ app.use((req, res, next) => {
   next();
 });
 
-// (Segurança) Rejeita path traversal e bloqueia extensões sensíveis
-const PROD_BLOCKED_STATIC_EXTS = [
-  '.sqlite', '.sqlite-wal', '.sqlite-shm', '.db', '.db-wal', '.db-shm',
-  '.pfx', '.p12', '.pem', '.crt', '.key', '.cer', '.env', '.log', '.ini',
-  '.bat', '.cmd', '.ps1', '.sh', '.zip', '.rar', '.7z', '.gz', '.tgz', '.tar',
-  '.exe', '.msi', '.jar', '.apk', '.dll', '.so', '.dylib', '.deb', '.pkg',
-  '.dmg', '.iso', '.war', '.ear', '.jks', '.keystore'
+// ── Hardening de Segurança: Headers HTTP e Proteção Anti-Sniffing/Clickjacking ──
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.removeHeader('X-Powered-By');
+  next();
+});
+
+// ── Firewall Estático: Bloqueia acesso direto a arquivos de servidor, bancos, chaves e git ──
+const PROD_BLOCKED_DIRECTORIES = [
+  '/controllers', '/scratch', '/node_modules', '/installer', '/migrations',
+  '/src', '/hub-server', '/iniciodoprojetorestaura', '/bin', '/.git', '/.vscode', '/.idea'
 ];
+
+const PROD_BLOCKED_EXACT_FILES = new Set([
+  'server.js', 'server-prod.js', 'server_test.js', 'watchdog.js', 'boot.js',
+  'obfuscate.js', 'sync-prod.js', 'setup-quiz.js', 'copy-super-admin.js',
+  'package.json', 'package-lock.json', 'chef-modules.json', 'tsconfig.json',
+  'ecosystem.config.js', 'vite.config.js', 'build-hub.ps1', 'build-pkg.ps1',
+  'server-prod-header.js'
+]);
+
+const PROD_BLOCKED_STATIC_EXTS = [
+  '.sqlite', '.sqlite-wal', '.sqlite-shm', '.sqlite3', '.db', '.db-wal', '.db-shm',
+  '.sql', '.bak', '.backup', '.dump',
+  '.pfx', '.p12', '.pem', '.crt', '.key', '.cer', '.jks', '.keystore',
+  '.env', '.log', '.ini', '.conf', '.cfg',
+  '.bat', '.cmd', '.ps1', '.sh',
+  '.zip', '.rar', '.7z', '.gz', '.tgz', '.tar',
+  '.exe', '.msi', '.jar', '.apk', '.dll', '.so', '.dylib', '.deb', '.pkg',
+  '.dmg', '.iso', '.war', '.ear',
+  '.map'
+];
+
 app.use((req, res, next) => {
   if (req.method !== 'GET' && req.method !== 'HEAD') return next();
   let raw = (req.url || '/').split('?')[0];
   let decoded = '';
   try { decoded = decodeURIComponent(raw); } catch (e) { decoded = raw; }
   decoded = decoded.replace(/\\/g, '/');
-  if (decoded.split('/').includes('..')) return res.status(403).send('Acesso negado.');
+
+  // 1. Path traversal
+  const segments = decoded.split('/').filter(Boolean);
+  if (segments.includes('..')) return res.status(403).send('Acesso negado.');
+
+  // 2. Arquivos ou pastas ocultas (ex: /.git, /.env, /.vscode)
+  if (segments.some(s => s.startsWith('.') && s !== '.')) return res.status(403).send('Acesso negado.');
+
   const lower = decoded.toLowerCase();
-  if (PROD_BLOCKED_STATIC_EXTS.some(b => lower.endsWith(b))) return res.status(403).send('Acesso negado.');
+
+  // 3. Diretórios backend protegidos
+  if (PROD_BLOCKED_DIRECTORIES.some(d => lower.startsWith(d.toLowerCase()))) {
+    return res.status(403).send('Acesso negado.');
+  }
+
+  // 4. Arquivos de servidor restritos na raiz
+  const filename = segments.length ? segments[segments.length - 1].toLowerCase() : '';
+  if (PROD_BLOCKED_EXACT_FILES.has(filename)) {
+    return res.status(403).send('Acesso negado.');
+  }
+
+  // 5. Extensões restritas
+  if (PROD_BLOCKED_STATIC_EXTS.some(b => lower.endsWith(b))) {
+    return res.status(403).send('Acesso negado.');
+  }
+
+  // 6. Arquivos .json que não sejam manifest.json ou plugins autorizados
+  if (lower.endsWith('.json') && filename !== 'manifest.json' && !lower.startsWith('/plugins/')) {
+    return res.status(403).send('Acesso negado.');
+  }
+
   next();
 });
 
@@ -1131,6 +1188,7 @@ function loadOrCreateSecret(name) {
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || loadOrCreateSecret('jwt');
+const SUPORTE_JWT_SECRET = process.env.SUPORTE_JWT_SECRET || loadOrCreateSecret('suporte_jwt');
 
 const restRateLimit = new Map();
 // (Segurança) IP real da conexão. O header 'x-forwarded-for' só é confiado a um
@@ -3745,6 +3803,24 @@ io.on('connection', (socket) => {
       });
     });
   };
+
+  // --- PROPAGAÇÃO DE TEMA DO RESTAURANTE (LOJA / STUDIO) ---
+  socket.on('tema_restaurante_aplicar', (data) => {
+    if (!data) return;
+    const tid = data.restaurante_id || socketTenantId || 1;
+    const room = `restaurante_${tid}`;
+    io.to(room).emit('tema_global_atualizado', data.cfg);
+    io.to(room).emit('tema_aplicado', { tema_id: data.tema ? data.tema.id : data.tema_id, cfg: data.cfg });
+    io.emit('tema_restaurante_atualizado', { restaurante_id: tid, cfg: data.cfg, tema_id: data.tema ? data.tema.id : data.tema_id });
+  });
+
+  socket.on('tema_global_aplicar', (data) => {
+    if (!data) return;
+    const tid = (data && data.restaurante_id) || socketTenantId || 1;
+    const room = `restaurante_${tid}`;
+    io.to(room).emit('tema_global_atualizado', data);
+    io.emit('tema_restaurante_atualizado', { restaurante_id: tid, cfg: data, tema_id: data.id || '' });
+  });
 
   let mpPollInterval = null;
 
@@ -8065,6 +8141,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('login_por_pin', (data) => {
+    const clientIp = (socket.handshake && (socket.handshake.headers['x-forwarded-for'] || socket.handshake.address)) || '127.0.0.1';
+    const cleanIp = String(clientIp).split(',')[0].trim().replace('::ffff:', '');
+    if (typeof loginBloqueado === 'function' && loginBloqueado(cleanIp)) {
+      return socket.emit('login_error', 'Muitas tentativas de PIN incorretas. Acesso bloqueado por 15 minutos por segurança.');
+    }
     const { pin } = data;
     if (!pin) return socket.emit('login_error', 'Informe o PIN.');
     
@@ -8095,7 +8176,7 @@ io.on('connection', (socket) => {
 
       // 2. Se não encontrou colaborador permanente, busca nos PINs temporários
       db.get(`SELECT * FROM pins_temporarios WHERE pin = ? AND ativo = 1`, [pin], (err, row) => {
-        if (err || !row) return socket.emit('login_error', 'PIN inválido ou inativo.');
+        if (err || !row) { if (typeof registrarFalhaLogin === 'function') registrarFalhaLogin(cleanIp); return socket.emit('login_error', 'PIN inválido ou inativo.'); }
         if (row.tipo_expiracao !== 'sessao' && row.expira_em && row.expira_em !== 'SESSION') {
           if (new Date(row.expira_em) < new Date()) {
             return socket.emit('login_error', 'PIN expirado. Solicite um novo ao administrador.');
@@ -11095,7 +11176,7 @@ app.post('/api/auth/registro', async (req, res) => {
 
               const userId = this.lastID;
 
-              // Vincular Venda a Afiliado se chaveRef for informada
+              // Vincular Venda a Afiliado / Suporte se chaveRef for informada
               if (chaveRef && typeof chaveRef === 'string' && chaveRef.trim()) {
                 const codeClean = chaveRef.trim().toUpperCase();
                 masterDb.get(`SELECT * FROM afiliados WHERE UPPER(codigo_ref) = ? AND status = 'ativo'`, [codeClean], (errAfil, afil) => {
@@ -11113,6 +11194,26 @@ app.post('/api/auth/registro', async (req, res) => {
                         }
                       }
                     );
+                  } else {
+                    // Fallback: verificar se é código de referência da equipe de suporte / parceiro
+                    masterDb.get(`SELECT * FROM equipe_suporte WHERE UPPER(codigo_ref) = ?`, [codeClean], (errSup, supUser) => {
+                      if (!errSup && supUser) {
+                        const comissaoPct = supUser.comissao_percentual || 20;
+                        const valorPlanoPadrao = 149.90;
+                        const comissaoVal = (valorPlanoPadrao * comissaoPct) / 100;
+
+                        masterDb.run(
+                          `INSERT INTO suporte_vendas (suporte_id, chave_ativacao, restaurante_nome, restaurante_id, contato_nome, contato_telefone, plano, valor_venda, status_venda, comissao_percentual, comissao_valor)
+                           VALUES (?, ?, ?, ?, ?, ?, 'trial', ?, 'fechado', ?, ?)`,
+                          [supUser.id, codeClean, restauranteNome, restauranteId, nome, telFormatado, valorPlanoPadrao, comissaoPct, comissaoVal],
+                          function(errSupVenda) {
+                            if (!errSupVenda) {
+                              console.log(`🤝 [Suporte/Afiliado] Venda vinculada a ${supUser.nome} (#${supUser.id}, ${codeClean}) no Restaurante #${restauranteId}`);
+                            }
+                          }
+                        );
+                      }
+                    });
                   }
                 });
               }
@@ -11915,6 +12016,10 @@ app.post('/api/marketing/disparo-massa', (req, res) => {
 });
 
 app.post('/api/auth/login', async (req, res) => {
+  const rawIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1').replace('::ffff:', '');
+  if (typeof loginBloqueado === 'function' && loginBloqueado(rawIp)) {
+    return res.status(429).json({ success: false, error: 'Muitas tentativas de login incorretas. Acesso bloqueado por 15 minutos por segurança.' });
+  }
   const { email, senha } = req.body;
   if (!email || !senha) return res.status(400).json({ success: false, error: 'Preencha e-mail e senha.' });
 
@@ -11934,7 +12039,7 @@ app.post('/api/auth/login', async (req, res) => {
     if (!user.r_ativo) return res.status(403).json({ success: false, error: 'Restaurante inativo.' });
 
     const match = await bcrypt.compare(senha, user.password_hash);
-    if (!match) return res.status(401).json({ success: false, error: 'Senha incorreta.' });
+    if (!match) { if (typeof registrarFalhaLogin === 'function') registrarFalhaLogin(rawIp); return res.status(401).json({ success: false, error: 'Senha incorreta.' }); }
 
     const token = jwt.sign({ id: user.id, restaurante_id: user.restaurante_id, role: user.role }, JWT_SECRET, { expiresIn: '90d' });
     res.json({ success: true, token, restaurante_id: user.restaurante_id, role: user.role });
@@ -11968,7 +12073,7 @@ function verificarToken(req, res, next) {
   if (!authHeader) return res.status(403).json({ success: false, error: 'Nenhum token fornecido.' });
 
   const token = authHeader.split(' ')[1]; // Formato: Bearer TOKEN
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, decoded) => {
     if (err) return res.status(401).json({ success: false, error: 'Sessão expirada ou token inválido.' });
 
     req.restaurante_id = decoded.restaurante_id;
@@ -13089,7 +13194,7 @@ const relatoSuporteAuth = (req, res, next) => {
   const token = req.headers['x-suporte-token'];
   if (!token) return res.json({ ok: false, erro: 'Token de suporte não fornecido.' });
   try {
-    const decoded = jwt.verify(token, process.env.SUPORTE_JWT_SECRET || 'chef-suporte-secret-key-2026');
+    const decoded = jwt.verify(token, SUPORTE_JWT_SECRET);
     req.suporteId = decoded.id;
     req.suporteData = decoded;
     next();
