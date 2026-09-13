@@ -2,12 +2,12 @@
     "name": "chef-cozinha",
     "version": "1.0.0",
     "main": "server.js",
-    "bin": "server-prod.js",
+    "bin": "boot-prod.js",
     "scripts": {
         "prestart": "node boot.js",
-        "start": "node --max-old-space-size=4096 setup-quiz.js",
-        "start:direct": "concurrently \"node --max-old-space-size=4096 server.js\" \"cross-env NODE_OPTIONS=--max-old-space-size=4096 vite --host\"",
-        "start:watchdog": "node --max-old-space-size=4096 watchdog.js",
+        "start": "node setup-quiz.js",
+        "start:direct": "concurrently \"node server.js\" \"cross-env NODE_OPTIONS=--max-old-space-size=4096 vite --host\"",
+        "start:watchdog": "node watchdog.js",
         "dev": "vite --host",
         "build": "vite build",
         "postbuild": "node copy-super-admin.js",
@@ -38,6 +38,7 @@
         "acorn": "^8.17.0",
         "bcrypt": "^6.0.0",
         "better-sqlite3": "^13.0.3",
+        "bytenode": "^1.6.0",
         "cors": "^2.8.6",
         "express": "^5.2.1",
         "figlet": "^1.11.4",
@@ -49,18 +50,20 @@
         "promise-polyfill": "^8.3.0",
         "socket.io": "^4.8.3",
         "socket.io-client": "^4.8.3",
-        "sqlite3": "^6.0.1",
         "web-push": "^3.6.7",
         "whatwg-fetch": "^3.6.20",
         "xlsx": "^0.18.5"
     },
     "pkg": {
         "assets": [
+            "public/**/*",
             "dist/**/*",
             "cert.pfx",
-            "node_modules/sqlite3/build/**/*",
             "node_modules/bcrypt/prebuilds/**/*",
-            "node_modules/socket.io-client/dist/**/*"
+            "node_modules/socket.io-client/dist/**/*",
+            "certificados/**/*",
+            "*.jsc",
+            "node_modules/better-sqlite3/build/Release/better_sqlite3.node"
         ],
         "targets": [
             "node18-win-x64"

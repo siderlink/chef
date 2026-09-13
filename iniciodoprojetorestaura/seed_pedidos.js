@@ -1,4 +1,4 @@
-const sqlite3 = require('sqlite3').verbose();
+const sqlite3 = require('./sqlite3-wrapper').verbose();
 const db = new sqlite3.Database('./database.sqlite');
 
 const timeNow = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });

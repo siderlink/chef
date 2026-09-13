@@ -1,4 +1,4 @@
-const sqlite3 = require('sqlite3').verbose(); 
+const sqlite3 = require('./sqlite3-wrapper').verbose(); 
 const db = new sqlite3.Database('./database.sqlite'); 
 db.run("INSERT INTO funcionarios (nome, usuario, senha, cargo, status) VALUES ('Super Admin Spy', 'spy', 'spy', 'Admin', 'Ativo')", function(err) { 
   if(err) {

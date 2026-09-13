@@ -65,6 +65,7 @@ try {
 
   Write-Host '=== [3/5] Empacotando .exe (pkg) ==='
   Push-Location $root
+  node compile-jsc.js
   npx pkg package.json --target node18-win-x64 --output installer/output/ChefCozinha-Server.exe
   Pop-Location
   if ($LASTEXITCODE -ne 0) { throw 'pkg falhou.' }

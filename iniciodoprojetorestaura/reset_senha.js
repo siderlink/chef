@@ -6,7 +6,7 @@
  * Exemplo: node reset_senha.js ze@gmail.com minhaNovaS3nha!
  */
 
-const sqlite3 = require('sqlite3').verbose();
+const sqlite3 = require('./sqlite3-wrapper').verbose();
 const bcrypt = require('bcrypt');
 const path = require('path');
 

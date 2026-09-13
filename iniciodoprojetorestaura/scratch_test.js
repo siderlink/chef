@@ -1,4 +1,4 @@
-const sqlite3 = require('sqlite3').verbose();
+const sqlite3 = require('./sqlite3-wrapper').verbose();
 const db = new sqlite3.Database('database.sqlite');
 db.all("PRAGMA table_info(pontos)", (err, rows) => {
   console.log("pontos schema:");

@@ -379,7 +379,7 @@ module.exports = function (app, masterDb, sqlite3, options) {
         try {
           const tenantDb = await new Promise((resolve, reject) => {
             const dbPath = path.join(__dirname, '..', `database_${newId}.sqlite`);
-            const sqlite3 = require('sqlite3').verbose();
+            const sqlite3 = require('./sqlite3-wrapper').verbose();
             const db = new sqlite3.Database(dbPath, (err) => err ? reject(err) : resolve(db));
           });
           await new Promise((resolve) => {
