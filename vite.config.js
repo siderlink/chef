@@ -67,7 +67,7 @@ export default defineConfig({
     injectPolyfills(),
     ...(!isCodespaces ? [basicSsl()] : []),
     legacy({
-      targets: ['iOS >= 9']
+      targets: ['chrome >= 49', 'firefox >= 52']
     })
   ],
   server: {

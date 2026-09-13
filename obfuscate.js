@@ -146,7 +146,7 @@ function obfuscateHtml(file) {
     try {
       const babel = require('@babel/core');
       let babelCode = babel.transformSync(b.body, {
-        presets: [['@babel/preset-env', { targets: 'iOS >= 9' }]],
+        presets: [['@babel/preset-env', { targets: 'chrome >= 49, firefox >= 52' }]],
         compact: false
       }).code;
 
