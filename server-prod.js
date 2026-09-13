@@ -745,6 +745,12 @@ masterDb.serialize(() => {
   masterDb.run(`ALTER TABLE restaurantes ADD COLUMN chave_ativacao TEXT`, err => { if (err) {} });
   masterDb.run(`ALTER TABLE restaurantes ADD COLUMN validade_licenca TEXT`, err => { if (err) {} });
   masterDb.run(`ALTER TABLE restaurantes ADD COLUMN max_dispositivos INTEGER DEFAULT 0`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN telefone TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN dono_nome TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN dono_telefone TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN dono_email TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN slug TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN custom_domain TEXT`, err => { if (err) {} });
   masterDb.run(`CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     restaurante_id INTEGER,
@@ -754,6 +760,8 @@ masterDb.serialize(() => {
     ativo BOOLEAN DEFAULT true,
     data_cadastro DATETIME DEFAULT (datetime('now', 'localtime'))
   )`);
+  masterDb.run(`ALTER TABLE usuarios ADD COLUMN nome TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE usuarios ADD COLUMN telefone TEXT`, err => { if (err) {} });
   masterDb.run(`INSERT OR IGNORE INTO restaurantes (id, nome, licenca, ativo) VALUES (1, 'Estabelecimento', 'ativo', 1)`);
   masterDb.run(`UPDATE restaurantes SET licenca = 'ativo', ativo = 1 WHERE id = 1`);
   masterDb.run(`CREATE TABLE IF NOT EXISTS licencas (
@@ -1275,7 +1283,12 @@ const tenantSocketCounts = new Map();
 const TENANT_FEATURES_REFRESH_MS = 30000;
 
 function getTenantDbPath(tenantId) {
-  return path.join(__dirname, `database_${tenantId}.sqlite`);
+  const tid = parseInt(tenantId, 10) || 1;
+  const estPath = path.join(APP_DATA_DIR, 'estabelecimentos', String(tid), 'database.sqlite');
+  if (fsSync.existsSync(estPath)) return estPath;
+  const legacy = path.join(__dirname, 'database_' + tid + '.sqlite');
+  if (fsSync.existsSync(legacy)) return legacy;
+  return estPath;
 }
 
 function listarBancosTenant() {
@@ -1411,9 +1424,11 @@ function localizarFuncionarioLogin(usuario, cb) {
         while (i < rests.length) {
           const tid = parseInt(rests[i++].id, 10);
           if (!Number.isFinite(tid) || tid <= 0 || tid === atual) continue;
-          const dbPath = path.join(__dirname, `database_${tid}.sqlite`);
-          if (!fsSync.existsSync(dbPath)) continue;
-          const tdb = new sqlite3.Database(dbPath);
+          const dbPath = getTenantDbPath(tid);
+          const legacy = path.join(__dirname, `database_${tid}.sqlite`);
+          const target = fsSync.existsSync(dbPath) ? dbPath : (fsSync.existsSync(legacy) ? legacy : null);
+          if (!target) continue;
+          const tdb = new sqlite3.Database(target);
           tdb.get(q, [usuario, usuario], (e2, row2) => {
             tdb.close();
             if (!e2 && row2) {
@@ -1543,8 +1558,9 @@ function seedTenantDb(db, restauranteNome, done) {
         const q = 'INSERT INTO formas_pagamento (nome, tipo, taxa, prazo_dias, ativo, icone, ordem) VALUES (?, ?, ?, ?, ?, ?, ?)';
         defaultMethods.forEach(m => db.run(q, m, onErr));
       }
+      if (typeof done === 'function') done();
     });
-  }, done || (() => {}));
+  });
 }
 
 // Cria um banco de tenant novo com schema vazio + dados iniciais (sem copiar database_1.sqlite)
@@ -1555,9 +1571,11 @@ function createFreshTenantDb(dbPath, restauranteNome) {
       newDb.run('PRAGMA journal_mode = WAL;');
       newDb.run('PRAGMA synchronous = NORMAL;');
       newDb.run('PRAGMA busy_timeout = 5000;');
-      const refPath = path.join(__dirname, 'database_1.sqlite');
-      if (fsSync.existsSync(refPath)) {
-        syncTenantSchema(newDb, refPath, () => {
+      const refPath = getTenantDbPath(1);
+      const fallbackRef = path.join(__dirname, 'database_1.sqlite');
+      const schemaSource = fsSync.existsSync(refPath) ? refPath : (fsSync.existsSync(fallbackRef) ? fallbackRef : null);
+      if (schemaSource && schemaSource !== dbPath) {
+        syncTenantSchema(newDb, schemaSource, () => {
           seedTenantDb(newDb, restauranteNome, () => resolve(newDb));
         });
       } else {
@@ -2976,12 +2994,18 @@ function broadcastMesaClientes() {
 }
 
 /* ── Socket auth helpers ───────────────────────────────────────────── */
-const ADMIN_CARGOS = ['Admin', 'Administrador', 'adm', 'Gerente'];
+const ADMIN_CARGOS = ['Admin', 'admin', 'Administrador', 'administrador', 'adm', 'ADM', 'Gerente', 'gerente', 'Dono', 'dono'];
+
+function isCargoAdmin(cargo) {
+  if (!cargo) return false;
+  const c = String(cargo).trim().toLowerCase();
+  return ADMIN_CARGOS.some(a => a.toLowerCase() === c);
+}
 
 /** Retorna true se o socket tem token JWT com cargo de admin */
 function exigirAdminSocket(socket) {
-  const cargo = socket.auth?.cargo || '';
-  if (!ADMIN_CARGOS.includes(cargo)) {
+  const cargo = socket.auth?.cargo || socket.auth?.role || '';
+  if (!isCargoAdmin(cargo)) {
     socket.emit('erro_servidor', 'Apenas administradores podem executar esta ação.');
     return false;
   }
@@ -7506,8 +7530,8 @@ io.on('connection', (socket) => {
 
   socket.on('zerar_todos_dados', async ({ senha }) => {
     /* Apenas Admin/Gerente podem zerar dados */
-    const cargo = socket.auth?.cargo || '';
-    const isAdmin = ['Admin', 'Administrador', 'adm', 'Gerente'].includes(cargo);
+    const cargo = socket.auth?.cargo || socket.auth?.role || '';
+    const isAdmin = isCargoAdmin(cargo);
     if (!isAdmin) {
       socket.emit('erro_caixa', 'Apenas administradores podem zerar dados.');
       return;
@@ -7982,175 +8006,6 @@ if (deploymentConfig.isOnPremise()) {
   });
   console.log('[Sync] Servidor sync (cloud) inicializado.');
 }
-
-// --- API DE STATUS E MONITORAMENTO LOCAL (SYNC.EXE / OFFLINE-FIRST) ---
-app.get('/api/sync/status', async (req, res) => {
-  try {
-    let isConn = false;
-    let instId = 'local-instance';
-    if (deploymentConfig && deploymentConfig.isOnPremise()) {
-      try {
-        const syncAgent = require('./sync-agent');
-        isConn = syncAgent.isConnected();
-        instId = syncAgent.getInstanceId() || 'local-instance';
-      } catch (e) {}
-    } else {
-      isConn = true;
-      instId = 'cloud-hub';
-    }
-
-    let outboxPending = 0;
-    try {
-      const row = await new Promise((resolve, reject) => {
-        db.get("SELECT COUNT(*) as cnt FROM sync_outbox WHERE status = 'pending'", (err, r) => {
-          if (err) reject(err);
-          else resolve(r);
-        });
-      });
-      outboxPending = row ? (row.cnt || 0) : 0;
-    } catch (e) {}
-
-    res.json({
-      success: true,
-      online: isConn,
-      instanceId: instId,
-      outboxPending,
-      deployMode: deploymentConfig ? deploymentConfig.getDeployMode() : 'standalone',
-      version: deploymentConfig ? deploymentConfig.getSoftwareVersion() : '1.0.0',
-      timestamp: new Date().toISOString()
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/sync/flush', async (req, res) => {
-  try {
-    if (deploymentConfig && deploymentConfig.isOnPremise()) {
-      const syncAgent = require('./sync-agent');
-      if (syncAgent && typeof syncAgent.flushOutbox === 'function') {
-        await syncAgent.flushOutbox();
-      }
-    }
-    res.json({ success: true, message: 'Flush disparado com sucesso' });
-
-app.post('/api/sync/activate', async (req, res) => {
-  const { type, chave_ativacao, email, senha, instance_id, machine_id, hostname } = req.body || {};
-  const bcrypt = require('bcrypt');
-
-  try {
-    const targetDb = (typeof masterDb !== 'undefined' && masterDb) ? masterDb : db;
-
-    if (type === 'key' || chave_ativacao) {
-      const chave = String(chave_ativacao || '').trim().toUpperCase();
-      if (!chave) return res.status(400).json({ ok: false, success: false, error: 'Chave de ativação é obrigatória.' });
-
-      const row = await new Promise((resolve, reject) => {
-        targetDb.get(
-          `SELECT * FROM restaurantes 
-           WHERE UPPER(TRIM(COALESCE(chave_ativacao, ''))) = ? 
-              OR UPPER(TRIM('CHEF-LOCAL-' || printf('%04d', id))) = ?
-              OR UPPER(TRIM('CHEF-' || printf('%04d', id))) = ?
-           LIMIT 1`,
-          [chave, chave, chave],
-          (err, r) => err ? reject(err) : resolve(r)
-        );
-      });
-
-      if (!row) {
-        return res.status(404).json({ ok: false, success: false, error: 'Chave de ativação inválida ou não encontrada.' });
-      }
-
-      if (row.ativo === 0) {
-        return res.status(403).json({ ok: false, success: false, error: 'Este restaurante está inativo no sistema.' });
-      }
-
-      const instId = instance_id || ('inst_' + row.id + '_' + Date.now());
-      const finalKey = row.chave_ativacao || ('CHEF-LOCAL-' + String(row.id).padStart(4, '0'));
-
-      return res.json({
-        ok: true,
-        success: true,
-        restaurant_id: row.id,
-        restaurant_name: row.nome,
-        activation_key: finalKey,
-        plan: row.licenca || 'premium',
-        instance_id: instId,
-        message: `Restaurante '${row.nome}' ativado com sucesso via chave!`
-      });
-    }
-    else if (type === 'login' || (email && senha)) {
-      const userLogin = String(email || '').trim().toLowerCase();
-      const userPass = String(senha || '');
-
-      if (!userLogin || !userPass) {
-        return res.status(400).json({ ok: false, success: false, error: 'Preencha usuário/e-mail e senha.' });
-      }
-
-      const user = await new Promise((resolve, reject) => {
-        targetDb.get(
-          `SELECT u.*, r.id as r_id, r.nome as r_nome, r.chave_ativacao as r_chave, r.ativo as r_ativo, r.licenca as r_licenca, r.dono_email
-           FROM usuarios u
-           JOIN restaurantes r ON u.restaurante_id = r.id
-           WHERE (LOWER(u.username) = ? OR LOWER(COALESCE(r.dono_email, '')) = ?) AND u.ativo = 1
-           ORDER BY u.id ASC LIMIT 1`,
-          [userLogin, userLogin],
-          (err, r) => err ? reject(err) : resolve(r)
-        );
-      });
-
-      if (!user) {
-        return res.status(401).json({ ok: false, success: false, error: 'Usuário não encontrado ou inativo.' });
-      }
-
-      if (user.r_ativo === 0) {
-        return res.status(403).json({ ok: false, success: false, error: 'Este restaurante está inativo no sistema.' });
-      }
-
-      const match = await bcrypt.compare(userPass, user.password_hash);
-      if (!match) {
-        return res.status(401).json({ ok: false, success: false, error: 'Senha incorreta.' });
-      }
-
-      const instId = instance_id || ('inst_' + user.r_id + '_' + Date.now());
-      const finalKey = user.r_chave || ('CHEF-LOCAL-' + String(user.r_id).padStart(4, '0'));
-
-      return res.json({
-        ok: true,
-        success: true,
-        restaurant_id: user.r_id,
-        restaurant_name: user.r_nome,
-        activation_key: finalKey,
-        account_email: user.username,
-        plan: user.r_licenca || 'premium',
-        instance_id: instId,
-        message: `Restaurante '${user.r_nome}' logado e ativado com sucesso!`
-      });
-    }
-    else {
-      return res.status(400).json({ ok: false, success: false, error: 'Informe a chave de ativação ou usuário e senha.' });
-    }
-  } catch (err) {
-    console.error('[Sync] Erro no endpoint /api/sync/activate:', err.message);
-    return res.status(500).json({ ok: false, success: false, error: 'Erro interno ao processar ativação: ' + err.message });
-  }
-});
-
-app.post('/api/sync/activate-local', async (req, res) => {
-  try {
-    const { restaurant_id, restaurant_name, activation_key } = req.body || {};
-    console.log(`[Sync Local] Restaurante ativado localmente: ${restaurant_name} (ID: ${restaurant_id})`);
-    res.json({ success: true, message: 'Ativação local registrada' });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
 
 // --- RETRO API PARA ANDROID 3.2 ---
 app.get('/api/retro/mesas', (req, res) => {
@@ -10784,8 +10639,29 @@ app.post('/api/auth/registro', async (req, res) => {
         // Se a senha bater com o cadastro prévio, permite continuar o onboarding com o restaurante existente
         const passMatch = await bcrypt.compare(senha, existingUser.password_hash || '');
         if (passMatch) {
-          const token = jwt.sign({ id: existingUser.id, restaurante_id: existingUser.restaurante_id, role: existingUser.role || 'admin' }, JWT_SECRET, { expiresIn: '90d' });
-          return res.json({ success: true, token, restaurante_id: existingUser.restaurante_id, ja_existia: true });
+          const tenantDbPath = getTenantDbPath(existingUser.restaurante_id);
+          if (!fsSync.existsSync(tenantDbPath)) {
+            await createFreshTenantDb(tenantDbPath, restauranteNome);
+          }
+          const token = jwt.sign({
+            id: existingUser.id,
+            restaurante_id: existingUser.restaurante_id,
+            role: existingUser.role || 'admin',
+            cargo: 'Dono',
+            nome: existingUser.nome || nome,
+            usuario: existingUser.username
+          }, JWT_SECRET, { expiresIn: '90d' });
+          return res.json({
+            success: true,
+            token,
+            restaurante_id: existingUser.restaurante_id,
+            id: existingUser.id,
+            nome: existingUser.nome || nome,
+            usuario: existingUser.username,
+            role: existingUser.role || 'admin',
+            cargo: 'Dono',
+            ja_existia: true
+          });
         } else {
           return res.status(400).json({ success: false, error: 'Este e-mail já possui uma conta. Digite a senha correta ou use outro e-mail.' });
         }
@@ -10805,13 +10681,35 @@ app.post('/api/auth/registro', async (req, res) => {
           masterDb.run(
             `INSERT INTO usuarios (restaurante_id, username, password_hash, role, nome, telefone) VALUES (?, ?, ?, 'admin', ?, ?)`,
             [restauranteId, emailClean, hash, nome, telFormatado],
-            function (errUser) {
+            async function (errUser) {
               if (errUser) {
                 masterDb.run(`DELETE FROM restaurantes WHERE id = ?`, [restauranteId]);
                 return res.status(500).json({ success: false, error: 'E-mail já cadastrado.' });
               }
 
               const userId = this.lastID;
+
+              // 3. Inicializar banco de dados do tenant e cadastrar o dono como funcionário ativo
+              const tenantDbPath = getTenantDbPath(restauranteId);
+              const pinPadrao = (telFormatado.replace(/\D/g, '').slice(-4) || '1234').padStart(4, '0');
+              try {
+                await createFreshTenantDb(tenantDbPath, restauranteNome);
+                const pinHash = await bcrypt.hash(pinPadrao, 10);
+                const tdb = new sqlite3.Database(tenantDbPath);
+                await new Promise((resFunc) => {
+                  tdb.run(
+                    `INSERT INTO funcionarios (nome, usuario, senha, cargo, status, restaurante_id, pin_hash, data_cadastro)
+                     VALUES (?, ?, ?, 'Dono', 'Ativo', ?, ?, datetime('now', 'localtime'))`,
+                    [nome, emailClean, hash, restauranteId, pinHash],
+                    (eF) => {
+                      if (eF) console.error('[Tenant Init] Erro ao cadastrar dono em funcionarios:', eF.message);
+                      tdb.close(() => resFunc());
+                    }
+                  );
+                });
+              } catch (eDbInit) {
+                console.error('[Tenant Init] Erro ao preparar banco do restaurante:', eDbInit);
+              }
 
               // Vincular Venda a Afiliado / Suporte se chaveRef for informada
               if (chaveRef && typeof chaveRef === 'string' && chaveRef.trim()) {
@@ -10873,8 +10771,26 @@ app.post('/api/auth/registro', async (req, res) => {
               }
 
               // Gerar JWT inicial
-              const token = jwt.sign({ id: userId, restaurante_id: restauranteId, role: 'admin' }, JWT_SECRET, { expiresIn: '90d' });
-              res.json({ success: true, token, restaurante_id: restauranteId });
+              const token = jwt.sign({
+                id: userId,
+                restaurante_id: restauranteId,
+                role: 'admin',
+                cargo: 'Dono',
+                nome: nome,
+                usuario: emailClean
+              }, JWT_SECRET, { expiresIn: '90d' });
+
+              res.json({
+                success: true,
+                token,
+                restaurante_id: restauranteId,
+                id: userId,
+                nome: nome,
+                usuario: emailClean,
+                role: 'admin',
+                cargo: 'Dono',
+                pin_padrao: pinPadrao
+              });
             }
           );
         }
@@ -10972,87 +10888,6 @@ io.on('connection', (socket) => {
 setInterval(runIAVerificacao, IA_CONFIG.intervaloVerificacao);
 
 // --- SAAS: ROTAS DE AUTENTICACAO ---
-app.post('/api/auth/registro', async (req, res) => {
-  const { restauranteNome, nome, email, telefone, senha } = req.body;
-  if (!restauranteNome || !nome || !email || !senha) {
-    return res.status(400).json({ success: false, error: 'Preencha todos os campos obrigatórios.' });
-  }
-
-  const telFormatado = (telefone || '').trim();
-
-  try {
-    const hash = await bcrypt.hash(senha, 10);
-
-    // Criar restaurante trial de 7 dias com dados do dono e telefone
-    masterDb.run(
-      `INSERT INTO restaurantes (nome, licenca, ativo, telefone, dono_nome, dono_telefone, dono_email) VALUES (?, 'trial', 1, ?, ?, ?, ?)`,
-      [restauranteNome, telFormatado, nome, telFormatado, email],
-      function (err) {
-        if (err) return res.status(500).json({ success: false, error: 'Erro ao criar restaurante.' });
-
-        const restauranteId = this.lastID;
-
-        // Criar usuário admin do restaurante
-        masterDb.run(
-          `INSERT INTO usuarios (restaurante_id, username, password_hash, role, nome, telefone) VALUES (?, ?, ?, 'admin', ?, ?)`,
-          [restauranteId, email, hash, nome, telFormatado],
-          function (errUser) {
-            if (errUser) {
-              // Rollback se falhar
-              masterDb.run(`DELETE FROM restaurantes WHERE id = ?`, [restauranteId]);
-              return res.status(500).json({ success: false, error: 'E-mail já cadastrado.' });
-            }
-
-            // Vincular Venda a Afiliado se chaveRef for informada
-            if (chaveRef && typeof chaveRef === 'string' && chaveRef.trim()) {
-              const codeClean = chaveRef.trim().toUpperCase();
-              db.get(`SELECT * FROM afiliados WHERE UPPER(codigo_ref) = ? AND status = 'ativo'`, [codeClean], (errAfil, afil) => {
-                if (!errAfil && afil) {
-                  const comissaoPct = afil.comissao_percentual || 10;
-                  const valorPlanoPadrao = 149.90; // Valor base padrão do plano
-                  const comissaoVal = (valorPlanoPadrao * comissaoPct) / 100;
-
-                  db.run(
-                    `INSERT INTO afiliado_vendas (afiliado_id, restaurante_id, restaurante_nome, plano, valor_venda, comissao_valor, status) VALUES (?, ?, ?, 'Trial 14 Dias', ?, ?, 'pendente')`,
-                    [afil.id, restauranteId, restauranteNome, valorPlanoPadrao, comissaoVal],
-                    function(errVenda) {
-                      if (!errVenda) {
-                        console.log(`🤝 [Afiliados] Venda registrada para Afiliado #${afil.id} (${afil.codigo_ref}) no Restaurante #${restauranteId}`);
-                      }
-                    }
-                  );
-                }
-              });
-            }
-
-            // Notificar o Super Admin em tempo real via Socket.IO
-            try {
-              const cadastroNotif = {
-                restaurante_id: restauranteId,
-                restauranteNome: restauranteNome,
-                nome: nome,
-                email: email,
-                telefone: telFormatado,
-                data: getLocalTimestamp()
-              };
-              io.emit('novo_cadastro_saas', cadastroNotif);
-              celebrarNovoRestaurante(restauranteNome, restauranteId, `${nome} <${email}>`);
-              console.log(`🔔 [SaaS Onboarding] Novo cadastro em andamento: Restaurante #${restauranteId} "${restauranteNome}" | Dono: ${nome} | Tel: ${telFormatado} | Email: ${email}`);
-            } catch (eNotif) {
-              console.error('Erro ao emitir notificacao de novo cadastro saas:', eNotif);
-            }
-
-            // Gerar JWT inicial
-            const token = jwt.sign({ id: this.lastID, restaurante_id: restauranteId, role: 'admin' }, JWT_SECRET, { expiresIn: '90d' });
-            res.json({ success: true, token, restaurante_id: restauranteId });
-          }
-        );
-      }
-    );
-  } catch (error) {
-    res.status(500).json({ success: false, error: 'Erro interno.' });
-  }
-});
 
 // ── Verificação de disponibilidade de Slug / Subdomínio ──
 app.get('/api/auth/check-slug', (req, res) => {
@@ -11196,27 +11031,34 @@ app.post('/api/auth/equipe-onboarding', verificarToken, async (req, res) => {
     }
   }
 
-  if (!Array.isArray(equipe) || equipe.length === 0) return res.status(400).json({ success: false, error: 'Envie pelo menos um funcionario.' });
+  const listaEquipe = Array.isArray(equipe) ? equipe : [];
 
   const restauranteNome = await new Promise((resolve) => {
     masterDb.get(`SELECT nome FROM restaurantes WHERE id = ?`, [restauranteId], (e, r) => resolve(r ? r.nome : null));
   });
 
-  const dbPath = path.join(__dirname, `database_${restauranteId}.sqlite`);
+  const dbPath = getTenantDbPath(restauranteId);
   if (!fsSync.existsSync(dbPath)) {
     await createFreshTenantDb(dbPath, restauranteNome);
   }
   if (!fsSync.existsSync(dbPath)) return res.status(500).json({ success: false, error: 'Erro ao criar banco do restaurante.' });
+
+  if (listaEquipe.length === 0) {
+    return res.json({ success: true, criados: 0, erros: 0 });
+  }
 
   const tenantDb = new sqlite3.Database(dbPath);
   let criados = 0;
   let erros = 0;
 
   const criarFuncionario = (f) => new Promise((resolve) => {
-    const hash = bcrypt.hashSync(f.senha, 10);
+    const hash = bcrypt.hashSync(f.senha || '1234', 10);
+    const pinFunc = String(f.pin || (f.senha || '').slice(-4) || '1234').padStart(4, '0');
+    const pinHash = bcrypt.hashSync(pinFunc, 10);
     tenantDb.run(
-      `INSERT INTO funcionarios (nome, usuario, senha, cargo, valor_hora, status, restaurante_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [f.nome, f.usuario, hash, f.cargo || 'Garcom', f.valor_hora || 0, f.status || 'Pendente', restauranteId],
+      `INSERT INTO funcionarios (nome, usuario, senha, cargo, valor_hora, status, restaurante_id, pin_hash, data_cadastro)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
+      [f.nome, f.usuario, hash, f.cargo || 'Garçom', f.valor_hora || 0, f.status || 'Ativo', restauranteId, pinHash],
       function(err) {
         if (err) { erros++; } else { criados++; }
         resolve();
@@ -11224,7 +11066,7 @@ app.post('/api/auth/equipe-onboarding', verificarToken, async (req, res) => {
     );
   });
 
-  for (const f of equipe) {
+  for (const f of listaEquipe) {
     if (f.nome && f.usuario && f.senha) {
       await criarFuncionario(f);
     }
@@ -11657,10 +11499,12 @@ app.post('/api/auth/login', async (req, res) => {
   if (typeof loginBloqueado === 'function' && loginBloqueado(rawIp)) {
     return res.status(429).json({ success: false, error: 'Muitas tentativas de login incorretas. Acesso bloqueado por 15 minutos por segurança.' });
   }
-  const { email, senha } = req.body;
+  const { email, senha } = req.body || {};
   if (!email || !senha) return res.status(400).json({ success: false, error: 'Preencha e-mail e senha.' });
 
-  masterDb.get(`SELECT u.*, r.ativo as r_ativo, r.licenca, r.data_cadastro FROM usuarios u JOIN restaurantes r ON u.restaurante_id = r.id WHERE u.username = ? AND u.ativo = 1`, [email], async (err, user) => {
+  const emailClean = String(email).trim().toLowerCase();
+
+  masterDb.get(`SELECT u.*, r.ativo as r_ativo, r.licenca, r.data_cadastro, r.nome as r_nome FROM usuarios u JOIN restaurantes r ON u.restaurante_id = r.id WHERE LOWER(TRIM(u.username)) = ? AND u.ativo = 1`, [emailClean], async (err, user) => {
     if (err || !user) return res.status(401).json({ success: false, error: 'Usuário não encontrado ou inativo.' });
 
     // Validar Trial
@@ -11678,8 +11522,33 @@ app.post('/api/auth/login', async (req, res) => {
     const match = await bcrypt.compare(senha, user.password_hash);
     if (!match) { if (typeof registrarFalhaLogin === 'function') registrarFalhaLogin(rawIp); return res.status(401).json({ success: false, error: 'Senha incorreta.' }); }
 
-    const token = jwt.sign({ id: user.id, restaurante_id: user.restaurante_id, role: user.role }, JWT_SECRET, { expiresIn: '90d' });
-    res.json({ success: true, token, restaurante_id: user.restaurante_id, role: user.role });
+    // Garantir que o banco do tenant existe
+    const tenantDbPath = getTenantDbPath(user.restaurante_id);
+    if (!fsSync.existsSync(tenantDbPath)) {
+      await createFreshTenantDb(tenantDbPath, user.r_nome || 'Meu Restaurante');
+    }
+
+    const role = user.role || 'admin';
+    const cargo = 'Dono';
+    const token = jwt.sign({
+      id: user.id,
+      restaurante_id: user.restaurante_id,
+      role: role,
+      cargo: cargo,
+      nome: user.nome || 'Dono',
+      usuario: user.username
+    }, JWT_SECRET, { expiresIn: '90d' });
+
+    res.json({
+      success: true,
+      token,
+      restaurante_id: user.restaurante_id,
+      role: role,
+      cargo: cargo,
+      id: user.id,
+      nome: user.nome || 'Dono',
+      usuario: user.username
+    });
   });
 });
 
@@ -13038,6 +12907,7 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       ifoodApi: null,
       baseDomain: BASE_DOMAIN,
       reloadDomainMaps: async () => {},
+      getTenantDbPath: getTenantDbPath,
       createFreshTenantDb: createFreshTenantDb,
       ifoodDeps: null
     });

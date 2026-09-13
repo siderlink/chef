@@ -745,6 +745,12 @@ masterDb.serialize(() => {
   masterDb.run(`ALTER TABLE restaurantes ADD COLUMN chave_ativacao TEXT`, err => { if (err) {} });
   masterDb.run(`ALTER TABLE restaurantes ADD COLUMN validade_licenca TEXT`, err => { if (err) {} });
   masterDb.run(`ALTER TABLE restaurantes ADD COLUMN max_dispositivos INTEGER DEFAULT 0`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN telefone TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN dono_nome TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN dono_telefone TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN dono_email TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN slug TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN custom_domain TEXT`, err => { if (err) {} });
   masterDb.run(`CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     restaurante_id INTEGER,
@@ -754,6 +760,8 @@ masterDb.serialize(() => {
     ativo BOOLEAN DEFAULT true,
     data_cadastro DATETIME DEFAULT (datetime('now', 'localtime'))
   )`);
+  masterDb.run(`ALTER TABLE usuarios ADD COLUMN nome TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE usuarios ADD COLUMN telefone TEXT`, err => { if (err) {} });
   masterDb.run(`INSERT OR IGNORE INTO restaurantes (id, nome, licenca, ativo) VALUES (1, 'Estabelecimento', 'ativo', 1)`);
   masterDb.run(`UPDATE restaurantes SET licenca = 'ativo', ativo = 1 WHERE id = 1`);
   masterDb.run(`CREATE TABLE IF NOT EXISTS licencas (
@@ -1275,7 +1283,12 @@ const tenantSocketCounts = new Map();
 const TENANT_FEATURES_REFRESH_MS = 30000;
 
 function getTenantDbPath(tenantId) {
-  return path.join(__dirname, `database_${tenantId}.sqlite`);
+  const tid = parseInt(tenantId, 10) || 1;
+  const estPath = path.join(APP_DATA_DIR, 'estabelecimentos', String(tid), 'database.sqlite');
+  if (fsSync.existsSync(estPath)) return estPath;
+  const legacy = path.join(__dirname, 'database_' + tid + '.sqlite');
+  if (fsSync.existsSync(legacy)) return legacy;
+  return estPath;
 }
 
 function listarBancosTenant() {
@@ -1411,9 +1424,11 @@ function localizarFuncionarioLogin(usuario, cb) {
         while (i < rests.length) {
           const tid = parseInt(rests[i++].id, 10);
           if (!Number.isFinite(tid) || tid <= 0 || tid === atual) continue;
-          const dbPath = path.join(__dirname, `database_${tid}.sqlite`);
-          if (!fsSync.existsSync(dbPath)) continue;
-          const tdb = new sqlite3.Database(dbPath);
+          const dbPath = getTenantDbPath(tid);
+          const legacy = path.join(__dirname, `database_${tid}.sqlite`);
+          const target = fsSync.existsSync(dbPath) ? dbPath : (fsSync.existsSync(legacy) ? legacy : null);
+          if (!target) continue;
+          const tdb = new sqlite3.Database(target);
           tdb.get(q, [usuario, usuario], (e2, row2) => {
             tdb.close();
             if (!e2 && row2) {
@@ -1543,8 +1558,9 @@ function seedTenantDb(db, restauranteNome, done) {
         const q = 'INSERT INTO formas_pagamento (nome, tipo, taxa, prazo_dias, ativo, icone, ordem) VALUES (?, ?, ?, ?, ?, ?, ?)';
         defaultMethods.forEach(m => db.run(q, m, onErr));
       }
+      if (typeof done === 'function') done();
     });
-  }, done || (() => {}));
+  });
 }
 
 // Cria um banco de tenant novo com schema vazio + dados iniciais (sem copiar database_1.sqlite)
@@ -1555,9 +1571,11 @@ function createFreshTenantDb(dbPath, restauranteNome) {
       newDb.run('PRAGMA journal_mode = WAL;');
       newDb.run('PRAGMA synchronous = NORMAL;');
       newDb.run('PRAGMA busy_timeout = 5000;');
-      const refPath = path.join(__dirname, 'database_1.sqlite');
-      if (fsSync.existsSync(refPath)) {
-        syncTenantSchema(newDb, refPath, () => {
+      const refPath = getTenantDbPath(1);
+      const fallbackRef = path.join(__dirname, 'database_1.sqlite');
+      const schemaSource = fsSync.existsSync(refPath) ? refPath : (fsSync.existsSync(fallbackRef) ? fallbackRef : null);
+      if (schemaSource && schemaSource !== dbPath) {
+        syncTenantSchema(newDb, schemaSource, () => {
           seedTenantDb(newDb, restauranteNome, () => resolve(newDb));
         });
       } else {

@@ -233,14 +233,17 @@ window.attemptOwnerLogin = async function() {
       localStorage.setItem('chef_operador_cargo', res.role || 'dono');
       localStorage.setItem('chef_is_dono', 'true');
       localStorage.setItem('chef_permissoes_estacoes', JSON.stringify(estacoesDono));
-      localStorage.setItem('chef_credentials', JSON.stringify({
+      const credsObj = {
         id: res.id || null,
         cargo: res.role || 'dono',
         role: res.role || 'dono',
         nome: res.nome || 'Proprietário Master',
+        usuario: res.usuario || email,
         is_dono: true,
         estacoes: estacoesDono
-      }));
+      };
+      localStorage.setItem('chef_credentials', JSON.stringify(credsObj));
+      localStorage.setItem('chef_operador_atual', JSON.stringify(credsObj));
 
       vibrar([10, 40, 10]);
 

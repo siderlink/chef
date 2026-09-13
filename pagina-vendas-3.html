@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cheff.pro Quantum — O Futuro Imersivo da Gastronomia Autônoma</title>
+  <meta name="description" content="A experiência 3D definitiva para restaurantes: Da chegada com QR Code ao KDS na cozinha, divisão de comanda Pix, cancela liberada e fidelização gamificada.">
+  <link rel="icon" href="/icons/icon.ico" type="image/x-icon">
+
+  <!-- Fontes de Alta Performance: Space Grotesk, Outfit & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Phosphor Icons -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/fill/style.css">
+
+  <style>
+    :root {
+      --bg-void: #030712;
+      --bg-deep: #050b18;
+      --gold: #f59e0b;
+      --gold-light: #fbbf24;
+      --gold-glow: rgba(245, 158, 11, 0.45);
+      --cyan-neon: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.4);
+      --emerald-neon: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.4);
+      --orange-neon: #fc4b15;
+      --orange-glow: rgba(252, 75, 21, 0.45);
+      --purple-neon: #8b5cf6;
+      --card-glass: rgba(10, 15, 29, 0.82);
+      --card-border: rgba(255, 255, 255, 0.09);
+      --card-border-glow: rgba(245, 158, 11, 0.35);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --font-display: 'Outfit', sans-serif;
+      --font-mono: 'Space Grotesk', monospace;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg-void);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ═══ CANVAS 3D WEBGL FIXO NO FUNDO ═══ */
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* ═══ PRELOADER HOLOGRÁFICO ═══ */
+    #preloader {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-void);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+    .preloader-core {
+      width: 80px;
+      height: 80px;
+      border: 2px solid rgba(245, 158, 11, 0.15);
+      border-top: 2px solid var(--gold);
+      border-right: 2px solid var(--cyan-neon);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 24px;
+      box-shadow: 0 0 30px var(--gold-glow);
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* ═══ HEADER FIXO DE TELEMETRIA ═══ */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 100;
+      padding: 16px clamp(1.5rem, 4vw, 5rem);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(3, 7, 18, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--card-border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 22px;
+      letter-spacing: -0.5px;
+    }
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #f59e0b, #fc4b15);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-size: 20px;
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+    .header-telemetry {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .telemetry-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .telemetry-pill .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulse-dot 1.5s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 0.3; transform: scale(0.85); }
+      50% { opacity: 1; transform: scale(1.3); }
+    }
+
+    /* ═══ STICKY JOURNEY TRACKER ═══ */
+    .journey-tracker {
+      position: sticky;
+      top: 72px;
+      z-index: 90;
+      background: rgba(5, 11, 24, 0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: 10px clamp(1rem, 3vw, 4rem);
+      gap: 10px;
+    }
+    .journey-tracker::-webkit-scrollbar { display: none; }
+
+    .step-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      font-family: var(--font-mono);
+    }
+    .step-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+    .step-btn.active {
+      background: var(--gold);
+      color: #000;
+      border-color: var(--gold);
+      box-shadow: 0 0 25px var(--gold-glow);
+      font-weight: 700;
+    }
+
+    /* ═══ CONTAINER PRINCIPAL ═══ */
+    .main-wrapper {
+      position: relative;
+      z-index: 10;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* HERO SECTION */
+    .hero-section {
+      min-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 100px 0 60px;
+      max-width: 58%;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid var(--card-border-glow);
+      color: var(--gold);
+      padding: 8px 18px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      margin-bottom: 24px;
+      width: fit-content;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+    }
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(40px, 5vw, 76px);
+      font-weight: 900;
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+      margin-bottom: 24px;
+    }
+    .hero-title .gradient-text {
+      background: linear-gradient(135deg, #ffffff 0%, #f59e0b 50%, #fc4b15 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-subtitle {
+      font-size: clamp(16px, 1.4vw, 20px);
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      line-height: 1.65;
+      max-width: 600px;
+    }
+    .hero-cta-group {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .btn-cta-gold {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 36px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      font-size: 15px;
+      font-weight: 800;
+      text-decoration: none;
+      border-radius: 14px;
+      box-shadow: 0 10px 35px var(--gold-glow);
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .btn-cta-gold:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 45px rgba(245, 158, 11, 0.5);
+    }
+    .btn-cta-glass {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 32px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s;
+    }
+    .btn-cta-glass:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* ═══ CARDS DE CADA ESTAÇÃO OPERACIONAL ═══ */
+    .station-section {
+      padding: 60px 0;
+      min-height: 85vh;
+      display: flex;
+      align-items: center;
+    }
+    .station-card {
+      background: var(--card-glass);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: clamp(32px, 4vw, 48px);
+      max-width: 54%;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+    }
+    .station-card:hover {
+      border-color: var(--card-border-glow);
+      box-shadow: 0 30px 60px -15px rgba(245, 158, 11, 0.2);
+    }
+
+    .station-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid var(--card-border-glow);
+      padding: 6px 14px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .station-title {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3vw, 42px);
+      font-weight: 800;
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+      margin-bottom: 18px;
+    }
+    .station-desc {
+      font-size: 15.5px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+    .station-features {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      border-top: 1px solid var(--card-border);
+      padding-top: 22px;
+    }
+    .feature-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 14px;
+      color: #e2e8f0;
+    }
+    .feature-row i {
+      color: var(--gold);
+      font-size: 20px;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    /* MOCKUP INTERATIVO DENTRO DO CARD */
+    .interactive-widget {
+      background: rgba(3, 7, 18, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 20px;
+      margin-top: 24px;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.6);
+    }
+    .widget-btn {
+      background: var(--gold);
+      color: #000;
+      font-weight: 700;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .widget-btn:hover {
+      box-shadow: 0 0 15px var(--gold-glow);
+      transform: scale(1.03);
+    }
+
+    /* ═══ SEÇÃO DE PLANOS ═══ */
+    .plans-wrapper {
+      padding: 100px 0;
+      text-align: center;
+      position: relative;
+      z-index: 20;
+      background: rgba(3, 7, 18, 0.95);
+      border-radius: 36px;
+      margin: 80px 0 40px;
+      border: 1px solid var(--card-border);
+    }
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+      margin-top: 48px;
+      padding: 0 24px;
+    }
+    .plan-box {
+      background: var(--card-glass);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 40px 32px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.3s ease;
+    }
+    .plan-box.featured {
+      border: 2px solid var(--gold);
+      box-shadow: 0 0 50px var(--gold-glow);
+      background: rgba(14, 21, 40, 0.95);
+    }
+    .plan-val {
+      font-size: 46px;
+      font-weight: 900;
+      font-family: var(--font-display);
+      margin: 16px 0 24px;
+    }
+    .plan-val small {
+      font-size: 15px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--card-border);
+      padding: 48px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-dim);
+      position: relative;
+      z-index: 20;
+      background: var(--bg-void);
+    }
+
+    /* RESPONSIVIDADE */
+    @media (max-width: 1080px) {
+      .hero-section, .station-card {
+        max-width: 100%;
+      }
+      .plans-grid { grid-template-columns: 1fr; }
+      .header-telemetry { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ PRELOADER HOLOGRÁFICO ═══ -->
+  <div id="preloader">
+    <div class="preloader-core"></div>
+    <div id="preloader-text" style="font-family:var(--font-mono); font-size:14px; color:var(--gold); letter-spacing:1px;">
+      INICIALIZANDO MOTOR 3D HOLOGRÁFICO...
+    </div>
+  </div>
+
+  <!-- ═══ CANVAS 3D WEBGL EM TELA CHEIA ═══ -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- ═══ HEADER FIXO DE TELEMETRIA ═══ -->
+  <header>
+    <a href="#" class="brand">
+      <div class="brand-icon"><i class="ph-bold ph-fork-knife"></i></div>
+      <span>CHEFF.PRO</span>
+    </a>
+
+    <div class="header-telemetry">
+      <div class="telemetry-pill">
+        <span class="dot"></span>
+        <span>REDE 3D QUANTUM ATIVA</span>
+      </div>
+      <span>LATÊNCIA: 0.8ms</span>
+      <span>OFFLINE-FIRST ATIVO</span>
+    </div>
+
+    <div>
+      <a href="/site.html" style="color:var(--text-muted); text-decoration:none; font-size:13px; font-weight:600; font-family:var(--font-mono);">
+        [ VERSÃO TRADICIONAL ]
+      </a>
+    </div>
+  </header>
+
+  <!-- ═══ STICKY JOURNEY TRACKER (8 ETAPAS DO RESTAURANTE) ═══ -->
+  <div class="journey-tracker">
+    <a href="#sec-hero" class="step-btn active" data-step="0"><i class="ph-bold ph-sparkle"></i> Boas-Vindas</a>
+    <a href="#station-1" class="step-btn" data-step="1"><i class="ph-bold ph-qr-code"></i> 1. Chegada & QR Code</a>
+    <a href="#station-2" class="step-btn" data-step="2"><i class="ph-bold ph-user-circle"></i> 2. Área do Cliente</a>
+    <a href="#station-3" class="step-btn" data-step="3"><i class="ph-bold ph-bell-ringing"></i> 3. Chama Garçom</a>
+    <a href="#station-4" class="step-btn" data-step="4"><i class="ph-bold ph-cooking-pot"></i> 4. Cozinha KDS</a>
+    <a href="#station-5" class="step-btn" data-step="5"><i class="ph-bold ph-tray"></i> 5. Entrega na Mesa</a>
+    <a href="#station-6" class="step-btn" data-step="6"><i class="ph-bold ph-receipt"></i> 6. Divisão da Conta</a>
+    <a href="#station-7" class="step-btn" data-step="7"><i class="ph-bold ph-car"></i> 7. Cancela Estacionamento</a>
+    <a href="#station-8" class="step-btn" data-step="8"><i class="ph-bold ph-star"></i> 8. Fidelidade & Estrelas</a>
+  </div>
+
+  <!-- ═══ CONTEÚDO PRINCIPAL (HTML / HUD) ═══ -->
+  <div class="main-wrapper">
+
+    <!-- HERO SECTION -->
+    <section class="hero-section" id="sec-hero">
+      <div class="hero-badge">
+        <i class="ph-bold ph-sparkle"></i>
+        <span>ALTA GASTRONOMIA // CONTROLE TOTAL</span>
+      </div>
+
+      <h1 class="hero-title">
+        A Próxima Dimensão da <span class="gradient-text">Gastronomia.</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Uma experiência imersiva e autônoma para o seu restaurante. Do QR Code na mesa e comanda mobile ao KDS na cozinha, divisão de conta instantânea, cancela liberada e estrelas de fidelidade.
+      </p>
+
+      <div class="hero-cta-group">
+        <a href="#station-1" class="btn-cta-gold">
+          <i class="ph-bold ph-play-circle"></i>
+          <span>Explorar Jornada Operacional</span>
+        </a>
+        <a href="#planos" class="btn-cta-glass">
+          <i class="ph-bold ph-tag"></i>
+          <span>Ver Planos e Valores</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ═══ ESTAÇÃO 1: CHEGADA & QR CODE ═══ -->
+    <section class="station-section" id="station-1" data-step="1">
+      <div class="station-card">
+        <div class="station-badge">ETAPA 01 // A CHEGADA</div>
+        <h2 class="station-title">Cliente Senta, Vê o QR Code e Pede Sozinho.</h2>
+        <p class="station-desc">
+          O cliente senta na mesa e aponta a câmera para o display QR Code de acrílico. Sem aplicativo e sem cadastro: o cardápio digital completo abre em menos de 1 segundo com fotos em alta resolução, personalização de pontos e adicionais.
+        </p>
+        <div class="station-features">
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Zero espera por cardápio físico:</strong> Atendimento imediato mesmo no salão lotado.</span>
+          </div>
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Fotos irresistíveis:</strong> Aumento comprovado de +28% no ticket médio.</span>
+          </div>
+        </div>
+
+        <div class="interactive-widget">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="color:var(--gold);"><i class="ph-bold ph-chair"></i> MESA 08 // CARDÁPIO DIGITAL</strong>
+            <span style="background:rgba(16,185,129,0.2); color:#34d399; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">CONECTADO</span>
+          </div>
+          <div style="color:#94a3b8; font-size:12.5px;">Totem acrílico com leitor laser ativo • Pedidos enviados diretamente à cozinha.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ESTAÇÃO 2: ÁREA DO CLIENTE AO VIVO ═══ -->
+    <section class="station-section" id="station-2" data-step="2">
+      <div class="station-card">
+        <div class="station-badge">ETAPA 02 // O ACOMPANHAMENTO</div>
+        <h2 class="station-title">Área do Cliente ao Vivo com Dados da Visita.</h2>
+        <p class="station-desc">
+          Pelo próprio smartphone, o cliente acompanha em tempo real o status de cada prato, o tempo de permanência na mesa e o valor parcial da comanda, eliminando a ansiedade do salão.
+        </p>
+        <div class="station-features">
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Status do Pedido:</strong> Recebido ➔ Na Chapa ➔ A Caminho da Mesa.</span>
+          </div>
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Conta Parcial Transparente:</strong> Sem sustos nem divergências no fechamento.</span>
+          </div>
+        </div>
+
+        <div class="interactive-widget">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span>🔥 Em preparo na chapa: <strong>Burger Trufado</strong></span>
+            <span style="color:#f59e0b; font-weight:700;">Previsão: 5 min</span>
+          </div>
+          <div style="width:100%; height:6px; background:#1e293b; border-radius:3px; overflow:hidden;">
+            <div style="width:70%; height:100%; background:linear-gradient(90deg, #f59e0b, #10b981);"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ESTAÇÃO 3: CHAMA GARÇOM ═══ -->
+    <section class="station-section" id="station-3" data-step="3">
+      <div class="station-card">
+        <div class="station-badge">ETAPA 03 // INTEGRAÇÃO DO SALÃO</div>
+        <h2 class="station-title">Chama Garçom e Envio Imediato para a Cozinha.</h2>
+        <p class="station-desc">
+          Dúvida sobre a carta de vinhos ou pedido de talher extra? O cliente aperta o botão no celular. O terminal mobile do garçom vibra instantaneamente com a mesa, e ele adiciona observações cirúrgicas com 1 toque.
+        </p>
+        <div class="station-features">
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Sem estalo de dedos:</strong> Notificação discreta e pontual no bolso da equipe.</span>
+          </div>
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Roteamento Inteligente:</strong> Bebidas disparam para o bar e carnes para a chapa.</span>
+          </div>
+        </div>
+
+        <div class="interactive-widget" style="border-left: 3px solid #ef4444;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="color:#ef4444; font-weight:700; display:flex; align-items:center; gap:6px;">
+              <i class="ph-bold ph-bell-ringing"></i> CHAMADO DE SALÃO: MESA 08
+            </div>
+            <button class="widget-btn" id="btn-demo-waiter">Simular Chamado</button>
+          </div>
+          <div id="waiter-status-msg" style="color:#cbd5e1; font-size:12px; margin-top:6px;">
+            Garçom Rodrigo atendeu em 12s • "Ponto da carne: ao ponto para mal".
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ESTAÇÃO 4: COZINHA KDS CIRÚRGICA ═══ -->
+    <section class="station-section" id="station-4" data-step="4">
+      <div class="station-card">
+        <div class="station-badge">ETAPA 04 // A COZINHA CIRÚRGICA</div>
+        <h2 class="station-title">Monitor KDS com Fogo Vivo e Visualização Dinâmica.</h2>
+        <p class="station-desc">
+          Adeus papéis perdidos, tickets manchados de óleo e gritaria na praça. Os pedidos chegam na tela industrial da cozinha com cores de prioridade e tempo de cocção cronometrado ao segundo.
+        </p>
+        <div class="station-features">
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Semáforo de Tempo:</strong> Verde (&lt;8min), Amarelo (8-12min) e Vermelho alerta de atraso.</span>
+          </div>
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Divisão por Praças:</strong> Fogão, Fritadeira, Garde-manger e Bar de Drinks separados.</span>
+          </div>
+        </div>
+
+        <div class="interactive-widget">
+          <div style="display:flex; justify-content:space-between; font-weight:700;">
+            <span style="color:#f97316;">🔥 CHAPA DE GRELHADOS // PEDIDO #04882</span>
+            <span style="color:#10b981;" id="kds-timer">03:45 NO PRAZO</span>
+          </div>
+          <div style="font-size:12.5px; color:#cbd5e1; margin-top:4px;">1x Bife de Chorizo • 1x Burger Artesanal Trufado • Ponto ao ponto</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ESTAÇÃO 5: ENTREGA DO PEDIDO ═══ -->
+    <section class="station-section" id="station-5" data-step="5">
+      <div class="station-card">
+        <div class="station-badge">ETAPA 05 // A DEGUSTAÇÃO</div>
+        <h2 class="station-title">Prato Servido Simultâneo e Fumegante.</h2>
+        <p class="station-desc">
+          Com o KDS avisando que a proteína e a guarnição ficaram prontas juntas, a mesa inteira recebe os pratos no mesmo instante. Ninguém come comida fria nem fica esperando constrangido enquanto os outros comem.
+        </p>
+        <div class="station-features">
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Sincronia Total:</strong> Saída sincronizada de pratos quentes e guarnições.</span>
+          </div>
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Avaliação 5 Estrelas:</strong> Satisfação máxima que se traduz em reviews públicos.</span>
+          </div>
+        </div>
+
+        <div class="interactive-widget" style="border-left: 3px solid #10b981;">
+          <strong style="color:#10b981;">✓ SERVIÇO CONCLUÍDO NA MESA 08</strong>
+          <div style="color:#cbd5e1; font-size:12px; margin-top:4px;">Tempo de entrega: 11 min 20s • Temperatura ideal garantida.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ESTAÇÃO 6: DIVISÃO DA CONTA ═══ -->
+    <section class="station-section" id="station-6" data-step="6">
+      <div class="station-card">
+        <div class="station-badge">ETAPA 06 // O FECHAMENTO SEM ATRITO</div>
+        <h2 class="station-title">Módulo de Divisão da Conta por Pessoa ou Item.</h2>
+        <p class="station-desc">
+          O momento que mais gera fila e dor de cabeça em restaurantes resolvido em segundos: dividir em partes iguais entre amigos? Cada um pagar o que consumiu? Pagar via Pix QR Code ou cartão na mesa? O Cheff.pro calcula os centavos e fecha a conta sem erro.
+        </p>
+        <div class="station-features">
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Fim da calculadora na mesa:</strong> Cada cliente escaneia o Pix da sua fração exata.</span>
+          </div>
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Fechamento Cego de Caixa:</strong> Zero sangria ou divergência no fim do turno.</span>
+          </div>
+        </div>
+
+        <div class="interactive-widget">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span>CONTA TOTAL: <strong>R$ 136,00</strong></span>
+            <span style="color:#10b981; font-weight:700;" id="split-result">4 AMIGOS // R$ 34,00 CADA</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="widget-btn" onclick="setSplit(2)">2 Pessoas (R$ 68)</button>
+            <button class="widget-btn" onclick="setSplit(4)">4 Pessoas (R$ 34)</button>
+            <button class="widget-btn" onclick="setSplit(8)">8 Pessoas (R$ 17)</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ESTAÇÃO 7: CANCELA DE ESTACIONAMENTO ═══ -->
+    <section class="station-section" id="station-7" data-step="7">
+      <div class="station-card">
+        <div class="station-badge">ETAPA 07 // A SAÍDA VIP</div>
+        <h2 class="station-title">Conta Paga: QR Code Libera a Cancela do Carro.</h2>
+        <p class="station-desc">
+          Sem fila de guichê de validação! Ao quitar a comanda pelo celular ou no caixa, o sistema gera o QR Code de Saída Expressa. O cliente aproxima no leitor da cancela e ela sobe na hora.
+        </p>
+        <div class="station-features">
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Fim dos tickets térmicos de estacionamento:</strong> Validação 100% digital.</span>
+          </div>
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Tolerância Inteligente:</strong> 20 minutos de tolerância configurável para manobra e saída.</span>
+          </div>
+        </div>
+
+        <div class="interactive-widget" style="border-left: 3px solid #10b981;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#34d399;"><i class="ph-bold ph-check-circle"></i> CANCELA LIBERADA</strong>
+            <span style="color:#f59e0b; font-weight:700; font-size:11px;">18 MIN TOLERÂNCIA</span>
+          </div>
+          <div style="color:#cbd5e1; font-size:12px; margin-top:4px;">Leitor ótico autorizou abertura imediata do braço mecânico.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ESTAÇÃO 8: FIDELIDADE & ESTRELAS VIP ═══ -->
+    <section class="station-section" id="station-8" data-step="8">
+      <div class="station-card">
+        <div class="station-badge">ETAPA 08 // A RECORRÊNCIA GARANTIDA</div>
+        <h2 class="station-title">Estrelas & Recompensas: O Cliente Quer Voltar.</h2>
+        <p class="station-desc">
+          A experiência fecha com dopamina e fidelização! A cada real consumido, o cliente acumula Estrelas Douradas no perfil para resgatar sobremesas, drinks autorais ou descontos especiais na próxima visita.
+        </p>
+        <div class="station-features">
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Retenção de Clientes em +47%:</strong> O cliente prefere o seu restaurante para pontuar.</span>
+          </div>
+          <div class="feature-row">
+            <i class="ph-fill ph-check-circle"></i>
+            <span><strong>Base de Dados Própria:</strong> Envie WhatsApp com promoções no aniversário do cliente.</span>
+          </div>
+        </div>
+
+        <div class="interactive-widget" style="border: 1px dashed #f59e0b; background: rgba(245,158,11,0.08);">
+          <div style="color:#f59e0b; font-weight:800; font-size:14px;">⭐ +136 ESTRELAS CONQUISTADAS!</div>
+          <div style="color:#fef08a; font-size:12px; margin-top:4px;">Prêmio Disponível: 1x Sobremesa Petit Gâteau na próxima visita.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ SEÇÃO DE PLANOS ═══ -->
+    <section class="plans-wrapper" id="planos">
+      <div class="station-badge">PLANOS SEM FIDELIDADE</div>
+      <h2 style="font-family: var(--font-display); font-size: clamp(32px, 4vw, 54px); font-weight: 800; margin-bottom: 14px;">
+        Tudo Isso Rodando no Seu Restaurante
+      </h2>
+      <p style="color: var(--text-muted); max-width: 680px; margin: 0 auto; font-size: 16px;">
+        Escolha o plano ideal para a sua casa. Instalação rápida, suporte que entende de gastronomia e zero taxa sobre suas vendas.
+      </p>
+
+      <div class="plans-grid">
+        <!-- PLANO 1 -->
+        <div class="plan-box">
+          <div>
+            <div style="font-size: 12px; color: var(--gold); font-weight: 700; letter-spacing: 1px; font-family:var(--font-mono);">// ESSENCIAL</div>
+            <h3 style="font-size: 26px; font-weight: 700; margin-top: 4px;">Bistrô Ágil</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px;">Para balcões, cafés e bares enxutos.</p>
+            <div class="plan-val">R$ 89 <small>/mês</small></div>
+            <ul style="list-style:none; display:flex; flex-direction:column; gap:12px; font-size:14px; color:#cbd5e1;">
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> 1 Ponto PDV Offline-First</li>
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> Emissão de NFC-e nativa</li>
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> Fechamento Cego de Caixa</li>
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> Cardápio QR Code Digital</li>
+            </ul>
+          </div>
+          <a href="/site.html" class="btn-cta-glass" style="margin-top: 28px; justify-content:center;">Assinar Bistrô</a>
+        </div>
+
+        <!-- PLANO 2 (DESTAQUE) -->
+        <div class="plan-box featured">
+          <div>
+            <div style="display:inline-block; background:var(--gold); color:#000; font-weight:800; font-size:10px; padding:4px 10px; border-radius:4px; margin-bottom:8px; font-family:var(--font-mono);">
+              MAIS ESCOLHIDO // OPERAÇÃO COMPLETA
+            </div>
+            <h3 style="font-size: 26px; font-weight: 700;">Gourmet Pro</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px;">Para restaurantes, salões cheios e pizzarias.</p>
+            <div class="plan-val">R$ 149 <small>/mês</small></div>
+            <ul style="list-style:none; display:flex; flex-direction:column; gap:12px; font-size:14px; color:#ffffff;">
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> <strong>Tudo do Plano Bistrô</strong></li>
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> Garçons Mobile Ilimitados (Zero taxa)</li>
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> Cozinha Síncrona KDS Dinâmica</li>
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> Módulo de Divisão da Conta</li>
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> Liberação de Cancela de Estacionamento</li>
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> Programa de Fidelidade com Estrelas</li>
+            </ul>
+          </div>
+          <a href="/site.html" class="btn-cta-gold" style="margin-top: 28px; justify-content:center;">Ativar Gourmet Pro</a>
+        </div>
+
+        <!-- PLANO 3 -->
+        <div class="plan-box">
+          <div>
+            <div style="font-size: 12px; color: var(--gold); font-weight: 700; letter-spacing: 1px; font-family:var(--font-mono);">// REDES & FRANQUIAS</div>
+            <h3 style="font-size: 26px; font-weight: 700; margin-top: 4px;">Grand Cru</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px;">Para grupos gastronômicos e alta escala.</p>
+            <div class="plan-val">R$ 299 <small>/mês</small></div>
+            <ul style="list-style:none; display:flex; flex-direction:column; gap:12px; font-size:14px; color:#cbd5e1;">
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> <strong>Tudo do Plano Gourmet Pro</strong></li>
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> Múltiplas Unidades Centralizadas</li>
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> Ficha Técnica e Baixa por Gramatura</li>
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> DRE & CMV em Tempo Real</li>
+              <li><i class="ph-bold ph-check" style="color:var(--gold);"></i> Suporte VIP 24/7 com Especialista</li>
+            </ul>
+          </div>
+          <a href="/site.html" class="btn-cta-glass" style="margin-top: 28px; justify-content:center;">Falar com Consultor</a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer>
+    <div style="margin-bottom: 12px; font-weight: 800; font-family: var(--font-display); color: #fff; font-size:16px;">
+      CHEFF.PRO // SISTEMA DE GESTÃO GASTRONÔMICA DE ALTA PERFORMANCE
+    </div>
+    <div style="color:var(--text-muted);">
+      Salão • Cozinha KDS • Garçom Mobile • Divisão de Conta • Estacionamento • Fidelidade Gamificada
+    </div>
+    <div style="margin-top: 18px; color: var(--text-dim); font-size: 11.5px; font-family:var(--font-mono);">
+      © 2026 Cheff.pro Tecnologia Gastronômica. Todos os direitos reservados.
+    </div>
+  </footer>
+
+  <!-- ═══ THREE.JS & GSAP CORE LIBS ═══ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <script>
+    gsap.registerPlugin(ScrollTrigger);
+
+    // 1. PRELOADER HOLOGRÁFICO
+    window.addEventListener('load', () => {
+      const preloader = document.getElementById('preloader');
+      setTimeout(() => {
+        gsap.to(preloader, {
+          opacity: 0,
+          duration: 0.8,
+          onComplete: () => { preloader.style.display = 'none'; }
+        });
+      }, 400);
+    });
+
+    // 2. CONFIGURAÇÃO DA CENA THREE.JS
+    const canvas = document.getElementById('webgl-canvas');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x030712, 0.012);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1.2, 9.5);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.35;
+
+    function handleResize() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      camera.aspect = width / height;
+      if (width < 900) {
+        camera.position.z = 13.5;
+        camera.position.y = 2.0;
+      } else if (width < 1300) {
+        camera.position.z = 11.0;
+        camera.position.y = 1.4;
+      } else {
+        camera.position.z = 9.5;
+        camera.position.y = 1.2;
+      }
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    // 3. ILUMINAÇÃO TOTALMENTE INFALÍVEL (3-POINT CAMERA RIG)
+    // As luzes são vinculadas diretamente à câmera: iluminam com intensidade máxima sempre a face visível!
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+    keyLight.position.set(4, 5, 8);
+    camera.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0x06b6d4, 1.6);
+    fillLight.position.set(-5, -2, 6);
+    camera.add(fillLight);
+
+    const warmLight = new THREE.DirectionalLight(0xf59e0b, 1.8);
+    warmLight.position.set(2, -4, 5);
+    camera.add(warmLight);
+
+    scene.add(camera);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.1);
+    scene.add(ambientLight);
+
+    const hemiLight = new THREE.HemisphereLight(0xfff7ed, 0x1e293b, 1.4);
+    scene.add(hemiLight);
+
+    // 4. PARTÍCULAS CYBERNETIC NO FUNDO (1400 PONTOS NEON)
+    const particleCount = 1400;
+    const particleGeo = new THREE.BufferGeometry();
+    const particlePos = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount * 3; i += 3) {
+      particlePos[i] = (Math.random() - 0.5) * 50;
+      particlePos[i + 1] = (Math.random() - 0.5) * 50;
+      particlePos[i + 2] = (Math.random() - 0.5) * 40;
+    }
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+    const particleMat = new THREE.PointsMaterial({
+      color: 0x38bdf8,
+      size: 0.14,
+      transparent: true,
+      opacity: 0.6
+    });
+    const starField = new THREE.Points(particleGeo, particleMat);
+    scene.add(starField);
+
+    // 5. O NÚCLEO HOLOGRÁFICO 3D DO RESTAURANTE (EXPLODING CORE)
+    const core3D = new THREE.Group();
+    scene.add(core3D);
+    core3D.position.set(3.4, 0, 0);
+
+    // A. Base Tecnológica / Mesa Inteligente
+    const baseGeo = new THREE.BoxGeometry(4.8, 0.35, 3.4);
+    const baseMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.8,
+      roughness: 0.2,
+      emissive: 0x0f172a,
+      emissiveIntensity: 0.3
+    });
+    const layerBase = new THREE.Mesh(baseGeo, baseMat);
+    core3D.add(layerBase);
+
+    // Wireframe Neon Ciano na Base
+    const baseWire = new THREE.LineSegments(
+      new THREE.EdgesGeometry(baseGeo),
+      new THREE.LineBasicMaterial({ color: 0x06b6d4, linewidth: 2 })
+    );
+    layerBase.add(baseWire);
+
+    // B. Núcleo Holográfico Central (Octaedro Quântico)
+    const coreGeo = new THREE.OctahedronGeometry(1.3, 1);
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.75,
+      wireframe: true
+    });
+    const layerCore = new THREE.Mesh(coreGeo, coreMat);
+    layerCore.position.y = 1.2;
+    core3D.add(layerCore);
+
+    // Anéis Quânticos Rotatórios em torno do Núcleo
+    const ringGeo1 = new THREE.TorusGeometry(2.0, 0.045, 16, 80);
+    const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.9 });
+    const ringMesh1 = new THREE.Mesh(ringGeo1, ringMat1);
+    ringMesh1.rotation.x = Math.PI / 2.3;
+    layerCore.add(ringMesh1);
+
+    const ringGeo2 = new THREE.TorusGeometry(2.1, 0.045, 16, 80);
+    const ringMat2 = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.9 });
+    const ringMesh2 = new THREE.Mesh(ringGeo2, ringMat2);
+    ringMesh2.rotation.y = Math.PI / 3;
+    layerCore.add(ringMesh2);
+
+    // C. Prato de Alta Gastronomia e Cloche Flutuante
+    const dishGroup = new THREE.Group();
+    dishGroup.position.y = 2.4;
+    core3D.add(dishGroup);
+
+    const plateGeo = new THREE.CylinderGeometry(2.2, 1.8, 0.15, 48);
+    const plateMat = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.2,
+      metalness: 0.2,
+      emissive: 0x334155,
+      emissiveIntensity: 0.2
+    });
+    const plateMesh = new THREE.Mesh(plateGeo, plateMat);
+    dishGroup.add(plateMesh);
+
+    // Filete de Ouro no Prato
+    const goldRim = new THREE.Mesh(
+      new THREE.TorusGeometry(2.2, 0.06, 16, 48),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.1, emissive: 0xb45309, emissiveIntensity: 0.4 })
+    );
+    goldRim.rotation.x = Math.PI / 2;
+    dishGroup.add(goldRim);
+
+    // Cloche de Prata com Puxador
+    const clocheGroup = new THREE.Group();
+    dishGroup.add(clocheGroup);
+
+    const clocheDome = new THREE.Mesh(
+      new THREE.SphereGeometry(1.9, 36, 18, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshStandardMaterial({
+        color: 0xe2e8f0,
+        metalness: 0.85,
+        roughness: 0.15,
+        emissive: 0x475569,
+        emissiveIntensity: 0.3
+      })
+    );
+    clocheGroup.add(clocheDome);
+
+    const clocheHandle = new THREE.Mesh(
+      new THREE.TorusGeometry(0.32, 0.08, 14, 28),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.95, roughness: 0.1, emissive: 0xb45309, emissiveIntensity: 0.5 })
+    );
+    clocheHandle.position.y = 2.05;
+    clocheGroup.add(clocheHandle);
+
+    // D. Hambúrguer Gourmet Explodido dentro do Prato
+    const burgerGroup = new THREE.Group();
+    dishGroup.add(burgerGroup);
+
+    const bunMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4, emissive: 0x78350f, emissiveIntensity: 0.25 });
+    const bunBottom = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 0.95, 0.25, 24), bunMat);
+    bunBottom.position.y = 0.2;
+    burgerGroup.add(bunBottom);
+
+    const patty = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.05, 1.05, 0.3, 24),
+      new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.7, emissive: 0x271003, emissiveIntensity: 0.3 })
+    );
+    patty.position.y = 0.5;
+    burgerGroup.add(patty);
+
+    const cheese = new THREE.Mesh(
+      new THREE.BoxGeometry(1.4, 0.05, 1.4),
+      new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.25, emissive: 0xd97706, emissiveIntensity: 0.35 })
+    );
+    cheese.position.y = 0.7;
+    cheese.rotation.y = Math.PI / 4;
+    burgerGroup.add(cheese);
+
+    const lettuce = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.2, 1.15, 0.06, 24),
+      new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.6, emissive: 0x15803d, emissiveIntensity: 0.3 })
+    );
+    lettuce.position.y = 0.85;
+    burgerGroup.add(lettuce);
+
+    const bunTop = new THREE.Mesh(new THREE.SphereGeometry(1.05, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), bunMat);
+    bunTop.position.y = 0.95;
+    burgerGroup.add(bunTop);
+
+    // E. Ticket Térmico Flutuante com QR Code
+    const ticketCanvas = document.createElement('canvas');
+    ticketCanvas.width = 320;
+    ticketCanvas.height = 440;
+    const tctx = ticketCanvas.getContext('2d');
+    tctx.fillStyle = '#ffffff';
+    tctx.fillRect(0, 0, 320, 440);
+    tctx.fillStyle = '#0f172a';
+    tctx.font = 'bold 22px monospace';
+    tctx.textAlign = 'center';
+    tctx.fillText('*** CHEFF.PRO ***', 160, 42);
+    tctx.font = 'bold 18px monospace';
+    tctx.fillText('MESA 08 • 19:42', 160, 78);
+    tctx.fillText('--------------------', 160, 105);
+    tctx.textAlign = 'left';
+    tctx.font = '15px monospace';
+    tctx.fillText('1x BURGER TRUFADO', 28, 145);
+    tctx.fillText('1x BATATA RÚSTICA', 28, 180);
+    tctx.fillText('2x CHOPP ARTESANAL', 28, 215);
+    tctx.fillText('--------------------', 28, 250);
+    tctx.font = 'bold 20px monospace';
+    tctx.fillText('TOTAL: R$ 136,00', 28, 288);
+    tctx.fillStyle = '#16a34a';
+    tctx.font = 'bold 17px monospace';
+    tctx.fillText('✓ CONTA SINCRONIZADA', 28, 330);
+
+    const ticketTex = new THREE.CanvasTexture(ticketCanvas);
+    const ticketGroup = new THREE.Group();
+    ticketGroup.position.set(2.4, 1.3, 0.4);
+    ticketGroup.scale.set(0.001, 0.001, 0.001); // Oculto inicialmente, aparece nas estações certas
+    core3D.add(ticketGroup);
+
+    const ticketMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.8, 2.4),
+      new THREE.MeshStandardMaterial({
+        map: ticketTex,
+        roughness: 0.5,
+        side: THREE.DoubleSide,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.15
+      })
+    );
+    ticketMesh.rotation.set(-0.1, -0.3, 0.08);
+    ticketGroup.add(ticketMesh);
+
+    // F. Grupo de Fidelidade & Estrelas (Exclusivo da Etapa 8)
+    const starsGroup = new THREE.Group();
+    starsGroup.position.set(0, 1.2, 0);
+    starsGroup.scale.set(0.001, 0.001, 0.001); // Oculto inicialmente, explode em glória na Etapa 8
+    core3D.add(starsGroup);
+
+    // Troféu Estrela Central Dourada Quântica
+    const centerStar = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(1.3, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0xf59e0b,
+        emissive: 0xd97706,
+        emissiveIntensity: 0.95,
+        metalness: 0.95,
+        roughness: 0.1
+      })
+    );
+    starsGroup.add(centerStar);
+
+    // Halo de Glória Dourado
+    const haloGold = new THREE.Mesh(
+      new THREE.TorusGeometry(2.4, 0.06, 16, 64),
+      new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.95, roughness: 0.1, emissive: 0xb45309, emissiveIntensity: 0.6 })
+    );
+    haloGold.rotation.x = Math.PI / 2.2;
+    starsGroup.add(haloGold);
+
+    // 6 Moedas/Gemas Douradas Orbitando
+    const starMeshes = [];
+    for (let s = 0; s < 6; s++) {
+      const star = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.38, 0),
+        new THREE.MeshStandardMaterial({
+          color: 0xfbbf24,
+          emissive: 0xf59e0b,
+          emissiveIntensity: 0.95,
+          metalness: 0.95,
+          roughness: 0.1
+        })
+      );
+      const angle = (s / 6) * Math.PI * 2;
+      star.position.set(Math.cos(angle) * 2.8, Math.sin(s * 1.5) * 0.4, Math.sin(angle) * 2.8);
+      starsGroup.add(star);
+      starMeshes.push(star);
+    }
+
+    // 6. PARALLAX DO MOUSE INTERATIVO
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+      mouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
+    });
+
+    // 7. GSAP SCROLLTRIGGER: TRANSIÇÃO SUAVE E SEM QUEBRAS PELAS 8 ETAPAS
+    // Todas as rotações ficam em ângulos elegantes onde as faces estão 100% iluminadas
+    // A. Hero: Núcleo Montado
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#sec-hero',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: 1.2
+      }
+    })
+    .to(core3D.rotation, { y: 0.35, x: 0.15 }, 0)
+    .to(clocheGroup.position, { y: 2.8 }, 0)
+    .to(ticketGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(starsGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(dishGroup.scale, { x: 1, y: 1, z: 1 }, 0);
+
+    // B. Estação 1: QR Code & Chegada
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#station-1',
+        start: 'top center',
+        end: 'bottom center',
+        scrub: 1.2
+      }
+    })
+    .to(core3D.position, { x: 3.5, y: 0.2, z: 1.2 }, 0)
+    .to(core3D.rotation, { y: 0.5, x: 0.2 }, 0)
+    .to(ticketGroup.scale, { x: 1.1, y: 1.1, z: 1.1 }, 0)
+    .to(ticketGroup.position, { x: 2.1, y: 1.3, z: 1.2 }, 0)
+    .to(dishGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(starsGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0);
+
+    // C. Estação 2: Área do Cliente & Mobile
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#station-2',
+        start: 'top center',
+        end: 'bottom center',
+        scrub: 1.2
+      }
+    })
+    .to(core3D.position, { x: 3.4, y: -0.1, z: 1.5 }, 0)
+    .to(core3D.rotation, { y: 0.2, x: 0.15 }, 0)
+    .to(ticketGroup.scale, { x: 1.1, y: 1.1, z: 1.1 }, 0)
+    .to(dishGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(starsGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0);
+
+    // D. Estação 3: Chama Garçom
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#station-3',
+        start: 'top center',
+        end: 'bottom center',
+        scrub: 1.2
+      }
+    })
+    .to(core3D.position, { x: 3.5, y: 0.3, z: 1.2 }, 0)
+    .to(core3D.rotation, { y: 0.45, x: 0.22 }, 0)
+    .to(layerCore.scale, { x: 1.3, y: 1.3, z: 1.3 }, 0)
+    .to(ticketGroup.scale, { x: 1.1, y: 1.1, z: 1.1 }, 0)
+    .to(dishGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(starsGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0);
+
+    // E. Estação 4: Cozinha KDS & Chapa Quente
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#station-4',
+        start: 'top center',
+        end: 'bottom center',
+        scrub: 1.2
+      }
+    })
+    .to(core3D.position, { x: 3.4, y: -0.2, z: 1.8 }, 0)
+    .to(core3D.rotation, { y: 0.15, x: 0.2 }, 0)
+    .to(ticketGroup.position, { x: 2.0, y: 1.5, z: 1.4 }, 0)
+    .to(ticketGroup.scale, { x: 1.25, y: 1.25, z: 1.25 }, 0)
+    .to(dishGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(starsGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0);
+
+    // F. Estação 5: Entrega & Degustação (Camadas do Hambúrguer Explodindo com Prato e Cloche Flutuante)
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#station-5',
+        start: 'top center',
+        end: 'bottom center',
+        scrub: 1.2
+      }
+    })
+    .to(core3D.position, { x: 3.2, y: -0.2, z: 1.8 }, 0)
+    .to(core3D.rotation, { y: 0.45, x: 0.22 }, 0)
+    .to(dishGroup.position, { x: 0, y: 0.1, z: 0 }, 0)
+    .to(dishGroup.scale, { x: 1.2, y: 1.2, z: 1.2 }, 0)
+    .to(clocheGroup.position, { y: 2.8 }, 0)
+    .to(bunTop.position, { y: 1.7 }, 0)
+    .to(lettuce.position, { y: 1.3 }, 0)
+    .to(cheese.position, { y: 0.95 }, 0)
+    .to(patty.position, { y: 0.6 }, 0)
+    .to(bunBottom.position, { y: 0.2 }, 0)
+    .to(ticketGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(starsGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0);
+
+    // G. Estação 6: Divisão da Conta (Ticket Térmico com Conta Sincronizada)
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#station-6',
+        start: 'top center',
+        end: 'bottom center',
+        scrub: 1.2
+      }
+    })
+    .to(core3D.position, { x: 3.4, y: 0.1, z: 1.5 }, 0)
+    .to(core3D.rotation, { y: 0.25, x: 0.18 }, 0)
+    .to(ticketGroup.position, { x: 2.0, y: 1.4, z: 1.2 }, 0)
+    .to(ticketGroup.scale, { x: 1.25, y: 1.25, z: 1.25 }, 0)
+    .to(ringMesh1.scale, { x: 1.35, y: 1.35, z: 1.35 }, 0)
+    .to(ringMesh2.scale, { x: 1.35, y: 1.35, z: 1.35 }, 0)
+    .to(dishGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(starsGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0);
+
+    // H. Estação 7: Cancela de Estacionamento (Ticket Validado Liberado)
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#station-7',
+        start: 'top center',
+        end: 'bottom center',
+        scrub: 1.2
+      }
+    })
+    .to(core3D.position, { x: 3.4, y: 0.2, z: 1.5 }, 0)
+    .to(core3D.rotation, { y: 0.45, x: 0.2 }, 0)
+    .to(ticketGroup.position, { x: 2.0, y: 1.4, z: 1.2 }, 0)
+    .to(ticketGroup.scale, { x: 1.15, y: 1.15, z: 1.15 }, 0)
+    .to(dishGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(starsGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0);
+
+    // I. Estação 8: Fidelidade & Estrelas (Troféu Dourado em Destaque Absoluto)
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#station-8',
+        start: 'top center',
+        end: 'bottom center',
+        scrub: 1.2
+      }
+    })
+    .to(dishGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(ticketGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(starsGroup.scale, { x: 1.6, y: 1.6, z: 1.6 }, 0)
+    .to(core3D.position, { x: 3.3, y: 0.3, z: 2.0 }, 0)
+    .to(core3D.rotation, { y: 0.6, x: 0.15 }, 0);
+
+    // J. Seção de Planos: Retorno ao Topo Central com Glória
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#planos',
+        start: 'top 85%',
+        end: 'top 20%',
+        scrub: 1.5
+      }
+    })
+    .to(core3D.position, { x: 0, y: 4.8, z: -5 }, 0)
+    .to(core3D.rotation, { x: 0.25, y: 0.2 }, 0)
+    .to(starsGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(ticketGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0)
+    .to(dishGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, 0);
+
+    // 8. ATUALIZAÇÃO DOS BOTÕES DO TRACKER NO SCROLL
+    const stationSections = document.querySelectorAll('section');
+    const trackerButtons = document.querySelectorAll('.step-btn');
+
+    window.addEventListener('scroll', () => {
+      let activeStep = '0';
+      stationSections.forEach(sec => {
+        const rect = sec.getBoundingClientRect();
+        if (rect.top <= 350 && rect.bottom >= 150) {
+          activeStep = sec.getAttribute('data-step') || '0';
+        }
+      });
+
+      trackerButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-step') === activeStep);
+      });
+    });
+
+    // Clique Suave no Tracker
+    trackerButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector(btn.getAttribute('href'));
+        if (target) {
+          const offset = 130;
+          const pos = target.getBoundingClientRect().top + window.pageYOffset - offset;
+          window.scrollTo({ top: pos, behavior: 'smooth' });
+        }
+      });
+    });
+
+    // 9. FUNÇÕES INTERATIVAS DOS WIDGETS
+    function setSplit(n) {
+      const val = (136 / n).toFixed(2).replace('.', ',');
+      document.getElementById('split-result').textContent = `${n} AMIGOS // R$ ${val} CADA`;
+    }
+
+    const btnWaiter = document.getElementById('btn-demo-waiter');
+    if (btnWaiter) {
+      btnWaiter.addEventListener('click', () => {
+        const msg = document.getElementById('waiter-status-msg');
+        msg.innerHTML = '<span style="color:#10b981; font-weight:700;">✓ Notificação vibrada no terminal do garçom Rodrigo (Mesa 08 respondida!)</span>';
+        gsap.fromTo(core3D.scale, { x: 1.15, y: 1.15, z: 1.15 }, { x: 1, y: 1, z: 1, duration: 0.6, ease: 'elastic.out' });
+      });
+    }
+
+    // 10. LOOP PRINCIPAL DE RENDERIZAÇÃO
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const time = clock.getElapsedTime();
+
+      // Parallax suave com a posição do mouse sem matar a altura base
+      const baseCamY = window.innerWidth < 900 ? 2.0 : 1.2;
+      camera.position.x += (mouseX * 0.6 - camera.position.x) * 0.05;
+      camera.position.y += (baseCamY + mouseY * 0.5 - camera.position.y) * 0.05;
+      camera.lookAt(0, 0.6, 0);
+
+      // Rotação autônoma constante dos anéis e núcleo
+      ringMesh1.rotation.z = time * 0.6;
+      ringMesh2.rotation.x = time * 0.5;
+      layerCore.rotation.y = time * 0.4;
+
+      // Órbita e rotação das Estrelas de Fidelidade
+      starsGroup.rotation.y = time * 0.7;
+      centerStar.rotation.y = time * 0.9;
+      centerStar.rotation.x = Math.sin(time * 1.2) * 0.2;
+      starMeshes.forEach((s, idx) => {
+        s.rotation.x += 0.03;
+        s.rotation.y += 0.04;
+        s.position.y = Math.sin(time * 2.5 + idx) * 0.3;
+      });
+
+      // Ticket flutuando suavemente
+      ticketMesh.position.y = Math.sin(time * 2.0) * 0.08;
+
+      // Giro suave das partículas de fundo
+      starField.rotation.y = time * 0.02;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Redimensionamento
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

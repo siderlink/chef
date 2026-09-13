@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -785,8 +785,23 @@
           if (data.success) {
             // Salvar dados de autenticação e etapa
             localStorage.setItem('chef_token', data.token);
-            localStorage.setItem('restaurante_id', data.restaurante_id);
-            localStorage.setItem('chef_credentials', JSON.stringify({ cargo: 'admin' }));
+            localStorage.setItem('restaurante_id', String(data.restaurante_id));
+            localStorage.setItem('usuario_role', 'admin');
+            localStorage.setItem('colaborador_cargo', 'Dono');
+            localStorage.setItem('usuario_logado', data.nome || nome);
+            localStorage.setItem('chef_operador_nome', data.nome || nome);
+            localStorage.setItem('chef_operador_cargo', 'Dono');
+            localStorage.setItem('chef_is_dono', 'true');
+            const credsObj = {
+              id: data.id || null,
+              cargo: 'Dono',
+              role: 'admin',
+              nome: data.nome || nome,
+              usuario: data.usuario || email,
+              is_dono: true
+            };
+            localStorage.setItem('chef_credentials', JSON.stringify(credsObj));
+            localStorage.setItem('chef_operador_atual', JSON.stringify(credsObj));
 
             // Salvar estado para recuperação caso recarregue a página
             localStorage.setItem('chef_onboarding_step', '2');
@@ -993,8 +1008,12 @@
         }
 
         if (equipe.length === 0) {
-          equipeError.textContent = 'Cadastre pelo menos o Dono ou Gerente.';
-          equipeError.style.display = 'block';
+          limparEstadoOnboarding();
+          const btn = document.getElementById('btnSalvarEquipe');
+          btn.innerHTML = '<i class="ph ph-check"></i> Tudo pronto! Entrando...';
+          setTimeout(() => {
+            window.location.href = '/index.html';
+          }, 400);
           return;
         }
 

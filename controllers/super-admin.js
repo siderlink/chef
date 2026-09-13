@@ -40,7 +40,12 @@ module.exports = function (app, masterDb, sqlite3, options) {
   }
 
   function getTenantDbPath(tenantId) {
+    if (typeof options.getTenantDbPath === 'function') {
+      return options.getTenantDbPath(tenantId);
+    }
     const tid = parseInt(tenantId) || 1;
+    const estPath = path.join(__dirname, '..', 'estabelecimentos', String(tid), 'database.sqlite');
+    if (fsSync.existsSync(estPath)) return estPath;
     return path.join(__dirname, '..', `database_${tid}.sqlite`);
   }
 
@@ -303,7 +308,7 @@ module.exports = function (app, masterDb, sqlite3, options) {
       });
 
       // 3) Criar banco do tenant vazio + schema + dados iniciais
-      const tenantDbPath = path.join(__dirname, '..', `database_${newId}.sqlite`);
+      const tenantDbPath = getTenantDbPath(newId);
       if (!fsSync.existsSync(tenantDbPath)) {
         try {
           if (typeof options.createFreshTenantDb === 'function') {

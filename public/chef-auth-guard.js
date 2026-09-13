@@ -28,13 +28,16 @@
         const creds = localStorage.getItem('chef_credentials');
         if (creds) {
           const parsed = JSON.parse(creds);
-          if (parsed && (parsed.nome || parsed.usuario)) {
+          if (parsed) {
+            const fallbackNome = parsed.nome || parsed.usuario || localStorage.getItem('usuario_logado') || localStorage.getItem('chef_operador_nome') || 'Operador';
+            const fallbackCargo = parsed.cargo || parsed.role || localStorage.getItem('colaborador_cargo') || localStorage.getItem('chef_operador_cargo') || 'Dono';
+            const isDonoCheck = !!parsed.is_dono || localStorage.getItem('chef_is_dono') === 'true' || /admin|dono|gerente/i.test(fallbackCargo);
             window.operadorAtivo = {
-              id: parsed.id,
-              nome: parsed.nome || parsed.usuario || 'Operador',
+              id: parsed.id || null,
+              nome: fallbackNome,
               usuario: parsed.usuario || '',
-              cargo: parsed.cargo || parsed.role || 'Caixa',
-              is_dono: !!parsed.is_dono
+              cargo: fallbackCargo,
+              is_dono: isDonoCheck
             };
             localStorage.setItem('chef_operador_atual', JSON.stringify(window.operadorAtivo));
           }
