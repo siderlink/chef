@@ -3586,7 +3586,8 @@ io.on('connection', (socket) => {
         usePort = true;
       }
       const hostPort = usePort ? `${domain}:${PORT}` : domain;
-      socketRef.emit('update_ponto_token', { url: `https://${hostPort}/${base}` });
+      const proto = (usePort || domain === ipLocal || /^\d+\.\d+\.\d+\.\d+$/.test(domain)) ? PROTOCOL : 'https';
+      socketRef.emit('update_ponto_token', { url: `${proto}://${hostPort}/${base}` });
       socketRef.emit('server_ip', domain);
     });
   };
@@ -9368,7 +9369,8 @@ setInterval(() => {
         usePort = true;
       }
       const hostPort = usePort ? `${domain}:${PORT}` : domain;
-      s.emit('update_ponto_token', { url: `https://${hostPort}/${base}` });
+      const proto = (usePort || domain === ipLocal || /^\d+\.\d+\.\d+\.\d+$/.test(domain)) ? PROTOCOL : 'https';
+      s.emit('update_ponto_token', { url: `${proto}://${hostPort}/${base}` });
     });
   }
 }, 30000);

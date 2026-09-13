@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -45,7 +45,7 @@
       <button class="header-btn"
         onclick="alert('Central de Notificações em breve! Aqui você receberá avisos como: Garçom chamado na mesa, novo delivery, etc.')"><i
           class="ph ph-bell"></i></button>
-      <button class="header-btn" onclick="window.location.href='/index.html'"><i class="ph ph-monitor"></i></button>
+      <button class="header-btn" title="Alternar para Caixa Completo" onclick="window.location.href = (localStorage.getItem('chef_caixa_versao') === 'v11' ? '/index.html' : '/caixa-classico.html')"><i class="ph ph-monitor"></i></button>
     </div>
   </header>
 

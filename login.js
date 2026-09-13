@@ -13,9 +13,11 @@ window.abrirModalEscolhaEstacao = function(data) {
   const nomeColab = data.nome || 'Proprietário';
   const isDono = data.is_dono || data.role === 'dono' || data.role === 'admin';
 
+  const caixaUrl = localStorage.getItem('chef_caixa_versao') === 'v11' ? '/index.html' : '/caixa-classico.html';
   const estacoesConfig = {
     gestao: { titulo: 'Painel do Dono & Gestão', sub: 'Relatórios, Faturamento e Métricas DRE', icone: 'ph-crown', cor: '#a855f7', url: '/painel-dono.html' },
-    caixa: { titulo: 'Terminal de Caixa (PDV Master)', sub: 'Operação de Caixa, Fechamento e Pagamentos', icone: 'ph-desktop', cor: '#3b82f6', url: '/index.html' },
+    caixa: { titulo: 'Terminal de Caixa (PDV)', sub: 'Operação de Caixa, Fechamento e Pagamentos', icone: 'ph-desktop', cor: '#3b82f6', url: caixaUrl },
+    caixa_mobile: { titulo: 'Caixa Mobile (Touch Celular)', sub: 'Operação de Caixa rápida para smartphone', icone: 'ph-device-mobile', cor: '#fc4b15', url: '/pdv-mobile.html' },
     garcom: { titulo: 'Salão de Mesas & App Garçom', sub: 'Atendimento, Comandas e Pedidos no Salão', icone: 'ph-fork-knife', cor: '#fc4b15', url: '/garcom.html' },
     cozinha: { titulo: 'KDS Cozinha & Bar', sub: 'Fila de Pedidos e Controle de Produção', icone: 'ph-fire', cor: '#10b981', url: '/fila-pedidos.html' },
     configuracoes: { titulo: 'Configurações & Cardápio', sub: 'Cadastros, Módulos, Impressoras e RH', icone: 'ph-gear', cor: '#0284c7', url: '/configuracoes.html' },
@@ -90,9 +92,11 @@ window.abrirModalEscolhaEstacao = function(data) {
   const estacoes = data.estacoes || ['garcom'];
   const nomeColab = data.nome || 'Colaborador';
 
+  const caixaUrl = localStorage.getItem('chef_caixa_versao') === 'v11' ? '/index.html' : '/caixa-classico.html';
   const estacoesConfig = {
     garcom: { titulo: 'Salão de Mesas & Comandas', sub: 'Atendimento e Lançamento de Pedidos', icone: 'ph-fork-knife', cor: '#fc4b15', url: '/garcom.html' },
-    caixa: { titulo: 'Terminal de Caixa (PDV)', sub: 'Operação de Caixa, Fechamento e Pagamentos', icone: 'ph-desktop', cor: '#3b82f6', url: '/index.html' },
+    caixa: { titulo: 'Terminal de Caixa (PDV)', sub: 'Operação de Caixa, Fechamento e Pagamentos', icone: 'ph-desktop', cor: '#3b82f6', url: caixaUrl },
+    caixa_mobile: { titulo: 'Caixa Mobile (Touch Celular)', sub: 'Operação de Caixa rápida para smartphone', icone: 'ph-device-mobile', cor: '#fc4b15', url: '/pdv-mobile.html' },
     cozinha: { titulo: 'KDS Cozinha & Preparo', sub: 'Fila de Pedidos e Controle de Produção', icone: 'ph-fire', cor: '#10b981', url: '/fila-pedidos.html' },
     gestao: { titulo: 'Painel do Dono & Gestão', sub: 'Relatórios, Faturamento e Configurações', icone: 'ph-crown', cor: '#a855f7', url: '/painel-dono.html' }
   };
@@ -324,10 +328,12 @@ function ensureLoginSocket() {
       }
       
       if (estacoes.length === 1) {
+        const caixaTarget = localStorage.getItem('chef_caixa_versao') === 'v11' ? '/index.html' : '/caixa-classico.html';
         const estacoesConfig = {
           garcom: '/garcom.html',
           cozinha: '/fila-pedidos.html',
-          caixa: '/index.html',
+          caixa: caixaTarget,
+          caixa_mobile: '/pdv-mobile.html',
           configuracoes: '/configuracoes.html',
           delivery: '/hub-delivery.html'
         };

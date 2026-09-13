@@ -399,7 +399,15 @@ socket.on('login_success', (user) => {
         return;
       }
       if (user.cargo === 'Garçom') window.location.href = '/garcom.html';
-      else if (user.cargo === 'Caixa') window.location.href = '/caixa-classico.html';
+      else if (user.cargo === 'Caixa') {
+        const isMobile = window.innerWidth <= 767 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+        if (isMobile) {
+          showSystemPicker();
+        } else {
+          const versaoCaixa = localStorage.getItem('chef_caixa_versao');
+          window.location.href = versaoCaixa === 'v11' ? '/index.html' : '/caixa-classico.html';
+        }
+      }
       else window.location.href = '/fila-pedidos.html';
     };
   }
@@ -1297,11 +1305,12 @@ function showSystemPicker() {
   box.style.cssText = 'background:white;border-radius:20px;padding:24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);';
 
   const systems = [
-    { label: 'Caixa v11 (Moderno)', icon: 'ph ph-currency-circle-dollar', href: '/index.html', desc: 'PDV moderno com mesas e delivery' },
-    { label: 'Caixa v1 (Clássico)', icon: 'ph ph-cash-register', href: '/caixa-classico.html', desc: 'Sistema clássico de vendas' },
-    { label: 'Garçom', icon: 'ph ph-note-pencil', href: '/garcom.html', desc: 'Comandas e pedidos para garçons' },
-    { label: 'Fila de Pedidos', icon: 'ph ph-list-bullets', href: '/fila-pedidos.html', desc: 'Visualização da fila de produção' },
-    { label: 'Cardápio Digital', icon: 'ph ph-qr-code', href: '/cardapio.html', desc: 'Cardápio online para clientes' },
+    { label: 'Caixa Mobile (Touch Celular)', icon: 'ph ph-device-mobile', href: '/pdv-mobile.html', desc: 'PDV rápido e leve para smartphone', cor: '#fc4b15' },
+    { label: 'Caixa v1 (Clássico)', icon: 'ph ph-cash-register', href: '/caixa-classico.html', desc: 'Sistema clássico de vendas e salão', cor: '#2563eb' },
+    { label: 'Caixa v1.1.1 (Moderno)', icon: 'ph ph-currency-circle-dollar', href: '/index.html', desc: 'PDV moderno com mesas e delivery', cor: '#10b981' },
+    { label: 'Garçom', icon: 'ph ph-note-pencil', href: '/garcom.html', desc: 'Comandas e pedidos para garçons', cor: '#f59e0b' },
+    { label: 'Fila de Pedidos', icon: 'ph ph-list-bullets', href: '/fila-pedidos.html', desc: 'Visualização da fila de produção', cor: '#8b5cf6' },
+    { label: 'Cardápio Digital', icon: 'ph ph-qr-code', href: '/cardapio.html', desc: 'Cardápio online para clientes', cor: '#06b6d4' },
   ];
 
   box.innerHTML = `
@@ -1311,13 +1320,15 @@ function showSystemPicker() {
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       ${systems.map(s => `
-        <button onclick="window.location.href='${s.href}'" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8f9fa;border:1px solid #e9ecef;border-radius:12px;cursor:pointer;text-align:left;transition:background 0.15s;width:100%;font-family:inherit;font-size:inherit;">
-          <i class="${s.icon}" style="font-size:24px;color:#9b59b6;width:32px;text-align:center;"></i>
-          <div style="flex:1;">
-            <div style="font-weight:600;color:#2c3e50;font-size:15px;">${s.label}</div>
-            <div style="font-size:12px;color:#7f8c8d;margin-top:2px;">${s.desc}</div>
+        <button onclick="window.location.href='${s.href}'" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#f8f9fa;border:1.5px solid #e9ecef;border-radius:14px;cursor:pointer;text-align:left;transition:all 0.15s;width:100%;font-family:inherit;font-size:inherit;">
+          <div style="width:40px;height:40px;border-radius:10px;background:${s.cor}18;color:${s.cor};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">
+            <i class="${s.icon}"></i>
           </div>
-          <i class="ph ph-caret-right" style="color:#adb5bd;"></i>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;color:#1e293b;font-size:14.5px;">${s.label}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:1px;">${s.desc}</div>
+          </div>
+          <i class="ph ph-caret-right" style="color:#94a3b8;font-size:18px;"></i>
         </button>
       `).join('')}
     </div>

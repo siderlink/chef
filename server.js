@@ -300,6 +300,7 @@ function getTempoConectadoStr(startTime) {
 
 let lastProdutos = null;
 let lastConfig = null;
+const pendingRegistrations = new Map();
 
 const express = require('express');
 const http = require('http');
@@ -383,7 +384,12 @@ const upload = multer({ dest: UPLOAD_DIR });
 const app  = express();
 app.disable('x-powered-by');
 
-app.use(cors());
+const corsOptions = {};
+if (process.env.CORS_ORIGIN) {
+  corsOptions.origin = process.env.CORS_ORIGIN === '*' ? '*' : process.env.CORS_ORIGIN.split(',').map(o => o.trim());
+  corsOptions.credentials = true;
+}
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // ── Middleware de Métricas & Latência de Ping (ms) ──
@@ -637,6 +643,48 @@ app.get('/api/public/site-config', (req, res) => {
     Object.keys(cfg).forEach(k => { if (k.indexOf('site_') === 0) out.configs[k] = cfg[k]; });
     res.json(out);
   });
+});
+
+app.get('/api/public/tracking-config', (req, res) => {
+  readGlobalConfig(cfg => {
+    res.json({
+      ok: true,
+      config: {
+        gtag_global: cfg.site_gtag_global || cfg.gtag_global || '',
+        pixel_global: cfg.site_pixel_global || cfg.pixel_global || ''
+      }
+    });
+  });
+});
+
+app.post('/api/public/geo-hit', express.json({ limit: '1mb' }), (req, res) => {
+  const payload = req.body || {};
+  // Gera coordenadas aproximadas (Brasil central/sudeste) para o Globo 3D
+  const baseLat = -14.2350;
+  const baseLng = -51.9253;
+  const lat = baseLat + (Math.random() * 15 - 7.5);
+  const lng = baseLng + (Math.random() * 15 - 7.5);
+  
+  if (typeof io !== 'undefined' && io) {
+    io.emit('geo_traffic_hit', {
+      id: Date.now().toString() + Math.floor(Math.random() * 1000),
+      lat: lat,
+      lng: lng,
+      tipo: payload.tipo || 'site',
+      path: payload.path || '/',
+      label: 'Acesso Público',
+      timestamp: Date.now()
+    });
+  }
+  res.json({ ok: true });
+});
+
+app.post('/api/monitor/cadastro-progresso', express.json(), (req, res) => {
+  const progresso = req.body || {};
+  if (typeof io !== 'undefined' && io) {
+    io.emit('cadastro_progresso', { ...progresso, timestamp: Date.now() });
+  }
+  res.json({ ok: true });
 });
 
 // sitemap.xml dinâmico
@@ -963,6 +1011,9 @@ function getTenantDb(explicitTenantId) {
       newDb.run('PRAGMA cache_size = -20000;');
       newDb.run('PRAGMA temp_store = MEMORY;');
     });
+    if (typeof applyTenantMigrations === 'function') {
+      applyTenantMigrations(newDb);
+    }
     tenantDbs.set(tenantId, newDb);
   }
   return tenantDbs.get(tenantId);
@@ -1835,7 +1886,7 @@ function listarBancosTenant() {
     const estDir = path.join(APP_DATA_DIR, 'estabelecimentos');
     if (!fsSync.existsSync(estDir)) return [];
     return fsSync.readdirSync(estDir)
-      .filter(f => /^\\d+$/.test(f))
+      .filter(f => /^\d+$/.test(f))
       .map(f => path.join(estDir, f, 'database.sqlite'))
       .filter(p => fsSync.existsSync(p));
   } catch (e) {
@@ -2054,80 +2105,361 @@ function samplePicos() {
 function seedTenantDb(db, restauranteNome, done) {
   const onErr = (e) => { if (e) console.error('[Seed] Erro:', e.message); };
   db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS afiliados (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nome TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      telefone TEXT,
-      codigo_ref TEXT UNIQUE NOT NULL,
-      comissao_percentual REAL DEFAULT 10,
-      chave_pix TEXT,
-      status TEXT DEFAULT 'ativo',
-      password_hash TEXT,
-      created_at DATETIME DEFAULT (datetime('now', 'localtime'))
-    )
-  `);
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS afiliado_vendas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      afiliado_id INTEGER NOT NULL,
-      restaurante_id INTEGER,
-      restaurante_nome TEXT,
-      plano TEXT,
-      valor_venda REAL DEFAULT 0,
-      comissao_valor REAL DEFAULT 0,
-      status TEXT DEFAULT 'pendente',
-      created_at DATETIME DEFAULT (datetime('now', 'localtime')),
-      FOREIGN KEY (afiliado_id) REFERENCES afiliados(id)
-    )
-  `);
+  // ── Tabelas base do restaurante ──
+  db.run(`CREATE TABLE IF NOT EXISTS mesas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT,
+    status TEXT DEFAULT 'Disponível',
+    observacao TEXT
+  )`);
 
-    for (let i = 1; i <= 6; i++) {
-      db.run(`INSERT OR IGNORE INTO mesas (nome, status, observacao) VALUES (?, 'Disponível', NULL)`, ['Mesa ' + i], onErr);
+  db.run(`CREATE TABLE IF NOT EXISTS produtos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT,
+    preco REAL,
+    categoria TEXT,
+    descricao TEXT,
+    imagem TEXT,
+    ativo INTEGER DEFAULT 1,
+    ordem INTEGER DEFAULT 0
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS pedidos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    productName TEXT,
+    productEmoji TEXT,
+    quantity INTEGER,
+    time TEXT,
+    localName TEXT,
+    userName TEXT,
+    total TEXT,
+    status TEXT,
+    sector TEXT,
+    paymentMethod TEXT,
+    turno_id INTEGER,
+    funcionario_id INTEGER,
+    pagamento_id INTEGER,
+    prontoEm DATETIME,
+    observations TEXT,
+    options TEXT,
+    composicoes TEXT,
+    mesa_grupo TEXT,
+    mesa_comanda TEXT,
+    garcom_call DATETIME,
+    cliente_id INTEGER,
+    entregador_id INTEGER,
+    promocao_id INTEGER,
+    createdAt DATETIME DEFAULT (datetime('now', 'localtime'))
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS funcionarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT,
+    usuario TEXT UNIQUE,
+    senha TEXT,
+    cargo TEXT,
+    status TEXT DEFAULT 'Ativo',
+    restaurante_id INTEGER,
+    pin_hash TEXT,
+    valor_hora REAL DEFAULT 0,
+    tipo_remuneracao TEXT DEFAULT 'hora',
+    valor_dia REAL DEFAULT 0,
+    valor_semana REAL DEFAULT 0,
+    valor_mes REAL DEFAULT 0,
+    chave_pix TEXT,
+    cpf TEXT,
+    telefone TEXT,
+    observacao_rh TEXT,
+    data_cadastro TEXT
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS configuracoes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chave TEXT UNIQUE,
+    valor TEXT
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS formas_pagamento (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT,
+    tipo TEXT,
+    taxa REAL DEFAULT 0,
+    prazo_dias INTEGER DEFAULT 0,
+    ativo INTEGER DEFAULT 1,
+    icone TEXT,
+    ordem INTEGER DEFAULT 0
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS categorias (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT,
+    ordem INTEGER DEFAULT 0,
+    ativo INTEGER DEFAULT 1,
+    icone TEXT
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS turno (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    funcionario_id INTEGER,
+    inicio TEXT,
+    fim TEXT,
+    status TEXT DEFAULT 'aberto',
+    observacao TEXT
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS caixa_movimentos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tipo TEXT,
+    valor REAL,
+    descricao TEXT,
+    operador TEXT,
+    data_hora TEXT DEFAULT (datetime('now','localtime'))
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS clientes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT,
+    telefone TEXT,
+    observacao TEXT,
+    endereco TEXT,
+    data_nascimento TEXT,
+    pontos INTEGER DEFAULT 0,
+    total_gasto REAL DEFAULT 0,
+    nivel TEXT DEFAULT 'Bronze',
+    ultimo_checkin TEXT
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS promocoes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT,
+    descricao TEXT,
+    tipo TEXT,
+    valor REAL,
+    ativo INTEGER DEFAULT 1,
+    config TEXT
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS api_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data_hora DATETIME DEFAULT (datetime('now', 'localtime')),
+    operador TEXT,
+    ip TEXT,
+    metodo TEXT,
+    endpoint TEXT,
+    detalhes TEXT,
+    status_code INTEGER
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS afiliados (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    telefone TEXT,
+    codigo_ref TEXT UNIQUE NOT NULL,
+    comissao_percentual REAL DEFAULT 10,
+    chave_pix TEXT,
+    status TEXT DEFAULT 'ativo',
+    password_hash TEXT,
+    created_at DATETIME DEFAULT (datetime('now', 'localtime'))
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS afiliado_vendas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    afiliado_id INTEGER NOT NULL,
+    restaurante_id INTEGER,
+    restaurante_nome TEXT,
+    plano TEXT,
+    valor_venda REAL DEFAULT 0,
+    comissao_valor REAL DEFAULT 0,
+    status TEXT DEFAULT 'pendente',
+    created_at DATETIME DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (afiliado_id) REFERENCES afiliados(id)
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS funcionarios_pagamentos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    funcionario_id INTEGER,
+    valor REAL,
+    forma_pagamento TEXT,
+    observacao TEXT,
+    data_pagamento TEXT,
+    operador TEXT
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS hub_pedidos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    codigo TEXT,
+    plataforma TEXT,
+    status TEXT DEFAULT 'Recebido',
+    itens_json TEXT,
+    valor_total REAL,
+    cliente_nome TEXT,
+    cliente_endereco TEXT,
+    pedido_link_ids TEXT,
+    atualizado_em TEXT
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS auditoria (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario TEXT,
+    acao TEXT,
+    detalhes TEXT,
+    motivo TEXT,
+    risco TEXT DEFAULT 'Baixo',
+    created_at DATETIME DEFAULT (datetime('now','localtime'))
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    endpoint TEXT UNIQUE,
+    auth TEXT,
+    p256dh TEXT,
+    role TEXT DEFAULT 'garcom',
+    nome TEXT,
+    created_at DATETIME DEFAULT (datetime('now', 'localtime'))
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS itens_montaveis (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    produto_id INTEGER,
+    pricing_model TEXT DEFAULT 'soma',
+    preco_fixo REAL DEFAULT 0,
+    ativo INTEGER DEFAULT 1,
+    criado_em DATETIME DEFAULT (datetime('now', 'localtime'))
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS montavel_categorias (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    montavel_id INTEGER,
+    nome TEXT,
+    obrigatoria INTEGER DEFAULT 0,
+    min_escolhas INTEGER DEFAULT 0,
+    max_escolhas INTEGER DEFAULT 1,
+    ordem INTEGER DEFAULT 0
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS montavel_opcoes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    categoria_id INTEGER,
+    nome TEXT,
+    preco REAL DEFAULT 0,
+    ativo INTEGER DEFAULT 1,
+    ordem INTEGER DEFAULT 0,
+    produto_id INTEGER
+  )`);
+
+  // ── Dados iniciais obrigatórios ──
+  for (let i = 1; i <= 6; i++) {
+    db.run(`INSERT OR IGNORE INTO mesas (nome, status, observacao) VALUES (?, 'Disponível', NULL)`, ['Mesa ' + i], onErr);
+  }
+  if (restauranteNome) {
+    db.run(`INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES ('nome_restaurante', ?)`, [restauranteNome], onErr);
+  }
+  const defaultMethods = [
+    ['Dinheiro', 'dinheiro', 0.0, 0, 1, 'ph-currency-dollar', 1],
+    ['Cartão de Crédito', 'credito', 2.5, 30, 1, 'ph-credit-card', 2],
+    ['Cartão de Débito', 'debito', 1.2, 1, 1, 'ph-credit-card', 3],
+    ['PIX', 'pix', 0.0, 0, 1, 'ph-qr-code', 4]
+  ];
+  db.get('SELECT COUNT(*) as c FROM formas_pagamento', [], (e, r) => {
+    if (!e && r && r.c === 0) {
+      const q = 'INSERT INTO formas_pagamento (nome, tipo, taxa, prazo_dias, ativo, icone, ordem) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      defaultMethods.forEach(m => db.run(q, m, onErr));
     }
-    if (restauranteNome) {
-      db.run(`INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES ('nome_restaurante', ?)`, [restauranteNome], onErr);
-    }
-    const defaultMethods = [
-      ['Dinheiro', 'dinheiro', 0.0, 0, 1, 'ph-currency-dollar', 1],
-      ['Cartão de Crédito', 'credito', 2.5, 30, 1, 'ph-credit-card', 2],
-      ['Cartão de Débito', 'debito', 1.2, 1, 1, 'ph-credit-card', 3],
-      ['PIX', 'pix', 0.0, 0, 1, 'ph-qr-code', 4]
-    ];
-    db.get('SELECT COUNT(*) as c FROM formas_pagamento', [], (e, r) => {
-      if (!e && r && r.c === 0) {
-        const q = 'INSERT INTO formas_pagamento (nome, tipo, taxa, prazo_dias, ativo, icone, ordem) VALUES (?, ?, ?, ?, ?, ?, ?)';
-        defaultMethods.forEach(m => db.run(q, m, onErr));
-      }
-      if (typeof done === 'function') done();
-    });
+    if (typeof done === 'function') done();
+  });
   });
 }
 
-// Cria um banco de tenant novo com schema vazio + dados iniciais (sem copiar database_1.sqlite)
+// Aplica migrações de colunas em um banco de tenant existente (idempotente)
+function applyTenantMigrations(tenantDb, done) {
+  const migrations = [
+    `ALTER TABLE pedidos ADD COLUMN prontoEm DATETIME`,
+    `ALTER TABLE pedidos ADD COLUMN funcionario_id INTEGER`,
+    `ALTER TABLE pedidos ADD COLUMN pagamento_id INTEGER`,
+    `ALTER TABLE pedidos ADD COLUMN observations TEXT`,
+    `ALTER TABLE pedidos ADD COLUMN options TEXT`,
+    `ALTER TABLE pedidos ADD COLUMN composicoes TEXT`,
+    `ALTER TABLE pedidos ADD COLUMN mesa_grupo TEXT`,
+    `ALTER TABLE pedidos ADD COLUMN mesa_comanda TEXT`,
+    `ALTER TABLE pedidos ADD COLUMN garcom_call DATETIME`,
+    `ALTER TABLE pedidos ADD COLUMN cliente_id INTEGER`,
+    `ALTER TABLE pedidos ADD COLUMN entregador_id INTEGER`,
+    `ALTER TABLE pedidos ADD COLUMN promocao_id INTEGER`,
+    `ALTER TABLE pedidos ADD COLUMN productEmoji TEXT`,
+    `ALTER TABLE pedidos ADD COLUMN turno_id INTEGER`,
+    `ALTER TABLE clientes ADD COLUMN endereco TEXT`,
+    `ALTER TABLE clientes ADD COLUMN data_nascimento TEXT`,
+    `ALTER TABLE clientes ADD COLUMN pontos INTEGER DEFAULT 0`,
+    `ALTER TABLE clientes ADD COLUMN total_gasto REAL DEFAULT 0`,
+    `ALTER TABLE clientes ADD COLUMN nivel TEXT DEFAULT 'Bronze'`,
+    `ALTER TABLE clientes ADD COLUMN ultimo_checkin TEXT`,
+    `ALTER TABLE funcionarios ADD COLUMN valor_hora REAL DEFAULT 0`,
+    `ALTER TABLE funcionarios ADD COLUMN tipo_remuneracao TEXT DEFAULT 'hora'`,
+    `ALTER TABLE funcionarios ADD COLUMN valor_dia REAL DEFAULT 0`,
+    `ALTER TABLE funcionarios ADD COLUMN valor_semana REAL DEFAULT 0`,
+    `ALTER TABLE funcionarios ADD COLUMN valor_mes REAL DEFAULT 0`,
+    `ALTER TABLE funcionarios ADD COLUMN chave_pix TEXT`,
+    `ALTER TABLE funcionarios ADD COLUMN cpf TEXT`,
+    `ALTER TABLE funcionarios ADD COLUMN telefone TEXT`,
+    `ALTER TABLE funcionarios ADD COLUMN observacao_rh TEXT`,
+    `ALTER TABLE funcionarios ADD COLUMN pin_hash TEXT`,
+    `ALTER TABLE produtos ADD COLUMN ativo INTEGER DEFAULT 1`,
+    `ALTER TABLE produtos ADD COLUMN ordem INTEGER DEFAULT 0`,
+    `ALTER TABLE montavel_opcoes ADD COLUMN produto_id INTEGER`,
+    `ALTER TABLE promocoes ADD COLUMN config TEXT`,
+  ];
+  let i = 0;
+  const next = () => {
+    if (i >= migrations.length) { if (typeof done === 'function') done(); return; }
+    tenantDb.run(migrations[i++], (e) => {
+      // Ignora erro de "duplicate column" — é o comportamento esperado em migrações idempotentes
+      next();
+    });
+  };
+  next();
+}
+
+// Cria um banco de tenant novo com schema completo + dados iniciais
 function createFreshTenantDb(dbPath, restauranteNome) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const parentDir = path.dirname(dbPath);
-    if (!fsSync.existsSync(parentDir)) {
-      fsSync.mkdirSync(parentDir, { recursive: true });
+    try {
+      if (!fsSync.existsSync(parentDir)) {
+        fsSync.mkdirSync(parentDir, { recursive: true });
+      }
+    } catch (mkdirErr) {
+      console.error('[Tenant] Erro ao criar diretório:', mkdirErr.message);
+      return reject(mkdirErr);
     }
     const newDb = new sqlite3.Database(dbPath, (err) => {
-      if (err) { console.error('[Tenant] Erro ao criar banco:', err.message); return resolve(newDb); }
+      if (err) {
+        console.error('[Tenant] Erro ao criar banco:', err.message);
+        return reject(err);
+      }
       newDb.run('PRAGMA journal_mode = WAL;');
       newDb.run('PRAGMA synchronous = NORMAL;');
       newDb.run('PRAGMA busy_timeout = 5000;');
+      // Primeiro garante o schema completo via seed (CREATE TABLE IF NOT EXISTS)
+      // Depois tenta copiar tabelas extras da ref (tenant 1) se existir
       const refPath = getTenantDbPath(1);
       const fallbackRef = path.join(__dirname, 'database_1.sqlite');
-      const schemaSource = fsSync.existsSync(refPath) ? refPath : (fsSync.existsSync(fallbackRef) ? fallbackRef : null);
-      if (schemaSource && schemaSource !== dbPath) {
-        syncTenantSchema(newDb, schemaSource, () => {
-          seedTenantDb(newDb, restauranteNome, () => resolve(newDb));
+      const schemaSource = (fsSync.existsSync(refPath) && refPath !== dbPath) ? refPath
+        : (fsSync.existsSync(fallbackRef) ? fallbackRef : null);
+
+      // Primeiro: seed garante tabelas essenciais com schema COMPLETO
+      seedTenantDb(newDb, restauranteNome, () => {
+        // Segundo: aplica migrações de colunas adicionadas ao longo do tempo
+        applyTenantMigrations(newDb, () => {
+          // Terceiro: se existir ref, copia tabelas extras ainda não presentes
+          if (schemaSource) {
+            syncTenantSchema(newDb, schemaSource, () => resolve(newDb));
+          } else {
+            resolve(newDb);
+          }
         });
-      } else {
-        seedTenantDb(newDb, restauranteNome, () => resolve(newDb));
-      }
+      });
     });
   });
 }
@@ -4133,7 +4465,8 @@ io.on('connection', (socket) => {
         usePort = true;
       }
       const hostPort = usePort ? `${domain}:${PORT}` : domain;
-      socketRef.emit('update_ponto_token', { url: `https://${hostPort}/${base}` });
+      const proto = (usePort || domain === ipLocal || /^\d+\.\d+\.\d+\.\d+$/.test(domain)) ? PROTOCOL : 'https';
+      socketRef.emit('update_ponto_token', { url: `${proto}://${hostPort}/${base}` });
       socketRef.emit('server_ip', domain);
     });
   };
@@ -9915,7 +10248,8 @@ setInterval(() => {
         usePort = true;
       }
       const hostPort = usePort ? `${domain}:${PORT}` : domain;
-      s.emit('update_ponto_token', { url: `https://${hostPort}/${base}` });
+      const proto = (usePort || domain === ipLocal || /^\d+\.\d+\.\d+\.\d+$/.test(domain)) ? PROTOCOL : 'https';
+      s.emit('update_ponto_token', { url: `${proto}://${hostPort}/${base}` });
     });
   }
 }, 30000);
@@ -11169,7 +11503,8 @@ io.on('connection', (socket) => {
 });
 
 app.post('/api/auth/registro', async (req, res) => {
-  const { restauranteNome, nome, email, telefone, senha, chaveRef } = req.body || {};
+  const { restauranteNome, nome, email, telefone, senha, chaveRef, chaveAtivacao } = req.body || {};
+  const chaveRefFinal = (chaveRef || chaveAtivacao || '').trim(); // compatibilidade: HTML envia 'chaveAtivacao'
   if (!restauranteNome || !nome || !email || !senha) {
     return res.status(400).json({ success: false, error: 'Preencha todos os campos obrigatórios.' });
   }
@@ -11188,7 +11523,13 @@ app.post('/api/auth/registro', async (req, res) => {
         if (passMatch) {
           const tenantDbPath = getTenantDbPath(existingUser.restaurante_id);
           if (!fsSync.existsSync(tenantDbPath)) {
-            await createFreshTenantDb(tenantDbPath, restauranteNome);
+            try { await createFreshTenantDb(tenantDbPath, restauranteNome); } catch (e) {
+              console.error('[Registro] Erro ao recriar banco para usuário existente:', e.message);
+            }
+          } else {
+            // Garantir que banco existente tem schema completo
+            const tmpDb = new sqlite3.Database(tenantDbPath);
+            await new Promise((r) => applyTenantMigrations(tmpDb, () => tmpDb.close(() => r())));
           }
           const token = jwt.sign({
             id: existingUser.id,
@@ -11214,7 +11555,7 @@ app.post('/api/auth/registro', async (req, res) => {
         }
       }
 
-      // 2. E-mail novo: Criar restaurante trial de 7 dias
+      // 2. E-mail novo: Criar restaurante trial
       const hash = await bcrypt.hash(senha, 10);
       masterDb.run(
         `INSERT INTO restaurantes (nome, licenca, ativo, telefone, dono_nome, dono_telefone, dono_email) VALUES (?, 'trial', 1, ?, ?, ?, ?)`,
@@ -11236,63 +11577,58 @@ app.post('/api/auth/registro', async (req, res) => {
 
               const userId = this.lastID;
 
-              // 3. Inicializar banco de dados do tenant e cadastrar o dono como funcionário ativo
+              // 3. Inicializar banco de dados do tenant (com schema completo e migrações)
               const tenantDbPath = getTenantDbPath(restauranteId);
               const pinPadrao = (telFormatado.replace(/\D/g, '').slice(-4) || '1234').padStart(4, '0');
+              let tenantOk = false;
               try {
-                await createFreshTenantDb(tenantDbPath, restauranteNome);
+                const tdbCreated = await createFreshTenantDb(tenantDbPath, restauranteNome);
                 const pinHash = await bcrypt.hash(pinPadrao, 10);
-                const tdb = new sqlite3.Database(tenantDbPath);
                 await new Promise((resFunc) => {
-                  tdb.run(
-                    `INSERT INTO funcionarios (nome, usuario, senha, cargo, status, restaurante_id, pin_hash, data_cadastro)
+                  tdbCreated.run(
+                    `INSERT OR IGNORE INTO funcionarios (nome, usuario, senha, cargo, status, restaurante_id, pin_hash, data_cadastro)
                      VALUES (?, ?, ?, 'Dono', 'Ativo', ?, ?, datetime('now', 'localtime'))`,
                     [nome, emailClean, hash, restauranteId, pinHash],
                     (eF) => {
                       if (eF) console.error('[Tenant Init] Erro ao cadastrar dono em funcionarios:', eF.message);
-                      tdb.close(() => resFunc());
+                      tdbCreated.close(() => resFunc());
                     }
                   );
                 });
+                tenantOk = true;
+                console.log(`✅ [SaaS] Banco do Restaurante #${restauranteId} criado com sucesso em: ${tenantDbPath}`);
               } catch (eDbInit) {
-                console.error('[Tenant Init] Erro ao preparar banco do restaurante:', eDbInit);
+                console.error('[Tenant Init] FALHA CRÍTICA ao preparar banco do restaurante:', eDbInit);
+                // Rollback: remover usuário e restaurante criados
+                masterDb.run(`DELETE FROM usuarios WHERE id = ?`, [userId]);
+                masterDb.run(`DELETE FROM restaurantes WHERE id = ?`, [restauranteId]);
+                return res.status(500).json({ success: false, error: 'Erro ao inicializar banco de dados do restaurante. Tente novamente.' });
               }
 
-              // Vincular Venda a Afiliado / Suporte se chaveRef for informada
-              if (chaveRef && typeof chaveRef === 'string' && chaveRef.trim()) {
-                const codeClean = chaveRef.trim().toUpperCase();
+              // 4. Vincular Venda a Afiliado / Suporte se chaveRefFinal for informada
+              if (chaveRefFinal) {
+                const codeClean = chaveRefFinal.toUpperCase();
                 masterDb.get(`SELECT * FROM afiliados WHERE UPPER(codigo_ref) = ? AND status = 'ativo'`, [codeClean], (errAfil, afil) => {
                   if (!errAfil && afil) {
                     const comissaoPct = afil.comissao_percentual || 10;
                     const valorPlanoPadrao = 149.90;
                     const comissaoVal = (valorPlanoPadrao * comissaoPct) / 100;
-
                     masterDb.run(
                       `INSERT INTO afiliado_vendas (afiliado_id, restaurante_id, restaurante_nome, plano, valor_venda, comissao_valor, status) VALUES (?, ?, ?, 'Trial 14 Dias', ?, ?, 'pendente')`,
                       [afil.id, restauranteId, restauranteNome, valorPlanoPadrao, comissaoVal],
-                      function(errVenda) {
-                        if (!errVenda) {
-                          console.log(`🤝 [Afiliados] Venda registrada para Afiliado #${afil.id} (${afil.codigo_ref}) no Restaurante #${restauranteId}`);
-                        }
-                      }
+                      (errVenda) => { if (!errVenda) console.log(`🤝 [Afiliados] Venda registrada: Afiliado #${afil.id} → Restaurante #${restauranteId}`); }
                     );
                   } else {
-                    // Fallback: verificar se é código de referência da equipe de suporte / parceiro
                     masterDb.get(`SELECT * FROM equipe_suporte WHERE UPPER(codigo_ref) = ?`, [codeClean], (errSup, supUser) => {
                       if (!errSup && supUser) {
                         const comissaoPct = supUser.comissao_percentual || 20;
                         const valorPlanoPadrao = 149.90;
                         const comissaoVal = (valorPlanoPadrao * comissaoPct) / 100;
-
                         masterDb.run(
                           `INSERT INTO suporte_vendas (suporte_id, chave_ativacao, restaurante_nome, restaurante_id, contato_nome, contato_telefone, plano, valor_venda, status_venda, comissao_percentual, comissao_valor)
                            VALUES (?, ?, ?, ?, ?, ?, 'trial', ?, 'fechado', ?, ?)`,
                           [supUser.id, codeClean, restauranteNome, restauranteId, nome, telFormatado, valorPlanoPadrao, comissaoPct, comissaoVal],
-                          function(errSupVenda) {
-                            if (!errSupVenda) {
-                              console.log(`🤝 [Suporte/Afiliado] Venda vinculada a ${supUser.nome} (#${supUser.id}, ${codeClean}) no Restaurante #${restauranteId}`);
-                            }
-                          }
+                          (errSupVenda) => { if (!errSupVenda) console.log(`🤝 [Suporte] Venda vinculada a ${supUser.nome} → Restaurante #${restauranteId}`); }
                         );
                       }
                     });
@@ -11300,7 +11636,7 @@ app.post('/api/auth/registro', async (req, res) => {
                 });
               }
 
-              // Notificar o Super Admin em tempo real via Socket.IO
+              // 5. Notificar o Super Admin em tempo real via Socket.IO
               try {
                 const cadastroNotif = {
                   restaurante_id: restauranteId,
@@ -11312,12 +11648,21 @@ app.post('/api/auth/registro', async (req, res) => {
                 };
                 if (io) io.emit('novo_cadastro_saas', cadastroNotif);
                 celebrarNovoRestaurante(restauranteNome, restauranteId, `${nome} <${emailClean}>`);
-                console.log(`🔔 [SaaS Onboarding] Novo cadastro em andamento: Restaurante #${restauranteId} "${restauranteNome}" | Dono: ${nome} | Tel: ${telFormatado} | Email: ${emailClean}`);
+                console.log(`🔔 [SaaS Onboarding] Novo cadastro: Restaurante #${restauranteId} "${restauranteNome}" | Dono: ${nome} | Email: ${emailClean}`);
               } catch (eNotif) {
                 console.error('Erro ao emitir notificacao de novo cadastro saas:', eNotif);
               }
 
-              // Gerar JWT inicial
+              // Limpar cofre de abandono de onboarding (Lead concluiu com sucesso!)
+              for (const [sId, entry] of pendingRegistrations.entries()) {
+                const c = entry.dados.campos || {};
+                if ((c.telefone && c.telefone === telFormatado) || (c.dono_user && c.dono_user === emailClean)) {
+                  clearTimeout(entry.timer);
+                  pendingRegistrations.delete(sId);
+                }
+              }
+
+              // 6. Gerar JWT e responder
               const token = jwt.sign({
                 id: userId,
                 restaurante_id: restauranteId,
@@ -11344,7 +11689,8 @@ app.post('/api/auth/registro', async (req, res) => {
       );
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Erro interno.' });
+    console.error('[Registro] Erro interno inesperado:', error);
+    res.status(500).json({ success: false, error: 'Erro interno no servidor.' });
   }
 });
 
