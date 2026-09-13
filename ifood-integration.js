@@ -1,7 +1,7 @@
 // Integração real com o iFood (Merchant API) — fluxo distribuído (OAuth userCode).
 // Requisitos: aplicativo registrado no Programa de Parceiros iFood (clientId/clientSecret)
 // e cada restaurante autoriza sua própria conta via portal.ifood.com.br/apps/code.
-const sqlite3 = require('sqlite3').verbose();
+const sqlite3 = require('./sqlite3-wrapper').verbose();
 const fsSync = require('fs');
 const path = require('path');
 

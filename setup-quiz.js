@@ -246,7 +246,7 @@ ${ANSI.dim}  Quando disponíveis, eles se conversam automaticamente:
 async function verificarBancoDados() {
   console.log(`\n${ANSI.bright}── Banco de Dados: verificação de integridade ──${ANSI.reset}`);
   let SQLite3;
-  try { SQLite3 = require('sqlite3').verbose(); } catch (e) {
+  try { SQLite3 = require('./sqlite3-wrapper').verbose(); } catch (e) {
     console.log(`${ANSI.red}Módulo sqlite3 indisponível: ${e.message}${ANSI.reset}`);
     return;
   }

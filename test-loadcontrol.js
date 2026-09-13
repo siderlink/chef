@@ -3,7 +3,7 @@ process.env.NODE_SILENT = '1';
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const Database = require('sqlite3').Database;
+const Database = require('./sqlite3-wrapper').Database;
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lc-test-'));
 const masterDb = new Database(path.join(tmp, 'master.sqlite'));

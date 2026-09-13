@@ -5,7 +5,7 @@
 const fs = require('fs');
 const fsSync = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const sqlite3 = require('./sqlite3-wrapper').verbose();
 
 module.exports = function({ app, db, io, options }) {
   const { verificarToken, withTenant, upload, getTenantDbPath, tenantDbs, isTenantFeatureEnabled, tenantContext } = options;

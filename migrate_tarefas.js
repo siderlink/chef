@@ -1,4 +1,4 @@
-const sqlite3 = require('sqlite3').verbose();
+const sqlite3 = require('./sqlite3-wrapper').verbose();
 const db = new sqlite3.Database('master.sqlite');
 
 db.serialize(() => {

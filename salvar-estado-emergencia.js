@@ -14,7 +14,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const sqlite3 = require('./sqlite3-wrapper').verbose();
 
 const args = process.argv.slice(2);
 if (args.length < 2) {

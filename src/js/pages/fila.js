@@ -1076,7 +1076,10 @@ function renderQueue() {
     return;
   }
 
-  queueList.innerHTML = filtered.map(item => {
+  const KDS_LIMIT = 100;
+  const toRender = filtered.slice(0, KDS_LIMIT);
+
+  queueList.innerHTML = toRender.map(item => {
     const timeCreated = parseUtc(item.createdAt);
     const diffMins = Math.floor((Date.now() - timeCreated) / 60000);
     const bgColor = getBgColor(diffMins);
@@ -1209,6 +1212,17 @@ function renderQueue() {
       </div>
     `;
   }).join('');
+
+  if (filtered.length > KDS_LIMIT) {
+    queueList.innerHTML += `
+      <div style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--text-secondary); background: rgba(0,0,0,0.02); border-radius: 12px; margin-top: 15px;">
+        <i class="ph ph-warning-circle" style="font-size:24px; color:#f59e0b; margin-bottom:8px;"></i><br>
+        <strong>Muitos pedidos simultâneos (${filtered.length})</strong><br>
+        Mostrando os primeiros ${KDS_LIMIT} para manter o tablet rápido. 
+        Finalize os atuais ou use os filtros (Setor/Pesquisa) para ver os demais.
+      </div>`;
+  }
+
 
   // Re-aplicar larguras das colunas
   ['quantidade', 'produto', 'local', 'pronto'].forEach(col => {
