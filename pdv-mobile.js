@@ -139,129 +139,6 @@ function initSocket() {
   socket.on('ia_manobra_sugerida', (data) => {
     const { mesa, produto, minutos } = data;
     showToast(`🔥 Manobra: Mesa ${mesa} aguardando "${produto}" há ${minutos}min`, '#ff6b35');
-﻿let socket;
-let mesasData = [];
-let produtosData = [];
-let categoriasData = [];
-let pedidosData = [];
-let activeFilter = 'all';
-let activeCategoria = 'all';
-let searchQuery = '';
-let currentMesa = null;
-let listaFormasPagamento = [];
-let checkoutCents = 0;
-let aplicarTaxaServico = true;
-
-// (Segurança) Escapa valor para string JS dentro de atributo HTML (aspas como entidade).
-function escJs(v) {
-  const s = (v === null || v === undefined) ? '' : String(v);
-  return JSON.stringify(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-}
-// (Segurança) Escapa valor para conteúdo HTML.
-function escHtml(v) {
-  return (v === null || v === undefined) ? '' : String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  setupBottomNav();
-  initSocket();
-  setupMesaFilters();
-  setupSearch();
-});
-
-function initSocket() {
-  if (typeof io === 'undefined') return;
-  socket = io({ query: { token: localStorage.getItem('chef_token'), restaurante_id: localStorage.getItem('restaurante_id') || '1' } });
-  window.socket = socket;
-  if (typeof initChefTz === 'function') initChefTz(socket);
-
-  socket.on('erro_servidor', (msg) => showToast(msg, 'error'));
-
-  socket.on('connect', () => {
-    socket.emit('registrar_sessao', { nome: 'Caixa Mobile', cargo: 'Operador' });
-    socket.emit('get_mesas');
-    socket.emit('get_produtos');
-    socket.emit('get_formas_pagamento');
-    socket.emit('get_pedidos');
-    const _serialTotem = localStorage.getItem('cc_serial_dispositivo') || '';
-    if (_serialTotem) socket.emit('get_modo_dispositivo', { serial: _serialTotem });
-  });
-
-  // Modo Totem remoto: este terminal pode virar quiosque pelo painel do dono
-  socket.on('modo_dispositivo', (data) => {
-    const modo = data && data.modo;
-    if (!modo || modo === 'normal') return;
-    const rid = encodeURIComponent(localStorage.getItem('restaurante_id') || '1');
-    const rot = modo === 'totem_invertido' ? '&rot=180' : '';
-    window.location.href = `/cardapio.html?restaurante_id=${rid}&mesa=Totem&totem=1${rot}`;
-  });
-
-  socket.on('mesas_atualizadas', (mesas) => {
-    mesasData = mesas;
-    renderMesas();
-  });
-
-  /* Delta: servidor envia apenas a mesa que mudou (otimização de rede) */
-  socket.on('mesa_delta', (mesa) => {
-    if (!mesa || !Array.isArray(mesasData)) return;
-    const idx = mesasData.findIndex(m => m.id === mesa.id || m.nome === mesa.nome);
-    if (idx === -1) { socket.emit('get_mesas'); return; }
-    mesasData[idx] = { ...mesasData[idx], ...mesa };
-    renderMesas();
-  });
-
-  socket.on('produtos_atualizados', (prods) => {
-    produtosData = prods;
-    extractCategorias();
-    renderCategorias();
-    renderProdutos();
-  });
-
-  socket.on('initial_data', (pedidos) => {
-    pedidosData = pedidos;
-    renderMesas();
-    renderComanda();
-  });
-
-  socket.on('pedidos_atualizados', (pedidos) => {
-    pedidosData = pedidos;
-    renderMesas();
-    renderComanda();
-  });
-
-  // Notificação em tempo real quando o caixa registra pagamento parcial (vice-versa)
-  socket.on('pagamento_parcial_registrado', (data) => {
-    if (!data || !data.mesaName) return;
-    const isSelf = !!(data.originSocket && socket.id && data.originSocket === socket.id);
-    if (isSelf) return;
-    const valor = (typeof data.valor === 'number' ? data.valor : parseFloat(String(data.valor).replace(',', '.'))) || 0;
-    const origemSplit = data.origem === 'split';
-    const msg = origemSplit
-      ? `✨ ${data.userName || 'Cliente'} separou a conta e pagou R$ ${valor.toFixed(2).replace('.', ',')} (${data.metodo || ''}) na ${data.mesaName}${data.excedenteTipo === 'gorjeta' ? ' + gorjeta' : ''}`
-      : `💰 Pgto Parcial de R$ ${valor.toFixed(2).replace('.', ',')} (${data.metodo || ''}) na ${data.mesaName}`;
-    showToast(msg, '#22c55e');
-    if ('Notification' in window && Notification.permission === 'granted') {
-      try {
-        new Notification(`${origemSplit ? '✨ Separar Conta' : '💰 Pagamento Parcial'} — ${data.mesaName}`, { body: `${msg}`, icon: '/icons/icon.ico' });
-      } catch (e) { }
-    }
-  });
-
-  socket.on('split_token_criado', (d) => {
-    if (window._splitQrCallback) { const cb = window._splitQrCallback; window._splitQrCallback = null; cb(d); }
-  });
-  socket.on('split_erro', (e) => showToast((e && e.msg) || 'Erro ao gerar o QR de separação.', 'error'));
-
-  socket.on('formas_pagamento_atualizadas', (formas) => {
-    if (Array.isArray(formas)) {
-      listaFormasPagamento = formas.filter(f => f.ativo === 1 || f.ativo === true);
-      renderCheckoutMethods();
-    }
-  });
-
-  socket.on('ia_manobra_sugerida', (data) => {
-    const { mesa, produto, minutos } = data;
-    showToast(`🔥 Manobra: Mesa ${mesa} aguardando "${produto}" há ${minutos}min`, '#ff6b35');
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(`🔥 Manobra - Mesa ${mesa}`, { body: `Oferecer entrada cortesia`, icon: '/favicon.ico' });
     }
@@ -273,17 +150,6 @@ function initSocket() {
 }
 
 // --- HELPERS ---
-function parseMoneyMobile(val) {
-  if (typeof val === 'number') return val;
-  if (!val) return 0;
-  let s = String(val).replace(/R\$\s*/gi, '').trim();
-  if (s.includes(',')) {
-    s = s.replace(/\./g, '').replace(',', '.');
-  }
-  const n = parseFloat(s);
-  return isNaN(n) ? 0 : n;
-}
-
 function getMesaOrders(mesaName) {
   return pedidosData.filter(p => p.localName === mesaName);
 }
@@ -294,26 +160,25 @@ function getMesaPendingOrders(mesaName) {
 
 function getMesaBruto(mesaName) {
   return getMesaOrders(mesaName)
-    .filter(p => !String(p.productName || p.nome || '').toLowerCase().includes('pgto parcial'))
-    .reduce((acc, p) => acc + parseMoneyMobile(p.total), 0);
+    .reduce((acc, p) => acc + (parseFloat(String(p.total).replace(',', '.')) || 0), 0);
 }
 
 function getMesaPendente(mesaName) {
   return getMesaPendingOrders(mesaName)
     .filter(p => {
-      const t = parseMoneyMobile(p.total);
+      const t = parseFloat(String(p.total).replace(',', '.')) || 0;
       return t >= 0;
     })
-    .reduce((acc, p) => acc + parseMoneyMobile(p.total), 0);
+    .reduce((acc, p) => acc + (parseFloat(String(p.total).replace(',', '.')) || 0), 0);
 }
 
 function getMesaPagamentos(mesaName) {
   return getMesaPendingOrders(mesaName)
     .filter(p => {
-      const t = parseMoneyMobile(p.total);
+      const t = parseFloat(String(p.total).replace(',', '.')) || 0;
       return t < 0;
     })
-    .reduce((acc, p) => acc + Math.abs(parseMoneyMobile(p.total)), 0);
+    .reduce((acc, p) => acc + Math.abs(parseFloat(String(p.total).replace(',', '.')) || 0), 0);
 }
 
 function getMesaTotalComTaxa(mesaName) {
@@ -330,12 +195,11 @@ function getMesaPendenteComTaxa(mesaName) {
 }
 
 function getMesaCliente(mesaName) {
+  const orders = getMesaOrders(mesaName);
+  if (orders.length > 0 && orders[0].userName) return orders[0].userName;
   const mesa = mesasData.find(m => m.nome === mesaName);
   if (mesa && mesa.observacao) {
-    try { 
-      const o = JSON.parse(mesa.observacao); 
-      if (o.cliente) return o.cliente; 
-    } catch(e) {}
+    try { const o = JSON.parse(mesa.observacao); if (o.cliente) return o.cliente; } catch(e) {}
   }
   return '-';
 }
@@ -566,7 +430,7 @@ function renderComanda() {
       const status = pedido.status;
       const cor = statusColors[status] || '#94a3b8';
       const nxt = nextStatus[status];
-      const val = parseMoneyMobile(pedido.total);
+      const val = parseFloat(String(pedido.total).replace(',', '.')) || 0;
       const urgencia = diffMins >= 40 ? '#ef4444' : diffMins >= 25 ? '#f59e0b' : null;
       const equip = getEquipamento(pedido);
 
@@ -704,7 +568,7 @@ window.abrirDivisao = () => {
   totalDiv.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
 
   itemsDiv.innerHTML = pending.map(p => {
-    const val = parseMoneyMobile(p.total);
+    const val = parseFloat(String(p.total).replace(',', '.')) || 0;
     const valComTaxa = aplicarTaxaServico ? val * 1.10 : val;
     return `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-color);">
@@ -1323,7 +1187,7 @@ window.abrirZoomQrPontoMobile = function () {
         <div style="padding:16px 20px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <h3 style="margin:0; font-size:18px; font-weight:800; color:#fc4b15;">${nomeMesa}</h3>
-            <span style="font-size:12px; color:#64748b;">${cliente !== '-' ? 'Cliente: ' + cliente : 'Consumo da mesa'}</span>
+            <span style="font-size:12px; color:#64748b;">${cliente ? 'Cliente: ' + cliente : 'Consumo da mesa'}</span>
           </div>
           <button type="button" onclick="document.getElementById('modal-detalhes-mesa-pdv-mobile').style.display='none'" style="background:#f1f5f9; border:none; width:34px; height:34px; border-radius:50%; color:#64748b; font-size:18px; cursor:pointer;">&times;</button>
         </div>
@@ -1336,60 +1200,29 @@ window.abrirZoomQrPontoMobile = function () {
             </div>
           ` : `
             <div style="display:flex; flex-direction:column; gap:10px;">
-              ${orders.map(o => {
-                const isPgto = String(o.productName || o.nome || '').toLowerCase().includes('pgto parcial') || parseMoneyMobile(o.total) < 0;
-                if (isPgto) {
-                  return `
-                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:#f0fdf4; border-radius:12px; border:1px dashed #22c55e;">
-                      <div style="display:flex; align-items:center; gap:10px;">
-                        <i class="ph-fill ph-check-circle" style="color:#22c55e; font-size:20px;"></i>
-                        <div>
-                          <strong style="font-size:14px; color:#166534; display:block;">${o.productName || o.nome}</strong>
-                        </div>
-                      </div>
-                      <span style="font-size:14px; font-weight:800; color:#166534;">- R$ ${Math.abs(parseMoneyMobile(o.total)).toFixed(2).replace('.', ',')}</span>
-                    </div>`;
-                }
-
-                let unitPrice = parseMoneyMobile(o.price || o.preco);
-                let itemTotal = parseMoneyMobile(o.total);
-                let qty = o.quantity || 1;
-                if (unitPrice === 0 && itemTotal > 0) unitPrice = itemTotal / qty;
-                if (itemTotal === 0 && unitPrice > 0) itemTotal = unitPrice * qty;
-
-                return `
+              ${orders.map(o => `
                 <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;">
                   <div style="display:flex; align-items:center; gap:10px;">
-                    <span style="background:#fc4b15; color:white; font-weight:800; font-size:13px; padding:2px 8px; border-radius:8px;">${qty}x</span>
+                    <span style="background:#fc4b15; color:white; font-weight:800; font-size:13px; padding:2px 8px; border-radius:8px;">${o.quantity || 1}x</span>
                     <div>
                       <strong style="font-size:14px; color:#0f172a; display:block;">${o.productName || o.nome}</strong>
-                      <span style="font-size:11.5px; color:#64748b;">R$ ${unitPrice.toFixed(2).replace('.', ',')} un</span>
+                      <span style="font-size:11.5px; color:#64748b;">R$ ${(parseFloat(o.price || o.preco || 0)).toFixed(2).replace('.', ',')} un</span>
                     </div>
                   </div>
-                  <span style="font-size:14px; font-weight:800; color:#10b981;">R$ ${itemTotal.toFixed(2).replace('.', ',')}</span>
-                </div>`;
-              }).join('')}
+                  <span style="font-size:14px; font-weight:800; color:#10b981;">R$ ${((parseFloat(o.price || o.preco || 0)) * (o.quantity || 1)).toFixed(2).replace('.', ',')}</span>
+                </div>
+              `).join('')}
             </div>
           `}
         </div>
 
-        <div style="padding:16px 20px; background:#f8fafc; border-top:1px solid #e2e8f0;">
+<div style="padding:16px 20px; background:#f8fafc; border-top:1px solid #e2e8f0;">
           <button onclick="window.abrirModalQrSepararConta('${nomeMesa}')" style="width:100%; padding:11px; margin-bottom:8px; background:#f3e8ff; color:#6d28d9; border:1px dashed #c4b5fd; border-radius:12px; font-weight:800; font-size:12.5px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px;">
             <i class="ph-bold ph-qr-code" style="font-size:16px;"></i> QR: Clientes separam a conta
           </button>
-          
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-size:13px; color:#64748b;">Consumo da Mesa:</span>
-            <span style="font-size:14px; font-weight:600; color:#0f172a;">R$ ${getMesaBruto(nomeMesa).toFixed(2).replace('.', ',')}</span>
-          </div>
-          ${getMesaPagamentos(nomeMesa) > 0 ? `
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-size:13px; color:#64748b;">Pagamentos Realizados:</span>
-            <span style="font-size:14px; font-weight:600; color:#ef4444;">- R$ ${getMesaPagamentos(nomeMesa).toFixed(2).replace('.', ',')}</span>
-          </div>` : ''}
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:8px; border-top:1px solid #e2e8f0; margin-bottom:12px;">
-            <span style="font-size:14px; font-weight:700; color:#0f172a;">A Pagar (c/ Taxa):</span>
-            <strong style="font-size:20px; font-weight:900; color:#10b981;">R$ ${getMesaPendenteComTaxa(nomeMesa).toFixed(2).replace('.', ',')}</strong>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:14px; font-weight:700; color:#64748b;">Total com Taxa:</span>
+            <strong style="font-size:20px; font-weight:900; color:#10b981;">R$ ${total.toFixed(2).replace('.', ',')}</strong>
           </div>
           
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
