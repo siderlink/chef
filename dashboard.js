@@ -1,3 +1,12 @@
+
+function parseMoneyDash(val) {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  let s = String(val).replace(/R\$\s*/gi, '').trim();
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
 const socket = io({ query: { token: localStorage.getItem('chef_token'), restaurante_id: localStorage.getItem('restaurante_id') || '1' } });
 
 socket.on('tenant_atualizado', (data) => {
@@ -26,10 +35,10 @@ socket.on('connect', () => {
 socket.on('dashboard_stats_result', (stats) => {
   if (!stats) return;
   // KPIs
-  document.getElementById('dash-fat-hoje').innerText = formatCurrency(stats.faturamentoHoje);
-  document.getElementById('dash-fat-mensal').innerText = formatCurrency(stats.faturamentoMensal);
+  document.getElementById('dash-fat-hoje').innerText = formatCurrency(parseMoneyDash(stats.faturamentoHoje));
+  document.getElementById('dash-fat-mensal').innerText = formatCurrency(parseMoneyDash(stats.faturamentoMensal));
   document.getElementById('dash-pedidos-hoje').innerText = stats.pedidosHoje || 0;
-  document.getElementById('dash-ticket-medio').innerText = formatCurrency(stats.ticketMedio);
+  document.getElementById('dash-ticket-medio').innerText = formatCurrency(parseMoneyDash(stats.ticketMedio));
 
   // Top Clientes
   const topClientesTbody = document.getElementById('lista-top-clientes');
@@ -102,11 +111,17 @@ socket.on('dashboard_stats_result', (stats) => {
         datasets: [{
           label: 'Faturamento (R$)',
           data: stats.vendasDias.map(d => d.total),
-          backgroundColor: '#3ab55b',
+          backgroundColor: (context) => {
+            const ctx = context.chart.ctx;
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(56, 189, 248, 0.8)');
+            gradient.addColorStop(1, 'rgba(56, 189, 248, 0.1)');
+            return gradient;
+          },
           borderRadius: 6
         }]
       },
-      options: { ...commonOptions, plugins: { ...commonOptions.plugins, title: { display: true, text: 'Vendas por Dia (Últimos 7 Dias)', font: { size: 15, weight: 'bold' }, color: '#1e293b' }, legend: { display: false } } }
+      options: { ...commonOptions, plugins: { ...commonOptions.plugins, title: { display: true, text: 'Vendas por Dia (Últimos 7 Dias)', font: { size: 15, weight: 'bold' }, color: '#f8fafc' }, legend: { display: false } } }
     });
   } else { emptyMsg('chart-vendas-dias', 'Sem dados de vendas no período.'); }
 
@@ -119,7 +134,7 @@ socket.on('dashboard_stats_result', (stats) => {
         labels: stats.receitasDespesas.map(d => d.tipo === 'Entrada' ? 'Receitas' : 'Despesas'),
         datasets: [{
           data: stats.receitasDespesas.map(d => d.total),
-          backgroundColor: ['#3ab55b', '#ef4444'],
+          backgroundColor: ['#10b981', '#f43f5e'],
           borderWidth: 0
         }]
       },
@@ -141,7 +156,7 @@ socket.on('dashboard_stats_result', (stats) => {
           borderRadius: 6
         }]
       },
-      options: { ...commonOptions, indexAxis: 'y', plugins: { ...commonOptions.plugins, title: { display: true, text: 'Produtos Mais Vendidos', font: { size: 15, weight: 'bold' }, color: '#1e293b' }, legend: { display: false } } }
+      options: { ...commonOptions, indexAxis: 'y', plugins: { ...commonOptions.plugins, title: { display: true, text: 'Produtos Mais Vendidos', font: { size: 15, weight: 'bold' }, color: '#f8fafc' }, legend: { display: false } } }
     });
   } else { emptyMsg('chart-produtos', 'Nenhum produto vendido no período.'); }
 
@@ -158,7 +173,7 @@ socket.on('dashboard_stats_result', (stats) => {
           borderWidth: 0
         }]
       },
-      options: { ...doughnutOptions, cutout: 0, plugins: { ...doughnutOptions.plugins, title: { display: true, text: 'Categorias Mais Vendidas', font: { size: 15, weight: 'bold' }, color: '#1e293b' } } }
+      options: { ...doughnutOptions, cutout: 0, plugins: { ...doughnutOptions.plugins, title: { display: true, text: 'Categorias Mais Vendidas', font: { size: 15, weight: 'bold' }, color: '#f8fafc' } } }
     });
   } else { emptyMsg('chart-categorias', 'Sem dados de categorias.'); }
 
@@ -175,7 +190,7 @@ socket.on('dashboard_stats_result', (stats) => {
           borderWidth: 0
         }]
       },
-      options: { ...doughnutOptions, plugins: { ...doughnutOptions.plugins, title: { display: true, text: 'Formas de Pagamento', font: { size: 15, weight: 'bold' }, color: '#1e293b' } } }
+      options: { ...doughnutOptions, plugins: { ...doughnutOptions.plugins, title: { display: true, text: 'Formas de Pagamento', font: { size: 15, weight: 'bold' }, color: '#f8fafc' } } }
     });
   } else { emptyMsg('chart-pagamentos', 'Sem dados de pagamentos.'); }
 
@@ -189,11 +204,17 @@ socket.on('dashboard_stats_result', (stats) => {
         datasets: [{
           label: 'Qtd. Entregas',
           data: stats.entregadores.map(e => e.entregas),
-          backgroundColor: '#fd79a8',
+          backgroundColor: (context) => {
+            const ctx = context.chart.ctx;
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(252, 75, 21, 0.8)');
+            gradient.addColorStop(1, 'rgba(252, 75, 21, 0.1)');
+            return gradient;
+          },
           borderRadius: 6
         }]
       },
-      options: { ...commonOptions, plugins: { ...commonOptions.plugins, title: { display: true, text: 'Entregas por Entregador', font: { size: 15, weight: 'bold' }, color: '#1e293b' }, legend: { display: false } } }
+      options: { ...commonOptions, plugins: { ...commonOptions.plugins, title: { display: true, text: 'Entregas por Entregador', font: { size: 15, weight: 'bold' }, color: '#f8fafc' }, legend: { display: false } } }
     });
   } else { emptyMsg('chart-entregadores', 'Sem dados de entregadores.'); }
 });

@@ -11,6 +11,60 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
   <script src="/vendor/chartjs/chart.umd.min.js"></script>
   <style>
+    :root {
+      --dash-bg: #0f172a;
+      --dash-card: rgba(30, 41, 59, 0.7);
+      --dash-text: #f8fafc;
+      --dash-text-muted: #94a3b8;
+      --dash-border: rgba(255, 255, 255, 0.1);
+      --dash-accent: #fc4b15;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .dash-card {
+      animation: fadeInUp 0.5s ease-out forwards;
+      opacity: 0;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--dash-border);
+      background: var(--dash-card) !important;
+      color: var(--dash-text) !important;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+    .dash-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border-color: rgba(252, 75, 21, 0.4);
+    }
+    .dash-val {
+      background: linear-gradient(90deg, #fc4b15, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 900 !important;
+    }
+    .dash-card h3 {
+      color: var(--dash-text-muted) !important;
+    }
+    body, html, .app-container {
+      background: var(--dash-bg) !important;
+      color: var(--dash-text) !important;
+    }
+    aside.sidebar {
+      background: #1e293b !important;
+      border-right: 1px solid var(--dash-border) !important;
+    }
+    .sidebar-header h2 { color: var(--dash-text) !important; }
+    .nav-item { color: var(--dash-text-muted) !important; }
+    .nav-item:hover { background: rgba(255,255,255,0.05) !important; color: var(--dash-text) !important; }
+    .nav-item.active { background: rgba(252, 75, 21, 0.15) !important; color: var(--dash-accent) !important; }
+    header.topbar { border-bottom: 1px solid var(--dash-border) !important; }
+    table { color: var(--dash-text) !important; }
+    thead tr { border-bottom: 2px solid var(--dash-border) !important; }
+    tbody tr { border-bottom: 1px solid var(--dash-border) !important; }
+    tbody tr:hover { background: rgba(255,255,255,0.05); }
+    
     * { box-sizing: border-box; }
     html, body {
       margin: 0;
@@ -200,7 +254,14 @@
         gap: 8px !important;
       }
     }
-  </style>
+  
+    .dash-card:nth-child(1) { animation-delay: 0.1s; }
+    .dash-card:nth-child(2) { animation-delay: 0.2s; }
+    .dash-card:nth-child(3) { animation-delay: 0.3s; }
+    .dash-card:nth-child(4) { animation-delay: 0.4s; }
+    .dash-grid:nth-of-type(2) .dash-card:nth-child(1) { animation-delay: 0.5s; }
+    .dash-grid:nth-of-type(2) .dash-card:nth-child(2) { animation-delay: 0.6s; }
+    </style>
   <script src="/locales.js"></script>
   <script src="/broadcast.js"></script>
   <script src="/i18n.js"></script>

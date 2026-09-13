@@ -1,3 +1,12 @@
+
+function parseMoneyFin(val) {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  let s = String(val).replace(/R\$\s*/gi, '').trim();
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
 const HOST = window.location.hostname;
 const socket = io({ query: { token: localStorage.getItem('chef_token'), restaurante_id: localStorage.getItem('restaurante_id') || '1' } });
 
@@ -183,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <tr style="border-bottom: 1px solid #eee;">
           <td style="padding: 8px;">${p.productName}</td>
           <td style="padding: 8px; text-align: center; font-weight: bold;">${p.qty}x</td>
-          <td style="padding: 8px; text-align: right; color: #3ab55b; font-weight: bold;">R$ ${parseFloat(p.valTotal).toFixed(2).replace('.', ',')}</td>
+          <td style="padding: 8px; text-align: right; color: #3ab55b; font-weight: bold;">R$ ${parseMoneyFin(p.valTotal).toFixed(2).replace('.', ',')}</td>
         </tr>
       `).join('');
     } else {
@@ -284,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const gaveta = (stats.fundo_troco || 0) + (stats.total_dinheiro || 0) + (stats.total_suprimento || 0) - (stats.total_sangria || 0);
     const dataFmt = new Date().toLocaleString('pt-BR');
 
-    let prods = (stats.produtos_vendidos || []).map(p => `• ${p.productName} — ${p.qty}x — ${fmt(parseFloat(p.valTotal))}`).join('\n');
+    let prods = (stats.produtos_vendidos || []).map(p => `• ${p.productName} — ${p.qty}x — ${fmt(parseMoneyFin(p.valTotal))}`).join('\n');
     if (!prods) prods = 'Nenhum produto vendido.';
 
     return `=========================================\n` +

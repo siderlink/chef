@@ -150,6 +150,16 @@ function initSocket() {
 }
 
 // --- HELPERS ---
+function parseMoneyMobile(val) {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  let s = String(val).replace(/R\$\s*/gi, '').trim();
+  if (s.includes(',')) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
 function getMesaOrders(mesaName) {
   return pedidosData.filter(p => p.localName === mesaName);
 }

@@ -15,6 +15,60 @@
   <link rel="stylesheet" href="/dark-mode.css">
   <script src="/theme-manager.js?v=20260901paletas"></script>
   <style>
+    :root, [data-theme="light"], [data-theme="dark"] {
+      --fin-bg: #0f172a;
+      --fin-card: rgba(30, 41, 59, 0.7);
+      --fin-text: #f8fafc;
+      --fin-text-muted: #94a3b8;
+      --fin-border: rgba(255, 255, 255, 0.1);
+    }
+    
+    body, html, .app-container {
+      background: var(--fin-bg) !important;
+      color: var(--fin-text) !important;
+    }
+    aside.sidebar {
+      background: #1e293b !important;
+      border-right: 1px solid var(--fin-border) !important;
+    }
+    .sidebar-header h2 { color: var(--fin-text) !important; }
+    .nav-item { color: var(--fin-text-muted) !important; }
+    .nav-item:hover { background: rgba(255,255,255,0.05) !important; color: var(--fin-text) !important; }
+    .nav-item.active { background: rgba(252, 75, 21, 0.15) !important; color: #fc4b15 !important; }
+    
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    #section-resumo-caixa > div:nth-child(2) > div,
+    #section-relatorio-avancado .dash-card {
+      animation: fadeInUp 0.5s ease-out forwards;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+      border-color: var(--fin-border) !important;
+      background: var(--fin-card) !important;
+      color: var(--fin-text) !important;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+    #section-resumo-caixa > div:nth-child(2) > div:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+      border-color: rgba(252, 75, 21, 0.4) !important;
+    }
+    table { color: var(--fin-text) !important; }
+    thead th { border-bottom: 2px solid var(--fin-border) !important; color: var(--fin-text-muted) !important; }
+    tbody tr { border-bottom: 1px solid var(--fin-border) !important; }
+    tbody tr:hover { background: rgba(255,255,255,0.05) !important; }
+    
+    /* Make text neon glow in KPI */
+    #card-faturado {
+      background: linear-gradient(90deg, #fc4b15, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 900 !important;
+    }
+    
     :root, [data-theme="light"] {
       --fin-bg: #f8fafc;
       --fin-card: #ffffff;
@@ -96,7 +150,7 @@
       border-radius: 6px;
     }
     .menu-icon:hover {
-      background: #f1f5f9;
+      background: rgba(255, 255, 255, 0.05);
     }
     .sidebar-nav {
       display: flex;
@@ -116,7 +170,7 @@
       transition: all 0.2s;
     }
     .nav-item:hover {
-      background: #f1f5f9;
+      background: rgba(255, 255, 255, 0.05);
       color: #0f172a;
     }
     .nav-item.active {
@@ -353,14 +407,14 @@
 
     <main class="main-content">
       <!-- Tab Header Navigation -->
-      <div style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid #eee; padding-bottom: 12px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;">
+      <div style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--fin-border); padding-bottom: 12px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;">
         <button id="tab-btn-resumo" style="background: transparent; border: none; font-size: 15px; font-weight: 600; padding: 8px 14px; cursor: pointer; color: #fc4b15; border-bottom: 3px solid #fc4b15; outline: none; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;">
           <i class="ph ph-receipt" style="margin-right: 4px;"></i> Resumo do Turno
         </button>
-        <button id="tab-btn-relatorio" style="background: transparent; border: none; font-size: 15px; font-weight: 600; padding: 8px 14px; cursor: pointer; color: #777; border-bottom: 3px solid transparent; outline: none; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;">
+        <button id="tab-btn-relatorio" style="background: transparent; border: none; font-size: 15px; font-weight: 600; padding: 8px 14px; cursor: pointer; color: var(--fin-text-muted); border-bottom: 3px solid transparent; outline: none; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;">
           <i class="ph ph-chart-bar" style="margin-right: 4px;"></i> Relatório Avançado
         </button>
-        <button id="tab-btn-contador" style="background: transparent; border: none; font-size: 15px; font-weight: 600; padding: 8px 14px; cursor: pointer; color: #777; border-bottom: 3px solid transparent; outline: none; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;">
+        <button id="tab-btn-contador" style="background: transparent; border: none; font-size: 15px; font-weight: 600; padding: 8px 14px; cursor: pointer; color: var(--fin-text-muted); border-bottom: 3px solid transparent; outline: none; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;">
           <i class="ph ph-paper-plane-tilt" style="margin-right: 4px;"></i> Enviar ao Contador
         </button>
       </div>
@@ -375,29 +429,29 @@
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 24px;">
-          <div style="background: white; padding: 18px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div style="color: gray; font-size: 13px;">Fundo de Troco</div>
-            <div id="card-troco" style="font-size: 22px; font-weight: bold; color: #333; margin-top: 4px;">R$ 0,00</div>
+          <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color: var(--fin-text-muted); font-size: 13px;">Fundo de Troco</div>
+            <div id="card-troco" style="font-size: 22px; font-weight: bold; color: var(--fin-text); margin-top: 4px;">R$ 0,00</div>
           </div>
-          <div style="background: white; padding: 18px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div style="color: gray; font-size: 13px;">Dinheiro em Gaveta</div>
+          <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color: var(--fin-text-muted); font-size: 13px;">Dinheiro em Gaveta</div>
             <div id="card-gaveta" style="font-size: 22px; font-weight: bold; color: #3ab55b; margin-top: 4px;">R$ 0,00</div>
           </div>
-          <div style="background: white; padding: 18px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div style="color: gray; font-size: 13px;">Total Faturado</div>
+          <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color: var(--fin-text-muted); font-size: 13px;">Total Faturado</div>
             <div id="card-faturado" style="font-size: 22px; font-weight: bold; color: #fc4b15; margin-top: 4px;">R$ 0,00</div>
           </div>
-          <div style="background: #f0fdf4; padding: 18px; border-radius: 12px; border: 1px solid #bbf7d0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div style="color: #166534; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px;"><i class="ph ph-qr-code"></i> PIX</div>
-            <div id="card-pix" style="font-size: 22px; font-weight: bold; color: #15803d; margin-top: 4px;">R$ 0,00</div>
+          <div style="background: rgba(34, 197, 94, 0.1) !important; padding: 18px; border-radius: 12px; border: 1px solid rgba(34, 197, 94, 0.3) !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color: #4ade80; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px;"><i class="ph ph-qr-code"></i> PIX</div>
+            <div id="card-pix" style="font-size: 22px; font-weight: bold; color: #22c55e; margin-top: 4px;">R$ 0,00</div>
           </div>
-          <div style="background: #eff6ff; padding: 18px; border-radius: 12px; border: 1px solid #bfdbfe; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div style="color: #1e40af; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px;"><i class="ph ph-credit-card"></i> Cartão Débito</div>
-            <div id="card-debito" style="font-size: 22px; font-weight: bold; color: #1d4ed8; margin-top: 4px;">R$ 0,00</div>
+          <div style="background: rgba(59, 130, 246, 0.1) !important; padding: 18px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.3) !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color: #60a5fa; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px;"><i class="ph ph-credit-card"></i> Cartão Débito</div>
+            <div id="card-debito" style="font-size: 22px; font-weight: bold; color: #3b82f6; margin-top: 4px;">R$ 0,00</div>
           </div>
-          <div style="background: #f5f3ff; padding: 18px; border-radius: 12px; border: 1px solid #ddd6fe; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div style="color: #5b21b6; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px;"><i class="ph ph-credit-card"></i> Cartão Crédito</div>
-            <div id="card-credito" style="font-size: 22px; font-weight: bold; color: #6d28d9; margin-top: 4px;">R$ 0,00</div>
+          <div style="background: rgba(139, 92, 246, 0.1) !important; padding: 18px; border-radius: 12px; border: 1px solid rgba(139, 92, 246, 0.3) !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color: #a78bfa; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px;"><i class="ph ph-credit-card"></i> Cartão Crédito</div>
+            <div id="card-credito" style="font-size: 22px; font-weight: bold; color: #8b5cf6; margin-top: 4px;">R$ 0,00</div>
           </div>
           <div style="background: #fffbe6; padding: 18px; border-radius: 12px; border: 1px solid #ffe58f; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
             <div style="color: #873800; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px;"><i class="ph ph-receipt"></i> Fiado / Na Conta</div>
@@ -419,12 +473,12 @@
         </div>
 
         <!-- DRE — DEMONSTRAÇÃO DO RESULTADO DO EXERCÍCIO & LUCRO REAL -->
-        <div style="background: white; border-radius: 14px; padding: 22px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+        <div style="background: var(--fin-card); border-radius: 14px; padding: 22px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
             <h3 style="margin: 0; color: #0f172a; font-size: 17px; display: flex; align-items: center; gap: 8px;">
               <i class="ph ph-chart-pie-slice" style="color: #2563eb; font-size: 22px;"></i> DRE — Demonstração do Lucro Real do Turno
             </h3>
-            <span id="dre-margem-badge" style="background: #f1f5f9; color: #475569; padding: 6px 14px; border-radius: 99px; font-weight: 800; font-size: 13px; border: 1px solid #cbd5e1;">Margem: 0.0%</span>
+            <span id="dre-margem-badge" style="background: rgba(255, 255, 255, 0.05); color: #475569; padding: 6px 14px; border-radius: 99px; font-weight: 800; font-size: 13px; border: 1px solid #cbd5e1;">Margem: 0.0%</span>
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
@@ -439,7 +493,7 @@
                   <td style="color: #dc2626;">(-) Descontos Concedidos</td>
                   <td id="dre-descontos" style="text-align: right; font-weight: 600; color: #dc2626;">R$ 0,00</td>
                 </tr>
-                <tr style="border-bottom: 1px solid #cbd5e1; height: 34px; background: #f1f5f9;">
+                <tr style="border-bottom: 1px solid #cbd5e1; height: 34px; background: rgba(255, 255, 255, 0.05);">
                   <td style="font-weight: 700; color: #1e293b;">(=) Receita Operacional Líquida</td>
                   <td id="dre-receita-liquida" style="text-align: right; font-weight: 800; color: #0284c7;">R$ 0,00</td>
                 </tr>
@@ -464,33 +518,33 @@
 
             <!-- Key Metrics Cards -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; justify-content: center;">
-                <div style="color: #166534; font-size: 12px; font-weight: 700;"><i class="ph ph-trend-up"></i> Lucro Líquido Real</div>
-                <div id="dre-card-lucro" style="font-size: 22px; font-weight: 900; color: #15803d; margin-top: 4px;">R$ 0,00</div>
-                <div style="font-size: 11px; color: #166534; margin-top: 2px;">Após CMV, taxas e despesas</div>
+              <div style="background: rgba(34, 197, 94, 0.1) !important; border: 1px solid rgba(34, 197, 94, 0.3) !important; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; justify-content: center;">
+                <div style="color: #4ade80; font-size: 12px; font-weight: 700;"><i class="ph ph-trend-up"></i> Lucro Líquido Real</div>
+                <div id="dre-card-lucro" style="font-size: 22px; font-weight: 900; color: #22c55e; margin-top: 4px;">R$ 0,00</div>
+                <div style="font-size: 11px; color: #4ade80; margin-top: 2px;">Após CMV, taxas e despesas</div>
               </div>
-              <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; justify-content: center;">
-                <div style="color: #1e40af; font-size: 12px; font-weight: 700;"><i class="ph ph-percent"></i> Margem Líquida</div>
-                <div id="dre-card-margem" style="font-size: 22px; font-weight: 900; color: #1d4ed8; margin-top: 4px;">0.0%</div>
-                <div style="font-size: 11px; color: #1e40af; margin-top: 2px;">Eficiência financeira do turno</div>
+              <div style="background: rgba(59, 130, 246, 0.1) !important; border: 1px solid rgba(59, 130, 246, 0.3) !important; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; justify-content: center;">
+                <div style="color: #60a5fa; font-size: 12px; font-weight: 700;"><i class="ph ph-percent"></i> Margem Líquida</div>
+                <div id="dre-card-margem" style="font-size: 22px; font-weight: 900; color: #3b82f6; margin-top: 4px;">0.0%</div>
+                <div style="font-size: 11px; color: #60a5fa; margin-top: 2px;">Eficiência financeira do turno</div>
               </div>
               <div style="background: #fffbe6; border: 1px solid #ffe58f; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; justify-content: center;">
                 <div style="color: #873800; font-size: 12px; font-weight: 700;"><i class="ph ph-package"></i> Custo de Mercadorias (CMV)</div>
                 <div id="dre-card-cmv" style="font-size: 20px; font-weight: 800; color: #d46b08; margin-top: 4px;">R$ 0,00</div>
               </div>
-              <div style="background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; justify-content: center;">
-                <div style="color: #5b21b6; font-size: 12px; font-weight: 700;"><i class="ph ph-credit-card"></i> Taxas de Maquininha</div>
-                <div id="dre-card-taxas" style="font-size: 20px; font-weight: 800; color: #6d28d9; margin-top: 4px;">R$ 0,00</div>
+              <div style="background: rgba(139, 92, 246, 0.1) !important; border: 1px solid rgba(139, 92, 246, 0.3) !important; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; justify-content: center;">
+                <div style="color: #a78bfa; font-size: 12px; font-weight: 700;"><i class="ph ph-credit-card"></i> Taxas de Maquininha</div>
+                <div id="dre-card-taxas" style="font-size: 20px; font-weight: 800; color: #8b5cf6; margin-top: 4px;">R$ 0,00</div>
               </div>
             </div>
           </div>
         </div>
 
-        <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-          <h3 style="margin-bottom: 16px; margin-top: 0; padding-bottom: 16px; border-bottom: 1px solid #eee;">Histórico de Movimentações</h3>
+        <div style="background: var(--fin-card); padding: 24px; border-radius: 12px; border: 1px solid var(--fin-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+          <h3 style="margin-bottom: 16px; margin-top: 0; padding-bottom: 16px; border-bottom: 1px solid var(--fin-border);">Histórico de Movimentações</h3>
           <table style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
-              <tr style="border-bottom: 2px solid #eee; color: gray;">
+              <tr style="border-bottom: 2px solid #eee; color: var(--fin-text-muted);">
                 <th style="padding: 12px;">ID</th>
                 <th style="padding: 12px;">Tipo</th>
                 <th style="padding: 12px;">Descrição</th>
@@ -516,7 +570,7 @@
         </div>
 
         <!-- Filters Section -->
-        <div style="background: white; padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); margin-bottom: 24px;">
+        <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); margin-bottom: 24px;">
           <h3 style="margin-top: 0; margin-bottom: 16px; color: #1a202c; font-weight: 600;">Filtros de Busca</h3>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-end;">
             <div>
@@ -529,7 +583,7 @@
             </div>
             <div>
               <label style="display: block; font-size: 13px; color: #718096; margin-bottom: 6px; font-weight: 500;">Agrupamento</label>
-              <select id="relatorio-agrupamento" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; background: white; transition: border-color 0.2s;" onfocus="this.style.borderColor='#fc4b15'" onblur="this.style.borderColor='#e2e8f0'">
+              <select id="relatorio-agrupamento" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; background: var(--fin-card); transition: border-color 0.2s;" onfocus="this.style.borderColor='#fc4b15'" onblur="this.style.borderColor='#e2e8f0'">
                 <option value="hour">Por Hora</option>
                 <option value="day" selected>Por Dia</option>
                 <option value="week">Por Semana</option>
@@ -539,13 +593,13 @@
             </div>
             <div>
               <label style="display: block; font-size: 13px; color: #718096; margin-bottom: 6px; font-weight: 500;">Cliente</label>
-              <select id="relatorio-cliente" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; background: white; transition: border-color 0.2s;" onfocus="this.style.borderColor='#fc4b15'" onblur="this.style.borderColor='#e2e8f0'">
+              <select id="relatorio-cliente" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; background: var(--fin-card); transition: border-color 0.2s;" onfocus="this.style.borderColor='#fc4b15'" onblur="this.style.borderColor='#e2e8f0'">
                 <option value="">Todos os Clientes</option>
               </select>
             </div>
             <div>
               <label style="display: block; font-size: 13px; color: #718096; margin-bottom: 6px; font-weight: 500;">Garçom</label>
-              <select id="relatorio-garcom" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; background: white; transition: border-color 0.2s;" onfocus="this.style.borderColor='#fc4b15'" onblur="this.style.borderColor='#e2e8f0'">
+              <select id="relatorio-garcom" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; background: var(--fin-card); transition: border-color 0.2s;" onfocus="this.style.borderColor='#fc4b15'" onblur="this.style.borderColor='#e2e8f0'">
                 <option value="">Todos os Garçons</option>
               </select>
             </div>
@@ -565,7 +619,7 @@
         <!-- KPIs Row -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
           <!-- Card 1: Faturamento -->
-          <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s, box-shadow 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)';">
+          <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s, box-shadow 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)';">
             <div>
               <div style="color: #718096; font-size: 14px; font-weight: 500;">Total Vendas</div>
               <div id="rep-kpi-faturamento" style="font-size: 28px; font-weight: 700; color: #1a202c; margin-top: 8px;">R$ 0,00</div>
@@ -575,7 +629,7 @@
             </div>
           </div>
           <!-- Card 2: Itens Vendidos -->
-          <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s, box-shadow 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)';">
+          <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s, box-shadow 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)';">
             <div>
               <div style="color: #718096; font-size: 14px; font-weight: 500;">Itens Vendidos</div>
               <div id="rep-kpi-itens" style="font-size: 28px; font-weight: 700; color: #1a202c; margin-top: 8px;">0</div>
@@ -585,7 +639,7 @@
             </div>
           </div>
           <!-- Card 3: Pedidos -->
-          <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s, box-shadow 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)';">
+          <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s, box-shadow 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)';">
             <div>
               <div style="color: #718096; font-size: 14px; font-weight: 500;">Pedidos Realizados</div>
               <div id="rep-kpi-pedidos" style="font-size: 28px; font-weight: 700; color: #1a202c; margin-top: 8px;">0</div>
@@ -595,7 +649,7 @@
             </div>
           </div>
           <!-- Card 4: Ticket Médio -->
-          <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s, box-shadow 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)';">
+          <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s, box-shadow 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)';">
             <div>
               <div style="color: #718096; font-size: 14px; font-weight: 500;">Ticket Médio</div>
               <div id="rep-kpi-ticket" style="font-size: 28px; font-weight: 700; color: #1a202c; margin-top: 8px;">R$ 0,00</div>
@@ -609,7 +663,7 @@
         <!-- Charts Row -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
           <!-- Payment Breakdown -->
-          <div style="background: white; padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
             <h3 style="margin-top: 0; margin-bottom: 16px; color: #1a202c; font-weight: 600;">Meios de Pagamento (Filtros Aplicados)</h3>
             <div id="rep-pagamentos-container" style="display: flex; flex-direction: column; gap: 14px; flex-grow: 1; justify-content: center;">
               <!-- JS Populated Progress Bars -->
@@ -617,7 +671,7 @@
           </div>
 
           <!-- Sales Trend Chart -->
-          <div style="background: white; padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02);">
+          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02);">
             <h3 style="margin-top: 0; margin-bottom: 16px; color: #1a202c; font-weight: 600;">Desempenho de Vendas</h3>
             <div id="rep-grafico-container" style="height: 200px; display: flex; align-items: flex-end; gap: 12px; padding: 10px 0; border-left: 2px solid #e2e8f0; border-bottom: 2px solid #e2e8f0; overflow-x: auto;">
               <!-- JS Populated CSS Bar Chart -->
@@ -628,37 +682,37 @@
         <!-- Row 3: Advanced Business Metrics -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
           <!-- Card 1: Categorias e Setores -->
-          <div style="background: white; padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
             <h3 style="margin-top: 0; margin-bottom: 16px; color: #1a202c; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px;"><i class="ph ph-chart-pie" style="color: #fc4b15;"></i> Vendas por Categoria e Setor</h3>
             <div style="margin-bottom: 15px;">
               <strong style="font-size:11px; color:#718096; display:block; margin-bottom:8px; text-transform: uppercase; letter-spacing: 0.5px;">POR CATEGORIA</strong>
               <div id="rep-categorias-container" style="display:flex; flex-direction:column; gap:10px;">
-                <div style="color:gray; font-size:12px; font-style:italic;">Nenhuma venda registrada.</div>
+                <div style="color: var(--fin-text-muted); font-size:12px; font-style:italic;">Nenhuma venda registrada.</div>
               </div>
             </div>
             <div style="margin-top: auto; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
               <strong style="font-size:11px; color:#718096; display:block; margin-bottom:8px; text-transform: uppercase; letter-spacing: 0.5px;">POR SETOR DE PREPARO</strong>
               <div id="rep-setores-container" style="display:flex; flex-direction:column; gap:10px;">
-                <div style="color:gray; font-size:12px; font-style:italic;">Nenhuma venda registrada.</div>
+                <div style="color: var(--fin-text-muted); font-size:12px; font-style:italic;">Nenhuma venda registrada.</div>
               </div>
             </div>
           </div>
 
           <!-- Card 2: Ranking de Garçons -->
-          <div style="background: white; padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
             <h3 style="margin-top: 0; margin-bottom: 16px; color: #1a202c; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px;"><i class="ph ph-users" style="color: #8e44ad;"></i> Desempenho da Equipe (Garçons)</h3>
             <div id="rep-garcons-container" style="display:flex; flex-direction:column; gap:10px; flex-grow:1;">
-              <div style="color:gray; font-size:12px; font-style:italic;">Nenhum dado de garçom disponível.</div>
+              <div style="color: var(--fin-text-muted); font-size:12px; font-style:italic;">Nenhum dado de garçom disponível.</div>
             </div>
           </div>
 
           <!-- Card 3: Clientes VIP e Perdas -->
-          <div style="background: white; padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
             <h3 style="margin-top: 0; margin-bottom: 16px; color: #1a202c; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px;"><i class="ph ph-crown" style="color: #f2994a;"></i> Clientes VIP &amp; Cancelamentos</h3>
             <div style="margin-bottom: 15px; flex-grow:1;">
               <strong style="font-size:11px; color:#718096; display:block; margin-bottom:8px; text-transform: uppercase; letter-spacing: 0.5px;">TOP 5 CLIENTES</strong>
               <div id="rep-clientes-vip-container" style="display:flex; flex-direction:column; gap:10px;">
-                <div style="color:gray; font-size:12px; font-style:italic;">Nenhum cliente registrado.</div>
+                <div style="color: var(--fin-text-muted); font-size:12px; font-style:italic;">Nenhum cliente registrado.</div>
               </div>
             </div>
             <div style="background: #fdf2f2; border: 1px dashed #f8b4b4; padding: 12px; border-radius: 8px; margin-top: auto;">
@@ -676,10 +730,10 @@
         </div>
 
         <!-- Tables Section -->
-        <div style="background: white; padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02);">
+        <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02);">
           <div style="display: flex; gap: 16px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
             <button id="rep-subtab-btn-produtos" style="background: transparent; border: none; font-size: 15px; font-weight: 600; cursor: pointer; color: #fc4b15; border-bottom: 2px solid #fc4b15; outline: none; padding: 8px 16px; transition: all 0.2s;">Itens Vendidos</button>
-            <button id="rep-subtab-btn-pedidos" style="background: transparent; border: none; font-size: 15px; font-weight: 600; cursor: pointer; color: #777; border-bottom: 2px solid transparent; outline: none; padding: 8px 16px; transition: all 0.2s;">Lista de Pedidos</button>
+            <button id="rep-subtab-btn-pedidos" style="background: transparent; border: none; font-size: 15px; font-weight: 600; cursor: pointer; color: var(--fin-text-muted); border-bottom: 2px solid transparent; outline: none; padding: 8px 16px; transition: all 0.2s;">Lista de Pedidos</button>
           </div>
 
           <!-- Table 1: Products -->
@@ -750,7 +804,7 @@
           <!-- Left: Config Panel -->
           <div style="display: flex; flex-direction: column; gap: 16px;">
             <!-- Contact Info -->
-            <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03);">
+            <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03);">
               <h3 style="margin: 0 0 14px 0; font-size: 15px; color: #1a202c; display: flex; align-items: center; gap: 8px;">
                 <i class="ph ph-user-circle" style="color: #3b82f6;"></i> Dados do Contador
               </h3>
@@ -771,7 +825,7 @@
             </div>
 
             <!-- Date Range -->
-            <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03);">
+            <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03);">
               <h3 style="margin: 0 0 14px 0; font-size: 15px; color: #1a202c; display: flex; align-items: center; gap: 8px;">
                 <i class="ph ph-calendar-blank" style="color: #fc4b15;"></i> Período dos Dados
               </h3>
@@ -791,7 +845,7 @@
             </div>
 
             <!-- Data Checkboxes -->
-            <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03);">
+            <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03);">
               <h3 style="margin: 0 0 14px 0; font-size: 15px; color: #1a202c; display: flex; align-items: center; gap: 8px;">
                 <i class="ph ph-checkbox-square" style="color: #8b5cf6;"></i> O que Enviar
               </h3>
@@ -829,7 +883,7 @@
           </div>
 
           <!-- Right: Preview Panel -->
-          <div style="background: white; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03); min-height: 500px;">
+          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03); min-height: 500px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
               <h3 style="margin: 0; font-size: 15px; color: #1a202c; display: flex; align-items: center; gap: 8px;">
                 <i class="ph ph-eye" style="color: #10b981;"></i> Pré-visualização
@@ -845,10 +899,10 @@
 
   <!-- Modal Fechamento -->
   <div id="fechamento-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; padding: 16px;">
-    <div style="background: white; border-radius: 16px; padding: 24px; max-width: 850px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh; box-sizing: border-box;">
+    <div style="background: var(--fin-card); border-radius: 16px; padding: 24px; max-width: 850px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh; box-sizing: border-box;">
       
       <!-- Cabeçalho do Modal -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #eee; padding-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--fin-border); padding-bottom: 12px;">
         <div>
           <h2 style="margin: 0; color: #1a202c; display: flex; align-items: center; gap: 8px; font-size: 20px;">
             <i class="ph ph-receipt" style="color: #fc4b15;"></i> Relatório de Fechamento de Turno
@@ -946,28 +1000,28 @@
 
   <!-- Modal Exportação -->
   <div id="export-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1001; padding: 24px;">
-    <div style="background: white; border-radius: 12px; padding: 28px; max-width: 500px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column;">
+    <div style="background: var(--fin-card); border-radius: 12px; padding: 28px; max-width: 500px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin: 0; font-size: 20px;"><i class="ph ph-export" style="color: #fc4b15;"></i> Exportar Relatório</h2>
         <button onclick="document.getElementById('export-modal').style.display='none'" style="background: transparent; border: none; font-size: 24px; cursor: pointer; color: #999;"><i class="ph ph-x"></i></button>
       </div>
-      <p style="margin-top: 0; margin-bottom: 24px; color: gray; font-size: 14px;">Selecione o formato de exportação desejado para os dados filtrados:</p>
+      <p style="margin-top: 0; margin-bottom: 24px; color: var(--fin-text-muted); font-size: 14px;">Selecione o formato de exportação desejado para os dados filtrados:</p>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
         <button id="btn-export-txt" style="background: #f7f9fb; border: 1px solid #e1e8ed; border-radius: 10px; padding: 20px 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; font-family: inherit;">
           <i class="ph ph-file-text" style="font-size: 32px; color: #4f46e5;"></i>
-          <span style="font-weight: 600; font-size: 14px; color: #333;">Arquivo .TXT</span>
+          <span style="font-weight: 600; font-size: 14px; color: var(--fin-text);">Arquivo .TXT</span>
         </button>
         <button id="btn-export-pdf" style="background: #f7f9fb; border: 1px solid #e1e8ed; border-radius: 10px; padding: 20px 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; font-family: inherit;">
           <i class="ph ph-file-pdf" style="font-size: 32px; color: #ef4444;"></i>
-          <span style="font-weight: 600; font-size: 14px; color: #333;">Documento .PDF</span>
+          <span style="font-weight: 600; font-size: 14px; color: var(--fin-text);">Documento .PDF</span>
         </button>
         <button id="btn-export-wa" style="background: #f7f9fb; border: 1px solid #e1e8ed; border-radius: 10px; padding: 20px 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; font-family: inherit;">
           <i class="ph ph-whatsapp-logo" style="font-size: 32px; color: #22c55e;"></i>
-          <span style="font-weight: 600; font-size: 14px; color: #333;">Enviar WhatsApp</span>
+          <span style="font-weight: 600; font-size: 14px; color: var(--fin-text);">Enviar WhatsApp</span>
         </button>
         <button id="btn-export-sheets" style="background: #f7f9fb; border: 1px solid #e1e8ed; border-radius: 10px; padding: 20px 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; font-family: inherit;">
           <i class="ph ph-microsoft-excel" style="font-size: 32px; color: #10b981;"></i>
-          <span style="font-weight: 600; font-size: 14px; color: #333;">Google Sheets</span>
+          <span style="font-weight: 600; font-size: 14px; color: var(--fin-text);">Google Sheets</span>
         </button>
       </div>
     </div>
