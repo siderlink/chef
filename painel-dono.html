@@ -3957,11 +3957,16 @@
         <textarea id="modal-sol-mod-obs" class="form-input" rows="2" placeholder="Ex: Gostaria de testar na minha unidade principal neste fim de semana..." style="font-size: 13px; resize: vertical;"></textarea>
       </div>
 
-      <div class="confirm-row" style="margin-top: 18px; display: flex; gap: 10px;">
-        <button type="button" class="btn-cancel" onclick="fecharModal('modal-solicitar-modulo')">Voltar</button>
-        <button type="button" class="btn-confirm" id="btn-confirmar-sol-mod" onclick="enviarSolicitacaoModuloDono()" style="flex: 1; background: linear-gradient(135deg, #fc4b15, #ff8c00); color: #fff;">
-          <i class="ph-bold ph-paper-plane-tilt"></i> Confirmar Solicitação
+      <div class="confirm-row" style="margin-top: 18px; display: flex; flex-direction: column; gap: 8px;">
+        <button type="button" class="btn-confirm" id="btn-ativar-imediato-mod" onclick="ativarModuloImediatoDono()" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 12px; font-size: 14px; font-weight: 900; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">
+          <i class="ph-bold ph-lightning"></i> Ativar Agora com 7 Dias Grátis
         </button>
+        <div style="display: flex; gap: 10px; width: 100%;">
+          <button type="button" class="btn-cancel" onclick="fecharModal('modal-solicitar-modulo')" style="flex: 1;">Voltar</button>
+          <button type="button" class="btn-confirm" id="btn-confirmar-sol-mod" onclick="enviarSolicitacaoModuloDono()" style="flex: 2; background: rgba(255,255,255,0.08); color: var(--text); border: 1px solid var(--border);">
+            <i class="ph-bold ph-chat-circle-dots"></i> Falar com Atendente
+          </button>
+        </div>
       </div>
     </div>
   </div>

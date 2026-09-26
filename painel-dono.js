@@ -3604,6 +3604,42 @@ window.enviarSolicitacaoModuloDono = async function() {
   }
 };
 
+window.ativarModuloImediatoDono = async function() {
+  const chave = document.getElementById('modal-sol-mod-chave')?.value;
+  if (!chave) return;
+  const btn = document.getElementById('btn-ativar-imediato-mod');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph-bold ph-spinner-gap spin"></i> Ativando Módulo...';
+  }
+  const authToken = (typeof token !== 'undefined' && token) || localStorage.getItem('chef_token') || '';
+  try {
+    const res = await fetch('/api/dono/modulos/ativar-imediato', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ chave_modulo: chave })
+    });
+    const data = await res.json();
+    if (data && data.ok) {
+      fecharModal('modal-solicitar-modulo');
+      showToast(data.mensagem || 'Módulo ativado com sucesso!', 'ph-check-circle', 'success');
+      window.carregarModulosDono(true);
+    } else {
+      showToast(data.erro || 'Falha ao ativar módulo.', 'ph-warning', 'error');
+    }
+  } catch (e) {
+    showToast('Erro de comunicação ao ativar módulo.', 'ph-wifi-slash', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ph-bold ph-lightning"></i> Ativar Agora com 7 Dias Grátis';
+    }
+  }
+};
+
 
 // ══════════════════════════════════════════════════════════════════
 // BI EXECUTIVO DO DONO: DRE & ENGENHARIA DE CARDÁPIO
