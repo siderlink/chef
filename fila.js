@@ -638,6 +638,7 @@ let currentSector = localStorage.getItem('filaCurrentSector') || 'Todos';
 let filaSearchText = localStorage.getItem('filaSearchText') || '';
 let filaSortDelay = localStorage.getItem('filaSortDelay') === 'true';
 let filaTipoFiltro = localStorage.getItem('filaTipoFiltro') || 'todos';
+let currentCanalFilter = localStorage.getItem('filaCurrentCanal') || 'todos';
 let produtoCategorias = new Map();
 let iaConfig = { minutosAtencao: 50, segundosPulseNovoPedido: 8 };
 const newOrderIds = new Set();
@@ -1514,6 +1515,13 @@ function renderQueue(forceRerender) {
     if (filaTipoFiltro !== 'todos' && tipoDoItem(item) !== filaTipoFiltro) {
       return false;
     }
+    if (currentCanalFilter === 'ifood') {
+      const isIfood = (item.canal && String(item.canal).toLowerCase().includes('ifood')) ||
+                      (item.origem && String(item.origem).toLowerCase().includes('ifood')) ||
+                      (item.localName && String(item.localName).toLowerCase().includes('ifood')) ||
+                      (item.mesa_comanda && String(item.mesa_comanda).toLowerCase().includes('ifood'));
+      if (!isIfood) return false;
+    }
     if (filaSearchText) {
       const productName = (item.productName || '').toLowerCase();
       const localName = (item.localName || '').toLowerCase();
@@ -1539,6 +1547,20 @@ function renderQueue(forceRerender) {
   const countEspera = queueData.filter(i => (i.status === 'Pendente' || i.status === 'Em espera') && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(i.status)).length;
   const countPreparo = queueData.filter(i => (i.status === 'Em preparo' || i.status === 'Em Preparo') && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(i.status)).length;
   const countPronto = queueData.filter(i => (i.status === 'Pronto' || i.status === 'Prontos') && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(i.status)).length;
+
+  const countIfood = queueData.filter(i => {
+    if (['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(i.status)) return false;
+    return (i.canal && String(i.canal).toLowerCase().includes('ifood')) ||
+           (i.origem && String(i.origem).toLowerCase().includes('ifood')) ||
+           (i.localName && String(i.localName).toLowerCase().includes('ifood')) ||
+           (i.mesa_comanda && String(i.mesa_comanda).toLowerCase().includes('ifood'));
+  }).length;
+
+  const bIfood = document.getElementById('kds-badge-ifood');
+  if (bIfood) {
+    bIfood.innerText = countIfood;
+    bIfood.style.display = countIfood > 0 ? 'inline-block' : 'none';
+  }
 
   const bEspera = document.getElementById('kds-badge-espera');
   const bPreparo = document.getElementById('kds-badge-preparo');
@@ -1677,6 +1699,14 @@ function renderizarCardIndividual(item) {
   const idStr = String(item.id);
   const apelidoPedido = kdsPedidoApelidos[idStr] || '';
 
+  const isIfood = (item.canal && String(item.canal).toLowerCase().includes('ifood')) ||
+                  (item.origem && String(item.origem).toLowerCase().includes('ifood')) ||
+                  (item.localName && String(item.localName).toLowerCase().includes('ifood')) ||
+                  (item.mesa_comanda && String(item.mesa_comanda).toLowerCase().includes('ifood'));
+  const badgeIfood = isIfood
+    ? `<span class="kds-ifood-badge" style="background:#ea1d2c;color:white;padding:2px 7px;border-radius:6px;font-size:11px;font-weight:900;display:inline-flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(234,29,44,0.3);"><i class="ph-bold ph-moped"></i> iFood</span>`
+    : '';
+
   const ptCabecalho = `
       <div class="kds-card-mobile-header" data-field-key="cabecalho">
         <div class="kds-card-mesa-badge">
@@ -1684,6 +1714,7 @@ function renderizarCardIndividual(item) {
           <div class="kds-card-mesa-info">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
               <strong class="kds-mesa-title">${localEsc}</strong>
+              ${badgeIfood}
               ${apelidoPedido ? `
                 <span class="kds-item-nickname-badge" onclick="event.stopPropagation(); window.cadastrarApelidoPedido(${id})" title="Apelido do Pedido: ${escHtml(apelidoPedido)}. Clique para alterar.">
                   <i class="ph-fill ph-tag"></i> <span>${escHtml(apelidoPedido)}</span>
@@ -2325,3 +2356,50 @@ setInterval(() => {
     renderQueue();
   }
 }, 30000);
+
+// ── INTEGRAÇÃO & POLLER IFOOD EM TEMPO REAL NO KDS ──
+window.filtrarCanal = function(canal) {
+  if (currentCanalFilter === canal) {
+    currentCanalFilter = 'todos';
+  } else {
+    currentCanalFilter = canal;
+  }
+  localStorage.setItem('filaCurrentCanal', currentCanalFilter);
+  const btnIfood = document.getElementById('kds-filter-ifood');
+  if (btnIfood) btnIfood.classList.toggle('active', currentCanalFilter === 'ifood');
+  renderQueue();
+};
+
+window.sincronizarIfoodManual = function() {
+  const btn = document.getElementById('btn-sync-ifood');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> <span>Sincronizando...</span>';
+  }
+  if (socket && socket.emit) {
+    socket.emit('ifood_manual_poll');
+  }
+  if (typeof window.enqueueTopNotification === 'function') {
+    window.enqueueTopNotification('🛵 Consultando novos pedidos no iFood (Merchant API)...', '#ea1d2c', 4000);
+  }
+  setTimeout(() => {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ph-bold ph-moped"></i> <span>iFood Sync</span>';
+    }
+  }, 3500);
+};
+
+socket.on('ifood_poll_done', () => {
+  if (typeof window.enqueueTopNotification === 'function') {
+    window.enqueueTopNotification('✅ Poller iFood sincronizado com sucesso!', '#10b981', 3500);
+  }
+  carregarPedidos();
+});
+
+socket.on('ifood_error', (msg) => {
+  if (typeof window.enqueueTopNotification === 'function') {
+    window.enqueueTopNotification(`⚠️ iFood: ${msg}`, '#ef4444', 4000);
+  }
+});
+

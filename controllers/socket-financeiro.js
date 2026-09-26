@@ -54,6 +54,52 @@ module.exports = function(socket, io, db, helpers) {
     });
   }
 
+  // Baixa automática de estoque de insumos via ficha técnica na finalização de itens
+  function dispararBaixaInsumos(pedidoIds) {
+    if (!pedidoIds || !pedidoIds.length || !db) return;
+    const placeholders = pedidoIds.map(() => '?').join(',');
+    db.all(`SELECT id, productName, quantity FROM pedidos WHERE id IN (${placeholders})`, pedidoIds, (err, rows) => {
+      if (err || !rows) return;
+      rows.forEach(r => {
+        if (!r.productName) return;
+        const qty = Math.max(1, parseFloat(r.quantity) || 1);
+        db.all(
+          `SELECT ft.quantidade, ft.perda_pct, ft.insumo_id, i.estoque_atual, i.estoque_minimo, i.nome, i.unidade
+           FROM ficha_tecnica ft
+           JOIN produtos p ON p.id = ft.produto_id
+           JOIN insumos i ON i.id = ft.insumo_id
+           WHERE LOWER(TRIM(p.nome)) = LOWER(TRIM(?))`,
+          [r.productName],
+          (eFt, fichas) => {
+            if (eFt || !fichas || !fichas.length) return;
+            db.serialize(() => {
+              fichas.forEach(f => {
+                const fator = 1 + ((f.perda_pct || 0) / 100);
+                const consumido = parseFloat((f.quantidade * qty * fator).toFixed(4));
+                const novoEstoque = Math.max(0, parseFloat((f.estoque_atual - consumido).toFixed(4)));
+                db.run(`UPDATE insumos SET estoque_atual = ? WHERE id = ?`, [novoEstoque, f.insumo_id]);
+                db.run(
+                  `INSERT INTO movimentacoes_insumos (insumo_id, tipo, quantidade, saldo_anterior, saldo_novo, motivo, referencia_id)
+                   VALUES (?, 'baixa_venda', ?, ?, ?, ?, ?)`,
+                  [f.insumo_id, consumido, f.estoque_atual, novoEstoque, `PDV: ${qty}x ${r.productName}`, r.id]
+                );
+                if (novoEstoque <= f.estoque_minimo && io) {
+                  io.emit('alerta_estoque_insumo', {
+                    insumo_id: f.insumo_id,
+                    nome: f.nome,
+                    estoque_atual: novoEstoque,
+                    estoque_minimo: f.estoque_minimo,
+                    unidade: f.unidade
+                  });
+                }
+              });
+            });
+          }
+        );
+      });
+    });
+  }
+
   // Autoriza o fechamento do caixa conforme o cargo de quem opera.
   async function autorizarFecharCaixa(data) {
     // Admin/Gerente autenticados: sem senha.
@@ -521,16 +567,26 @@ socket.on('pagamento_parcial_valor', ({ mesaName, valor, metodo, userName, comTa
             }
             
             if (validIds && validIds.length > 0) {
+              dispararBaixaInsumos(validIds);
               const placeholders = validIds.map(() => '?').join(',');
               db.run(`UPDATE pedidos SET status = 'Pago', turno_id = ? WHERE id IN (${placeholders})`, [turno.id, ...validIds], () => {
                 broadcastPedidos();
               });
             } else if (comandaName && String(comandaName).trim()) {
-              db.run(
-                `UPDATE pedidos SET status = 'Pago', turno_id = ? WHERE (localName = ? OR mesa_grupo = ?) AND TRIM(mesa_comanda) = ? AND status != 'Finalizado' AND status != 'Pago'`,
-                [turno.id, mesaName, mesaName, String(comandaName).trim()],
-                () => {
-                  broadcastPedidos();
+              db.all(
+                `SELECT id FROM pedidos WHERE (localName = ? OR mesa_grupo = ?) AND TRIM(mesa_comanda) = ? AND status != 'Finalizado' AND status != 'Pago'`,
+                [mesaName, mesaName, String(comandaName).trim()],
+                (eFind, rFind) => {
+                  if (!eFind && rFind && rFind.length) {
+                    dispararBaixaInsumos(rFind.map(x => x.id));
+                  }
+                  db.run(
+                    `UPDATE pedidos SET status = 'Pago', turno_id = ? WHERE (localName = ? OR mesa_grupo = ?) AND TRIM(mesa_comanda) = ? AND status != 'Finalizado' AND status != 'Pago'`,
+                    [turno.id, mesaName, mesaName, String(comandaName).trim()],
+                    () => {
+                      broadcastPedidos();
+                    }
+                  );
                 }
               );
             } else {
@@ -1083,12 +1139,22 @@ socket.on('pagamento_parcial_valor', ({ mesaName, valor, metodo, userName, comTa
             await lançarMov(vComanda, `${descComanda} - ${mesaName}`);
 
             if (Array.isArray(itemIdsComanda) && itemIdsComanda.length > 0) {
+              dispararBaixaInsumos(itemIdsComanda);
               const placeholders = itemIdsComanda.map(() => '?').join(',');
               db.run(`UPDATE pedidos SET status = 'Pago', turno_id = ? WHERE id IN (${placeholders})`, [turno.id, ...itemIdsComanda]);
             } else if (comanda) {
-              db.run(
-                `UPDATE pedidos SET status = 'Pago', turno_id = ? WHERE (localName = ? OR mesa_grupo = ?) AND TRIM(mesa_comanda) = ? AND status NOT IN ('Finalizado', 'Cancelado', 'Pago')`,
-                [turno.id, mesaName, mesaName, comanda]
+              db.all(
+                `SELECT id FROM pedidos WHERE (localName = ? OR mesa_grupo = ?) AND TRIM(mesa_comanda) = ? AND status NOT IN ('Finalizado', 'Cancelado', 'Pago')`,
+                [mesaName, mesaName, comanda],
+                (eFind, rFind) => {
+                  if (!eFind && rFind && rFind.length) {
+                    dispararBaixaInsumos(rFind.map(x => x.id));
+                  }
+                  db.run(
+                    `UPDATE pedidos SET status = 'Pago', turno_id = ? WHERE (localName = ? OR mesa_grupo = ?) AND TRIM(mesa_comanda) = ? AND status NOT IN ('Finalizado', 'Cancelado', 'Pago')`,
+                    [turno.id, mesaName, mesaName, comanda]
+                  );
+                }
               );
             }
 
@@ -1108,6 +1174,7 @@ socket.on('pagamento_parcial_valor', ({ mesaName, valor, metodo, userName, comTa
             // Opcional: se o caixa escolheu "levar" um item compartilhado inteiro junto,
             // ele é marcado como pago (quantidade inteira). Crédito é financeiro.
             if (itemIdCompartilhado) {
+              dispararBaixaInsumos([itemIdCompartilhado]);
               db.run(`UPDATE pedidos SET status = 'Pago', turno_id = ? WHERE id = ?`, [turno.id, itemIdCompartilhado]);
             }
 

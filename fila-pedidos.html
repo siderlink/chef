@@ -81,12 +81,22 @@
         <button class="kds-chip-item active sector-modal-btn" data-sector="Todos" onclick="filtrarSetor('Todos')">
           <i class="ph-bold ph-storefront"></i> <span>Todos os Setores</span>
         </button>
+        <button class="kds-chip-item" id="kds-filter-ifood" onclick="window.filtrarCanal('ifood')" title="Filtrar apenas pedidos de Delivery iFood">
+          <i class="ph-bold ph-moped" style="color: #ea1d2c;"></i> <span>iFood</span>
+          <span class="kds-badge-count" id="kds-badge-ifood" style="display:none; background:#ea1d2c; color:white; font-size:10px; padding:1px 6px; border-radius:10px; margin-left:4px; font-weight:800;">0</span>
+        </button>
         <div id="kds-sectors-chips-dynamic" style="display: contents;"></div>
       </div>
     </div>
 
     <!-- DIREITA: SELETOR GRADE/LINHAS/KANBAN + AJUSTES DE LAYOUT + BUSCA + TEMA -->
     <div class="kds-navbar-right">
+      <!-- Botão Sincronizar Poller iFood -->
+      <button type="button" id="btn-sync-ifood" onclick="window.sincronizarIfoodManual()" class="kds-nav-btn" style="background: rgba(234,29,44,0.12); color: #ea1d2c; border: 1.5px solid rgba(234,29,44,0.3); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px;" title="Consultar novos pedidos no iFood agora (Poller)">
+        <i class="ph-bold ph-moped" style="font-size: 16px;"></i>
+        <span>iFood Sync</span>
+      </button>
+
       <!-- Seletor de Modo de Exibição: Grade vs Linhas vs Kanban -->
       <div style="display: flex; background: var(--bg-tertiary, #1e293b); padding: 3px; border-radius: 10px; border: 1px solid var(--border-color, #334155); gap: 2px;">
         <button type="button" id="btn-layout-grid" onclick="window.alterarModoDisposicao('grid')" title="Modo Grade de Cards" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 800; cursor: pointer; background: #fc4b15; color: white; display: flex; align-items: center; gap: 4px;">

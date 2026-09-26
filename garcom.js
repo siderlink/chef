@@ -2250,6 +2250,11 @@ socket.on('pedido_pronto', (pedido) => {
       showToast(`🔔 PEDIDO PRONTO! ${pedido.quantity || 1}x ${pedido.productName || 'Item'} (${pedido.localName}${comandaLabel})`, '#22c55e');
       if (typeof playChamarGarcom === 'function') playChamarGarcom();
       if (typeof playDing === 'function') playDing();
+      try {
+        if ('vibrate' in navigator) {
+          navigator.vibrate([300, 150, 300, 150, 450]);
+        }
+      } catch (e) {}
     }
     socket.emit('get_esteira', loggedUser.nome);
 
@@ -2354,6 +2359,11 @@ socket.on('notificacao_garcom', (data) => {
   const msg = `🔔 ${data.quantity}x ${data.productName} - ${data.localName}${clienteLabel} aguardando retirada!`;
   showToast(msg, '#8b5cf6');
   playChamarGarcom();
+  try {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([350, 150, 350, 150, 500]);
+    }
+  } catch (e) {}
 
   if ('Notification' in window) {
     const sendNotif = () => {
