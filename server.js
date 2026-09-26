@@ -8,7 +8,17 @@ const activeSockets = new Map();
 const originalLog = console.log;
 const originalError = console.error;
 
-
+// Ativação da Proteção Global de Processo (Anti-Crash contra uncaughtException & unhandledRejection)
+const { setupProcessGuard, globalErrorMiddleware } = require('./middleware/safe-handler');
+setupProcessGuard({
+  onError: (type, err) => {
+    try {
+      const fs = require('fs');
+      const crashLog = `[${new Date().toISOString()}] [${type}] ${err && (err.stack || err.message || err)}\n`;
+      fs.appendFileSync('crash-forensics.log', crashLog);
+    } catch (_) {}
+  }
+});
 const ANSI = {
   reset: "\x1b[0m",
   bright: "\x1b[1m",
@@ -4750,28 +4760,58 @@ io.on('connection', (socket) => {
       db.all(`SELECT * FROM configuracoes`, async (errConfig, configRows) => {
         const config = {};
         if (configRows) configRows.forEach(r => config[r.chave] = r.valor);
-        const result = await nfceService.emitirNFCe({
+        let result = await nfceService.emitirNFCe({
           db,
           pedidoId: data.pedidoId || null,
-          localName: data.mesaName || 'Balcão',
+          localName: data.mesaName || data.mesaId || 'Balcão',
           items: data.items || [],
           totalValue: parseFloat(data.totalValue) || 0,
           cpfCnpj: data.cpfCnpj || '',
           clienteNome: data.clienteNome || '',
-          paymentMethods: data.metodo || 'Dinheiro',
+          paymentMethods: data.metodo || data.formaPagamento || 'Dinheiro',
           config
         });
-        if (result.ok) {
+
+        // Fallback Resiliente: Se SEFAZ falhou, emitir automaticamente em Contingência Offline (tpEmis = 9)
+        if (!result || !result.ok) {
+          console.warn('[NFC-e] Falha na emissão normal. Ativando Contingência Offline (tpEmis = 9)...');
+          config.contingencia = true;
+          result = await nfceService.emitirNFCe({
+            db,
+            pedidoId: data.pedidoId || null,
+            localName: data.mesaName || data.mesaId || 'Balcão',
+            items: data.items || [],
+            totalValue: parseFloat(data.totalValue) || 0,
+            cpfCnpj: data.cpfCnpj || '',
+            clienteNome: data.clienteNome || '',
+            paymentMethods: data.metodo || data.formaPagamento || 'Dinheiro',
+            config
+          });
+        }
+
+        if (result && result.ok) {
           socket.emit('nfce_emitida_sucesso', result);
           db.all(`SELECT id, pedido_id, localName, cliente_nome, cpf_cnpj, valor_total, chave_acesso, numero_nota, serie, ambiente, status, protocolo, created_at FROM nfce_notas ORDER BY id DESC LIMIT 50`, (e, notasRows) => {
             io.emit('nfce_lista_atualizada', notasRows || []);
           });
         } else {
-          socket.emit('erro_nfce', `Erro ao emitir NFC-e: ${result.erro}`);
+          socket.emit('erro_nfce', `Erro ao emitir NFC-e: ${(result && result.erro) || 'Falha no processamento fiscal'}`);
         }
       });
     } catch (e) {
       socket.emit('erro_nfce', `Erro interno ao emitir NFC-e: ${e.message}`);
+    }
+  });
+
+  socket.on('sincronizar_nfce_contingencia', async () => {
+    try {
+      const res = await nfceService.sincronizarContingencias(db);
+      socket.emit('nfce_contingencia_sincronizada', res);
+      db.all(`SELECT id, pedido_id, localName, cliente_nome, cpf_cnpj, valor_total, chave_acesso, numero_nota, serie, ambiente, status, protocolo, created_at FROM nfce_notas ORDER BY id DESC LIMIT 50`, (e, notasRows) => {
+        io.emit('nfce_lista_atualizada', notasRows || []);
+      });
+    } catch (e) {
+      socket.emit('erro_nfce', `Erro ao sincronizar contingências: ${e.message}`);
     }
   });
 
@@ -12227,6 +12267,9 @@ app.get('/healthz', (req, res) => {
   }
 });
 
+// Middleware Global de Fallback Express (Anti-Crash para rotas e APIs)
+app.use(globalErrorMiddleware);
+
 // Graceful shutdown: encerra conexões socket e o HTTP server em até 5s
 let shuttingDown = false;
 function shutdown(signal) {
@@ -12423,6 +12466,19 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       console.log('💼 Controller Equipe de Suporte & Vendas Afiliadas carregado com sucesso.');
     } catch (eSupVend) {
       console.error('Erro ao carregar o Controller Suporte Vendas:', eSupVend);
+    }
+
+    try {
+      require('./controllers/saas-monetizacao')(app, masterDb, sqlite3, {
+        verificarToken,
+        superAdminAuth,
+        getTenantDb,
+        io,
+        loadAllTenantFeatures,
+        isTenantFeatureEnabled
+      });
+    } catch (eMonetizacao) {
+      console.error('Erro ao carregar o Controller SaaS Monetização:', eMonetizacao);
     }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);

@@ -21,12 +21,31 @@ class IfoodApiError extends Error {
   }
 }
 
-async function reqJson(url, opts) {
-  const res = await fetch(url, opts);
-  const text = await res.text();
-  let data = null;
-  try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
-  return { status: res.status, ok: res.ok, data };
+async function reqJson(url, opts = {}) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const fetchOpts = {
+      ...opts,
+      signal: opts.signal || controller.signal
+    };
+
+    const res = await fetch(url, fetchOpts);
+    clearTimeout(timeoutId);
+
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
+    return { status: res.status, ok: res.ok, data };
+  } catch (err) {
+    const isTimeout = err.name === 'AbortError';
+    console.warn(`[ifood-integration] Erro na requisição HTTP para ${url}:`, isTimeout ? 'Timeout de 10s excedido' : err.message);
+    return {
+      status: isTimeout ? 504 : 503,
+      ok: false,
+      data: { error: isTimeout ? 'Gateway Timeout' : 'iFood API unreachable', details: err.message }
+    };
+  }
 }
 
 async function postForm(url, params) {

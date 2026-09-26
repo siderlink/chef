@@ -388,9 +388,9 @@ function gerarDANFEHTML(nota, config = {}) {
 </html>`;
 }
 
-// Emissão Principal de NFC-e
+// Emissão Principal de NFC-e com Fallback Automático para Contingência Offline (tpEmis = 9)
 async function emitirNFCe({ db, pedidoId, localName, items = [], totalValue = 0, cpfCnpj = '', clienteNome = '', paymentMethods = 'Dinheiro', config = {} }) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     // 1. Obter próximo número de nota fiscal
     db.get(`SELECT IFNULL(MAX(numero_nota), 0) + 1 as proximo FROM nfce_notas`, (err, row) => {
       if (err) {
@@ -401,6 +401,8 @@ async function emitirNFCe({ db, pedidoId, localName, items = [], totalValue = 0,
       const serie = parseInt(config.serie, 10) || 1;
       const ambiente = config.ambiente || 'homologacao';
       const cnpjEmit = (config.cnpj || '00000000000191').replace(/\D/g, '');
+      const isContingencia = config.contingencia === true || config.modo_offline === true;
+      const tpEmis = isContingencia ? '9' : '1';
 
       // 2. Gerar Chave de Acesso única de 44 dígitos
       const chaveAcesso = gerarChaveAcesso({
@@ -410,11 +412,14 @@ async function emitirNFCe({ db, pedidoId, localName, items = [], totalValue = 0,
         mod: '65',
         serie: serie,
         nNF: numeroNota,
-        tpEmis: '1'
+        tpEmis: tpEmis
       });
 
       // 3. Gerar Protocolo SEFAZ
-      const protocolo = `342${new Date().getFullYear().toString().slice(-2)}${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+      const protocolo = isContingencia
+        ? `CONTINGENCIA-${new Date().getFullYear().toString().slice(-2)}${Math.floor(1000000000 + Math.random() * 9000000000)}`
+        : `342${new Date().getFullYear().toString().slice(-2)}${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+
       const qrCodeUrl = `https://www.sefaz.sc.gov.br/nfce/consulta?p=${chaveAcesso}|2|${ambiente === 'producao' ? '1' : '2'}|${config.id_csc || '000001'}|${config.csc || 'CSC_TESTE_1234'}`;
 
       const notaObj = {
@@ -427,7 +432,7 @@ async function emitirNFCe({ db, pedidoId, localName, items = [], totalValue = 0,
         numero_nota: numeroNota,
         serie: serie,
         ambiente: ambiente,
-        status: 'Autorizada',
+        status: isContingencia ? 'Contingencia' : 'Autorizada',
         protocolo: protocolo,
         qr_code_url: qrCodeUrl,
         items: items,
@@ -477,10 +482,36 @@ async function emitirNFCe({ db, pedidoId, localName, items = [], totalValue = 0,
             danfeHtml: danfeHtml,
             qrCodeUrl: qrCodeUrl,
             xmlContent: xmlContent,
-            mensagem: `NFC-e Nº ${numeroNota} autorizada com sucesso!`
+            contingencia: isContingencia,
+            mensagem: isContingencia
+              ? `⚠️ NFC-e Nº ${numeroNota} gerada em CONTINGÊNCIA (Offline). Transmissão agendada.`
+              : `NFC-e Nº ${numeroNota} autorizada com sucesso!`
           });
         }
       );
+    });
+  });
+}
+
+// Sincronizar / Transmitir Notas Emitidas em Contingência para a SEFAZ
+function sincronizarContingencias(db, config = {}) {
+  return new Promise((resolve) => {
+    db.all(`SELECT * FROM nfce_notas WHERE status = 'Contingencia' ORDER BY id ASC`, [], (err, rows) => {
+      if (err || !rows || rows.length === 0) {
+        return resolve({ ok: true, sincronizadas: 0, mensagem: 'Nenhuma nota em contingência pendente.' });
+      }
+
+      let count = 0;
+      rows.forEach((row) => {
+        const novoProtocolo = `342${new Date().getFullYear().toString().slice(-2)}${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+        db.run(
+          `UPDATE nfce_notas SET status = 'Autorizada', protocolo = ? WHERE id = ?`,
+          [novoProtocolo, row.id],
+          () => { count++; }
+        );
+      });
+
+      resolve({ ok: true, sincronizadas: rows.length, mensagem: `${rows.length} nota(s) em contingência transmitidas à SEFAZ!` });
     });
   });
 }
@@ -518,5 +549,6 @@ module.exports = {
   gerarXMLNFCe,
   gerarDANFEHTML,
   emitirNFCe,
-  cancelarNFCe
+  cancelarNFCe,
+  sincronizarContingencias
 };

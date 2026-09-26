@@ -1302,14 +1302,20 @@
       if (!navigator.serial) {
         if (window.Swal) {
           Swal.fire({
-            icon: 'warning',
-            title: 'Web Serial Não Suportada',
-            text: 'Seu navegador não suporta comunicação serial direta. Utilize Google Chrome, Microsoft Edge ou Opera com porta serial habilitada.',
+            icon: 'info',
+            title: 'Balança: Modo Manual',
+            text: 'Web Serial indisponível neste navegador. Deseja informar o peso manualmente?',
+            showCancelButton: true,
+            confirmButtonText: 'Digitar Peso (kg)',
+            cancelButtonText: 'Fechar',
             background: '#0f172a',
-            color: '#f8fafc'
+            color: '#f8fafc',
+            confirmButtonColor: '#10b981'
+          }).then((r) => {
+            if (r.isConfirmed) this.fallbackInputPesoManual();
           });
         } else {
-          alert('Web Serial API não suportada neste navegador.');
+          this.fallbackInputPesoManual();
         }
         return;
       }
@@ -1349,7 +1355,81 @@
           }
         })();
       } catch (err) {
-        console.error('[Caixa Ultra] Erro ao conectar balança:', err);
+        console.warn('[Caixa Ultra] Balança serial não conectada ou cancelada:', err.message);
+        // Fallback imediato para digitação manual sem travar o operador
+        if (err.name !== 'NotFoundError') {
+          this.fallbackInputPesoManual();
+        }
+      }
+    },
+
+    fallbackInputPesoManual: function () {
+      if (window.Swal) {
+        Swal.fire({
+          title: '⚖️ Peso da Balança (Manual)',
+          text: 'Digite o peso aferido na balança (em kg):',
+          input: 'text',
+          inputPlaceholder: 'Ex: 0.450',
+          showCancelButton: true,
+          confirmButtonText: 'Confirmar Peso',
+          confirmButtonColor: '#10b981',
+          cancelButtonText: 'Cancelar',
+          background: '#0f172a',
+          color: '#f8fafc'
+        }).then((res) => {
+          if (res.isConfirmed && res.value) {
+            const peso = parseFloat(res.value.replace(',', '.'));
+            if (!isNaN(peso) && peso > 0) {
+              this.atualizarPesoBalanca(peso);
+            }
+          }
+        });
+      } else {
+        const val = prompt('Digite o peso em kg (Ex: 0.450):');
+        if (val) {
+          const peso = parseFloat(val.replace(',', '.'));
+          if (!isNaN(peso) && peso > 0) this.atualizarPesoBalanca(peso);
+        }
+      }
+    },
+
+    imprimirCupomMesa: function (mesaNome) {
+      const mesa = this.mesaAtual || (this.mesas || []).find(m => m.nome === mesaNome);
+      if (!mesa) return;
+      try {
+        const win = window.open('', '_blank', 'width=380,height=600');
+        if (win) {
+          const itensHtml = (mesa.itens || []).map(i => `
+            <tr>
+              <td>${i.quantidade || 1}x ${i.nome || i.produto_nome || ''}</td>
+              <td style="text-align:right;">R$ ${(Number(i.preco || i.preco_unitario || 0) * Number(i.quantidade || 1)).toFixed(2).replace('.', ',')}</td>
+            </tr>
+          `).join('');
+          win.document.write(`
+            <!DOCTYPE html><html><head><title>Cupom - ${mesa.nome}</title>
+            <style>
+              body { font-family: monospace; width: 75mm; margin: 0 auto; padding: 10px; font-size: 12px; }
+              h3 { text-align: center; margin: 0 0 5px 0; }
+              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+              td { padding: 3px 0; }
+              hr { border: none; border-top: 1px dashed #000; margin: 8px 0; }
+            </style></head><body>
+              <h3>CHEF COZINHA</h3>
+              <p style="text-align:center; margin:0; font-size:11px;">EXTRATO DE CONFERÊNCIA — ${mesa.nome}</p>
+              <hr>
+              <table>${itensHtml}</table>
+              <hr>
+              <p style="font-weight:bold; font-size:14px; text-align:right; margin:4px 0;">TOTAL: R$ ${Number(mesa.total || 0).toFixed(2).replace('.', ',')}</p>
+              <p style="text-align:center; font-size:10px; margin-top:14px;">Documento Não Fiscal</p>
+              <script>window.print(); setTimeout(() => window.close(), 1200);<\/script>
+            </body></html>
+          `);
+          win.document.close();
+        } else {
+          window.print();
+        }
+      } catch (_) {
+        window.print();
       }
     },
 
