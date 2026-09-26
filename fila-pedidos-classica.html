@@ -15,7 +15,6 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
-  <link rel="stylesheet" href="/dark-mode.css">
   <script src="/theme-manager.js?v=20260901paletas"></script>
   <script src="/vendor/morphdom/morphdom.min.js"></script>
   <script src="/locales.js"></script>
@@ -32,22 +31,45 @@
   <script src="/chef-tz.js"></script>
   <script>
     (function kdsDetectarVersaoNova() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('v') === '1' || urlParams.get('v') === 'classica' || urlParams.get('force') === '1') {
+        localStorage.setItem('fila_modo', 'classica');
+        localStorage.setItem('chef_fila_modo', 'classica');
+        return;
+      }
       const localModo = localStorage.getItem('fila_modo') || localStorage.getItem('chef_fila_modo');
       if (localModo === 'nova') {
-        window.location.replace('/fila-pedidos.html');
+        window.location.replace('/fila-pedidos.html?v=2');
         return;
       }
       fetch('/api/config')
         .then(r => r.json())
         .then(cfg => {
           if (cfg && String(cfg.fila_modo || '').toLowerCase() === 'nova') {
-            localStorage.setItem('fila_modo', 'nova');
-            localStorage.setItem('chef_fila_modo', 'nova');
-            window.location.replace('/fila-pedidos.html');
+            const curP = new URLSearchParams(window.location.search);
+            if (curP.get('v') !== '1' && curP.get('force') !== '1') {
+              localStorage.setItem('fila_modo', 'nova');
+              localStorage.setItem('chef_fila_modo', 'nova');
+              window.location.replace('/fila-pedidos.html?v=2');
+            }
           }
         })
         .catch(() => {});
     })();
+
+    window.trocarVersaoFila = function(versao) {
+      const isV1 = (versao === 'v1' || versao === 'classica');
+      localStorage.setItem('fila_modo', isV1 ? 'classica' : 'nova');
+      localStorage.setItem('chef_fila_modo', isV1 ? 'classica' : 'nova');
+      try {
+        fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (typeof obterTokenAtual === 'function' ? obterTokenAtual() : '') },
+          body: JSON.stringify({ fila_modo: isV1 ? 'classica' : 'nova' })
+        }).catch(() => {});
+      } catch(e) {}
+      window.location.href = isV1 ? '/fila-pedidos-classica.html?v=1' : '/fila-pedidos.html?v=2';
+    };
   </script>
   <script src="fila-classica.js"></script>
 </head>
@@ -98,12 +120,22 @@
             <button class="queue-tipo-btn" data-tipo="alacarte" onclick="window.setFiltroTipo('alacarte')"><i class="ph ph-fork-knife"></i><span>A La Carte</span></button>
           </div>
 
-          <!-- SETOR ATUAL + TAMANHO DA LETRA (A- / A+) -->
+          <!-- SETOR ATUAL + CONEXÃO + TAMANHO DA LETRA (A- / A+) -->
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 2px; font-size: 12px;">
-            <span style="color: var(--text-secondary, #64748b); font-weight: 600;"><i class="ph ph-storefront" style="color: #1a73e8;"></i> Setor atual: <span id="current-sector-label" style="color: #1a73e8; font-weight: 700;">Todos</span></span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: var(--text-secondary, #64748b); font-weight: 600;"><i class="ph ph-storefront" style="color: #1a73e8;"></i> Setor atual: <span id="current-sector-label" style="color: #1a73e8; font-weight: 700;">Todos</span></span>
+              <div id="kds-connection-badge" class="kds-conn-badge online" title="Status da Conexão em Tempo Real">
+                <span class="kds-conn-dot"></span>
+                <span id="kds-conn-text">Online</span>
+              </div>
+            </div>
             <div style="display: flex; gap: 6px; align-items: center;">
               <button id="btn-font-dec" class="fila-settings-btn" title="Diminuir letra" style="min-width: 42px;"><i class="ph ph-text-aa-offset-decrease"></i><span>A-</span></button>
               <button id="btn-font-inc" class="fila-settings-btn" title="Aumentar letra" style="min-width: 42px;"><i class="ph ph-text-aa-offset-increase"></i><span>A+</span></button>
+              <button type="button" onclick="window.trocarVersaoFila('nova')" class="fila-settings-btn" style="background: rgba(252, 75, 21, 0.12); color: #fc4b15; border: 1.5px solid rgba(252, 75, 21, 0.4); font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" title="Alternar para a Fila de Pedidos V2 (Moderna)">
+                <i class="ph-bold ph-sparkle" style="color: #fc4b15;"></i>
+                <span>Fila V2 Moderna</span>
+              </button>
             </div>
           </div>
 
@@ -252,11 +284,11 @@
 
         <!-- SEÇÃO ESTILO VISUAL DA COZINHA (MODERNA V2 / CLÁSSICA V1) -->
         <div class="fila-settings-group">
-          <span class="fila-settings-label">Estilo Visual da Cozinha</span>
+          <span class="fila-settings-label">Versão da Cozinha (V1 / V2)</span>
           <div class="fila-settings-grid" style="grid-template-columns: 1fr 1fr;">
-            <a href="/fila-pedidos.html" class="fila-settings-btn" style="text-decoration:none; border-color: #fc4b15; color: #fc4b15;" title="Mudar para o design moderno v2">
+            <button type="button" class="fila-settings-btn" onclick="window.trocarVersaoFila('nova')" style="border-color: #fc4b15; color: #fc4b15; cursor: pointer;" title="Mudar para o design moderno v2">
               <i class="ph-fill ph-sparkle" style="color: #fc4b15;"></i><span>Moderna (v2)</span>
-            </a>
+            </button>
             <button type="button" class="fila-settings-btn active" style="background: rgba(0,0,0,0.06); border-color: #94a3b8; color: #1e293b;" title="Visual Clássico v1 Ativo">
               <i class="ph ph-clock-counter-clockwise"></i><span>Clássica (v1)</span>
             </button>
@@ -282,6 +314,19 @@
           <div class="fila-settings-row">
             <button class="fila-settings-btn flex-1" onclick="window.resetColumnWidths && window.resetColumnWidths()">
               <i class="ph ph-arrow-counter-clock"></i><span>Resetar Colunas</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SEÇÃO AUTO-SCROLL (ROLAGEM AUTOMÁTICA) -->
+        <div class="fila-settings-group">
+          <span class="fila-settings-label">Rolagem Automática (Novos Pedidos)</span>
+          <div class="fila-settings-grid" style="grid-template-columns: 1fr 1fr;">
+            <button type="button" class="fila-settings-btn autoscroll-btn active" id="btn-autoscroll-on" onclick="window.setAutoscrollMode(true)">
+              <i class="ph ph-check-circle" style="color: #10b981;"></i><span>Ativada</span>
+            </button>
+            <button type="button" class="fila-settings-btn autoscroll-btn" id="btn-autoscroll-off" onclick="window.setAutoscrollMode(false)">
+              <i class="ph ph-x-circle" style="color: #ef4444;"></i><span>Desativada</span>
             </button>
           </div>
         </div>
@@ -338,6 +383,10 @@
     </div>
     <div id="ia-gerente-content"></div>
   </div>
+
+  <!-- Container de Toast para Desfazer (Undo) -->
+  <div id="kds-undo-container" class="kds-undo-container"></div>
+
   <script src="/fullscreen.js"></script>
   <script>window.PUSH_ROLE = 'cozinha';</script>
   <script src="/push-client.js"></script>

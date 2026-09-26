@@ -1,25 +1,28 @@
 (function() {
 
-  // ─── DARK MODE CSS INJECTION ─────────────────────────────────────────────────
-  // Inject dark-mode.css if not already present (for pages that don't load it directly)
-  if (!document.querySelector('link[href*="dark-mode.css"]')) {
-    var dmLink = document.createElement('link');
-    dmLink.rel = 'stylesheet';
-    dmLink.href = '/dark-mode.css';
-    document.head.appendChild(dmLink);
-  }
-
-  // ─── DARK MODE STATE ─────────────────────────────────────────────────────────
+  // ─── DARK MODE STATE & PARITY COM CHEFTHEME ─────────────────────────────────
   var DARK_KEY = 'chef_garcom_theme';
-  // Unificado: prefere a chave do theme-manager (chef_theme) para os dois sistemas nunca divergirem
-  var isDark = (function() {
+  function checkIsDark() {
+    if (window.ChefTheme && typeof window.ChefTheme.get === 'function') {
+      return window.ChefTheme.get() === 'dark';
+    }
     try {
       var t = localStorage.getItem('chef_theme');
       if (t === 'dark') return true;
       if (t === 'light') return false;
     } catch (e) { }
     return localStorage.getItem(DARK_KEY) === 'dark';
-  })();
+  }
+  var isDark = checkIsDark();
+
+  // Se a página não tiver theme-manager.js, garante injeção de dark-mode.css somente quando escuro
+  var hasThemeManager = !!(window.ChefTheme || document.querySelector('script[src*="theme-manager"]'));
+  if (!hasThemeManager && isDark && !document.querySelector('link[href*="dark-mode.css"]')) {
+    var dmLink = document.createElement('link');
+    dmLink.rel = 'stylesheet';
+    dmLink.href = '/dark-mode.css';
+    document.head.appendChild(dmLink);
+  }
 
   // Apply immediately on load (before DOMContentLoaded to avoid flash)
   if (isDark) document.documentElement.classList.add('dark-mode-pre');
@@ -74,24 +77,40 @@
 
   // ─── DARK MODE LOGIC ─────────────────────────────────────────────────────────
   function applyDarkMode(dark) {
-    document.body.classList.toggle('dark-mode', dark);
+    if (document.body) document.body.classList.toggle('dark-mode', dark);
     document.documentElement.classList.toggle('dark-mode', dark);
     darkBtn.innerHTML = dark ? SVG_SUN : SVG_MOON;
     darkBtn.title = dark ? 'Modo Claro' : 'Modo Noturno';
     darkBtn.style.opacity = dark ? '1' : '0.7';
     darkBtn.style.color = dark ? '#f59e0b' : 'inherit';
+
+    var dmLinks = document.querySelectorAll('link[href*="dark-mode.css"]');
+    if (dark) {
+      if (!dmLinks.length) {
+        var dmLink = document.createElement('link');
+        dmLink.rel = 'stylesheet';
+        dmLink.href = '/dark-mode.css';
+        document.head.appendChild(dmLink);
+      } else {
+        dmLinks.forEach(function (l) { l.disabled = false; });
+      }
+    } else {
+      dmLinks.forEach(function (l) {
+        l.disabled = true;
+        try { if (l.parentNode) l.parentNode.removeChild(l); } catch (e) { }
+      });
+    }
   }
 
   // Apply saved theme on DOM ready (promotes pre-class to body.dark-mode)
   function applyDarkOnLoad() {
-    // Only apply if body.dark-mode isn't already managed by the page itself
-    // (garcom.html manages its own via garcom.js — avoid double-toggle)
+    isDark = checkIsDark();
     var pageManages = !!document.getElementById('btn-theme-toggle');
-    if (!pageManages && isDark) {
-      applyDarkMode(true);
-    } else if (pageManages) {
+    if (!pageManages) {
+      applyDarkMode(isDark);
+    } else {
       // Sync icon with garcom.js state
-      var bodyIsDark = document.body.classList.contains('dark-mode');
+      var bodyIsDark = document.body ? document.body.classList.contains('dark-mode') : isDark;
       isDark = bodyIsDark;
       darkBtn.innerHTML = bodyIsDark ? SVG_SUN : SVG_MOON;
       darkBtn.style.color = bodyIsDark ? '#f59e0b' : 'inherit';
@@ -102,13 +121,27 @@
   document.addEventListener('DOMContentLoaded', applyDarkOnLoad);
   if (document.readyState === 'complete' || document.readyState === 'interactive') applyDarkOnLoad();
 
+  window.addEventListener('chef_theme_changed', function(ev) {
+    var theme = (ev && ev.detail && ev.detail.theme) || (window.ChefTheme ? window.ChefTheme.get() : null);
+    if (theme) {
+      isDark = (theme === 'dark');
+      applyDarkMode(isDark);
+    }
+  });
+
   darkBtn.addEventListener('click', function(e) {
     e.preventDefault(); e.stopPropagation();
+    if (window.ChefTheme && typeof window.ChefTheme.toggle === 'function') {
+      var nextTheme = window.ChefTheme.toggle();
+      isDark = (nextTheme === 'dark');
+      applyDarkMode(isDark);
+      return;
+    }
     isDark = !isDark;
-    localStorage.setItem(DARK_KEY, isDark ? 'dark' : 'light');
-    try { localStorage.setItem('chef_theme', isDark ? 'dark' : 'light'); } catch (err) { }
-    // Mantém o sistema do theme-manager alinhado quando a página usa os dois
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    var next = isDark ? 'dark' : 'light';
+    try { localStorage.setItem('chef_theme', next); } catch (err) { }
+    try { localStorage.setItem(DARK_KEY, next); } catch (err) { }
+    document.documentElement.setAttribute('data-theme', next);
     applyDarkMode(isDark);
     // Sync garcom.js button if present
     var garcomBtn = document.getElementById('btn-theme-toggle');

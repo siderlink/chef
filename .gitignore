@@ -8,7 +8,13 @@ build/
 *.zip
 ChefCozinha-Nativo/
 versao-win/
-installer/
+installer/*
+!installer/Instalador-ChefSync.bat
+!installer/install-sync.ps1
+!installer/install-sync.sh
+!installer/setup-sync.iss
+!installer/Sync.cs
+!installer/build-installer.ps1
 ubuntu-server/
 offline/
 pendrive/
@@ -56,3 +62,8 @@ scratch/
 Thumbs.db
 .vscode/
 .idea/
+.gemini/
+.agent/
+.cursor/
+.opencode/
+instance-id.txt

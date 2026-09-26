@@ -20,17 +20,32 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/theme-manager.js?v=20260901paletas"></script>
   <style>
-    :root {
+    :root, [data-theme="light"], body.theme-light {
       --bg: #f8f9fa;
       --card-bg: #ffffff;
-      --primary: #9b59b6;
-      --primary-dark: #8e44ad;
+      --primary: #fc4b15;
+      --primary-dark: #e03e09;
       --success: #2ecc71;
       --danger: #e74c3c;
       --text-main: #2c3e50;
       --text-muted: #7f8c8d;
       --border: #ecf0f1;
+      --input-bg: #ffffff;
+    }
+
+    [data-theme="dark"], body.dark-mode, body.theme-dark {
+      --bg: #0b0f19;
+      --card-bg: #1e293b;
+      --primary: #fc4b15;
+      --primary-dark: #e03e09;
+      --success: #2ecc71;
+      --danger: #e74c3c;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.08);
+      --input-bg: #0f172a;
     }
     
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
@@ -44,7 +59,7 @@
     #login-view h2 { margin-bottom: 24px; color: var(--primary); font-size: 28px; }
     .input-group { width: 100%; margin-bottom: 16px; }
     .input-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-muted); }
-    .input-group input { width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; font-size: 16px; transition: 0.3s; }
+    .input-group input { width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; font-size: 16px; transition: 0.3s; background: var(--input-bg); color: var(--text-main); }
     .input-group input:focus { border-color: var(--primary); outline: none; }
     
     .btn-main {

@@ -1378,3 +1378,102 @@ body.dark-mode #ia-alertas-icon,
 }
 
 
+
+
+
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE OLED APPLE PREMIUM PARA COMANDA MOBILE & GARÇOM
+   ══════════════════════════════════════════════════════════════ */
+[data-theme="dark"],
+html.dark,
+body.dark {
+  --bg-main: #090d16 !important;
+  --bg-card: #131b2e !important;
+  --text-primary: #f8fafc !important;
+  --text-secondary: #94a3b8 !important;
+  --border-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: #090d16 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] #view-tables,
+[data-theme="dark"] #view-table-options,
+[data-theme="dark"] #view-menu,
+[data-theme="dark"] #view-cart,
+[data-theme="dark"] .view {
+  background: #090d16 !important;
+  color: #f8fafc !important;
+}
+
+/* Cards de mesas no Dark Mode (Fundo Dark Slate com iluminação vibrante) */
+[data-theme="dark"] .table-card {
+  background: #131b2e !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .table-card span {
+  color: #f8fafc !important;
+  font-weight: 700 !important;
+}
+
+/* Mesa Ocupada Dark Mode (Vermelho/Coral Luminoso) */
+[data-theme="dark"] .table-card.ocupada {
+  background: linear-gradient(145deg, #241315, #180d0f) !important;
+  border-color: rgba(252, 75, 21, 0.5) !important;
+  box-shadow: 0 4px 20px rgba(252, 75, 21, 0.15) !important;
+}
+[data-theme="dark"] .table-card.ocupada i {
+  color: #fc4b15 !important;
+}
+[data-theme="dark"] .table-card.ocupada span {
+  color: #fda4af !important;
+}
+
+/* Mesa Livre Dark Mode (Verde Esmeralda Luminoso) */
+[data-theme="dark"] .table-card:not(.ocupada):not(.reservada) {
+  background: linear-gradient(145deg, #0d231b, #091712) !important;
+  border-color: rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.12) !important;
+}
+[data-theme="dark"] .table-card:not(.ocupada):not(.reservada) i {
+  color: #10b981 !important;
+}
+[data-theme="dark"] .table-card:not(.ocupada):not(.reservada) span {
+  color: #6ee7b7 !important;
+}
+
+/* Mesa Pedindo Conta Dark Mode */
+[data-theme="dark"] .table-card.status-fechamento {
+  background: linear-gradient(145deg, #2a1f0f, #1c1507) !important;
+  border-color: rgba(245, 158, 11, 0.6) !important;
+}
+
+/* Tela de Opções da Mesa Dark Mode (Alto Contraste) */
+[data-theme="dark"] #options-table-name {
+  color: #f8fafc !important;
+  font-weight: 800 !important;
+}
+
+[data-theme="dark"] #btn-opt-view,
+[data-theme="dark"] #btn-opt-bill {
+  background: #1e293b !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] #btn-opt-mostrar-cliente {
+  background: rgba(14, 165, 233, 0.15) !important;
+  border-color: rgba(14, 165, 233, 0.3) !important;
+  color: #38bdf8 !important;
+}
+
+/* Bottom Navigation Bar no Dark Mode */
+[data-theme="dark"] #bottom-nav,
+[data-theme="dark"] .garcom-bottom-nav {
+  background: rgba(15, 23, 42, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}

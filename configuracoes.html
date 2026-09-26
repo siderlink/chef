@@ -9,71 +9,135 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
   <!-- QR Code local (funciona sem internet) -->
   <script src="/vendor/qrcode/qrcode-generator.js"></script>
   <script src="/vendor/qrcode/qr-helper.js"></script>
   <style>
-    :root, [data-theme="light"] {
-      --cfg-bg: #f4f4f5;
+    :root, [data-theme="light"], body.theme-light {
+      --cfg-bg: #f8fafc;
       --cfg-header-bg: #ffffff;
-      --cfg-header-text: #18181b;
+      --cfg-header-text: #0f172a;
       --cfg-sidebar-bg: #ffffff;
-      --cfg-sidebar-text: #52525b;
+      --cfg-sidebar-text: #64748b;
       --cfg-card-bg: #ffffff;
-      --cfg-text: #18181b;
-      --cfg-text-muted: #71717a;
-      --cfg-border: #e4e4e7;
-      --cfg-input-bg: #ffffff;
+      --cfg-text: #0f172a;
+      --cfg-text-muted: #64748b;
+      --cfg-border: #e2e8f0;
+      --cfg-input-bg: #f8fafc;
       --cfg-primary: #fc4b15;
-      --cfg-hover-bg: rgba(0, 0, 0, 0.05);
-      --cfg-subtle-bg: #f7f7f8;
-      --cfg-heading: #18181b;
-      --cfg-field-border: #d4d4d8;
-      --cfg-row-hover: #f4f4f5;
-      --cfg-card-alt: #f4f4f5;
+      --cfg-primary-hover: #e03e0a;
       --cfg-primary-soft: rgba(252, 75, 21, 0.12);
-      --cfg-chip-bg: #e4e4e7;
-      --cfg-chip-text: #3f3f46;
+      --cfg-hover-bg: rgba(252, 75, 21, 0.05);
+      --cfg-subtle-bg: #f8fafc;
+      --cfg-heading: #0f172a;
+      --cfg-field-border: #cbd5e1;
+      --cfg-row-hover: #f1f5f9;
+      --cfg-card-alt: #f8fafc;
+      --cfg-chip-bg: #f1f5f9;
+      --cfg-chip-text: #334155;
+      --cfg-card-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), 0 2px 8px rgba(15, 23, 42, 0.04);
+      --cfg-transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Super Admin Palette Aliases */
+      --bg-dark: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --bg-sidebar: #ffffff;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #fc4b15;
+      --primary-hover: #e03e0a;
+      --primary-glow: rgba(252, 75, 21, 0.25);
     }
 
-    [data-theme="dark"] {
-      --cfg-bg: #09090b;
-      --cfg-header-bg: #121218;
-      --cfg-header-text: #f4f4f5;
-      --cfg-sidebar-bg: #121218;
-      --cfg-sidebar-text: #a1a1aa;
-      --cfg-card-bg: #18181b;
-      --cfg-text: #f4f4f5;
-      --cfg-text-muted: #a1a1aa;
-      --cfg-border: #2a2a30;
-      --cfg-input-bg: #0c0c10;
-      --cfg-primary: #ff5722;
-      --cfg-hover-bg: rgba(255, 255, 255, 0.07);
-      --cfg-subtle-bg: #1c1c22;
-      --cfg-heading: #fafafa;
-      --cfg-field-border: #3f3f46;
-      --cfg-row-hover: #232329;
-      --cfg-card-alt: #1c1c22;
-      --cfg-primary-soft: rgba(255, 87, 34, 0.16);
-      --cfg-chip-bg: #2a2a30;
-      --cfg-chip-text: #d4d4d8;
+    [data-theme="dark"], body.dark-mode {
+      --cfg-bg: #0b0f19;
+      --cfg-header-bg: #101422;
+      --cfg-header-text: #f8fafc;
+      --cfg-sidebar-bg: #101422;
+      --cfg-sidebar-text: #94a3b8;
+      --cfg-card-bg: rgba(22, 27, 44, 0.95);
+      --cfg-text: #f8fafc;
+      --cfg-text-muted: #94a3b8;
+      --cfg-border: rgba(255, 255, 255, 0.1);
+      --cfg-input-bg: rgba(12, 16, 28, 0.85);
+      --cfg-primary: #fc4b15;
+      --cfg-primary-hover: #ff5722;
+      --cfg-primary-soft: rgba(252, 75, 21, 0.22);
+      --cfg-hover-bg: rgba(255, 255, 255, 0.06);
+      --cfg-subtle-bg: rgba(26, 32, 53, 0.7);
+      --cfg-heading: #f8fafc;
+      --cfg-field-border: rgba(255, 255, 255, 0.15);
+      --cfg-row-hover: rgba(255, 255, 255, 0.05);
+      --cfg-card-alt: rgba(18, 22, 38, 0.8);
+      --cfg-chip-bg: rgba(255, 255, 255, 0.08);
+      --cfg-chip-text: #cbd5e1;
+      --cfg-card-shadow: 0 15px 35px rgba(0, 0, 0, 0.45);
+      --cfg-transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Super Admin Palette Aliases */
+      --bg-dark: #0b0f19;
+      --bg-card: rgba(22, 27, 44, 0.95);
+      --bg-card-hover: rgba(30, 37, 60, 0.95);
+      --bg-sidebar: #101422;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #fc4b15;
+      --primary-hover: #ff5722;
+      --primary-glow: rgba(252, 75, 21, 0.35);
+    }
+
+    /* ── BASE & TYPOGRAPHY ── */
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
     }
 
     body {
-      font-family: 'Inter', sans-serif;
-      background: var(--cfg-bg);
+      background-color: var(--cfg-bg);
+      background-image:
+        radial-gradient(at 10% 10%, rgba(252, 75, 21, 0.03) 0px, transparent 40%),
+        radial-gradient(at 90% 90%, rgba(59, 130, 246, 0.03) 0px, transparent 40%);
       color: var(--cfg-text);
       margin: 0;
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
     }
 
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Outfit', sans-serif;
+      margin: 0;
+    }
+
+    /* Modern Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.03);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.35);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--cfg-primary);
+    }
+
+    /* ── HEADER SUPER ADMIN STYLE ── */
     .config-header {
       background: var(--cfg-header-bg);
       color: var(--cfg-header-text);
-      border-bottom: 1px solid var(--cfg-border);
-      padding: 16px 28px;
+      border-bottom: 1.5px solid var(--cfg-border);
+      padding: 0 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -81,54 +145,198 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 58px;
+      height: 64px;
       box-sizing: border-box;
       z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+      backdrop-filter: blur(10px);
     }
 
-    .config-header h1 {
-      margin: 0;
-      font-size: 20px;
+    .config-header .header-left {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 14px;
     }
 
+    #btn-toggle-sidebar {
+      background: var(--cfg-card-bg);
+      border: 1.5px solid var(--cfg-border);
+      color: var(--cfg-primary);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      outline: none;
+      transition: var(--cfg-transition);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      flex-shrink: 0;
+    }
+
+    #btn-toggle-sidebar:hover {
+      background: var(--cfg-primary-soft);
+      border-color: var(--cfg-primary);
+      transform: scale(0.96);
+    }
+
+    .config-header .header-branding {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .config-header .brand-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--cfg-primary-soft);
+      color: var(--cfg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(252, 75, 21, 0.15);
+    }
+
+    .config-header .header-title-box h1 {
+      font-size: 1.18rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: var(--cfg-heading);
+      line-height: 1.2;
+    }
+
+    .config-header .header-title-box p {
+      color: var(--cfg-text-muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin: 1px 0 0 0;
+      line-height: 1.2;
+    }
+
+    .config-header .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-hdr-action {
+      background: var(--cfg-card-bg);
+      border: 1.5px solid var(--cfg-border);
+      color: var(--cfg-text);
+      padding: 0.55rem 1rem;
+      border-radius: 12px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--cfg-transition);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    }
+
+    .btn-hdr-action:hover {
+      border-color: var(--cfg-primary);
+      color: var(--cfg-primary);
+      background: var(--cfg-hover-bg);
+    }
+
+    .btn-hdr-action.btn-hdr-primary {
+      background: linear-gradient(135deg, #fc4b15 0%, #e03a08 100%) !important;
+      color: #ffffff !important;
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(252, 75, 21, 0.35) !important;
+    }
+
+    .btn-hdr-action.btn-hdr-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(252, 75, 21, 0.45) !important;
+    }
+
+    /* ── LAYOUT PRINCIPAL ── */
     .config-layout {
       display: flex;
       flex: 1;
       overflow: hidden;
-      height: calc(100vh - 58px);
-      margin-top: 58px;
+      height: calc(100vh - 64px);
+      margin-top: 64px;
+      background: var(--cfg-bg);
     }
+
+    /* ── SIDEBAR SUPER ADMIN STYLE ── */
     .config-sidebar {
-      width: 240px;
+      width: 275px;
+      min-width: 275px;
+      max-width: 275px;
       background: var(--cfg-sidebar-bg);
-      padding: 14px 10px;
-      padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+      border-right: 1.5px solid var(--cfg-border);
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      transition: width 0.3s ease, padding 0.3s ease;
-      overflow-y: auto;
-      overflow-x: hidden;
-      border-right: 1px solid var(--cfg-border, #27272a);
+      height: 100%;
       box-sizing: border-box;
-      scrollbar-width: thin;
+      transition: width 0.25s ease, min-width 0.25s ease, padding 0.25s ease;
+      overflow: hidden;
+      z-index: 10;
+      box-shadow: 2px 0 12px rgba(0, 0, 0, 0.02);
+    }
+
+    .config-sidebar.collapsed {
+      width: 0 !important;
+      min-width: 0 !important;
+      max-width: 0 !important;
+      padding: 0 !important;
+      border-right: none !important;
+      overflow: hidden !important;
+    }
+
+    .sidebar-top {
+      padding: 14px 12px 10px;
+      border-bottom: 1px solid var(--cfg-border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--cfg-sidebar-bg);
+      flex-shrink: 0;
+    }
+
+    .sidebar-brand-summary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 2px 4px;
+    }
+
+    .sidebar-brand-summary i {
+      font-size: 1.45rem;
+      color: var(--cfg-primary);
+      filter: drop-shadow(0 2px 6px rgba(252, 75, 21, 0.25));
+    }
+
+    .sidebar-brand-summary h2 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--cfg-heading);
+      letter-spacing: -0.2px;
+      line-height: 1.2;
+    }
+
+    .sidebar-brand-summary span {
+      font-size: 0.72rem;
+      color: var(--cfg-text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .config-sidebar-search-wrap {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: var(--cfg-sidebar-bg);
-      padding: 0 0 10px 0;
-      border-bottom: 1px solid var(--cfg-border, #e4e4e7);
-      margin-bottom: 8px;
-    }
-
-    [data-theme="dark"] .config-sidebar-search-wrap {
-      border-bottom-color: #27272a;
+      position: relative;
+      width: 100%;
     }
 
     .config-search-box {
@@ -136,177 +344,297 @@
       display: flex;
       align-items: center;
       width: 100%;
-      box-sizing: border-box;
     }
 
     .config-search-box input {
       width: 100%;
-      padding: 8px 28px 8px 30px;
-      border-radius: 8px;
-      border: 1px solid var(--cfg-border, #e4e4e7);
-      background: var(--cfg-input-bg, #fff);
-      color: var(--cfg-text, #18181b);
-      font-size: 12px;
+      padding: 8px 30px 8px 34px;
+      border-radius: 10px;
+      border: 1.5px solid var(--cfg-border);
+      background: var(--cfg-input-bg);
+      color: var(--cfg-text);
+      font-size: 12.5px;
+      font-weight: 500;
       outline: none;
       box-sizing: border-box;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: var(--cfg-transition);
     }
 
     .config-search-box input:focus {
-      border-color: var(--cfg-primary, #fc4b15);
-      box-shadow: 0 0 0 2px rgba(252, 75, 21, 0.15);
+      border-color: var(--cfg-primary);
+      background: var(--cfg-card-bg);
+      box-shadow: 0 0 0 3px var(--cfg-primary-soft);
     }
 
     .config-search-box i.search-icon {
       position: absolute;
-      left: 9px;
-      color: var(--cfg-text-muted, #71717a);
-      font-size: 14px;
+      left: 10px;
+      color: var(--cfg-text-muted);
+      font-size: 15px;
       pointer-events: none;
     }
 
     .config-search-box button.clear-btn {
       position: absolute;
-      right: 6px;
+      right: 8px;
       background: none;
       border: none;
-      color: var(--cfg-text-muted, #71717a);
+      color: var(--cfg-text-muted);
       cursor: pointer;
       font-size: 14px;
       display: none;
       align-items: center;
       justify-content: center;
       padding: 2px;
+      border-radius: 4px;
     }
 
     .config-search-box button.clear-btn:hover {
-      color: var(--cfg-text, #18181b);
+      color: var(--cfg-primary);
     }
 
-    .config-sidebar.collapsed {
-      width: 0;
-      padding-left: 0;
-      padding-right: 0;
-      border: none;
-    }
-
-    #btn-toggle-sidebar:hover {
-      transform: scale(1.1);
-    }
-
-    .group-title {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      color: var(--cfg-text-muted, #888);
-      padding: 8px 10px 4px;
-      letter-spacing: 0.8px;
-      cursor: pointer;
-      user-select: none;
+    /* ── CATEGORIAS EM ACORDEÃO (SUPER ADMIN STYLE) ── */
+    .sidebar-categories {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px 8px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-radius: 6px;
-      transition: background 0.15s, color 0.15s;
+      flex-direction: column;
+      gap: 7px;
+      scrollbar-width: thin;
     }
 
-    .action-group.collapsed .admin-tab-btn {
-      display: none !important;
+    .menu-categoria {
+      border: 1px solid var(--cfg-border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--cfg-card-bg);
+      transition: var(--cfg-transition);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     }
 
-    .action-group {
-      transition: opacity 0.15s;
-      margin-bottom: 6px;
+    .menu-categoria:hover {
+      border-color: rgba(252, 75, 21, 0.2);
     }
 
-    .action-group .group-title:hover {
-      background: var(--cfg-hover-bg);
-      color: var(--cfg-text);
-    }
-
-    .action-group .group-title::after {
-      content: '\25BE';
-      font-size: 11px;
-      opacity: 0.7;
-      transition: transform 0.2s;
-    }
-
-    .action-group.collapsed .group-title::after {
-      transform: rotate(-90deg);
-    }
-
-    .action-group.collapsed .group-title {
-      margin-bottom: 0;
-    }
-
-    .btn-action {
+    .cat-header {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: none;
+      padding: 9px 12px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--cfg-text-muted);
+      cursor: pointer;
+      user-select: none;
+      transition: var(--cfg-transition);
+    }
+
+    .cat-header:hover {
+      color: var(--cfg-primary);
+      background: rgba(252, 75, 21, 0.05);
+    }
+
+    .cat-header > i.cat-icon {
+      font-size: 15px;
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .cat-seta {
+      margin-left: auto;
+      font-size: 11px;
+      transition: transform 0.25s ease;
+      color: var(--cfg-text-muted);
+    }
+
+    .menu-categoria.aberta .cat-seta {
+      transform: rotate(180deg);
+    }
+
+    .cat-itens {
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      padding: 4px 6px 7px;
+    }
+
+    .menu-categoria.aberta .cat-itens {
+      display: flex;
+    }
+
+    .menu-categoria.aberta .cat-header {
+      color: var(--cfg-primary);
+      background: rgba(252, 75, 21, 0.07);
+      font-weight: 800;
+    }
+
+    /* Suporte de retrocompatibilidade com .action-group */
+    .action-group.collapsed .cat-itens,
+    .action-group.collapsed .admin-tab-btn {
+      display: none !important;
+    }
+    .action-group:not(.collapsed) .cat-itens {
+      display: flex;
+    }
+
+    /* ── BOTÕES DE ABA NA SIDEBAR ── */
+    .admin-tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 10px;
+      border-radius: 9px;
+      border: 1px solid transparent;
       background: transparent;
       color: var(--cfg-sidebar-text);
       cursor: pointer;
       width: 100%;
       text-align: left;
-      font-size: 13px;
-      transition: background 0.15s;
-    }
-
-    .btn-action:hover {
-      background: var(--cfg-hover-bg);
-      color: var(--cfg-text);
-    }
-
-    .btn-action.active {
-      background: rgba(252, 75, 21, 0.15);
-      color: #fc4b15;
-      font-weight: bold;
-    }
-
-    .admin-tab-btn {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--cfg-sidebar-text, #52525b);
-      cursor: pointer;
-      width: 100%;
-      text-align: left;
-      font-size: 13px;
-      font-weight: 500;
-      transition: all 0.15s ease;
+      font-size: 12.8px;
+      font-weight: 600;
+      transition: var(--cfg-transition);
       box-sizing: border-box;
       position: relative;
+      text-decoration: none;
+    }
+
+    .admin-tab-btn i {
+      font-size: 15px;
+      flex-shrink: 0;
+      transition: color 0.15s;
+    }
+
+    .admin-tab-btn span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .admin-tab-btn:hover {
       background: var(--cfg-hover-bg);
-      color: var(--cfg-text, #18181b);
+      color: var(--cfg-text);
       transform: translateX(2px);
     }
 
     .admin-tab-btn.active {
-      background: rgba(252, 75, 21, 0.12) !important;
-      color: #fc4b15 !important;
+      color: #ffffff !important;
+      background: linear-gradient(135deg, #fc4b15 0%, #e03a08 100%) !important;
+      box-shadow: 0 4px 12px rgba(252, 75, 21, 0.3) !important;
       font-weight: 700 !important;
-      border-color: rgba(252, 75, 21, 0.25) !important;
+      border-color: transparent !important;
     }
 
-    .admin-tab-btn.active::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 15%;
-      height: 70%;
-      width: 3px;
-      background: #fc4b15;
-      border-radius: 0 4px 4px 0;
+    .admin-tab-btn.active i,
+    .admin-tab-btn.active span {
+      color: #ffffff !important;
+    }
+
+    /* ── SIDEBAR FOOTER ── */
+    .sidebar-footer {
+      padding: 12px 14px;
+      border-top: 1px solid var(--cfg-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--cfg-sidebar-bg);
+      flex-shrink: 0;
+    }
+
+    .sidebar-restaurant-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .rest-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--cfg-primary-soft);
+      border: 1.5px solid var(--cfg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cfg-primary);
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .rest-meta {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .rest-meta span {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--cfg-heading);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .rest-meta small {
+      font-size: 0.72rem;
+      color: var(--cfg-text-muted);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ── SECTION INFO BANNER (SUPER ADMIN HIGHLIGHT) ── */
+    .info-banner {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.4rem;
+      background: var(--cfg-card-bg);
+      border: 1.5px solid var(--cfg-border);
+      border-left: 4px solid var(--cfg-primary);
+      border-radius: 16px;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--cfg-card-shadow);
+      flex-shrink: 0;
+      animation: tabFadeIn 0.2s ease-out;
+    }
+
+    .info-banner-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .info-banner-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .info-banner-content h3 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--cfg-heading);
+    }
+
+    .info-banner-content p {
+      font-size: 0.84rem;
+      color: var(--cfg-text-muted);
+      font-weight: 500;
+      line-height: 1.4;
+      margin: 0;
     }
 
     .main-workspace {
@@ -2419,156 +2747,268 @@
 
 <body>
 
-  <div class="config-header">
-    <h1 style="display: flex; align-items: center; gap: 12px;">
-      <button id="btn-toggle-sidebar" onclick="window.toggleConfigSidebar()"
-        style="background: transparent; border: none; color: white; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; outline: none; transition: transform 0.2s;"><i
-          class="ph ph-list"></i></button>
-      <span><i class="ph ph-gear"></i> Painel de Configurações</span>
-    </h1>
-    <div id="header-right-actions" style="display: flex; align-items: center; gap: 12px;">
-      <button onclick="window.location.href='index.html'"
-        style="padding: 8px 18px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; cursor: pointer; font-weight: 500; display:flex; align-items:center; gap:6px;"><i
-          class="ph ph-arrow-left"></i> Voltar</button>
+  <!-- ── CABEÇALHO FIXO SUPER ADMIN STYLE ── -->
+  <header class="config-header">
+    <div class="header-left">
+      <button id="btn-toggle-sidebar" onclick="window.toggleConfigSidebar()" title="Recolher / Expandir Menu Lateral" aria-label="Toggle Sidebar">
+        <i class="ph ph-list"></i>
+      </button>
+      <div class="header-branding">
+        <div class="brand-badge"><i class="ph-bold ph-storefront"></i></div>
+        <div class="header-title-box">
+          <h1 id="panel-title">Painel de Configurações</h1>
+          <p id="panel-subtitle">Personalização e parâmetros operacionais do restaurante</p>
+        </div>
+      </div>
     </div>
-  </div>
+    <div class="header-right" id="header-right-actions">
+      <button type="button" class="btn-hdr-action" id="btn-theme-toggle" onclick="if(window.ChefTheme) window.ChefTheme.toggle(); else { const cur = document.documentElement.getAttribute('data-theme') || 'light'; const next = cur === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', next); localStorage.setItem('chef_theme', next); }" title="Alternar Modo Claro / Escuro">
+        <i class="ph ph-moon" id="theme-toggle-icon"></i>
+        <span>Tema</span>
+      </button>
+      <button type="button" class="btn-hdr-action btn-hdr-primary" onclick="window.location.href='index.html'" title="Voltar ao Salão / Frente de Caixa">
+        <i class="ph ph-arrow-left"></i>
+        <span>Voltar ao Salão</span>
+      </button>
+    </div>
+  </header>
 
   <div class="config-layout">
 
-    <!-- SIDEBAR -->
-    <aside class="config-sidebar">
-      <div class="config-sidebar-search-wrap">
-        <div class="config-search-box">
-          <i class="ph ph-magnifying-glass search-icon"></i>
-          <input type="text" id="config-sidebar-search" placeholder="Buscar opções... ( / )" autocomplete="off" />
-          <button id="config-sidebar-search-clear" class="clear-btn" title="Limpar busca"><i class="ph ph-x-circle"></i></button>
+    <!-- ── SIDEBAR SUPER ADMIN STYLE ── -->
+    <aside class="config-sidebar" id="config-sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-brand-summary">
+          <i class="ph-bold ph-sliders"></i>
+          <div>
+            <h2>Configurações</h2>
+            <span>Restaurante & Operação</span>
+          </div>
+        </div>
+        <div class="config-sidebar-search-wrap">
+          <div class="config-search-box">
+            <i class="ph ph-magnifying-glass search-icon"></i>
+            <input type="text" id="config-sidebar-search" placeholder="Buscar configurações... ( / )" autocomplete="off" />
+            <button id="config-sidebar-search-clear" class="clear-btn" title="Limpar busca"><i class="ph ph-x-circle"></i></button>
+          </div>
         </div>
       </div>
-      <div class="action-group">
-        <div class="group-title">Sistema</div>
-        <button class="admin-tab-btn" data-tab="inicio">
-          <i class="ph ph-squares-four" style="color:#fc4b15;"></i> Central de Operações Modular
-        </button>
-        <button class="admin-tab-btn" data-tab="gerais">
-          <i class="ph ph-sliders"></i> Sistema &amp; Cardápio
-        </button>
-        <button class="admin-tab-btn" data-tab="resolucao">
-          <i class="ph ph-monitor"></i> Resolução &amp; Escala de Tela
-        </button>
-        <button class="admin-tab-btn" data-tab="sons">
-          <i class="ph ph-speaker-high"></i> Sons &amp; Notificações
-        </button>
-        <button class="admin-tab-btn" data-tab="atalhos">
-          <i class="ph ph-keyboard"></i> Atalhos de Teclado
-        </button>
-        <button class="admin-tab-btn" data-tab="funcionalidades" style="color:#10b981;">
-          <i class="ph ph-toggle-left"></i> Funcionalidades
-        </button>
+
+      <div class="sidebar-categories">
+        <!-- 1. GERAL & IDENTIDADE -->
+        <div class="menu-categoria action-group aberta" data-cat="geral">
+          <div class="cat-header">
+            <i class="ph-bold ph-gear-six cat-icon" style="color:#fc4b15;"></i>
+            <span>Geral &amp; Identidade</span>
+            <i class="ph ph-caret-down cat-seta"></i>
+          </div>
+          <div class="cat-itens">
+            <button class="admin-tab-btn active" data-tab="inicio">
+              <i class="ph ph-squares-four" style="color:#fc4b15;"></i>
+              <span>Central de Operações</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="perfil">
+              <i class="ph ph-storefront" style="color:#10b981;"></i>
+              <span>Dados do Restaurante</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="gerais">
+              <i class="ph ph-sliders"></i>
+              <span>Sistema &amp; Cardápio</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="resolucao">
+              <i class="ph ph-monitor" style="color:#3b82f6;"></i>
+              <span>Resolução &amp; Tela</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="sons">
+              <i class="ph ph-speaker-high" style="color:#f59e0b;"></i>
+              <span>Sons &amp; Notificações</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="atalhos">
+              <i class="ph ph-keyboard" style="color:#6366f1;"></i>
+              <span>Atalhos de Teclado</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. SALÃO & ATENDIMENTO -->
+        <div class="menu-categoria action-group aberta" data-cat="salao">
+          <div class="cat-header">
+            <i class="ph-bold ph-door cat-icon" style="color:#0ea5e9;"></i>
+            <span>Salão &amp; Atendimento</span>
+            <i class="ph ph-caret-down cat-seta"></i>
+          </div>
+          <div class="cat-itens">
+            <button class="admin-tab-btn" data-tab="mesas">
+              <i class="ph ph-table"></i>
+              <span>Mesas &amp; Comandas</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="salao">
+              <i class="ph ph-blueprint" style="color:#0ea5e9;"></i>
+              <span>Layout do Salão</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="reservas">
+              <i class="ph ph-calendar-check" style="color:#0ea5e9;"></i>
+              <span>Reservas Futuras</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="fila-espera">
+              <i class="ph ph-hourglass-high" style="color:#f59e0b;"></i>
+              <span>Fila de Espera</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. CARDÁPIO & PRODUTOS -->
+        <div class="menu-categoria action-group aberta" data-cat="cardapio">
+          <div class="cat-header">
+            <i class="ph-bold ph-hamburger cat-icon" style="color:#f97316;"></i>
+            <span>Cardápio &amp; Produtos</span>
+            <i class="ph ph-caret-down cat-seta"></i>
+          </div>
+          <div class="cat-itens">
+            <button class="admin-tab-btn" data-tab="produtos">
+              <i class="ph ph-hamburger"></i>
+              <span>Produtos &amp; Categorias</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="montaveis">
+              <i class="ph ph-puzzle-piece" style="color:#8b5cf6;"></i>
+              <span>Itens Montáveis &amp; Adicionais</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. EQUIPE & GESTÃO -->
+        <div class="menu-categoria action-group aberta" data-cat="equipe">
+          <div class="cat-header">
+            <i class="ph-bold ph-users-three cat-icon" style="color:#8b5cf6;"></i>
+            <span>Equipe &amp; Gestão</span>
+            <i class="ph ph-caret-down cat-seta"></i>
+          </div>
+          <div class="cat-itens">
+            <button class="admin-tab-btn" data-tab="funcionarios">
+              <i class="ph ph-users"></i>
+              <span>Funcionários &amp; Acessos</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="pins">
+              <i class="ph ph-key" style="color:#8b5cf6;"></i>
+              <span>PINs Temporários</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="rh">
+              <i class="ph ph-hand-coins" style="color:#10b981;"></i>
+              <span>RH, Folha &amp; Caixa</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="metricas">
+              <i class="ph ph-chart-line-up" style="color:#f59e0b;"></i>
+              <span>Métricas de Atendimento</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5. MARKETING & FIDELIDADE -->
+        <div class="menu-categoria action-group aberta" data-cat="marketing">
+          <div class="cat-header">
+            <i class="ph-bold ph-gift cat-icon" style="color:#ec4899;"></i>
+            <span>Marketing &amp; Fidelidade</span>
+            <i class="ph ph-caret-down cat-seta"></i>
+          </div>
+          <div class="cat-itens">
+            <button class="admin-tab-btn" data-tab="clientes">
+              <i class="ph ph-address-book"></i>
+              <span>Base de Clientes</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="promocoes">
+              <i class="ph ph-tag" style="color:#ec4899;"></i>
+              <span>Promoções &amp; Cupons</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="inteligencia">
+              <i class="ph ph-brain" style="color:#3b82f6;"></i>
+              <span>Inteligência de Vendas (IA)</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="fidelidade">
+              <i class="ph ph-gift" style="color:#f59e0b;"></i>
+              <span>Programa de Fidelidade</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="jogos">
+              <i class="ph ph-game-controller" style="color:#8b5cf6;"></i>
+              <span>Jogos &amp; Prêmios</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 6. PAGAMENTOS & FISCAL -->
+        <div class="menu-categoria action-group aberta" data-cat="fiscal">
+          <div class="cat-header">
+            <i class="ph-bold ph-credit-card cat-icon" style="color:#10b981;"></i>
+            <span>Pagamentos &amp; Fiscal</span>
+            <i class="ph ph-caret-down cat-seta"></i>
+          </div>
+          <div class="cat-itens">
+            <button class="admin-tab-btn" data-tab="formas-pagamento">
+              <i class="ph ph-wallet" style="color:#10b981;"></i>
+              <span>Formas de Pagamento</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="maquininhas">
+              <i class="ph ph-credit-card"></i>
+              <span>Maquininhas de Cartão</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="nfce">
+              <i class="ph ph-receipt"></i>
+              <span>Configuração NFC-e</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="gerenciar-notas">
+              <i class="ph ph-list-magnifying-glass"></i>
+              <span>Gerenciar Notas NFC-e</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 7. SISTEMA & SEGURANÇA -->
+        <div class="menu-categoria action-group aberta" data-cat="seguranca">
+          <div class="cat-header">
+            <i class="ph-bold ph-shield-check cat-icon" style="color:#6366f1;"></i>
+            <span>Sistema &amp; Segurança</span>
+            <i class="ph ph-caret-down cat-seta"></i>
+          </div>
+          <div class="cat-itens">
+            <button class="admin-tab-btn" data-tab="funcionalidades">
+              <i class="ph ph-toggle-left" style="color:#10b981;"></i>
+              <span>Funcionalidades Ativas</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="funcoes">
+              <i class="ph ph-sliders" style="color:#22d3ee;"></i>
+              <span>Funções do Sistema</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="modulos">
+              <i class="ph ph-puzzle-piece" style="color:#8b5cf6;"></i>
+              <span>Módulos &amp; Extensões</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="dispositivos">
+              <i class="ph ph-devices" style="color:#0284c7;"></i>
+              <span>Dispositivos &amp; Terminais</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="backup">
+              <i class="ph ph-hard-drives" style="color:#fc4b15;"></i>
+              <span>Backup e Restore</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="auditoria">
+              <i class="ph ph-shield-warning" style="color:#e11d48;"></i>
+              <span>Auditoria &amp; Anti-Fraude</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="licenca">
+              <i class="ph ph-seal-check" style="color:#a78bfa;"></i>
+              <span>Ativação &amp; Licença</span>
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="action-group">
-        <div class="group-title" style="color:#059669;">Perfil do Restaurante</div>
-        <button class="admin-tab-btn" data-tab="perfil" style="color:#059669;">
-          <i class="ph ph-storefront"></i> Dados do Restaurante
-        </button>
-      </div>
-      <div class="action-group">
-        <div class="group-title">Cadastros</div>
-        <button class="admin-tab-btn" data-tab="mesas">
-          <i class="ph ph-table"></i> Mesas &amp; Comandas
-        </button>
-        <button class="admin-tab-btn" data-tab="salao" style="color:#0ea5e9;">
-          <i class="ph ph-blueprint"></i> Layout do Salão
-        </button>
-        <button class="admin-tab-btn" data-tab="reservas" style="color:#0ea5e9;">
-          <i class="ph ph-calendar-check"></i> Reservas Futuras
-        </button>
-        <button class="admin-tab-btn" data-tab="produtos">
-          <i class="ph ph-hamburger"></i> Produtos
-        </button>
-        <button class="admin-tab-btn" data-tab="montaveis" style="color:#8b5cf6;">
-          <i class="ph ph-puzzle-piece"></i> Itens Montáveis
-        </button>
-        <button class="admin-tab-btn" data-tab="funcionarios">
-          <i class="ph ph-users"></i> Funcionários
-        </button>
-        <button class="admin-tab-btn" data-tab="pins" style="color:#8b5cf6;">
-          <i class="ph ph-key"></i> PINs Temporários
-        </button>
-        <button class="admin-tab-btn" data-tab="clientes">
-          <i class="ph ph-address-book"></i> Clientes
-        </button>
-      </div>
-      <div class="action-group">
-        <div class="group-title">Promoções & Fidelidade</div>
-        <button class="admin-tab-btn" data-tab="promocoes">
-          <i class="ph ph-tag"></i> Promoções
-        </button>
-        <button class="admin-tab-btn" data-tab="inteligencia" style="color: #3b82f6;">
-          <i class="ph ph-brain"></i> Inteligência de Vendas
-        </button>
-        <button class="admin-tab-btn" data-tab="fidelidade" style="color: #f59e0b;">
-          <i class="ph ph-gift"></i> Prog. Fidelidade
-        </button>
-        <button class="admin-tab-btn" data-tab="fila-espera" style="color: #d97706;">
-          <i class="ph ph-hourglass-high"></i> Fila de Espera
-        </button>
-        <button class="admin-tab-btn" data-tab="jogos" style="color: #8b5cf6; font-weight: bold;">
-          <i class="ph ph-game-controller"></i> Jogos / Premios
-        </button>
-      </div>
-      <div class="action-group">
-        <div class="group-title">Gestão</div>
-        <button class="admin-tab-btn" data-tab="rh">
-          <i class="ph ph-hand-coins"></i> RH / Folha
-        </button>
-        <button class="admin-tab-btn" data-tab="metricas" style="color:#f59e0b; font-weight: bold;">
-          <i class="ph ph-chart-line-up"></i> Métricas dos Garçons
-        </button>
-        <button class="admin-tab-btn" data-tab="formas-pagamento" style="color: #10b981; font-weight: bold;">
-          <i class="ph ph-wallet"></i> Formas de Pagamento & Cartões
-        </button>
-      </div>
-      <div class="action-group">
-        <div class="group-title">Fiscal</div>
-        <button class="admin-tab-btn" data-tab="nfce">
-          <i class="ph ph-receipt"></i> Configuração NFC-e
-        </button>
-      <button class="admin-tab-btn" data-tab="gerenciar-notas">
-        <i class="ph ph-list-magnifying-glass"></i> Gerenciar Notas (NFC-e)
-      </button>
-      </div>
-      <div class="action-group">
-        <div class="group-title" style="color:#10b981;">Integrações</div>
-        <button class="admin-tab-btn" data-tab="maquininhas">
-          <i class="ph ph-credit-card"></i> Maquininhas de Cartão
-        </button>
-      </div>
-      <div class="action-group">
-        <div class="group-title">Segurança</div>
-        <button class="admin-tab-btn" data-tab="backup" style="color:#fc4b15;">
-          <i class="ph ph-hard-drives"></i> Backup e Restore
-        </button>
-        
-        <button class="admin-tab-btn" data-tab="dispositivos" style="color:#0284c7; font-weight: bold;">
-          <i class="ph ph-devices"></i> Dispositivos & Terminais
-        </button>
-        
-        <button class="admin-tab-btn" data-tab="modulos" style="color: #8b5cf6; font-weight: 800;">
-          <i class="ph ph-puzzle-piece"></i> Módulos & Extensões
-        </button>
-        
-        <button class="admin-tab-btn" data-tab="auditoria" style="color:#e11d48;">
-          <i class="ph ph-shield-warning"></i> Auditoria &amp; Anti-Fraude
-        </button>
-      </div>
-      <div class="action-group">
-        <div class="group-title" style="color:#a78bfa;">Licenciamento</div>
-        <button class="admin-tab-btn" data-tab="licenca" style="color:#a78bfa;">
-          <i class="ph ph-seal-check"></i> Ativação do Sistema
-        </button>
-        <button class="admin-tab-btn" data-tab="funcoes" style="color:#22d3ee;">
-          <i class="ph ph-puzzle-piece"></i> Funções do Sistema
-        </button>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-restaurant-info">
+          <div class="rest-avatar"><i class="ph-bold ph-storefront"></i></div>
+          <div class="rest-meta">
+            <span id="sidebar-rest-name">Restaurante Principal</span>
+            <small id="sidebar-rest-badge"><i class="ph ph-circle-fill" style="color:#10b981;font-size:7px;"></i> Online</small>
+          </div>
+        </div>
       </div>
     </aside>
 
@@ -7208,23 +7648,33 @@ ChefModules.registerNavbarAction({ id: 'btn_acao', label: 'Meu Botão', onClick:
     <script>
     /* Acordeão das categorias da sidebar: permite navegação fluida */
     (function() {
-      document.querySelectorAll('.action-group .group-title').forEach(function(titulo) {
+      document.querySelectorAll('.cat-header, .action-group .group-title').forEach(function(titulo) {
         titulo.addEventListener('click', function() {
-          var grupo = titulo.closest('.action-group');
-          if (grupo) grupo.classList.toggle('collapsed');
+          var grupo = titulo.closest('.menu-categoria, .action-group');
+          if (grupo) {
+            grupo.classList.toggle('aberta');
+            grupo.classList.toggle('collapsed');
+          }
         });
       });
 
       document.addEventListener('click', function(e) {
         var btn = e.target && e.target.closest ? e.target.closest('.admin-tab-btn') : null;
         if (!btn) return;
-        var grupo = btn.closest('.action-group');
-        if (grupo) grupo.classList.remove('collapsed');
+        var grupo = btn.closest('.menu-categoria, .action-group');
+        if (grupo) {
+          grupo.classList.add('aberta');
+          grupo.classList.remove('collapsed');
+        }
       });
 
       var ativo = document.querySelector('.admin-tab-btn.active');
-      if (ativo && ativo.closest('.action-group')) {
-        ativo.closest('.action-group').classList.remove('collapsed');
+      if (ativo) {
+        var grupoAtivo = ativo.closest('.menu-categoria, .action-group');
+        if (grupoAtivo) {
+          grupoAtivo.classList.add('aberta');
+          grupoAtivo.classList.remove('collapsed');
+        }
       }
     })();
     </script>

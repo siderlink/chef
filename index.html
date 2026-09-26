@@ -15,6 +15,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    try {
+      if (localStorage.getItem('chef_caixa_versao') === 'v1' && !window.location.search.includes('force')) {
+        window.location.replace('/caixa-classico.html');
+      }
+    } catch(e) {}
+  </script>
   <!-- Dynamic GTAG & Meta Pixel Tracking -->
   <script src="/tracking-loader.js"></script>
   <script src="/theme-manager.js?v=20260901paletas"></script>
@@ -44,8 +51,9 @@
   <script src="offline-queue.js"></script>
   <script src="/plugin-client.js"></script>
   <script src="/chef-tz.js"></script>
+  <script src="/fuzzy-search.js"></script>
   <script src="/pwa-telemetry.js"></script>
-  <script src="main.js?v=20260904joinfix"></script>
+  <script type="module" src="main.js"></script>
   <script src="/anti-tamper.js" defer></script>
   <link rel="stylesheet" href="/apple-transitions.css?v=1787948800000">
   <script src="/apple-transitions.js?v=1787948800000" defer></script>
@@ -151,7 +159,7 @@
         <button type="button" onclick="window.wizardSkip()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; padding:6px 12px; border-radius:8px; font-size:11.5px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;" onmouseover="this.style.color='#f8fafc'" onmouseout="this.style.color='#94a3b8'">
           <span>Pular</span> <i class="ph ph-arrow-right"></i>
         </button>
-      </div>/div>
+      </div>
 
       
       
@@ -398,6 +406,8 @@
         <div class="dropdown-menu" id="drop-arquivo">
           <div class="dropdown-item" id="menu-abrir-caixa"><i class="ph ph-lock-key-open"></i> Abrir Caixa</div>
           <div class="dropdown-item" id="menu-fechar-caixa"><i class="ph ph-lock-key"></i> Fechar Caixa</div>
+          <div class="dropdown-item" onclick="window.abrirModalSuprimento && window.abrirModalSuprimento()"><i class="ph ph-hand-coins"></i> Suprimento (Entrada de Troco)</div>
+          <div class="dropdown-item" onclick="window.abrirModalSangria && window.abrirModalSangria()"><i class="ph ph-money"></i> Sangria (Retirada de Dinheiro)</div>
           <div class="dropdown-item" onclick="location.reload()"><i class="ph ph-arrows-clockwise"></i> Atualizar Página
           </div>
         </div>
@@ -439,17 +449,26 @@
         style="margin-left:auto; font-size:13px; color:#aaa; padding-right:8px;"></span>
 
       <!-- SELETOR DE VERSÃO DO CAIXA: v1.1.1 (Moderno) vs v1 (Clássico Simples) -->
-      <div class="dropdown-wrapper" id="caixa-version-switcher-wrapper">
-        <span class="menu-trigger caixa-version-badge" data-dropdown="drop-caixa-version" title="Alternar versão da tela do Caixa" style="display:inline-flex; align-items:center; gap:5px; background:rgba(252,75,21,0.12); border:1px solid rgba(252,75,21,0.3); color:#fc4b15; padding:3px 8px; border-radius:6px; font-size:11.5px; font-weight:700; cursor:pointer;">
+      <!-- BOTÃO PARA RECOLHER/EXPANDIR ATALHOS DO TOPO -->
+      <button type="button" id="btn-toggle-top-toolbar" onclick="window.toggleTopToolbar()" class="chip-view-btn" title="Recolher / Expandir barra de atalhos rápidos do topo" style="display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--text-secondary,#cbd5e1); padding:3px 8px; border-radius:6px; font-size:11.5px; font-weight:700; cursor:pointer; transition:all 0.15s ease;">
+        <i class="ph ph-squares-four"></i> <span>Atalhos</span> <i class="ph ph-caret-down" id="icon-toggle-top-toolbar" style="font-size:10px;"></i>
+      </button>
+
+      <div class="dropdown-wrapper" id="caixa-version-switcher-wrapper" style="position:relative;">
+        <span class="menu-trigger caixa-version-badge" id="btn-toggle-caixa-version" onclick="var m = document.getElementById('drop-caixa-version'); if(m) m.classList.toggle('show'); event.stopPropagation();" title="Alternar versão da tela do Caixa" style="display:inline-flex; align-items:center; gap:5px; background:rgba(252,75,21,0.12); border:1px solid rgba(252,75,21,0.3); color:#fc4b15; padding:3px 8px; border-radius:6px; font-size:11.5px; font-weight:700; cursor:pointer;">
           <i class="ph-bold ph-tag"></i> Caixa v1.1.1 <i class="ph ph-caret-down" style="font-size:10px;"></i>
         </span>
-        <div class="dropdown-menu" id="drop-caixa-version" style="min-width: 230px;">
+        <div class="dropdown-menu" id="drop-caixa-version" style="min-width: 250px; right:0; left:auto; z-index:999999;">
+          <div class="dropdown-item" onclick="localStorage.setItem('chef_caixa_versao', 'ultra'); location.href='/caixa-ultra.html'" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+            <span><i class="ph-bold ph-lightning" style="color:#06b6d4;"></i> <strong>Caixa Ultra 3D</strong> (&gt; 6GB RAM)</span>
+            <span style="font-size:10px; color:#06b6d4; font-weight:700;">Studio</span>
+          </div>
           <div class="dropdown-item active" style="display:flex; justify-content:space-between; align-items:center; background:rgba(252,75,21,0.08); font-weight:700;">
             <span><i class="ph-bold ph-check" style="color:#fc4b15;"></i> <strong>Caixa v1.1.1</strong> (Moderno)</span>
             <span style="font-size:10px; color:#fc4b15; font-weight:700;">Ativo</span>
           </div>
-          <div class="dropdown-item" onclick="localStorage.setItem('chef_caixa_versao', 'v1'); location.href='/caixa-classico.html'" style="display:flex; justify-content:space-between; align-items:center;">
-            <span><i class="ph ph-clock-counter-clockwise"></i> <strong>Caixa v1</strong> (Clássico - 2 Semanas Atrás)</span>
+          <div class="dropdown-item" onclick="localStorage.setItem('chef_caixa_versao', 'v1'); localStorage.setItem('chef_caixa_tema', 'classico'); location.href='/caixa-classico.html'" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+            <span><i class="ph ph-clock-counter-clockwise"></i> <strong>Caixa v1</strong> (Clássico)</span>
             <span style="font-size:10px; color:#16a34a; font-weight:700;">Estável</span>
           </div>
         </div>
@@ -458,7 +477,7 @@
 
       <!-- Busca de Mesa / Comanda (presente em TODAS as visualizações) -->
       <div class="caixa-ux-search-box" id="caixa-ux-search-box-topbar">
-        <input type="text" id="caixa-ux-search" class="caixa-ux-search-input" placeholder="Buscar mesa ou comanda... [F4]" oninput="window.filtrarMesasBusca(this.value)">
+        <input type="text" id="caixa-ux-search" class="caixa-ux-search-input" placeholder="Buscar mesa ou comanda..." oninput="window.filtrarMesasBusca(this.value)">
         <button type="button" id="caixa-ux-search-clear" class="caixa-ux-search-clear-btn" onclick="window.limparBuscaCaixa && window.limparBuscaCaixa()" title="Limpar busca (Esc)" style="display:none; position:absolute; right:32px; background:none; border:none; color:var(--text-secondary,#94a3b8); cursor:pointer; font-size:12px; font-weight:bold; padding:2px 4px;">✕</button>
         <span class="caixa-ux-search-badge" onclick="document.getElementById('caixa-ux-search').focus()">F4</span>
       </div>
@@ -614,6 +633,12 @@
             <button class="mobile-menu-action-btn" id="menu-mob-fechar-caixa">
               <i class="ph ph-lock-key"></i> Fechar Caixa
             </button>
+            <button class="mobile-menu-action-btn" id="menu-mob-suprimento" onclick="window.closeMobileMenu && window.closeMobileMenu(); window.abrirModalSuprimento && window.abrirModalSuprimento();">
+              <i class="ph ph-hand-coins"></i> Suprimento
+            </button>
+            <button class="mobile-menu-action-btn" id="menu-mob-sangria" onclick="window.closeMobileMenu && window.closeMobileMenu(); window.abrirModalSangria && window.abrirModalSangria();">
+              <i class="ph ph-money"></i> Sangria
+            </button>
           </div>
         </div>
       </div>
@@ -711,10 +736,21 @@
               <button class="btn-action" id="btn-movimento-parcial" title="Receber pagamento parcial">
                 <i class="ph ph-currency-dollar" style="color: #3ab55b;"></i> Parcial
               </button>
-              <button class="btn-action" id="btn-movimento-concluir" title="Fechar conta">
-                <i class="ph ph-check" style="color: #3ab55b;"></i> Fechar
+              <button class="btn-action" id="btn-movimento-concluir" title="Fechar conta da mesa">
+                <i class="ph ph-check" style="color: #3ab55b;"></i> Fechar Mesa
               </button>
             </div>
+            <div class="btn-grid-2" style="margin-top: 6px;">
+              <button class="btn-action" onclick="window.abrirModalSuprimento && window.abrirModalSuprimento()" title="Suprimento (Entrada de Troco)">
+                <i class="ph ph-hand-coins" style="color: #2563eb;"></i> Suprimento
+              </button>
+              <button class="btn-action" onclick="window.abrirModalSangria && window.abrirModalSangria()" title="Sangria (Retirada de Dinheiro)">
+                <i class="ph ph-money" style="color: #e11d48;"></i> Sangria
+              </button>
+            </div>
+            <button class="btn-action" style="margin-top: 6px; width: 100%;" onclick="window.abrirFechamentoCegoCaixa && window.abrirFechamentoCegoCaixa()" title="Fechar o turno do Caixa">
+              <i class="ph ph-lock-key" style="color: #dc2626;"></i> Fechar Caixa
+            </button>
           </div>
 
           <div class="action-group">
@@ -759,10 +795,10 @@
           <div class="action-group" style="margin-top: auto;">
             <div class="group-title">Mesas</div>
             <div class="btn-grid-2">
-              <button class="btn-action" id="btn-alterar-mesa">
+              <button class="btn-action" id="btn-alterar-mesa" title="Alterar Mesa">
                 <i class="ph ph-pencil-simple" style="color: #f39c12;"></i> Alterar
               </button>
-              <button class="btn-action" id="btn-juntar-mesa">
+              <button class="btn-action" id="btn-juntar-mesa" title="Juntar Mesas">
                 <i class="ph ph-arrows-merge" style="color: #e67e22;"></i> Juntar
               </button>
             </div>
@@ -817,39 +853,47 @@
               </div>
 
               
-      <!-- BOTÃO RÁPIDO PARA PERSONALIZAR LAYOUT DO COLABORADOR -->
-      <button type="button" onclick="window.abrirModalPersonalizarLayout()" id="btn-header-personalizar-layout" class="chip-view-btn" title="Personalizar Meu Layout (Disposição de Mesas, Botões e Resumo)" style="padding: 4px 9px; border-radius: 6px; border: 1px solid rgba(252,75,21,0.3); font-size: 11.5px; font-weight: 700; cursor: pointer; background: rgba(252,75,21,0.08); color: #fc4b15; display: inline-flex; align-items: center; gap: 4px;">
-        <i class="ph-bold ph-layout"></i> Personalizar
-      </button>
+              <!-- BOTÃO TOGGLE CONFIGURAR LAYOUT (RECOLHIDO POR PADRÃO) -->
+              <button type="button" onclick="window.toggleMesasLayoutOptions()" id="btn-toggle-layout-config" class="chip-view-btn" title="Configurar Layout das Mesas (Colunas, Orientação e Agrupamento)" style="padding: 4px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.14); font-size: 11.5px; font-weight: 700; cursor: pointer; background: rgba(0,0,0,0.06); color: var(--text-secondary, #94a3b8); display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease;">
+                <i class="ph-bold ph-sliders"></i> <span>Layout</span> <i class="ph ph-caret-down" id="icon-toggle-layout-config" style="font-size: 10px;"></i>
+              </button>
 
-              <!-- SELETOR DE MODO DE GRADE / COLUNAS -->
-              <div class="mesas-grid-mode-switcher" style="display: inline-flex; align-items: center; gap: 2px; background: rgba(0,0,0,0.06); padding: 2px 4px; border-radius: 8px;">
-                <button type="button" onclick="window.setMesaGridCols(3)" id="btn-grid-cols-3" title="Grade com 3 Colunas" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: transparent; color: var(--text-muted); font-weight: 700;">
-                  ⊞ 3 Col
+              <!-- CONTAINER DAS OPÇÕES DE CONFIGURAR LAYOUT (RECOLHIDO POR PADRÃO) -->
+              <div id="mesas-layout-options-container" class="mesas-layout-options-toolbar" style="display: none; align-items: center; gap: 6px; flex-wrap: wrap; background: rgba(0,0,0,0.04); padding: 2px 6px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.12);">
+                <!-- BOTÃO RÁPIDO PARA PERSONALIZAR LAYOUT DO COLABORADOR -->
+                <button type="button" onclick="window.abrirModalPersonalizarLayout()" id="btn-header-personalizar-layout" class="chip-view-btn" title="Personalizar Meu Layout (Disposição de Mesas, Botões e Resumo)" style="padding: 4px 9px; border-radius: 6px; border: 1px solid rgba(252,75,21,0.3); font-size: 11.5px; font-weight: 700; cursor: pointer; background: rgba(252,75,21,0.08); color: #fc4b15; display: inline-flex; align-items: center; gap: 4px;">
+                  <i class="ph-bold ph-layout"></i> Personalizar
                 </button>
-                <button type="button" onclick="window.setMesaGridCols(2)" id="btn-grid-cols-2" title="Grade com 2 Colunas" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: var(--bg-card); color: var(--text-main); font-weight: 800;">
-                  ⊞ 2 Col
-                </button>
-                <button type="button" onclick="window.setMesaGridCols(1)" id="btn-grid-cols-1" title="Lista Completa (1 Coluna)" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: transparent; color: var(--text-muted); font-weight: 700;">
-                  ☰ 1 Col
-                </button>
-                <button type="button" onclick="window.setMesaGridCols('compact')" id="btn-grid-cols-compact" title="Modo Compacto" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: transparent; color: var(--text-muted); font-weight: 700;">
-                  ❖ Compacto
-                </button>
-              </div>
 
-              <!-- SELETOR DE ORIENTAÇÃO (HORIZONTAL / VERTICAL) -->
-              <div class="mesas-orientation-switcher" style="display: inline-flex; align-items: center; gap: 2px; background: rgba(0,0,0,0.06); padding: 2px 4px; border-radius: 8px; margin-left: 2px;">
-                <button type="button" onclick="window.setMesasOrientation('horizontal')" id="btn-orient-horizontal" title="Disposição Horizontal" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: var(--bg-card); color: var(--text-main); font-weight: 800; display: inline-flex; align-items: center; gap: 3px;">
-                  <i class="ph-bold ph-rows"></i> Horizontal
-                </button>
-                <button type="button" onclick="window.setMesasOrientation('vertical')" id="btn-orient-vertical" title="Disposição Vertical" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: transparent; color: var(--text-muted); font-weight: 700; display: inline-flex; align-items: center; gap: 3px;">
-                  <i class="ph-bold ph-columns"></i> Vertical
-                </button>
-                <span style="width:1px;height:14px;background:rgba(0,0,0,0.12);"></span>
-                <button type="button" onclick="window.toggleMesasAgrupado()" id="btn-toggle-mesas-agrupado" title="Agrupar por status (blocos recolhíveis)" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: var(--bg-card); color: var(--text-main); font-weight: 800; display: inline-flex; align-items: center; gap: 3px;">
-                  <i class="ph-bold ph-funnel-simple"></i> Agrupar
-                </button>
+                <!-- SELETOR DE MODO DE GRADE / COLUNAS -->
+                <div class="mesas-grid-mode-switcher" style="display: inline-flex; align-items: center; gap: 2px; background: rgba(0,0,0,0.06); padding: 2px 4px; border-radius: 8px;">
+                  <button type="button" onclick="window.setMesaGridCols(3)" id="btn-grid-cols-3" title="Grade com 3 Colunas" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: transparent; color: var(--text-muted); font-weight: 700;">
+                    ⊞ 3 Col
+                  </button>
+                  <button type="button" onclick="window.setMesaGridCols(2)" id="btn-grid-cols-2" title="Grade com 2 Colunas" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: var(--bg-card); color: var(--text-main); font-weight: 800;">
+                    ⊞ 2 Col
+                  </button>
+                  <button type="button" onclick="window.setMesaGridCols(1)" id="btn-grid-cols-1" title="Lista Completa (1 Coluna)" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: transparent; color: var(--text-muted); font-weight: 700;">
+                    ☰ 1 Col
+                  </button>
+                  <button type="button" onclick="window.setMesaGridCols('compact')" id="btn-grid-cols-compact" title="Modo Compacto" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: transparent; color: var(--text-muted); font-weight: 700;">
+                    ❖ Compacto
+                  </button>
+                </div>
+
+                <!-- SELETOR DE ORIENTAÇÃO (HORIZONTAL / VERTICAL) -->
+                <div class="mesas-orientation-switcher" style="display: inline-flex; align-items: center; gap: 2px; background: rgba(0,0,0,0.06); padding: 2px 4px; border-radius: 8px; margin-left: 2px;">
+                  <button type="button" onclick="window.setMesasOrientation('horizontal')" id="btn-orient-horizontal" title="Disposição Horizontal" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: var(--bg-card); color: var(--text-main); font-weight: 800; display: inline-flex; align-items: center; gap: 3px;">
+                    <i class="ph-bold ph-rows"></i> Horizontal
+                  </button>
+                  <button type="button" onclick="window.setMesasOrientation('vertical')" id="btn-orient-vertical" title="Disposição Vertical" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: transparent; color: var(--text-muted); font-weight: 700; display: inline-flex; align-items: center; gap: 3px;">
+                    <i class="ph-bold ph-columns"></i> Vertical
+                  </button>
+                  <span style="width:1px;height:14px;background:rgba(0,0,0,0.12);"></span>
+                  <button type="button" onclick="window.toggleMesasAgrupado()" id="btn-toggle-mesas-agrupado" title="Agrupar por status (blocos recolhíveis)" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: var(--bg-card); color: var(--text-main); font-weight: 800; display: inline-flex; align-items: center; gap: 3px;">
+                    <i class="ph-bold ph-funnel-simple"></i> Agrupar
+                  </button>
+                </div>
               </div>
             </div>
 

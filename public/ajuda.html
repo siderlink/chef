@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assistência Remota — Chef Cozinha</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(22, 28, 45, 0.95);
+      --border: rgba(255, 255, 255, 0.1);
+      --primary: #fc4b15;
+      --success: #22c55e;
+      --success-glow: rgba(34, 197, 94, 0.35);
+      --info: #38bdf8;
+      --warning: #f59e0b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter', sans-serif; }
+    h1, h2, h3, h4, .brand-font { font-family:'Outfit', sans-serif; }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #172554 0%, var(--bg) 65%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Laser pointer animado apontado pelo técnico */
+    #remote-laser-pointer {
+      position: fixed;
+      width: 44px;
+      height: 44px;
+      margin-left: -22px;
+      margin-top: -22px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.4);
+      border: 3px solid #ef4444;
+      pointer-events: none;
+      z-index: 999999;
+      display: none;
+      box-shadow: 0 0 25px #ef4444;
+      animation: pulseLaser 1s infinite alternate;
+      transition: left 0.15s ease-out, top 0.15s ease-out;
+    }
+    #remote-laser-pointer::after {
+      content: '👉 Técnico apontando aqui';
+      position: absolute;
+      top: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ef4444;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    @keyframes pulseLaser {
+      from { transform: scale(0.9); opacity: 0.8; }
+      to { transform: scale(1.2); opacity: 1; }
+    }
+
+    .container {
+      max-width: 680px;
+      width: 100%;
+      z-index: 10;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(56, 189, 248, 0.08);
+      backdrop-filter: blur(16px);
+      text-align: center;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(252, 75, 21, 0.12);
+      border: 1px solid rgba(252, 75, 21, 0.3);
+      padding: 6px 16px;
+      border-radius: 50px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #ff6b3d;
+      margin-bottom: 1.5rem;
+    }
+
+    .title {
+      font-size: 2.1rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 0.75rem;
+      color: #ffffff;
+    }
+
+    .subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 2rem;
+    }
+
+    /* Estado: Solicitando PIN (se aberto sem parâmetros) */
+    .pin-box {
+      background: rgba(0, 0, 0, 0.35);
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .pin-input {
+      font-family: 'Outfit', monospace;
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: 6px;
+      text-align: center;
+      width: 100%;
+      max-width: 320px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 2px solid var(--info);
+      background: rgba(15, 23, 42, 0.8);
+      color: #38bdf8;
+      outline: none;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+    }
+
+    /* Botão Principal Gigante Ultra Amigável */
+    .btn-super {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      width: 100%;
+      padding: 1.25rem 2rem;
+      border-radius: 18px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 10px 25px -5px var(--success-glow);
+    }
+    .btn-green {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: #ffffff;
+    }
+    .btn-green:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 16px 35px -5px rgba(34, 197, 94, 0.5);
+    }
+    .btn-green:active {
+      transform: translateY(1px);
+    }
+
+    .btn-blue {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: #ffffff;
+    }
+
+    /* Status Conectado */
+    .status-panel {
+      display: none;
+      background: rgba(34, 197, 94, 0.08);
+      border: 1.5px solid rgba(34, 197, 94, 0.3);
+      border-radius: 18px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      text-align: left;
+    }
+    .status-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .pulse-dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 12px #22c55e;
+      animation: blink 1.2s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    /* Cartão do Agente de Acesso Total */
+    .agent-card {
+      margin-top: 2rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: left;
+    }
+
+    /* Caixa de Chat & Voz */
+    .chat-box {
+      margin-top: 1.5rem;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1rem;
+      max-height: 180px;
+      overflow-y: auto;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+    .chat-msg {
+      margin-bottom: 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+    .chat-msg.tech {
+      background: rgba(56, 189, 248, 0.15);
+      border-left: 3px solid #38bdf8;
+      color: #e0f2fe;
+    }
+    .chat-msg.client {
+      background: rgba(34, 197, 94, 0.15);
+      border-left: 3px solid #22c55e;
+      color: #dcfce7;
+      text-align: right;
+    }
+
+    /* Respostas Rápidas de 1 Clique */
+    .quick-replies {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      justify-content: center;
+    }
+    .quick-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .quick-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Laser pointer controlado remotamente pelo técnico -->
+  <div id="remote-laser-pointer"></div>
+
+  <div class="container">
+    <div class="card">
+      
+      <div class="logo-badge">
+        <i class="fa-solid fa-headset"></i> Chef Cozinha — Suporte Técnico Remoto
+      </div>
+
+      <h1 class="title" id="main-title">Assistência Remota</h1>
+      <p class="subtitle" id="main-subtitle">
+        Fique tranquilo! Nossa equipe técnica vai se conectar e resolver tudo no seu computador sem você se preocupar com nada.
+      </p>
+
+      <!-- PASSO 1: DIGITAÇÃO DE CÓDIGO (se não tiver link direto) -->
+      <div id="view-pin" style="display:none;">
+        <div class="pin-box">
+          <p style="font-size:1.05rem; font-weight:600; margin-bottom:12px; color:#cbd5e1;">
+            Digite o Código de 6 Números informado pelo Atendente:
+          </p>
+          <input type="text" id="input-pin" class="pin-input" placeholder="000 000" maxlength="7" autofocus>
+          <div style="margin-top:14px;">
+            <button class="btn-super btn-green" onclick="conectarPorPin()" style="max-width:320px; font-size:1.15rem; padding:12px;">
+              <i class="fa-solid fa-arrow-right"></i> Entrar no Atendimento
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASSO 2: BOTÃO GIGANTE DE CONEXÃO E COMPARTILHAMENTO DE TELA -->
+      <div id="view-action">
+        
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:1.25rem; margin-bottom:1.5rem; text-align:left; display:flex; align-items:center; gap:16px;">
+          <div style="width:48px; height:48px; border-radius:50%; background:rgba(34,197,94,0.15); display:flex; align-items:center; justify-content:center; color:#22c55e; font-size:1.5rem; flex-shrink:0;">
+            <i class="fa-solid fa-user-check"></i>
+          </div>
+          <div>
+            <div style="font-size:0.85rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Atendente Responsável</div>
+            <div style="font-size:1.15rem; font-weight:800; color:#ffffff;" id="display-atendente">Técnico Chef Cozinha</div>
+            <div style="font-size:0.85rem; color:#38bdf8;" id="display-restaurante">Carregando dados da sessão...</div>
+          </div>
+        </div>
+
+        <button class="btn-super btn-green" id="btn-share-screen" onclick="iniciarCompartilhamentoTela()">
+          <i class="fa-solid fa-desktop" style="font-size:1.6rem;"></i>
+          <span>PERMITIR AJUDA REMOTA AGORA (1 Clique)</span>
+        </button>
+
+        <p style="font-size:0.88rem; color:#94a3b8; margin-top:12px;">
+          🔒 Conexão criptografada e segura. Você pode encerrar o atendimento a qualquer momento.
+        </p>
+
+        <!-- CARTÃO DO ASSISTENTE DE ACESSO TOTAL (.BAT) -->
+        <div class="agent-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <i class="fa-solid fa-wand-magic-sparkles" style="color:#f59e0b; font-size:1.3rem;"></i>
+              <strong style="font-size:1.05rem;">Precisa de Configuração Profunda ou Reparo?</strong>
+            </div>
+            <a id="btn-download-helper" href="#" class="quick-btn" style="background:#0284c7; color:#fff; font-weight:700; padding:8px 16px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-download"></i> Baixar Assistente Remoto (ChefSuporte.bat)
+            </a>
+          </div>
+          <p style="font-size:0.9rem; color:#cbd5e1; margin:0; line-height:1.4;">
+            Caso o técnico precise configurar impressoras, bancos de dados ou o servidor, basta clicar no botão acima, abrir o arquivo baixado e deixar que ele faça o trabalho.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- PAINEL CONECTADO AO VIVO -->
+      <div id="status-panel" class="status-panel">
+        <div class="status-header">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="pulse-dot"></span>
+            <strong style="color:#22c55e; font-size:1.1rem;">SESSÃO REMOTA ATIVA</strong>
+          </div>
+          <button onclick="encerrarSessao()" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; padding:5px 12px; border-radius:8px; font-size:0.85rem; font-weight:700; cursor:pointer;">
+            <i class="fa-solid fa-xmark"></i> Encerrar
+          </button>
+        </div>
+        <p style="font-size:0.95rem; color:#e2e8f0; margin-bottom:0.75rem;">
+          Nosso técnico já está visualizando sua tela e trabalhando nos ajustes. Você não precisa fazer nada!
+        </p>
+
+        <!-- Chat com o Técnico -->
+        <div class="chat-box" id="chat-messages">
+          <div class="chat-msg tech">
+            <strong>Técnico:</strong> Olá! Estou conectado e iniciando os diagnósticos do sistema.
+          </div>
+        </div>
+
+        <!-- Respostas rápidas para leigos -->
+        <div class="quick-replies">
+          <button class="quick-btn" onclick="enviarRespostaRapida('Estou acompanhando aqui na tela 👍')">👍 Estou vendo</button>
+          <button class="quick-btn" onclick="enviarRespostaRapida('Pode prosseguir com o ajuste!')">✅ Pode prosseguir</button>
+          <button class="quick-btn" onclick="enviarRespostaRapida('Apareceu uma janela na tela!')">⚠️ Apareceu aviso</button>
+          <button class="quick-btn" onclick="enviarRespostaRapida('Muito obrigado, funcionou!')">🎉 Funcionou!</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Recupera parâmetros da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    let sessionId = urlParams.get('sessao') || '';
+    let pinParam = urlParams.get('pin') || '';
+
+    let socket = null;
+    let peerConnection = null;
+    let localScreenStream = null;
+    let frameStreamInterval = null;
+
+    // Inicialização da Página
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Se não tiver sessão nem pin na URL, pede PIN
+      if (!sessionId && !pinParam) {
+        document.getElementById('view-pin').style.display = 'block';
+        document.getElementById('view-action').style.display = 'none';
+        return;
+      }
+
+      // Se tiver PIN sem session ID, faz lookup
+      if (pinParam && !sessionId) {
+        await lookupPin(pinParam);
+      } else {
+        await carregarDadosSessao(sessionId);
+      }
+    });
+
+    async function lookupPin(pin) {
+      try {
+        const res = await fetch('/api/support/sessions/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: pin })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          sessionId = data.sessionId;
+          document.getElementById('display-atendente').textContent = data.atendenteNome || 'Técnico Chef Cozinha';
+          document.getElementById('display-restaurante').textContent = data.restauranteNome || '';
+          configurarLinkAssistente(sessionId);
+          conectarSocket(sessionId);
+        } else {
+          alert('Código inválido: ' + (data.erro || 'Erro ao localizar atendimento.'));
+          document.getElementById('view-pin').style.display = 'block';
+          document.getElementById('view-action').style.display = 'none';
+        }
+      } catch (e) {
+        alert('Erro ao conectar ao servidor de suporte: ' + e.message);
+      }
+    }
+
+    async function carregarDadosSessao(sId) {
+      try {
+        const res = await fetch('/api/support/sessions/' + sId);
+        const data = await res.json();
+        if (data.ok && data.session) {
+          document.getElementById('display-atendente').textContent = data.session.atendenteNome || 'Técnico Chef Cozinha';
+          document.getElementById('display-restaurante').textContent = data.session.restauranteNome || 'Seu Restaurante';
+          configurarLinkAssistente(sId);
+          conectarSocket(sId);
+        } else {
+          alert('Sessão não encontrada ou expirada.');
+          document.getElementById('view-pin').style.display = 'block';
+          document.getElementById('view-action').style.display = 'none';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function conectarPorPin() {
+      const pin = document.getElementById('input-pin').value.replace(/\D/g, '');
+      if (pin.length < 6) {
+        alert('Digite os 6 números do código.');
+        return;
+      }
+      document.getElementById('view-pin').style.display = 'none';
+      document.getElementById('view-action').style.display = 'block';
+      await lookupPin(pin);
+    }
+
+    function configurarLinkAssistente(sId) {
+      const btn = document.getElementById('btn-download-helper');
+      if (btn) {
+        btn.href = '/api/support/agent/download.bat?sessao=' + encodeURIComponent(sId);
+      }
+    }
+
+    // Conexão Socket.IO & WebRTC
+    function conectarSocket(sId) {
+      if (typeof io === 'undefined') return;
+
+      socket = io('/remote-support');
+
+      socket.on('connect', () => {
+        socket.emit('join', { sessionId: sId, role: 'client' });
+        
+        // Registra dispositivo no backend
+        fetch(`/api/support/sessions/${sId}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            deviceInfo: {
+              platform: navigator.platform,
+              userAgent: navigator.userAgent,
+              screen: `${window.screen.width}x${window.screen.height}`,
+              language: navigator.language
+            }
+          })
+        }).catch(() => {});
+      });
+
+      // Laser Pointer: Técnico aponta na tela para o cliente ver!
+      socket.on('pointer_move', (coords) => {
+        const laser = document.getElementById('remote-laser-pointer');
+        if (!laser) return;
+        if (coords.visible === false) {
+          laser.style.display = 'none';
+          return;
+        }
+        laser.style.display = 'block';
+        laser.style.left = (coords.x * window.innerWidth) + 'px';
+        laser.style.top = (coords.y * window.innerHeight) + 'px';
+      });
+
+      // Chat & Voz por Text-to-Speech
+      socket.on('chat_message', (msg) => {
+        adicionarMensagemChat(msg.from === 'support' ? 'tech' : 'client', msg.text);
+        if (msg.from === 'support' && 'speechSynthesis' in window) {
+          falarTexto(msg.text);
+        }
+      });
+
+      // WebRTC Signaling
+      socket.on('webrtc_offer', async (offer) => {
+        if (!peerConnection) return;
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        socket.emit('webrtc_answer', answer);
+      });
+
+      socket.on('webrtc_ice_candidate', async (candidate) => {
+        if (peerConnection && candidate) {
+          try { await peerConnection.addIceCandidate(new RTCIceCandidate(candidate)); } catch (e) {}
+        }
+      });
+    }
+
+    // 1-Click: Compartilhar Tela Inteira
+    async function iniciarCompartilhamentoTela() {
+      try {
+        localScreenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { cursor: 'always' },
+          audio: false
+        });
+
+        document.getElementById('view-action').style.display = 'none';
+        document.getElementById('status-panel').style.display = 'block';
+        document.getElementById('main-title').textContent = 'Atendimento em Andamento';
+        document.getElementById('main-subtitle').textContent = 'Nossa equipe já está cuidando do seu computador. Pode deixar que nós fazemos tudo!';
+
+        if (socket) {
+          socket.emit('screen_sharing_status', { active: true });
+        }
+
+        // Configura WebRTC Peer Connection
+        iniciarWebRtcSender(localScreenStream);
+
+        // Fallback: Streaming de Frames via Canvas (garante 100% de funcionamento se WebRTC falhar em firewall restritivo)
+        iniciarFallbackSnapshotStream(localScreenStream);
+
+        // Se o usuário clicar em "Parar compartilhamento" no banner nativo do navegador
+        localScreenStream.getVideoTracks()[0].onended = () => {
+          encerrarSessao();
+        };
+
+        // Fala com o cliente via áudio para tranquilizá-lo!
+        falarTexto("Conexão autorizada com sucesso. Nossa equipe já está visualizando sua tela e trabalhando para você.");
+
+      } catch (err) {
+        alert('Para que possamos te ajudar, você precisa clicar em "Permitir" e escolher a tela do computador. Tente novamente!');
+      }
+    }
+
+    function iniciarWebRtcSender(stream) {
+      const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+      peerConnection = new RTCPeerConnection(config);
+
+      stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate && socket) {
+          socket.emit('webrtc_ice_candidate', event.candidate);
+        }
+      };
+
+      peerConnection.createOffer().then(offer => {
+        return peerConnection.setLocalDescription(offer);
+      }).then(() => {
+        if (socket) socket.emit('webrtc_offer', peerConnection.localDescription);
+      }).catch(err => console.warn('WebRTC offer error:', err));
+    }
+
+    function iniciarFallbackSnapshotStream(stream) {
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.play();
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      frameStreamInterval = setInterval(() => {
+        if (!video.videoWidth) return;
+        canvas.width = Math.min(video.videoWidth, 1280);
+        canvas.height = Math.round(canvas.width * (video.videoHeight / video.videoWidth));
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+        if (socket) {
+          socket.emit('screen_frame', { frame: dataUrl });
+        }
+      }, 800); // 1.2 fps snapshot stream
+    }
+
+    function falarTexto(texto) {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(texto);
+        utterance.lang = 'pt-BR';
+        utterance.rate = 1.05;
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {}
+    }
+
+    function adicionarMensagemChat(tipo, texto) {
+      const box = document.getElementById('chat-messages');
+      if (!box) return;
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'chat-msg ' + tipo;
+      msgDiv.innerHTML = '<strong>' + (tipo === 'tech' ? 'Técnico' : 'Você') + ':</strong> ' + texto;
+      box.appendChild(msgDiv);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function enviarRespostaRapida(texto) {
+      if (socket) {
+        socket.emit('chat_message', { from: 'client', text: texto });
+      }
+    }
+
+    function encerrarSessao() {
+      if (localScreenStream) {
+        localScreenStream.getTracks().forEach(t => t.stop());
+      }
+      if (frameStreamInterval) clearInterval(frameStreamInterval);
+      if (socket) {
+        socket.emit('screen_sharing_status', { active: false });
+      }
+      document.getElementById('status-panel').style.display = 'none';
+      document.getElementById('view-action').style.display = 'block';
+      document.getElementById('main-title').textContent = 'Atendimento Finalizado';
+      document.getElementById('main-subtitle').textContent = 'Obrigado por usar o Chef Cozinha! O suporte foi finalizado.';
+      falarTexto("Atendimento remoto finalizado. Obrigado!");
+    }
+  </script>
+</body>
+</html>

@@ -83,6 +83,10 @@
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
 
+    // Não intercepta se houver modal ou overlay aberto
+    const modalAberto = document.querySelector('.modal-overlay:not([style*="display: none"]), .modal-base:not([style*="display: none"]), #checkout-modal-overlay:not([style*="display: none"]), .modal-container:not([style*="display: none"])');
+    if (modalAberto && window.getComputedStyle(modalAberto).display !== 'none') return;
+
     // Busca de mesa/comanda fala com o grid de mesas
     if (window.viewFilter && window.viewFilter !== 'Mesas' && window.viewFilter !== 'Todas') return;
 
@@ -495,8 +499,9 @@
     const floatRestore = document.getElementById('float-restore-' + side);
     if (!panel) return;
 
-    panel.classList.remove('mode-expanded', 'mode-mini', 'mode-hidden', 'sidebar-expanded', 'sidebar-mini', 'sidebar-hidden');
+    panel.classList.remove('mode-expanded', 'mode-mini', 'mode-hidden', 'sidebar-expanded', 'sidebar-mini', 'sidebar-hidden', 'dock-icon-only');
     panel.classList.add('mode-' + mode, 'sidebar-' + mode);
+    if (mode === 'mini' && side === 'left') panel.classList.add('dock-icon-only');
 
     const desktop = window.innerWidth >= 768;
     if (desktop) {
@@ -505,9 +510,9 @@
       } else if (mode === 'mini') {
         const w = right ? '190px' : '68px';
         panel.style.display = '';
-        panel.style.width = w;
-        panel.style.minWidth = w;
-        panel.style.maxWidth = w;
+        panel.style.setProperty('width', w, 'important');
+        panel.style.setProperty('min-width', w, 'important');
+        panel.style.setProperty('max-width', w, 'important');
       } else {
         panel.style.display = '';
         const stored = localStorage.getItem('chef_sidebar_' + side + '_width');
@@ -646,3 +651,79 @@
   inicializarModosBarrasLaterais();
 
 })(window);
+
+
+// ─── TOGGLE DAS OPÇÕES DE CONFIGURAR LAYOUT DAS MESAS (RECOLHIDO POR PADRÃO) ───
+window.toggleMesasLayoutOptions = function (forceState) {
+  const container = document.getElementById('mesas-layout-options-container');
+  const btn = document.getElementById('btn-toggle-layout-config');
+  const icon = document.getElementById('icon-toggle-layout-config');
+  if (!container) return;
+
+  const isCurrentlyOpen = container.style.display !== 'none' && container.style.display !== '';
+  const shouldOpen = typeof forceState === 'boolean' ? forceState : !isCurrentlyOpen;
+
+  if (shouldOpen) {
+    container.style.display = 'inline-flex';
+    if (btn) {
+      btn.style.background = 'rgba(252,75,21,0.12)';
+      btn.style.color = '#fc4b15';
+      btn.style.borderColor = 'rgba(252,75,21,0.3)';
+    }
+    if (icon) icon.className = 'ph ph-caret-up';
+  } else {
+    container.style.display = 'none';
+    if (btn) {
+      btn.style.background = 'rgba(0,0,0,0.06)';
+      btn.style.color = 'var(--text-secondary, #94a3b8)';
+      btn.style.borderColor = 'rgba(255,255,255,0.14)';
+    }
+    if (icon) icon.className = 'ph ph-caret-down';
+  }
+};
+
+// ─── TOGGLE DA BARRA DE ATALHOS DO TOPO (RECOLHIDA POR PADRÃO NO TABLET) ───
+window.toggleTopToolbar = function (forceState) {
+  const tb = document.querySelector('.top-toolbar');
+  const btn = document.getElementById('btn-toggle-top-toolbar');
+  const icon = document.getElementById('icon-toggle-top-toolbar');
+  if (!tb) return;
+
+  const isHidden = window.getComputedStyle(tb).display === 'none';
+  const shouldShow = typeof forceState === 'boolean' ? forceState : isHidden;
+
+  if (shouldShow) {
+    tb.classList.add('expandida');
+    tb.style.setProperty('display', 'flex', 'important');
+    if (btn) {
+      btn.style.background = 'rgba(252,75,21,0.12)';
+      btn.style.color = '#fc4b15';
+      btn.style.borderColor = 'rgba(252,75,21,0.3)';
+    }
+    if (icon) icon.className = 'ph ph-caret-up';
+    localStorage.setItem('chef_top_toolbar_expandida', 'true');
+  } else {
+    tb.classList.remove('expandida');
+    tb.style.setProperty('display', 'none', 'important');
+    if (btn) {
+      btn.style.background = 'rgba(255,255,255,0.06)';
+      btn.style.color = 'var(--text-secondary,#cbd5e1)';
+      btn.style.borderColor = 'rgba(255,255,255,0.12)';
+    }
+    if (icon) icon.className = 'ph ph-caret-down';
+    localStorage.setItem('chef_top_toolbar_expandida', 'false');
+  }
+};
+
+document.addEventListener('DOMContentLoaded', function () {
+  const layoutContainer = document.getElementById('mesas-layout-options-container');
+  if (layoutContainer) layoutContainer.style.display = 'none';
+
+  const isTabletOrMobile = window.innerWidth <= 1024 || document.body.classList.contains('force-mobile');
+  if (isTabletOrMobile) {
+    const savedToolbar = localStorage.getItem('chef_top_toolbar_expandida');
+    if (savedToolbar !== 'true') {
+      window.toggleTopToolbar(false);
+    }
+  }
+});

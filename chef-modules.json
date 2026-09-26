@@ -20,9 +20,10 @@
     "pesagem-selfservice": true,
     "tema-v2": true,
     "rh": true,
-    "cheff-ai": false,
+    "cheff-ai": true,
     "cheff-entregas": true,
-    "theme-curator": true
+    "theme-curator": true,
+    "fila-espera": true
   },
   "order": []
 }

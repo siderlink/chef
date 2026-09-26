@@ -8,33 +8,91 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/theme-manager.js"></script>
   <style>
-    :root {
+    :root, [data-theme="light"], body.theme-light {
       --primary: #fc4b15;
       --primary-dark: #e03a0b;
       --surface: #ffffff;
       --bg: #f8f9fa;
+      --body-bg: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
       --text: #1e293b;
       --text-muted: #64748b;
+      --input-bg: #f8fafc;
+      --input-border: #e2e8f0;
+      --input-color: #0f172a;
+      --toggle-bg: #f1f5f9;
+      --card-border: rgba(0, 0, 0, 0.06);
+      --card-shadow: 0 20px 40px rgba(0,0,0,0.08);
+      --rede-bg: #ffffff;
+      --rede-card-bg: #f8fafc;
+      --rede-border: #e2e8f0;
     }
+
+    [data-theme="dark"], body.theme-dark, body.dark-mode {
+      --primary: #fc4b15;
+      --primary-dark: #e03a0b;
+      --surface: #1e293b;
+      --bg: #0b0f19;
+      --body-bg: linear-gradient(135deg, #0b0f19 0%, #0f172a 100%);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: #0f172a;
+      --input-border: #334155;
+      --input-color: #f8fafc;
+      --toggle-bg: #0f172a;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-shadow: 0 20px 40px rgba(0,0,0,0.45);
+      --rede-bg: #1e293b;
+      --rede-card-bg: #0f172a;
+      --rede-border: #334155;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
     body {
-      background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
-      height: 100vh;
+      background: var(--body-bg);
+      color: var(--text);
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .theme-toggle-floating {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 999;
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
+    }
+    .theme-toggle-floating:hover {
+      transform: scale(1.05);
+      border-color: var(--primary);
     }
     .login-container {
       background: var(--surface);
       padding: 40px;
       border-radius: 24px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--card-shadow);
       width: 100%;
       max-width: 420px;
       text-align: center;
       position: relative;
       overflow: hidden;
+      transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
     .login-container::before {
       content: '';
@@ -60,21 +118,22 @@
     .input-group { text-align: left; margin-bottom: 20px; position: relative; }
     .input-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
     .input-wrapper { position: relative; }
-    .input-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 20px; }
+    .input-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 20px; }
     .input-group input {
       width: 100%;
       padding: 14px 16px 14px 44px;
-      border: 2px solid #e2e8f0;
+      border: 2px solid var(--input-border);
       border-radius: 12px;
       font-size: 16px;
       transition: all 0.2s ease;
-      background: #f8fafc;
+      background: var(--input-bg);
+      color: var(--input-color);
     }
     .input-group input:focus {
       border-color: var(--primary);
-      background: #fff;
+      background: var(--input-bg);
       outline: none;
-      box-shadow: 0 0 0 4px rgba(252, 75, 21, 0.1);
+      box-shadow: 0 0 0 4px rgba(252, 75, 21, 0.15);
     }
     
     .btn-login {
@@ -121,29 +180,32 @@
     .rede-sheet {
       width: 100%; max-width: 420px;
       max-height: 82vh; overflow-y: auto;
-      background: #ffffff;
+      background: var(--rede-bg);
+      color: var(--text);
       border-radius: 24px 24px 0 0;
       padding: 12px 20px 28px 20px;
       transform: translateY(100%);
       transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
-      box-shadow: 0 -12px 48px rgba(0,0,0,0.18);
+      box-shadow: 0 -12px 48px rgba(0,0,0,0.25);
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--card-border);
     }
     @media (min-width: 640px) {
       .rede-sheet { border-radius: 24px; transform: translateY(24px) scale(0.96); opacity: 0; }
       .rede-overlay.visivel .rede-sheet { transform: translateY(0) scale(1); }
     }
     .rede-overlay.visivel .rede-sheet { transform: translateY(0); }
-    .rede-grabber { width: 40px; height: 5px; border-radius: 3px; background: #e2e8f0; margin: 4px auto 14px auto; }
+    .rede-grabber { width: 40px; height: 5px; border-radius: 3px; background: var(--input-border); margin: 4px auto 14px auto; }
     .rede-card-restaurante {
       display: flex; align-items: center; gap: 14px; width: 100%;
-      background: #f8fafc; border: 2px solid transparent; border-radius: 16px;
+      background: var(--rede-card-bg); border: 2px solid var(--rede-border); border-radius: 16px;
       padding: 14px; margin-bottom: 10px; cursor: pointer; text-align: left;
+      color: var(--text);
       transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.2s ease;
       -webkit-tap-highlight-color: transparent;
     }
-    .rede-card-restaurante:hover { border-color: #fec7ad; background: #fff7f3; }
+    .rede-card-restaurante:hover { border-color: var(--primary); background: rgba(252, 75, 21, 0.08); }
     .rede-card-restaurante:active { transform: scale(0.97); }
     .rede-avatar {
       width: 46px; height: 46px; flex-shrink: 0; border-radius: 14px;
@@ -243,7 +305,10 @@
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
   </head>
 <body>
-    <div class="login-container">
+  <button class="theme-toggle-floating" id="theme-toggle-btn" type="button" onclick="window.ChefTheme && window.ChefTheme.toggle()" title="Alternar Modo Claro / Escuro">
+    <i class="ph ph-moon" id="theme-toggle-icon"></i>
+  </button>
+  <div class="login-container">
     <div class="login-header-side">
       <div class="logo-icon">
         <i class="ph-fill ph-chef-hat"></i>
@@ -252,7 +317,7 @@
       <p class="subtitle" id="login-subtitle">Escolha seu tipo de perfil para continuar.</p>
       
       <!-- Seletor Principal: Proprietário (Owner) vs Colaborador (Equipe) -->
-      <div class="login-type-toggle" style="display:flex; background:#f1f5f9; padding:4px; border-radius:14px; margin-bottom:18px; border:1px solid #e2e8f0;">
+      <div class="login-type-toggle" style="display:flex; background:var(--toggle-bg); padding:4px; border-radius:14px; margin-bottom:18px; border:1px solid var(--input-border);">
         <button id="tab-login-owner" type="button" onclick="setTipoPerfil('owner')" style="flex:1; padding:10px 8px; border:none; border-radius:10px; font-weight:800; font-size:13px; cursor:pointer; background:var(--primary); color:white; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px;">
           <i class="ph-bold ph-crown"></i> <span>Dono / Owner</span>
         </button>
@@ -300,7 +365,7 @@
         <button type="button" id="btn-colab-mode-pin" onclick="setModoColaborador('pin')" style="background:rgba(252,75,21,0.1); color:#fc4b15; border:1px solid rgba(252,75,21,0.3); padding:6px 14px; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer;">
           <i class="ph-bold ph-key"></i> PIN de Acesso
         </button>
-        <button type="button" id="btn-colab-mode-user" onclick="setModoColaborador('user')" style="background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0; padding:6px 14px; border-radius:8px; font-weight:700; font-size:12px; cursor:pointer;">
+        <button type="button" id="btn-colab-mode-user" onclick="setModoColaborador('user')" style="background:var(--toggle-bg); color:var(--text-muted); border:1px solid var(--input-border); padding:6px 14px; border-radius:8px; font-weight:700; font-size:12px; cursor:pointer;">
           <i class="ph-bold ph-user"></i> Usuário & Senha
         </button>
       </div>

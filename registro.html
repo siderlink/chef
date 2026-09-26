@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
   <style>
-    :root {
+    :root, [data-theme="dark"], body.theme-dark, body.dark {
       --primary: #fc4b15;
       --primary-hover: #e03a0b;
       --primary-subtle: rgba(252, 75, 21, 0.12);
@@ -25,6 +25,45 @@
       --success-bg: rgba(16, 185, 129, 0.12);
       --danger: #EF4444;
       --danger-bg: rgba(239, 68, 68, 0.12);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+      --input-bg: #0F172A;
+      --input-border: #334155;
+      --input-color: #F8FAFC;
+      --card-header-border: rgba(255, 255, 255, 0.06);
+      --btn-sec-bg: transparent;
+      --btn-sec-color: #94A3B8;
+      --btn-sec-border: #334155;
+      --btn-sec-hover-bg: rgba(255, 255, 255, 0.04);
+      --btn-sec-hover-color: #F8FAFC;
+    }
+
+    [data-theme="light"], body.theme-light, body.light {
+      --primary: #fc4b15;
+      --primary-hover: #e03a0b;
+      --primary-subtle: rgba(252, 75, 21, 0.12);
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-inner: #f1f5f9;
+      --border: #cbd5e1;
+      --border-focus: #fc4b15;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --success: #10B981;
+      --success-bg: rgba(16, 185, 129, 0.12);
+      --danger: #EF4444;
+      --danger-bg: rgba(239, 68, 68, 0.12);
+      --card-border: rgba(0, 0, 0, 0.08);
+      --card-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+      --input-bg: #ffffff;
+      --input-border: #cbd5e1;
+      --input-color: #0f172a;
+      --card-header-border: rgba(0, 0, 0, 0.06);
+      --btn-sec-bg: transparent;
+      --btn-sec-color: #64748b;
+      --btn-sec-border: #cbd5e1;
+      --btn-sec-hover-bg: rgba(0, 0, 0, 0.04);
+      --btn-sec-hover-color: #0f172a;
     }
 
     * {
@@ -50,10 +89,10 @@
 
     .container {
       background-color: var(--card-bg);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
       padding: 36px 32px;
       border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+      box-shadow: var(--card-shadow);
       width: 100%;
       max-width: 460px;
       text-align: center;
@@ -159,9 +198,9 @@
     select {
       width: 100%;
       padding: 12px 14px;
-      border: 1px solid var(--border);
-      background-color: var(--card-inner);
-      color: var(--text);
+      border: 1px solid var(--input-border);
+      background-color: var(--input-bg);
+      color: var(--input-color);
       border-radius: 10px;
       box-sizing: border-box;
       outline: none;
@@ -225,9 +264,9 @@
     }
 
     button.btn-sec {
-      background-color: transparent;
-      color: #94A3B8;
-      border: 1px dashed var(--border);
+      background-color: var(--btn-sec-bg);
+      color: var(--btn-sec-color);
+      border: 1px dashed var(--btn-sec-border);
       margin-top: 6px;
       margin-bottom: 14px;
       font-size: 14px;
@@ -236,9 +275,9 @@
     }
 
     button.btn-sec:hover {
-      background-color: rgba(255, 255, 255, 0.04);
-      color: var(--text);
-      border-color: #64748B;
+      background-color: var(--btn-sec-hover-bg);
+      color: var(--btn-sec-hover-color);
+      border-color: var(--primary);
       transform: none;
       box-shadow: none;
     }
@@ -318,7 +357,7 @@
       gap: 10px;
       margin-bottom: 14px;
       padding-bottom: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid var(--card-header-border);
     }
 
     .equipe-card-title {
@@ -419,7 +458,32 @@
     .sucesso-banner.visible {
       display: flex;
     }
+
+    .theme-toggle-floating {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 999;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
+    }
+    .theme-toggle-floating:hover {
+      transform: scale(1.05);
+      border-color: var(--primary);
+    }
   </style>
+  <script src="/theme-manager.js"></script>
   <script src="/locales.js"></script>
   <script src="/i18n.js"></script>
   <link rel="icon" href="/icons/icon.ico">
@@ -433,6 +497,9 @@
 </head>
 
 <body>
+  <button class="theme-toggle-floating" id="theme-toggle-btn" type="button" onclick="window.ChefTheme && window.ChefTheme.toggle()" title="Alternar Modo Claro / Escuro">
+    <i class="ph ph-moon" id="theme-toggle-icon"></i>
+  </button>
 
   <!-- PASSO 1: REGISTRO DA CONTA -->
   <div class="container" id="passo1">
@@ -1231,6 +1298,18 @@
     })();
   </script>
 
+
+  <script>
+    function updateThemeIcon() {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light' || document.body.classList.contains('theme-light') || document.body.classList.contains('light');
+      const icon = document.getElementById('theme-toggle-icon');
+      if (icon) {
+        icon.className = isLight ? 'ph ph-sun' : 'ph ph-moon';
+      }
+    }
+    window.addEventListener('chef_theme_changed', updateThemeIcon);
+    document.addEventListener('DOMContentLoaded', updateThemeIcon);
+  </script>
 </body>
 
 </html>

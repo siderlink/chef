@@ -11,8 +11,10 @@
   /* ═══ 1. MODO CLARO / ESCURO (TEMA) ═══ */
   function getSavedTheme() {
     try {
-      var saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === 'dark' || saved === 'light') return saved;
+      var primary = localStorage.getItem(STORAGE_KEY);
+      if (primary === 'dark' || primary === 'light') return primary;
+      var secondary = localStorage.getItem('chef_garcom_theme');
+      if (secondary === 'dark' || secondary === 'light') return secondary;
     } catch (e) { }
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches && localStorage.getItem('chef_theme_auto') === '1') {
       return 'dark';
@@ -44,30 +46,42 @@
   function applyTheme(theme) {
     var validTheme = (theme === 'dark') ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', validTheme);
+    document.documentElement.classList.remove('theme-dark', 'theme-light', 'light', 'dark');
+    document.documentElement.classList.add('theme-' + validTheme);
+    document.documentElement.classList.toggle('dark-mode', validTheme === 'dark');
+    document.documentElement.classList.toggle('light', validTheme === 'light');
+    document.documentElement.classList.toggle('dark', validTheme === 'dark');
+
     if (document.body) {
-      document.body.classList.remove('theme-dark', 'theme-light');
+      document.body.setAttribute('data-theme', validTheme);
+      document.body.classList.remove('theme-dark', 'theme-light', 'light', 'dark');
       document.body.classList.add('theme-' + validTheme);
       document.body.classList.toggle('dark-mode', validTheme === 'dark');
+      document.body.classList.toggle('light', validTheme === 'light');
+      document.body.classList.toggle('dark', validTheme === 'dark');
     }
-    var dmLink = document.querySelector('link[href*="dark-mode.css"]');
+
+    var dmLinks = document.querySelectorAll('link[href*="dark-mode.css"]');
     if (validTheme === 'dark') {
-      if (!dmLink) {
-        dmLink = document.createElement('link');
+      if (!dmLinks.length) {
+        var dmLink = document.createElement('link');
         dmLink.rel = 'stylesheet';
         dmLink.href = '/dark-mode.css';
         document.head.appendChild(dmLink);
       } else {
-        dmLink.disabled = false;
+        dmLinks.forEach(function (l) { l.disabled = false; });
       }
     } else {
-      if (dmLink) {
-        dmLink.disabled = true;
-        try { if (dmLink.parentNode) dmLink.parentNode.removeChild(dmLink); } catch (e) { }
-      }
+      dmLinks.forEach(function (l) {
+        l.disabled = true;
+        try { if (l.parentNode) l.parentNode.removeChild(l); } catch (e) { }
+      });
     }
-    document.documentElement.classList.toggle('dark-mode', validTheme === 'dark');
+
     try { localStorage.setItem(STORAGE_KEY, validTheme); } catch (e) { }
     try { localStorage.setItem('chef_garcom_theme', validTheme); } catch (e) { }
+    try { localStorage.setItem('theme', validTheme); } catch (e) { }
+    try { document.cookie = 'chef_lite_theme=' + validTheme + ';path=/;max-age=31536000'; } catch (e) { }
     updateThemeUI(validTheme);
 
     var baseStyleEl = document.getElementById('chef-mode-base-vars');
@@ -86,15 +100,26 @@
         '  --bg-page: #f8fafc !important;',
         '  --bg-card: #ffffff !important;',
         '  --bg-panel: #ffffff !important;',
-        '  --bg-sidebar: #f8fafc !important;',
+        '  --bg-sidebar: #ffffff !important;',
         '  --bg-header: #ffffff !important;',
+        '  --surface: #ffffff !important;',
+        '  --surface-panel: #ffffff !important;',
+        '  --surface-card: #ffffff !important;',
+        '  --surface-ground: #f8fafc !important;',
         '  --text-primary: #0f172a !important;',
         '  --text-main: #0f172a !important;',
+        '  --text-body: #1e293b !important;',
         '  --text-secondary: #64748b !important;',
         '  --text-muted: #64748b !important;',
         '  --border-color: #e2e8f0 !important;',
         '  --border-light: #e2e8f0 !important;',
         '  --border-subtle: #e2e8f0 !important;',
+        '  --border-main: #e2e8f0 !important;',
+        '  --glass-bg: rgba(255, 255, 255, 0.92) !important;',
+        '  --glass-border: rgba(226, 232, 240, 0.8) !important;',
+        '  --input-bg: #ffffff !important;',
+        '  --input-border: #cbd5e1 !important;',
+        '  --input-color: #0f172a !important;',
         '}'
       ].join('\n');
     } else {
@@ -109,33 +134,29 @@
         '  --bg-panel: #0f172a !important;',
         '  --bg-sidebar: #0b1120 !important;',
         '  --bg-header: #0f172a !important;',
+        '  --surface: #1e293b !important;',
+        '  --surface-panel: #0f172a !important;',
+        '  --surface-card: #1e293b !important;',
+        '  --surface-ground: #0b0f19 !important;',
         '  --text-primary: #f8fafc !important;',
         '  --text-main: #f8fafc !important;',
+        '  --text-body: #f1f5f9 !important;',
         '  --text-secondary: #94a3b8 !important;',
         '  --text-muted: #94a3b8 !important;',
         '  --border-color: rgba(255, 255, 255, 0.08) !important;',
         '  --border-light: rgba(255, 255, 255, 0.08) !important;',
         '  --border-subtle: rgba(255, 255, 255, 0.08) !important;',
+        '  --border-main: rgba(255, 255, 255, 0.12) !important;',
+        '  --glass-bg: rgba(15, 23, 42, 0.85) !important;',
+        '  --glass-border: rgba(255, 255, 255, 0.1) !important;',
+        '  --input-bg: #1e293b !important;',
+        '  --input-border: #334155 !important;',
+        '  --input-color: #f8fafc !important;',
         '}'
       ].join('\n');
     }
 
     if (_lastCfg) {
-      if (_lastCfg.storeTema) {
-        if (validTheme === 'light' && !isLightColor(_lastCfg.bgColor || _lastCfg.bgPage)) {
-          _lastCfg.bgColor = '#f8fafc';
-          _lastCfg.bgCard = '#ffffff';
-          _lastCfg.borderColor = '#e2e8f0';
-          _lastCfg.textPrimary = '#0f172a';
-          _lastCfg.textSecondary = '#64748b';
-        } else if (validTheme === 'dark' && isLightColor(_lastCfg.bgColor || _lastCfg.bgPage)) {
-          _lastCfg.bgColor = '#0b0f19';
-          _lastCfg.bgCard = '#1e293b';
-          _lastCfg.borderColor = '#1f2937';
-          _lastCfg.textPrimary = '#f3f4f6';
-          _lastCfg.textSecondary = '#94a3b8';
-        }
-      }
       applyCustomTheme(_lastCfg);
     }
     window.dispatchEvent(new CustomEvent('chef_theme_changed', { detail: { theme: validTheme } }));
@@ -259,40 +280,68 @@
       document.head.appendChild(styleEl);
     }
 
+    var activeTheme = getSavedTheme();
+    var isDark = (activeTheme === 'dark');
+
     var prim = cfg.primary || '#fc4b15';
     var primRgb = hexToRgb(prim);
     var primHov = cfg.primaryHover || prim;
-    var bg = cfg.bgColor || cfg.bgPage || '#0b0f19';
-    var cardBg = cfg.bgCard || '#111827';
-    var border = cfg.borderColor || '#1f2937';
-    var textMain = cfg.textPrimary || cfg.textMain || '#f3f4f6';
-    var isDarkBg = !isLightColor(bg);
-    var textSec = cfg.textSecondary || (isDarkBg ? '#94a3b8' : '#64748b');
+    var bg = cfg.bgColor || cfg.bgPage || (isDark ? '#0b0f19' : '#f8fafc');
+    var cardBg = cfg.bgCard || (isDark ? '#111827' : '#ffffff');
+    var border = cfg.borderColor || (isDark ? '#1f2937' : '#e2e8f0');
+    var textMain = cfg.textPrimary || cfg.textMain || (isDark ? '#f3f4f6' : '#0f172a');
+    var textSec = cfg.textSecondary || (isDark ? '#94a3b8' : '#64748b');
     var stOcup = cfg.statusOcupada || '#ef4444';
     var stLiv = cfg.statusLivre || '#10b981';
 
-    // Se o tema veio da loja (storeTema), sincroniza modo claro/escuro
-    if (cfg.storeTema) {
-      var modoTema = isDarkBg ? 'dark' : 'light';
-      document.documentElement.setAttribute('data-theme', modoTema);
-      if (document.body) {
-        document.body.classList.remove('theme-dark', 'theme-light');
-        document.body.classList.add('theme-' + modoTema);
-        document.body.classList.toggle('dark-mode', isDarkBg);
+    // Adaptação não invasiva: respeita rigorosamente a escolha de Modo Claro ou Escuro do usuário
+    if (!isDark) {
+      if (!isLightColor(bg)) bg = '#f8fafc';
+      if (!isLightColor(cardBg)) cardBg = '#ffffff';
+      if (!isLightColor(border)) border = '#e2e8f0';
+      if (isLightColor(textMain)) textMain = '#0f172a';
+      if (isLightColor(textSec)) textSec = '#64748b';
+    } else {
+      if (isLightColor(bg)) bg = '#0b0f19';
+      if (isLightColor(cardBg)) cardBg = '#1e293b';
+      if (isLightColor(border)) border = 'rgba(255, 255, 255, 0.08)';
+      if (!isLightColor(textMain)) textMain = '#f8fafc';
+      if (!isLightColor(textSec)) textSec = '#94a3b8';
+    }
+
+    var isDarkBg = isDark;
+
+    document.documentElement.setAttribute('data-theme', activeTheme);
+    document.documentElement.classList.remove('theme-dark', 'theme-light', 'light', 'dark');
+    document.documentElement.classList.add('theme-' + activeTheme);
+    document.documentElement.classList.toggle('dark-mode', isDark);
+    document.documentElement.classList.toggle('dark', isDark);
+    document.documentElement.classList.toggle('light', !isDark);
+
+    if (document.body) {
+      document.body.setAttribute('data-theme', activeTheme);
+      document.body.classList.remove('theme-dark', 'theme-light', 'light', 'dark');
+      document.body.classList.add('theme-' + activeTheme);
+      document.body.classList.toggle('dark-mode', isDark);
+      document.body.classList.toggle('dark', isDark);
+      document.body.classList.toggle('light', !isDark);
+    }
+
+    var dmLinks = document.querySelectorAll('link[href*="dark-mode.css"]');
+    if (isDark) {
+      if (!dmLinks.length) {
+        var dmLink = document.createElement('link');
+        dmLink.rel = 'stylesheet';
+        dmLink.href = '/dark-mode.css';
+        document.head.appendChild(dmLink);
+      } else {
+        dmLinks.forEach(function (l) { l.disabled = false; });
       }
-      var dmLink = document.querySelector('link[href*="dark-mode.css"]');
-      if (isDarkBg) {
-        if (!dmLink) {
-          dmLink = document.createElement('link');
-          dmLink.rel = 'stylesheet';
-          dmLink.href = '/dark-mode.css';
-          document.head.appendChild(dmLink);
-        } else {
-          dmLink.disabled = false;
-        }
-      } else if (dmLink) {
-        dmLink.disabled = true;
-      }
+    } else {
+      dmLinks.forEach(function (l) {
+        l.disabled = true;
+        try { if (l.parentNode) l.parentNode.removeChild(l); } catch (e) { }
+      });
     }
 
     var cssVars = [
@@ -374,7 +423,7 @@
     if (cfg.modalWidth) cssVars.push('--modal-max-w: ' + cfg.modalWidth + ';');
     if (cfg.modalPosition) cssVars.push('--modal-align: ' + cfg.modalPosition + ';');
 
-    var universalSelector = ':root, html, body, [data-theme="dark"], [data-theme="light"], body.theme-dark, body.theme-light, body.dark-mode';
+    var universalSelector = ':root, html, body, [data-theme="' + activeTheme + '"], body.theme-' + activeTheme + (isDark ? ', body.dark-mode, body.dark' : ', body.light');
     var rules = [universalSelector + ' {\n  ' + cssVars.join('\n  ') + '\n}'];
 
     // 3. CSS customizado
@@ -420,6 +469,7 @@
     } catch (e) { }
 
     renderCoringa(cfg);
+    updateThemeUI(activeTheme);
     window.dispatchEvent(new CustomEvent('chef_custom_theme_applied', { detail: cfg }));
   }
 
@@ -616,8 +666,97 @@
     }
   });
 
-  // Propagação WebSocket em tempo real
+  // Sincronização entre abas e janelas em tempo real via storage event
+  window.addEventListener('storage', function (e) {
+    if (!e || !e.key) return;
+    if (e.key === STORAGE_KEY) {
+      var newTheme = e.newValue;
+      if (newTheme === 'dark' || newTheme === 'light') {
+        var currentTheme = document.documentElement.getAttribute('data-theme');
+        if (currentTheme !== newTheme) {
+          applyTheme(newTheme);
+        }
+      }
+    } else if (e.key === CUSTOM_THEME_KEY) {
+      if (e.newValue) {
+        try { applyCustomTheme(JSON.parse(e.newValue)); } catch (err) { }
+      } else {
+        clearCustomTheme();
+      }
+    } else if (e.key === VIEW_MODE_KEY) {
+      if (e.newValue && e.newValue !== getViewMode()) {
+        applyViewMode(e.newValue);
+      }
+    }
+  });
+
+  // Propagação WebSocket em tempo real & Controle Remoto pelo Super Admin
   var temaSocketTries = 0;
+
+  function exibirTelaBloqueioRemoto(motivo, contato) {
+    var el = document.getElementById('chef-remote-lock-screen');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'chef-remote-lock-screen';
+      el.style.cssText = 'position:fixed;inset:0;background:rgba(11,15,25,0.95);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);z-index:9999999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;color:#fff;text-align:center;font-family:Inter,sans-serif;animation:fadeInLock 0.3s ease;';
+      document.body.appendChild(el);
+    }
+    el.innerHTML = '<div style="background:rgba(239,68,68,0.1);border:1.5px solid rgba(239,68,68,0.35);padding:40px 32px;border-radius:24px;max-width:520px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,0.6);display:flex;flex-direction:column;align-items:center;gap:18px;">'
+      + '<div style="width:72px;height:72px;background:linear-gradient(135deg,#ef4444,#b91c1c);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 0 25px rgba(239,68,68,0.5);">'
+      + '🔒'
+      + '</div>'
+      + '<h2 style="font-size:24px;font-weight:900;color:#fff;margin:0;letter-spacing:-0.5px;">Sistema Suspenso</h2>'
+      + '<p style="font-size:15px;color:#cbd5e1;line-height:1.6;margin:0;">' + (motivo || 'Esta instalação do Chef Cozinha foi temporariamente suspensa pela administração central.') + '</p>'
+      + '<div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 18px;font-size:13px;color:#94a3b8;width:100%;box-sizing:border-box;">'
+      + 'Para regularizar o acesso e reativar seus terminais, contate o suporte:'
+      + '<div style="margin-top:8px;font-weight:700;color:#f8fafc;font-size:14px;">' + (contato || 'Suporte Técnico Chef Cozinha') + '</div>'
+      + '</div>'
+      + '<a href="https://wa.me/5511999999999" target="_blank" style="margin-top:6px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:800;font-size:14px;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(16,185,129,0.35);">'
+      + 'Falar com o Suporte Técnico'
+      + '</a>'
+      + '</div>';
+    el.style.display = 'flex';
+  }
+
+  function ocultarTelaBloqueioRemoto() {
+    var el = document.getElementById('chef-remote-lock-screen');
+    if (el) {
+      el.style.transition = 'opacity 0.4s ease';
+      el.style.opacity = '0';
+      setTimeout(function () {
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+      }, 400);
+    }
+  }
+
+  function exibirNotificacaoSuperAdmin(title, body, type, duracao) {
+    var toast = document.createElement('div');
+    var bg = type === 'danger' ? '#ef4444' : type === 'warning' ? '#f59e0b' : type === 'success' ? '#10b981' : '#3b82f6';
+    toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999999;background:' + bg + ';color:#fff;padding:16px 24px;border-radius:14px;box-shadow:0 15px 35px rgba(0,0,0,0.35);font-family:Inter,sans-serif;max-width:90vw;width:440px;display:flex;flex-direction:column;gap:4px;animation:slideDown 0.3s ease;';
+    toast.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;"><strong style="font-size:15px;font-weight:800;">' + (title || 'Aviso da Central') + '</strong><button onclick="this.parentNode.parentNode.remove()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;line-height:1;">✕</button></div>'
+      + '<div style="font-size:13px;line-height:1.5;opacity:0.95;">' + (body || '') + '</div>';
+    document.body.appendChild(toast);
+    setTimeout(function () {
+      if (toast && toast.parentNode) {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+      }
+    }, duracao || 10000);
+  }
+
+  // Verifica estado de bloqueio na inicialização
+  try {
+    fetch('/api/status-bloqueio')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data && data.bloqueado) {
+          exibirTelaBloqueioRemoto(data.motivo, data.contato);
+        }
+      })
+      .catch(function () {});
+  } catch (e) {}
+
   function bindTemaSocket() {
     if (temaSocketTries++ > 30) return;
     var sock = window.socket || (typeof io === 'function' ? io() : null);
@@ -643,6 +782,34 @@
       });
       sock.on('tema_aplicado', function (data) {
         if (data && data.cfg) applyCustomTheme(data.cfg);
+      });
+
+      // ── EVENTOS DE CONTROLE REMOTO DO SUPER ADMIN ─────────────────
+      sock.on('sistema_bloqueado_remoto', function (data) {
+        exibirTelaBloqueioRemoto(data ? data.motivo : null, data ? data.contato : null);
+      });
+
+      sock.on('sistema_desbloqueado_remoto', function () {
+        ocultarTelaBloqueioRemoto();
+        exibirNotificacaoSuperAdmin('Acesso Restaurado', 'O sistema foi desbloqueado com sucesso pela administração central.', 'success', 6000);
+      });
+
+      sock.on('notificacao_super_admin', function (data) {
+        if (data) {
+          exibirNotificacaoSuperAdmin(data.title, data.body, data.type, data.duracao);
+        }
+      });
+
+      sock.on('servidor_reiniciando', function (data) {
+        exibirNotificacaoSuperAdmin('Servidor Reiniciando', (data && data.mensagem) || 'O servidor está sendo reiniciado. Reconectando...', 'warning', 4000);
+        setTimeout(function () {
+          window.location.reload();
+        }, 3000);
+      });
+
+      sock.on('forcar_logout_geral', function (data) {
+        alert((data && data.motivo) || 'Sua sessão foi encerrada pela administração central.');
+        window.location.href = '/login.html';
       });
     } catch (e) { }
   }

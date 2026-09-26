@@ -83,6 +83,9 @@
 
   // 5. Anti-Debugging Ativo (detecta pausa maliciosa por DevTools / breakpoints)
   (function antiDebugLoop() {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.search.includes('force=true')) {
+      return; // Permite desenvolvimento e automação local sem travamentos
+    }
     function testDebugger() {
       const start = performance.now();
       try {

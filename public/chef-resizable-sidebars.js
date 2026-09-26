@@ -4,6 +4,88 @@
  */
 (function() {
   'use strict';
+  window.applyLeftSidebarResize = function(newWidth) {
+    const leftPanel = document.getElementById('left-panel');
+    if (!leftPanel) return;
+
+    if (newWidth <= 115) {
+      // Ativa modo mini / dock de ícones
+      leftPanel.classList.remove('mode-expanded', 'sidebar-expanded');
+      leftPanel.classList.add('mode-mini', 'sidebar-mini', 'dock-icon-only');
+      leftPanel.style.setProperty('width', '68px', 'important');
+      leftPanel.style.setProperty('min-width', '68px', 'important');
+      leftPanel.style.setProperty('max-width', '68px', 'important');
+      document.documentElement.style.setProperty('--left-sidebar-width', '68px');
+      document.documentElement.style.setProperty('--left-expanded-width', '68px');
+      try {
+        localStorage.setItem(STORAGE_LEFT_MODE, 'mini');
+        localStorage.setItem(STORAGE_LEFT_WIDTH, '68');
+        localStorage.setItem('leftPanelWidth', '68');
+      } catch(e){}
+
+      const btnExp = document.getElementById('btn-sidebar-left-expanded');
+      const btnMini = document.getElementById('btn-sidebar-left-mini');
+      if (btnMini) {
+        btnMini.style.setProperty('background', '#fc4b15', 'important');
+        btnMini.style.setProperty('color', '#ffffff', 'important');
+      }
+      if (btnExp) {
+        btnExp.style.background = 'transparent';
+        btnExp.style.color = 'inherit';
+      }
+      window.dispatchEvent(new CustomEvent('chef_sidebar_mode_changed', { detail: { side: 'left', mode: 'mini' } }));
+    } else {
+      // Modo expandido com títulos
+      const clampedW = Math.max(160, Math.min(newWidth, 600));
+      leftPanel.classList.remove('mode-mini', 'sidebar-mini', 'dock-icon-only', 'mode-hidden', 'sidebar-hidden');
+      leftPanel.classList.add('mode-expanded', 'sidebar-expanded');
+      leftPanel.style.display = '';
+      leftPanel.style.width = clampedW + 'px';
+      leftPanel.style.minWidth = clampedW + 'px';
+      leftPanel.style.maxWidth = clampedW + 'px';
+      document.documentElement.style.setProperty('--left-sidebar-width', clampedW + 'px');
+      document.documentElement.style.setProperty('--left-expanded-width', clampedW + 'px');
+      try {
+        localStorage.setItem(STORAGE_LEFT_MODE, 'expanded');
+        localStorage.setItem(STORAGE_LEFT_WIDTH, String(clampedW));
+        localStorage.setItem('chef_left_expanded_width', String(clampedW));
+        localStorage.setItem('leftPanelWidth', String(clampedW));
+        localStorage.setItem('chef_sidebar_left_expanded_last', String(clampedW));
+      } catch(e){}
+
+      const btnExp = document.getElementById('btn-sidebar-left-expanded');
+      const btnMini = document.getElementById('btn-sidebar-left-mini');
+      if (btnExp) {
+        btnExp.style.setProperty('background', '#fc4b15', 'important');
+        btnExp.style.setProperty('color', '#ffffff', 'important');
+      }
+      if (btnMini) {
+        btnMini.style.background = 'transparent';
+        btnMini.style.color = 'inherit';
+      }
+      window.dispatchEvent(new CustomEvent('chef_sidebar_mode_changed', { detail: { side: 'left', mode: 'expanded' } }));
+    }
+  };
+
+  window.toggleLeftSidebarExpandCollapse = function() {
+    const leftPanel = document.getElementById('left-panel');
+    if (!leftPanel) return;
+    const isMini = leftPanel.classList.contains('mode-mini') ||
+                   leftPanel.classList.contains('sidebar-mini') ||
+                   leftPanel.classList.contains('dock-icon-only') ||
+                   parseInt(leftPanel.style.width, 10) <= 90;
+    if (isMini) {
+      const targetW = parseInt(localStorage.getItem('chef_sidebar_left_expanded_last'), 10) || 240;
+      window.applyLeftSidebarResize(targetW);
+    } else {
+      const curW = parseInt(leftPanel.style.width, 10) || 240;
+      if (curW > 125) {
+        try { localStorage.setItem('chef_sidebar_left_expanded_last', String(curW)); } catch(e){}
+      }
+      window.applyLeftSidebarResize(68);
+    }
+  };
+
 
   const STORAGE_LEFT_WIDTH = 'chef_sidebar_left_width';
   const STORAGE_RIGHT_WIDTH = 'chef_sidebar_right_width';
@@ -211,7 +293,8 @@
       leftSplitter.id = 'chef-left-splitter';
       workspace.insertBefore(leftSplitter, mainPanel);
     }
-    leftSplitter.className = 'chef-sidebar-splitter left-splitter';
+    leftSplitter.classList.add('chef-sidebar-splitter', 'left-splitter');
+    leftSplitter.addEventListener('dblclick', (e) => { e.preventDefault(); if (typeof window.toggleLeftSidebarExpandCollapse === 'function') window.toggleLeftSidebarExpandCollapse(); });
     leftSplitter.title = 'Arraste para redimensionar a barra esquerda';
 
     let rightSplitter = document.getElementById('chef-right-splitter') || document.getElementById('resizer-right');
@@ -247,11 +330,7 @@
 
     const handleMove = (clientX) => {
       if (isDraggingLeft) {
-        const newW = Math.max(140, Math.min(clientX, 550));
-        leftPanel.style.width = newW + 'px';
-        leftPanel.style.minWidth = newW + 'px';
-        leftPanel.style.maxWidth = newW + 'px';
-        localStorage.setItem(STORAGE_LEFT_WIDTH, String(newW));
+        window.applyLeftSidebarResize(clientX);
       }
       if (isDraggingRight) {
         const newW = Math.max(180, Math.min(window.innerWidth - clientX, 600));
@@ -286,7 +365,11 @@
     document.addEventListener('touchend', stopDrag);
 
     // Aplicar estados salvos
-    window.setSidebarMode('left', savedLeftMode, false);
+    if (savedLeftMode === 'mini' || savedLeftW === '68') {
+      window.applyLeftSidebarResize(68);
+    } else {
+      window.setSidebarMode('left', savedLeftMode, false);
+    }
     window.setSidebarMode('right', savedRightMode, false);
 
     // Alinhar splitters à ordem dos painéis (layout modular)

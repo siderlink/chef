@@ -9,6 +9,8 @@
 'use strict';
 
 const path = require('path');
+const fs = require('fs');
+const zlib = require('zlib');
 const { exec: _gitExecCb } = require('child_process');
 const TunnelManager = require('../tunnel-manager');
 
@@ -241,7 +243,106 @@ setInterval(async () => {
 // ── SUPER ADMIN: SUPABASE CONFIG ─────────────────────────────────────
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
 
-// GET — carrega configuração do Supabase
+// GET /api/super/commits — Lista os ultimos 15 commits do repositorio Git
+app.get('/api/super/commits', superAdminAuth, async (req, res) => {
+  const logRes = await gitExec('git log -n 15 --pretty=format:"%h|%s|%an|%ar"', 15000);
+  if (!logRes.ok) return res.json({ ok: false, erro: 'Falha ao obter historico Git: ' + logRes.stderr });
+  const lines = logRes.stdout.split('\n').filter(Boolean);
+  const commits = lines.map(line => {
+    const parts = line.split('|');
+    return {
+      hash: parts[0],
+      mensagem: parts[1] || 'Sem mensagem',
+      autor: parts[2] || 'Anonimo',
+      data: parts[3] || 'Recente'
+    };
+  });
+  masterDb.get(`SELECT valor FROM configuracoes_global WHERE chave = 'commit_meta'`, [], (errM, rowM) => {
+    let meta = {};
+    if (!errM && rowM && rowM.valor) { try { meta = JSON.parse(rowM.valor); } catch (e) { } }
+    commits.forEach(c => {
+      const m = meta[c.hash];
+      if (m) { c.status = m.status || null; c.nota = m.nota || ''; }
+    });
+    res.json({ ok: true, commits });
+  });
+});
+
+// POST /api/super/commits/meta — Marca commit como estavel/quebrado e salva nota rapida
+app.post('/api/super/commits/meta', superAdminAuth, (req, res) => {
+  const { hash } = req.body || {};
+  const status = req.body && req.body.status !== undefined ? req.body.status : null;
+  const nota = req.body && req.body.nota !== undefined ? String(req.body.nota).slice(0, 500) : null;
+  const safeHash = String(hash || '').replace(/[^a-f0-9]/gi, '');
+  if (!safeHash) return res.json({ ok: false, erro: 'Hash do commit e obrigatorio.' });
+  if (status !== null && !['estavel', 'quebrado', ''].includes(status)) {
+    return res.json({ ok: false, erro: 'Status invalido. Use "estavel", "quebrado" ou "".' });
+  }
+  masterDb.get(`SELECT valor FROM configuracoes_global WHERE chave = 'commit_meta'`, [], (err, row) => {
+    let meta = {};
+    if (!err && row && row.valor) { try { meta = JSON.parse(row.valor); } catch (e) { } }
+    const atual = meta[safeHash] || {};
+    if (status !== null) atual.status = status || null;
+    if (nota !== null) atual.nota = nota;
+    atual.ts = Date.now();
+    meta[safeHash] = atual;
+    const valor = JSON.stringify(meta);
+    masterDb.run(`INSERT INTO configuracoes_global (chave, valor) VALUES ('commit_meta', ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor`, [valor], (errS) => {
+      if (errS) return res.json({ ok: false, erro: errS.message });
+      res.json({ ok: true, mensagem: 'Commit atualizado.', meta: meta[safeHash] });
+    });
+  });
+});
+
+// POST /api/super/deploy-commit — Executa deploy zero-downtime para um commit especifico
+app.post('/api/super/deploy-commit', superAdminAuth, async (req, res) => {
+  const { hash } = req.body || {};
+  if (!hash) return res.json({ ok: false, erro: 'Hash do commit e obrigatorio.' });
+  const safeHash = String(hash).replace(/[^a-f0-9]/gi, '');
+
+  const checkoutRes = await gitExec(`git checkout ${safeHash}`, 30000);
+  if (!checkoutRes.ok) return res.json({ ok: false, erro: 'Erro ao alternar para o commit: ' + (checkoutRes.stderr || (checkoutRes.err && checkoutRes.err.message)) });
+
+  const reloadResult = [];
+  const modulesToReload = [
+    './controllers/super-admin.js',
+    './controllers/socket-financeiro.js',
+    './controllers/sync-server.js',
+    './deployment-config.js',
+    './sync-agent.js',
+    './feature-plans.js'
+  ];
+  modulesToReload.forEach(mod => {
+    try {
+      const resolved = require.resolve(path.join(__dirname, '..', mod));
+      delete require.cache[resolved];
+      reloadResult.push({ modulo: mod, status: 'recarregado' });
+    } catch (e) {
+      reloadResult.push({ modulo: mod, status: 'ignorado: ' + e.message });
+    }
+  });
+
+  if (io) {
+    io.emit('sistema_hot_swapped', {
+      hash: safeHash,
+      data: new Date().toISOString(),
+      reload_result: reloadResult,
+      mensagem: 'Servidor atualizado para commit ' + safeHash + '. Recarregue a pagina para ver mudancas.'
+    });
+  }
+
+  res.json({
+    ok: true,
+    mensagem: `Deploy Zero-Downtime efetuado para o commit ${safeHash}. ${reloadResult.length} modulo(s) recarregado(s).`,
+    reload_result: reloadResult
+  });
+});
+
+
+let supabaseSyncEmAndamento = false;
+let supabaseUltimoLog = null;
+
+// GET — carrega configuração completa do Supabase
 app.get('/api/super/supabase-config', superAdminAuth, (req, res) => {
   masterDb.all(`SELECT key, value FROM super_config WHERE key LIKE 'supabase_%'`, [], (err, rows) => {
     const config = {};
@@ -252,35 +353,56 @@ app.get('/api/super/supabase-config', superAdminAuth, (req, res) => {
         url: config.supabase_url || '',
         anon_key: config.supabase_anon_key || '',
         service_role_key: config.supabase_service_role_key || '',
-        enabled: config.supabase_enabled || 'false'
+        enabled: config.supabase_enabled || 'false',
+        sync_mode: config.supabase_sync_mode || 'hybrid',
+        sync_frequency: config.supabase_sync_frequency || 'manual',
+        sync_tenants: config.supabase_sync_tenants !== 'false',
+        sync_backups: config.supabase_sync_backups !== 'false',
+        sync_telemetry: config.supabase_sync_telemetry !== 'false',
+        storage_bucket: config.supabase_storage_bucket || 'chef-backups',
+        backup_retention: parseInt(config.supabase_backup_retention, 10) || 14,
+        last_sync_time: config.supabase_last_sync_time || null,
+        last_sync_status: config.supabase_last_sync_status || null,
+        last_sync_log: config.supabase_last_sync_log ? JSON.parse(config.supabase_last_sync_log) : null
       }
     });
   });
 });
 
-// POST — salva configuração do Supabase
+// POST — salva configuração do Supabase com opções de execução
 app.post('/api/super/supabase-config', superAdminAuth, (req, res) => {
-  const { url, anon_key, enabled } = req.body || {};
-  const serviceKeyFornecida = typeof req.body.service_role_key === 'string' && req.body.service_role_key.trim() !== '';
+  const b = req.body || {};
+  const serviceKeyFornecida = typeof b.service_role_key === 'string' && b.service_role_key.trim() !== '';
+  
   const campos = {
-    supabase_url: (url || '').trim(),
-    supabase_anon_key: (anon_key || '').trim(),
-    supabase_service_role_key: serviceKeyFornecida ? req.body.service_role_key.trim() : null,
-    supabase_enabled: enabled ? 'true' : 'false'
+    supabase_url: (b.url || '').trim(),
+    supabase_anon_key: (b.anon_key || '').trim(),
+    supabase_service_role_key: serviceKeyFornecida ? b.service_role_key.trim() : null,
+    supabase_enabled: b.enabled ? 'true' : 'false',
+    supabase_sync_mode: ['hybrid', 'storage', 'relational'].includes(b.sync_mode) ? b.sync_mode : 'hybrid',
+    supabase_sync_frequency: ['manual', '1h', '6h', 'daily'].includes(b.sync_frequency) ? b.sync_frequency : 'manual',
+    supabase_sync_tenants: b.sync_tenants !== false ? 'true' : 'false',
+    supabase_sync_backups: b.sync_backups !== false ? 'true' : 'false',
+    supabase_sync_telemetry: b.sync_telemetry !== false ? 'true' : 'false',
+    supabase_storage_bucket: (b.storage_bucket || 'chef-backups').trim(),
+    supabase_backup_retention: String(Math.max(1, parseInt(b.backup_retention, 10) || 14))
   };
+
   masterDb.serialize(() => {
     Object.keys(campos).forEach(k => {
-      if (campos[k] === null) return; // preserva valor salvo anteriormente
+      if (campos[k] === null) return;
       masterDb.run(`INSERT OR REPLACE INTO super_config (key, value) VALUES (?, ?)`, [k, campos[k]]);
     });
   });
-  res.json({ ok: true, mensagem: 'Configuração do Supabase salva com sucesso!' });
+  res.json({ ok: true, mensagem: 'Configuração e regras de execução do Supabase salvas com sucesso!' });
 });
 
 // POST — testa conexão com Supabase
 app.post('/api/super/supabase-test', superAdminAuth, async (req, res) => {
-  const { url, anon_key } = req.body || {};
-  if (!url || !anon_key) return res.json({ ok: false, erro: 'URL e Anon Key são obrigatórios para testar.' });
+  const { url, anon_key, service_role_key } = req.body || {};
+  if (!url) return res.json({ ok: false, erro: 'URL do projeto é obrigatória para testar.' });
+  const keyToTest = (service_role_key || anon_key || '').trim();
+  if (!keyToTest) return res.json({ ok: false, erro: 'Informe a Anon Key ou Service Role Key para testar.' });
 
   try {
     const testUrl = url.replace(/\/+$/, '') + '/rest/v1/';
@@ -290,8 +412,8 @@ app.post('/api/super/supabase-test', superAdminAuth, async (req, res) => {
     const response = await fetch(testUrl, {
       method: 'GET',
       headers: {
-        'apikey': anon_key,
-        'Authorization': 'Bearer ' + anon_key
+        'apikey': keyToTest,
+        'Authorization': 'Bearer ' + keyToTest
       },
       signal: controller.signal
     });
@@ -306,6 +428,241 @@ app.post('/api/super/supabase-test', superAdminAuth, async (req, res) => {
     res.json({ ok: false, erro: 'Falha ao conectar: ' + (e.message || 'Timeout ou URL inválida') });
   }
 });
+
+// Função central: executa a sincronização conforme as regras configuradas
+async function executarSincronizacaoSupabase(origem = 'manual') {
+  if (supabaseSyncEmAndamento) {
+    return { ok: false, emAndamento: true, mensagem: 'Uma sincronização já está em andamento.' };
+  }
+
+  supabaseSyncEmAndamento = true;
+  const logs = [];
+  const addLog = (msg, tipo = 'info') => {
+    logs.push({ ts: new Date().toISOString(), msg, tipo });
+    console.log(`[SupabaseSync] ${msg}`);
+  };
+
+  try {
+    addLog(`Iniciando sincronização com Supabase (origem: ${origem})...`);
+
+    // Carregar configurações do masterDb
+    const cfgRows = await new Promise((resolve) => {
+      masterDb.all(`SELECT key, value FROM super_config WHERE key LIKE 'supabase_%'`, [], (err, rows) => resolve(rows || []));
+    });
+    const cfg = {};
+    cfgRows.forEach(r => { cfg[r.key] = r.value; });
+
+    if (cfg.supabase_enabled !== 'true') {
+      addLog('Sincronização cancelada: integração desativada nas configurações.', 'aviso');
+      return { ok: false, mensagem: 'Integração desativada.' };
+    }
+
+    const url = (cfg.supabase_url || '').replace(/\/+$/, '');
+    const authKey = cfg.supabase_service_role_key || cfg.supabase_anon_key || '';
+    if (!url || !authKey) {
+      addLog('URL ou chave de API não configurada.', 'erro');
+      return { ok: false, mensagem: 'Credenciais ausentes.' };
+    }
+
+    const mode = cfg.supabase_sync_mode || 'hybrid';
+    const syncTenants = cfg.supabase_sync_tenants !== 'false';
+    const syncBackups = cfg.supabase_sync_backups !== 'false';
+    const syncTelemetry = cfg.supabase_sync_telemetry !== 'false';
+    const bucket = cfg.supabase_storage_bucket || 'chef-backups';
+
+    const restHeaders = {
+      'apikey': authKey,
+      'Authorization': 'Bearer ' + authKey,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates'
+    };
+
+    // ── 1. Sincronização Relacional: Estabelecimentos & Licenças ──
+    if (mode !== 'storage' && syncTenants) {
+      addLog('Consultando estabelecimentos e licenças para sincronização...');
+      const restaurantes = await new Promise((res) => masterDb.all(`SELECT * FROM restaurantes`, [], (e, r) => res(r || [])));
+      const licencas = await new Promise((res) => masterDb.all(`SELECT * FROM licencas`, [], (e, r) => res(r || [])));
+
+      if (restaurantes.length > 0) {
+        try {
+          const resRest = await fetch(`${url}/rest/v1/restaurantes`, {
+            method: 'POST',
+            headers: restHeaders,
+            body: JSON.stringify(restaurantes)
+          });
+          if (resRest.ok || resRest.status === 201) {
+            addLog(`✔ ${restaurantes.length} estabelecimentos sincronizados no Supabase.`);
+          } else {
+            addLog(`Aviso ao enviar restaurantes (${resRest.status}): certifique-se que a tabela existe no Supabase.`, 'aviso');
+          }
+        } catch (e) {
+          addLog(`Erro ao enviar restaurantes: ${e.message}`, 'aviso');
+        }
+      }
+
+      if (licencas.length > 0) {
+        try {
+          const resLic = await fetch(`${url}/rest/v1/licencas`, {
+            method: 'POST',
+            headers: restHeaders,
+            body: JSON.stringify(licencas)
+          });
+          if (resLic.ok || resLic.status === 201) {
+            addLog(`✔ ${licencas.length} licenças sincronizadas no Supabase.`);
+          } else {
+            addLog(`Aviso ao enviar licenças (${resLic.status}).`, 'aviso');
+          }
+        } catch (e) {
+          addLog(`Erro ao enviar licenças: ${e.message}`, 'aviso');
+        }
+      }
+    }
+
+    // ── 2. Sincronização de Telemetria & Métricas ──
+    if (mode !== 'storage' && syncTelemetry) {
+      addLog('Consultando telemetria recente...');
+      const telemetria = await new Promise((res) => masterDb.all(`SELECT * FROM telemetria ORDER BY id DESC LIMIT 500`, [], (e, r) => res(r || [])));
+      if (telemetria.length > 0) {
+        try {
+          const resTelem = await fetch(`${url}/rest/v1/telemetria`, {
+            method: 'POST',
+            headers: restHeaders,
+            body: JSON.stringify(telemetria)
+          });
+          if (resTelem.ok || resTelem.status === 201) {
+            addLog(`✔ ${telemetria.length} registros de telemetria sincronizados.`);
+          }
+        } catch (e) {
+          addLog(`Aviso telemetria: ${e.message}`, 'aviso');
+        }
+      }
+    }
+
+    // ── 3. Backup de Bancos SQLite Comprimidos (.gz) para o Supabase Storage ──
+    if (mode !== 'relational' && syncBackups) {
+      addLog(`Preparando compactação de bancos de dados para o Storage (Bucket: ${bucket})...`);
+      const rootDir = path.join(__dirname, '..');
+      const dbFiles = ['master.sqlite'];
+      try {
+        const itens = fs.readdirSync(rootDir);
+        itens.forEach(it => {
+          if (/^database_\d+\.sqlite$/.test(it)) dbFiles.push(it);
+        });
+      } catch (e) {}
+
+      let backupsEnviados = 0;
+      const dataHoje = new Date().toISOString().slice(0, 10);
+
+      for (const dbName of dbFiles) {
+        const fullPath = path.join(rootDir, dbName);
+        if (!fs.existsSync(fullPath)) continue;
+
+        try {
+          const rawBuffer = fs.readFileSync(fullPath);
+          const gzBuffer = zlib.gzipSync(rawBuffer);
+          const destName = `${dataHoje}/${dbName}.gz`;
+
+          const storageUrl = `${url}/storage/v1/object/${bucket}/${destName}`;
+          const resStorage = await fetch(storageUrl, {
+            method: 'POST',
+            headers: {
+              'apikey': authKey,
+              'Authorization': 'Bearer ' + authKey,
+              'Content-Type': 'application/gzip',
+              'x-upsert': 'true'
+            },
+            body: gzBuffer
+          });
+
+          if (resStorage.ok || resStorage.status === 200 || resStorage.status === 201) {
+            backupsEnviados++;
+            addLog(`✔ Backup ${dbName} (.gz: ${(gzBuffer.length / 1024).toFixed(1)} KB) enviado para ${bucket}/${destName}`);
+          } else {
+            const errTxt = await resStorage.text();
+            addLog(`Aviso ao enviar ${dbName} para Storage (${resStorage.status}): ${errTxt.slice(0, 100)}`, 'aviso');
+          }
+        } catch (errDb) {
+          addLog(`Erro ao compactar ${dbName}: ${errDb.message}`, 'erro');
+        }
+      }
+      addLog(`Compactação e envio concluídos: ${backupsEnviados}/${dbFiles.length} bancos salvos no Cloud Storage.`);
+    }
+
+    const agora = new Date().toISOString();
+    supabaseUltimoLog = logs;
+
+    masterDb.serialize(() => {
+      masterDb.run(`INSERT OR REPLACE INTO super_config (key, value) VALUES ('supabase_last_sync_time', ?)`, [agora]);
+      masterDb.run(`INSERT OR REPLACE INTO super_config (key, value) VALUES ('supabase_last_sync_status', 'success')`);
+      masterDb.run(`INSERT OR REPLACE INTO super_config (key, value) VALUES ('supabase_last_sync_log', ?)`, [JSON.stringify(logs)]);
+    });
+
+    if (io && io.emit) {
+      io.emit('supabase_sync_completed', { ts: agora, status: 'success', logs });
+    }
+
+    addLog('✔ Sincronização finalizada com êxito!');
+    return { ok: true, timestamp: agora, logs };
+  } catch (errGlobal) {
+    addLog(`Falha crítica na sincronização: ${errGlobal.message}`, 'erro');
+    masterDb.run(`INSERT OR REPLACE INTO super_config (key, value) VALUES ('supabase_last_sync_status', 'error')`);
+    return { ok: false, erro: errGlobal.message, logs };
+  } finally {
+    supabaseSyncEmAndamento = false;
+  }
+}
+
+// POST — Disparo manual "Sincronizar Agora"
+app.post('/api/super/supabase-sync-now', superAdminAuth, async (req, res) => {
+  const result = await executarSincronizacaoSupabase('manual');
+  res.json(result);
+});
+
+// GET — Status detalhado da última sincronização
+app.get('/api/super/supabase-sync-status', superAdminAuth, (req, res) => {
+  masterDb.all(`SELECT key, value FROM super_config WHERE key IN ('supabase_last_sync_time', 'supabase_last_sync_status', 'supabase_last_sync_log', 'supabase_enabled', 'supabase_sync_frequency')`, [], (err, rows) => {
+    const data = {};
+    (rows || []).forEach(r => { data[r.key] = r.value; });
+    res.json({
+      ok: true,
+      is_syncing: supabaseSyncEmAndamento,
+      last_sync_time: data.supabase_last_sync_time || null,
+      last_sync_status: data.supabase_last_sync_status || null,
+      last_sync_log: data.supabase_last_sync_log ? JSON.parse(data.supabase_last_sync_log) : (supabaseUltimoLog || null),
+      enabled: data.supabase_enabled === 'true',
+      frequency: data.supabase_sync_frequency || 'manual'
+    });
+  });
+});
+
+// Agendador em segundo plano de acordo com a frequência configurada (1h, 6h, daily)
+setInterval(async () => {
+  try {
+    if (supabaseSyncEmAndamento) return;
+    const rows = await new Promise(r => masterDb.all(`SELECT key, value FROM super_config WHERE key IN ('supabase_enabled', 'supabase_sync_frequency', 'supabase_last_sync_time')`, [], (e, d) => r(d || [])));
+    const cfg = {};
+    rows.forEach(x => { cfg[x.key] = x.value; });
+
+    if (cfg.supabase_enabled !== 'true') return;
+    const freq = cfg.supabase_sync_frequency || 'manual';
+    if (freq === 'manual') return;
+
+    const last = cfg.supabase_last_sync_time ? new Date(cfg.supabase_last_sync_time).getTime() : 0;
+    const diffHours = (Date.now() - last) / (1000 * 60 * 60);
+
+    let shouldRun = false;
+    if (freq === '1h' && diffHours >= 1) shouldRun = true;
+    else if (freq === '6h' && diffHours >= 6) shouldRun = true;
+    else if (freq === 'daily' && diffHours >= 24) shouldRun = true;
+
+    if (shouldRun) {
+      console.log(`[SupabaseSync] Disparando sincronização agendada (frequência: ${freq})...`);
+      await executarSincronizacaoSupabase(`agendada_${freq}`);
+    }
+  } catch (e) {
+    console.error('[SupabaseScheduler] erro:', e.message);
+  }
+}, 60000);
 
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
 // ── SUPER ADMIN: MULTI-SERVER / BALANCEAMENTO DE CARGA ───────────────

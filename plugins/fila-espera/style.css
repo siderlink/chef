@@ -1,0 +1,30 @@
+/* plugins/fila-espera/style.css */
+#modal-fila-espera table th,
+#modal-fila-espera table td {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] #modal-fila-espera .modal {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] #modal-fila-espera table tr th {
+  background: #0f172a !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] #modal-fila-espera table tr td {
+  color: #e2e8f0 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.badge-count-fila {
+  background: #d97706;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 800;
+  margin-left: 6px;
+}

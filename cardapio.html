@@ -14,12 +14,12 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
-  <link rel="stylesheet" href="/dark-mode.css">
+  <script src="/theme-manager.js?v=20260901paletas"></script>
   <!-- QR Code local (funciona sem internet) -->
   <script src="/vendor/qrcode/qrcode-generator.js"></script>
   <script src="/vendor/qrcode/qr-helper.js"></script>
   <style>
-    :root {
+    :root, [data-theme="light"], body.theme-light {
       --primary: #fc4b15;
       --primary-hover: #e03e09;
       --bg: #f8fafc;
@@ -31,6 +31,17 @@
       --radius-sm: 8px;
       --radius-md: 14px;
       --radius-lg: 20px;
+    }
+
+    [data-theme="dark"], body.dark-mode, body.theme-dark {
+      --primary: #fc4b15;
+      --primary-hover: #e03e09;
+      --bg: #090d16;
+      --surface: #131b2e;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.08);
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
     }
 
     * {
@@ -51,7 +62,7 @@
     }
 
     header {
-      background: rgba(255, 255, 255, 0.85);
+      background: var(--surface);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       position: sticky;
@@ -1248,12 +1259,19 @@
 <body>
   <div id="menu-reading-progress"></div>
   <script>
-    /* Detect dark mode: localStorage > system preference */
     (function(){
-      var t = localStorage.getItem('chef_tema');
-      if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.body.classList.add('dark-mode');
+      function syncCardapioTheme(theme) {
+        var isDark = (theme === 'dark');
+        var icon = document.getElementById('cardapio-theme-icon');
+        if (icon) icon.className = isDark ? 'ph ph-sun' : 'ph ph-moon';
       }
+      var t = (window.ChefTheme && typeof window.ChefTheme.get === 'function') ? window.ChefTheme.get() : (localStorage.getItem('chef_theme') || 'light');
+      window.addEventListener('chef_theme_changed', function(e) {
+        if (e && e.detail && e.detail.theme) syncCardapioTheme(e.detail.theme);
+      });
+      document.addEventListener('DOMContentLoaded', function() {
+        syncCardapioTheme((window.ChefTheme && window.ChefTheme.get) ? window.ChefTheme.get() : t);
+      });
     })();
   </script>
 
@@ -1277,8 +1295,8 @@
           <i class="ph-fill ph-sparkle" style="color: #fc4b15; font-size: 16px;"></i>
           <span>Tour da Casa</span>
         </button>
-        <button onclick="if(window.ChefTheme && window.ChefTheme.toggle) window.ChefTheme.toggle(); else document.body.classList.toggle('dark-mode');" style="background: transparent; border: 1px solid var(--border); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted);" title="Alternar Tema Claro / Escuro">
-          <i class="ph ph-moon"></i>
+        <button id="btn-cardapio-theme" onclick="if(window.ChefTheme && window.ChefTheme.toggle) window.ChefTheme.toggle(); else document.body.classList.toggle('dark-mode');" style="background: transparent; border: 1px solid var(--border); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted);" title="Alternar Tema Claro / Escuro">
+          <i id="cardapio-theme-icon" class="ph ph-moon"></i>
         </button>
       </div>
       <div class="table-badge" id="mesa-badge">Mesa</div>

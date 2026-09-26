@@ -62,6 +62,11 @@
                 <span>Tarefas</span>
                 <span class="menu-badge" id="tarefas-badge" style="display:none;background:#f59e0b;color:#fff;font-size:0.6rem;padding:2px 7px;border-radius:99px;font-weight:700;">0</span>
               </div>
+              <div class="menu-item" data-target="sec-contador-gestao" id="menu-item-contador-gestao">
+                <i class="fa-solid fa-file-invoice-dollar" style="color:#10b981;"></i>
+                <span>Contador Cheff (Gestão &amp; Bonificações)</span>
+                <span class="menu-badge" id="contador-demandas-badge" style="display:none;background:#10b981;color:#fff;font-size:0.6rem;padding:2px 7px;border-radius:99px;font-weight:700;">0</span>
+              </div>
               <div class="menu-item" data-target="sec-afiliados" id="menu-item-afiliados">
                 <i class="fa-solid fa-handshake"></i>
                 <span>Afiliados & Parceiros</span>
@@ -69,6 +74,30 @@
               <div class="menu-item" data-target="sec-site-vendas">
                 <i class="fa-solid fa-bullseye"></i>
                 <span>Site de Vendas</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-categoria" data-cat="financeiro">
+            <div class="cat-header"><i class="fa-solid fa-vault" style="color:#10b981;"></i><span>Financeiro &amp; Custódia</span><i class="fa-solid fa-chevron-down cat-seta"></i></div>
+            <div class="cat-itens">
+              <div class="menu-item" data-target="sec-fin-custodia" id="menu-item-fin-custodia">
+                <i class="fa-solid fa-shield-halved" style="color:#10b981;"></i>
+                <span>Custódia &amp; Repasses (15D)</span>
+                <span class="menu-badge" id="custodia-pendente-badge" style="display:none;background:#f59e0b;color:#fff;font-size:0.6rem;padding:2px 7px;border-radius:99px;font-weight:700;">0</span>
+              </div>
+              <div class="menu-item" data-target="sec-fin-assinaturas" id="menu-item-fin-assinaturas">
+                <i class="fa-solid fa-receipt" style="color:#3b82f6;"></i>
+                <span>Assinaturas Tenants</span>
+                <span class="menu-badge" id="assinaturas-vencidas-badge" style="display:none;background:#ef4444;color:#fff;font-size:0.6rem;padding:2px 7px;border-radius:99px;font-weight:700;">0</span>
+              </div>
+              <div class="menu-item" data-target="sec-fin-contratacoes" id="menu-item-fin-contratacoes">
+                <i class="fa-solid fa-user-check" style="color:#a855f7;"></i>
+                <span>Contratações &amp; Freelancers</span>
+              </div>
+              <div class="menu-item" data-target="sec-fin-gateways" id="menu-item-fin-gateways">
+                <i class="fa-solid fa-credit-card" style="color:#fc4b15;"></i>
+                <span>Gateways (Asaas / MP)</span>
               </div>
             </div>
           </div>
@@ -98,6 +127,11 @@
                 <i class="fa-solid fa-server"></i>
                 <span>Instâncias On-Premise</span>
                 <span class="menu-badge" id="offline-count-badge" style="display:none;">0</span>
+              </div>
+              <div class="menu-item" data-target="sec-suporte-remoto" id="menu-item-suporte-remoto" onclick="abrirSecaoSuporteRemoto()">
+                <i class="fa-solid fa-headset" style="color:#22c55e;"></i>
+                <span>Suporte Remoto 1-Clique</span>
+                <span class="menu-badge" id="suporte-remoto-active-badge" style="background:#22c55e;color:#fff;display:none;">0</span>
               </div>
               <div class="menu-item" data-target="sec-dominios">
                 <i class="fa-solid fa-globe"></i>
@@ -131,6 +165,10 @@
               <div class="menu-item" data-target="sec-config">
                 <i class="fa-solid fa-gear"></i>
                 <span>Configurações</span>
+              </div>
+              <div class="menu-item" data-target="sec-ia-global" id="menu-item-ia-global">
+                <i class="fa-solid fa-brain" style="color: #3b82f6;"></i>
+                <span>Inteligência Artificial (IA)</span>
               </div>
               <div class="menu-item" data-target="sec-funcoes">
                 <i class="fa-solid fa-toggle-on"></i>
@@ -170,6 +208,11 @@
               <div class="menu-item" data-target="sec-alterar-senha" id="menu-item-alterar-senha">
                 <i class="fa-solid fa-user-lock"></i>
                 <span>Alterar Senha</span>
+              </div>
+              <div class="menu-item" data-target="sec-synccheff" id="menu-item-synccheff">
+                <i class="fa-solid fa-shield-virus" style="color:#10b981;"></i>
+                <span>SyncCheff &amp; Root Shield</span>
+                <span class="menu-badge" style="background:#10b981;color:#fff;">ROOT</span>
               </div>
             </div>
           </div>
@@ -542,6 +585,104 @@
             </div>
             <div id="chaves-offline-lista"></div>
           </div>
+
+          <!-- ══════ PAINEL DE GRUPOS & ARQUITETURA (SYNC OFFLINE-FIRST VS CLOUD) ══════ -->
+          <div class="table-container" style="margin-bottom:14px; background:linear-gradient(180deg, var(--bg-card, #1e293b) 0%, rgba(15,23,42,0.85) 100%); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:18px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+              <div style="display:flex; gap:6px; align-items:center; background:rgba(0,0,0,0.3); padding:4px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
+                <button type="button" class="btn-grupo-tab active" id="tab-grupo-todos" onclick="window.filtrarGrupoArquitetura('todos')" style="background:var(--primary, #fc4b15); color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:0.8rem; font-weight:700; cursor:pointer; transition:all 0.2s;">
+                  <i class="fa-solid fa-layer-group"></i> Todos (<span id="cont-grupo-todos">0</span>)
+                </button>
+                <button type="button" class="btn-grupo-tab" id="tab-grupo-offline" onclick="window.filtrarGrupoArquitetura('offline_first')" style="background:transparent; color:var(--text-muted, #94a3b8); border:none; border-radius:8px; padding:7px 14px; font-size:0.8rem; font-weight:700; cursor:pointer; transition:all 0.2s;">
+                  <i class="fa-solid fa-bolt" style="color:#10b981;"></i> Sync Offline-First (<span id="cont-grupo-offline">0</span>)
+                </button>
+                <button type="button" class="btn-grupo-tab" id="tab-grupo-cloud" onclick="window.filtrarGrupoArquitetura('cloud')" style="background:transparent; color:var(--text-muted, #94a3b8); border:none; border-radius:8px; padding:7px 14px; font-size:0.8rem; font-weight:700; cursor:pointer; transition:all 0.2s;">
+                  <i class="fa-solid fa-cloud" style="color:#38bdf8;"></i> Cloud Version (<span id="cont-grupo-cloud">0</span>)
+                </button>
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn-action" onclick="carregarRestaurantes()" title="Recarregar métricas"><i class="fa-solid fa-rotate"></i> <span>Atualizar Grupos</span></button>
+              </div>
+            </div>
+
+            <!-- CARDS DE MÉTRICAS & PROJEÇÕES COMPARATIVAS POR GRUPO -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:14px;">
+              <!-- Bloco Offline-First -->
+              <div style="background:linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(6,78,59,0.2) 100%); border:1px solid rgba(16,185,129,0.3); border-radius:14px; padding:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <span style="display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#10b981; background:rgba(16,185,129,0.15); padding:4px 10px; border-radius:99px;">
+                    <i class="fa-solid fa-bolt"></i> Sync Offline-First
+                  </span>
+                  <span id="badge-offline-taxa" style="font-size:0.72rem; color:#a7f3d0; font-family:monospace; background:rgba(0,0,0,0.25); padding:3px 8px; border-radius:6px;">Sync: 99.8%</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+                  <h3 id="stat-offline-total" style="font-size:2rem; font-weight:900; color:#f8fafc; margin:0;">0</h3>
+                  <span style="font-size:0.8rem; color:var(--text-muted);"><strong id="stat-offline-nos" style="color:#10b981;">0</strong> nós locais ativos</span>
+                </div>
+                <div style="font-size:0.8rem; color:var(--text-muted); display:flex; flex-direction:column; gap:5px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
+                  <div style="display:flex; justify-content:space-between;"><span>Pedidos Off-grid:</span> <strong id="stat-offline-pedidos" style="color:#f8fafc;">0</strong></div>
+                  <div style="display:flex; justify-content:space-between;"><span>Faturamento Local:</span> <strong id="stat-offline-faturamento" style="color:#10b981;">R$ 0,00</strong></div>
+                  <div style="display:flex; justify-content:space-between;"><span>Latência Média Nó:</span> <strong id="stat-offline-latencia" style="color:#a7f3d0;">14ms</strong></div>
+                </div>
+                <!-- Projeções Offline-First -->
+                <div style="margin-top:12px; background:rgba(0,0,0,0.3); border-radius:10px; padding:12px; border:1px solid rgba(16,185,129,0.25);">
+                  <div style="font-size:0.72rem; color:#34d399; text-transform:uppercase; font-weight:800; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                    <i class="fa-solid fa-chart-line"></i> Projeções Operacionais
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
+                    <span style="color:var(--text-muted);">Volume Mensal Projetado:</span>
+                    <strong id="proj-offline-volume" style="color:#f8fafc;">0 MB/mês</strong>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
+                    <span style="color:var(--text-muted);">Economia Cloud Estimada:</span>
+                    <strong id="proj-offline-economia" style="color:#10b981;">R$ 0,00/mês</strong>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.78rem;">
+                    <span style="color:var(--text-muted);">Resiliência Off-Grid:</span>
+                    <strong id="proj-offline-autonomia" style="color:#34d399;">720h (30 dias)</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bloco Cloud Version -->
+              <div style="background:linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(14,116,144,0.2) 100%); border:1px solid rgba(56,189,248,0.3); border-radius:14px; padding:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <span style="display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#38bdf8; background:rgba(56,189,248,0.15); padding:4px 10px; border-radius:99px;">
+                    <i class="fa-solid fa-cloud"></i> Cloud Version
+                  </span>
+                  <span id="badge-cloud-dispo" style="font-size:0.72rem; color:#bae6fd; font-family:monospace; background:rgba(0,0,0,0.25); padding:3px 8px; border-radius:6px;">Uptime: 99.95%</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+                  <h3 id="stat-cloud-total" style="font-size:2rem; font-weight:900; color:#f8fafc; margin:0;">0</h3>
+                  <span style="font-size:0.8rem; color:var(--text-muted);"><strong id="stat-cloud-sockets" style="color:#38bdf8;">0</strong> conexões ao vivo</span>
+                </div>
+                <div style="font-size:0.8rem; color:var(--text-muted); display:flex; flex-direction:column; gap:5px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
+                  <div style="display:flex; justify-content:space-between;"><span>Pedidos em Nuvem:</span> <strong id="stat-cloud-pedidos" style="color:#f8fafc;">0</strong></div>
+                  <div style="display:flex; justify-content:space-between;"><span>Faturamento Cloud:</span> <strong id="stat-cloud-faturamento" style="color:#38bdf8;">R$ 0,00</strong></div>
+                  <div style="display:flex; justify-content:space-between;"><span>Latência API / Ping:</span> <strong id="stat-cloud-latencia" style="color:#bae6fd;">24ms</strong></div>
+                </div>
+                <!-- Projeções Cloud -->
+                <div style="margin-top:12px; background:rgba(0,0,0,0.3); border-radius:10px; padding:12px; border:1px solid rgba(56,189,248,0.25);">
+                  <div style="font-size:0.72rem; color:#bae6fd; text-transform:uppercase; font-weight:800; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                    <i class="fa-solid fa-chart-line"></i> Projeções de Escala
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
+                    <span style="color:var(--text-muted);">Throughput Previsto:</span>
+                    <strong id="proj-cloud-throughput" style="color:#f8fafc;">0 req/mês</strong>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px;">
+                    <span style="color:var(--text-muted);">Custo Infra Nuvem:</span>
+                    <strong id="proj-cloud-custo" style="color:#fb7185;">R$ 0,00/mês</strong>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.78rem;">
+                    <span style="color:var(--text-muted);">MRR Previsto (Planos):</span>
+                    <strong id="proj-cloud-mrr" style="color:#38bdf8;">R$ 0,00/mês</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="table-container">
             <div class="table-controls">
               <div class="search-bar">
@@ -596,6 +737,7 @@
                   <tr>
                     <th>ID</th>
                     <th>Restaurante</th>
+                    <th>Arquitetura</th>
                     <th>Licença</th>
                     <th>Status</th>
                     <th>Equipe</th>
@@ -605,7 +747,7 @@
                 </thead>
                 <tbody id="restaurantes-tbody">
                   <tr>
-                    <td colspan="7" style="text-align:center;color:var(--text-muted);">Clique em Sincronizar para
+                    <td colspan="8" style="text-align:center;color:var(--text-muted);">Clique em Sincronizar para
                       carregar...</td>
                   </tr>
                 </tbody>
@@ -1940,12 +2082,24 @@
             <button class="btn-login form-submit" id="btn-save-config">
               <i class="fa-solid fa-floppy-disk"></i><span>Salvar Configurações</span>
             </button>
+            <div style="margin-top:1.5rem; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.25); border-radius:12px; padding:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h4 style="margin:0 0 4px; color:#60a5fa; font-size:1rem; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-brain"></i> Inteligência Artificial Global (Google Gemini)
+                </h4>
+                <p style="margin:0; font-size:0.83rem; color:var(--text-muted);">Acesse a aba de IA para gerenciar a Chave Master, Modelos e Políticas operacionais dos restaurantes.</p>
+              </div>
+              <button type="button" class="btn-action btn-primary-action" onclick="switchTab('sec-ia-global')" style="gap:6px;">
+                <span>Abrir Gestão de IA</span> <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
           </div>
         </div>
 
-        
+        <!-- ════ SEÇÃO: INTELIGÊNCIA ARTIFICIAL GLOBAL (GOOGLE GEMINI) ════ -->
+        <div class="content-section" id="sec-ia-global">
           <!-- CARD DE GESTÃO GLOBAL DE IA (GOOGLE GEMINI) -->
-          <div class="form-box" style="margin-top: 2rem; border-left: 4px solid #3b82f6;">
+          <div class="form-box" style="border-left: 4px solid #3b82f6;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
               <div>
                 <h3 style="font-family:'Outfit',sans-serif;font-size:1.3rem; margin: 0 0 4px; display: flex; align-items: center; gap: 8px;">
@@ -2000,6 +2154,7 @@
               <span id="super-ia-test-feedback" style="font-size: 0.85rem; font-weight: 600; margin-left: 8px;"></span>
             </div>
           </div>
+        </div>
 
 
         <!-- ════ SEÇÃO: FUNÇÕES POR TENANT ════ -->
@@ -2579,140 +2734,758 @@
           </div>
         </div>
 
-        <!-- ════ SEÇÃO: INSTÂNCIAS ON-PREMISE ════ -->
+        <!-- ════ SEÇÃO: REDE DISTRIBUÍDA & CONTROLE DOS RESTAURANTES (SYNC & DISTRIBUTION) ════ -->
         <div class="content-section" id="sec-instancias">
           <div style="padding: 20px;">
-            <h2 style="margin-bottom:6px;"><i class="fa-solid fa-server"></i> Instâncias On-Premise</h2>
-            <p style="color:#999;font-size:13px;margin-bottom:20px;">Gerencie instalações locais dos restaurantes
-              conectadas ao servidor.</p>
+            <!-- Header com Ações Globais -->
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;margin-bottom:22px;">
+              <div>
+                <h2 style="margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:1.45rem;">
+                  <i class="fa-solid fa-network-wired" style="color:var(--primary);"></i> Rede Distribuída &amp; Controle Central dos Restaurantes
+                  <span id="sync-hub-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);letter-spacing:0.5px;">
+                    <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;margin-right:4px;"></span> HUB ATIVO
+                  </span>
+                </h2>
+                <p style="color:#94a3b8;font-size:13px;margin:0;">Gerencie todas as instalações locais, distribua chaves de ativação, monitore telemetria de faturamento e envie comandos de bloqueio e alertas em tempo real.</p>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <button class="btn-action" onclick="abrirModalGerarChave()" style="background:#16a34a;color:#fff;font-weight:600;padding:0.6rem 1.15rem;border-radius:8px;box-shadow:0 4px 14px rgba(22,163,74,0.3);display:flex;align-items:center;gap:8px;">
+                  <i class="fa-solid fa-key"></i> + Nova Chave de Ativação
+                </button>
+                <button class="btn-action" id="btn-refresh-instances" title="Atualizar instâncias e telemetria" style="padding:0.6rem 1rem;display:flex;align-items:center;gap:6px;">
+                  <i class="fa-solid fa-rotate"></i> Atualizar Tudo
+                </button>
+              </div>
+            </div>
 
-            <div class="stats-grid"
-              style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom:1.5rem;">
+            <!-- Stats Grid com Telemetria Comercial e de Conexão -->
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom:1.5rem; gap:14px;">
               <div class="stat-card">
                 <div class="stat-icon"><i class="fa-solid fa-server"></i></div>
-                <div class="stat-meta"><span>Total</span>
+                <div class="stat-meta"><span>Instâncias Registradas</span>
                   <h3 id="inst-total">0</h3>
                 </div>
               </div>
-              <div class="stat-card">
-                <div class="stat-icon" style="color:#00c853;"><i class="fa-solid fa-circle-check"></i></div>
-                <div class="stat-meta"><span>Online</span>
-                  <h3 id="inst-online">0</h3>
+              <div class="stat-card active-card">
+                <div class="stat-icon" style="color:#22c55e;"><i class="fa-solid fa-signal"></i></div>
+                <div class="stat-meta"><span>Online Agora (WS)</span>
+                  <h3 id="inst-online" style="color:#22c55e;">0</h3>
                 </div>
               </div>
-              <div class="stat-card">
-                <div class="stat-icon" style="color:#ff5252;"><i class="fa-solid fa-circle-xmark"></i></div>
+              <div class="stat-card blocked-card">
+                <div class="stat-icon" style="color:#ef4444;"><i class="fa-solid fa-circle-xmark"></i></div>
                 <div class="stat-meta"><span>Offline</span>
-                  <h3 id="inst-offline">0</h3>
+                  <h3 id="inst-offline" style="color:#ef4444;">0</h3>
                 </div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon" style="color:#ffc107;"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                <div class="stat-meta"><span>Comandos Pendentes</span>
-                  <h3 id="inst-pending">0</h3>
+                <div class="stat-icon" style="color:#10b981;"><i class="fa-solid fa-brazilian-real-sign"></i></div>
+                <div class="stat-meta"><span>Vendas da Rede Hoje</span>
+                  <h3 id="inst-vendas-hoje" style="color:#10b981;">R$ 0,00</h3>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" style="color:#3b82f6;"><i class="fa-solid fa-receipt"></i></div>
+                <div class="stat-meta"><span>Pedidos Hoje</span>
+                  <h3 id="inst-pedidos-hoje">0</h3>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" style="color:#f59e0b;"><i class="fa-solid fa-cash-register"></i></div>
+                <div class="stat-meta"><span>Caixas Abertos</span>
+                  <h3 id="inst-caixas-abertos">0</h3>
                 </div>
               </div>
             </div>
 
-            <div class="card" style="padding:0;overflow:hidden;">
-              <div
-                style="padding:0.8rem 1.2rem;background:rgba(255,87,34,0.08);border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
-                <span style="font-weight:600;font-size:0.9rem;"><i class="fa-solid fa-server"></i> Instâncias
-                  Registradas</span>
-                <button class="btn-action" id="btn-refresh-instances" title="Atualizar"
-                  style="padding:0.4rem 0.8rem;font-size:0.8rem;">
-                  <i class="fa-solid fa-rotate"></i> Atualizar
+            <!-- Sub-navegação por Abas -->
+            <div style="display:flex;gap:6px;border-bottom:1.5px solid var(--border-color);margin-bottom:1.5rem;overflow-x:auto;">
+              <button class="subtab-inst-btn active" id="subtab-btn-inst" onclick="alternarSubabaInstancias('inst')" style="background:none;border:none;border-bottom:3px solid var(--primary);color:var(--text-main);font-weight:600;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:0.92rem;">
+                <i class="fa-solid fa-store"></i> Instâncias &amp; Telemetria
+              </button>
+              <button class="subtab-inst-btn" id="subtab-btn-chaves" onclick="alternarSubabaInstancias('chaves')" style="background:none;border:none;border-bottom:3px solid transparent;color:var(--text-muted);font-weight:600;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:0.92rem;">
+                <i class="fa-solid fa-key"></i> Chaves de Distribuição &amp; Onboarding
+              </button>
+              <button class="subtab-inst-btn" id="subtab-btn-sync" onclick="alternarSubabaInstancias('sync')" style="background:none;border:none;border-bottom:3px solid transparent;color:var(--text-muted);font-weight:600;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:0.92rem;">
+                <i class="fa-solid fa-layer-group"></i> Fila de Comandos &amp; Conflitos
+              </button>
+              <button class="subtab-inst-btn" id="subtab-btn-servers" onclick="alternarSubabaInstancias('servers')" style="background:none;border:none;border-bottom:3px solid transparent;color:var(--text-muted);font-weight:600;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:0.92rem;">
+                <i class="fa-solid fa-network-wired"></i> Servidores &amp; Balanceamento
+              </button>
+              <button class="subtab-inst-btn" id="subtab-btn-remoto" onclick="alternarSubabaInstancias('remoto')" style="background:none;border:none;border-bottom:3px solid transparent;color:var(--text-muted);font-weight:600;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:0.92rem;">
+                <i class="fa-solid fa-headset" style="color:#22c55e;"></i> Suporte Remoto 1-Clique
+                <span id="badge-sessoes-count" style="display:none;background:#22c55e;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;">0</span>
+              </button>
+            </div>
+
+            <!-- SUB-ABA 1: INSTÂNCIAS REGISTRADAS & TELEMETRIA -->
+            <div id="subaba-view-inst" class="subaba-view-content">
+              <div class="card" style="padding:0;overflow:hidden;border:1px solid var(--border-color);border-radius:10px;">
+                <div style="padding:0.9rem 1.25rem;background:rgba(255,87,34,0.06);border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-weight:700;font-size:0.95rem;"><i class="fa-solid fa-store" style="color:var(--primary);"></i> Instalações nos Restaurantes</span>
+                    <span id="inst-badge-count" style="font-size:11px;background:rgba(0,0,0,0.15);padding:2px 8px;border-radius:10px;color:var(--text-muted);">0</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="btn-action" onclick="abrirModalInstaladorSync()" style="background:#3b82f6;color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;display:flex;align-items:center;gap:6px;">
+                      <i class="fa-solid fa-download"></i> Auto-Instalador
+                    </button>
+                    <input type="text" id="filtro-busca-instancias" placeholder="Buscar por restaurante, ID ou IP..." onkeyup="filtrarTabelaInstancias()" style="padding:6px 12px;font-size:12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;width:240px;">
+                  </div>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table class="custom-table" style="width:100%;margin:0;">
+                    <thead>
+                      <tr>
+                        <th>Restaurante / ID</th>
+                        <th>Conexão &amp; Status</th>
+                        <th>Vendas Hoje</th>
+                        <th>Operação (Pedidos / Caixa)</th>
+                        <th>Telemetria (CPU / RAM)</th>
+                        <th>Versão &amp; Heartbeat</th>
+                        <th style="text-align:center;min-width:180px;">Comandos Imediatos</th>
+                      </tr>
+                    </thead>
+                    <tbody id="instances-table-body">
+                      <tr>
+                        <td colspan="7" style="text-align:center;padding:2.5rem;color:var(--text-muted);">
+                          <i class="fa-solid fa-spinner fa-spin"></i> Carregando instâncias e telemetria...
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUB-ABA 2: CHAVES DE DISTRIBUIÇÃO & ONBOARDING -->
+            <div id="subaba-view-chaves" class="subaba-view-content" style="display:none;">
+              <div class="card" style="padding:0;overflow:hidden;border:1px solid var(--border-color);border-radius:10px;">
+                <div style="padding:0.9rem 1.25rem;background:rgba(34,197,94,0.06);border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                  <div>
+                    <span style="font-weight:700;font-size:0.95rem;"><i class="fa-solid fa-key" style="color:#22c55e;"></i> Chaves de Ativação &amp; Licenciamento</span>
+                    <p style="font-size:12px;color:#888;margin:2px 0 0;">Envie as chaves para os donos dos restaurantes ativarem o aplicativo em 1 clique via tela de ativação.</p>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="btn-action" onclick="abrirModalInstaladorSync()" style="background:#3b82f6;color:#fff;font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;display:flex;align-items:center;gap:6px;">
+                      <i class="fa-solid fa-download"></i> Auto-Instalador do Sync
+                    </button>
+                    <button class="btn-action" onclick="abrirModalGerarChave()" style="background:#22c55e;color:#fff;font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;">
+                      <i class="fa-solid fa-plus"></i> Gerar Nova Chave
+                    </button>
+                  </div>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table class="custom-table" style="width:100%;margin:0;">
+                    <thead>
+                      <tr>
+                        <th>Chave de Ativação</th>
+                        <th>Restaurante Vinculado</th>
+                        <th>Plano</th>
+                        <th>Status</th>
+                        <th>Validade</th>
+                        <th>Criada Em</th>
+                        <th style="text-align:center;min-width:160px;">Ações de Envio</th>
+                      </tr>
+                    </thead>
+                    <tbody id="chaves-table-body">
+                      <tr>
+                        <td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">Carregando chaves...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUB-ABA 3: FILA DE SYNC & CONFLITOS -->
+            <div id="subaba-view-sync" class="subaba-view-content" style="display:none;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;">
+                <div class="card" style="padding:0;overflow:hidden;border:1px solid var(--border-color);border-radius:10px;">
+                  <div style="padding:0.8rem 1.2rem;background:rgba(245,158,11,0.08);border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-weight:600;font-size:0.9rem;"><i class="fa-solid fa-layer-group" style="color:#f59e0b;"></i> Fila de Sincronização &amp; Comandos</span>
+                    <button class="btn-action" onclick="carregarFilaSync()" style="padding:4px 9px;font-size:11px;"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+                  </div>
+                  <div id="sync-queue-body" style="padding:1rem;font-size:13px;color:#bbb;max-height:320px;overflow-y:auto;">
+                    Carregando fila...
+                  </div>
+                </div>
+                <div class="card" style="padding:0;overflow:hidden;border:1px solid var(--border-color);border-radius:10px;">
+                  <div style="padding:0.8rem 1.2rem;background:rgba(239,68,68,0.08);border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-weight:600;font-size:0.9rem;"><i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i> Conflitos &amp; Resoluções</span>
+                    <button class="btn-action" onclick="carregarConflitosSync()" style="padding:4px 9px;font-size:11px;"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+                  </div>
+                  <div id="sync-conflicts-body" style="padding:1rem;font-size:13px;color:#bbb;max-height:320px;overflow-y:auto;">
+                    Carregando conflitos...
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUB-ABA 4: SERVIDORES & BALANCEAMENTO DE CARGA -->
+            <div id="subaba-view-servers" class="subaba-view-content" style="display:none;">
+              <div class="card" style="padding:0;overflow:hidden;border:1px solid var(--border-color);border-radius:10px;">
+                <div style="padding:0.8rem 1.2rem;background:rgba(59,130,246,0.08);border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-weight:600;font-size:0.9rem;"><i class="fa-solid fa-network-wired" style="color:#3b82f6;"></i> Servidores &amp; Balanceamento de Carga</span>
+                  <button class="btn-action" onclick="adicionarServidorHub()" title="Adicionar servidor" style="padding:0.4rem 0.8rem;font-size:0.8rem;">
+                    <i class="fa-solid fa-plus"></i> Adicionar Nó
+                  </button>
+                </div>
+                <table class="custom-table" style="margin:0;">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>URL</th>
+                      <th>Peso</th>
+                      <th>Status</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="servers-tbody">
+                    <tr>
+                      <td colspan="5" style="text-align:center;padding:1.2rem;color:var(--text-muted);">Carregando servidores...</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div style="padding:0.8rem 1.2rem;border-top:1px solid var(--border-color);display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                  <label style="color:#999;font-size:12px;">Estratégia de Balanceamento:</label>
+                  <select id="lb-strategy" style="background:#111;border:1px solid #333;color:white;border-radius:6px;padding:6px 10px;font-size:12px;">
+                    <option value="round_robin">Round Robin</option>
+                    <option value="weighted">Ponderado (peso)</option>
+                    <option value="least_connections">Menos Conexões</option>
+                  </select>
+                  <button class="btn-action" onclick="salvarStrategyServidores()" style="padding:0.4rem 0.8rem;font-size:0.8rem;"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUB-ABA 5: SUPORTE REMOTO 1-CLIQUE & TELEPRESENÇA -->
+            <div id="subaba-view-remoto" class="subaba-view-content" style="display:none;">
+              
+              <!-- Card de Apresentação e Geração de Link -->
+              <div class="card" style="padding:1.25rem 1.5rem; border:1px solid var(--border-color); border-radius:12px; margin-bottom:1.5rem; background:linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(15,23,42,0.6) 100%);">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+                  <div>
+                    <h3 style="margin:0 0 6px 0; display:flex; align-items:center; gap:10px; font-size:1.15rem; color:#f8fafc;">
+                      <i class="fa-solid fa-headset" style="color:#22c55e;"></i> Central de Assistência Remota &amp; Telepresença
+                      <span style="font-size:11px; background:#22c55e; color:#fff; padding:2px 8px; border-radius:10px; font-weight:700;">Zero Burocracia para o Cliente</span>
+                    </h3>
+                    <p style="color:#94a3b8; font-size:12.5px; margin:0; max-width:700px; line-height:1.4;">
+                      Ideal para clientes leigos ou de mais idade: envie o link pelo WhatsApp, o dono do restaurante clica no link e você assume o controle da máquina, visualiza a tela, conserta impressoras, repara bancos de dados e instala o Sync sem ele precisar entender nada de informática.
+                    </p>
+                  </div>
+                  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <button class="btn-action" onclick="abrirModalGerarLinkSuporte()" style="background:#22c55e; color:#fff; font-weight:700; padding:9px 18px; border-radius:8px; display:flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(34,197,94,0.3); font-size:0.92rem;">
+                      <i class="fa-solid fa-plus"></i> + Gerar Link de Ajuda (WhatsApp)
+                    </button>
+                    <button class="btn-action" onclick="carregarSessoesSuporte()" style="padding:9px 14px; font-size:0.92rem;">
+                      <i class="fa-solid fa-rotate"></i> Atualizar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lista de Sessões de Ajuda Abertas / Ao Vivo -->
+              <div style="margin-bottom:1.5rem;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                  <span style="font-weight:700; font-size:0.92rem; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-users-viewfinder" style="color:#38bdf8;"></i> Sessões de Suporte Ativas
+                    <span id="sup-sessoes-count" style="font-size:11px; background:rgba(0,0,0,0.3); padding:2px 8px; border-radius:8px; color:var(--text-muted);">0</span>
+                  </span>
+                </div>
+                <div id="sup-sessoes-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px;">
+                  <div style="padding:1.5rem; text-align:center; color:var(--text-muted); background:rgba(0,0,0,0.2); border-radius:10px; border:1px dashed var(--border-color); grid-column:1/-1;">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="margin-right:6px;"></i> Carregando atendimentos...
+                  </div>
+                </div>
+              </div>
+
+              <!-- Console da Sessão Conectada (Tela + Terminal + Ações 1-Clique) -->
+              <div id="sup-active-session-console" style="display:none; background:rgba(15,23,42,0.85); border:1.5px solid rgba(56,189,248,0.3); border-radius:14px; padding:1.25rem; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+                
+                <!-- Barra de Título da Sessão Conectada -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem; margin-bottom:1rem;">
+                  <div>
+                    <span style="font-size:11px; text-transform:uppercase; color:#38bdf8; font-weight:700; letter-spacing:1px;">Console de Controle Remoto</span>
+                    <h3 id="sup-console-title" style="margin:2px 0 0; font-size:1.2rem; display:flex; align-items:center; gap:10px;">
+                      <span id="sup-console-restaurante">Restaurante</span>
+                      <span id="sup-console-pin" style="font-family:monospace; background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); padding:2px 8px; border-radius:6px; font-size:12px;">PIN: -</span>
+                    </h3>
+                  </div>
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <span id="sup-live-status-badge" style="font-size:11px; padding:4px 10px; border-radius:12px; background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); font-weight:700;">
+                      <i class="fa-solid fa-spinner fa-spin"></i> Conectando...
+                    </span>
+                    <button class="btn-action" onclick="fecharConsoleSessao()" style="padding:6px 12px; font-size:12px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);">
+                      <i class="fa-solid fa-xmark"></i> Fechar Console
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Split Grid: Tela à Esquerda (60%) e Comandos à Direita (40%) -->
+                <div style="display:grid; grid-template-columns:minmax(0, 1.3fr) minmax(0, 1fr); gap:16px;" id="sup-console-grid">
+                  
+                  <!-- Coluna Esquerda: Visualizador de Tela ao Vivo -->
+                  <div style="background:#000; border:1px solid var(--border-color); border-radius:10px; padding:8px; display:flex; flex-direction:column; overflow:hidden;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding:0 4px;">
+                      <span style="font-size:12px; font-weight:700; color:#38bdf8; display:flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-desktop"></i> Tela do Restaurante (Ao Vivo)
+                      </span>
+                      <div style="display:flex; gap:6px;">
+                        <button class="btn-action" id="btn-toggle-laser" onclick="toggleLaserPointer()" style="font-size:11px; padding:4px 8px; background:rgba(239,68,68,0.2); color:#ef4444; border:1px solid rgba(239,68,68,0.4);" title="Apontar Laser Vermelho na tela do cliente">
+                          <i class="fa-solid fa-arrow-pointer"></i> Laser
+                        </button>
+                        <button class="btn-action" onclick="fullscreenScreenViewer()" style="font-size:11px; padding:4px 8px;" title="Tela Cheia">
+                          <i class="fa-solid fa-expand"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Container do Vídeo / Canvas -->
+                    <div id="sup-screen-container" style="position:relative; width:100%; min-height:360px; background:#0b0f19; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:crosshair;" onmousemove="enviarLaserParaCliente(event)">
+                      <video id="sup-screen-video" autoplay playsinline style="width:100%; height:100%; object-fit:contain; display:none;"></video>
+                      <canvas id="sup-screen-canvas" style="width:100%; height:100%; object-fit:contain;"></canvas>
+                      
+                      <!-- Placeholder quando o cliente ainda não compartilhou tela -->
+                      <div id="sup-screen-placeholder" style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem; text-align:center; background:rgba(11,15,25,0.9);">
+                        <i class="fa-solid fa-desktop" style="font-size:3rem; color:var(--text-muted); margin-bottom:12px; opacity:0.4;"></i>
+                        <h4 style="margin:0 0 6px; font-size:1.05rem;">Aguardando o cliente clicar em "Permitir"</h4>
+                        <p style="font-size:12px; color:#888; max-width:320px; margin:0;">O cliente abriu a página. Assim que ele clicar no botão verde, a tela aparecerá aqui em tempo real.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Coluna Direita: Caixa de Ferramentas, Shell e Chat -->
+                  <div style="display:flex; flex-direction:column; gap:12px;">
+                    
+                    <!-- Sub-abas do Painel de Controle -->
+                    <div style="display:flex; gap:6px; border-bottom:1px solid var(--border-color); padding-bottom:6px;">
+                      <button class="subtab-tool-btn active" id="tool-tab-btn-actions" onclick="alternarToolTab('actions')" style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; font-weight:700; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 1-Clique Fix
+                      </button>
+                      <button class="subtab-tool-btn" id="tool-tab-btn-shell" onclick="alternarToolTab('shell')" style="background:transparent; border:1px solid transparent; color:var(--text-muted); font-weight:600; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer;">
+                        <i class="fa-solid fa-terminal"></i> Terminal Shell
+                      </button>
+                      <button class="subtab-tool-btn" id="tool-tab-btn-chat" onclick="alternarToolTab('chat')" style="background:transparent; border:1px solid transparent; color:var(--text-muted); font-weight:600; padding:6px 12px; border-radius:6px; font-size:12px; cursor:pointer;">
+                        <i class="fa-solid fa-comments"></i> Chat &amp; Voz
+                      </button>
+                    </div>
+
+                    <!-- ABA 1: AÇÕES DE 1-CLIQUE (ZERO DIGITAÇÃO) -->
+                    <div id="tool-content-actions" class="tool-content-view">
+                      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        
+                        <button class="btn-action" onclick="executarAcaoRemota('install_sync')" style="padding:10px; font-size:12px; font-weight:700; text-align:left; background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.3); border-radius:8px; display:flex; flex-direction:column; gap:4px;">
+                          <span><i class="fa-solid fa-rotate"></i> Instalar Sync Agent</span>
+                          <small style="font-size:10px; color:#86efac; font-weight:normal;">Baixa e ativa o daemon silencioso no terminal</small>
+                        </button>
+
+                        <button class="btn-action" onclick="executarAcaoRemota('restart_pos')" style="padding:10px; font-size:12px; font-weight:700; text-align:left; background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); border-radius:8px; display:flex; flex-direction:column; gap:4px;">
+                          <span><i class="fa-solid fa-power-off"></i> Reiniciar Servidor / PDV</span>
+                          <small style="font-size:10px; color:#fde68a; font-weight:normal;">Destrava processos travados e reinicia</small>
+                        </button>
+
+                        <button class="btn-action" onclick="executarAcaoRemota('printer_test')" style="padding:10px; font-size:12px; font-weight:700; text-align:left; background:rgba(147,51,234,0.12); color:#c084fc; border:1px solid rgba(147,51,234,0.3); border-radius:8px; display:flex; flex-direction:column; gap:4px;">
+                          <span><i class="fa-solid fa-print"></i> Testar Impressoras</span>
+                          <small style="font-size:10px; color:#d8b4fe; font-weight:normal;">Detecta impressoras instaladas no Windows</small>
+                        </button>
+
+                        <button class="btn-action" onclick="executarAcaoRemota('db_repair')" style="padding:10px; font-size:12px; font-weight:700; text-align:left; background:rgba(6,182,212,0.12); color:#22d3ee; border:1px solid rgba(6,182,212,0.3); border-radius:8px; display:flex; flex-direction:column; gap:4px;">
+                          <span><i class="fa-solid fa-stethoscope"></i> Médico do SQLite</span>
+                          <small style="font-size:10px; color:#a5f3fc; font-weight:normal;">Integrity check e recuperação de tabelas</small>
+                        </button>
+
+                        <button class="btn-action" onclick="executarAcaoRemota('network_diag')" style="padding:10px; font-size:12px; font-weight:700; text-align:left; background:rgba(59,130,246,0.12); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); border-radius:8px; display:flex; flex-direction:column; gap:4px;">
+                          <span><i class="fa-solid fa-network-wired"></i> Checar Portas 3000 / 8080</span>
+                          <small style="font-size:10px; color:#bfdbfe; font-weight:normal;">Verifica conflitos de porta e firewall</small>
+                        </button>
+
+                        <button class="btn-action" onclick="executarAvisoRemoto()" style="padding:10px; font-size:12px; font-weight:700; text-align:left; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:8px; display:flex; flex-direction:column; gap:4px;">
+                          <span><i class="fa-solid fa-bullhorn"></i> Exibir Alerta na Tela</span>
+                          <small style="font-size:10px; color:#fca5a5; font-weight:normal;">Manda pop-up de aviso para o operador</small>
+                        </button>
+
+                      </div>
+
+                      <div style="margin-top:12px; background:rgba(0,0,0,0.3); border-radius:8px; padding:10px; font-size:11.5px; color:#94a3b8;">
+                        💡 <strong>Dica de Suporte:</strong> Se o cliente não tiver o Sync instalado, peça para ele clicar em <em>"Baixar Assistente Remoto"</em> na tela dele para liberar o acesso total em segundo plano.
+                      </div>
+                    </div>
+
+                    <!-- ABA 2: TERMINAL WEB / SHELL INTERATIVO -->
+                    <div id="tool-content-shell" class="tool-content-view" style="display:none;">
+                      <div id="sup-terminal-output" style="width:100%; height:220px; background:#050811; border:1px solid var(--border-color); border-radius:6px; padding:10px; font-family:monospace; font-size:11.5px; color:#38bdf8; overflow-y:auto; white-space:pre-wrap;">[Terminal Remoto Conectado - Digite um comando para executar no computador do cliente]</div>
+                      <div style="display:flex; gap:6px; margin-top:8px;">
+                        <input type="text" id="sup-shell-input" placeholder="ex: ipconfig, tasklist, dir C:\ChefCozinha..." onkeydown="if(event.key==='Enter')enviarComandoShell()" style="flex:1; padding:8px 12px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-family:monospace; font-size:12px;">
+                        <button class="btn-action" onclick="enviarComandoShell()" style="background:#0284c7; color:#fff; font-weight:700; padding:8px 16px;">Executar</button>
+                      </div>
+                    </div>
+
+                    <!-- ABA 3: CHAT E VOZ TEXT-TO-SPEECH -->
+                    <div id="tool-content-chat" class="tool-content-view" style="display:none;">
+                      <div id="sup-chat-output" style="width:100%; height:200px; background:#050811; border:1px solid var(--border-color); border-radius:6px; padding:10px; overflow-y:auto; font-size:12px;">
+                        <div style="color:#64748b; font-style:italic;">Início do atendimento.</div>
+                      </div>
+                      <div style="margin-top:8px;">
+                        <div style="display:flex; gap:6px; margin-bottom:6px;">
+                          <input type="text" id="sup-chat-input" placeholder="Digite uma mensagem para o cliente..." onkeydown="if(event.key==='Enter')enviarMensagemSuporteChat()" style="flex:1; padding:8px 12px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#fff; font-size:12px;">
+                          <button class="btn-action" onclick="enviarMensagemSuporteChat()" style="background:#22c55e; color:#fff; font-weight:700; padding:8px 14px;">Enviar</button>
+                        </div>
+                        <label style="font-size:11px; color:#cbd5e1; display:flex; align-items:center; gap:6px; cursor:pointer;">
+                          <input type="checkbox" id="sup-chat-speak" checked>
+                          <span>🔊 <strong>Falar em voz alta</strong> no computador do cliente (ideal para clientes leigos/idosos)</span>
+                        </label>
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ MODAL: AUTO-INSTALADOR MULTIPLATAFORMA DO SYNC ════ -->
+        <div class="modal-overlay" id="modal-instalador-sync" style="display:none;">
+          <div class="modal-content" style="max-width:740px; width:95%; border:1px solid var(--border-color); border-radius:14px; box-shadow:0 20px 45px rgba(0,0,0,0.6);">
+            <div class="modal-header" style="border-bottom:1px solid var(--border-color); padding:1rem 1.25rem;">
+              <h3 style="display:flex;align-items:center;gap:10px;font-size:1.15rem;margin:0;">
+                <i class="fa-solid fa-cloud-arrow-down" style="color:#3b82f6;"></i> Auto-Instalador do Chef Cozinha Sync
+              </h3>
+              <button class="modal-close" onclick="fecharModalInstaladorSync()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="padding:1.25rem;">
+              
+              <!-- Seletor de Chave / Restaurante -->
+              <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:8px; padding:12px 14px; margin-bottom:1.25rem;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                  <div>
+                    <label style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Chave de Ativação Vinculada</label>
+                    <input type="text" id="modal-inst-input-key" placeholder="CHEF-XXXX-YYYY (ou deixe vazio para configurar no terminal)" oninput="atualizarComandosInstalador()" style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.3); color:inherit; font-family:monospace; font-size:13px; font-weight:bold; color:#22c55e;">
+                  </div>
+                  <div>
+                    <label style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Hub Cloud / Servidor Central</label>
+                    <input type="text" id="modal-inst-input-hub" oninput="atualizarComandosInstalador()" style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.3); color:inherit; font-size:13px;">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Abas de Sistemas Operacionais -->
+              <div style="display:flex; gap:8px; border-bottom:1px solid var(--border-color); margin-bottom:1.25rem; overflow-x:auto;">
+                <button class="btn-subtab-os active" id="btn-os-win" onclick="selecionarOsInstalador('win')" style="background:none; border:none; border-bottom:3px solid #00a4ef; color:var(--text-main); font-weight:700; padding:8px 16px; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
+                  <i class="fa-brands fa-windows" style="color:#00a4ef;"></i> Windows (7, 8, 8.1, 10, 11)
+                </button>
+                <button class="btn-subtab-os" id="btn-os-linux" onclick="selecionarOsInstalador('linux')" style="background:none; border:none; border-bottom:3px solid transparent; color:var(--text-muted); font-weight:700; padding:8px 16px; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
+                  <i class="fa-brands fa-linux" style="color:#f59e0b;"></i> Linux (Ubuntu, Debian, CentOS, Alpine)
+                </button>
+                <button class="btn-subtab-os" id="btn-os-mac" onclick="selecionarOsInstalador('mac')" style="background:none; border:none; border-bottom:3px solid transparent; color:var(--text-muted); font-weight:700; padding:8px 16px; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
+                  <i class="fa-brands fa-apple" style="color:#e2e8f0;"></i> macOS (Intel &amp; Apple Silicon)
                 </button>
               </div>
-              <table class="custom-table">
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>Status</th>
-                    <th>Versão</th>
-                    <th>Último Heartbeat</th>
-                    <th>Última Sync</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="instances-table-body">
-                  <tr>
-                    <td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">Carregando
-                      instâncias...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
 
-            <!-- Servidores / Balanceamento -->
-            <div class="card" style="padding:0;overflow:hidden;margin-top:1.5rem;">
-              <div
-                style="padding:0.8rem 1.2rem;background:rgba(59,130,246,0.08);border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
-                <span style="font-weight:600;font-size:0.9rem;"><i class="fa-solid fa-network-wired"></i> Servidores &amp;
-                  Balanceamento de Carga</span>
-                <button class="btn-action" onclick="adicionarServidorHub()" title="Adicionar servidor"
-                  style="padding:0.4rem 0.8rem;font-size:0.8rem;">
-                  <i class="fa-solid fa-plus"></i> Adicionar
+              <!-- CONTEÚDO WINDOWS -->
+              <div id="content-os-win" class="content-os-box">
+                <div style="background:rgba(0,164,239,0.06); border:1px solid rgba(0,164,239,0.2); border-radius:8px; padding:12px; margin-bottom:1rem;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                    <span style="font-weight:700; font-size:13px; color:#38bdf8;">
+                      <i class="fa-solid fa-file-arrow-down"></i> Opção 1: Download do Instalador (.BAT)
+                    </span>
+                    <a id="btn-download-bat" href="#" target="_blank" class="btn-action" style="background:#0284c7; color:#fff; font-size:12px; font-weight:700; padding:6px 14px; border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                      <i class="fa-solid fa-download"></i> Baixar Instalador-ChefSync.bat
+                    </a>
+                  </div>
+                  <p style="font-size:12px; color:#cbd5e1; margin:0;">
+                    Envie o arquivo <strong>Instalador-ChefSync.bat</strong> para o restaurante e dê 2 cliques. Compatível com Windows 7 SP1, 8, 8.1, 10 e 11 (32 e 64-bit), dispensa privilégios administrativos e já embute a chave de ativação.
+                  </p>
+                </div>
+
+                <div>
+                  <label style="font-size:12px; font-weight:700; color:var(--text-main); display:block; margin-bottom:6px;">
+                    <i class="fa-solid fa-terminal" style="color:#00a4ef;"></i> Opção 2: Comando em 1 Linha (PowerShell / Terminal do Windows)
+                  </label>
+                  <div style="position:relative;">
+                    <textarea id="cmd-win-ps" readonly style="width:100%; height:75px; padding:10px; font-family:monospace; font-size:11.5px; background:rgba(0,0,0,0.5); border:1px solid var(--border-color); border-radius:6px; color:#38bdf8; resize:none;"></textarea>
+                    <button class="btn-action" onclick="copiarComandoInstalador('cmd-win-ps', 'Comando Windows copiado!')" style="position:absolute; right:8px; top:8px; background:rgba(255,255,255,0.1); color:#fff; font-size:11px; padding:4px 8px; border-radius:4px;">
+                      <i class="fa-solid fa-copy"></i> Copiar
+                    </button>
+                  </div>
+                  <small style="color:var(--text-muted); font-size:11px; display:block; margin-top:4px;">
+                    💡 Compatível com PowerShell 2.0 e 3.0+ com TLS 1.2 garantido. Baixa o instalador, instala silenciosamente e ativa a inicialização automática no boot.
+                  </small>
+                </div>
+              </div>
+
+              <!-- CONTEÚDO LINUX -->
+              <div id="content-os-linux" class="content-os-box" style="display:none;">
+                <div style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); border-radius:8px; padding:12px; margin-bottom:1rem;">
+                  <span style="font-weight:700; font-size:13px; color:#fbbf24;">
+                    <i class="fa-solid fa-server"></i> Instalação como Serviço Systemd Contínuo
+                  </span>
+                  <p style="font-size:12px; color:#cbd5e1; margin:4px 0 0;">
+                    Compatível com <strong>Ubuntu, Debian, CentOS, RHEL, Fedora, Rocky, Alpine e Raspberry Pi</strong>. Instala automaticamente o Node.js se ausente, cria serviço systemd com restart contínuo e disponibiliza a CLI <code style="color:#fbbf24;">chef-sync</code>.
+                  </p>
+                </div>
+
+                <div>
+                  <label style="font-size:12px; font-weight:700; color:var(--text-main); display:block; margin-bottom:6px;">
+                    <i class="fa-solid fa-terminal" style="color:#fbbf24;"></i> Comando em 1 Linha (Root / Sudo)
+                  </label>
+                  <div style="position:relative;">
+                    <textarea id="cmd-linux-sh" readonly style="width:100%; height:65px; padding:10px; font-family:monospace; font-size:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border-color); border-radius:6px; color:#fbbf24; resize:none;"></textarea>
+                    <button class="btn-action" onclick="copiarComandoInstalador('cmd-linux-sh', 'Comando Linux copiado!')" style="position:absolute; right:8px; top:8px; background:rgba(255,255,255,0.1); color:#fff; font-size:11px; padding:4px 8px; border-radius:4px;">
+                      <i class="fa-solid fa-copy"></i> Copiar
+                    </button>
+                  </div>
+                </div>
+
+                <div style="margin-top:12px; font-size:11.5px; color:#94a3b8; background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:6px;">
+                  <strong>Utilitários de gestão rápida:</strong> <code style="color:#fbbf24;">chef-sync status</code> (telemetria), <code style="color:#fbbf24;">chef-sync logs</code> (logs ao vivo), <code style="color:#fbbf24;">chef-sync restart</code> (reiniciar serviço).
+                </div>
+              </div>
+
+              <!-- CONTEÚDO MACOS -->
+              <div id="content-os-mac" class="content-os-box" style="display:none;">
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:12px; margin-bottom:1rem;">
+                  <span style="font-weight:700; font-size:13px; color:#e2e8f0;">
+                    <i class="fa-brands fa-apple"></i> LaunchAgent Nativo para Apple Mac
+                  </span>
+                  <p style="font-size:12px; color:#cbd5e1; margin:4px 0 0;">
+                    Compatível com <strong>Apple Silicon (M1, M2, M3, M4) e Intel (x86_64)</strong>. Registra daemon silencioso no <code style="color:#93c5fd;">~/Library/LaunchAgents</code> para iniciar sem interromper a tela do caixa.
+                  </p>
+                </div>
+
+                <div>
+                  <label style="font-size:12px; font-weight:700; color:var(--text-main); display:block; margin-bottom:6px;">
+                    <i class="fa-solid fa-terminal" style="color:#e2e8f0;"></i> Comando em 1 Linha (Terminal do macOS)
+                  </label>
+                  <div style="position:relative;">
+                    <textarea id="cmd-mac-sh" readonly style="width:100%; height:65px; padding:10px; font-family:monospace; font-size:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border-color); border-radius:6px; color:#e2e8f0; resize:none;"></textarea>
+                    <button class="btn-action" onclick="copiarComandoInstalador('cmd-mac-sh', 'Comando macOS copiado!')" style="position:absolute; right:8px; top:8px; background:rgba(255,255,255,0.1); color:#fff; font-size:11px; padding:4px 8px; border-radius:4px;">
+                      <i class="fa-solid fa-copy"></i> Copiar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+        <!-- ════ MODAL: GERAR LINK DE SUPORTE REMOTO (WHATSAPP) ════ -->
+        <div class="modal-overlay" id="modal-gerar-link-suporte" style="display:none;">
+          <div class="modal-content" style="max-width:560px; width:95%; border:1px solid var(--border-color); border-radius:14px; box-shadow:0 20px 45px rgba(0,0,0,0.6);">
+            <div class="modal-header" style="border-bottom:1px solid var(--border-color); padding:1rem 1.25rem;">
+              <h3 style="display:flex;align-items:center;gap:10px;font-size:1.15rem;margin:0;">
+                <i class="fa-solid fa-headset" style="color:#22c55e;"></i> Gerar Link de Ajuda Remota
+              </h3>
+              <button class="modal-close" onclick="fecharModalGerarLinkSuporte()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="padding:1.25rem;">
+              
+              <div id="sup-form-gerar-box">
+                <div class="form-group" style="margin-bottom:1rem;">
+                  <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Nome do Restaurante *</label>
+                  <input type="text" id="sup-input-restaurante" placeholder="Ex: Pizzaria Forno Nobre" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
+                </div>
+                <div class="form-group" style="margin-bottom:1rem;">
+                  <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Seu Nome / Identificação do Atendente</label>
+                  <input type="text" id="sup-input-atendente" value="Suporte Chef Cozinha" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
+                </div>
+                <button class="btn-action" onclick="confirmarGerarLinkSuporte()" style="width:100%;background:#22c55e;color:#fff;font-weight:700;padding:11px;border-radius:8px;font-size:14px;box-shadow:0 4px 12px rgba(34,197,94,0.3);">
+                  <i class="fa-solid fa-bolt"></i> Criar Sessão &amp; Gerar Link Agora
                 </button>
               </div>
-              <table class="custom-table">
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>URL</th>
-                    <th>Peso</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="servers-tbody">
-                  <tr>
-                    <td colspan="5" style="text-align:center;padding:1.2rem;color:var(--text-muted);">Carregando
-                      servidores...</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div
-                style="padding:0.8rem 1.2rem;border-top:1px solid var(--border-color);display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                <label style="color:#999;font-size:12px;">Estratégia:</label>
-                <select id="lb-strategy"
-                  style="background:#111;border:1px solid #333;color:white;border-radius:6px;padding:6px 10px;font-size:12px;">
-                  <option value="round_robin">Round Robin</option>
-                  <option value="weighted">Ponderado (peso)</option>
-                  <option value="least_connections">Menos Conexões</option>
-                </select>
-                <button class="btn-action" onclick="salvarStrategyServidores()"
-                  style="padding:0.4rem 0.8rem;font-size:0.8rem;"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
-              </div>
-            </div>
 
-            <!-- Fila de Sync & Conflitos -->
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-top:1.5rem;">
-              <div class="card" style="padding:0;overflow:hidden;">
-                <div
-                  style="padding:0.8rem 1.2rem;background:rgba(245,158,11,0.08);border-bottom:1px solid var(--border-color);">
-                  <span style="font-weight:600;font-size:0.9rem;"><i class="fa-solid fa-layer-group"></i> Fila de
-                    Sincronização</span>
+              <!-- Resultado da Sessão Gerada -->
+              <div id="sup-result-gerar-box" style="display:none; text-align:center;">
+                <div style="font-size:11px; text-transform:uppercase; color:#22c55e; font-weight:700; letter-spacing:1px; margin-bottom:4px;">Código PIN de Atendimento</div>
+                <div id="sup-result-pin" style="font-family:monospace; font-size:2.4rem; font-weight:800; color:#22c55e; letter-spacing:4px; margin-bottom:10px;">
+                  000 000
                 </div>
-                <div id="sync-queue-body"
-                  style="padding:1rem;font-size:13px;color:#bbb;max-height:260px;overflow-y:auto;">
-                  Carregando fila...
+
+                <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:8px; padding:10px; margin-bottom:14px; text-align:left;">
+                  <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Link Direto de 1-Clique:</div>
+                  <div id="sup-result-link" style="font-size:12px; color:#38bdf8; word-break:break-all; font-family:monospace;"></div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <button class="btn-action" onclick="copiarMensagemWhatsAppSuporte()" style="background:#25d366; color:#fff; font-weight:700; padding:10px; border-radius:8px; font-size:13px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <i class="fa-brands fa-whatsapp" style="font-size:1.1rem;"></i> Copiar Mensagem Pronta para WhatsApp
+                  </button>
+                  <button class="btn-action" onclick="conectarSessaoPeloModal()" style="background:#0284c7; color:#fff; font-weight:700; padding:10px; border-radius:8px; font-size:13px;">
+                    <i class="fa-solid fa-desktop"></i> Abrir Console Desta Sessão
+                  </button>
                 </div>
               </div>
-              <div class="card" style="padding:0;overflow:hidden;">
-                <div
-                  style="padding:0.8rem 1.2rem;background:rgba(239,68,68,0.08);border-bottom:1px solid var(--border-color);">
-                  <span style="font-weight:600;font-size:0.9rem;"><i class="fa-solid fa-triangle-exclamation"></i>
-                    Conflitos de Sync</span>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ MODAL: GERAR CHAVE DE ATIVAÇÃO / DISTRIBUIÇÃO ════ -->
+        <div class="modal-overlay" id="modal-gerar-chave" style="display:none;">
+          <div class="modal-content" style="max-width:580px; width:94%; border:1px solid var(--border-color); border-radius:12px;">
+            <div class="modal-header">
+              <h3 style="display:flex;align-items:center;gap:8px;">
+                <i class="fa-solid fa-key" style="color:#22c55e;"></i> Gerar Chave de Ativação / Distribuir
+              </h3>
+              <button class="modal-close" onclick="fecharModalGerarChave()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="padding:1.25rem;">
+              <div id="form-gerar-chave-box">
+                <div class="form-group" style="margin-bottom:1rem;">
+                  <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Nome do Restaurante *</label>
+                  <input type="text" id="chave-input-nome" placeholder="Ex: Pizzaria Bella Italia" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
                 </div>
-                <div id="sync-conflicts-body"
-                  style="padding:1rem;font-size:13px;color:#bbb;max-height:260px;overflow-y:auto;">
-                  Carregando conflitos...
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
+                  <div class="form-group">
+                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Plano da Licença *</label>
+                    <select id="chave-input-plano" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
+                      <option value="premium" selected>Premium (Completo)</option>
+                      <option value="pro">Pro (Garçom + KDS)</option>
+                      <option value="basico">Básico (PDV Offline)</option>
+                      <option value="enterprise">Enterprise (Redes / Franquias)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Validade Inicial *</label>
+                    <select id="chave-input-dias" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
+                      <option value="15">15 Dias (Teste Grátis)</option>
+                      <option value="30" selected>30 Dias (Mensal)</option>
+                      <option value="90">90 Dias (Trimestral)</option>
+                      <option value="180">180 Dias (Semestral)</option>
+                      <option value="365">365 Dias (Anual)</option>
+                      <option value="3650">Vitalício (10 Anos)</option>
+                    </select>
+                  </div>
                 </div>
+                <div class="form-group" style="margin-bottom:1rem;">
+                  <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Observações Internas (Opcional)</label>
+                  <input type="text" id="chave-input-obs" placeholder="Ex: Cliente fechado pelo vendedor Marcos" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
+                </div>
+                <button class="btn-action" onclick="confirmarGerarChave()" style="width:100%;background:#22c55e;color:#fff;font-weight:700;padding:10px;border-radius:8px;font-size:14px;box-shadow:0 4px 12px rgba(34,197,94,0.3);">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Chave Agora
+                </button>
+              </div>
+
+              <!-- Box de Resultado Gerado -->
+              <div id="resultado-chave-box" style="display:none;margin-top:1rem;padding:1.25rem;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:10px;text-align:center;">
+                <div style="font-size:12px;text-transform:uppercase;color:#22c55e;font-weight:700;letter-spacing:1px;margin-bottom:6px;">Chave de Ativação Gerada</div>
+                <div id="chave-gerada-texto" style="font-family:monospace;font-size:1.6rem;font-weight:800;color:#22c55e;letter-spacing:2px;margin-bottom:12px;user-select:all;">
+                  CHEF-2026-XXXX-YYYY
+                </div>
+                <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;">
+                  <button class="btn-action" onclick="copiarChaveGerada()" style="background:#22c55e;color:#fff;font-size:12px;padding:6px 14px;">
+                    <i class="fa-solid fa-copy"></i> Copiar Chave
+                  </button>
+                  <button class="btn-action" onclick="copiarTemplateWhatsApp()" style="background:#25d366;color:#fff;font-size:12px;padding:6px 14px;">
+                    <i class="fa-brands fa-whatsapp"></i> Copiar Mensagem WhatsApp
+                  </button>
+                </div>
+                <div id="link-ativacao-preview" style="font-size:11px;color:#94a3b8;word-break:break-all;"></div>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- ════ MODAL: BLOQUEIO REMOTO COM MOTIVO ════ -->
+        <div class="modal-overlay" id="modal-bloquear-instancia" style="display:none;">
+          <div class="modal-content" style="max-width:500px; width:94%; border:1px solid rgba(239,68,68,0.4); border-radius:12px;">
+            <div class="modal-header" style="border-bottom:1px solid rgba(239,68,68,0.2);">
+              <h3 style="display:flex;align-items:center;gap:8px;color:#ef4444;">
+                <i class="fa-solid fa-lock"></i> Bloquear Instância Remotamente
+              </h3>
+              <button class="modal-close" onclick="fecharModalBloquear()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="padding:1.25rem;">
+              <p style="font-size:13px;color:#cbd5e1;margin-bottom:1rem;">
+                Você está prestes a bloquear o acesso da instalação: <strong id="bloquear-nome-instancia" style="color:#f87171;">-</strong>. Todos os terminais do restaurante serão travados imediatamente.
+              </p>
+              <input type="hidden" id="bloquear-id-instancia">
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Motivo do Bloqueio *</label>
+                <select id="bloquear-select-motivo" onchange="aoMudarMotivoBloqueio()" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
+                  <option value="Inadimplência financeira — Pagamento pendente">Inadimplência financeira — Pagamento pendente</option>
+                  <option value="Período de avaliação / licença expirado">Período de avaliação / licença expirado</option>
+                  <option value="Encerramento de contrato comercial">Encerramento de contrato comercial</option>
+                  <option value="Manutenção preventiva de emergência">Manutenção preventiva de emergência</option>
+                  <option value="outro">Outro (especificar abaixo)</option>
+                </select>
+              </div>
+              <div class="form-group" id="bloquear-custom-motivo-box" style="display:none;margin-bottom:1rem;">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Descreva o Motivo</label>
+                <input type="text" id="bloquear-custom-motivo" placeholder="Motivo detalhado..." style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
+              </div>
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Contato para Desbloqueio (exibido na tela do cliente)</label>
+                <input type="text" id="bloquear-contato-suporte" value="WhatsApp: (11) 99999-9999 | suporte@chefcozinha.com" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
+              </div>
+              <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button class="btn-action" onclick="fecharModalBloquear()">Cancelar</button>
+                <button class="btn-action" onclick="executarBloqueioConfirmado()" style="background:#ef4444;color:#fff;font-weight:700;">
+                  <i class="fa-solid fa-lock"></i> Bloquear Imediatamente
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ MODAL: TRANSMITIR ALERTA / MENSAGEM AO RESTAURANTE ════ -->
+        <div class="modal-overlay" id="modal-mensagem-instancia" style="display:none;">
+          <div class="modal-content" style="max-width:500px; width:94%; border:1px solid var(--border-color); border-radius:12px;">
+            <div class="modal-header">
+              <h3 style="display:flex;align-items:center;gap:8px;">
+                <i class="fa-solid fa-bullhorn" style="color:#3b82f6;"></i> Transmitir Alerta ao Restaurante
+              </h3>
+              <button class="modal-close" onclick="fecharModalMensagem()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="padding:1.25rem;">
+              <p style="font-size:13px;color:#94a3b8;margin-bottom:1rem;">
+                Esta mensagem aparecerá como um banner interativo em todos os PDVs, telas de garçons e KDS deste restaurante.
+              </p>
+              <input type="hidden" id="msg-id-instancia">
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Tipo de Notificação</label>
+                <select id="msg-tipo" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
+                  <option value="info">Informativa (Azul)</option>
+                  <option value="warning">Aviso / Importante (Amarelo)</option>
+                  <option value="danger">Urgente / Crítica (Vermelho)</option>
+                  <option value="success">Comemoração / Sucesso (Verde)</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Título *</label>
+                <input type="text" id="msg-titulo" placeholder="Ex: Atualização do Cardápio Concluída" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
+              </div>
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Mensagem Detalhada *</label>
+                <textarea id="msg-corpo" rows="3" placeholder="Digite a mensagem para a equipe do restaurante..." style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;"></textarea>
+              </div>
+              <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button class="btn-action" onclick="fecharModalMensagem()">Cancelar</button>
+                <button class="btn-action" onclick="transmitirMensagemConfirmada()" style="background:#3b82f6;color:#fff;font-weight:700;">
+                  <i class="fa-solid fa-paper-plane"></i> Emitir Agora
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ MODAL: DIAGNÓSTICO PROFUNDO & TELEMETRIA ════ -->
+        <div class="modal-overlay" id="modal-diagnostico-instancia" style="display:none;">
+          <div class="modal-content" style="max-width:760px; width:95%; border:1px solid var(--border-color); border-radius:12px;">
+            <div class="modal-header">
+              <h3 style="display:flex;align-items:center;gap:8px;">
+                <i class="fa-solid fa-chart-pie" style="color:var(--primary);"></i> Diagnóstico &amp; Telemetria em Tempo Real
+              </h3>
+              <button class="modal-close" onclick="fecharModalDiagnostico()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="modal-diagnostico-corpo" style="padding:1.5rem;max-height:75vh;overflow-y:auto;">
+              Carregando dados...
+            </div>
+          </div>
+        </div>
+
 
 
         <!-- ════ SEÇÃO: INFRAESTRUTURA CLOUD ════ -->
@@ -3363,7 +4136,6 @@
                 <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Título *</label>
                 <input type="text" id="tarefa-titulo" placeholder="Ex: Configurar dominio para Pizzaria XYZ" style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; background:var(--input-bg, #0f172a); color:var(--text); box-sizing:border-box;">
               </div>
-              <div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div>
                   <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Prioridade</label>
@@ -3402,6 +4174,893 @@
                 <button onclick="document.getElementById('modal-tarefa').style.display='none'" style="padding:10px 20px; background:rgba(255,255,255,0.06); color:#94a3b8; border:1px solid rgba(255,255,255,0.08); border-radius:10px; font-weight:600; cursor:pointer; font-size:14px;">Cancelar</button>
                 <button onclick="superAdmin.salvarTarefa()" style="padding:10px 24px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:700; cursor:pointer; font-size:14px;">Salvar</button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ SEÇÃO: CONTADOR CHEFF (GESTÃO, RECEITA & REPASSE) ════ -->
+        <div class="content-section" id="sec-contador-gestao">
+          <div style="padding: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h2 style="margin-bottom:4px; font-size:22px; display:flex; align-items:center; gap:10px;">
+                  <i class="fa-solid fa-file-invoice-dollar" style="color:#10b981;"></i> Contador Cheff: Gestão de Assinaturas, Demandas &amp; Bonificações
+                </h2>
+                <p style="color:var(--text-muted); font-size:13.5px; margin:0;">
+                  Centralização financeira das assinaturas contábeis recebidas dos restaurantes, distribuição de demandas para os contadores e controle de bonificações.
+                </p>
+              </div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn-action" style="background:#10b981; color:white;" onclick="abrirModalCriarDemandaSuperAdmin()">
+                  <i class="fa-solid fa-plus"></i> Nova Demanda Fiscal
+                </button>
+                <button class="btn-action" style="background:rgba(255,255,255,0.08); color:var(--text);" onclick="carregarGestaoContadorCheff()">
+                  <i class="fa-solid fa-rotate"></i> Atualizar
+                </button>
+              </div>
+            </div>
+
+            <!-- CARDS DE FLUXO FINANCEIRO & MARGEM DO SUPER-ADMIN -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:14px; margin-bottom:24px;">
+              <div class="card" style="padding:16px; border-left:4px solid #10b981;">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">MRR Assinaturas Recebido</div>
+                <div id="super-cont-mrr" style="font-size:24px; font-weight:900; color:#10b981; margin:6px 0;">R$ 0,00</div>
+                <div style="font-size:11.5px; color:var(--text-muted);"><span id="super-cont-assinantes-qtd">0</span> restaurantes pagantes</div>
+              </div>
+              <div class="card" style="padding:16px; border-left:4px solid #f59e0b;">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Repassado em Bonificações</div>
+                <div id="super-cont-bonif-pagas" style="font-size:24px; font-weight:900; color:#f59e0b; margin:6px 0;">R$ 0,00</div>
+                <div style="font-size:11.5px; color:var(--text-muted);">Pago aos contadores executores</div>
+              </div>
+              <div class="card" style="padding:16px; border-left:4px solid #ef4444;">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Bonificações Pendentes</div>
+                <div id="super-cont-bonif-pendentes" style="font-size:24px; font-weight:900; color:#ef4444; margin:6px 0;">R$ 0,00</div>
+                <div style="font-size:11.5px; color:var(--text-muted);">Aguardando liberação via PIX</div>
+              </div>
+              <div class="card" style="padding:16px; border-left:4px solid #3b82f6;">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Lucro Líquido Super-Admin</div>
+                <div id="super-cont-lucro-liquido" style="font-size:24px; font-weight:900; color:#3b82f6; margin:6px 0;">R$ 0,00</div>
+                <div style="font-size:11.5px; color:#10b981; font-weight:700;">Margem Retida: <span id="super-cont-margem-pct">100%</span></div>
+              </div>
+            </div>
+
+            <!-- TABS DA SEÇÃO -->
+            <div style="display:flex; gap:10px; border-bottom:1px solid var(--border-color); margin-bottom:20px; padding-bottom:10px;">
+              <button class="btn-action" id="super-cont-tab-btn-dist" style="background:#10b981; color:white;" onclick="trocarAbaSuperContador('dist')">
+                <i class="fa-solid fa-list-check"></i> Distribuidor de Demandas
+              </button>
+              <button class="btn-action" id="super-cont-tab-btn-assinantes" style="background:rgba(255,255,255,0.06); color:var(--text);" onclick="trocarAbaSuperContador('assinantes')">
+                <i class="fa-solid fa-store"></i> Restaurantes Assinantes
+              </button>
+              <button class="btn-action" id="super-cont-tab-btn-payout" style="background:rgba(255,255,255,0.06); color:var(--text);" onclick="trocarAbaSuperContador('payout')">
+                <i class="fa-solid fa-money-bill-transfer"></i> Payout PIX Bonificações
+              </button>
+              <button class="btn-action" id="super-cont-tab-btn-contadores" style="background:rgba(255,255,255,0.06); color:var(--text);" onclick="trocarAbaSuperContador('contadores')">
+                <i class="fa-solid fa-user-tie"></i> Contadores &amp; Performance
+              </button>
+            </div>
+
+            <!-- ABA 1: DISTRIBUIDOR DE DEMANDAS -->
+            <div id="super-cont-aba-dist">
+              <div class="table-container">
+                <div class="table-title" style="display:flex; justify-content:space-between; align-items:center;">
+                  <span><i class="fa-solid fa-inbox" style="color:#10b981;"></i> Fila de Demandas Contábeis &amp; Atribuição</span>
+                  <div style="display:flex; gap:6px;">
+                    <button class="btn-action btn-sm" onclick="filtrarDemandasSuperAdmin('todos', this)">Todas</button>
+                    <button class="btn-action btn-sm" onclick="filtrarDemandasSuperAdmin('pendente_distribuicao', this)" style="background:rgba(245,158,11,0.15); color:#f59e0b;">Pendentes de Distribuição</button>
+                    <button class="btn-action btn-sm" onclick="filtrarDemandasSuperAdmin('em_andamento', this)" style="background:rgba(59,130,246,0.15); color:#3b82f6;">Em Andamento</button>
+                    <button class="btn-action btn-sm" onclick="filtrarDemandasSuperAdmin('concluido', this)" style="background:rgba(16,185,129,0.15); color:#10b981;">Concluídas</button>
+                  </div>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Restaurante</th>
+                        <th>Demanda</th>
+                        <th>Competência</th>
+                        <th>Contador Atribuído</th>
+                        <th>Bonificação Tarefa (R$)</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="super-cont-demandas-tbody">
+                      <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Carregando demandas...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- ABA 2: RESTAURANTES ASSINANTES -->
+            <div id="super-cont-aba-assinantes" style="display:none;">
+              <div class="table-container">
+                <div class="table-title"><i class="fa-solid fa-store" style="color:#10b981;"></i> Restaurantes Assinantes do Contador Cheff</div>
+                <div style="overflow-x:auto;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th>Restaurante</th>
+                        <th>Plano Contratado</th>
+                        <th>Mensalidade (MRR)</th>
+                        <th>Regime Tributário</th>
+                        <th>CNPJ</th>
+                        <th>Responsável / WhatsApp</th>
+                        <th>Contador Designado</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="super-cont-assinantes-tbody">
+                      <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Carregando assinantes...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- ABA 3: PAYOUT PIX BONIFICAÇÕES -->
+            <div id="super-cont-aba-payout" style="display:none;">
+              <div class="table-container">
+                <div class="table-title"><i class="fa-solid fa-money-bill-wave" style="color:#10b981;"></i> Bonificações por Tarefa Aguardando Pagamento PIX</div>
+                <div style="overflow-x:auto;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Contador Beneficiário</th>
+                        <th>Tarefa Realizada</th>
+                        <th>Restaurante</th>
+                        <th>Valor a Pagar</th>
+                        <th>Chave PIX do Contador</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody id="super-cont-bonificacoes-tbody">
+                      <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Carregando bonificações...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- ABA 4: CONTADORES & PERFORMANCE -->
+            <div id="super-cont-aba-contadores" style="display:none;">
+              <div class="table-container">
+                <div class="table-title"><i class="fa-solid fa-users" style="color:#10b981;"></i> Equipe de Contadores Disponíveis</div>
+                <div style="overflow-x:auto;">
+                  <table class="custom-table">
+                    <thead>
+                      <tr>
+                        <th>Contador</th>
+                        <th>Email / Telefone</th>
+                        <th>Cargo &amp; Especialidade</th>
+                        <th>Chave PIX</th>
+                        <th>Tarefas Ativas</th>
+                        <th>Tarefas Concluídas</th>
+                        <th>Total Ganho em Bonificações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="super-cont-contadores-tbody">
+                      <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Carregando contadores...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODAL: ATRIBUIR DEMANDA COM BONIFICAÇÃO (SUPER-ADMIN) -->
+        <div id="modal-atribuir-demanda-superadmin" class="modal-overlay" style="display:none;">
+          <div class="modal-content" style="max-width:500px; background:#111827; border:1px solid #374151; border-radius:14px; padding:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h3 style="margin:0; color:#10b981; font-size:1.1rem;"><i class="fa-solid fa-user-plus"></i> Atribuir Demanda Fiscal</h3>
+              <button onclick="fecharModalAtribuirDemandaSuperAdmin()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px;">&times;</button>
+            </div>
+            <input type="hidden" id="atribuir-demanda-id">
+            
+            <div style="background:#1f2937; padding:12px; border-radius:8px; margin-bottom:14px;">
+              <div id="atribuir-demanda-titulo-txt" style="font-weight:700; color:#fff;">Título da Demanda</div>
+              <div id="atribuir-demanda-rest-txt" style="font-size:12px; color:var(--text-muted);">Restaurante</div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Selecione o Contador Responsável *</label>
+                <select id="atribuir-contador-select" style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; border-radius:8px; color:#fff; font-size:13.5px;">
+                  <option value="">Carregando contadores...</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Valor da Bonificação por Tarefa (R$) *</label>
+                <input type="number" id="atribuir-bonus-input" value="50.00" step="5" min="10" style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; border-radius:8px; color:#10b981; font-size:15px; font-weight:800;">
+                <small style="color:var(--text-muted); font-size:11px;">O valor será creditado para pagamento ao contador assim que ele entregar a guia/parecer.</small>
+              </div>
+
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Prazo Limite de Entrega</label>
+                <input type="date" id="atribuir-prazo-input" style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; border-radius:8px; color:#fff; font-size:13.5px;">
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+              <button class="btn-action" onclick="fecharModalAtribuirDemandaSuperAdmin()">Cancelar</button>
+              <button class="btn-action" style="background:#10b981; color:white;" onclick="confirmarAtribuicaoDemandaSuperAdmin()">
+                <i class="fa-solid fa-check"></i> Confirmar Atribuição &amp; Bonificação
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODAL: CRIAR DEMANDA PROATIVA (SUPER-ADMIN) -->
+        <div id="modal-criar-demanda-superadmin" class="modal-overlay" style="display:none;">
+          <div class="modal-content" style="max-width:540px; background:#111827; border:1px solid #374151; border-radius:14px; padding:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h3 style="margin:0; color:#10b981; font-size:1.1rem;"><i class="fa-solid fa-file-circle-plus"></i> Criar Nova Demanda Contábil</h3>
+              <button onclick="fecharModalCriarDemandaSuperAdmin()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px;">&times;</button>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Restaurante Destino *</label>
+                <select id="nova-dem-restaurante" style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; border-radius:8px; color:#fff;">
+                  <option value="">Carregando restaurantes...</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Tipo de Tarefa</label>
+                <select id="nova-dem-tipo" style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; border-radius:8px; color:#fff;">
+                  <option value="fechamento_mensal">Fechamento Fiscal Mensal</option>
+                  <option value="apuracao_das">Apuração da Guia DAS</option>
+                  <option value="dre_contabil">DRE Contábil e Conciliação</option>
+                  <option value="folha_pagamento">Folha de Pagamento &amp; Pró-labore</option>
+                  <option value="cnd_certidao">Emissão de Certidão CND</option>
+                </select>
+              </div>
+
+              <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px;">
+                <div>
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Título da Demanda *</label>
+                  <input type="text" id="nova-dem-titulo" placeholder="Ex: Fechamento Fiscal 09/2026" style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; border-radius:8px; color:#fff;">
+                </div>
+                <div>
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Competência</label>
+                  <input type="text" id="nova-dem-comp" placeholder="09/2026" style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; border-radius:8px; color:#fff;">
+                </div>
+              </div>
+
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Atribuir Diretamente a um Contador (Opcional)</label>
+                <select id="nova-dem-contador" style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; border-radius:8px; color:#fff;">
+                  <option value="">Deixar na fila de distribuição</option>
+                </select>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Bonificação da Tarefa (R$)</label>
+                  <input type="number" id="nova-dem-bonus" value="50.00" step="5" style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; border-radius:8px; color:#10b981; font-weight:800;">
+                </div>
+                <div>
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Data Limite</label>
+                  <input type="date" id="nova-dem-prazo" style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; border-radius:8px; color:#fff;">
+                </div>
+              </div>
+
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Descrição e Instruções</label>
+                <textarea id="nova-dem-desc" rows="2" placeholder="Instruções para o contador realizar a tarefa..." style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; border-radius:8px; color:#fff;"></textarea>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+              <button class="btn-action" onclick="fecharModalCriarDemandaSuperAdmin()">Cancelar</button>
+              <button class="btn-action" style="background:#10b981; color:white;" onclick="confirmarCriarDemandaSuperAdmin()">
+                <i class="fa-solid fa-plus"></i> Criar Demanda
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODAL: PAGAR BONIFICAÇÃO PIX (SUPER-ADMIN) -->
+        <div id="modal-pagar-bonificacao-superadmin" class="modal-overlay" style="display:none;">
+          <div class="modal-content" style="max-width:480px; background:#111827; border:1px solid #374151; border-radius:14px; padding:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h3 style="margin:0; color:#10b981; font-size:1.1rem;"><i class="fa-brands fa-pix"></i> Pagar Bonificação via PIX</h3>
+              <button onclick="fecharModalPagarBonificacaoSuperAdmin()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px;">&times;</button>
+            </div>
+            <input type="hidden" id="pagar-bonif-id">
+
+            <div style="background:#1f2937; padding:14px; border-radius:10px; margin-bottom:14px;">
+              <div style="font-size:12px; color:var(--text-muted);">Contador Beneficiário:</div>
+              <div id="pagar-bonif-nome" style="font-weight:800; font-size:1.1rem; color:#fff; margin-bottom:6px;">Nome do Contador</div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:8px; border-top:1px solid #374151;">
+                <span style="font-size:13px; color:var(--text-muted);">Valor da Bonificação:</span>
+                <span id="pagar-bonif-valor" style="font-size:1.3rem; font-weight:900; color:#10b981;">R$ 0,00</span>
+              </div>
+              <div style="margin-top:8px; background:#111827; padding:8px 10px; border-radius:6px;">
+                <small style="color:var(--text-muted); display:block; font-size:11px;">Chave PIX Cadastrada:</small>
+                <div id="pagar-bonif-pix" style="font-family:monospace; font-weight:700; color:#38bdf8; font-size:13px; user-select:all;">-</div>
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Comprovante / Código de Autenticação PIX</label>
+              <input type="text" id="pagar-bonif-comprovante" placeholder="Ex: PIX-E2E-98439248324832" style="width:100%; padding:10px; background:#1f2937; border:1px solid #374151; border-radius:8px; color:#fff; font-size:13px;">
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+              <button class="btn-action" onclick="fecharModalPagarBonificacaoSuperAdmin()">Cancelar</button>
+              <button class="btn-action" style="background:#10b981; color:white;" onclick="confirmarPagamentoBonificacaoSuperAdmin()">
+                <i class="fa-solid fa-check-double"></i> Confirmar Transferência PIX
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ SEÇÃO: CUSTÓDIA & REPASSES DE VERBA (15 DIAS) ════ -->
+        <div class="content-section" id="sec-fin-custodia">
+          <div style="padding: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h2 style="margin-bottom:4px; font-size:22px; display:flex; align-items:center; gap:10px;">
+                  <i class="fa-solid fa-shield-halved" style="color:#10b981;"></i> Custódia &amp; Repasses de Verba (Garantia de 15 Dias)
+                </h2>
+                <p style="color:var(--text-muted); font-size:13.5px; margin:0;">
+                  Pagamentos aprovados imediatamente com retenção em custódia por 15 dias para validação operacional. Liberação automática somente sem contestações ativas.
+                </p>
+              </div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn-action" style="background:linear-gradient(135deg, #10b981, #059669); color:white; font-weight:700; box-shadow:0 4px 12px rgba(16,185,129,0.3);" onclick="processarLiberacoesMaduras()">
+                  <i class="fa-solid fa-bolt"></i> Processar Liberações Maduras
+                </button>
+                <button class="btn-action" style="background:rgba(255,255,255,0.08); color:var(--text);" onclick="abrirModalNovaCustodia()">
+                  <i class="fa-solid fa-plus"></i> Novo Repasse sob Custódia
+                </button>
+                <button class="btn-action" style="background:rgba(255,255,255,0.08); color:var(--text);" onclick="carregarFinCustodia()">
+                  <i class="fa-solid fa-rotate"></i> Atualizar
+                </button>
+              </div>
+            </div>
+
+            <!-- CARDS DE METRICAS DE CUSTODIA -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:24px;">
+              <div class="card" style="padding:16px; border-left:4px solid #f59e0b; background:var(--bg-card);">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Sob Custódia Ativa (15D)</div>
+                <div id="fin-card-total-custodia" style="font-size:24px; font-weight:900; color:#f59e0b; margin:6px 0;">R$ 0,00</div>
+                <div style="font-size:11.5px; color:var(--text-muted);"><span id="fin-card-qtd-custodia">0</span> repasses em período de segurança</div>
+              </div>
+              <div class="card" style="padding:16px; border-left:4px solid #10b981; background:var(--bg-card);">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Prontos para Liberação (Hoje)</div>
+                <div id="fin-card-pronto-liberar" style="font-size:24px; font-weight:900; color:#10b981; margin:6px 0;">R$ 0,00</div>
+                <div style="font-size:11.5px; color:var(--text-muted);"><span id="fin-card-qtd-pronto">0</span> elegíveis sem contestações</div>
+              </div>
+              <div class="card" style="padding:16px; border-left:4px solid #ef4444; background:var(--bg-card);">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Contestados / Bloqueados</div>
+                <div id="fin-card-total-contestado" style="font-size:24px; font-weight:900; color:#ef4444; margin:6px 0;">R$ 0,00</div>
+                <div style="font-size:11.5px; color:#ef4444; font-weight:600;"><span id="fin-card-qtd-contestado">0</span> com erro operacional reportado</div>
+              </div>
+              <div class="card" style="padding:16px; border-left:4px solid #3b82f6; background:var(--bg-card);">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Total Liberado no Mês</div>
+                <div id="fin-card-total-liberado" style="font-size:24px; font-weight:900; color:#3b82f6; margin:6px 0;">R$ 0,00</div>
+                <div style="font-size:11.5px; color:var(--text-muted);"><span id="fin-card-qtd-liberado">0</span> transferências liquidadas</div>
+              </div>
+            </div>
+
+            <!-- FILTROS & BUSCA -->
+            <div class="card" style="padding:14px; margin-bottom:18px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+              <div style="flex:2; min-width:240px; position:relative;">
+                <input type="text" id="fin-custodia-busca" placeholder="Buscar por beneficiário, restaurante, chave PIX..." style="width:100%; padding:9px 12px 9px 34px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;" onkeyup="if(event.key==='Enter') carregarFinCustodia()">
+                <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:12px; color:var(--text-muted); font-size:13px;"></i>
+              </div>
+              <div style="flex:1; min-width:180px;">
+                <select id="fin-custodia-filtro-status" style="width:100%; padding:9px 12px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;" onchange="carregarFinCustodia()">
+                  <option value="todos">Todos os Status</option>
+                  <option value="em_custodia">Em Custódia (15 Dias)</option>
+                  <option value="maduros">Prontos para Liberação (Maduros)</option>
+                  <option value="liberado">Liberados / Pagos</option>
+                  <option value="contestado">Contestados (Bloqueados)</option>
+                  <option value="estornado">Estornados</option>
+                </select>
+              </div>
+              <button class="btn-action" style="padding:9px 16px;" onclick="carregarFinCustodia()">
+                <i class="fa-solid fa-filter"></i> Filtrar
+              </button>
+            </div>
+
+            <!-- TABELA DE REPASSES EM CUSTÓDIA -->
+            <div class="card" style="padding:0; overflow:hidden;">
+              <div style="overflow-x:auto;">
+                <table class="data-table" style="width:100%; border-collapse:collapse; font-size:13px;">
+                  <thead>
+                    <tr style="background:rgba(255,255,255,0.02); border-bottom:1px solid var(--border-color); text-align:left;">
+                      <th style="padding:12px 14px;">Origem / ID</th>
+                      <th style="padding:12px 14px;">Restaurante</th>
+                      <th style="padding:12px 14px;">Beneficiário / PIX</th>
+                      <th style="padding:12px 14px;">Valor Líquido</th>
+                      <th style="padding:12px 14px;">Aprovação / Custódia</th>
+                      <th style="padding:12px 14px;">Status da Verba</th>
+                      <th style="padding:12px 14px; text-align:center;">Ações de Controle</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fin-custodia-tbody">
+                    <tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">Carregando repasses sob custódia...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ SEÇÃO: ASSINATURAS TENANTS ════ -->
+        <div class="content-section" id="sec-fin-assinaturas">
+          <div style="padding: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h2 style="margin-bottom:4px; font-size:22px; display:flex; align-items:center; gap:10px;">
+                  <i class="fa-solid fa-receipt" style="color:#3b82f6;"></i> Assinaturas dos Estabelecimentos (Tenants)
+                </h2>
+                <p style="color:var(--text-muted); font-size:13.5px; margin:0;">
+                  Gestão de planos SaaS, faturamento recorrente (MRR), controle de inadimplência e cobrança via Asaas ou Mercado Pago.
+                </p>
+              </div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn-action" style="background:rgba(255,255,255,0.08); color:var(--text);" onclick="carregarFinAssinaturas()">
+                  <i class="fa-solid fa-rotate"></i> Atualizar
+                </button>
+              </div>
+            </div>
+
+            <!-- CARDS DE MRR E METRICAS DE ASSINATURA -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:24px;">
+              <div class="card" style="padding:16px; border-left:4px solid #10b981; background:var(--bg-card);">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">MRR Recorrente Ativo</div>
+                <div id="fin-assin-mrr" style="font-size:24px; font-weight:900; color:#10b981; margin:6px 0;">R$ 0,00</div>
+                <div style="font-size:11.5px; color:var(--text-muted);"><span id="fin-assin-qtd-ativas">0</span> tenants pagantes em dia</div>
+              </div>
+              <div class="card" style="padding:16px; border-left:4px solid #ef4444; background:var(--bg-card);">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Assinaturas Vencidas</div>
+                <div id="fin-assin-vencidas-count" style="font-size:24px; font-weight:900; color:#ef4444; margin:6px 0;">0</div>
+                <div style="font-size:11.5px; color:#ef4444;">Aguardando liquidação de boleto/PIX</div>
+              </div>
+              <div class="card" style="padding:16px; border-left:4px solid #8b5cf6; background:var(--bg-card);">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Em Teste Grátis (Trial)</div>
+                <div id="fin-assin-trial-count" style="font-size:24px; font-weight:900; color:#8b5cf6; margin:6px 0;">0</div>
+                <div style="font-size:11.5px; color:var(--text-muted);">Estabelecimentos nos 14 dias trial</div>
+              </div>
+              <div class="card" style="padding:16px; border-left:4px solid #3b82f6; background:var(--bg-card);">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Total de Estabelecimentos</div>
+                <div id="fin-assin-total-tenants" style="font-size:24px; font-weight:900; color:#3b82f6; margin:6px 0;">0</div>
+                <div style="font-size:11.5px; color:var(--text-muted);">Restaurantes integrados na base</div>
+              </div>
+            </div>
+
+            <!-- FILTRO DE ASSINATURAS -->
+            <div class="card" style="padding:14px; margin-bottom:18px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+              <div style="flex:2; min-width:240px; position:relative;">
+                <input type="text" id="fin-assin-busca" placeholder="Buscar restaurante, dono ou email..." style="width:100%; padding:9px 12px 9px 34px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;" onkeyup="if(event.key==='Enter') carregarFinAssinaturas()">
+                <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:12px; color:var(--text-muted); font-size:13px;"></i>
+              </div>
+              <div style="flex:1; min-width:180px;">
+                <select id="fin-assin-filtro-status" style="width:100%; padding:9px 12px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;" onchange="carregarFinAssinaturas()">
+                  <option value="todos">Todos os Status</option>
+                  <option value="em_dia">Em Dia (Ativo)</option>
+                  <option value="pendente">Pendente de Pagamento</option>
+                  <option value="vencida">Vencida / Inadimplente</option>
+                  <option value="trial">Trial (Período de Testes)</option>
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              </div>
+              <button class="btn-action" style="padding:9px 16px;" onclick="carregarFinAssinaturas()">
+                <i class="fa-solid fa-filter"></i> Filtrar
+              </button>
+            </div>
+
+            <!-- TABELA DE ASSINATURAS -->
+            <div class="card" style="padding:0; overflow:hidden;">
+              <div style="overflow-x:auto;">
+                <table class="data-table" style="width:100%; border-collapse:collapse; font-size:13px;">
+                  <thead>
+                    <tr style="background:rgba(255,255,255,0.02); border-bottom:1px solid var(--border-color); text-align:left;">
+                      <th style="padding:12px 14px;">Restaurante / Dono</th>
+                      <th style="padding:12px 14px;">Plano Atual</th>
+                      <th style="padding:12px 14px;">Mensalidade</th>
+                      <th style="padding:12px 14px;">Próximo Vencimento</th>
+                      <th style="padding:12px 14px;">Status Assinatura</th>
+                      <th style="padding:12px 14px;">Gateway / Método</th>
+                      <th style="padding:12px 14px; text-align:center;">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fin-assinaturas-tbody">
+                    <tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">Carregando assinaturas...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ SEÇÃO: CONTRATAÇÕES & FREELANCERS ════ -->
+        <div class="content-section" id="sec-fin-contratacoes">
+          <div style="padding: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h2 style="margin-bottom:4px; font-size:22px; display:flex; align-items:center; gap:10px;">
+                  <i class="fa-solid fa-user-check" style="color:#a855f7;"></i> Central de Contratações &amp; Escalas de Freelancers
+                </h2>
+                <p style="color:var(--text-muted); font-size:13.5px; margin:0;">
+                  Visão completa de escalas de diaristas, vagas preenchidas, diárias pagas e status do vínculo com a regra de 15 dias de custódia.
+                </p>
+              </div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn-action" style="background:rgba(255,255,255,0.08); color:var(--text);" onclick="carregarFinContratacoes()">
+                  <i class="fa-solid fa-rotate"></i> Atualizar
+                </button>
+              </div>
+            </div>
+
+            <!-- TABELA DE CONTRATAÇÕES -->
+            <div class="card" style="padding:0; overflow:hidden;">
+              <div style="overflow-x:auto;">
+                <table class="data-table" style="width:100%; border-collapse:collapse; font-size:13px;">
+                  <thead>
+                    <tr style="background:rgba(255,255,255,0.02); border-bottom:1px solid var(--border-color); text-align:left;">
+                      <th style="padding:12px 14px;">Data Turno</th>
+                      <th style="padding:12px 14px;">Restaurante</th>
+                      <th style="padding:12px 14px;">Profissional / Cargo</th>
+                      <th style="padding:12px 14px;">Valor Diária</th>
+                      <th style="padding:12px 14px;">Status da Escala</th>
+                      <th style="padding:12px 14px;">Custódia 15 Dias</th>
+                      <th style="padding:12px 14px; text-align:center;">Chave PIX</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fin-contratacoes-tbody">
+                    <tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">Carregando contratações e escalas...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ SEÇÃO: GATEWAYS DE PAGAMENTO (ASAAS / MERCADO PAGO) ════ -->
+        <div class="content-section" id="sec-fin-gateways">
+          <div style="padding: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h2 style="margin-bottom:4px; font-size:22px; display:flex; align-items:center; gap:10px;">
+                  <i class="fa-solid fa-credit-card" style="color:#fc4b15;"></i> Gateways de Pagamento &amp; Regras de Custódia
+                </h2>
+                <p style="color:var(--text-muted); font-size:13.5px; margin:0;">
+                  Configure integração de split e liquidação via Asaas e/ou Mercado Pago, ajuste a janela padrão de custódia (15 dias) e taxas da plataforma.
+                </p>
+              </div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn-action" style="background:#10b981; color:white; font-weight:700;" onclick="salvarConfigGatewaysSuperAdmin()">
+                  <i class="fa-solid fa-floppy-disk"></i> Salvar Configurações
+                </button>
+                <button class="btn-action" style="background:rgba(255,255,255,0.08); color:var(--text);" onclick="carregarFinGateways()">
+                  <i class="fa-solid fa-rotate"></i> Recarregar
+                </button>
+              </div>
+            </div>
+
+            <!-- GRID PRINCIPAL DE GATEWAYS -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:20px; margin-bottom:24px;">
+              
+              <!-- CARD ASAAS -->
+              <div class="card" style="padding:22px; border-top:4px solid #0030b8; background:var(--bg-card);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:36px; height:36px; border-radius:8px; background:rgba(0,48,184,0.15); color:#0055ff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px;">A</div>
+                    <div>
+                      <h3 style="margin:0; font-size:16px;">Asaas (Split &amp; PIX Automático)</h3>
+                      <span style="font-size:12px; color:var(--text-muted);">Gateway bancário para cobrança e transferências</span>
+                    </div>
+                  </div>
+                  <label class="toggle-switch" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                    <input type="checkbox" id="cfg-asaas-ativo" checked>
+                    <span style="font-size:12px; font-weight:700;">Ativo</span>
+                  </label>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">Ambiente de Execução</label>
+                  <select id="cfg-asaas-sandbox" style="width:100%; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+                    <option value="true">🟡 Sandbox / Homologação (Testes sem dinheiro real)</option>
+                    <option value="false">🟢 Produção (Transações e Repasses Reais)</option>
+                  </select>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">API Key do Asaas ($aact_...)</label>
+                  <input type="password" id="cfg-asaas-api-key" placeholder="$aact_prod_... ou $aact_hmlg_..." style="width:100%; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+                </div>
+
+                <div style="margin-bottom:16px;">
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">Webhook Secret Token</label>
+                  <input type="text" id="cfg-asaas-webhook-token" placeholder="Token secreto do webhook de retorno" style="width:100%; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; pt-2; border-top:1px solid var(--border-color); padding-top:14px;">
+                  <button class="btn-action" style="background:#0055ff; color:white; font-size:12px;" onclick="testarConexaoGateway('asaas')">
+                    <i class="fa-solid fa-satellite-dish"></i> Testar Conexão Asaas
+                  </button>
+                  <span id="asaas-test-status" style="font-size:12px; color:var(--text-muted);">Não testado</span>
+                </div>
+              </div>
+
+              <!-- CARD MERCADO PAGO -->
+              <div class="card" style="padding:22px; border-top:4px solid #009ee3; background:var(--bg-card);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:36px; height:36px; border-radius:8px; background:rgba(0,158,227,0.15); color:#009ee3; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px;">MP</div>
+                    <div>
+                      <h3 style="margin:0; font-size:16px;">Mercado Pago (Checkout &amp; PIX)</h3>
+                      <span style="font-size:12px; color:var(--text-muted);">Processamento ágil de cartões e PIX dinâmico</span>
+                    </div>
+                  </div>
+                  <label class="toggle-switch" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                    <input type="checkbox" id="cfg-mp-ativo">
+                    <span style="font-size:12px; font-weight:700;">Ativo</span>
+                  </label>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">Ambiente de Execução</label>
+                  <select id="cfg-mp-sandbox" style="width:100%; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+                    <option value="true">🟡 Sandbox (Credenciais de Teste)</option>
+                    <option value="false">🟢 Produção (Credenciais Reais)</option>
+                  </select>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">Access Token (APP_USR-... ou TEST-...)</label>
+                  <input type="password" id="cfg-mp-access-token" placeholder="APP_USR-..." style="width:100%; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+                </div>
+
+                <div style="margin-bottom:16px;">
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">Public Key (Opcional para checkout)</label>
+                  <input type="text" id="cfg-mp-public-key" placeholder="APP_USR-..." style="width:100%; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-color); padding-top:14px;">
+                  <button class="btn-action" style="background:#009ee3; color:white; font-size:12px;" onclick="testarConexaoGateway('mercadopago')">
+                    <i class="fa-solid fa-satellite-dish"></i> Testar Conexão MP
+                  </button>
+                  <span id="mp-test-status" style="font-size:12px; color:var(--text-muted);">Não testado</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- CARD REGRAS DE CUSTÓDIA, PRAZOS & COMPLIANCE -->
+            <div class="card" style="padding:22px; background:var(--bg-card); border-top:4px solid #10b981;">
+              <h3 style="margin-bottom:14px; font-size:17px; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-clock-rotate-left" style="color:#10b981;"></i> Regras de Custódia (Escrow) &amp; Prazos de Concessão
+              </h3>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px;">
+                <div>
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">
+                    Período Padrão de Custódia (Dias)
+                  </label>
+                  <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="number" id="cfg-dias-custodia" min="0" max="60" value="15" style="width:90px; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:15px; font-weight:700; text-align:center;">
+                    <span style="font-size:13px; color:var(--text-muted);">dias corridos até a liberação automática</span>
+                  </div>
+                  <small style="color:#10b981; font-weight:600; display:block; margin-top:4px;">* Padrão recomendado de 15 dias para garantia contra erros operacionais.</small>
+                </div>
+
+                <div>
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">
+                    Taxa da Plataforma retida nos repasses (%)
+                  </label>
+                  <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="number" id="cfg-taxa-plataforma" min="0" max="50" step="0.5" value="10.0" style="width:90px; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:15px; font-weight:700; text-align:center;">
+                    <span style="font-size:13px; color:var(--text-muted);">% de comissão / take-rate</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">Gateway Padrão de Repasse</label>
+                  <select id="cfg-gateway-padrao" style="width:100%; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+                    <option value="asaas">Asaas (Principal / PIX Automático)</option>
+                    <option value="mercadopago">Mercado Pago</option>
+                    <option value="ambos">Ambos / Fallback inteligente</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">Políticas Automatizadas</label>
+                  <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                      <input type="checkbox" id="cfg-auto-liberar" checked>
+                      <span>Liberar pagamentos maduros automaticamente sem contestação</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                      <input type="checkbox" id="cfg-bloqueio-contestacao" checked>
+                      <span>Travar transferência imediatamente se houver contestação aberta</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+                <button class="btn-action" style="background:#10b981; color:white; font-weight:700; padding:11px 24px;" onclick="salvarConfigGatewaysSuperAdmin()">
+                  <i class="fa-solid fa-floppy-disk"></i> Salvar Todas as Configurações
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ MODAL: CONTESTAR CUSTÓDIA / ERRO OPERACIONAL ════ -->
+        <div class="modal-overlay" id="modal-contestar-custodia" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); align-items:center; justify-content:center;">
+          <div class="card" style="width:100%; max-width:500px; padding:24px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; box-shadow:var(--card-shadow);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h3 style="margin:0; font-size:17px; display:flex; align-items:center; gap:8px; color:#ef4444;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Contestar Repasse por Erro Operacional
+              </h3>
+              <button onclick="fecharModalContestarCustodia()" style="background:none; border:none; color:inherit; font-size:18px; cursor:pointer;">&times;</button>
+            </div>
+            <input type="hidden" id="contestar-custodia-id">
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+              Ao registrar uma contestação, o pagamento sob custódia de 15 dias será <strong>CONGELADO IMEDIATAMENTE</strong>, impedindo qualquer liberação ou transferência automática.
+            </p>
+            <div style="margin-bottom:14px;">
+              <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">Motivo do Erro Operacional ou Disputa</label>
+              <textarea id="contestar-motivo" rows="4" placeholder="Descreva detalhadamente o erro operacional ocorrido (Ex: Falta de comparecimento do profissional, contagem divergente de horas, quebra/avaria na cozinha, divergência de valor...)" style="width:100%; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;"></textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+              <button class="btn-action" onclick="fecharModalContestarCustodia()">Voltar</button>
+              <button class="btn-action" style="background:#ef4444; color:white; font-weight:700;" onclick="confirmarContestacaoCustodia()">
+                <i class="fa-solid fa-lock"></i> Congelar Pagamento &amp; Bloquear
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ MODAL: RESOLVER CONTESTAÇÃO / DISPUTA ════ -->
+        <div class="modal-overlay" id="modal-resolver-disputa" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); align-items:center; justify-content:center;">
+          <div class="card" style="width:100%; max-width:520px; padding:24px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; box-shadow:var(--card-shadow);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h3 style="margin:0; font-size:17px; display:flex; align-items:center; gap:8px; color:#3b82f6;">
+                <i class="fa-solid fa-scale-balanced"></i> Resolver Contestação Financeira
+              </h3>
+              <button onclick="fecharModalResolverDisputa()" style="background:none; border:none; color:inherit; font-size:18px; cursor:pointer;">&times;</button>
+            </div>
+            <input type="hidden" id="resolver-disputa-id">
+            <div id="resolver-disputa-detalhes" style="padding:10px 12px; background:rgba(239,68,68,0.1); border-left:3px solid #ef4444; border-radius:6px; font-size:12.5px; margin-bottom:14px;">
+              Carregando motivo...
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">Decisão do Super Admin</label>
+              <select id="resolver-disputa-decisao" style="width:100%; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+                <option value="liberar">🟢 Desconsiderar erro e Liberar Transferência ao Beneficiário</option>
+                <option value="estornar">🔄 Confirmar erro e Estornar Crédito ao Restaurante</option>
+                <option value="cancelar">❌ Cancelar Transação / Fraude</option>
+              </select>
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:6px;">Parecer / Resolução</label>
+              <input type="text" id="resolver-disputa-resolucao" placeholder="Justificativa da decisão tomada" style="width:100%; padding:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+              <button class="btn-action" onclick="fecharModalResolverDisputa()">Cancelar</button>
+              <button class="btn-action" style="background:#3b82f6; color:white; font-weight:700;" onclick="confirmarResolucaoDisputa()">
+                <i class="fa-solid fa-check"></i> Aplicar Decisão
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ MODAL: EDITAR ASSINATURA TENANT ════ -->
+        <div class="modal-overlay" id="modal-editar-assinatura" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); align-items:center; justify-content:center;">
+          <div class="card" style="width:100%; max-width:500px; padding:24px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; box-shadow:var(--card-shadow);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h3 style="margin:0; font-size:17px; display:flex; align-items:center; gap:8px; color:#3b82f6;">
+                <i class="fa-solid fa-pen-to-square"></i> Editar Assinatura do Estabelecimento
+              </h3>
+              <button onclick="fecharModalEditarAssinatura()" style="background:none; border:none; color:inherit; font-size:18px; cursor:pointer;">&times;</button>
+            </div>
+            <input type="hidden" id="edit-assin-rest-id">
+            <div style="margin-bottom:12px;">
+              <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Restaurante</label>
+              <input type="text" id="edit-assin-rest-nome" readonly style="width:100%; padding:9px; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Plano</label>
+                <select id="edit-assin-plano" style="width:100%; padding:9px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+                  <option value="Starter">Starter (R$ 89/mês)</option>
+                  <option value="Profissional">Profissional (R$ 149/mês)</option>
+                  <option value="Enterprise">Enterprise (R$ 299/mês)</option>
+                  <option value="Franquia">Franquia Master (R$ 499/mês)</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Valor Mensal (R$)</label>
+                <input type="number" id="edit-assin-valor" step="0.5" style="width:100%; padding:9px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Status da Assinatura</label>
+                <select id="edit-assin-status" style="width:100%; padding:9px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+                  <option value="em_dia">Em Dia (Ativo)</option>
+                  <option value="pendente">Pendente de Pagamento</option>
+                  <option value="vencida">Vencida / Inadimplente</option>
+                  <option value="trial">Trial (Período de Testes)</option>
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Próximo Vencimento</label>
+                <input type="date" id="edit-assin-vencimento" style="width:100%; padding:9px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+              </div>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Observações Internas</label>
+              <input type="text" id="edit-assin-obs" placeholder="Ex: Negociação especial de 30% desconto" style="width:100%; padding:9px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+              <button class="btn-action" onclick="fecharModalEditarAssinatura()">Cancelar</button>
+              <button class="btn-action" style="background:#3b82f6; color:white; font-weight:700;" onclick="salvarAssinaturaTenant()">
+                <i class="fa-solid fa-floppy-disk"></i> Salvar Assinatura
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ MODAL: NOVO REPASSE SOB CUSTÓDIA ════ -->
+        <div class="modal-overlay" id="modal-nova-custodia" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); align-items:center; justify-content:center;">
+          <div class="card" style="width:100%; max-width:520px; padding:24px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; box-shadow:var(--card-shadow);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h3 style="margin:0; font-size:17px; display:flex; align-items:center; gap:8px; color:#10b981;">
+                <i class="fa-solid fa-plus"></i> Novo Pagamento com Custódia de 15 Dias
+              </h3>
+              <button onclick="fecharModalNovaCustodia()" style="background:none; border:none; color:inherit; font-size:18px; cursor:pointer;">&times;</button>
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Restaurante Pagador</label>
+              <select id="nova-custodia-rest-id" style="width:100%; padding:9px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+                <!-- Dinâmico -->
+              </select>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Nome do Beneficiário</label>
+                <input type="text" id="nova-custodia-nome" placeholder="Ex: Carlos Silva" style="width:100%; padding:9px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+              </div>
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Chave PIX</label>
+                <input type="text" id="nova-custodia-pix" placeholder="CPF, e-mail, tel ou chave aleatória" style="width:100%; padding:9px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Valor Bruto (R$)</label>
+                <input type="number" id="nova-custodia-valor" step="0.5" placeholder="140.00" style="width:100%; padding:9px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+              </div>
+              <div>
+                <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Dias de Custódia</label>
+                <input type="number" id="nova-custodia-dias" value="15" min="0" max="60" style="width:100%; padding:9px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+              </div>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="font-size:12px; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Descrição da Tarefa / Diária</label>
+              <input type="text" id="nova-custodia-desc" placeholder="Ex: Diária Garçom Especial - Festival Gastronômico" style="width:100%; padding:9px; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:8px; color:inherit; font-size:13px;">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+              <button class="btn-action" onclick="fecharModalNovaCustodia()">Cancelar</button>
+              <button class="btn-action" style="background:#10b981; color:white; font-weight:700;" onclick="salvarNovoRepasseCustodia()">
+                <i class="fa-solid fa-check"></i> Aprovar Imediatamente &amp; Iniciar Custódia
+              </button>
             </div>
           </div>
         </div>
@@ -4962,14 +6621,100 @@
             </div>
 
             <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;">
-              <h3 style="margin:0 0 1rem 0;font-size:1.05rem;"><i class="fa-solid fa-plug-circle-check" style="color:#22c55e;"></i> Passo 3 — Testar e salvar</h3>
-              <div id="supabase-test-resultado" style="display:none;padding:0.85rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:0.88rem;"></div>
-              <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-                <button class="btn-action btn-primary-action" id="btn-supabase-testar"><i class="fa-solid fa-vial"></i> Testar Conexão</button>
-                <button class="btn-action" id="btn-supabase-salvar"><i class="fa-solid fa-floppy-disk"></i> Salvar Configuração</button>
-                <label style="display:flex;align-items:center;gap:8px;color:var(--text-muted);font-size:0.85rem;cursor:pointer;">
-                  <input type="checkbox" id="supabase-enabled"> Ativar integração
+              <h3 style="margin:0 0 1rem 0;font-size:1.05rem;"><i class="fa-solid fa-sliders" style="color:#6366f1;"></i> Passo 3 — Regras de Execução & Sincronização</h3>
+              
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;margin-bottom:1.25rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-weight:600;display:flex;align-items:center;gap:6px;">
+                    <i class="fa-solid fa-layer-group" style="color:#6366f1;"></i> Modo de Sincronização
+                  </label>
+                  <select id="supabase-sync-mode" class="form-control" style="width:100%;padding:0.65rem 0.85rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-dark);color:var(--text-main);">
+                    <option value="hybrid">Híbrido Completo (Storage + Tabelas Relacionais)</option>
+                    <option value="storage">Apenas Nuvem Storage (Backups SQLite .gz)</option>
+                    <option value="relational">Apenas Tabelas Relacionais (Tenants, Licenças, Telemetria)</option>
+                  </select>
+                  <small style="color:var(--text-muted);font-size:0.75rem;margin-top:4px;display:block;">Define quais camadas de dados serão enviadas à nuvem.</small>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-weight:600;display:flex;align-items:center;gap:6px;">
+                    <i class="fa-solid fa-clock-rotate-left" style="color:#3b82f6;"></i> Frequência Automática
+                  </label>
+                  <select id="supabase-sync-frequency" class="form-control" style="width:100%;padding:0.65rem 0.85rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-dark);color:var(--text-main);">
+                    <option value="manual">Manual (Apenas sob demanda)</option>
+                    <option value="1h">Automático — A cada 1 hora</option>
+                    <option value="6h">Automático — A cada 6 horas</option>
+                    <option value="daily">Automático — Diário (1x ao dia)</option>
+                  </select>
+                  <small style="color:var(--text-muted);font-size:0.75rem;margin-top:4px;display:block;">Agendamento em segundo plano sem travar o servidor.</small>
+                </div>
+              </div>
+
+              <div style="background:var(--bg-dark);border:1px solid var(--border-color);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem;">
+                <label style="font-weight:600;display:block;margin-bottom:0.75rem;font-size:0.9rem;">
+                  <i class="fa-solid fa-list-check" style="color:#10b981;"></i> Escopo dos Dados a Sincronizar:
                 </label>
+                <div style="display:flex;flex-wrap:wrap;gap:1.5rem;">
+                  <label style="display:flex;align-items:center;gap:8px;color:var(--text-main);font-size:0.88rem;cursor:pointer;">
+                    <input type="checkbox" id="supabase-sync-tenants" checked>
+                    <span>Estabelecimentos & Licenças</span>
+                  </label>
+                  <label style="display:flex;align-items:center;gap:8px;color:var(--text-main);font-size:0.88rem;cursor:pointer;">
+                    <input type="checkbox" id="supabase-sync-backups" checked>
+                    <span>Snapshots SQLite Compactados (.gz)</span>
+                  </label>
+                  <label style="display:flex;align-items:center;gap:8px;color:var(--text-main);font-size:0.88rem;cursor:pointer;">
+                    <input type="checkbox" id="supabase-sync-telemetry" checked>
+                    <span>Telemetria & Métricas de Desempenho</span>
+                  </label>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.85rem;">Nome do Bucket Storage</label>
+                  <input type="text" id="supabase-storage-bucket" placeholder="chef-backups" value="chef-backups" style="width:100%;padding:0.6rem 0.85rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-dark);color:var(--text-main);">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.85rem;">Retenção de Backups (dias)</label>
+                  <input type="number" id="supabase-backup-retention" placeholder="14" min="1" max="365" value="14" style="width:100%;padding:0.6rem 0.85rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-dark);color:var(--text-main);">
+                </div>
+              </div>
+            </div>
+
+            <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;">
+              <h3 style="margin:0 0 1rem 0;font-size:1.05rem;"><i class="fa-solid fa-plug-circle-check" style="color:#22c55e;"></i> Passo 4 — Salvar, Testar e Executar</h3>
+              <div id="supabase-test-resultado" style="display:none;padding:0.85rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:0.88rem;"></div>
+              
+              <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:1.25rem;">
+                <button class="btn-action btn-primary-action" id="btn-supabase-testar"><i class="fa-solid fa-vial"></i> Testar Conexão</button>
+                <button class="btn-action" id="btn-supabase-salvar"><i class="fa-solid fa-floppy-disk"></i> Salvar Configurações</button>
+                <button class="btn-action" id="btn-supabase-sync-now" style="background:#10b981;color:#ffffff;border:none;font-weight:700;box-shadow:0 4px 14px rgba(16,185,129,0.3);">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Sincronizar Agora
+                </button>
+                <label style="display:flex;align-items:center;gap:8px;color:var(--text-main);font-size:0.88rem;cursor:pointer;margin-left:auto;">
+                  <input type="checkbox" id="supabase-enabled"> <strong>Ativar sincronização</strong>
+                </label>
+              </div>
+
+              <!-- Painel de Status em Tempo Real & Logs da Execução -->
+              <div style="background:var(--bg-dark);border:1px solid var(--border-color);border-radius:12px;padding:1.25rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:0.75rem;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-weight:600;font-size:0.9rem;color:var(--text-main);"><i class="fa-solid fa-heart-pulse" style="color:#3ecf8e;"></i> Status da Sincronização:</span>
+                    <span id="supabase-sync-status-badge" style="padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;background:rgba(100,116,139,0.2);color:var(--text-muted);">Desconhecido</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <span id="supabase-sync-last-time" style="font-size:0.8rem;color:var(--text-muted);">Última sincronização: Nunca</span>
+                    <button class="btn-action" id="btn-supabase-refresh-status" style="padding:4px 10px;font-size:0.75rem;" title="Recarregar status">
+                      <i class="fa-solid fa-rotate"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div id="supabase-sync-logs-terminal" style="background:#090d16;color:#a7f3d0;font-family:monospace;font-size:0.82rem;padding:0.85rem 1rem;border-radius:8px;max-height:160px;overflow-y:auto;line-height:1.5;border:1px solid rgba(255,255,255,0.06);">
+                  <span style="color:#64748b;">Nenhuma atividade recente registrada. Clique em "Sincronizar Agora" para iniciar.</span>
+                </div>
               </div>
             </div>
 
@@ -5855,8 +7600,9 @@
                 <button class="btn-action" style="background:#6366f1;color:white;" onclick="salvarMissaoSurpresa()"><i
                     class="fa-solid fa-fire"></i> Lançar Promoção em Tempo Real</button>
               </div>
-            </div>
           </div>
+        </div>
+      </div>
 
     <!-- ═══ Mobile Bottom Navigation Bar ═══ -->
     <nav id="mobile-bottom-nav" class="mobile-bottom-nav">
@@ -5882,3 +7628,4 @@
       </button>
     </nav>
   </div>
+</div>

@@ -405,7 +405,7 @@ socket.on('login_success', (user) => {
           showSystemPicker();
         } else {
           const versaoCaixa = localStorage.getItem('chef_caixa_versao');
-          window.location.href = versaoCaixa === 'v11' ? '/index.html' : '/caixa-classico.html';
+          window.location.href = versaoCaixa === 'v1' ? '/caixa-classico.html' : '/index.html';
         }
       }
       else window.location.href = '/fila-pedidos.html';

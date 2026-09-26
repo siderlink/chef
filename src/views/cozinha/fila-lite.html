@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -6,6 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <title>Fila da Cozinha Lite</title>
+  <script src="/theme-manager.js"></script>
   <style>
     /* ═══ RESET ═══ */
     * { margin: 0; padding: 0; -webkit-box-sizing: border-box; box-sizing: border-box; }
@@ -366,14 +367,20 @@ function aplicarTema(tema) {
   var btn = document.getElementById('btnTema');
   if (tema === 'light') {
     body.className = 'light';
-    btn.innerHTML = '&#x2600; Claro';
+    if (btn) btn.innerHTML = '&#x2600; Claro';
   } else {
     body.className = '';
-    btn.innerHTML = '&#x263E; Escuro';
+    if (btn) btn.innerHTML = '&#x263E; Escuro';
   }
 }
 
 function alternarTema() {
+  if (window.ChefTheme && typeof window.ChefTheme.toggle === 'function') {
+    var next = window.ChefTheme.toggle();
+    aplicarTema(next);
+    gravarCookie('fila_tema', next, 365);
+    return next;
+  }
   var atual = document.body.className;
   var novo = (atual === 'light') ? 'dark' : 'light';
   aplicarTema(novo);
@@ -381,12 +388,18 @@ function alternarTema() {
 }
 
 /* Aplicar tema salvo */
-var temaSalvo = lerCookie('fila_tema');
+var temaSalvo = (window.ChefTheme ? window.ChefTheme.get() : null) || lerCookie('fila_tema') || localStorage.getItem('chef_theme');
 if (temaSalvo === 'light' || temaSalvo === 'dark') {
   aplicarTema(temaSalvo);
 } else {
   aplicarTema('dark');
 }
+
+window.addEventListener('chef_theme_changed', function(e) {
+  if (e && e.detail && e.detail.theme) {
+    aplicarTema(e.detail.theme);
+  }
+});
 
 /* ═══ SETOR ═══ */
 function mudarSetor(setor, btn) {

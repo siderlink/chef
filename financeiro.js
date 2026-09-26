@@ -264,26 +264,355 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  document.getElementById('btn-fechar-caixa-oficial').onclick = () => {
-    document.getElementById('fechamento-print-area').classList.add('print-active');
-    document.getElementById('relatorio-print-area').classList.remove('print-active');
-    document.getElementById('fechamento-modal').style.display = 'flex';
-  };
-  
-  document.getElementById('btn-print').onclick = () => {
-    window.print();
-    if(confirm('Impresso com sucesso. Deseja encerrar o turno e bloquear o sistema agora?')) {
-      // (Segurança) Admin/Gerente fecham sem senha; caixa digita a própria
-      // senha; garçom/demais informam a senha de um caixa/admin/gerente.
-      const payload = { operador: window.crmPerfil ? window.crmPerfil.nome : 'Desconhecido' };
-      if (!window.ehAdminOuGerenteLogado()) {
-        const senha = prompt(window.promptSenhaFechamentoCaixa());
-        if (!senha) return alert('Operação cancelada.');
-        payload.senha = senha;
+// ══════════════════════════════════════════════════════════════════
+  // FECHAMENTO DE CAIXA AVANÇADO & AUDITADO (CONFERÊNCIA CEGA / ABERTA)
+  // ══════════════════════════════════════════════════════════════════
+
+  let configFinanceiroGlobal = { fechamento_modo: 'cego', cmv_padrao_pct: 32, taxa_cartao_debito_pct: 1.5, taxa_cartao_credito_pct: 3.0, taxa_pix_pct: 0 };
+  let apuracaoFechamentoAtual = null;
+
+  async function obterConfigFinanceiro() {
+    try {
+      const res = await fetch('/api/financeiro/config');
+      const data = await res.json();
+      if (data && data.ok && data.config) {
+        configFinanceiroGlobal = data.config;
       }
-      socket.emit('fechar_caixa', payload);
+    } catch(e) {
+      console.warn('Usando configs padrão de fechamento');
     }
-  };
+    return configFinanceiroGlobal;
+  }
+
+  function calcularQuebraCaixaTempoReal() {
+    const stats = window.currentCaixaStats || {};
+    const fmt = (v) => 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ',');
+
+    const getVal = (id) => {
+      const el = document.getElementById(id);
+      return (el && !isNaN(parseFloat(el.value))) ? parseFloat(el.value) : 0;
+    };
+
+    const cedulas = getVal('contagem-cedulas');
+    const moedas = getVal('contagem-moedas');
+    const debito = getVal('contagem-debito');
+    const credito = getVal('contagem-credito');
+    const pix = getVal('contagem-pix');
+    const outros = getVal('contagem-outros');
+
+    const totalDinheiroDeclarado = cedulas + moedas;
+    const totalGeralDeclarado = totalDinheiroDeclarado + debito + credito + pix + outros;
+
+    const elTotalDec = document.getElementById('contagem-total-declarado');
+    if (elTotalDec) elTotalDec.innerText = fmt(totalGeralDeclarado);
+
+    const fundoTroco = parseFloat(stats.fundo_troco) || 0;
+    const totalDinheiroSistema = parseFloat(stats.total_dinheiro) || 0;
+    const totalSuprimento = parseFloat(stats.total_suprimento) || 0;
+    const totalSangria = parseFloat(stats.total_sangria) || 0;
+    const gavetaEsperada = fundoTroco + totalDinheiroSistema + totalSuprimento - totalSangria;
+
+    const totalFaturadoSistema = (stats.total_dinheiro || 0) + (stats.total_pix || 0) + (stats.total_credito || 0) + (stats.total_debito || 0) + (stats.total_fiado || 0);
+
+    const diferencaGaveta = totalDinheiroDeclarado - gavetaEsperada;
+    const diferencaGeral = totalGeralDeclarado - totalFaturadoSistema;
+
+    const elGavetaEsp = document.getElementById('fechamento-gaveta-esperada');
+    if (elGavetaEsp) elGavetaEsp.innerText = fmt(gavetaEsperada);
+
+    const elDinheiroDec = document.getElementById('fechamento-dinheiro-declarado');
+    if (elDinheiroDec) elDinheiroDec.innerText = fmt(totalDinheiroDeclarado);
+
+    const elDifGaveta = document.getElementById('fechamento-diferenca-gaveta');
+    if (elDifGaveta) {
+      elDifGaveta.innerText = (diferencaGaveta >= 0 ? '+ ' : '') + fmt(diferencaGaveta);
+      elDifGaveta.style.color = Math.abs(diferencaGaveta) < 0.01 ? '#16a34a' : (diferencaGaveta > 0 ? '#0284c7' : '#dc2626');
+    }
+
+    const elDifGeral = document.getElementById('fechamento-diferenca-geral');
+    if (elDifGeral) {
+      elDifGeral.innerText = (diferencaGeral >= 0 ? '+ ' : '') + fmt(diferencaGeral);
+      elDifGeral.style.color = Math.abs(diferencaGeral) < 0.01 ? '#16a34a' : (diferencaGeral > 0 ? '#0284c7' : '#dc2626');
+    }
+
+    const badgeStatus = document.getElementById('quebra-status-badge');
+    if (badgeStatus) {
+      if (totalGeralDeclarado === 0 && (!cedulas && !moedas && !debito && !credito && !pix)) {
+        badgeStatus.innerText = 'Aguardando contagem física';
+        badgeStatus.style.background = '#e2e8f0';
+        badgeStatus.style.color = '#475569';
+      } else if (Math.abs(diferencaGeral) < 0.01) {
+        badgeStatus.innerText = '✓ Caixa Exato (Sem Divergência)';
+        badgeStatus.style.background = '#dcfce7';
+        badgeStatus.style.color = '#15803d';
+      } else if (diferencaGeral > 0) {
+        badgeStatus.innerText = '▲ Sobra de Caixa (+' + fmt(diferencaGeral) + ')';
+        badgeStatus.style.background = '#e0f2fe';
+        badgeStatus.style.color = '#0369a1';
+      } else {
+        badgeStatus.innerText = '▼ Falta de Caixa / Quebra (-' + fmt(Math.abs(diferencaGeral)) + ')';
+        badgeStatus.style.background = '#fee2e2';
+        badgeStatus.style.color = '#b91c1c';
+      }
+    }
+
+    apuracaoFechamentoAtual = {
+      cedulas, moedas, debito, credito, pix, outros,
+      totalDinheiroDeclarado,
+      totalGeralDeclarado,
+      gavetaEsperada,
+      totalFaturadoSistema,
+      diferencaGaveta,
+      diferencaGeral
+    };
+  }
+
+  // Eventos nos inputs de contagem física
+  document.querySelectorAll('.contagem-input').forEach(input => {
+    input.addEventListener('input', calcularQuebraCaixaTempoReal);
+  });
+
+  const btnFecharCaixaOficial = document.getElementById('btn-fechar-caixa-oficial');
+  if (btnFecharCaixaOficial) {
+    btnFecharCaixaOficial.onclick = async () => {
+      await obterConfigFinanceiro();
+      const modo = configFinanceiroGlobal.fechamento_modo || 'cego';
+      const badgeModo = document.getElementById('fechamento-modo-badge');
+
+      if (badgeModo) {
+        badgeModo.innerText = modo === 'cego' ? 'Modo: Conferência Cega (Auditada)' : 'Modo: Conferência Aberta';
+        badgeModo.style.background = modo === 'cego' ? '#e0e7ff' : '#dcfce7';
+        badgeModo.style.color = modo === 'cego' ? '#4338ca' : '#15803d';
+      }
+
+      // No modo cego, orienta o operador
+      const instrucoesBox = document.getElementById('fechamento-instrucoes-box');
+      if (instrucoesBox) {
+        if (modo === 'cego') {
+          instrucoesBox.innerHTML = '<i class="ph ph-shield-check" style="color: #6366f1; font-size: 16px; margin-right: 4px;"></i>' +
+          '<strong>Conferência Cega Ativa:</strong> Digite os valores reais conferidos na gaveta física e comprovantes das maquininhas. A apuração de diferenças será calculada em tempo real.';
+        } else {
+          instrucoesBox.innerHTML = '<i class="ph ph-check-circle" style="color: #10b981; font-size: 16px; margin-right: 4px;"></i>' +
+          '<strong>Conferência Aberta:</strong> Compare os valores contados diretamente com os valores registrados no sistema.';
+        }
+      }
+
+      // Limpar campos de contagem para nova conferência
+      ['contagem-cedulas', 'contagem-moedas', 'contagem-debito', 'contagem-credito', 'contagem-pix', 'contagem-outros'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      const justifEl = document.getElementById('fechamento-justificativa');
+      if (justifEl) justifEl.value = '';
+
+      calcularQuebraCaixaTempoReal();
+
+      const printArea = document.getElementById('fechamento-print-area');
+      if (printArea) printArea.classList.add('print-active');
+      const relPrintArea = document.getElementById('relatorio-print-area');
+      if (relPrintArea) relPrintArea.classList.remove('print-active');
+      
+      const modal = document.getElementById('fechamento-modal');
+      if (modal) modal.style.display = 'flex';
+    };
+  }
+
+  // Confirmação auditada do fechamento
+  const btnConfirmarFechamento = document.getElementById('btn-confirmar-fechamento-auditado');
+  if (btnConfirmarFechamento) {
+    btnConfirmarFechamento.onclick = async () => {
+      calcularQuebraCaixaTempoReal();
+      const ap = apuracaoFechamentoAtual || {};
+      const diferencaGeral = ap.diferencaGeral || 0;
+      const justif = (document.getElementById('fechamento-justificativa')?.value || '').trim();
+
+      // Regra aprovada: Exigir justificativa obrigatória caso haja qualquer divergência (sobra ou falta)
+      if (Math.abs(diferencaGeral) >= 0.01 && !justif) {
+        alert('⚠️ ATENÇÃO: Foi detectada divergência no caixa (' + (diferencaGeral > 0 ? 'Sobra' : 'Falta') + ' de R$ ' + Math.abs(diferencaGeral).toFixed(2).replace('.', ',') + ').\n\nÉ OBRIGATÓRIO preencher o campo "Justificativa da Divergência" antes de confirmar o encerramento!');
+        document.getElementById('fechamento-justificativa')?.focus();
+        return;
+      }
+
+      // Validação de senha por cargo
+      let senha = null;
+      if (!window.ehAdminOuGerenteLogado()) {
+        senha = prompt(window.promptSenhaFechamentoCaixa());
+        if (!senha) return alert('Fechamento cancelado.');
+      }
+
+      btnConfirmarFechamento.disabled = true;
+      btnConfirmarFechamento.innerText = 'Processando Fechamento...';
+
+      try {
+        const payload = {
+          contagem: {
+            cedulas: ap.cedulas || 0,
+            moedas: ap.moedas || 0,
+            debito: ap.debito || 0,
+            credito: ap.credito || 0,
+            pix: ap.pix || 0,
+            outros: ap.outros || 0,
+            total_declarado: ap.totalGeralDeclarado || 0
+          },
+          justificativa: justif,
+          operador: window.crmPerfil ? window.crmPerfil.nome : 'Operador Caixa',
+          senha: senha
+        };
+
+        const res = await fetch('/api/caixa/fechamento-conferencia', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        btnConfirmarFechamento.disabled = false;
+        btnConfirmarFechamento.innerHTML = '<i class="ph ph-lock-key"></i> Confirmar Fechamento &amp; Encerrar Turno';
+
+        if (!data.ok) {
+          alert('Erro ao fechar caixa: ' + (data.erro || 'Falha desconhecida'));
+          return;
+        }
+
+        // Sucesso! Apresenta diálogo pós-fechamento com botões imediatos de impressão térmica e compartilhamento
+        exibirPosFechamentoAuditado(data.resumo || {});
+      } catch(e) {
+        btnConfirmarFechamento.disabled = false;
+        btnConfirmarFechamento.innerHTML = '<i class="ph ph-lock-key"></i> Confirmar Fechamento &amp; Encerrar Turno';
+        alert('Erro de comunicação com o servidor: ' + e.message);
+      }
+    };
+  }
+
+  function exibirPosFechamentoAuditado(resumo) {
+    const modal = document.getElementById('fechamento-modal');
+    if (modal) modal.style.display = 'none';
+
+    const fmt = (v) => 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ',');
+    const dif = resumo.diferenca_geral || 0;
+    const difFmt = (dif >= 0 ? '+ ' : '') + fmt(dif);
+    const difCor = Math.abs(dif) < 0.01 ? '#16a34a' : (dif > 0 ? '#0284c7' : '#dc2626');
+
+    const overlay = document.createElement('div');
+    overlay.id = 'pos-fechamento-overlay';
+    overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 16px;';
+
+    overlay.innerHTML = 
+      '<div style="background: var(--fin-card, #fff); border-radius: 18px; padding: 28px; max-width: 520px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.4); text-align: center; border: 1px solid var(--fin-border, #e2e8f0);">' +
+        '<div style="width: 64px; height: 64px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px;">' +
+          '<i class="ph ph-check-bold"></i>' +
+        '</div>' +
+        '<h2 style="margin: 0 0 6px 0; font-size: 22px; color: var(--fin-text, #0f172a);">Turno #' + (resumo.turno_id || '') + ' Encerrado!</h2>' +
+        '<p style="margin: 0 0 20px 0; font-size: 13.5px; color: var(--fin-text-muted, #64748b);">Fechamento auditado e registrado no histórico.</p>' +
+        '<div style="background: rgba(0,0,0,0.03); border: 1px solid var(--fin-border, #e2e8f0); border-radius: 12px; padding: 14px; margin-bottom: 20px; text-align: left; font-size: 13px;">' +
+          '<div style="display: flex; justify-content: space-between; margin-bottom: 6px;">' +
+            '<span style="color: var(--fin-text-muted, #64748b);">Total Registrado no Sistema:</span>' +
+            '<strong style="color: var(--fin-text, #0f172a);">' + fmt(resumo.faturado_sistema) + '</strong>' +
+          '</div>' +
+          '<div style="display: flex; justify-content: space-between; margin-bottom: 6px;">' +
+            '<span style="color: var(--fin-text-muted, #64748b);">Total Físico Declarado:</span>' +
+            '<strong style="color: #fc4b15;">' + fmt(resumo.total_declarado) + '</strong>' +
+          '</div>' +
+          '<div style="display: flex; justify-content: space-between; border-top: 1px dashed var(--fin-border, #e2e8f0); padding-top: 6px;">' +
+            '<span style="font-weight: 700; color: var(--fin-text, #0f172a);">Apuração / Quebra:</span>' +
+            '<strong style="color: ' + difCor + '; font-size: 14px;">' + difFmt + ' (' + (resumo.situacao || 'OK') + ')</strong>' +
+          '</div>' +
+        '</div>' +
+        '<p style="margin: 0 0 12px 0; font-size: 12px; font-weight: 700; color: var(--fin-text-muted, #64748b); text-transform: uppercase;">Ações Imediatas de Comprovante:</p>' +
+        '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">' +
+          '<button id="btn-pos-imprimir-termica" style="padding: 12px; border-radius: 10px; background: #fc4b15; color: white; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px;">' +
+            '<i class="ph ph-printer" style="font-size: 18px;"></i> Imprimir Térmica' +
+          '</button>' +
+          '<button id="btn-pos-whatsapp" style="padding: 12px; border-radius: 10px; background: #25d366; color: white; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px;">' +
+            '<i class="ph ph-whatsapp-logo" style="font-size: 18px;"></i> Enviar WhatsApp' +
+          '</button>' +
+          '<button id="btn-pos-txt" style="padding: 10px; border-radius: 10px; background: #4f46e5; color: white; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px;">' +
+            '<i class="ph ph-file-text"></i> Baixar TXT' +
+          '</button>' +
+          '<button id="btn-pos-csv" style="padding: 10px; border-radius: 10px; background: #10b981; color: white; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px;">' +
+            '<i class="ph ph-microsoft-excel"></i> Baixar CSV' +
+          '</button>' +
+        '</div>' +
+        '<button id="btn-pos-concluir-tudo" style="width: 100%; padding: 12px; border-radius: 10px; background: transparent; border: 1px solid var(--fin-border, #e2e8f0); color: var(--fin-text, #0f172a); font-weight: 700; cursor: pointer; font-size: 13.5px;">' +
+          'Concluir e Voltar ao Início' +
+        '</button>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    const txtContent = gerarTextoRelatorioFechamentoAuditado(resumo);
+
+    document.getElementById('btn-pos-imprimir-termica').onclick = () => {
+      imprimirCupomTermicoFechamento(resumo);
+    };
+
+    document.getElementById('btn-pos-whatsapp').onclick = () => {
+      window.open('https://wa.me/?text=' + encodeURIComponent(txtContent), '_blank');
+    };
+
+    document.getElementById('btn-pos-txt').onclick = () => {
+      const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'comprovante_fechamento_turno_' + (resumo.turno_id || Date.now()) + '.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    document.getElementById('btn-pos-csv').onclick = () => {
+      const btnCsv = document.getElementById('btn-fechamento-sheets');
+      if (btnCsv) btnCsv.click();
+    };
+
+    document.getElementById('btn-pos-concluir-tudo').onclick = () => {
+      window.location.href = 'index.html';
+    };
+  }
+
+  function gerarTextoRelatorioFechamentoAuditado(resumo) {
+    const stats = window.currentCaixaStats || {};
+    const fmt = (v) => 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ',');
+    const dataFmt = new Date().toLocaleString('pt-BR');
+    const dif = resumo.diferenca_geral || 0;
+    const difStr = (dif >= 0 ? '+ ' : '') + fmt(dif);
+
+    let prods = (stats.produtos_vendidos || []).map(p => '• ' + p.productName + ' — ' + p.qty + 'x — ' + fmt(parseMoneyFin(p.valTotal))).join('\n');
+    if (!prods) prods = 'Nenhum produto vendido no turno.';
+
+    return '=========================================\n' +
+           '   CHEF COZINHA — FECHAMENTO AUDITADO    \n' +
+           '=========================================\n' +
+           'Turno ID: #' + (resumo.turno_id || stats.turno_id || 1) + '\n' +
+           'Data / Hora: ' + dataFmt + '\n' +
+           '-----------------------------------------\n' +
+           '📊 TOTAIS APURADOS PELO SISTEMA:\n' +
+           '• Total Faturado: ' + fmt(resumo.faturado_sistema) + '\n' +
+           '• Fundo Troco:    ' + fmt(stats.fundo_troco) + '\n' +
+           '• Dinheiro:       ' + fmt(stats.total_dinheiro) + '\n' +
+           '• PIX:            ' + fmt(stats.total_pix) + '\n' +
+           '• Débito:         ' + fmt(stats.total_debito) + '\n' +
+           '• Crédito:        ' + fmt(stats.total_credito) + '\n' +
+           '-----------------------------------------\n' +
+           '💵 CONTAGEM FÍSICA DECLARADA:\n' +
+           '• Total Declarado: ' + fmt(resumo.total_declarado) + '\n' +
+           '• Situação:        ' + (resumo.situacao || 'Conferido') + '\n' +
+           '• Quebra de Caixa: ' + difStr + '\n' +
+           (resumo.justificativa ? '• Justificativa:  ' + resumo.justificativa + '\n' : '') +
+           '-----------------------------------------\n' +
+           '🍕 PRODUTOS VENDIDOS:\n' + prods + '\n' +
+           '=========================================\n';
+  }
+
+  function imprimirCupomTermicoFechamento(resumo) {
+    const printArea = document.getElementById('fechamento-print-area');
+    if (printArea) {
+      printArea.classList.add('print-active');
+      window.print();
+    } else {
+      window.print();
+    }
+  }
 
   // Funções de Exportação do Fechamento
   function gerarTextoRelatorioFechamento() {
@@ -379,42 +708,90 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  // --- ADVANCED REPORT SYSTEM LOGIC ---
+// --- ADVANCED REPORT & BI NAVIGATION SYSTEM ---
   const tabResumo = document.getElementById('tab-btn-resumo');
   const tabRelatorio = document.getElementById('tab-btn-relatorio');
+  const tabDre = document.getElementById('tab-btn-dre');
+  const tabAbc = document.getElementById('tab-btn-abc');
+  const tabDespesas = document.getElementById('tab-btn-despesas');
+  const tabTurnos = document.getElementById('tab-btn-turnos');
+  const tabContador = document.getElementById('tab-btn-contador');
+
   const secResumo = document.getElementById('section-resumo-caixa');
   const secRelatorio = document.getElementById('section-relatorio-avancado');
-  const tabContador = document.getElementById('tab-btn-contador');
+  const secDre = document.getElementById('section-dre');
+  const secAbc = document.getElementById('section-curva-abc');
+  const secDespesas = document.getElementById('section-despesas');
+  const secTurnos = document.getElementById('section-turnos');
   const secContador = document.getElementById('section-contador');
+
+  const allTabs = [tabResumo, tabRelatorio, tabDre, tabAbc, tabDespesas, tabTurnos, tabContador].filter(Boolean);
+  const allSecs = [secResumo, secRelatorio, secDre, secAbc, secDespesas, secTurnos, secContador].filter(Boolean);
 
   // Unified tab switching
   function switchTab(activeTab) {
-    const allTabs = [tabResumo, tabRelatorio, tabContador];
-    const allSecs = [secResumo, secRelatorio, secContador];
-    
-    allTabs.forEach(t => { t.style.color = '#777'; t.style.borderBottom = '3px solid transparent'; });
+    allTabs.forEach(t => { 
+      if (t) {
+        t.style.color = 'var(--fin-text-muted, #777)'; 
+        t.style.borderBottom = '3px solid transparent'; 
+      }
+    });
     allSecs.forEach(s => { if (s) s.style.display = 'none'; });
     
-    activeTab.style.color = '#fc4b15';
-    activeTab.style.borderBottom = '3px solid #fc4b15';
-    const idx = allTabs.indexOf(activeTab);
-    const sec = allSecs[idx];
-    if (sec) sec.style.display = 'block';
+    if (activeTab) {
+      activeTab.style.color = '#fc4b15';
+      activeTab.style.borderBottom = '3px solid #fc4b15';
+      const idx = allTabs.indexOf(activeTab);
+      const sec = allSecs[idx];
+      if (sec) sec.style.display = 'block';
+    }
   }
 
   // Switch Tabs
-  tabResumo.addEventListener('click', () => switchTab(tabResumo));
+  if (tabResumo) tabResumo.addEventListener('click', () => switchTab(tabResumo));
 
-  tabRelatorio.addEventListener('click', () => {
-    switchTab(tabRelatorio);
-    socket.emit('get_report_filters');
-    loadReportData();
-  });
+  if (tabRelatorio) {
+    tabRelatorio.addEventListener('click', () => {
+      switchTab(tabRelatorio);
+      socket.emit('get_report_filters');
+      loadReportData();
+    });
+  }
 
-  tabContador.addEventListener('click', () => {
-    switchTab(tabContador);
-    renderCntPreview();
-  });
+  if (tabDre) {
+    tabDre.addEventListener('click', () => {
+      switchTab(tabDre);
+      carregarDRE();
+    });
+  }
+
+  if (tabAbc) {
+    tabAbc.addEventListener('click', () => {
+      switchTab(tabAbc);
+      carregarCurvaABC();
+    });
+  }
+
+  if (tabDespesas) {
+    tabDespesas.addEventListener('click', () => {
+      switchTab(tabDespesas);
+      carregarDespesas();
+    });
+  }
+
+  if (tabTurnos) {
+    tabTurnos.addEventListener('click', () => {
+      switchTab(tabTurnos);
+      carregarHistoricoTurnos();
+    });
+  }
+
+  if (tabContador) {
+    tabContador.addEventListener('click', () => {
+      switchTab(tabContador);
+      renderCntPreview();
+    });
+  }
 
   // Set default dates (start of month to today)
   const dateInit = document.getElementById('relatorio-data-inicial');
@@ -1363,4 +1740,744 @@ document.addEventListener('DOMContentLoaded', () => {
     a.click();
     URL.revokeObjectURL(url);
   });
+
+// ══════════════════════════════════════════════════════════════════
+  // FUNÇÕES DE DRE GERENCIAL & RESULTADO DO EXERCÍCIO
+  // ══════════════════════════════════════════════════════════════════
+
+  async function carregarDRE(periodo) {
+    const sel = document.getElementById('dre-filtro-periodo');
+    const p = periodo || (sel ? sel.value : 'mes');
+    const label = document.getElementById('dre-periodo-label');
+    if (label) label.innerText = 'Carregando DRE...';
+
+    const fmt = (v) => 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ',');
+
+    try {
+      const res = await fetch('/api/financeiro/dre?periodo=' + encodeURIComponent(p));
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.erro || 'Falha ao buscar DRE');
+
+      if (label) label.innerText = 'Período: ' + data.periodo.inicio + ' até ' + data.periodo.fim;
+
+      const kpis = data.kpis || {};
+      const setEl = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
+      };
+
+      setEl('dre-kpi-bruta', fmt(kpis.receita_bruta));
+      setEl('dre-kpi-deducoes', fmt(kpis.deducoes_taxas));
+      setEl('dre-kpi-cmv', fmt(kpis.cmv_total));
+      setEl('dre-kpi-cmv-pct', (kpis.cmv_pct_receita || 0).toFixed(1) + '% da receita bruta');
+      setEl('dre-kpi-margem', fmt(kpis.margem_contribuicao));
+      setEl('dre-kpi-margem-pct', (kpis.margem_contribuicao_pct || 0).toFixed(1) + '% margem líquida');
+      setEl('dre-kpi-despesas', fmt(kpis.despesas_operacionais_fixas));
+      setEl('dre-kpi-lucro', fmt(kpis.lucro_liquido_real));
+
+      // ── Termômetro do Ponto de Equilíbrio (Break-Even) ──
+      const recLiq = parseFloat(kpis.receita_liquida) || 0;
+      const ptEquilibrio = parseFloat(kpis.ponto_equilibrio_estimado) || 0;
+      const pctCob = ptEquilibrio > 0 ? (recLiq / ptEquilibrio) * 100 : 0;
+
+      setEl('dre-pe-receita-atual', fmt(recLiq));
+      setEl('dre-pe-valor-meta', fmt(ptEquilibrio));
+      setEl('dre-pe-pct-cobertura', Math.round(pctCob) + '% coberto');
+
+      const peBar = document.getElementById('dre-pe-progresso-bar');
+      if (peBar) {
+        peBar.style.width = Math.min(100, Math.max(0, pctCob)) + '%';
+        peBar.style.background = pctCob >= 100 ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #f59e0b, #10b981)';
+      }
+
+      const peBadge = document.getElementById('dre-pe-badge-status');
+      const peDesc = document.getElementById('dre-pe-descricao-status');
+      if (peBadge && peDesc) {
+        if (pctCob >= 100) {
+          const sobra = recLiq - ptEquilibrio;
+          peBadge.innerText = '🟢 Ponto de Equilíbrio Superado (+ ' + fmt(sobra) + ')';
+          peBadge.style.background = '#dcfce7';
+          peBadge.style.color = '#15803d';
+          peDesc.innerText = 'Excelente! Sua operação já superou os custos fixos deste período e está gerando lucro líquido real de forma consolidada.';
+        } else {
+          const falta = ptEquilibrio - recLiq;
+          peBadge.innerText = '🟡 Em Cobertura (' + pctCob.toFixed(1) + '% atingido)';
+          peBadge.style.background = '#fef3c7';
+          peBadge.style.color = '#b45309';
+          peDesc.innerText = 'Faltam ' + fmt(falta) + ' em receita líquida para alcançar o Ponto de Equilíbrio e cobrir todos os custos operacionais.';
+        }
+      }
+
+      const lucroEl = document.getElementById('dre-kpi-lucro');
+      if (lucroEl) lucroEl.style.color = kpis.lucro_liquido_real >= 0 ? '#16a34a' : '#dc2626';
+
+      const lucroPctEl = document.getElementById('dre-kpi-lucro-pct');
+      if (lucroPctEl) {
+        lucroPctEl.innerText = 'Margem Líquida: ' + (kpis.margem_liquida_pct || 0).toFixed(1) + '%';
+        lucroPctEl.style.color = kpis.lucro_liquido_real >= 0 ? '#16a34a' : '#dc2626';
+      }
+
+      // Preencher Tabela Contábil Detalhada
+      const tbody = document.getElementById('dre-tabela-corpo');
+      if (tbody) {
+        const linhas = [
+          { nome: '(+) RECEITA BRUTA DE VENDAS', valor: kpis.receita_bruta, pct: 100, cor: '#0f172a', bold: true, bg: 'rgba(0,0,0,0.02)' },
+          { nome: '  • Vendas Dinheiro', valor: data.formas_pagamento.dinheiro, pct: kpis.receita_bruta > 0 ? (data.formas_pagamento.dinheiro / kpis.receita_bruta)*100 : 0 },
+          { nome: '  • Vendas PIX', valor: data.formas_pagamento.pix, pct: kpis.receita_bruta > 0 ? (data.formas_pagamento.pix / kpis.receita_bruta)*100 : 0 },
+          { nome: '  • Vendas Cartão Crédito', valor: data.formas_pagamento.credito, pct: kpis.receita_bruta > 0 ? (data.formas_pagamento.credito / kpis.receita_bruta)*100 : 0 },
+          { nome: '  • Vendas Cartão Débito', valor: data.formas_pagamento.debito, pct: kpis.receita_bruta > 0 ? (data.formas_pagamento.debito / kpis.receita_bruta)*100 : 0 },
+          { nome: '  • Vendas Fiado / Outros', valor: data.formas_pagamento.fiado, pct: kpis.receita_bruta > 0 ? (data.formas_pagamento.fiado / kpis.receita_bruta)*100 : 0 },
+          { nome: '(-) DEDUÇÕES DA RECEITA & TAXAS', valor: -kpis.deducoes_taxas, pct: kpis.receita_liquida > 0 ? (kpis.deducoes_taxas / kpis.receita_liquida)*100 : 0, cor: '#dc2626', bold: true },
+          { nome: '(=) RECEITA OPERACIONAL LÍQUIDA', valor: kpis.receita_liquida, pct: 100, cor: '#0284c7', bold: true, bg: 'rgba(2, 132, 199, 0.06)' },
+          { nome: '(-) CUSTO DAS MERCADORIAS VENDIDAS (CMV)', valor: -kpis.cmv_total, pct: kpis.receita_liquida > 0 ? (kpis.cmv_total / kpis.receita_liquida)*100 : 0, cor: '#d97706', bold: true },
+          { nome: '(=) MARGEM DE CONTRIBUIÇÃO', valor: kpis.margem_contribuicao, pct: kpis.receita_liquida > 0 ? (kpis.margem_contribuicao / kpis.receita_liquida)*100 : 0, cor: '#3b82f6', bold: true, bg: 'rgba(59, 130, 246, 0.06)' },
+          { nome: '(-) DESPESAS FIXAS & OPERACIONAIS', valor: -kpis.despesas_operacionais_fixas, pct: kpis.receita_liquida > 0 ? (kpis.despesas_operacionais_fixas / kpis.receita_liquida)*100 : 0, cor: '#8b5cf6', bold: true }
+        ];
+
+        // Linhas de despesas detalhadas por categoria
+        (data.detalhes_despesas || []).forEach(d => {
+          linhas.push({
+            nome: '  • ' + d.categoria,
+            valor: -d.total,
+            pct: kpis.receita_liquida > 0 ? (d.total / kpis.receita_liquida)*100 : 0,
+            cor: '#64748b'
+          });
+        });
+
+        linhas.push({
+          nome: '(=) LUCRO LÍQUIDO DO EXERCÍCIO (RESULTADO REAL)',
+          valor: kpis.lucro_liquido_real,
+          pct: kpis.receita_liquida > 0 ? (kpis.lucro_liquido_real / kpis.receita_liquida)*100 : 0,
+          cor: kpis.lucro_liquido_real >= 0 ? '#15803d' : '#b91c1c',
+          bold: true,
+          bg: kpis.lucro_liquido_real >= 0 ? 'rgba(22, 163, 74, 0.12)' : 'rgba(220, 38, 38, 0.12)',
+          destaque: true
+        });
+
+        linhas.push({
+          nome: '⭐ PONTO DE EQUILÍBRIO ESTIMADO (BREAK-EVEN)',
+          valor: kpis.ponto_equilibrio_estimado,
+          pct: null,
+          cor: '#f59e0b',
+          bold: true,
+          bg: 'rgba(245, 158, 11, 0.06)'
+        });
+
+        tbody.innerHTML = linhas.map(l => {
+          const valStr = l.valor < 0 ? '- ' + fmt(Math.abs(l.valor)) : fmt(l.valor);
+          const pctStr = l.pct !== null ? l.pct.toFixed(1) + '%' : '-';
+          const barWidth = Math.min(100, Math.max(0, l.pct || 0));
+          return '<tr style="border-bottom: 1px solid var(--fin-border); background: ' + (l.bg || 'transparent') + '; font-weight: ' + (l.bold ? '700' : 'normal') + ';">' +
+              '<td style="padding: 10px 14px; color: ' + (l.cor || 'var(--fin-text)') + '; font-size: ' + (l.destaque ? '14.5px' : '13.5px') + ';">' + l.nome + '</td>' +
+              '<td style="padding: 10px 14px; text-align: right; color: ' + (l.cor || 'var(--fin-text)') + '; font-size: ' + (l.destaque ? '15px' : '13.5px') + ';">' + valStr + '</td>' +
+              '<td style="padding: 10px 14px; text-align: right; color: var(--fin-text-muted);">' + pctStr + '</td>' +
+              '<td style="padding: 10px 14px;">' +
+                (l.pct !== null ? '<div style="width: 100%; background: rgba(0,0,0,0.06); height: 7px; border-radius: 4px; overflow: hidden;"><div style="width: ' + barWidth + '%; background: ' + (l.cor || '#fc4b15') + '; height: 100%;"></div></div>' : '') +
+              '</td>' +
+            '</tr>';
+        }).join('');
+      }
+    } catch(e) {
+      if (label) label.innerText = 'Erro ao carregar DRE';
+      console.error(e);
+    }
+  }
+
+  const btnDreRecarregar = document.getElementById('btn-dre-recarregar');
+  if (btnDreRecarregar) btnDreRecarregar.onclick = () => carregarDRE();
+
+  const selDrePeriodo = document.getElementById('dre-filtro-periodo');
+  if (selDrePeriodo) selDrePeriodo.onchange = () => carregarDRE();
+
+  // Exportar DRE CSV
+  const btnDreExportar = document.getElementById('btn-dre-exportar');
+  if (btnDreExportar) {
+    btnDreExportar.onclick = () => {
+      const rows = [];
+      document.querySelectorAll('#dre-tabela-corpo tr').forEach(tr => {
+        const cols = Array.from(tr.querySelectorAll('td')).map(td => td.innerText.trim());
+        if (cols.length >= 3) {
+          rows.push([cols[0], cols[1], cols[2]]);
+        }
+      });
+      const csv = 'Linha;Valor;Percentual\n' + rows.map(r => r.map(c => '"' + c.replace(/"/g, '""') + '"').join(';')).join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'DRE_ChefCozinha_' + Date.now() + '.csv';
+      a.click();
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // FUNÇÕES DE CURVA ABC & ENGENHARIA DE CARDÁPIO
+  // ══════════════════════════════════════════════════════════════════
+
+  let _curvaAbcItensCache = [];
+  let _quadranteAtivoFiltro = null;
+
+  async function carregarCurvaABC(periodo, categoria) {
+    const sel = document.getElementById('abc-filtro-periodo');
+    const selCat = document.getElementById('abc-filtro-categoria');
+    const p = periodo || (sel ? sel.value : 'mes');
+    const c = categoria || (selCat ? selCat.value : 'todas');
+    const fmt = (v) => 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ',');
+
+    try {
+      const res = await fetch('/api/financeiro/curva-abc?periodo=' + encodeURIComponent(p) + '&categoria=' + encodeURIComponent(c === 'todas' ? '' : c));
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.erro || 'Falha ao buscar Curva ABC');
+
+      // Badges dos 4 Quadrantes
+      const q = data.engenharia_cardapio || {};
+      const setBadge = (id, count) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = (count || 0) + ' itens';
+      };
+      setBadge('abc-badge-estrelas', q.estrelas);
+      setBadge('abc-badge-cavalos', q.cavalos_de_carga);
+      setBadge('abc-badge-puzzles', q.quebra_cabecas);
+      setBadge('abc-badge-caes', q.caes);
+
+      _curvaAbcItensCache = data.curva_abc || [];
+
+      // Popular categorias únicas no filtro
+      if (selCat) {
+        const valAtual = selCat.value;
+        const categorias = Array.from(new Set(_curvaAbcItensCache.map(i => i.categoria).filter(Boolean)));
+        selCat.innerHTML = '<option value="todas">Todas as Categorias</option>' +
+          categorias.map(cat => '<option value="' + escHtml(cat) + '">' + escHtml(cat) + '</option>').join('');
+        if (categorias.includes(valAtual)) selCat.value = valAtual;
+      }
+
+      // Tabela Pareto
+      const tbody = document.getElementById('abc-tabela-corpo');
+      if (tbody) {
+        if (!data.curva_abc || data.curva_abc.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 24px; color: var(--fin-text-muted);">Nenhum pedido finalizado no período selecionado.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.curva_abc.map(item => {
+          let badgeClasseBg = '#fee2e2';
+          let badgeClasseCor = '#dc2626';
+          if (item.classe_faturamento === 'A') {
+            badgeClasseBg = '#dcfce7';
+            badgeClasseCor = '#16a34a';
+          } else if (item.classe_faturamento === 'B') {
+            badgeClasseBg = '#fef3c7';
+            badgeClasseCor = '#d97706';
+          }
+
+          let quadIcon = item.icone_quadrante || '🍽️';
+          let quadCor = '#475569';
+          if (item.quadrante === 'Estrela') quadCor = '#16a34a';
+          if (item.quadrante === 'Cavalo de Carga') quadCor = '#2563eb';
+          if (item.quadrante === 'Quebra-Cabeça') quadCor = '#d97706';
+          if (item.quadrante === 'Cão') quadCor = '#dc2626';
+
+          return '<tr style="border-bottom: 1px solid var(--fin-border);">' +
+              '<td style="padding: 10px 12px; font-weight: 600; color: var(--fin-text);">' +
+                '<span style="margin-right: 6px;">' + (item.emoji || '🍽️') + '</span>' + escHtml(item.nome) +
+              '</td>' +
+              '<td style="padding: 10px 12px; text-align: center; font-weight: 700;">' + item.qtd + 'x</td>' +
+              '<td style="padding: 10px 12px; text-align: right; color: var(--fin-text);">' + fmt(item.preco_medio) + '</td>' +
+              '<td style="padding: 10px 12px; text-align: right;">' +
+                '<div style="display: inline-flex; align-items: center; gap: 4px;">' +
+                  '<span style="font-size: 11px; color: var(--fin-text-muted);">R$</span>' +
+                  '<input type="number" step="0.10" min="0" value="' + (item.custo_unitario || 0).toFixed(2) + '" ' +
+                         'title="Editar Preço de Custo (CMV)" ' +
+                         'onchange="atualizarCustoProdutoInline(\'' + escHtml(item.nome).replace(/'/g, "\\'") + '\', this.value)" ' +
+                         'style="width: 72px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 12.5px; font-weight: 700; text-align: right;">' +
+                '</div>' +
+              '</td>' +
+              '<td style="padding: 10px 12px; text-align: right; color: #16a34a; font-weight: 700;">' + fmt(item.margem_unitaria) + '</td>' +
+              '<td style="padding: 10px 12px; text-align: right; font-weight: 800; color: #fc4b15;">' + fmt(item.faturamento) + '</td>' +
+              '<td style="padding: 10px 12px; text-align: right; color: var(--fin-text-muted); font-size: 12px;">' + (item.pct_faturamento_acumulado || 0).toFixed(1) + '%</td>' +
+              '<td style="padding: 10px 12px; text-align: center;">' +
+                '<span style="padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 12px; background: ' + badgeClasseBg + '; color: ' + badgeClasseCor + ';">' +
+                  'Classe ' + item.classe_faturamento +
+                '</span>' +
+              '</td>' +
+              '<td style="padding: 10px 12px; text-align: center;" title="' + escHtml(item.acao_sugerida || '') + '">' +
+                '<span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px; background: rgba(0,0,0,0.04); color: ' + quadCor + '; cursor: help;">' +
+                  quadIcon + ' ' + item.quadrante +
+                '</span>' +
+              '</td>' +
+            '</tr>';
+        }).join('');
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  // Função inline para atualizar custo unitário de prato
+  window.atualizarCustoProdutoInline = async function(nome, novoCusto) {
+    if (isNaN(parseFloat(novoCusto))) return;
+    try {
+      const res = await fetch('/api/financeiro/produto-custo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, custo: parseFloat(novoCusto) })
+      });
+      const data = await res.json();
+      if (data && data.ok) {
+        // Recalcular Curva ABC
+        carregarCurvaABC();
+      }
+    } catch(e) {
+      console.error('Falha ao salvar custo:', e);
+    }
+  };
+
+  const btnAbcRecarregar = document.getElementById('btn-abc-recarregar');
+  if (btnAbcRecarregar) btnAbcRecarregar.onclick = () => carregarCurvaABC();
+
+
+  window.filtrarPorQuadranteABC = function(quadrante) {
+    if (_quadranteAtivoFiltro === quadrante) {
+      _quadranteAtivoFiltro = null;
+    } else {
+      _quadranteAtivoFiltro = quadrante;
+    }
+
+    // Atualiza bordas dos cards de quadrante
+    document.querySelectorAll('.quad-card-btn').forEach(btn => {
+      btn.style.boxShadow = 'none';
+      btn.style.transform = 'scale(1)';
+    });
+
+    if (_quadranteAtivoFiltro) {
+      const qLower = _quadranteAtivoFiltro.toLowerCase();
+      document.querySelectorAll('.quad-card-btn').forEach(btn => {
+        if (btn.getAttribute('onclick').toLowerCase().includes(qLower)) {
+          btn.style.boxShadow = '0 0 0 2px #fc4b15, 0 8px 20px rgba(252,75,21,0.2)';
+          btn.style.transform = 'scale(1.02)';
+        }
+      });
+    }
+
+    // Filtra linhas da tabela
+    const rows = document.querySelectorAll('#abc-tabela-corpo tr');
+    rows.forEach(tr => {
+      if (!_quadranteAtivoFiltro) {
+        tr.style.display = '';
+      } else {
+        const quadTd = tr.querySelector('td:last-child');
+        if (quadTd && quadTd.innerText.includes(_quadranteAtivoFiltro)) {
+          tr.style.display = '';
+        } else {
+          tr.style.display = 'none';
+        }
+      }
+    });
+  };
+
+  const selAbcCat = document.getElementById('abc-filtro-categoria');
+  if (selAbcCat) selAbcCat.onchange = () => carregarCurvaABC();
+
+  const selAbcPeriodo = document.getElementById('abc-filtro-periodo');
+  if (selAbcPeriodo) selAbcPeriodo.onchange = () => carregarCurvaABC();
+
+  // Exportar Curva ABC CSV
+  const btnAbcExportar = document.getElementById('btn-abc-exportar');
+  if (btnAbcExportar) {
+    btnAbcExportar.onclick = () => {
+      const rows = [];
+      document.querySelectorAll('#abc-tabela-corpo tr').forEach(tr => {
+        const cols = Array.from(tr.querySelectorAll('td')).map(td => td.innerText.trim());
+        if (cols.length >= 7) {
+          rows.push([cols[0], cols[1], cols[2], cols[4], cols[5], cols[6], cols[7], cols[8]]);
+        }
+      });
+      const csv = 'Produto;Qtd;PrecoMedio;MargemUnit;Faturamento;PctAcumulada;Classe;Quadrante\n' + rows.map(r => r.map(c => '"' + c.replace(/"/g, '""') + '"').join(';')).join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Curva_ABC_Cardapio_' + Date.now() + '.csv';
+      a.click();
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // MÓDULO ÁGIL DE DESPESAS OPERACIONAIS & CONTAS A PAGAR
+  // ══════════════════════════════════════════════════════════════════
+
+  async function carregarDespesas() {
+    const cat = document.getElementById('despesas-filtro-categoria')?.value || 'todas';
+    const status = document.getElementById('despesas-filtro-status')?.value || 'todos';
+    const fmt = (v) => 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ',');
+
+    try {
+      const res = await fetch('/api/financeiro/despesas?categoria=' + encodeURIComponent(cat) + '&status=' + encodeURIComponent(status));
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.erro || 'Falha ao buscar despesas');
+
+      const resumo = data.resumo || {};
+      const setEl = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = fmt(val);
+      };
+      setEl('despesas-kpi-total', resumo.total);
+      setEl('despesas-kpi-pagas', resumo.pagas);
+      setEl('despesas-kpi-pendentes', resumo.pendentes);
+
+      const tbody = document.getElementById('despesas-tabela-corpo');
+      if (tbody) {
+        if (!data.despesas || data.despesas.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--fin-text-muted);">Nenhuma despesa cadastrada com estes filtros.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.despesas.map(d => {
+          const isPago = d.status === 'Pago';
+          const statusBadge = isPago
+            ? '<span style="padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; background: #dcfce7; color: #15803d;">Pago</span>'
+            : '<span style="padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; background: #fee2e2; color: #b91c1c;">Pendente</span>';
+
+          return '<tr style="border-bottom: 1px solid var(--fin-border);">' +
+              '<td style="padding: 10px 12px; font-weight: 600; color: var(--fin-text);">' +
+                escHtml(d.descricao) +
+                (d.observacao ? '<br><small style="color: var(--fin-text-muted); font-size: 11px;">' + escHtml(d.observacao) + '</small>' : '') +
+              '</td>' +
+              '<td style="padding: 10px 12px; color: var(--fin-text-muted);">' + escHtml(d.categoria) + '</td>' +
+              '<td style="padding: 10px 12px; color: var(--fin-text-muted);">' + (d.data_competencia || '-') + '</td>' +
+              '<td style="padding: 10px 12px; color: var(--fin-text-muted);">' + (d.data_vencimento || '-') + '</td>' +
+              '<td style="padding: 10px 12px; text-align: right; font-weight: 700; color: #dc2626;">' + fmt(d.valor) + '</td>' +
+              '<td style="padding: 10px 12px; text-align: center;">' + statusBadge + '</td>' +
+              '<td style="padding: 10px 12px; text-align: center;">' +
+                '<div style="display: inline-flex; gap: 6px;">' +
+                  (!isPago ? '<button onclick="marcarDespesaPaga(' + d.id + ')" style="padding: 4px 8px; border-radius: 6px; background: #10b981; color: white; border: none; font-size: 11px; font-weight: 700; cursor: pointer;">Pagar</button>' : '') +
+                  '<button onclick="excluirDespesa(' + d.id + ')" style="padding: 4px 8px; border-radius: 6px; background: transparent; border: 1px solid var(--fin-border); color: #dc2626; font-size: 11px; cursor: pointer;"><i class="ph ph-trash"></i></button>' +
+                '</div>' +
+              '</td>' +
+            '</tr>';
+        }).join('');
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  window.marcarDespesaPaga = async function(id) {
+    if (!confirm('Confirmar pagamento desta despesa?')) return;
+    try {
+      const res = await fetch('/api/financeiro/despesas/' + id + '/pagar', { method: 'PUT' });
+      const data = await res.json();
+      if (data.ok) {
+        carregarDespesas();
+      } else {
+        alert(data.erro || 'Falha ao atualizar despesa');
+      }
+    } catch(e) {
+      alert('Erro: ' + e.message);
+    }
+  };
+
+  window.excluirDespesa = async function(id) {
+    if (!confirm('Tem certeza que deseja remover esta despesa?')) return;
+    try {
+      const res = await fetch('/api/financeiro/despesas/' + id, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.ok) {
+        carregarDespesas();
+      } else {
+        alert(data.erro || 'Falha ao excluir despesa');
+      }
+    } catch(e) {
+      alert('Erro: ' + e.message);
+    }
+  };
+
+  const btnNovaDespesa = document.getElementById('btn-nova-despesa');
+  if (btnNovaDespesa) {
+    btnNovaDespesa.onclick = () => {
+      document.getElementById('despesa-input-descricao').value = '';
+      document.getElementById('despesa-input-valor').value = '';
+      document.getElementById('despesa-input-competencia').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('despesa-input-obs').value = '';
+      const m = document.getElementById('modal-nova-despesa');
+      if (m) m.style.display = 'flex';
+    };
+  }
+
+  const btnSalvarDespesaModal = document.getElementById('btn-despesa-salvar-modal');
+  if (btnSalvarDespesaModal) {
+    btnSalvarDespesaModal.onclick = async () => {
+      const descricao = document.getElementById('despesa-input-descricao').value.trim();
+      const categoria = document.getElementById('despesa-input-categoria').value;
+      const valor = parseFloat(document.getElementById('despesa-input-valor').value);
+      const competencia = document.getElementById('despesa-input-competencia').value;
+      const status = document.getElementById('despesa-input-status').value;
+      const obs = document.getElementById('despesa-input-obs').value.trim();
+
+      if (!descricao || isNaN(valor) || valor <= 0) {
+        alert('Por favor, informe uma descrição válida e o valor numérico da despesa.');
+        return;
+      }
+
+      btnSalvarDespesaModal.disabled = true;
+      btnSalvarDespesaModal.innerText = 'Salvando...';
+
+      try {
+        const res = await fetch('/api/financeiro/despesas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            descricao,
+            categoria,
+            valor,
+            data_competencia: competencia,
+            status,
+            observacao: obs
+          })
+        });
+        const data = await res.json();
+        btnSalvarDespesaModal.disabled = false;
+        btnSalvarDespesaModal.innerText = 'Salvar Despesa';
+
+        if (data.ok) {
+          document.getElementById('modal-nova-despesa').style.display = 'none';
+          carregarDespesas();
+        } else {
+          alert('Erro ao cadastrar despesa: ' + (data.erro || 'Falha'));
+        }
+      } catch(e) {
+        btnSalvarDespesaModal.disabled = false;
+        btnSalvarDespesaModal.innerText = 'Salvar Despesa';
+        alert('Erro de conexão: ' + e.message);
+      }
+    };
+  }
+
+
+  const inputBuscaDespesas = document.getElementById('despesas-filtro-busca');
+  if (inputBuscaDespesas) {
+    inputBuscaDespesas.addEventListener('input', (e) => {
+      const termo = (e.target.value || '').toLowerCase().trim();
+      document.querySelectorAll('#despesas-tabela-corpo tr').forEach(tr => {
+        const texto = tr.innerText.toLowerCase();
+        tr.style.display = texto.includes(termo) ? '' : 'none';
+      });
+    });
+  }
+
+  const btnDespesasRecarregar = document.getElementById('btn-despesas-recarregar');
+  if (btnDespesasRecarregar) btnDespesasRecarregar.onclick = () => carregarDespesas();
+
+  // ══════════════════════════════════════════════════════════════════
+  // HISTÓRICO DE AUDITORIA DE TURNOS & QUEBRA DE CAIXA
+  // ══════════════════════════════════════════════════════════════════
+
+  async function carregarHistoricoTurnos() {
+    const fmt = (v) => 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ',');
+
+    try {
+      const res = await fetch('/api/caixa/turnos-historico');
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.erro || 'Falha ao buscar turnos');
+
+      _turnosHistoricoCache = data.turnos || [];
+      const tbody = document.getElementById('turnos-tabela-corpo');
+      if (tbody) {
+        if (!data.turnos || data.turnos.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--fin-text-muted);">Nenhum histórico de turno encerrado ainda.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.turnos.map(t => {
+          const dif = parseFloat(t.diferenca_caixa) || 0;
+          let difBadge = '<span style="padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; background: #dcfce7; color: #16a34a;">Exato (R$ 0,00)</span>';
+          if (dif > 0) {
+            difBadge = '<span style="padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; background: #e0f2fe; color: #0284c7;">Sobra (+ ' + fmt(dif) + ')</span>';
+          } else if (dif < 0) {
+            difBadge = '<span style="padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; background: #fee2e2; color: #dc2626;">Falta (- ' + fmt(Math.abs(dif)) + ')</span>';
+          }
+
+          const dtAb = t.data_abertura ? new Date(t.data_abertura).toLocaleString('pt-BR') : '-';
+          const dtFech = t.data_fechamento ? new Date(t.data_fechamento).toLocaleString('pt-BR') : 'Em Aberto';
+
+          return '<tr style="border-bottom: 1px solid var(--fin-border);">' +
+              '<td style="padding: 10px 12px; font-weight: 700; color: #fc4b15;">#' + t.id + '</td>' +
+              '<td style="padding: 10px 12px; font-size: 12px; color: var(--fin-text-muted);">' +
+                dtAb + '<br><small style="color: var(--fin-text);">até ' + dtFech + '</small>' +
+              '</td>' +
+              '<td style="padding: 10px 12px; font-weight: 600; color: var(--fin-text);">' + escHtml(t.operador_fechamento || 'Caixa') + '</td>' +
+              '<td style="padding: 10px 12px; text-align: right; color: var(--fin-text-muted);">' + fmt(t.fundo_troco) + '</td>' +
+              '<td style="padding: 10px 12px; text-align: right; font-weight: 700; color: var(--fin-text);">' + fmt(t.total_declarado) + '</td>' +
+              '<td style="padding: 10px 12px; text-align: center;">' + difBadge + '</td>' +
+              '<td style="padding: 10px 12px; font-size: 12px; color: var(--fin-text-muted); max-width: 200px;">' +
+                escHtml(t.justificativa_diferenca || '-') +
+              '</td>' +
+              '<td style="padding: 10px 12px; text-align: center;">' +
+                '<button onclick="visualizarComprovanteHistorico(' + t.id + ')" style="padding: 5px 10px; border-radius: 6px; background: rgba(0,0,0,0.04); border: 1px solid var(--fin-border); cursor: pointer; font-size: 12px; color: var(--fin-text);">' +
+                  '<i class="ph ph-receipt"></i> Ver' +
+                '</button>' +
+              '</td>' +
+            '</tr>';
+        }).join('');
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  let _turnosHistoricoCache = [];
+
+  window.visualizarComprovanteHistorico = function(turnoId) {
+    const t = _turnosHistoricoCache.find(x => String(x.id) === String(turnoId));
+    if (!t) return alert('Turno não localizado no histórico.');
+
+    const fmt = (v) => 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ',');
+    const m = document.getElementById('modal-detalhes-turno');
+    if (!m) return;
+
+    document.getElementById('mdt-titulo').innerHTML = '<i class="ph ph-receipt" style="color: #fc4b15;"></i> Auditoria do Turno #' + t.id;
+    
+    const dtAb = t.data_abertura ? new Date(t.data_abertura).toLocaleString('pt-BR') : '-';
+    const dtFech = t.data_fechamento ? new Date(t.data_fechamento).toLocaleString('pt-BR') : 'Em Aberto';
+    document.getElementById('mdt-datas').innerHTML = dtAb + '<br><small style="color:var(--fin-text-muted);">até ' + dtFech + '</small>';
+    document.getElementById('mdt-operador').innerText = t.operador_fechamento || 'Operador Caixa';
+
+    const dif = parseFloat(t.diferenca_caixa) || 0;
+    const badge = document.getElementById('mdt-quebra-badge');
+    if (Math.abs(dif) < 0.01) {
+      badge.innerText = 'Exato (Sem Divergência)';
+      badge.style.background = '#dcfce7';
+      badge.style.color = '#15803d';
+    } else if (dif > 0) {
+      badge.innerText = 'Sobra de ' + fmt(dif);
+      badge.style.background = '#e0f2fe';
+      badge.style.color = '#0284c7';
+    } else {
+      badge.innerText = 'Quebra/Falta de ' + fmt(Math.abs(dif));
+      badge.style.background = '#fee2e2';
+      badge.style.color = '#dc2626';
+    }
+
+    const justifBox = document.getElementById('mdt-justificativa-box');
+    const justifTxt = document.getElementById('mdt-justificativa-texto');
+    if (t.justificativa_diferenca) {
+      justifBox.style.display = 'block';
+      justifTxt.innerText = t.justificativa_diferenca;
+    } else {
+      justifBox.style.display = 'none';
+    }
+
+    const det = t.detalhes_fechamento || {};
+    const esp = det.esperado || {};
+    const dec = det.declarado || {};
+
+    const linhas = [
+      { item: 'Dinheiro na Gaveta (com Fundo)', esp: esp.gaveta_esperada || (parseFloat(t.fundo_troco)||0), dec: dec.dinheiro !== undefined ? dec.dinheiro : (parseFloat(t.total_declarado)||0), dif: (dec.dinheiro || 0) - (esp.gaveta_esperada || 0) },
+      { item: 'PIX Conferido', esp: esp.pix || 0, dec: dec.pix || 0, dif: (dec.pix || 0) - (esp.pix || 0) },
+      { item: 'Cartão Débito', esp: esp.debito || 0, dec: dec.debito || 0, dif: (dec.debito || 0) - (esp.debito || 0) },
+      { item: 'Cartão Crédito', esp: esp.credito || 0, dec: dec.credito || 0, dif: (dec.credito || 0) - (esp.credito || 0) },
+      { item: 'TOTAL GERAL APURADO', esp: esp.total_faturado || 0, dec: t.total_declarado || 0, dif: dif, bold: true }
+    ];
+
+    const tbody = document.getElementById('mdt-tabela-conferencia');
+    if (tbody) {
+      tbody.innerHTML = linhas.map(l => {
+        const difCor = Math.abs(l.dif) < 0.01 ? '#16a34a' : (l.dif > 0 ? '#0284c7' : '#dc2626');
+        return '<tr style="border-bottom: 1px solid var(--fin-border); font-weight:' + (l.bold ? '700' : 'normal') + ';">' +
+            '<td style="padding: 8px;">' + l.item + '</td>' +
+            '<td style="padding: 8px; text-align: right; color: var(--fin-text-muted);">' + fmt(l.esp) + '</td>' +
+            '<td style="padding: 8px; text-align: right; color: var(--fin-text); font-weight:700;">' + fmt(l.dec) + '</td>' +
+            '<td style="padding: 8px; text-align: right; color: ' + difCor + '; font-weight:800;">' + (l.dif >= 0 ? '+' : '') + fmt(l.dif) + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    // Configurar botões de impressão e WhatsApp
+    const txtComprovante = '=========================================\n' +
+      '  CHEF COZINHA - COMPROVANTE DE TURNO #' + t.id + '\n' +
+      '=========================================\n' +
+      'Abertura: ' + dtAb + '\n' +
+      'Fechamento: ' + dtFech + '\n' +
+      'Operador: ' + (t.operador_fechamento || 'Caixa') + '\n' +
+      '-----------------------------------------\n' +
+      'Total Declarado: ' + fmt(t.total_declarado) + '\n' +
+      'Quebra de Caixa: ' + fmt(dif) + '\n' +
+      (t.justificativa_diferenca ? 'Justificativa: ' + t.justificativa_diferenca + '\n' : '') +
+      '=========================================\n';
+
+    document.getElementById('btn-mdt-reimprimir').onclick = () => {
+      window.print();
+    };
+
+    document.getElementById('btn-mdt-whatsapp').onclick = () => {
+      window.open('https://wa.me/?text=' + encodeURIComponent(txtComprovante), '_blank');
+    };
+
+    m.style.display = 'flex';
+  };
+
+  const btnTurnosRecarregar = document.getElementById('btn-turnos-recarregar');
+  if (btnTurnosRecarregar) btnTurnosRecarregar.onclick = () => carregarHistoricoTurnos();
+
+  // ══════════════════════════════════════════════════════════════════
+  // CONFIGURAÇÕES FINANCEIRAS & PARÂMETROS DE EXECUÇÃO
+  // ══════════════════════════════════════════════════════════════════
+
+  const btnAbrirConfigFin = document.getElementById('btn-abrir-config-financeiro');
+  if (btnAbrirConfigFin) {
+    btnAbrirConfigFin.onclick = async () => {
+      await obterConfigFinanceiro();
+      const cfg = configFinanceiroGlobal;
+      document.getElementById('cfg-fechamento-modo').value = cfg.fechamento_modo || 'cego';
+      document.getElementById('cfg-cmv-padrao').value = cfg.cmv_padrao_pct || 32;
+      document.getElementById('cfg-taxa-debito').value = cfg.taxa_cartao_debito_pct || 1.5;
+      document.getElementById('cfg-taxa-credito').value = cfg.taxa_cartao_credito_pct || 3.0;
+      document.getElementById('cfg-taxa-pix').value = cfg.taxa_pix_pct || 0;
+
+      const m = document.getElementById('modal-config-financeiro');
+      if (m) m.style.display = 'flex';
+    };
+  }
+
+  const btnSalvarConfigFin = document.getElementById('btn-salvar-config-financeiro');
+  if (btnSalvarConfigFin) {
+    btnSalvarConfigFin.onclick = async () => {
+      const modo = document.getElementById('cfg-fechamento-modo').value;
+      const cmv = parseFloat(document.getElementById('cfg-cmv-padrao').value);
+      const debito = parseFloat(document.getElementById('cfg-taxa-debito').value);
+      const credito = parseFloat(document.getElementById('cfg-taxa-credito').value);
+      const pix = parseFloat(document.getElementById('cfg-taxa-pix').value);
+
+      btnSalvarConfigFin.disabled = true;
+      btnSalvarConfigFin.innerText = 'Salvando...';
+
+      try {
+        const res = await fetch('/api/financeiro/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fechamento_modo: modo,
+            cmv_padrao_pct: cmv,
+            taxa_cartao_debito_pct: debito,
+            taxa_cartao_credito_pct: credito,
+            taxa_pix_pct: pix
+          })
+        });
+
+        const data = await res.json();
+        btnSalvarConfigFin.disabled = false;
+        btnSalvarConfigFin.innerText = 'Salvar Parâmetros';
+
+        if (data.ok) {
+          configFinanceiroGlobal = data.config;
+          document.getElementById('modal-config-financeiro').style.display = 'none';
+          alert('Configurações financeiras salvas com sucesso!');
+        } else {
+          alert('Erro ao salvar: ' + (data.erro || 'Falha'));
+        }
+      } catch(e) {
+        btnSalvarConfigFin.disabled = false;
+        btnSalvarConfigFin.innerText = 'Salvar Parâmetros';
+        alert('Erro: ' + e.message);
+      }
+    };
+  }
 });

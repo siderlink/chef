@@ -34,6 +34,7 @@ socket.on('tenant_atualizado', (data) => {
   socket.disconnect();
   socket.io.opts.query = { token: data.token, restaurante_id: String(data.restaurante_id) };
   socket.connect();
+  if (typeof registrarListenersRestauranteDono === 'function') registrarListenersRestauranteDono();
 });
 
 // ─── Cache DOM elements ───────────────────────────────────────
@@ -151,6 +152,9 @@ async function carregarMetricas() {
       if (mesasEl)       mesasEl.innerText = data.mesasAtivas || '0';
       if (ticketEl)      ticketEl.innerText = formatCurrency(data.ticketMedio);
       if (equipeEl)      equipeEl.innerText = data.colaboradoresAtivos || '0';
+
+      const pedidosEl = document.getElementById('kpi-pedidos');
+      if (pedidosEl) pedidosEl.innerText = data.totalPedidos || 0;
 
       // ── Copiloto Cheff IA Insight ──
       const iaText = document.getElementById('ia-insight-text');
@@ -272,6 +276,22 @@ async function carregarMetricas() {
         ? `Fundo de troco: ${formatCurrency(data.caixaSaldo)}`
         : 'Toque em "Abrir" para iniciar as vendas.';
 
+      // KPI Status Operacional
+      const statusOpEl = document.getElementById('kpi-status-operacao');
+      const statusOpSub = document.getElementById('kpi-status-operacao-sub');
+      const iconStatusOp = document.getElementById('kpi-icon-status-op');
+      if (statusOpEl) {
+        statusOpEl.innerText = isOpen ? 'Aberto' : 'Fechado';
+        statusOpEl.style.color = isOpen ? 'var(--green)' : '#ef4444';
+      }
+      if (statusOpSub) {
+        statusOpSub.innerText = isOpen ? (data.caixaSaldo ? `Saldo: ${formatCurrency(data.caixaSaldo)}` : 'Caixa em atendimento') : 'Caixa fechado';
+      }
+      if (iconStatusOp) {
+        iconStatusOp.className = `kpi-icon ${isOpen ? 'green' : 'orange'}`;
+        iconStatusOp.innerHTML = `<i class="ph-fill ph-${isOpen ? 'check-circle' : 'lock'}"></i>`;
+      }
+
       if (cashierToggleBtn) {
         if (isOpen) {
           cashierToggleBtn.className = 'btn-caixa close';
@@ -308,6 +328,14 @@ async function carregarMetricas() {
 
       // ─── Programa Indique & Ganhe Parceiros ───
       initIndicacaoParceiros();
+
+      // ─── BI Executivo: DRE & Engenharia de Cardápio ───
+      if (typeof carregarBIDonoExecutivo === "function") carregarBIDonoExecutivo();
+
+      // ─── Atualizar Badges de Resumo das Seções Recolhidas ───
+      if (typeof window.atualizarBadgesResumoSecoes === 'function') {
+        window.atualizarBadgesResumoSecoes(data);
+      }
     }
   } catch (error) {
     console.error('Erro ao carregar métricas:', error);
@@ -1424,6 +1452,38 @@ socket.on('dono_acao_erro', (data) => {
   showToast(data.mensagem || 'Erro ao executar ação.', 'ph-warning', 'error');
 });
 
+// Listener dinâmico para alertas específicos do restaurante (fiscais, contador, RH)
+function registrarListenersRestauranteDono() {
+  const restId = localStorage.getItem('restaurante_id') || '1';
+  socket.off(`alerta_restaurante_${restId}`);
+  socket.on(`alerta_restaurante_${restId}`, (data) => {
+    if (data && data.titulo) {
+      showToast(`${data.titulo}: ${data.mensagem || ''}`, 'ph-briefcase', 'info');
+      adicionarAoFeed('aviso', `[${data.tipo || 'RH'}] ${data.titulo}: ${data.mensagem || ''}`);
+    }
+    if (typeof window.carregarResumoContratacaoSecao === 'function') window.carregarResumoContratacaoSecao();
+    if (typeof window.carregarEscalaFreelancers === 'function') window.carregarEscalaFreelancers();
+  });
+}
+try { registrarListenersRestauranteDono(); } catch(e) {}
+
+socket.on('alerta_contador_cheff', (data) => {
+  if (data && data.mensagem) {
+    showToast(`📊 Contador Cheff: ${data.mensagem}`, 'ph-chart-line-up', 'info');
+  }
+});
+
+socket.on('contratacao_atualizada', (data) => {
+  if (data && data.mensagem) {
+    showToast(`🤝 Equipe: ${data.mensagem}`, 'ph-user-check', 'success');
+    adicionarAoFeed('aviso', data.mensagem);
+  }
+  if (typeof window.carregarResumoContratacaoSecao === 'function') window.carregarResumoContratacaoSecao();
+  if (typeof window.carregarEscalaFreelancers === 'function') window.carregarEscalaFreelancers();
+  if (typeof window.carregarMinhasVagas === 'function') window.carregarMinhasVagas();
+  carregarMetricas();
+});
+
 // ─── Alta Demanda: "Uau, seu negócio está bombando!" ─────────────
 let _modalDemandaAberto = false;
 
@@ -1501,10 +1561,12 @@ window.onload = () => {
   carregarMetricas();
   carregarFuncionalidades();
   carregarFuncionariosControleRemoto();
+  if (typeof carregarStatusContadorCheff === 'function') carregarStatusContadorCheff();
 };
 startClock();
 carregarMetricas();
 carregarFuncionariosControleRemoto();
+if (typeof carregarStatusContadorCheff === 'function') carregarStatusContadorCheff();
 
 // ─── Funcionalidades (Feature Toggles) ────────────────────────
 const FEATURE_DEFS = [
@@ -2056,16 +2118,30 @@ window.carregarCuponsDono();
 // TEMA CLARO / ESCURO NO PAINEL DO DONO
 // ════════════════════════════════════════════════════════════════════
 window.toggleTemaDono = function() {
-  const current = localStorage.getItem('chef_theme') || 'dark';
+  if (window.ChefTheme && typeof window.ChefTheme.toggle === 'function') {
+    const next = window.ChefTheme.toggle();
+    const icon = document.getElementById('theme-dono-icon');
+    if (icon) {
+      icon.className = next === 'dark' ? 'ph-bold ph-sun' : 'ph-bold ph-moon';
+    }
+    return next;
+  }
+  const current = localStorage.getItem('chef_theme') || 'light';
   const next = current === 'dark' ? 'light' : 'dark';
   window.aplicarTemaDono(next);
+  return next;
 };
 
 window.aplicarTemaDono = function(theme) {
-  localStorage.setItem('chef_theme', theme);
-  document.body.setAttribute('data-theme', theme);
-  document.body.classList.remove('theme-light', 'theme-dark');
-  document.body.classList.add('theme-' + theme);
+  if (window.ChefTheme && typeof window.ChefTheme.set === 'function') {
+    window.ChefTheme.set(theme);
+  } else {
+    localStorage.setItem('chef_theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', theme);
+    document.body.classList.remove('theme-light', 'theme-dark');
+    document.body.classList.add('theme-' + theme);
+  }
 
   const icon = document.getElementById('theme-dono-icon');
   if (icon) {
@@ -2075,9 +2151,19 @@ window.aplicarTemaDono = function(theme) {
 
 // Inicializa o tema salvo
 (function initTemaDono() {
-  const salvo = localStorage.getItem('chef_theme') || 'dark';
+  const salvo = (window.ChefTheme && typeof window.ChefTheme.get === 'function')
+    ? window.ChefTheme.get()
+    : (localStorage.getItem('chef_theme') || 'light');
   window.aplicarTemaDono(salvo);
 })();
+
+window.addEventListener('chef_theme_changed', function(e) {
+  var t = (e && e.detail && e.detail.theme) || (window.ChefTheme ? window.ChefTheme.get() : null);
+  if (t) {
+    var icon = document.getElementById('theme-dono-icon');
+    if (icon) icon.className = t === 'dark' ? 'ph-bold ph-sun' : 'ph-bold ph-moon';
+  }
+});
 
 
 // ════════════════════════════════════════════════════════════════════
@@ -2332,48 +2418,109 @@ window.restaurarEstadoSecoes = function() {
 // Tornar os cabeçalhos de cada seção clicáveis dinamicamente
 window.inicializarSecoesRecolhiveis = function() {
   document.querySelectorAll('main > div').forEach((sec, idx) => {
-    sec.classList.add('dono-section');
-    const secId = sec.id || ('sec-dono-' + idx);
-    if (!sec.id) sec.id = secId;
+    try {
+      sec.classList.add('dono-section');
+      const secId = sec.id || ('sec-dono-' + idx);
+      if (!sec.id) sec.id = secId;
 
-    const titleEl = sec.querySelector('.sec-title');
-    if (titleEl && !sec.querySelector('.btn-sec-toggle')) {
       let headerRow = sec.querySelector('.sec-header-row');
-      if (!headerRow) {
-        headerRow = document.createElement('div');
-        headerRow.className = 'sec-header-row';
-        sec.insertBefore(headerRow, titleEl);
-        headerRow.appendChild(titleEl);
+      const titleEl = sec.querySelector('.sec-title');
+      if ((titleEl || headerRow) && !sec.querySelector('.btn-sec-toggle')) {
+        if (!headerRow && titleEl) {
+          headerRow = document.createElement('div');
+          headerRow.className = 'sec-header-row';
+          const p = titleEl.parentNode;
+          if (p && typeof p.contains === 'function' && p.contains(titleEl)) {
+            p.insertBefore(headerRow, titleEl);
+          } else {
+            sec.prepend(headerRow);
+          }
+          headerRow.appendChild(titleEl);
+        }
+
+        if (headerRow) {
+          headerRow.onclick = function(e) {
+            if (e.target && e.target.closest('button, a, input, select, textarea, .btn-primary, .btn-secondary, label, .btn-chip-modal')) {
+              return;
+            }
+            window.toggleSecao(secId);
+          };
+          headerRow.title = 'Clique para recolher ou expandir esta seção';
+
+          // Badge de resumo quando recolhido
+          let badge = headerRow.querySelector('.sec-collapsed-badge');
+          if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'sec-collapsed-badge';
+            badge.innerText = 'Oculto (Toque para Ver)';
+            headerRow.appendChild(badge);
+          }
+
+          // Botão seta
+          const toggleBtn = document.createElement('button');
+          toggleBtn.type = 'button';
+          toggleBtn.className = 'btn-sec-toggle';
+          toggleBtn.innerHTML = '<i class="ph-bold ph-caret-down"></i>';
+          headerRow.appendChild(toggleBtn);
+
+          // Envolver conteúdo restante em .sec-content se ainda não estiver
+          if (!sec.querySelector('.sec-content')) {
+            const contentNodes = Array.from(sec.children).filter(c => c !== headerRow);
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'sec-content';
+            contentNodes.forEach(node => contentWrapper.appendChild(node));
+            sec.appendChild(contentWrapper);
+          }
+        }
       }
-
-      headerRow.setAttribute('onclick', `window.toggleSecao('${secId}')`);
-      headerRow.title = 'Clique para recolher ou expandir esta seção';
-
-      // Badge de resumo quando recolhido
-      const badge = document.createElement('span');
-      badge.className = 'sec-collapsed-badge';
-      badge.innerText = 'Oculto (Toque para Ver)';
-      headerRow.appendChild(badge);
-
-      // Botão seta
-      const toggleBtn = document.createElement('button');
-      toggleBtn.type = 'button';
-      toggleBtn.className = 'btn-sec-toggle';
-      toggleBtn.innerHTML = '<i class="ph-bold ph-caret-down"></i>';
-      headerRow.appendChild(toggleBtn);
-
-      // Envolver conteúdo restante em .sec-content se ainda não estiver
-      if (!sec.querySelector('.sec-content')) {
-        const contentNodes = Array.from(sec.children).filter(c => c !== headerRow);
-        const contentWrapper = document.createElement('div');
-        contentWrapper.className = 'sec-content';
-        contentNodes.forEach(node => contentWrapper.appendChild(node));
-        sec.appendChild(contentWrapper);
-      }
+    } catch (err) {
+      console.warn('Erro ao inicializar secao recolhivel:', err);
     }
   });
 
-  window.restaurarEstadoSecoes();
+  try {
+    window.restaurarEstadoSecoes();
+  } catch (err) {
+    console.warn('Erro ao restaurar estado secoes:', err);
+  }
+};
+
+window.atualizarBadgesResumoSecoes = function(data) {
+  if (!data) return;
+  const isOpen = data.caixaStatus === 'Aberto';
+  const metaVal = typeof metaVendas !== 'undefined' ? metaVendas : 0;
+  const percent = metaVal > 0 ? Math.min(100, Math.round(((data.faturamentoHoje || 0) / metaVal) * 100)) : 0;
+
+  const badges = {
+    'sec-periodo': data.rotuloPeriodo || 'Hoje',
+    'sec-ia-briefing': '✨ Briefing Ativo',
+    'sec-kpis': `${formatCurrency(data.faturamentoHoje || 0)} • ${data.totalPedidos || 0} ped.`,
+    'sec-bi-dre-abc': data.dre ? `💎 Lucro ${formatCurrency(data.dre.lucroLiquido)} (${data.dre.margemLucro}%)` : '💎 BI & DRE',
+    'sec-canais-venda': data.canais ? `🏪 ${data.canais.salao?.percentual || 0}% Salão • 🛵 ${data.canais.delivery?.percentual || 0}% Deliv.` : '🏪 3 Canais',
+    'sec-antifraude': data.antifraude ? ((data.antifraude.canceladosQtd || 0) > 0 ? `⚠️ ${data.antifraude.canceladosQtd} canc.` : '🛡️ 100% Seguro') : '🛡️ Radar Seguro',
+    'sec-caixa': isOpen ? `🟢 Aberto (${formatCurrency(data.caixaSaldo || 0)})` : '🔒 Fechado',
+    'sec-equipe': `👥 ${data.colaboradoresAtivos || 0} Ativos`,
+    'sec-remoto-telas': '🖥️ Telas & Terminal',
+    'sec-remoto-caixa': '🖥️ Telas & Terminal',
+    'sec-remoto-equipe': '📱 Políticas & Acessos',
+    'sec-remoto-colabs': '📱 Políticas & Acessos',
+    'sec-marketing-vip': '📢 Disparo & Push',
+    'sec-marketing': '📢 Disparo & Push',
+    'sec-cupons': '🎟️ Cupons QR',
+    'sec-gamificacao-equipe': '⚔️ Batalha de Vendas',
+    'sec-indicacao-parceiros': '🎁 Indique & Ganhe',
+    'sec-meta-aviso': `🎯 Meta: ${percent}%`,
+    'sec-ranking': data.topProdutos && data.topProdutos.length > 0 ? `🏆 Top: ${data.topProdutos[0].productName}` : '🏆 Ranking',
+    'sec-features': '🧩 Módulos Ativos',
+    'sec-atividade': '⚡ Tempo Real'
+  };
+
+  Object.entries(badges).forEach(([id, html]) => {
+    const sec = document.getElementById(id);
+    if (!sec) return;
+    const badge = sec.querySelector('.sec-collapsed-badge');
+    if (badge) badge.innerHTML = html;
+  });
 };
 
 // ════════════════════════════════════════════════════════════════════
@@ -2387,6 +2534,7 @@ window.navMobilePara = function(targetId) {
   if (!el && targetId === 'sec-caixa') el = document.querySelector('[data-secao="caixa"]');
   if (!el && targetId === 'sec-remoto-telas') el = document.querySelector('[data-secao="remoto-caixa"]');
   if (!el && targetId === 'sec-remoto-equipe') el = document.querySelector('[data-secao="remoto-colabs"]') || document.querySelector('[data-secao="equipe"]');
+  if (!el && targetId === 'sec-contratacao-talentos') el = document.querySelector('[data-secao="contratacao-talentos"]');
   if (!el && targetId === 'sec-cupons') el = document.querySelector('[data-secao="cupons"]');
   if (!el && targetId === 'sec-marketing-vip') el = document.querySelector('[data-secao="marketing"]');
   if (!el && targetId === 'sec-meta-aviso') el = document.querySelector('[data-secao="meta-aviso"]');
@@ -2426,7 +2574,8 @@ window.initMobileNavScrollSpy = function() {
     { id: 'sec-kpis', getEl: () => document.getElementById('sec-kpis') || document.querySelector('[data-secao="kpis"]') },
     { id: 'sec-caixa', getEl: () => document.getElementById('sec-caixa') || document.querySelector('[data-secao="caixa"]') },
     { id: 'sec-remoto-telas', getEl: () => document.getElementById('sec-remoto-telas') || document.querySelector('[data-secao="remoto-caixa"]') },
-    { id: 'sec-remoto-equipe', getEl: () => document.getElementById('sec-remoto-equipe') || document.querySelector('[data-secao="remoto-colabs"]') }
+    { id: 'sec-remoto-equipe', getEl: () => document.getElementById('sec-remoto-equipe') || document.querySelector('[data-secao="remoto-colabs"]') },
+    { id: 'sec-contratacao-talentos', getEl: () => document.getElementById('sec-contratacao-talentos') || document.querySelector('[data-secao="contratacao-talentos"]') }
   ];
 
   window.addEventListener('scroll', () => {
@@ -2459,6 +2608,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     if (typeof window.inicializarSecoesRecolhiveis === 'function') window.inicializarSecoesRecolhiveis();
     if (typeof window.initMobileNavScrollSpy === 'function') window.initMobileNavScrollSpy();
+    if (typeof window.carregarResumoContratacaoSecao === 'function') window.carregarResumoContratacaoSecao();
   }, 50);
 });
 
@@ -2688,19 +2838,22 @@ window.executarDisparoMassa = async function() {
 
 const DONO_SECOES_DEF = [
   { id: 'sec-periodo', nome: '📅 Período & Preferências de Layout', icon: 'ph-calendar', larguraDef: 'large' },
-  { id: 'sec-kpis', nome: '📊 Resumo do Dia (KPIs de Faturamento, Mesas, Ticket)', icon: 'ph-chart-bar', larguraDef: 'large' },
+  { id: 'sec-ia-briefing', nome: '✨ Copiloto Cheff IA — Briefing Executivo', icon: 'ph-sparkle', larguraDef: 'large' },
+  { id: 'sec-kpis', nome: '📊 Resumo do Dia & Lucro Real (KPIs)', icon: 'ph-chart-bar', larguraDef: 'large' },
+  { id: 'sec-bi-dre-abc', nome: '💎 DRE Gerencial & Inteligência de Cardápio (BI)', icon: 'ph-chart-polar', larguraDef: 'large' },
+  { id: 'sec-canais-venda', nome: '🏪 Canais de Venda (Salão, Delivery, Balcão)', icon: 'ph-storefront', larguraDef: 'medium' },
+  { id: 'sec-antifraude', nome: '🛡️ Radar Antifraude & Auditoria de Caixa', icon: 'ph-shield-warning', larguraDef: 'medium' },
   { id: 'sec-caixa', nome: '💵 Controle do Caixa (Abrir/Fechar)', icon: 'ph-cash-register', larguraDef: 'medium' },
   { id: 'sec-equipe', nome: '👥 Equipe & Colaboradores Ativos', icon: 'ph-users-three', larguraDef: 'medium' },
-  { id: 'sec-remoto-telas', nome: '🖥️ Controle Remoto — Navegação de Telas', icon: 'ph-desktop', larguraDef: 'large' },
-  { id: 'sec-remoto-acoes', nome: '⚡ Ações Imediatas no Terminal', icon: 'ph-lightning', larguraDef: 'medium' },
-  { id: 'sec-remoto-equipe', nome: '📱 Controle Remoto de Colaboradores', icon: 'ph-users', larguraDef: 'large' },
+  { id: 'sec-remoto-telas', nome: '🖥️ Controle Remoto — Navegação e Terminal', icon: 'ph-desktop', larguraDef: 'medium' },
+  { id: 'sec-remoto-equipe', nome: '📱 Gestão da Equipe & Políticas de Acesso', icon: 'ph-users', larguraDef: 'medium' },
   { id: 'sec-marketing-vip', nome: '📢 Mensagens em Massa & Push (Marketing VIP)', icon: 'ph-megaphone', larguraDef: 'medium' },
   { id: 'sec-cupons', nome: '🎟️ Cupons QR & Promoções', icon: 'ph-ticket', larguraDef: 'medium' },
-  { id: 'sec-gamificacao-equipe', nome: '⚔️ Batalha de Vendas & Gamificação da Equipe', icon: 'ph-trophy', larguraDef: 'large' },
-  { id: 'sec-meta-aviso', nome: '🎯 Meta Diária & Aviso à Equipe', icon: 'ph-target', larguraDef: 'large' },
+  { id: 'sec-gamificacao-equipe', nome: '⚔️ Batalha de Vendas & Gamificação da Equipe', icon: 'ph-trophy', larguraDef: 'medium' },
+  { id: 'sec-indicacao-parceiros', nome: '🎁 Programa Indique & Ganhe Parceiros', icon: 'ph-gift', larguraDef: 'medium' },
+  { id: 'sec-meta-aviso', nome: '🎯 Meta Diária & Aviso à Equipe', icon: 'ph-target', larguraDef: 'medium' },
   { id: 'sec-ranking', nome: '🏆 Ranking de Produtos Mais Vendidos', icon: 'ph-chart-line-up', larguraDef: 'medium' },
-  { id: 'sec-indicacao-parceiros', nome: '🤝 Indique & Ganhe Mensalidades Grátis', icon: 'ph-gift', larguraDef: 'large' },
-  { id: 'sec-features', nome: '⚙️ Funcionalidades & Módulos Ativos', icon: 'ph-toggle-left', larguraDef: 'medium' },
+  { id: 'sec-features', nome: '🧩 Central de Módulos & Extensões', icon: 'ph-puzzle-piece', larguraDef: 'large' },
   { id: 'sec-atividade', nome: '⚡ Feed de Atividade em Tempo Real', icon: 'ph-activity', larguraDef: 'large' }
 ];
 
@@ -2776,7 +2929,7 @@ window.aplicarPerfilDono = function(perfilNome) {
   if (perfilNome === 'senior') {
     cfg.fontScale = 1.25; // Fonte gigante para 60+
     cfg.secoes.forEach(s => {
-      s.visivel = ['sec-periodo', 'sec-kpis', 'sec-caixa', 'sec-equipe', 'sec-remoto-telas', 'sec-remoto-acoes', 'sec-meta-aviso'].includes(s.id);
+      s.visivel = ['sec-periodo', 'sec-kpis', 'sec-caixa', 'sec-equipe', 'sec-remoto-telas', 'sec-meta-aviso'].includes(s.id);
       s.largura = 'large';
     });
     if (typeof showToast === 'function') showToast('👓 Perfil Sênior (60+) Ativado: Fontes e Botões Gigantes!', 'ph-sparkle', 'success');
@@ -2784,14 +2937,15 @@ window.aplicarPerfilDono = function(perfilNome) {
     cfg.fontScale = 1.0;
     cfg.secoes.forEach(s => {
       s.visivel = true;
-      s.largura = 'medium';
+      const def = DONO_SECOES_DEF.find(d => d.id === s.id);
+      s.largura = def ? def.larguraDef : 'medium';
     });
-    if (typeof showToast === 'function') showToast('⚡ Perfil Jovem Executivo Ativado: Visão Completa Bento Grid!', 'ph-sparkle', 'success');
+    if (typeof showToast === 'function') showToast('⚡ Perfil Executivo Completo Ativado!', 'ph-sparkle', 'success');
   } else if (perfilNome === 'mobile_one_hand') {
     cfg.fontScale = 1.1;
     cfg.secoes.forEach(s => {
-      s.visivel = ['sec-periodo', 'sec-kpis', 'sec-caixa', 'sec-remoto-telas', 'sec-remoto-acoes'].includes(s.id);
-      s.largura = 'small';
+      s.visivel = ['sec-periodo', 'sec-kpis', 'sec-caixa', 'sec-remoto-telas'].includes(s.id);
+      s.largura = 'large';
     });
     if (typeof showToast === 'function') showToast('📱 Perfil Mobile Mão Única Ativado!', 'ph-mobile', 'success');
   }
@@ -2823,17 +2977,24 @@ window.aplicarDonoModularConfig = function(cfg = null) {
   // Mapa data-secao -> id de config (padrão interno DONOMO)
   const dataSecToId = {
     'periodo': 'sec-periodo',
+    'ia-briefing': 'sec-ia-briefing',
     'kpis': 'sec-kpis',
+    'bi-dre-abc': 'sec-bi-dre-abc',
+    'canais-venda': 'sec-canais-venda',
+    'antifraude': 'sec-antifraude',
     'caixa': 'sec-caixa',
     'equipe': 'sec-equipe',
     'remoto-caixa': 'sec-remoto-telas',
+    'remoto-telas': 'sec-remoto-telas',
     'remoto-colabs': 'sec-remoto-equipe',
+    'remoto-equipe': 'sec-remoto-equipe',
     'marketing': 'sec-marketing-vip',
+    'marketing-vip': 'sec-marketing-vip',
     'cupons': 'sec-cupons',
     'gamificacao-equipe': 'sec-gamificacao-equipe',
+    'indicacao-parceiros': 'sec-indicacao-parceiros',
     'meta-aviso': 'sec-meta-aviso',
     'ranking': 'sec-ranking',
-    'indicacao-parceiros': 'sec-indicacao-parceiros',
     'funcionalidades': 'sec-features',
     'feed': 'sec-atividade'
   };
@@ -2853,15 +3014,21 @@ window.aplicarDonoModularConfig = function(cfg = null) {
       } else if (el.querySelector('.sec-title')) {
         const txt = el.querySelector('.sec-title').textContent.toLowerCase();
         if (txt.includes('período')) el.id = 'sec-periodo';
+        else if (txt.includes('copiloto') || txt.includes('briefing')) el.id = 'sec-ia-briefing';
         else if (txt.includes('resumo')) el.id = 'sec-kpis';
+        else if (txt.includes('dre') || txt.includes('cardápio')) el.id = 'sec-bi-dre-abc';
+        else if (txt.includes('canais')) el.id = 'sec-canais-venda';
+        else if (txt.includes('antifraude') || txt.includes('radar')) el.id = 'sec-antifraude';
         else if (txt.includes('caixa') && !txt.includes('remoto')) el.id = 'sec-caixa';
         else if (txt.includes('controle remoto do caixa')) el.id = 'sec-remoto-telas';
-        else if (txt.includes('colaboradores')) el.id = 'sec-remoto-equipe';
+        else if (txt.includes('gestão da equipe') || txt.includes('colaboradores') || txt.includes('políticas')) el.id = 'sec-remoto-equipe';
         else if (txt.includes('mensagens')) el.id = 'sec-marketing-vip';
         else if (txt.includes('cupons')) el.id = 'sec-cupons';
+        else if (txt.includes('batalha') || txt.includes('gamificação')) el.id = 'sec-gamificacao-equipe';
+        else if (txt.includes('indique')) el.id = 'sec-indicacao-parceiros';
         else if (txt.includes('meta')) el.id = 'sec-meta-aviso';
         else if (txt.includes('ranking') || txt.includes('produtos')) el.id = 'sec-ranking';
-        else if (txt.includes('funcionalidades')) el.id = 'sec-features';
+        else if (txt.includes('central de módulos') || txt.includes('funcionalidades')) el.id = 'sec-features';
         else if (txt.includes('atividade')) el.id = 'sec-atividade';
       } else if (el.classList.contains('equipe-card')) {
         el.id = 'sec-equipe';
@@ -3436,3 +3603,1509 @@ window.enviarSolicitacaoModuloDono = async function() {
     }
   }
 };
+
+
+// ══════════════════════════════════════════════════════════════════
+// BI EXECUTIVO DO DONO: DRE & ENGENHARIA DE CARDÁPIO
+// ══════════════════════════════════════════════════════════════════
+
+async function carregarBIDonoExecutivo() {
+  const fmt = (v) => 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ',');
+  const authToken = (typeof token !== 'undefined' && token) || localStorage.getItem('chef_token') || '';
+  try {
+    const p = window.periodoAtual === 'custom' ? 'mes' : (window.periodoAtual || 'mes');
+    const [resDre, resAbc] = await Promise.all([
+      fetch('/api/financeiro/dre?periodo=' + encodeURIComponent(p), { headers: { 'Authorization': 'Bearer ' + authToken } }),
+      fetch('/api/financeiro/curva-abc?periodo=' + encodeURIComponent(p), { headers: { 'Authorization': 'Bearer ' + authToken } })
+    ]);
+
+    const dataDre = await resDre.json();
+    const dataAbc = await resAbc.json();
+
+    if (dataDre && dataDre.ok) {
+      const k = dataDre.kpis || {};
+      const elLucro = document.getElementById('dono-dre-lucro-real');
+      if (elLucro) {
+        elLucro.innerText = fmt(k.lucro_liquido_real);
+        elLucro.style.color = k.lucro_liquido_real >= 0 ? '#10b981' : '#f43f5e';
+      }
+      const elMargem = document.getElementById('dono-dre-margem-pct');
+      if (elMargem) elMargem.innerText = 'Margem Líquida: ' + (k.margem_liquida_pct || 0).toFixed(1) + '%';
+
+      const elCmv = document.getElementById('dono-dre-cmv');
+      if (elCmv) elCmv.innerText = fmt(k.cmv_total);
+      const elCmvPct = document.getElementById('dono-dre-cmv-pct');
+      if (elCmvPct) elCmvPct.innerText = (k.cmv_pct_receita || 0).toFixed(1) + '% da receita bruta';
+
+      const elContrib = document.getElementById('dono-dre-margem-contrib');
+      if (elContrib) elContrib.innerText = fmt(k.margem_contribuicao);
+      const elContribPct = document.getElementById('dono-dre-margem-contrib-pct');
+      if (elContribPct) elContribPct.innerText = (k.margem_contribuicao_pct || 0).toFixed(1) + '% sobre vendas';
+
+      const elBreak = document.getElementById('dono-dre-break-even');
+      if (elBreak) elBreak.innerText = fmt(k.ponto_equilibrio_estimado);
+    }
+
+    if (dataAbc && dataAbc.ok) {
+      const q = dataAbc.engenharia_cardapio || {};
+      const setQuad = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val || 0;
+      };
+      setQuad('dono-quad-estrelas', q.estrelas);
+      setQuad('dono-quad-cavalos', q.cavalos_de_carga);
+      setQuad('dono-quad-puzzles', q.quebra_cabecas);
+      setQuad('dono-quad-caes', q.caes);
+    }
+  } catch (e) {
+    console.warn('BI Dono Executivo indisponível:', e);
+  }
+}
+
+window.abrirModalDRECompletoDono = function() {
+  const modal = document.getElementById('modal-dre-bi-dono');
+  if (modal) {
+    modal.classList.remove('hidden');
+    carregarDREModalDono('mes');
+  }
+};
+
+window.fecharModalDRECompletoDono = function() {
+  const modal = document.getElementById('modal-dre-bi-dono');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.carregarDREModalDono = async function(periodo) {
+  const fmt = (v) => 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ',');
+  const p = periodo || 'mes';
+  const authToken = (typeof token !== 'undefined' && token) || localStorage.getItem('chef_token') || '';
+
+  const labelEl = document.getElementById('modal-dono-dre-periodo-label');
+  if (labelEl) labelEl.innerText = 'Carregando...';
+
+  try {
+    const [resDre, resAbc] = await Promise.all([
+      fetch('/api/financeiro/dre?periodo=' + encodeURIComponent(p), { headers: { 'Authorization': 'Bearer ' + authToken } }),
+      fetch('/api/financeiro/curva-abc?periodo=' + encodeURIComponent(p), { headers: { 'Authorization': 'Bearer ' + authToken } })
+    ]);
+
+    const dataDre = await resDre.json();
+    const dataAbc = await resAbc.json();
+
+    if (labelEl && dataDre.periodo) {
+      labelEl.innerText = 'De ' + dataDre.periodo.inicio + ' a ' + dataDre.periodo.fim;
+    }
+
+    // ── Termômetro do Ponto de Equilíbrio (Break-Even) no Modal Dono ──
+    if (dataDre && dataDre.ok) {
+      const k = dataDre.kpis || {};
+      const recLiq = parseFloat(k.receita_liquida) || 0;
+      const ptEquilibrio = parseFloat(k.ponto_equilibrio_estimado) || 0;
+      const pctCob = ptEquilibrio > 0 ? (recLiq / ptEquilibrio) * 100 : 0;
+
+      const elRec = document.getElementById('modal-dono-pe-rec');
+      const elMeta = document.getElementById('modal-dono-pe-meta');
+      const elPct = document.getElementById('modal-dono-pe-pct');
+      const elBar = document.getElementById('modal-dono-pe-bar');
+      const elBadge = document.getElementById('modal-dono-pe-badge');
+
+      if (elRec) elRec.innerText = fmt(recLiq);
+      if (elMeta) elMeta.innerText = fmt(ptEquilibrio);
+      if (elPct) elPct.innerText = Math.round(pctCob) + '% coberto';
+
+      if (elBar) {
+        elBar.style.width = Math.min(100, Math.max(0, pctCob)) + '%';
+        elBar.style.background = pctCob >= 100 ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #f59e0b, #10b981)';
+      }
+
+      if (elBadge) {
+        if (pctCob >= 100) {
+          const sobra = recLiq - ptEquilibrio;
+          elBadge.innerText = '🟢 Ponto de Equilíbrio Superado (+ ' + fmt(sobra) + ')';
+          elBadge.style.background = '#dcfce7';
+          elBadge.style.color = '#15803d';
+        } else {
+          const falta = ptEquilibrio - recLiq;
+          elBadge.innerText = '🟡 Faltam ' + fmt(falta) + ' (' + pctCob.toFixed(1) + '%)';
+          elBadge.style.background = '#fef3c7';
+          elBadge.style.color = '#b45309';
+        }
+      }
+    }
+
+    const tbodyDre = document.getElementById('modal-dono-dre-tbody');
+    if (tbodyDre && dataDre.ok) {
+      const k = dataDre.kpis || {};
+      const linhas = [
+        { nome: '(+) Receita Bruta de Vendas', val: k.receita_bruta, pct: 100, bold: true },
+        { nome: '(-) Deduções & Taxas Cartão', val: -k.deducoes_taxas, pct: k.receita_liquida > 0 ? (k.deducoes_taxas/k.receita_liquida)*100 : 0, cor: '#f43f5e' },
+        { nome: '(=) Receita Líquida Operacional', val: k.receita_liquida, pct: 100, bold: true, cor: '#3b82f6' },
+        { nome: '(-) CMV (Insumos dos Pratos)', val: -k.cmv_total, pct: k.receita_liquida > 0 ? (k.cmv_total/k.receita_liquida)*100 : 0, cor: '#f59e0b' },
+        { nome: '(=) Margem de Contribuição', val: k.margem_contribuicao, pct: k.receita_liquida > 0 ? (k.margem_contribuicao/k.receita_liquida)*100 : 0, bold: true, cor: '#10b981' },
+        { nome: '(-) Despesas Operacionais Fixas', val: -k.despesas_operacionais_fixas, pct: k.receita_liquida > 0 ? (k.despesas_operacionais_fixas/k.receita_liquida)*100 : 0, cor: '#a855f7' },
+        { nome: '(=) LUCRO LÍQUIDO REAL', val: k.lucro_liquido_real, pct: k.receita_liquida > 0 ? (k.lucro_liquido_real/k.receita_liquida)*100 : 0, bold: true, cor: k.lucro_liquido_real >= 0 ? '#10b981' : '#f43f5e' },
+        { nome: '⭐ Ponto de Equilíbrio Estimado', val: k.ponto_equilibrio_estimado, pct: null, bold: true, cor: '#f59e0b' }
+      ];
+
+      tbodyDre.innerHTML = linhas.map(l => {
+        const valStr = l.val < 0 ? '- ' + fmt(Math.abs(l.val)) : fmt(l.val);
+        const pctStr = l.pct !== null ? l.pct.toFixed(1) + '%' : '-';
+        return '<tr style="border-bottom: 1px solid var(--border); font-weight:' + (l.bold ? '700' : 'normal') + '; color:' + (l.cor || 'var(--text)') + ';">' +
+            '<td style="padding: 8px 12px;">' + l.nome + '</td>' +
+            '<td style="padding: 8px 12px; text-align: right;">' + valStr + '</td>' +
+            '<td style="padding: 8px 12px; text-align: right; color: var(--text-sub);">' + pctStr + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    const tbodyAbc = document.getElementById('modal-dono-abc-tbody');
+    if (tbodyAbc && dataAbc.ok && dataAbc.curva_abc) {
+      tbodyAbc.innerHTML = dataAbc.curva_abc.slice(0, 10).map(item => {
+        let quadCor = item.quadrante === 'Estrela' ? '#10b981' : (item.quadrante === 'Cavalo de Carga' ? '#3b82f6' : (item.quadrante === 'Quebra-Cabeça' ? '#f59e0b' : '#f43f5e'));
+        return '<tr style="border-bottom: 1px solid var(--border);">' +
+            '<td style="padding: 8px 10px; font-weight: 600;">' + (item.emoji || '🍽️') + ' ' + escHtml(item.nome) + '</td>' +
+            '<td style="padding: 8px 10px; text-align: center; font-weight: 700;">' + item.qtd + 'x</td>' +
+            '<td style="padding: 8px 10px; text-align: right;">' + fmt(item.preco_medio) + '</td>' +
+            '<td style="padding: 8px 10px; text-align: right; color: #10b981; font-weight: 700;">' + fmt(item.margem_unitaria) + '</td>' +
+            '<td style="padding: 8px 10px; text-align: right; font-weight: 800; color: var(--primary);">' + fmt(item.faturamento) + '</td>' +
+            '<td style="padding: 8px 10px; text-align: center;"><span style="padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 11px; background: rgba(255,255,255,0.06);">Classe ' + item.classe_faturamento + '</span></td>' +
+            '<td style="padding: 8px 10px; text-align: center;"><span style="color: ' + quadCor + '; font-weight: 700; font-size: 11.5px;">' + (item.icone_quadrante || '') + ' ' + item.quadrante + '</span></td>' +
+          '</tr>';
+      }).join('');
+    }
+  } catch(e) {
+    console.error('Erro ao carregar DRE modal dono:', e);
+  }
+};
+
+// ══════════════════════════════════════════════════════════════════
+// MÓDULO CONTADOR CHEFF — GESTÃO & ASSESSORIA CONTÁBIL NO PAINEL DO DONO
+// ══════════════════════════════════════════════════════════════════
+
+window.statusContadorCheffAtual = null;
+
+async function carregarStatusContadorCheff() {
+  try {
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    const res = await fetch(`/api/dono/contador/status?restaurante_id=${restId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!data || !data.ok) return;
+
+    window.statusContadorCheffAtual = data;
+    renderizarPainelContadorCheff(data);
+  } catch (err) {
+    console.error('Erro ao carregar status do Contador Cheff:', err);
+  }
+}
+
+function renderizarPainelContadorCheff(data) {
+  const vitrineEl = document.getElementById('dono-contador-vitrine');
+  const painelAtivoEl = document.getElementById('dono-contador-painel-ativo');
+  const badgeEl = document.getElementById('dono-contador-status-badge');
+
+  if (!data.ativo || !data.assinatura) {
+    if (vitrineEl) vitrineEl.style.display = 'block';
+    if (painelAtivoEl) painelAtivoEl.style.display = 'none';
+    if (badgeEl) {
+      badgeEl.innerHTML = `
+        <span style="background: rgba(16,185,129,0.12); color: #10b981; border: 1px solid rgba(16,185,129,0.3); font-size: 11.5px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px;">
+          <i class="ph-bold ph-seal-percent"></i> Economize até 30% no DAS
+        </span>
+      `;
+    }
+    return;
+  }
+
+  // Se ativo:
+  if (vitrineEl) vitrineEl.style.display = 'none';
+  if (painelAtivoEl) painelAtivoEl.style.display = 'block';
+
+  const assin = data.assinatura;
+  if (badgeEl) {
+    badgeEl.innerHTML = `
+      <span style="background: rgba(16,185,129,0.18); color: #10b981; border: 1.5px solid #10b981; font-size: 11.5px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px;">
+        <i class="ph-bold ph-check-circle"></i> Assinatura Ativa
+      </span>
+    `;
+  }
+
+  const planoEl = document.getElementById('dono-contador-ativo-plano');
+  if (planoEl) planoEl.innerText = assin.plano_nome || 'Plano Pro Restaurante';
+
+  const detalhesEl = document.getElementById('dono-contador-ativo-detalhes');
+  if (detalhesEl) {
+    const contNome = assin.contador_responsavel_nome || 'Chef Equipe Contábil';
+    detalhesEl.innerText = `Contador Responsável: ${contNome} | Regime: ${formatarRegimeNome(assin.regime_tributario)}`;
+  }
+
+  const regimeKpi = document.getElementById('dono-contador-kpi-regime');
+  if (regimeKpi) regimeKpi.innerText = formatarRegimeNome(assin.regime_tributario);
+
+  const cnpjKpi = document.getElementById('dono-contador-kpi-cnpj');
+  if (cnpjKpi) cnpjKpi.innerText = assin.cnpj ? `CNPJ: ${assin.cnpj}` : 'CNPJ em validação';
+
+  const demandas = data.demandas || [];
+  const demKpi = document.getElementById('dono-contador-kpi-demandas');
+  if (demKpi) demKpi.innerText = `${demandas.length} registros`;
+
+  // WhatsApp do Contador / Central
+  const btnWhats = document.getElementById('btn-whatsapp-contador');
+  if (btnWhats) {
+    btnWhats.href = `https://wa.me/5511999999999?text=${encodeURIComponent(`Olá Contador Cheff! Sou do ${assin.restaurante_nome} e gostaria de tirar uma dúvida contábil/fiscal.`)}`;
+  }
+
+  // Tabela de Demandas
+  const tbody = document.getElementById('dono-contador-tabela-demandas');
+  if (tbody) {
+    if (demandas.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; padding: 24px; color: var(--text-sub);">
+            Nenhuma demanda registrada ainda. Clique em "Nova Solicitação Contábil" para enviar uma tarefa ao seu contador.
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = demandas.map(dem => {
+        let badgeStatus = '<span style="background: rgba(245,158,11,0.15); color: #f59e0b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Na Fila</span>';
+        if (dem.status === 'em_andamento') {
+          badgeStatus = '<span style="background: rgba(59,130,246,0.15); color: #3b82f6; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Em Execução</span>';
+        } else if (dem.status === 'concluido' || dem.status === 'aprovado') {
+          badgeStatus = '<span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">✓ Concluído</span>';
+        }
+
+        let parecerOuGuia = '<span style="color: var(--text-sub); font-size: 12px;">Aguardando retorno</span>';
+        if (dem.parecer_contador) {
+          parecerOuGuia = `
+            <div style="font-size: 12px; color: var(--text); line-height: 1.4;">
+              ${escHtml(dem.parecer_contador)}
+              ${dem.documento_anexo_url ? `<br><a href="${escHtml(dem.documento_anexo_url)}" target="_blank" style="color: #10b981; font-weight: 700; text-decoration: underline;"><i class="ph-bold ph-download-simple"></i> Baixar Guia/Relatório</a>` : ''}
+              ${dem.codigo_barras_guia ? `<br><span style="font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.15); padding: 2px 6px; border-radius: 4px;">Linha: ${escHtml(dem.codigo_barras_guia)}</span>` : ''}
+            </div>
+          `;
+        }
+
+        return `
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 10px 12px; font-weight: 700;">
+              <div>${escHtml(dem.titulo)}</div>
+              <span style="font-size: 11px; color: var(--text-sub); font-weight: normal;">${escHtml(dem.descricao || '')}</span>
+            </td>
+            <td style="padding: 10px 12px; font-size: 12px;">${escHtml(dem.competencia || 'Atual')}</td>
+            <td style="padding: 10px 12px;">${badgeStatus}</td>
+            <td style="padding: 10px 12px; font-size: 12px;">${escHtml(dem.contador_nome || 'Equipe Contábil')}</td>
+            <td style="padding: 10px 12px;">${parecerOuGuia}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
+}
+
+function formatarRegimeNome(regime) {
+  switch (regime) {
+    case 'simples_nacional': return 'Simples Nacional';
+    case 'mei': return 'MEI';
+    case 'lucro_presumido': return 'Lucro Presumido';
+    case 'lucro_real': return 'Lucro Real';
+    default: return 'Simples Nacional';
+  }
+}
+
+function abrirModalContratarContador(planoSugerido) {
+  if (planoSugerido) {
+    const sel = document.getElementById('contratar-plano');
+    if (sel) sel.value = planoSugerido;
+  }
+  const modal = document.getElementById('modal-contratar-contador');
+  if (modal) modal.style.display = 'flex';
+  const fb = document.getElementById('contratar-feedback');
+  if (fb) fb.style.display = 'none';
+}
+
+function fecharModalContratarContador() {
+  const modal = document.getElementById('modal-contratar-contador');
+  if (modal) modal.style.display = 'none';
+}
+
+function atualizarInfoPlanoContratar() {
+  // onchange handler
+}
+
+async function confirmarContratacaoContador() {
+  const btn = document.getElementById('btn-confirmar-contratacao-contador');
+  const fb = document.getElementById('contratar-feedback');
+  const plano = document.getElementById('contratar-plano')?.value || 'pro_restaurante';
+  const cnpj = document.getElementById('contratar-cnpj')?.value || '';
+  const regime = document.getElementById('contratar-regime')?.value || 'simples_nacional';
+  const respNome = document.getElementById('contratar-nome-resp')?.value || '';
+  const whats = document.getElementById('contratar-whatsapp')?.value || '';
+  const email = document.getElementById('contratar-email')?.value || '';
+  const obs = document.getElementById('contratar-obs')?.value || '';
+
+  if (!cnpj.trim()) {
+    if (fb) {
+      fb.style.display = 'block';
+      fb.style.color = '#ef4444';
+      fb.innerText = 'Por favor, informe o CNPJ da sua empresa.';
+    }
+    return;
+  }
+
+  try {
+    if (btn) btn.disabled = true;
+    if (fb) {
+      fb.style.display = 'block';
+      fb.style.color = '#3b82f6';
+      fb.innerText = 'Ativando seu plano contábil...';
+    }
+
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    const res = await fetch(`/api/dono/contador/contratar?restaurante_id=${restId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        plano,
+        cnpj,
+        regime_tributario: regime,
+        responsavel_nome: respNome,
+        responsavel_whatsapp: whats,
+        email_contabil: email,
+        notas_adicionais: obs
+      })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      if (fb) {
+        fb.style.color = '#10b981';
+        fb.innerText = 'Assinatura confirmada com sucesso! Recarregando...';
+      }
+      setTimeout(() => {
+        fecharModalContratarContador();
+        carregarStatusContadorCheff();
+      }, 1200);
+    } else {
+      if (fb) {
+        fb.style.color = '#ef4444';
+        fb.innerText = data.erro || 'Erro ao contratar o plano.';
+      }
+    }
+  } catch (err) {
+    if (fb) {
+      fb.style.color = '#ef4444';
+      fb.innerText = 'Falha de conexão com o servidor.';
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function abrirModalSolicitarDemandaContador() {
+  const modal = document.getElementById('modal-solicitar-demanda-contador');
+  if (modal) modal.style.display = 'flex';
+  const fb = document.getElementById('demanda-feedback');
+  if (fb) fb.style.display = 'none';
+
+  // Pré-preenche competência
+  const compEl = document.getElementById('demanda-competencia');
+  if (compEl && !compEl.value) {
+    compEl.value = new Date().toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
+  }
+}
+
+function fecharModalSolicitarDemandaContador() {
+  const modal = document.getElementById('modal-solicitar-demanda-contador');
+  if (modal) modal.style.display = 'none';
+}
+
+async function enviarDemandaContador() {
+  const btn = document.getElementById('btn-enviar-demanda-contador');
+  const fb = document.getElementById('demanda-feedback');
+  const tipo = document.getElementById('demanda-tipo')?.value || 'apuracao_das';
+  const titulo = document.getElementById('demanda-titulo')?.value || '';
+  const comp = document.getElementById('demanda-competencia')?.value || '';
+  const desc = document.getElementById('demanda-descricao')?.value || '';
+
+  if (!titulo.trim() || !desc.trim()) {
+    if (fb) {
+      fb.style.display = 'block';
+      fb.style.color = '#ef4444';
+      fb.innerText = 'Preencha o título e a descrição da demanda.';
+    }
+    return;
+  }
+
+  try {
+    if (btn) btn.disabled = true;
+    if (fb) {
+      fb.style.display = 'block';
+      fb.style.color = '#3b82f6';
+      fb.innerText = 'Enviando demanda para o seu contador...';
+    }
+
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    const res = await fetch(`/api/dono/contador/solicitar-demanda?restaurante_id=${restId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        tipo,
+        titulo,
+        competencia: comp,
+        descricao: desc
+      })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      if (fb) {
+        fb.style.color = '#10b981';
+        fb.innerText = 'Demanda enviada com sucesso! Seu contador cuidará da tarefa.';
+      }
+      setTimeout(() => {
+        fecharModalSolicitarDemandaContador();
+        carregarStatusContadorCheff();
+      }, 1200);
+    } else {
+      if (fb) {
+        fb.style.color = '#ef4444';
+        fb.innerText = data.erro || 'Erro ao enviar demanda.';
+      }
+    }
+  } catch (err) {
+    if (fb) {
+      fb.style.color = '#ef4444';
+      fb.innerText = 'Falha de comunicação com o servidor.';
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+
+// ════════════════════════════════════════════════════════════════════
+// MÓDULO: CONTRATAÇÃO & TALENTOS GASTRONÔMICOS (HUB RH DO DONO)
+// ════════════════════════════════════════════════════════════════════
+
+let _filtroCargoAtual = '';
+let _buscaTalentoAtual = '';
+
+// 1. Abrir Modal Principal do Hub de Contratação
+window.abrirModalContratacaoTalentos = function(aba = 'talentos', cargo = '') {
+  const modal = document.getElementById('modal-contratacao-talentos');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+  modal.style.opacity = '1';
+  modal.style.pointerEvents = 'auto';
+
+  if (cargo !== undefined) {
+    _filtroCargoAtual = cargo;
+    const filtroInput = document.getElementById('rh-filtro-cargo-input');
+    if (filtroInput) filtroInput.value = cargo;
+  }
+
+  window.alternarAbaContratacao(aba);
+};
+
+// 2. Fechar Modal Principal
+window.fecharModalContratacaoTalentos = function() {
+  const modal = document.getElementById('modal-contratacao-talentos');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+};
+
+// 3. Alternar entre as 5 Abas do Hub
+window.alternarAbaContratacao = function(aba) {
+  const abas = ['talentos', 'publicar', 'vagas', 'escala', 'calculadora'];
+  
+  abas.forEach(nome => {
+    const btn = document.getElementById(`tab-nav-${nome}`);
+    const box = document.getElementById(`aba-hub-${nome}`);
+    const ativa = (nome === aba);
+
+    if (btn) {
+      btn.classList.toggle('active', ativa);
+      btn.style.color = ativa ? 'var(--text)' : 'var(--text-sub)';
+      btn.style.borderBottom = ativa ? '3px solid #10b981' : '3px solid transparent';
+      btn.style.fontWeight = ativa ? '800' : '700';
+    }
+    if (box) {
+      box.style.display = ativa ? 'block' : 'none';
+    }
+  });
+
+  if (aba === 'talentos') {
+    window.carregarBancoTalentos();
+  } else if (aba === 'publicar') {
+    const whatsInput = document.getElementById('vaga-contato-whats');
+    if (whatsInput && !whatsInput.value) {
+      const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (savedUser.telefone) whatsInput.value = savedUser.telefone;
+    }
+  } else if (aba === 'vagas') {
+    window.carregarMinhasVagas();
+  } else if (aba === 'escala') {
+    window.carregarEscalaFreelancers();
+  } else if (aba === 'calculadora') {
+    window.calcularSimuladorCustos();
+  }
+};
+
+// 4. Carregar Resumo da Seção no Dashboard
+window.carregarResumoContratacaoSecao = async function() {
+  try {
+    const currentToken = localStorage.getItem('chef_token') || token;
+    const headers = { 'Authorization': `Bearer ${currentToken}` };
+
+    const [resTalentos, resVagas, resEscala] = await Promise.all([
+      fetch('/api/contratacao/talentos?limite=6', { headers }).then(r => r.json()).catch(() => ({})),
+      fetch('/api/contratacao/vagas', { headers }).then(r => r.json()).catch(() => ({})),
+      fetch('/api/contratacao/escala', { headers }).then(r => r.json()).catch(() => ({}))
+    ]);
+
+    const elTotal = document.getElementById('rh-kpi-total-talentos');
+    const elVagas = document.getElementById('rh-kpi-vagas-abertas');
+    const elEscala = document.getElementById('rh-kpi-escala-ativa');
+
+    const totalTalentos = (resTalentos.talentos && resTalentos.talentos.length) || 12;
+    if (elTotal) elTotal.innerText = `${totalTalentos}+`;
+
+    const totalVagas = (resVagas.vagas && resVagas.vagas.filter(v => v.status === 'aberta').length) || 0;
+    if (elVagas) elVagas.innerText = String(totalVagas);
+
+    const totalEscala = (resEscala.escala && resEscala.escala.filter(e => e.status === 'agendado' || e.status === 'presente').length) || 0;
+    if (elEscala) elEscala.innerText = `${totalEscala} turnos`;
+
+    // Renderizar candidatos em destaque no preview do dono
+    const containerPreview = document.getElementById('dono-preview-talentos-container');
+    if (containerPreview && resTalentos.talentos && resTalentos.talentos.length > 0) {
+      const top3 = resTalentos.talentos.slice(0, 3);
+      containerPreview.innerHTML = top3.map(t => {
+        const valDiaria = t.valor_diaria || t.valor_diaria_padrao || 140;
+        const diariaFmt = formatCurrency(valDiaria);
+        const avatar = t.foto_avatar || t.foto || '👨‍🍳';
+        const rating = t.avaliacao_media || t.avaliacao || '5.0';
+        return `
+          <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:42px; height:42px; border-radius:12px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:24px;">
+                  ${escHtml(avatar)}
+                </div>
+                <div>
+                  <strong style="font-size:14px; color:var(--text); display:block;">${escHtml(t.nome)}</strong>
+                  <span style="font-size:11.5px; color:#10b981; font-weight:700;">★ ${rating} (${t.total_avaliacoes || 18} avaliações)</span>
+                </div>
+              </div>
+              <span style="background:rgba(59,130,246,0.15); color:#60a5fa; font-size:11px; font-weight:800; padding:2px 8px; border-radius:8px;">
+                ${escHtml(t.cargo)}
+              </span>
+            </div>
+            
+            <div style="font-size:12px; color:var(--text-sub); line-height:1.4;">
+              ${escHtml((t.bio || '').substring(0, 85))}...
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px dashed var(--border);">
+              <div>
+                <span style="font-size:10.5px; color:var(--text-sub); display:block;">Diária Sugerida</span>
+                <strong style="font-size:14px; color:#10b981;">${diariaFmt}</strong>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button type="button" onclick="window.abrirPerfilTalento(${t.id})" style="padding:6px 10px; font-size:11.5px; border-radius:8px; border:1px solid var(--border); background:var(--card2); color:var(--text); cursor:pointer; font-weight:700;">
+                  Perfil
+                </button>
+                <button type="button" onclick="window.abrirModalEscalarTalento(${t.id}, '${escHtml(t.nome)}', '${escHtml(t.cargo)}', ${valDiaria}, '${escHtml(avatar)}')" class="btn-primary" style="padding:6px 12px; font-size:11.5px; border-radius:8px; background:linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                  Escalar
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (err) {
+    console.warn('Erro ao carregar resumo de contratação:', err);
+  }
+};
+
+// 5. Carregar Lista Completa do Banco de Talentos
+window.carregarBancoTalentos = async function() {
+  const grid = document.getElementById('grid-banco-talentos') || document.getElementById('grid-talentos-hub');
+  if (!grid) return;
+
+  const cargoInput = document.getElementById('filtro-categoria-talento') || document.getElementById('rh-filtro-cargo-input');
+  const buscaInput = document.getElementById('filtro-busca-talento') || document.getElementById('rh-busca-talento-input');
+  const cargo = cargoInput ? cargoInput.value : _filtroCargoAtual;
+  const busca = buscaInput ? buscaInput.value : _buscaTalentoAtual;
+
+  grid.innerHTML = `
+    <div style="text-align:center; padding:40px 20px; color:var(--text-sub); grid-column:1/-1;">
+      <i class="ph ph-circle-notch" style="animation:spin 1s infinite linear; font-size:28px; color:#10b981;"></i>
+      <p style="margin-top:10px; font-size:13.5px;">Buscando profissionais disponíveis para o seu restaurante...</p>
+    </div>
+  `;
+
+  try {
+    const currentToken = localStorage.getItem('chef_token') || token;
+    let url = `/api/contratacao/talentos?`;
+    if (cargo) url += `cargo=${encodeURIComponent(cargo)}&`;
+    if (busca) url += `busca=${encodeURIComponent(busca)}&`;
+
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${currentToken}` }
+    });
+    const data = await res.json();
+
+    if (!data.talentos || data.talentos.length === 0) {
+      grid.innerHTML = `
+        <div style="text-align:center; padding:50px 20px; color:var(--text-sub); grid-column:1/-1; background:var(--card); border-radius:16px; border:1px dashed var(--border);">
+          <i class="ph-bold ph-magnifying-glass" style="font-size:36px; color:var(--text-sub); margin-bottom:8px;"></i>
+          <h4 style="font-size:16px; color:var(--text); margin:0 0 6px 0;">Nenhum profissional encontrado para este filtro</h4>
+          <p style="font-size:13px; margin:0 0 14px 0;">Tente buscar por outro cargo ou publicar uma vaga para atrair novos candidatos.</p>
+          <button type="button" class="btn-primary" onclick="window.alternarAbaContratacao('publicar')" style="padding:8px 16px; font-size:13px; border-radius:10px;">
+            <i class="ph-bold ph-megaphone"></i> Publicar Vaga Agora
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = data.talentos.map(t => {
+      const valDiaria = t.valor_diaria || t.valor_diaria_padrao || 140;
+      const diariaFmt = formatCurrency(valDiaria);
+      const avatar = t.foto_avatar || t.foto || '👨‍🍳';
+      const rating = t.avaliacao_media || t.avaliacao || '5.0';
+      const expAnos = t.experiencia_anos || t.anos_experiencia || 3;
+      const especialidades = (t.especialidades || '').split(',').map(s => s.trim()).filter(Boolean);
+      const espBadges = especialidades.slice(0, 3).map(e => `
+        <span style="background:rgba(255,255,255,0.06); font-size:10.5px; padding:2px 7px; border-radius:6px; color:var(--text-sub); border:1px solid var(--border);">
+          ${escHtml(e)}
+        </span>
+      `).join('');
+
+      return `
+        <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; display:flex; flex-direction:column; justify-content:space-between; gap:12px; transition:all 0.2s; box-shadow:var(--shadow-sm);">
+          
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(59,130,246,0.15) 100%); display:flex; align-items:center; justify-content:center; font-size:26px; border:1px solid var(--border);">
+                  ${escHtml(avatar)}
+                </div>
+                <div>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <strong style="font-size:15px; color:var(--text);">${escHtml(t.nome)}</strong>
+                    <i class="ph-fill ph-seal-check" style="color:#10b981; font-size:16px;" title="Perfil Verificado"></i>
+                  </div>
+                  <span style="font-size:12px; color:var(--text-sub); display:block;">${escHtml(t.cargo)} • ${expAnos} anos exp.</span>
+                </div>
+              </div>
+
+              <span style="background:rgba(16,185,129,0.15); color:#10b981; font-size:11px; font-weight:800; padding:3px 8px; border-radius:8px;">
+                ★ ${rating} (${t.total_avaliacoes || 18})
+              </span>
+            </div>
+
+            <p style="font-size:12.5px; color:var(--text); line-height:1.45; margin:0 0 10px 0;">
+              ${escHtml(t.bio || 'Profissional com sólida experiência operacional no setor gastronômico.')}
+            </p>
+
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+              ${espBadges}
+            </div>
+
+            <div style="background:var(--card2); border-radius:10px; padding:10px 12px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span style="color:var(--text-sub); font-size:11px; display:block;">Diária Base</span>
+                <strong style="color:#10b981; font-size:15px;">${diariaFmt}</strong>
+              </div>
+              <div style="text-align:right;">
+                <span style="color:var(--text-sub); font-size:11px; display:block;">Disponibilidade</span>
+                <span style="color:#3b82f6; font-weight:700;">${escHtml(t.disponibilidade || 'Imediata')}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px;">
+            <button type="button" onclick="window.abrirPerfilTalento(${t.id})" style="padding:9px; font-size:12.5px; border-radius:10px; border:1px solid var(--border); background:var(--card2); color:var(--text); font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+              <i class="ph-bold ph-identification-card"></i> Currículo
+            </button>
+            <button type="button" onclick="window.abrirModalEscalarTalento(${t.id}, '${escHtml(t.nome)}', '${escHtml(t.cargo)}', ${valDiaria}, '${escHtml(avatar)}')" class="btn-primary" style="padding:9px; font-size:12.5px; border-radius:10px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); display:flex; align-items:center; justify-content:center; gap:4px;">
+              <i class="ph-bold ph-calendar-plus"></i> Escalar / Chamar
+            </button>
+          </div>
+
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error('Erro ao listar talentos:', err);
+    grid.innerHTML = `<div style="text-align:center; padding:30px; color:#ef4444; grid-column:1/-1;">Erro ao carregar banco de talentos.</div>`;
+  }
+};
+
+// 6. Filtrar por Chip Rápido de Cargo
+window.filtrarTalentosChip = function(cargo, btnEl) {
+  _filtroCargoAtual = cargo;
+  const filtroInput = document.getElementById('filtro-categoria-talento') || document.getElementById('rh-filtro-cargo-input');
+  if (filtroInput) filtroInput.value = cargo;
+
+  document.querySelectorAll('.btn-chip-modal, .btn-chip-rh').forEach(btn => {
+    btn.classList.remove('active');
+    btn.style.color = 'var(--text-sub)';
+  });
+  if (btnEl) {
+    btnEl.classList.add('active');
+    btnEl.style.color = 'var(--text)';
+  }
+
+  window.carregarBancoTalentos();
+};
+
+// 7. Abrir Currículo Completo do Profissional
+window.abrirPerfilTalento = async function(id) {
+  const modal = document.getElementById('modal-perfil-talento');
+  const conteudo = document.getElementById('conteudo-perfil-talento');
+  const titulo = document.getElementById('perfil-titulo-modal');
+  if (!modal || !conteudo) return;
+
+  conteudo.innerHTML = `
+    <div style="text-align:center; padding:40px; color:var(--text-sub);">
+      <i class="ph ph-circle-notch" style="animation:spin 1s infinite linear; font-size:32px; color:#10b981;"></i>
+      <p style="margin-top:10px;">Carregando currículo e avaliações...</p>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+  modal.style.opacity = '1';
+  modal.style.pointerEvents = 'auto';
+
+  try {
+    const currentToken = localStorage.getItem('chef_token') || token;
+    const res = await fetch(`/api/contratacao/talentos/${id}`, {
+      headers: { 'Authorization': `Bearer ${currentToken}` }
+    });
+    const data = await res.json();
+    const t = data.talento;
+    if (!t) throw new Error('Talento não encontrado');
+
+    if (titulo) titulo.innerText = `${t.nome} • ${t.cargo}`;
+
+    const valDiaria = t.valor_diaria || t.valor_diaria_padrao || 140;
+    const diariaFmt = formatCurrency(valDiaria);
+    const avatar = t.foto_avatar || t.foto || '👨‍🍳';
+    const rating = t.avaliacao_media || t.avaliacao || '5.0';
+    const whatsNum = t.whatsapp || t.telefone || '';
+
+    const espItems = (t.especialidades || '').split(',').map(s => `
+      <span style="background:var(--card2); border:1px solid var(--border); border-radius:8px; padding:4px 10px; font-size:12px; color:var(--text); font-weight:600;">
+        ✓ ${escHtml(s.trim())}
+      </span>
+    `).join('');
+
+    conteudo.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        
+        <!-- Header Perfil -->
+        <div style="display:flex; align-items:center; gap:16px; background:var(--card2); padding:16px; border-radius:16px; border:1px solid var(--border);">
+          <div style="width:64px; height:64px; border-radius:18px; background:linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(59,130,246,0.2) 100%); display:flex; align-items:center; justify-content:center; font-size:36px; border:1px solid var(--border);">
+            ${escHtml(avatar)}
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h3 style="font-size:18px; font-weight:900; color:var(--text); margin:0;">${escHtml(t.nome)}</h3>
+              <i class="ph-fill ph-seal-check" style="color:#10b981; font-size:18px;" title="Verificado"></i>
+            </div>
+            <div style="font-size:13px; color:#3b82f6; font-weight:700; margin-top:2px;">
+              ${escHtml(t.cargo)} • Categoria: ${escHtml(t.categoria || 'Gastronomia')}
+            </div>
+            <div style="font-size:12px; color:var(--text-sub); margin-top:4px;">
+              📍 ${escHtml(t.cidade || 'São Paulo')} • ★ ${rating} (${t.total_avaliacoes || 18} avaliações positivas)
+            </div>
+          </div>
+        </div>
+
+        <!-- Biografia e Apresentação -->
+        <div>
+          <strong style="font-size:13.5px; color:var(--text); display:block; margin-bottom:6px;">Sobre o Profissional:</strong>
+          <p style="font-size:13px; color:var(--text); line-height:1.55; margin:0; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:14px;">
+            ${escHtml(t.bio || 'Profissional com experiência prática e dedicação em ritmo intenso de serviço.')}
+          </p>
+        </div>
+
+        <!-- Especialidades e Habilidades -->
+        <div>
+          <strong style="font-size:13.5px; color:var(--text); display:block; margin-bottom:8px;">Especialidades Técnicas:</strong>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            ${espItems}
+          </div>
+        </div>
+
+        <!-- Casas e Restaurantes Anteriores -->
+        <div>
+          <strong style="font-size:13.5px; color:var(--text); display:block; margin-bottom:6px;">Casas &amp; Restaurantes no Histórico:</strong>
+          <div style="background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:12px 14px; font-size:12.5px; color:var(--text);">
+            <i class="ph-bold ph-storefront" style="color:#f59e0b; margin-right:6px;"></i>
+            ${escHtml(t.casas_anteriores || 'Restaurantes e Bares de gastronomia contemporânea')}
+          </div>
+        </div>
+
+        <!-- Certificações e Chave PIX -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div style="background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:12px;">
+            <span style="font-size:11px; color:var(--text-sub); display:block;">Certificados / Higiene</span>
+            <strong style="font-size:12.5px; color:var(--text);">${escHtml(t.certificados || 'Boas Práticas Manipulação (Anvisa)')}</strong>
+          </div>
+          <div style="background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:12px;">
+            <span style="font-size:11px; color:var(--text-sub); display:block;">Chave PIX Cadastrada</span>
+            <strong style="font-size:12.5px; color:#10b981;">${escHtml(t.chave_pix || 'Chave Celular Cadastrada')}</strong>
+          </div>
+        </div>
+
+        <!-- Ações do Dono -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
+          <button type="button" onclick="window.falarTalentoWhatsApp('${whatsNum}', '${escHtml(t.nome)}', '${escHtml(t.cargo)}')" style="padding:12px; font-size:13px; font-weight:800; border-radius:12px; border:1px solid #22c55e; background:rgba(34,197,94,0.12); color:#22c55e; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <i class="ph-bold ph-whatsapp-logo" style="font-size:18px;"></i> Chamar no WhatsApp
+          </button>
+          <button type="button" onclick="window.fecharModalPerfilTalento(); window.abrirModalEscalarTalento(${t.id}, '${escHtml(t.nome)}', '${escHtml(t.cargo)}', ${valDiaria}, '${escHtml(avatar)}')" class="btn-primary" style="padding:12px; font-size:13px; font-weight:800; border-radius:12px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); display:flex; align-items:center; justify-content:center; gap:6px;">
+            <i class="ph-bold ph-calendar-plus" style="font-size:18px;"></i> Escalar para Meu Turno
+          </button>
+        </div>
+
+      </div>
+    `;
+
+  } catch (err) {
+    conteudo.innerHTML = `<div style="text-align:center; padding:30px; color:#ef4444;">Erro ao carregar perfil do profissional.</div>`;
+  }
+};
+
+// 8. Fechar Modal Perfil
+window.fecharModalPerfilTalento = function() {
+  const modal = document.getElementById('modal-perfil-talento');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+};
+
+// 9. Abrir Modal de Escalar e Contratar Freelancer
+window.abrirModalEscalarTalento = function(id, nome, cargo, diaria, avatar) {
+  const modal = document.getElementById('modal-escalar-talento');
+  if (!modal) return;
+
+  const idEl = document.getElementById('escalar-talento-id');
+  const nomeEl = document.getElementById('escalar-nome');
+  const cargoEl = document.getElementById('escalar-cargo');
+  const avatarEl = document.getElementById('escalar-avatar');
+  const valorEl = document.getElementById('escalar-valor');
+  const dataEl = document.getElementById('escalar-data');
+
+  if (idEl) idEl.value = id;
+  if (nomeEl) nomeEl.innerText = nome;
+  if (cargoEl) cargoEl.innerText = cargo;
+  if (avatarEl) avatarEl.innerText = avatar || '👨‍🍳';
+  if (valorEl) valorEl.value = diaria || 140;
+  if (dataEl && !dataEl.value) {
+    const hoje = new Date().toISOString().split('T')[0];
+    dataEl.value = hoje;
+  }
+
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+  modal.style.opacity = '1';
+  modal.style.pointerEvents = 'auto';
+};
+
+window.abrirModalPerfilTalento = window.abrirPerfilTalento;
+
+// 10. Fechar Modal Escalar
+window.fecharModalEscalarTalento = function() {
+  const modal = document.getElementById('modal-escalar-talento');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+};
+
+// 11. Confirmar Contratação e Agendamento
+window.confirmarEscalarEContratarTalento = async function() {
+  const talentoId = document.getElementById('escalar-talento-id')?.value;
+  const dataTurno = document.getElementById('escalar-data')?.value;
+  const periodo = document.getElementById('escalar-periodo')?.value || 'Jantar/Noite';
+  const valorDiaria = parseFloat(document.getElementById('escalar-valor')?.value) || 140;
+  const tipoContrato = document.getElementById('escalar-tipo-contrato')?.value || 'Freelancer / Diarista';
+
+  if (!talentoId || !dataTurno) {
+    showToast('Preencha a data do turno.', 'ph-warning', 'error');
+    return;
+  }
+
+  try {
+    const currentToken = localStorage.getItem('chef_token') || token;
+    const res = await fetch('/api/contratacao/contratar-talento', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentToken}`
+      },
+      body: JSON.stringify({
+        talento_id: talentoId,
+        data_turno: dataTurno,
+        periodo: periodo,
+        valor_diaria: valorDiaria,
+        tipo_contrato: tipoContrato,
+        adicionar_como_funcionario: true
+      })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`🎉 ${data.mensagem}`, 'ph-check-circle', 'success');
+      window.fecharModalEscalarTalento();
+      window.carregarResumoContratacaoSecao();
+      if (typeof window.carregarFuncionariosControleRemoto === 'function') {
+        window.carregarFuncionariosControleRemoto();
+      }
+      window.alternarAbaContratacao('escala');
+    } else {
+      showToast(data.erro || 'Erro ao agendar profissional.', 'ph-warning', 'error');
+    }
+  } catch (err) {
+    showToast('Falha na comunicação com o servidor.', 'ph-warning', 'error');
+  }
+};
+
+// 12. Falar com Profissional pelo WhatsApp
+window.falarTalentoWhatsApp = function(telefone, nome, cargo) {
+  let limpo = (telefone || '').replace(/\D/g, '');
+  if (!limpo) {
+    showToast('Telefone não disponível.', 'ph-warning', 'error');
+    return;
+  }
+  if (!limpo.startsWith('55')) limpo = '55' + limpo;
+
+  const msg = `Olá ${nome}! Sou o gestor do restaurante e vi seu perfil de ${cargo} no Banco de Talentos Chef Cozinha. Gostaria de verificar sua disponibilidade para trabalhar conosco. Podemos conversar?`;
+  const url = `https://wa.me/${limpo}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+};
+
+// 13. Publicar Nova Vaga pelo Dono
+window.publicarNovaVagaDono = async function() {
+  const titulo = document.getElementById('vaga-titulo')?.value?.trim();
+  const cargo = document.getElementById('vaga-cargo')?.value;
+  const tipoVaga = document.getElementById('vaga-tipo')?.value || 'Freelancer / Diária';
+  const remuneracao = document.getElementById('vaga-remuneracao')?.value?.trim();
+  const horario = document.getElementById('vaga-horario')?.value?.trim();
+  const requisitos = document.getElementById('vaga-requisitos')?.value?.trim();
+  const localizacao = document.getElementById('vaga-localizacao')?.value?.trim();
+  const contatoWhatsapp = document.getElementById('vaga-contato-whats')?.value?.trim();
+
+  if (!titulo || !cargo || !remuneracao) {
+    showToast('Preencha título da vaga, cargo e remuneração.', 'ph-warning', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-publicar-vaga');
+  if (btn) btn.disabled = true;
+
+  try {
+    const currentToken = localStorage.getItem('chef_token') || token;
+    const res = await fetch('/api/contratacao/vagas', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentToken}`
+      },
+      body: JSON.stringify({
+        titulo,
+        cargo,
+        tipo_vaga: tipoVaga,
+        remuneracao,
+        horario,
+        requisitos,
+        localizacao,
+        contato_whatsapp: contatoWhatsapp
+      })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      showToast('📢 Vaga publicada com sucesso!', 'ph-check-circle', 'success');
+
+      // Limpar formulário
+      const form = document.getElementById('form-publicar-vaga');
+      if (form) form.reset();
+
+      // Atualizar contadores e ir para a aba de vagas
+      window.carregarResumoContratacaoSecao();
+      window.alternarAbaContratacao('vagas');
+    } else {
+      showToast(data.erro || 'Erro ao publicar vaga.', 'ph-warning', 'error');
+    }
+  } catch (err) {
+    showToast('Falha na conexão ao publicar vaga.', 'ph-warning', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
+
+// 14. Carregar Vagas Abertas do Dono
+window.carregarMinhasVagas = async function() {
+  const container = document.getElementById('lista-minhas-vagas') || document.getElementById('tabela-minhas-vagas');
+  if (!container) return;
+
+  const isTable = container.tagName === 'TBODY' || container.tagName === 'TABLE';
+
+  if (isTable) {
+    container.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center; padding:30px; color:var(--text-sub);">
+          <i class="ph ph-circle-notch" style="animation:spin 1s infinite linear; font-size:24px; color:#f59e0b;"></i>
+          <p style="margin-top:6px; font-size:12.5px;">Carregando suas vagas abertas...</p>
+        </td>
+      </tr>
+    `;
+  } else {
+    container.innerHTML = `
+      <div style="text-align:center; padding:40px; color:var(--text-sub);">
+        <i class="ph ph-circle-notch" style="animation:spin 1s infinite linear; font-size:28px; color:#10b981;"></i>
+        <p style="margin-top:10px; font-size:13.5px;">Carregando suas vagas abertas...</p>
+      </div>
+    `;
+  }
+
+  try {
+    const currentToken = localStorage.getItem('chef_token') || token;
+    const res = await fetch('/api/contratacao/vagas', {
+      headers: { 'Authorization': `Bearer ${currentToken}` }
+    });
+    const data = await res.json();
+
+    if (!data.vagas || data.vagas.length === 0) {
+      if (isTable) {
+        container.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center; padding:40px; color:var(--text-sub);">
+              Você ainda não publicou nenhuma vaga. Clique em <strong>Publicar Vaga</strong> para atrair garçons, diaristas e especialistas.
+            </td>
+          </tr>
+        `;
+      } else {
+        container.innerHTML = `
+          <div style="text-align:center; padding:50px 20px; color:var(--text-sub); background:var(--card); border-radius:16px; border:1px dashed var(--border);">
+            <i class="ph-bold ph-briefcase" style="font-size:36px; color:var(--text-sub); margin-bottom:8px;"></i>
+            <h4 style="font-size:16px; color:var(--text); margin:0 0 6px 0;">Nenhuma vaga publicada ainda</h4>
+            <p style="font-size:13px; margin:0 0 14px 0;">Publique oportunidades para atrair garçons, diaristas de fim de semana, cozinheiros e barman.</p>
+            <button type="button" class="btn-primary" onclick="window.alternarAbaContratacao('publicar')" style="padding:8px 16px; font-size:13px; border-radius:10px;">
+              <i class="ph-bold ph-plus-circle"></i> Criar Nova Vaga
+            </button>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    if (isTable) {
+      container.innerHTML = data.vagas.map(v => {
+        const dataCriada = v.criado_em ? new Date(v.criado_em).toLocaleDateString('pt-BR') : '-';
+        const statusColor = v.status === 'aberta' ? '#10b981' : '#6b7280';
+        const statusTxt = v.status === 'aberta' ? 'Ativa' : 'Encerrada';
+
+        const zapShareMsg = `Vaga Aberta em nosso restaurante: ${v.titulo} (${v.cargo}) - Remuneração: ${v.remuneracao || 'A combinar'}. Interessados chamem no WhatsApp!`;
+        const zapLink = `https://wa.me/?text=${encodeURIComponent(zapShareMsg)}`;
+
+        return `
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:12px; font-weight:800; color:var(--text);">
+              ${escHtml(v.titulo)}
+              <span style="font-size:11px; color:var(--text-sub); display:block;">Criada em ${dataCriada}</span>
+            </td>
+            <td style="padding:12px; color:var(--text);">${escHtml(v.cargo)}</td>
+            <td style="padding:12px; color:var(--text); font-weight:700;">${escHtml(v.tipo_vaga)}</td>
+            <td style="padding:12px; color:#10b981; font-weight:800;">${escHtml(v.remuneracao || 'A combinar')}</td>
+            <td style="padding:12px;">
+              <span style="background:rgba(16,185,129,0.15); color:${statusColor}; font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px;">
+                ${statusTxt}
+              </span>
+            </td>
+            <td style="padding:12px; text-align:right;">
+              <div style="display:flex; justify-content:flex-end; gap:6px;">
+                <a href="${zapLink}" target="_blank" style="padding:6px 10px; font-size:11.5px; border-radius:8px; border:1px solid #22c55e; background:rgba(34,197,94,0.1); color:#22c55e; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:700;">
+                  <i class="ph-bold ph-whatsapp-logo"></i> Compartilhar
+                </a>
+                ${v.status === 'aberta' ? `
+                  <button type="button" onclick="window.encerrarVagaDono(${v.id})" style="padding:6px 10px; font-size:11.5px; border-radius:8px; border:1px solid #ef4444; background:rgba(239,68,68,0.1); color:#ef4444; font-weight:700; cursor:pointer;">
+                    Encerrar
+                  </button>
+                ` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } else {
+      container.innerHTML = data.vagas.map(v => {
+        const dataCriada = v.criado_em ? new Date(v.criado_em).toLocaleDateString('pt-BR') : '-';
+        const isAberta = v.status === 'aberta';
+        const statusColor = isAberta ? '#10b981' : '#6b7280';
+        const statusBg = isAberta ? 'rgba(16,185,129,0.15)' : 'rgba(107,114,128,0.15)';
+        const statusTxt = isAberta ? 'Vaga Ativa' : 'Encerrada';
+
+        const zapShareMsg = `🚨 VAGA ABERTA NO RESTAURANTE!\n\n📋 *Cargo:* ${v.cargo}\n📌 *Título:* ${v.titulo}\n💰 *Remuneração:* ${v.remuneracao || 'A combinar'}\n🕒 *Tipo/Turno:* ${v.tipo_vaga || 'A combinar'} - ${v.horario || 'Turno Padrão'}\n\nInteressados entrar em contato pelo WhatsApp!`;
+        const zapLink = `https://wa.me/?text=${encodeURIComponent(zapShareMsg)}`;
+
+        return `
+          <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+              <div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <strong style="font-size:15px; color:var(--text);">${escHtml(v.titulo)}</strong>
+                  <span style="background:${statusBg}; color:${statusColor}; font-size:11px; font-weight:800; padding:2px 8px; border-radius:8px;">
+                    ${statusTxt}
+                  </span>
+                </div>
+                <div style="font-size:12px; color:var(--text-sub); margin-top:2px;">
+                  Cargo: <strong style="color:var(--text);">${escHtml(v.cargo)}</strong> • Publicada em ${dataCriada}
+                </div>
+              </div>
+
+              <div style="display:flex; align-items:center; gap:8px;">
+                <a href="${zapLink}" target="_blank" style="padding:7px 12px; font-size:12px; border-radius:10px; border:1px solid #22c55e; background:rgba(34,197,94,0.12); color:#22c55e; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-weight:700;">
+                  <i class="ph-bold ph-whatsapp-logo" style="font-size:15px;"></i> Divulgar no WhatsApp
+                </a>
+                ${isAberta ? `
+                  <button type="button" onclick="window.encerrarVagaDono(${v.id})" style="padding:7px 12px; font-size:12px; border-radius:10px; border:1px solid #ef4444; background:rgba(239,68,68,0.12); color:#ef4444; font-weight:700; cursor:pointer;">
+                    Encerrar Vaga
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; background:var(--card2); border-radius:10px; padding:10px 12px; font-size:12px;">
+              <div>
+                <span style="color:var(--text-sub); font-size:11px; display:block;">Tipo de Contrato</span>
+                <strong style="color:var(--text);">${escHtml(v.tipo_vaga || 'Freelancer')}</strong>
+              </div>
+              <div>
+                <span style="color:var(--text-sub); font-size:11px; display:block;">Remuneração</span>
+                <strong style="color:#10b981; font-size:13px;">${escHtml(v.remuneracao || 'A combinar')}</strong>
+              </div>
+              <div>
+                <span style="color:var(--text-sub); font-size:11px; display:block;">Turno / Horário</span>
+                <span style="color:var(--text); font-weight:600;">${escHtml(v.horario || 'Turno da Casa')}</span>
+              </div>
+              <div>
+                <span style="color:var(--text-sub); font-size:11px; display:block;">Candidaturas Recebidas</span>
+                <span style="color:#3b82f6; font-weight:700;">${v.total_candidaturas || 0} candidatos</span>
+              </div>
+            </div>
+
+            ${v.requisitos ? `
+              <div style="font-size:12px; color:var(--text-sub); line-height:1.4;">
+                <strong>Requisitos:</strong> ${escHtml(v.requisitos)}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+  } catch (err) {
+    if (isTable) {
+      container.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#ef4444;">Erro ao carregar vagas.</td></tr>`;
+    } else {
+      container.innerHTML = `<div style="text-align:center; padding:20px; color:#ef4444;">Erro ao carregar vagas abertas.</div>`;
+    }
+  }
+};
+
+// 15. Encerrar Vaga
+window.encerrarVagaDono = async function(id) {
+  if (!confirm('Deseja realmente encerrar esta vaga?')) return;
+
+  try {
+    const currentToken = localStorage.getItem('chef_token') || token;
+    const res = await fetch(`/api/contratacao/vagas/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${currentToken}` }
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('Vaga encerrada.', 'ph-check-circle', 'success');
+      window.carregarMinhasVagas();
+      window.carregarResumoContratacaoSecao();
+    } else {
+      showToast(data.erro || 'Erro ao encerrar.', 'ph-warning', 'error');
+    }
+  } catch (err) {
+    showToast('Falha na conexão.', 'ph-warning', 'error');
+  }
+};
+
+// 16. Carregar Escala de Freelancers e Diárias
+window.carregarEscalaFreelancers = async function() {
+  const container = document.getElementById('tabela-escala-container') || document.getElementById('tabela-escala-freelancers');
+  if (!container) return;
+
+  // Se o elemento encontrado for o container da div, certifique-se de que a tabela e o tbody existam
+  let tbody = document.getElementById('tabela-escala-freelancers');
+  if (!tbody) {
+    container.innerHTML = `
+      <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
+        <thead>
+          <tr style="background:var(--card2); border-bottom:1px solid var(--border); color:var(--text-sub); font-size:11.5px; text-transform:uppercase; letter-spacing:0.5px;">
+            <th style="padding:12px;">Profissional &amp; Pix</th>
+            <th style="padding:12px;">Cargo</th>
+            <th style="padding:12px;">Data</th>
+            <th style="padding:12px;">Período</th>
+            <th style="padding:12px;">Valor Diária</th>
+            <th style="padding:12px;">Status</th>
+            <th style="padding:12px; text-align:right;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-escala-freelancers">
+          <tr>
+            <td colspan="7" style="text-align:center; padding:30px; color:var(--text-sub);">
+              <i class="ph ph-circle-notch" style="animation:spin 1s infinite linear; font-size:24px; color:#3b82f6;"></i>
+              <p style="margin-top:6px; font-size:12.5px;">Carregando escala de diaristas...</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+    tbody = document.getElementById('tabela-escala-freelancers');
+  } else {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center; padding:30px; color:var(--text-sub);">
+          <i class="ph ph-circle-notch" style="animation:spin 1s infinite linear; font-size:24px; color:#3b82f6;"></i>
+          <p style="margin-top:6px; font-size:12.5px;">Carregando escala de diaristas...</p>
+        </td>
+      </tr>
+    `;
+  }
+
+  try {
+    const currentToken = localStorage.getItem('chef_token') || token;
+    const res = await fetch('/api/contratacao/escala', {
+      headers: { 'Authorization': `Bearer ${currentToken}` }
+    });
+    const data = await res.json();
+
+    if (!data.escala || data.escala.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align:center; padding:40px; color:var(--text-sub);">
+            Nenhum diarista ou freelancer agendado na escala no momento. Vá ao <strong>Banco de Talentos</strong> para escalar garçons, cozinha, limpeza e barman.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = data.escala.map(e => {
+      const valorFmt = formatCurrency(e.valor_diaria || 140);
+      let statusBadge = '';
+      let acaoBtns = '';
+
+      if (e.status === 'agendado') {
+        statusBadge = `<span style="background:rgba(59,130,246,0.15); color:#60a5fa; font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px;">Agendado</span>`;
+        acaoBtns = `
+          <button type="button" onclick="window.atualizarStatusEscala(${e.id}, 'presente')" style="padding:6px 10px; font-size:11.5px; border-radius:8px; border:1px solid #10b981; background:rgba(16,185,129,0.12); color:#10b981; font-weight:800; cursor:pointer;">
+            ✓ Check-in
+          </button>
+        `;
+      } else if (e.status === 'presente') {
+        statusBadge = `<span style="background:rgba(245,158,11,0.15); color:#f59e0b; font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px;">Presente</span>`;
+        acaoBtns = `
+          <button type="button" onclick="window.atualizarStatusEscala(${e.id}, 'concluido')" style="padding:6px 10px; font-size:11.5px; border-radius:8px; border:1px solid #8b5cf6; background:rgba(139,92,246,0.12); color:#a78bfa; font-weight:800; cursor:pointer;">
+            Finalizar Turno
+          </button>
+        `;
+      } else if (e.status === 'concluido') {
+        statusBadge = `<span style="background:rgba(139,92,246,0.15); color:#a78bfa; font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px;">Turno Concluído</span>`;
+        acaoBtns = `
+          <button type="button" onclick="window.pagarDiariaEscala(${e.id}, '${escHtml(e.nome_talento)}', ${e.valor_diaria || 140}, '${escHtml(e.cargo)}')" class="btn-primary" style="padding:6px 12px; font-size:11.5px; border-radius:8px; background:linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            💰 Pagar Diária Pix
+          </button>
+        `;
+      } else if (e.status === 'pago') {
+        statusBadge = `<span style="background:rgba(16,185,129,0.2); color:#34d399; font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px;">✓ Pago no Caixa</span>`;
+        acaoBtns = `<span style="font-size:11px; color:#10b981; font-weight:700;">Lançado na DRE</span>`;
+      }
+
+      return `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px; font-weight:800; color:var(--text);">
+            ${escHtml(e.nome_talento)}
+            <span style="font-size:11px; color:var(--text-sub); display:block;">${escHtml(e.chave_pix ? `Pix: ${e.chave_pix}` : 'Pix cadastrado')}</span>
+          </td>
+          <td style="padding:12px; color:var(--text);">${escHtml(e.cargo)}</td>
+          <td style="padding:12px; color:var(--text); font-weight:700;">${escHtml(e.data_turno)}</td>
+          <td style="padding:12px; color:var(--text-sub);">${escHtml(e.periodo)}</td>
+          <td style="padding:12px; color:#10b981; font-weight:800;">${valorFmt}</td>
+          <td style="padding:12px;">${statusBadge}</td>
+          <td style="padding:12px; text-align:right;">
+            <div style="display:flex; justify-content:flex-end; gap:6px;">
+              ${acaoBtns}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#ef4444;">Erro ao carregar escala.</td></tr>`;
+  }
+};
+
+// 17. Atualizar Status do Turno na Escala
+window.atualizarStatusEscala = async function(id, novoStatus) {
+  try {
+    const currentToken = localStorage.getItem('chef_token') || token;
+    const res = await fetch(`/api/contratacao/escala/${id}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentToken}`
+      },
+      body: JSON.stringify({ status: novoStatus })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`Status atualizado para ${novoStatus}.`, 'ph-check-circle', 'success');
+      window.carregarEscalaFreelancers();
+      window.carregarResumoContratacaoSecao();
+    } else {
+      showToast(data.erro || 'Erro ao atualizar status.', 'ph-warning', 'error');
+    }
+  } catch (err) {
+    showToast('Falha na conexão.', 'ph-warning', 'error');
+  }
+};
+
+// 18. Pagar Diária e Registrar Diretamente no Caixa / DRE
+window.pagarDiariaEscala = async function(id, nome, valor, cargo) {
+  const valorFmt = formatCurrency(valor);
+  const confirmar = confirm(`Deseja efetuar o pagamento da diária de ${valorFmt} para ${nome} (${cargo})?\n\nEste valor será lançado automaticamente como saída no Caixa e na DRE do restaurante.`);
+  if (!confirmar) return;
+
+  try {
+    const currentToken = localStorage.getItem('chef_token') || token;
+    const res = await fetch(`/api/contratacao/escala/${id}/pagar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentToken}`
+      },
+      body: JSON.stringify({ metodo_pagamento: 'PIX' })
+    });
+
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`💵 Diária de ${valorFmt} paga para ${nome}! Registrada no Caixa.`, 'ph-check-circle', 'success');
+      window.carregarEscalaFreelancers();
+      window.carregarResumoContratacaoSecao();
+      carregarMetricas();
+    } else {
+      showToast(data.erro || 'Erro ao processar pagamento.', 'ph-warning', 'error');
+    }
+  } catch (err) {
+    showToast('Falha na comunicação ao registrar pagamento.', 'ph-warning', 'error');
+  }
+};
+
+// 19. Calculadora Trabalhista CLT vs Diaristas Freelancers
+window.calcularSimuladorCustos = function() {
+  const salarioBase = parseFloat(document.getElementById('calc-salario-clt')?.value || document.getElementById('calc-salario-base')?.value) || 2200;
+  const diasExtras = parseInt(document.getElementById('calc-dias-extras')?.value, 10) || 12;
+  const valorDiaria = parseFloat(document.getElementById('calc-diaria-freela')?.value || document.getElementById('calc-valor-diaria')?.value) || 140;
+  const regime = document.getElementById('calc-regime-empresa')?.value || 'simples';
+
+  // Alíquotas patronais
+  const inssRate = (regime === 'simples') ? 0.0 : 0.20; // 20% patronal se Lucro Presumido/Real; 0% adicional direto se Simples Nacional
+  const fgtsRate = 0.08; // 8% FGTS
+  const inssFgtsRate = (regime === 'simples') ? 0.08 : 0.288;
+  const decimoFeriasRate = (1 / 12) + (1 / 12) + (1 / 36); // Provisão 13º + Férias + 1/3 (~19.4%)
+  const beneficiosFixo = 452.22; // Vale Transporte + Refeição + Exames Ocupacionais
+
+  const custoInss = salarioBase * (regime === 'simples' ? 0 : 0.20);
+  const custoFgts = salarioBase * 0.08;
+  const custoInssFgts = salarioBase * inssFgtsRate;
+  const custoDecimoFerias = salarioBase * decimoFeriasRate;
+  const custoTotalClt = salarioBase + custoInss + custoFgts + custoDecimoFerias + beneficiosFixo;
+
+  const custoTotalFreela = diasExtras * valorDiaria;
+  const economiaMensal = Math.max(0, custoTotalClt - custoTotalFreela);
+  const economiaAnual = economiaMensal * 12;
+
+  // Atualizar DOM
+  const elCltTotal = document.getElementById('calc-res-clt-total');
+  const elCltBase = document.getElementById('calc-res-clt-base') || document.getElementById('calc-res-clt-salario');
+  const elCltInss = document.getElementById('calc-res-clt-inss');
+  const elCltFgts = document.getElementById('calc-res-clt-fgts');
+  const elCltInssFgts = document.getElementById('calc-res-clt-inss-fgts');
+  const elCltDecimo = document.getElementById('calc-res-clt-decimo');
+  const elCltBenef = document.getElementById('calc-res-clt-benef');
+
+  const elFreelaTotal = document.getElementById('calc-res-freela-total');
+  const elFreelaDias = document.getElementById('calc-res-freela-dias');
+  const elEconMensal = document.getElementById('calc-res-economia-mensal');
+  const elEconAnual = document.getElementById('calc-res-economia-anual');
+  const elRecomendacao = document.getElementById('calc-recomendacao-texto');
+
+  if (elCltTotal) elCltTotal.innerText = formatCurrency(custoTotalClt);
+  if (elCltBase) elCltBase.innerText = formatCurrency(salarioBase);
+  if (elCltInss) elCltInss.innerText = formatCurrency(custoInss);
+  if (elCltFgts) elCltFgts.innerText = formatCurrency(custoFgts);
+  if (elCltInssFgts) elCltInssFgts.innerText = formatCurrency(custoInssFgts);
+  if (elCltDecimo) elCltDecimo.innerText = formatCurrency(custoDecimoFerias);
+  if (elCltBenef) elCltBenef.innerText = formatCurrency(beneficiosFixo);
+
+  if (elFreelaTotal) elFreelaTotal.innerText = formatCurrency(custoTotalFreela);
+  if (elFreelaDias) elFreelaDias.innerText = `${diasExtras} dias`;
+  if (elEconMensal) elEconMensal.innerText = formatCurrency(economiaMensal);
+  if (elEconAnual) elEconAnual.innerText = formatCurrency(economiaAnual);
+
+  if (elRecomendacao) {
+    if (diasExtras <= 14) {
+      elRecomendacao.innerHTML = `
+        <strong>Recomendação do Contador Cheff:</strong> O modelo híbrido é altamente vantajoso! Usando <strong>${diasExtras} dias de freelancers</strong> nos picos de fim de semana (Sexta a Domingo), seu restaurante economiza <strong>${formatCurrency(economiaMensal)}/mês</strong> (${formatCurrency(economiaAnual)}/ano) e elimina custos ociosos em dias parados ou chuvosos.
+      `;
+    } else {
+      elRecomendacao.innerHTML = `
+        <strong>Recomendação do Contador Cheff:</strong> Com ${diasExtras} dias por mês, o volume se aproxima de um turno integral contínuo. Avalie contratar 1 profissional CLT ou Contrato Intermitente formalizado para evitar risco de habitualidade trabalhista (Art. 3º CLT).
+      `;
+    }
+  }
+};
+
+// Auto-inicializar carregamento da seção de contratação
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof window.carregarResumoContratacaoSecao === 'function') {
+      window.carregarResumoContratacaoSecao();
+    }
+  });
+} else {
+  setTimeout(() => {
+    if (typeof window.carregarResumoContratacaoSecao === 'function') {
+      window.carregarResumoContratacaoSecao();
+    }
+  }, 100);
+}
+

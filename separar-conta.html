@@ -12,7 +12,6 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
-  <link rel="stylesheet" href="/dark-mode.css">
   <script src="/theme-manager.js?v=20260901paletas"></script>
   <!-- QR Code local (funciona sem internet) -->
   <script src="/vendor/qrcode/qrcode-generator.js"></script>
@@ -37,7 +36,11 @@
       --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
     }
 
-    [data-theme="dark"], body.dark-mode {
+    :root, [data-theme="light"], body.theme-light, body.light {
+      --transition-theme: background 0.3s ease, color 0.3s ease;
+    }
+
+    [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark {
       --bg: #0e1218;
       --surface: #161b24;
       --surface-2: #1d2330;
@@ -52,7 +55,7 @@
 
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
 
-    body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 96px; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 96px; transition: background 0.3s ease, color 0.3s ease; }
 
     .app-header { position: sticky; top: 0; z-index: 50; background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px calc(10px + env(safe-area-inset-top)); display: flex; align-items: center; gap: 12px; }
     .app-header .logo { width: 38px; height: 38px; border-radius: 12px; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
@@ -158,6 +161,9 @@
       <h1 id="hdr-titulo">Separar Conta</h1>
       <p id="hdr-sub">Escolha seus itens e pague</p>
     </div>
+    <button type="button" class="btn-theme-header" id="theme-toggle-btn" onclick="window.ChefTheme && window.ChefTheme.toggle()" title="Alternar Modo Claro / Escuro" style="margin-left:auto; width:36px; height:36px; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px;">
+      <i class="ph ph-moon" id="theme-toggle-icon"></i>
+    </button>
   </header>
 
   <div id="view-loading" class="screen-msg">
@@ -683,6 +689,18 @@
         conectar();
       });
     })();
+  </script>
+
+  <script>
+    function updateThemeIcon() {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light' || document.body.classList.contains('theme-light') || document.body.classList.contains('light');
+      const icon = document.getElementById('theme-toggle-icon');
+      if (icon) {
+        icon.className = isLight ? 'ph ph-sun' : 'ph ph-moon';
+      }
+    }
+    window.addEventListener('chef_theme_changed', updateThemeIcon);
+    document.addEventListener('DOMContentLoaded', updateThemeIcon);
   </script>
 </body>
 

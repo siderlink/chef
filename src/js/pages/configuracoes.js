@@ -2892,7 +2892,7 @@ window.gerarCupomPromocaoIA = async function(encodedPromo) {
     const p = JSON.parse(decodeURIComponent(encodedPromo));
     const res = await fetch('/api/ia/cupom-rapido', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
       body: JSON.stringify({
         titulo: p.titulo,
         codigo: String((p.titulo || 'PROMO').split(' ').slice(0, 3).join('-')).toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 12),
@@ -9701,7 +9701,7 @@ window.salvarMarcaSuporteUI = function() {
 
   window.carregarConfigIA = async function() {
     try {
-      const res = await fetch('/api/ia/config', { credentials: 'same-origin' });
+      const res = await fetch('/api/ia/config', { credentials: 'same-origin', headers: typeof authHeaders === 'function' ? authHeaders() : {} });
       const data = await res.json();
       if (!data || !data.ok || !data.config) return;
 
@@ -9753,7 +9753,7 @@ window.salvarMarcaSuporteUI = function() {
     try {
       const res = await fetch('/api/ia/config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
         body: JSON.stringify(payload)
       });
       const data = await res.json();
@@ -9781,7 +9781,7 @@ window.salvarMarcaSuporteUI = function() {
     try {
       const res = await fetch('/api/ia/test-key', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
         body: JSON.stringify({
           apiKey: keyInput ? keyInput.value.trim() : '',
           model: modelSelect ? modelSelect.value : 'gemini-2.5-flash'
@@ -9819,7 +9819,7 @@ window.salvarMarcaSuporteUI = function() {
     try {
       const res = await fetch('/api/ia/gerar-promocoes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
         body: JSON.stringify({ objetivo: focoSelect ? focoSelect.value : '' })
       });
       const data = await res.json();
@@ -9932,7 +9932,7 @@ window.salvarMarcaSuporteUI = function() {
       const p = JSON.parse(decodeURIComponent(encodedPromo));
       const res = await fetch('/api/ia/aplicar-promocao', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
         body: JSON.stringify({
           titulo: p.titulo,
           preco: p.preco_promocional,
@@ -9979,7 +9979,7 @@ window.salvarMarcaSuporteUI = function() {
     try {
       const res = await fetch('/api/ia/gerar-copy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
         body: JSON.stringify({
           canal: canalSelect ? canalSelect.value : 'whatsapp',
           promocao: temaInput ? temaInput.value.trim() : ''
@@ -10058,7 +10058,7 @@ window.salvarMarcaSuporteUI = function() {
     try {
       const res = await fetch('/api/ia/consultor', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
         body: JSON.stringify({
           pergunta,
           historico: _iaChatHistory.slice(-6)

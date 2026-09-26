@@ -1,7 +1,6 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard - Sistema Premium</title>
@@ -9,16 +8,31 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
-  <script src="/vendor/chartjs/chart.umd.min.js"></script>
+  <script src="/theme-manager.js?v=20260901paletas"></script>
+  <script src="/vendor/chartjs/chart.umd.min.js"></script>
   <style>
-    :root {
+    :root, [data-theme="dark"], body.theme-dark, body.dark-mode {
       --dash-bg: #0f172a;
       --dash-card: rgba(30, 41, 59, 0.7);
+      --dash-sidebar: #1e293b;
       --dash-text: #f8fafc;
       --dash-text-muted: #94a3b8;
       --dash-border: rgba(255, 255, 255, 0.1);
       --dash-accent: #fc4b15;
+      --dash-hover: rgba(255, 255, 255, 0.05);
     }
+
+    [data-theme="light"], body.theme-light {
+      --dash-bg: #f8fafc;
+      --dash-card: #ffffff;
+      --dash-sidebar: #ffffff;
+      --dash-text: #0f172a;
+      --dash-text-muted: #64748b;
+      --dash-border: #e2e8f0;
+      --dash-accent: #fc4b15;
+      --dash-hover: rgba(0, 0, 0, 0.04);
+    }
+
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
@@ -35,7 +49,7 @@
     }
     .dash-card:hover {
       transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
       border-color: rgba(252, 75, 21, 0.4);
     }
     .dash-val {
@@ -52,12 +66,12 @@
       color: var(--dash-text) !important;
     }
     aside.sidebar {
-      background: #1e293b !important;
+      background: var(--dash-sidebar) !important;
       border-right: 1px solid var(--dash-border) !important;
     }
     .sidebar-header h2 { color: var(--dash-text) !important; }
     .nav-item { color: var(--dash-text-muted) !important; }
-    .nav-item:hover { background: rgba(255,255,255,0.05) !important; color: var(--dash-text) !important; }
+    .nav-item:hover { background: var(--dash-hover) !important; color: var(--dash-text) !important; }
     .nav-item.active { background: rgba(252, 75, 21, 0.15) !important; color: var(--dash-accent) !important; }
     header.topbar { border-bottom: 1px solid var(--dash-border) !important; }
     table { color: var(--dash-text) !important; }

@@ -853,7 +853,9 @@ function verificarSenhaAdmin(senha) {
 
 // ════════════ SUPER ADMIN LOCAL (login + gerenciamento de certificados) ════════════
 async function superAdminAuth(req, res, next) {
-  const tokenHeader = req.headers['x-super-admin-token'] || req.query.adminToken;
+  const authBearer = (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) ? req.headers.authorization.slice(7).trim() : null;
+  const cookieToken = (req.cookies && req.cookies.super_admin_token);
+  const tokenHeader = req.headers['x-super-admin-token'] || req.query.adminToken || authBearer || cookieToken;
   if (tokenHeader) {
     try {
       const decoded = jwt.verify(tokenHeader, JWT_SECRET);
@@ -4102,6 +4104,7 @@ io.on('connection', (socket) => {
               io.emit('pedido_adicionado', newOrder);
               sendPush('cozinha', '🆕 Novo Pedido!', `${newOrder.quantity || 1}x ${newOrder.productName || 'Item'} — ${newOrder.localName || ''}`.trim(), 'pedido-' + mainId, '/fila-pedidos.html');
               updateMesaStatus();
+              broadcastPedidos();
 
               if (comboBonus) {
                 db.get(`SELECT emoji, categoria FROM produtos WHERE nome = ?`, [comboBonus], (err, bonusProd) => {
@@ -4118,6 +4121,7 @@ io.on('connection', (socket) => {
                           time: pedido.time, localName: pedido.localName, userName: pedido.userName,
                           total: "0.00", status: status, sector: bonusSector, id: this.lastID, createdAt: new Date().toISOString()
                         });
+                        broadcastPedidos();
                       }
                     }
                   );
@@ -4360,7 +4364,10 @@ io.on('connection', (socket) => {
     if (valor <= 0) return;
     db.get(`SELECT id FROM turnos_caixa ORDER BY id DESC LIMIT 1`, [], (err, turno) => {
       const turnoId = turno ? turno.id : null;
-      const tipoDb = tipo === 'Sangria' ? 'saida' : 'Entrada';
+      const tLower = tipo.toLowerCase();
+      const tipoDb = (tLower === 'sangria' || tLower === 'saida') ? 'Sangria'
+                   : (tLower === 'suprimento' || tLower === 'aporte' || tLower === 'reforco') ? 'Suprimento'
+                   : tipo;
       db.run(
         `INSERT INTO movimentacoes (turno_id, tipo, valor, forma_pagamento, descricao, data) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
         [turnoId, tipoDb, valor, forma_pagamento, `${tipo} (${operador}): ${descricao}`],
@@ -4431,9 +4438,17 @@ io.on('connection', (socket) => {
             'Ação manual', 'Alto');
 
           const productName = row.productName || '';
-          if ((productName.indexOf('Pgto Parcial') !== -1 || productName.indexOf('Pagamento') !== -1) && row.turno_id) {
-            const descMatch = productName;
-            db.run(`DELETE FROM movimentacoes WHERE turno_id = ? AND descricao LIKE ? AND tipo = 'Entrada'`, [row.turno_id, `%${mesaName}%`], () => {});
+          if ((productName.indexOf('Pgto Parcial') !== -1 || productName.indexOf('Pagamento') !== -1)) {
+            const valorNum = Math.abs(parseFloat(String(row.total || 0).replace(',', '.')) || 0);
+            db.run(
+              `DELETE FROM movimentacoes WHERE id = (
+                 SELECT id FROM movimentacoes
+                 WHERE (turno_id = ? OR ? IS NULL) AND tipo = 'Entrada' AND ABS(valor - ?) < 0.01 AND descricao LIKE ?
+                 ORDER BY id DESC LIMIT 1
+               )`,
+              [row.turno_id || null, row.turno_id || null, valorNum, `%${mesaName}%`],
+              () => {}
+            );
           }
         }
         broadcastPedidos();
@@ -4626,6 +4641,7 @@ io.on('connection', (socket) => {
                     createdAt: new Date().toISOString()
                   });
                   sendPush('cozinha', '🆕 Novo Pedido!', `${item.quantity || 1}x ${item.productName || 'Item'} — ${mesaName}`.trim(), 'pedido-' + insertedId, '/fila-pedidos.html');
+                  broadcastPedidos();
                 }
               }
             );
@@ -4656,6 +4672,7 @@ io.on('connection', (socket) => {
                     cliente_id: pendingOrder.cliente_id || null,
                     createdAt: new Date().toISOString()
                   });
+                  broadcastPedidos();
                 }
               }
             );
@@ -5714,6 +5731,8 @@ io.on('connection', (socket) => {
                     if (!err4) {
                       pedido.id = this.lastID;
                       io.emit('novo_pedido', pedido);
+                      io.emit('pedido_adicionado', pedido);
+                      broadcastPedidos();
                       // Atualiza o status da mesa para ocupada se for nova
                       db.get(`SELECT status FROM mesas WHERE nome = ?`, [mesaName], (err, m) => {
                         if (m && m.status === 'Disponível') {
@@ -8409,7 +8428,7 @@ app.get('/api/auditoria', verificarToken, (req, res) => {
   });
 });
 
-app.get('/api/logs-api', (req, res) => {
+app.get('/api/logs-api', verificarToken, (req, res) => {
   db.all(`SELECT * FROM api_logs ORDER BY id DESC LIMIT 300`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows || []);
@@ -8808,7 +8827,7 @@ app.get('/api/ia/config', (req, res) => {
   });
 });
 
-app.post('/api/ia/config', (req, res) => {
+app.post('/api/ia/config', verificarToken, (req, res) => {
   const payload = req.body || {};
   withTenant(req, () => {
     const valores = {};
@@ -8831,7 +8850,7 @@ app.post('/api/ia/config', (req, res) => {
   });
 });
 
-app.post('/api/ia/test-key', (req, res) => {
+app.post('/api/ia/test-key', verificarToken, (req, res) => {
   const body = req.body || {};
   withTenant(req, () => {
     db.all(`SELECT chave, valor FROM configuracoes WHERE chave IN ('ia_api_key','ia_model')`, [], (err, rows) => {
@@ -8847,7 +8866,7 @@ app.post('/api/ia/test-key', (req, res) => {
   });
 });
 
-app.post('/api/ia/gerar-promocoes', (req, res) => {
+app.post('/api/ia/gerar-promocoes', verificarToken, (req, res) => {
   const objetivo = (req.body && req.body.objetivo) || 'Aumentar faturamento e ticket médio';
   withTenant(req, () => {
     db.all(`SELECT chave, valor FROM configuracoes`, [], (eCfg, rows) => {
@@ -8879,7 +8898,7 @@ app.post('/api/ia/gerar-promocoes', (req, res) => {
   });
 });
 
-app.post('/api/ia/aplicar-promocao', (req, res) => {
+app.post('/api/ia/aplicar-promocao', verificarToken, (req, res) => {
   const p = req.body || {};
   const titulo = String(p.titulo || '').trim();
   if (!titulo) return res.json({ ok: false, erro: 'Título da promoção obrigatório.' });
@@ -8911,7 +8930,7 @@ app.post('/api/ia/aplicar-promocao', (req, res) => {
   });
 });
 
-app.post('/api/ia/gerar-copy', (req, res) => {
+app.post('/api/ia/gerar-copy', verificarToken, (req, res) => {
   const body = req.body || {};
   const canal = String(body.canal || 'whatsapp');
   const promocao = String(body.promocao || 'Nossos pratos especiais');
@@ -8932,7 +8951,7 @@ app.post('/api/ia/gerar-copy', (req, res) => {
   });
 });
 
-app.post('/api/ia/consultor', (req, res) => {
+app.post('/api/ia/consultor', verificarToken, (req, res) => {
   const body = req.body || {};
   const pergunta = String(body.pergunta || '').trim();
   if (!pergunta) return res.json({ ok: false, erro: 'Digite uma pergunta.' });
@@ -8996,7 +9015,7 @@ app.post('/api/ia/pesquisar-estabelecimento-geo', (req, res) => {
 });
 
 // Gera um cupom (QR) promocional de 1 clique a partir de uma sugestão de combo da IA
-app.post('/api/ia/cupom-rapido', (req, res) => {
+app.post('/api/ia/cupom-rapido', verificarToken, (req, res) => {
   const p = req.body || {};
   const titulo = String(p.titulo || 'Promo IA').trim().slice(0, 90);
   const precoOrig = Math.abs(parseFloat(p.preco_original) || 0);
@@ -11444,6 +11463,110 @@ app.get('/api/licenca/status-quarentena', (req, res) => {
   res.json({ status: 'ativa', quarentena: false, dias_restantes: 30 });
 });
 
+// ── ROTAS DE CONTROLE REMOTO & ATIVAÇÃO DE INSTÂNCIAS DISTRIBUÍDAS ──
+app.get('/api/status-bloqueio', (req, res) => {
+  db.get(`SELECT valor FROM configuracoes WHERE chave = 'restaurant_status'`, [], (err, row) => {
+    const bloqueado = (row && row.valor === 'bloqueado') || global.__RESTAURANT_BLOQUEADO === true;
+    db.get(`SELECT valor FROM configuracoes WHERE chave = 'bloqueado_motivo'`, [], (err2, row2) => {
+      res.json({
+        bloqueado,
+        motivo: (row2 && row2.valor) || global.__BLOQUEIO_MOTIVO || 'Instalação suspensa pela administração central.',
+        contato: 'Suporte Técnico Chef Cozinha'
+      });
+    });
+  });
+});
+
+app.post('/api/sync/ativar-local', express.json(), async (req, res) => {
+  const { chave, hubUrl, email, senha } = req.body || {};
+  const superUrl = (hubUrl || process.env.SUPER_ADMIN_URL || deploymentConfig.getSuperAdminUrl() || '').replace(/\/+$/, '');
+
+  try {
+    let payload = {};
+    if (chave) {
+      payload = { type: 'key', chave_ativacao: chave };
+    } else if (email && senha) {
+      payload = { type: 'login', email, senha };
+    } else {
+      return res.status(400).json({ ok: false, error: 'Chave de ativação ou credenciais são obrigatórias.' });
+    }
+
+    let result = null;
+
+    if (superUrl) {
+      const resp = await fetch(`${superUrl}/api/sync/activate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({}, payload, {
+          hostname: require('os').hostname(),
+          platform: require('os').platform()
+        }))
+      });
+      result = await resp.json();
+    } else if (masterDb) {
+      const chaveNorm = String(chave || '').trim().toUpperCase();
+      const r = await new Promise((resolve, reject) => {
+        masterDb.get(
+          `SELECT * FROM restaurantes WHERE UPPER(TRIM(COALESCE(chave_ativacao,''))) = ? OR UPPER(TRIM('CHEF-LOCAL-' || printf('%04d', id))) = ? LIMIT 1`,
+          [chaveNorm, chaveNorm],
+          (e, row) => e ? reject(e) : resolve(row)
+        );
+      });
+      if (r) {
+        result = {
+          ok: true,
+          success: true,
+          restaurant_id: r.id,
+          restaurant_name: r.nome,
+          plan: r.licenca || 'premium',
+          activation_key: chaveNorm
+        };
+      } else {
+        result = { ok: false, error: 'Chave inválida no banco local.' };
+      }
+    } else {
+      return res.status(400).json({ ok: false, error: 'URL do Super Admin não configurada e banco master inexistente.' });
+    }
+
+    if (!result || !result.ok) {
+      return res.status(400).json({ ok: false, error: (result && result.error) || 'Falha ao ativar chave.' });
+    }
+
+    db.serialize(() => {
+      db.run(`INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES ('restaurant_status', 'ativo')`);
+      db.run(`DELETE FROM configuracoes WHERE chave = 'bloqueado_motivo'`);
+      if (result.restaurant_name) {
+        db.run(`INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES ('nome_restaurante', ?)`, [result.restaurant_name]);
+      }
+      if (result.plan) {
+        db.run(`INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES ('licenca', ?)`, [result.plan]);
+      }
+      if (result.activation_key) {
+        db.run(`INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES ('chave_ativacao', ?)`, [result.activation_key]);
+      }
+    });
+
+    global.__RESTAURANT_BLOQUEADO = false;
+    global.__BLOQUEIO_MOTIVO = null;
+
+    if (typeof io !== 'undefined') {
+      io.emit('sistema_desbloqueado_remoto');
+      io.emit('plano_atualizado', { plan: result.plan });
+    }
+
+    res.json({
+      ok: true,
+      success: true,
+      restaurant_name: result.restaurant_name,
+      plan: result.plan,
+      message: result.message || 'Instância ativada e conectada com sucesso!'
+    });
+  } catch (err) {
+    console.error('[Ativacao Local] Erro:', err.message);
+    res.status(500).json({ ok: false, error: 'Erro de comunicação ao ativar: ' + err.message });
+  }
+});
+
 app.post('/api/pwa/telemetria', (req, res) => {
   res.json({ success: true });
 });
@@ -11755,6 +11878,19 @@ try {
   });
 } catch (e) {
   console.error('[theme-curator] Falha ao inicializar:', e);
+}
+
+// ─── Provedores de Imagem (Pool com failover, fallback local e multi-provider) ───
+try {
+  require('./plugins/image-providers')({
+    app,
+    masterDb,
+    io,
+    options: { JWT_SECRET, superAdminAuth, verificarToken },
+    log: (m) => console.log(`[image-providers] ${m}`)
+  });
+} catch (e) {
+  console.error('[image-providers] Falha ao inicializar:', e);
 }
 
 // Health check (sem auth, para load balancer / monitor) ────────────
@@ -12854,6 +12990,7 @@ app.post('/api/super/deploy-commit', superAdminAuth, (req, res) => {
     const reloadResult = [];
     const modulesToReload = [
       './controllers/super-admin.js',
+      './controllers/super-admin-financeiro.js',
       './controllers/socket-financeiro.js',
       './controllers/sync-server.js',
       './deployment-config.js',
@@ -12915,6 +13052,14 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
     });
     console.log('👑 Controller do Super Admin carregado com sucesso no servidor principal.');
 
+    // Infraestrutura Super Admin: Git Deploy, Supabase Cloud Sync, Túneis e Multi-Servidores
+    try {
+      require('./controllers/super-admin-infra')(app, masterDb, sqlite3, { superAdminAuth, io });
+      console.log('🚀 Controller Super Admin Infraestrutura (Git, Supabase, Túneis, Load Balancer) carregado com sucesso.');
+    } catch (eInfra) {
+      console.error('Erro ao carregar o Controller Super Admin Infra:', eInfra);
+    }
+
     // Módulo extra restaurado: Demo, Modalidades, Reporte Suporte, Rescue
     try {
       require('./controllers/sistema-extra')(app, masterDb, sqlite3, { verificarToken, getTenantDb, io, JWT_SECRET, bcrypt });
@@ -12937,6 +13082,63 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       console.log('🛠️ Controller Dev Hub & APIs Internas carregado com sucesso.');
     } catch (eDev) {
       console.error('Erro ao carregar o Controller Dev Hub:', eDev);
+    }
+
+    try {
+      require('./controllers/financeiro-bi')(app, { db, masterDb, io, verificarToken, getTenantDb });
+      console.log('📊 Controller Financeiro & BI carregado com sucesso.');
+    } catch (eFinBi) {
+      console.error('Erro ao carregar o Controller Financeiro & BI:', eFinBi);
+    }
+
+    try {
+      require('./controllers/rh-talentos-contratacao')(app, { db, masterDb, io, sqlite3, verificarToken, getTenantDb });
+      console.log('🧑‍🍳 Controller RH & Contratação de Talentos Gastronômicos carregado com sucesso.');
+    } catch (eRh) {
+      console.error('Erro ao carregar o Controller RH & Contratação:', eRh);
+    }
+
+    try {
+      require('./controllers/contador-cheff')(app, masterDb, sqlite3, {
+        superAdminAuth,
+        JWT_SECRET,
+        SUPORTE_JWT_SECRET,
+        suporteJwtSecret: SUPORTE_JWT_SECRET,
+        verificarToken,
+        getTenantDb,
+        io
+      });
+      console.log('📊 Controller Contador Cheff carregado com sucesso.');
+    } catch (eContador) {
+      console.error('Erro ao carregar o Controller Contador Cheff:', eContador);
+    }
+
+    try {
+      require('./controllers/super-admin-financeiro')(app, masterDb, sqlite3, {
+        superAdminAuth,
+        io
+      });
+      console.log('💰 Controller Super Admin Financeiro carregado com sucesso.');
+    } catch (eFinSa) {
+      console.error('Erro ao carregar o Controller Super Admin Financeiro:', eFinSa);
+    }
+
+    try {
+      require('./controllers/remote-support')(app, masterDb, sqlite3, { io });
+      console.log('🖥️ Controller Suporte Remoto & Telepresença carregado com sucesso.');
+    } catch (eRem) {
+      console.error('Erro ao carregar o Controller Suporte Remoto:', eRem);
+    }
+
+    try {
+      require('./controllers/suporte-vendas')(app, masterDb, sqlite3, {
+        superAdminAuth,
+        io,
+        suporteJwtSecret: SUPORTE_JWT_SECRET
+      });
+      console.log('💼 Controller Equipe de Suporte & Vendas Afiliadas carregado com sucesso.');
+    } catch (eSupVend) {
+      console.error('Erro ao carregar o Controller Suporte Vendas:', eSupVend);
     }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);

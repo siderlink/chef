@@ -143,7 +143,7 @@ ${ANSI.cyan}${ANSI.bright}  ┌────────────────�
 
 function startServices() {
   console.log(`${ANSI.bright}${ANSI.green}🚀 Iniciando Servidor Backend e Servidor Frontend Vite...${ANSI.reset}\n`);
-  const child = spawn('npx', ['concurrently', '"node --max-old-space-size=4096 server.js"', '"node --max-old-space-size=4096 ./node_modules/vite/bin/vite.js --host"'], {
+  const child = spawn('npm', ['run', 'start:direct'], {
     stdio: 'inherit',
     shell: true
   });

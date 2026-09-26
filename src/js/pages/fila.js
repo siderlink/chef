@@ -13,17 +13,47 @@ function formatarTempoFila(mins) {
 
 const HOST = window.location.hostname;
 
-// Se o restaurante configurou o modo Clássico, redireciona para a fila clássica.
+// Se o restaurante configurou o modo Clássico, redireciona para a fila clássica (a não ser que forçado na URL).
 (function kdsDetectarVersaoClassica() {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('v') === '2' || urlParams.get('v') === 'nova' || urlParams.get('force') === '1') {
+    localStorage.setItem('fila_modo', 'nova');
+    localStorage.setItem('chef_fila_modo', 'nova');
+    return;
+  }
+  const localModo = localStorage.getItem('fila_modo') || localStorage.getItem('chef_fila_modo');
+  if (localModo === 'classica') {
+    window.location.replace('/fila-pedidos-classica.html?v=1');
+    return;
+  }
   fetch('/api/config')
     .then(r => r.json())
     .then(cfg => {
       if (cfg && String(cfg.fila_modo || '').toLowerCase() === 'classica') {
-        window.location.replace('/fila-pedidos-classica.html');
+        const curP = new URLSearchParams(window.location.search);
+        if (curP.get('v') !== '2' && curP.get('force') !== '1') {
+          localStorage.setItem('fila_modo', 'classica');
+          localStorage.setItem('chef_fila_modo', 'classica');
+          window.location.replace('/fila-pedidos-classica.html?v=1');
+        }
       }
     })
     .catch(() => {});
 })();
+
+window.trocarVersaoFila = function(versao) {
+  const isV1 = (versao === 'v1' || versao === 'classica');
+  localStorage.setItem('fila_modo', isV1 ? 'classica' : 'nova');
+  localStorage.setItem('chef_fila_modo', isV1 ? 'classica' : 'nova');
+  try {
+    fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (typeof obterTokenAtual === 'function' ? obterTokenAtual() : '') },
+      body: JSON.stringify({ fila_modo: isV1 ? 'classica' : 'nova' })
+    }).catch(() => {});
+  } catch(e) {}
+  window.location.href = isV1 ? '/fila-pedidos-classica.html?v=1' : '/fila-pedidos.html?v=2';
+};
 
 // ── Preferências da fila sincronizadas com o servidor (config por restaurante) ──
 let kdsSyncTimer = null;
@@ -39,7 +69,9 @@ function kdsSalvarNoServidor(extra) {
     kds_pulse_seconds: (localStorage.getItem('chef_kds_pulse_seconds') || '3'),
     kds_sound: (localStorage.getItem('chef_kds_sound') || '1'),
     kds_card_order: (localStorage.getItem('chef_kds_card_order') || JSON.stringify(['cabecalho', 'quantidade', 'produto', 'acao'])),
-    kds_card_hidden: (localStorage.getItem('chef_kds_card_hidden') || '[]')
+    kds_card_hidden: (localStorage.getItem('chef_kds_card_hidden') || '[]'),
+    kds_section_sizes: (localStorage.getItem('chef_kds_section_sizes') || JSON.stringify(DEFAULT_SECTION_SIZES)),
+    kds_colab_apelidos: (localStorage.getItem('chef_kds_colab_apelidos') || '{}')
   };
   try {
     const ord = localStorage.getItem('filaColOrder');
@@ -76,6 +108,16 @@ function kdsAplicarPreferencias(cfg) {
     localStorage.setItem('chef_kds_layout_mode', cfg.kds_view_mode);
     if (typeof window.alterarModoDisposicao === 'function') window.alterarModoDisposicao(cfg.kds_view_mode);
   }
+  if (cfg.kds_section_sizes) {
+    try {
+      const parsed = typeof cfg.kds_section_sizes === 'string' ? JSON.parse(cfg.kds_section_sizes) : cfg.kds_section_sizes;
+      if (parsed && typeof parsed === 'object') {
+        Object.assign(kdsSectionSizes, parsed);
+        localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
+        if (typeof aplicarTamanhosCSS === 'function') aplicarTamanhosCSS(kdsSectionSizes);
+      }
+    } catch(e){}
+  }
   if (cfg.kds_col_order) {
     try { const arr = JSON.parse(cfg.kds_col_order); if (Array.isArray(arr) && arr.length) localStorage.setItem('filaColOrder', JSON.stringify(arr)); } catch (e) {}
   }
@@ -87,14 +129,313 @@ function kdsAplicarPreferencias(cfg) {
   }
   if (cfg.kds_card_order) carregarCardConfig(cfg.kds_card_order, 'order');
   if (cfg.kds_card_hidden) carregarCardConfig(cfg.kds_card_hidden, 'hidden');
+  if (cfg.kds_colab_apelidos) {
+    try {
+      const parsed = typeof cfg.kds_colab_apelidos === 'string' ? JSON.parse(cfg.kds_colab_apelidos) : cfg.kds_colab_apelidos;
+      if (parsed && typeof parsed === 'object') {
+        Object.assign(kdsColabApelidos, parsed);
+        localStorage.setItem('chef_kds_colab_apelidos', JSON.stringify(kdsColabApelidos));
+        renderizarListaApelidosDrawer();
+      }
+    } catch(e) {}
+  }
 }
+
+// ── DIMENSIONAMENTO DINÂMICO DE SEÇÕES E LAYOUT DO KDS ──
+const DEFAULT_SECTION_SIZES = {
+  header: 260,
+  qty: 54,
+  action: 230,
+  height: 76,
+  gap: 12,
+  cardMin: 290,
+  gridCols: 'auto',
+  cardSize: 'm',
+  fontSize: 15,
+  caixaAlta: false
+};
+
+let kdsSectionSizes = Object.assign({}, DEFAULT_SECTION_SIZES);
+try {
+  const savedSizes = localStorage.getItem('chef_kds_section_sizes');
+  if (savedSizes) Object.assign(kdsSectionSizes, JSON.parse(savedSizes));
+} catch(e){}
+
+// Apelidos de Colaboradores e de Pedidos
+let kdsColabApelidos = {};
+try {
+  const savedColabs = localStorage.getItem('chef_kds_colab_apelidos');
+  if (savedColabs) kdsColabApelidos = JSON.parse(savedColabs);
+} catch(e) {}
+
+let kdsPedidoApelidos = {};
+try {
+  const savedPedidos = localStorage.getItem('chef_kds_pedidos_apelidos');
+  if (savedPedidos) kdsPedidoApelidos = JSON.parse(savedPedidos);
+} catch(e) {}
+
+function aplicarTamanhosCSS(sizes) {
+  if (!sizes) sizes = kdsSectionSizes;
+  const root = document.documentElement;
+  const queueList = document.getElementById('queue-list');
+
+  root.style.setProperty('--kds-col-header-width', (sizes.header || 260) + 'px');
+  root.style.setProperty('--kds-col-qty-width', (sizes.qty || 54) + 'px');
+  root.style.setProperty('--kds-col-action-width', (sizes.action || 230) + 'px');
+  root.style.setProperty('--kds-card-height', (sizes.height || 76) + 'px');
+  root.style.setProperty('--kds-card-gap', (sizes.gap !== undefined ? sizes.gap : 12) + 'px');
+  root.style.setProperty('--kds-card-min-width', (sizes.cardMin || 290) + 'px');
+  root.style.setProperty('--kds-font-size', (sizes.fontSize || 15) + 'px');
+
+  if (queueList) {
+    queueList.classList.remove('grade-2col', 'grade-3col', 'grade-4col', 'grade-5col');
+    if (sizes.gridCols && sizes.gridCols !== 'auto') {
+      queueList.classList.add(`grade-${sizes.gridCols}col`);
+    }
+    queueList.classList.remove('card-tam-p', 'card-tam-m', 'card-tam-g', 'card-tam-gg');
+    if (sizes.cardSize) {
+      queueList.classList.add(`card-tam-${sizes.cardSize}`);
+    }
+    if (sizes.caixaAlta) {
+      queueList.classList.add('kds-caixa-alta');
+      document.body.classList.add('kds-caixa-alta');
+    } else {
+      queueList.classList.remove('kds-caixa-alta');
+      document.body.classList.remove('kds-caixa-alta');
+    }
+  }
+  sincronizarControlesLayoutUI(sizes);
+}
+
+function sincronizarControlesLayoutUI(sizes) {
+  if (!sizes) sizes = kdsSectionSizes;
+  const mapInputs = {
+    'kds-slider-header': { val: sizes.header, unit: 'px', labelId: 'kds-val-header' },
+    'kds-slider-qty': { val: sizes.qty, unit: 'px', labelId: 'kds-val-qty' },
+    'kds-slider-action': { val: sizes.action, unit: 'px', labelId: 'kds-val-action' },
+    'kds-slider-height': { val: sizes.height, unit: 'px', labelId: 'kds-val-height' },
+    'kds-slider-gap': { val: sizes.gap !== undefined ? sizes.gap : 12, unit: 'px', labelId: 'kds-val-gap' },
+    'kds-slider-font': { val: sizes.fontSize || 15, unit: 'px', labelId: 'kds-val-font' }
+  };
+  Object.keys(mapInputs).forEach(id => {
+    const el = document.getElementById(id);
+    const item = mapInputs[id];
+    if (el) el.value = item.val;
+    const label = document.getElementById(item.labelId);
+    if (label) label.innerText = item.val + item.unit;
+  });
+
+  const btnCaixaAlta = document.getElementById('btn-toggle-caixa-alta');
+  const lblCaixaAlta = document.getElementById('label-caixa-alta-status');
+  if (btnCaixaAlta && lblCaixaAlta) {
+    const ativa = !!sizes.caixaAlta;
+    btnCaixaAlta.classList.toggle('active', ativa);
+    lblCaixaAlta.innerText = ativa ? 'Ativado (A-Z)' : 'Desativado';
+    lblCaixaAlta.style.background = ativa ? 'rgba(34, 197, 94, 0.15)' : 'rgba(0,0,0,0.1)';
+    lblCaixaAlta.style.color = ativa ? '#22c55e' : 'var(--kds-text-muted)';
+  }
+
+  document.querySelectorAll('.btn-col-choice').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-cols') === String(sizes.gridCols));
+  });
+  document.querySelectorAll('.btn-size-choice').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-size') === String(sizes.cardSize));
+  });
+  const modo = localStorage.getItem('chef_kds_layout_mode') || 'grid';
+  document.querySelectorAll('.btn-mode-choice').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-mode') === modo);
+  });
+  const gradeOpts = document.getElementById('kds-grade-options-group');
+  if (gradeOpts) gradeOpts.style.display = modo === 'grid' ? 'flex' : 'none';
+}
+
+window.alterarTamanhoSecao = function(chave, valor) {
+  const num = parseInt(valor, 10);
+  if (isNaN(num)) return;
+  kdsSectionSizes[chave] = num;
+  localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
+  aplicarTamanhosCSS(kdsSectionSizes);
+  kdsAgendarSalvarNoServidor();
+};
+
+window.alterarColunasGrade = function(cols) {
+  kdsSectionSizes.gridCols = cols;
+  localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
+  aplicarTamanhosCSS(kdsSectionSizes);
+  kdsAgendarSalvarNoServidor();
+};
+
+window.alterarTamanhoCard = function(tam) {
+  kdsSectionSizes.cardSize = tam;
+  localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
+  aplicarTamanhosCSS(kdsSectionSizes);
+  kdsAgendarSalvarNoServidor();
+};
+
+window.aplicarPresetDensidade = function(preset) {
+  if (preset === 'ultra') {
+    kdsSectionSizes.gap = 2;
+    kdsSectionSizes.height = 36;
+    kdsSectionSizes.fontSize = 12;
+    kdsSectionSizes.qty = 44;
+    kdsSectionSizes.action = 170;
+    kdsSectionSizes.header = 200;
+  } else if (preset === 'compacto') {
+    kdsSectionSizes.gap = 6;
+    kdsSectionSizes.height = 52;
+    kdsSectionSizes.fontSize = 13;
+    kdsSectionSizes.qty = 48;
+    kdsSectionSizes.action = 200;
+    kdsSectionSizes.header = 230;
+  } else if (preset === 'padrao') {
+    kdsSectionSizes.gap = 12;
+    kdsSectionSizes.height = 76;
+    kdsSectionSizes.fontSize = 15;
+    kdsSectionSizes.qty = 54;
+    kdsSectionSizes.action = 230;
+    kdsSectionSizes.header = 260;
+  } else if (preset === 'amplo') {
+    kdsSectionSizes.gap = 18;
+    kdsSectionSizes.height = 96;
+    kdsSectionSizes.fontSize = 17;
+    kdsSectionSizes.qty = 64;
+    kdsSectionSizes.action = 260;
+    kdsSectionSizes.header = 290;
+  }
+  localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
+  aplicarTamanhosCSS(kdsSectionSizes);
+  kdsAgendarSalvarNoServidor();
+};
+
+window.toggleCaixaAlta = function(forcar) {
+  if (typeof forcar === 'boolean') {
+    kdsSectionSizes.caixaAlta = forcar;
+  } else {
+    kdsSectionSizes.caixaAlta = !kdsSectionSizes.caixaAlta;
+  }
+  localStorage.setItem('chef_kds_caixa_alta', kdsSectionSizes.caixaAlta ? '1' : '0');
+  localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
+  aplicarTamanhosCSS(kdsSectionSizes);
+  kdsAgendarSalvarNoServidor();
+};
+
+window.restaurarTamanhosPadrao = function() {
+  kdsSectionSizes = Object.assign({}, DEFAULT_SECTION_SIZES);
+  localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
+  aplicarTamanhosCSS(kdsSectionSizes);
+  kdsAgendarSalvarNoServidor();
+};
+
+window.cadastrarApelidoColaborador = function(nomeOriginal) {
+  if (!nomeOriginal) return;
+  const atual = kdsColabApelidos[nomeOriginal] || '';
+  const novo = prompt(`Cadastrar apelido para o garçom/colaborador "${nomeOriginal}":\n(Deixe em branco para remover o apelido)`, atual);
+  if (novo === null) return;
+  const apelidoLimpo = novo.trim();
+  if (apelidoLimpo) {
+    kdsColabApelidos[nomeOriginal] = apelidoLimpo;
+  } else {
+    delete kdsColabApelidos[nomeOriginal];
+  }
+  localStorage.setItem('chef_kds_colab_apelidos', JSON.stringify(kdsColabApelidos));
+  renderizarListaApelidosDrawer();
+  renderQueue(true);
+  kdsAgendarSalvarNoServidor({ kds_colab_apelidos: JSON.stringify(kdsColabApelidos) });
+};
+
+window.cadastrarApelidoPedido = function(pedidoId) {
+  const idStr = String(pedidoId);
+  const atual = kdsPedidoApelidos[idStr] || '';
+  const novo = prompt(`Cadastrar identificação/apelido para este pedido na fila:\n(Ex: Mesa de Aniversário, VIP, Pedido do Zé, Balcão 2)`, atual);
+  if (novo === null) return;
+  const apelidoLimpo = novo.trim();
+  if (apelidoLimpo) {
+    kdsPedidoApelidos[idStr] = apelidoLimpo;
+  } else {
+    delete kdsPedidoApelidos[idStr];
+  }
+  localStorage.setItem('chef_kds_pedidos_apelidos', JSON.stringify(kdsPedidoApelidos));
+  renderQueue(true);
+};
+
+window.salvarApelidoColaboradorDoDrawer = function() {
+  const inOrig = document.getElementById('kds-input-colab-orig');
+  const inApelido = document.getElementById('kds-input-colab-apelido');
+  if (!inOrig || !inApelido) return;
+  const orig = inOrig.value.trim();
+  const apelido = inApelido.value.trim();
+  if (!orig || !apelido) {
+    alert('Informe o nome original do colaborador e o apelido desejado.');
+    return;
+  }
+  kdsColabApelidos[orig] = apelido;
+  localStorage.setItem('chef_kds_colab_apelidos', JSON.stringify(kdsColabApelidos));
+  inOrig.value = '';
+  inApelido.value = '';
+  renderizarListaApelidosDrawer();
+  renderQueue(true);
+  kdsAgendarSalvarNoServidor({ kds_colab_apelidos: JSON.stringify(kdsColabApelidos) });
+};
+
+window.removerApelidoColaborador = function(orig) {
+  delete kdsColabApelidos[orig];
+  localStorage.setItem('chef_kds_colab_apelidos', JSON.stringify(kdsColabApelidos));
+  renderizarListaApelidosDrawer();
+  renderQueue(true);
+  kdsAgendarSalvarNoServidor({ kds_colab_apelidos: JSON.stringify(kdsColabApelidos) });
+};
+
+function renderizarListaApelidosDrawer() {
+  const wrap = document.getElementById('kds-lista-colab-apelidos');
+  if (!wrap) return;
+  const keys = Object.keys(kdsColabApelidos);
+  if (keys.length === 0) {
+    wrap.innerHTML = '<span style="font-size:12px; color:var(--kds-text-muted); font-style:italic;">Nenhum apelido cadastrado ainda. Digite acima ou clique sobre o nome do garçom no card.</span>';
+    return;
+  }
+  wrap.innerHTML = keys.map(k => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:var(--kds-btn-bg); border:1px solid var(--kds-card-border); border-radius:8px; font-size:12px;">
+      <div>
+        <span style="color:var(--kds-text-secondary);">${escHtml(k)}:</span>
+        <strong style="color:var(--kds-primary, #fc4b15); margin-left:4px;">${escHtml(kdsColabApelidos[k])}</strong>
+      </div>
+      <button type="button" onclick="window.removerApelidoColaborador('${escJs(k)}')" style="border:none; background:transparent; color:#ef4444; cursor:pointer; font-weight:bold; font-size:14px;" title="Remover apelido">&times;</button>
+    </div>
+  `).join('');
+}
+
+window.toggleLayoutDrawer = function(forceOpen) {
+  const drawer = document.getElementById('kds-layout-drawer');
+  if (!drawer) return;
+  const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !drawer.classList.contains('active');
+  if (shouldOpen) {
+    drawer.classList.add('active');
+    aplicarTamanhosCSS(kdsSectionSizes);
+    renderizarCamposCardModal();
+    renderizarListaApelidosDrawer();
+  } else {
+    drawer.classList.remove('active');
+  }
+};
+
+window.trocarAbaLayoutDrawer = function(aba) {
+  document.querySelectorAll('.kds-drawer-tab-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-tab') === aba);
+  });
+  document.querySelectorAll('.kds-drawer-tab-content').forEach(c => {
+    c.style.display = (c.getAttribute('data-tab') === aba) ? 'flex' : 'none';
+  });
+  if (aba === 'apelidos') {
+    renderizarListaApelidosDrawer();
+  }
+};
 
 // ── CAMPOS DO CARD (ORDEM E VISIBILIDADE) ──
 const CARD_FIELDS = [
   { key: 'cabecalho', label: 'Mesa / Comanda e Tempo' },
-  { key: 'quantidade', label: 'Quantidade' },
-  { key: 'produto', label: 'Produto (Nome, Obs, Composição)' },
-  { key: 'acao', label: 'Botão de Ação (Pronto / Chamar)' }
+  { key: 'quantidade', label: 'Badge Quantidade' },
+  { key: 'produto', label: 'Produto (Nome, Obs, Adicionais)' },
+  { key: 'acao', label: 'Botões de Ação (Pronto / Chamar)' }
 ];
 let kdsCardOrder = [];
 let kdsCardHidden = new Set();
@@ -148,7 +489,7 @@ window.moverCampoCard = function(key, dir) {
   kdsCardOrder = ordem.slice();
   localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
   renderizarCamposCardModal();
-  renderQueue();
+  renderQueue(true);
   kdsAgendarSalvarNoServidor();
 };
 window.alternarCampoCard = function(key) {
@@ -157,24 +498,72 @@ window.alternarCampoCard = function(key) {
   kdsCardHidden = hidden;
   localStorage.setItem('chef_kds_card_hidden', JSON.stringify(Array.from(hidden)));
   renderizarCamposCardModal();
-  renderQueue();
+  renderQueue(true);
   kdsAgendarSalvarNoServidor();
 };
-function renderizarCamposCardModal() {
-  const wrap = document.getElementById('kds-card-fields-config');
+
+function renderizarCamposCardList(containerId) {
+  const wrap = document.getElementById(containerId);
   if (!wrap) return;
   const ordem = obterCardOrder();
   const hidden = window.obterCardHidden();
   wrap.innerHTML = ordem.map(k => {
     const oculto = hidden.has(k);
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;margin-bottom:6px;">
-      <button type="button" onclick="window.moverCampoCard('${k}',-1)" title="Mover para cima" style="background:none;border:none;cursor:pointer;font-size:14px;color:#64748b;"><i class="ph ph-arrow-u-up-left"></i></button>
-      <span style="flex:1;font-size:13px;font-weight:600;color:#1e293b;">${window.cardFieldLabel(k)}</span>
-      <span style="font-size:11px;color:${oculto ? '#ef4444' : '#22c55e'};font-weight:700;width:70px;text-align:center;">${oculto ? 'Oculto' : 'Visível'}</span>
-      <button type="button" onclick="window.alternarCampoCard('${k}')" title="${oculto ? 'Mostrar' : 'Ocultar'}" style="background:none;border:none;cursor:pointer;font-size:15px;color:${oculto ? '#22c55e' : '#ef4444'};"><i class="ph ${oculto ? 'ph-eye' : 'ph-eye-slash'}"></i></button>
-      <button type="button" onclick="window.moverCampoCard('${k}',1)" title="Mover para baixo" style="background:none;border:none;cursor:pointer;font-size:14px;color:#64748b;"><i class="ph ph-arrow-up-right"></i></button>
-    </div>`;
+    return `
+      <div class="kds-field-item" data-key="${k}">
+        <div class="kds-drag-handle" title="Segure e arraste para reordenar">
+          <i class="ph-bold ph-dots-six-vertical"></i>
+        </div>
+        <div class="kds-field-title">
+          <span>${window.cardFieldLabel(k)}</span>
+          <span style="font-size: 11px; padding: 2px 7px; border-radius: 6px; font-weight: 800; ${oculto ? 'background: rgba(239,68,68,0.15); color: #ef4444;' : 'background: rgba(34,197,94,0.15); color: #22c55e;'}">
+            ${oculto ? 'Oculto' : 'Visível'}
+          </span>
+        </div>
+        <div class="kds-field-actions">
+          <button type="button" class="kds-field-btn" onclick="window.moverCampoCard('${k}',-1)" title="Mover para cima / esquerda">
+            <i class="ph-bold ph-arrow-up"></i>
+          </button>
+          <button type="button" class="kds-field-btn" onclick="window.moverCampoCard('${k}',1)" title="Mover para baixo / direita">
+            <i class="ph-bold ph-arrow-down"></i>
+          </button>
+          <button type="button" class="kds-field-btn" onclick="window.alternarCampoCard('${k}')" title="${oculto ? 'Mostrar' : 'Ocultar'}" style="${oculto ? 'color: #22c55e;' : 'color: #ef4444;'}">
+            <i class="ph-bold ${oculto ? 'ph-eye' : 'ph-eye-slash'}"></i>
+          </button>
+        </div>
+      </div>`;
   }).join('');
+
+  if (typeof Sortable !== 'undefined' && !wrap._sortableInited) {
+    wrap._sortableInited = true;
+    Sortable.create(wrap, {
+      handle: '.kds-drag-handle',
+      animation: 160,
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      onEnd: () => {
+        const novaOrdem = Array.from(wrap.children).map(c => c.getAttribute('data-key')).filter(Boolean);
+        if (novaOrdem.length === CARD_FIELDS.length) {
+          kdsCardOrder = novaOrdem.slice();
+          localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
+          if (containerId === 'kds-card-fields-drawer') {
+            const outro = document.getElementById('kds-card-fields-config');
+            if (outro) renderizarCamposCardList('kds-card-fields-config');
+          } else {
+            const outro = document.getElementById('kds-card-fields-drawer');
+            if (outro) renderizarCamposCardList('kds-card-fields-drawer');
+          }
+          renderQueue(true);
+          kdsAgendarSalvarNoServidor();
+        }
+      }
+    });
+  }
+}
+
+function renderizarCamposCardModal() {
+  renderizarCamposCardList('kds-card-fields-config');
+  renderizarCamposCardList('kds-card-fields-drawer');
 }
 // Parse timestamps stored as UTC in DB (SQLite datetime('now') = UTC)
 function parseUtc(s) { if (!s) return Date.now(); const t = s.includes('T') ? s : s + 'Z'; const d = new Date(t); return isNaN(d.getTime()) ? Date.now() : d.getTime(); }
@@ -341,11 +730,35 @@ function carregarPedidos() {
   }
 }
 
+function atualizarStatusConexao(online) {
+  const badge = document.getElementById('kds-connection-badge');
+  const text = document.getElementById('kds-conn-text');
+  if (!badge || !text) return;
+  if (online) {
+    badge.className = 'kds-conn-badge online';
+    badge.title = 'Conectado ao servidor (tempo real ativo)';
+    text.textContent = 'Online';
+  } else {
+    badge.className = 'kds-conn-badge reconnecting';
+    badge.title = 'Desconectado do servidor. Tentando reconectar...';
+    text.textContent = 'Reconectando...';
+  }
+}
+
 socket.on('connect', () => {
+  atualizarStatusConexao(true);
   carregarPedidos();
   aplicarFiltrosSalvos();
   sincronizarSecoesFilaDoServidor();
   socket.emit('get_produtos');
+});
+
+socket.on('disconnect', () => {
+  atualizarStatusConexao(false);
+});
+
+socket.on('connect_error', () => {
+  atualizarStatusConexao(false);
 });
 
 socket.on('produtos_atualizados', (prods) => {
@@ -650,25 +1063,27 @@ function playOrderSoundAndVibrate(status = 'Em espera', sector = '') {
 }
 
 socket.on('pedidos_atualizados', (data) => {
-  if (Array.isArray(data)) {
-    const oldIds = new Set(queueData.map(p => p.id));
-    queueData = data;
-    let newestId = null;
-    data.forEach(p => {
-      if (!oldIds.has(p.id)) {
-        newOrderIds.add(safeId(p.id));
-        newestId = p.id;
-        setTimeout(() => {
-          newOrderIds.delete(safeId(p.id));
-          renderQueue();
-        }, (iaConfig.segundosPulseNovoPedido || 8) * 1000);
-      }
-    });
-    renderQueue();
-    renderizarSecoesFila();
-    if (newestId) {
-      autoScrollToNewOrders(newestId);
+  if (!data || !Array.isArray(data)) {
+    if (socket && socket.emit) socket.emit('get_pedidos');
+    return;
+  }
+  const oldIds = new Set(queueData.map(p => p.id));
+  queueData = data;
+  let newestId = null;
+  data.forEach(p => {
+    if (!oldIds.has(p.id)) {
+      newOrderIds.add(safeId(p.id));
+      newestId = p.id;
+      setTimeout(() => {
+        newOrderIds.delete(safeId(p.id));
+        renderQueue();
+      }, (iaConfig.segundosPulseNovoPedido || 8) * 1000);
     }
+  });
+  renderQueue();
+  renderizarSecoesFila();
+  if (newestId) {
+    autoScrollToNewOrders(newestId);
   }
 });
 
@@ -688,6 +1103,19 @@ socket.on('pedido_adicionado', (pedido) => {
   }
 });
 
+window.setAutoscrollMode = function(enabled) {
+  localStorage.setItem('chef_kds_autoscroll', enabled ? 'true' : 'false');
+  atualizarBotoesAutoscroll();
+};
+
+function atualizarBotoesAutoscroll() {
+  const enabled = localStorage.getItem('chef_kds_autoscroll') !== 'false';
+  const btnOn = document.getElementById('btn-autoscroll-on');
+  const btnOff = document.getElementById('btn-autoscroll-off');
+  if (btnOn) btnOn.classList.toggle('active', enabled);
+  if (btnOff) btnOff.classList.toggle('active', !enabled);
+}
+
 let scrollTimer = null;
 function autoScrollToNewOrders(targetId) {
   requestAnimationFrame(() => {
@@ -698,24 +1126,33 @@ function autoScrollToNewOrders(targetId) {
     if (!targetEl) targetEl = document.querySelector('.queue-item.is-new');
 
     const pulseSecs = parseInt(localStorage.getItem('chef_kds_pulse_seconds')) || 3;
+    const isAutoscrollEnabled = localStorage.getItem('chef_kds_autoscroll') !== 'false';
 
     if (targetEl) {
-      // 1. Rolar suavemente até o pedido no final/posição da fila
-      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // 1. Rolar suavemente até o pedido se o autoscroll estiver ativado
+      if (isAutoscrollEnabled) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       targetEl.classList.add('new-order-entry-pulse');
 
       // 2. Tocar som configurado (por seção e etapa) e vibrar o celular
       const novoPedido = queueData.find(x => x.id === targetId);
       playOrderSoundAndVibrate(novoPedido ? novoPedido.status : 'Em espera', novoPedido ? novoPedido.sector : '');
 
-      // 3. Após o tempo configurado (ex: 3s), rolar de volta suavemente para o topo da tela
-      if (scrollTimer) clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(() => {
-        queueSection.scrollTo({ top: 0, behavior: 'smooth' });
+      // 3. Após o tempo configurado (ex: 3s), rolar de volta suavemente para o topo se autoscroll ligado
+      if (isAutoscrollEnabled) {
+        if (scrollTimer) clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => {
+          queueSection.scrollTo({ top: 0, behavior: 'smooth' });
+          setTimeout(() => {
+            if (targetEl) targetEl.classList.remove('new-order-entry-pulse');
+          }, 1000);
+        }, pulseSecs * 1000);
+      } else {
         setTimeout(() => {
           if (targetEl) targetEl.classList.remove('new-order-entry-pulse');
-        }, 1000);
-      }, pulseSecs * 1000);
+        }, pulseSecs * 1000);
+      }
     }
   });
 }
@@ -937,11 +1374,67 @@ window.filtrarFila = function(statusText) {
   renderQueue();
 };
 
-window.alterarStatusPedido = function(id, novoStatus) {
-  socket.emit('atualizar_status', { id, status: novoStatus });
+let undoToastTimeout = null;
+function mostrarToastUndo(id, productName, localName, statusAnterior, novoStatus) {
+  const container = document.getElementById('kds-undo-container');
+  if (!container) return;
+
+  container.innerHTML = '';
+  if (undoToastTimeout) clearTimeout(undoToastTimeout);
+
+  const toast = document.createElement('div');
+  toast.className = 'kds-undo-toast';
+  toast.innerHTML = `
+    <div class="kds-undo-content">
+      <i class="ph ph-check-circle" style="color: #10b981; font-size: 18px;"></i>
+      <span><strong>${escHtml(productName || 'Item')}</strong> (${escHtml(localName || 'Mesa')}) → <em>${escHtml(novoStatus)}</em></span>
+    </div>
+    <button class="kds-undo-btn" id="btn-undo-action" title="Desfazer e voltar para ${escHtml(statusAnterior)}">
+      <i class="ph ph-arrow-u-up-left"></i> Desfazer
+    </button>
+    <div class="kds-undo-progress"></div>
+  `;
+
+  const btnUndo = toast.querySelector('#btn-undo-action');
+  if (btnUndo) {
+    btnUndo.onclick = function() {
+      if (undoToastTimeout) clearTimeout(undoToastTimeout);
+      toast.remove();
+      window.alterarStatusPedido(id, statusAnterior, true);
+    };
+  }
+
+  container.appendChild(toast);
+  undoToastTimeout = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => toast.remove(), 350);
+  }, 5000);
+}
+
+window.alterarStatusPedido = function(id, novoStatus, isUndo = false) {
   const p = queueData.find(x => x.id === id);
-  if (p) {
+  if (!p) {
+    socket.emit('atualizar_status', { id, status: novoStatus });
+    return;
+  }
+
+  const statusAnterior = p.status;
+  if (!isUndo && statusAnterior !== novoStatus) {
+    mostrarToastUndo(id, p.productName, p.localName, statusAnterior, novoStatus);
+  }
+
+  const cardEl = document.querySelector(`.queue-item[data-id="${safeId(id)}"]`);
+  if (cardEl && !isUndo) {
+    cardEl.classList.add('item-exiting');
+    setTimeout(() => {
+      p.status = novoStatus;
+      socket.emit('atualizar_status', { id, status: novoStatus });
+      renderQueue();
+    }, 220);
+  } else {
     p.status = novoStatus;
+    socket.emit('atualizar_status', { id, status: novoStatus });
     renderQueue();
   }
 };
@@ -995,7 +1488,7 @@ function getBgColor(diffMins) {
   }
 }
 
-function renderQueue() {
+function renderQueue(forceRerender) {
   const queueList = document.getElementById('queue-list');
   if (!queueList) return;
 
@@ -1062,7 +1555,7 @@ function renderQueue() {
   if (bProntoMob) bProntoMob.innerText = countPronto;
 
   if (filtered.length === 0) {
-    queueList.innerHTML = `
+    const emptyHtml = `
       <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; background: var(--bg-card, #ffffff); border-radius: 24px; border: 1.5px dashed var(--border-color, #cbd5e1); margin: 30px auto; max-width: 480px; box-shadow: 0 4px 16px rgba(0,0,0,0.02);">
         <div style="width: 72px; height: 72px; border-radius: 50%; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 38px; margin-bottom: 16px;">
           <i class="ph-fill ph-check-circle"></i>
@@ -1073,163 +1566,261 @@ function renderQueue() {
           <i class="ph-fill ph-circle" style="color:#10b981; font-size: 8px;"></i> Monitorando novos pedidos em tempo real...
         </span>
       </div>`;
+    if (forceRerender || typeof window.morphdom !== 'function') {
+      queueList.innerHTML = emptyHtml;
+    } else {
+      const tempWrapper = queueList.cloneNode(false);
+      tempWrapper.innerHTML = emptyHtml;
+      window.morphdom(queueList, tempWrapper, {
+        getNodeKey: function(node) {
+          return node.getAttribute ? (node.getAttribute('data-field-key') || node.getAttribute('data-id') || node.id || null) : null;
+        }
+      });
+    }
     return;
   }
 
-  const KDS_LIMIT = 100;
-  const toRender = filtered.slice(0, KDS_LIMIT);
+function renderizarCardIndividual(item) {
+  const timeCreated = parseUtc(item.createdAt);
+  const diffMins = Math.floor((Date.now() - timeCreated) / 60000);
+  const bgColor = getBgColor(diffMins);
+  const localColor = getComandaColor(item.localName);
 
-  queueList.innerHTML = toRender.map(item => {
-    const timeCreated = parseUtc(item.createdAt);
-    const diffMins = Math.floor((Date.now() - timeCreated) / 60000);
-    const bgColor = getBgColor(diffMins);
-    const localColor = getComandaColor(item.localName);
+  const status = item.status;
+  const id = safeId(item.id);
+  const qty = safeQty(item.quantity);
+  let btnIcon, btnColor, nextStatus, btnTitle, btnText;
+  let prevStatus = null;
+  let prevIcon = null;
+  let prevTitle = null;
+  let isPronto = false;
 
-    const status = item.status;
-    const id = safeId(item.id);
-    const qty = safeQty(item.quantity);
-    let btnIcon, btnColor, nextStatus, btnTitle, btnText;
-    let prevStatus = null;
-    let prevIcon = null;
-    let prevTitle = null;
-    let isPronto = false;
-
-    if (status === 'Em espera' || status === 'Pendente') {
-      btnIcon = 'ph-fire';
-      btnColor = '#eb5757';
-      nextStatus = 'Em preparo';
-      btnTitle = 'Iniciar preparo';
-      btnText = 'Iniciar Preparo';
-    } else if (status === 'Em preparo') {
-      btnIcon = 'ph-bowl-food';
-      btnColor = '#10b981';
-      nextStatus = 'Pronto';
-      btnTitle = 'Marcar como Pronto';
-      btnText = 'Marcar Pronto';
-      prevStatus = 'Em espera';
-      prevIcon = 'ph-arrow-u-up-left';
-      prevTitle = 'Voltar para Em espera';
-    } else {
-      isPronto = true;
-      btnIcon = 'ph-bell-ringing';
-      btnColor = '#8b5cf6';
-      btnText = item._chamado ? 'Chamar Novamente' : 'Chamar Garçom';
-      prevStatus = 'Em preparo';
-      prevIcon = 'ph-arrow-u-up-left';
-      prevTitle = 'Voltar para Em preparo';
-    }
-
-    const revertBtn = prevStatus
-      ? `<button class="btn-reverter" onclick="window.alterarStatusPedido(${id}, '${prevStatus}')" title="${prevTitle}"><i class="ph ${prevIcon}"></i> <span>Voltar</span></button>`
-      : '';
-
-    const chamadoClass = (isPronto && item._chamado) ? ' chamado' : '';
-    const especial = iaPedidosEspeciais.get(item.id);
-    const isManobra = especial && especial.tipo === 'manobra';
-    const corSegura = especial && /^#[0-9a-fA-F]{3,8}$/.test(String(especial.cor || '')) ? especial.cor : '#ff6b35';
-    const estiloEspecial = especial ? `border-left: 4px solid ${corSegura} !important; box-shadow: 0 0 12px ${corSegura}33;${isManobra ? 'animation: pulseManobra 1.5s infinite;' : ''}` : '';
-
-    const badgeEspecial = especial
-      ? `<span class="kds-badge-especial" style="background:${corSegura};color:white;${isManobra ? 'animation: pulseBadge 1.5s infinite;' : ''}">${isManobra ? '🔥 ' : ''}${escHtml(especial.mensagem)}</span>`
-      : '';
-
-    const mainBtn = isPronto
-      ? `<button class="btn-chamar${chamadoClass}" onclick="window.chamarGarcom(${id}, ${escJs(item.productName)}, ${qty}, ${escJs(item.localName)}, ${escJs(item.userName)})" title="Chamar garçom para entregar" style="background: #8b5cf6; color: white;"><i class="ph ${btnIcon}"></i> <span>${btnText}</span></button>`
-      : `<button class="btn-pronto" onclick="window.alterarStatusPedido(${id}, '${nextStatus}')" style="background: ${btnColor}; color: white;" title="${btnTitle}"><i class="ph ${btnIcon}"></i> <span>${btnText}</span></button>`;
-
-    const isMultipleClass = qty > 1 ? ' is-multiple' : '';
-    const isNewClass = newOrderIds.has(id) ? ' new-order-entry-pulse' : '';
-
-    const statusEsc = escHtml(status);
-    const nomeEsc = escHtml(item.productName || item.nome || 'Produto');
-    const emojiEsc = escHtml(item.productEmoji || '🍽️');
-    const localEsc = escHtml(item.localName || 'Mesa');
-    const userEsc = escHtml(item.userName || '');
-    const obsEsc = escHtml(item.observations || '');
-    let compsHtml = '';
-    try {
-      const comps = typeof item.composicoes === 'string' ? JSON.parse(item.composicoes) : (item.composicoes || []);
-      if (Array.isArray(comps) && comps.length > 0) {
-        const byCat = {};
-        comps.forEach(c => {
-          if (typeof c === 'object' && c.categoria) {
-            if (!byCat[c.categoria]) byCat[c.categoria] = [];
-            byCat[c.categoria].push(c.opcao || c.nome || String(c));
-          } else {
-            if (!byCat['Composição']) byCat['Composição'] = [];
-            byCat['Composição'].push(typeof c === 'object' ? (c.nome || c.opcao || JSON.stringify(c)) : String(c));
-          }
-        });
-        compsHtml = '<div class="item-composicoes">' + Object.keys(byCat).map(cat =>
-          '<span style="font-weight:700;color:#1e3a5f;">' + escHtml(cat) + ':</span> ' +
-          byCat[cat].map(o => '<span class="comp-item">' + escHtml(o) + '</span>').join(' ')
-        ).join(' &nbsp; ') + '</div>';
-      }
-    } catch(e) {}
-
-    const urgencyClass = diffMins >= 30 ? 'urgente' : (diffMins >= 15 ? 'atencao' : 'normal');
-
-    const ptCabecalho = `
-        <div class="kds-card-mobile-header">
-          <div class="kds-card-mesa-badge">
-            <i class="ph-bold ph-table" style="color: ${localColor}; font-size: 18px;"></i>
-            <strong style="font-size: 14.5px; font-weight: 800; color: inherit;">${localEsc}</strong>
-            ${userEsc ? `<span class="kds-card-garcom" style="opacity:0.75; font-size:12px;">· ${userEsc}</span>` : ''}
-          </div>
-          <div class="kds-card-time-badge ${urgencyClass}">
-            <i class="ph ph-clock"></i>
-            <span>${formatarTempoFila(diffMins)}</span>
-          </div>
-        </div>`;
-
-    const ptQtd = `
-        <div class="kds-qty-badge">${qty}x</div>`;
-
-    const ptProduto = `
-        <div class="item-produto">
-          <div class="item-produto-title-line">
-            <span class="item-emoji" style="font-size:20px;">${emojiEsc}</span>
-            <span class="kds-product-name">${nomeEsc}</span>
-            ${badgeEspecial}
-          </div>
-          ${obsEsc ? `<div class="item-observacao" style="background:rgba(239,68,68,0.1); color:#ef4444; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;"><i class="ph-bold ph-warning-circle"></i> OBS: ${obsEsc}</div>` : ''}
-          ${compsHtml}
-        </div>`;
-
-    const ptAcao = `
-        <div class="item-pronto">
-          ${revertBtn}
-          ${mainBtn}
-        </div>`;
-
-    const camposMontados = { cabecalho: ptCabecalho, quantidade: ptQtd, produto: ptProduto, acao: ptAcao };
-    const hiddenFields = window.obterCardHidden();
-    const corpoCard = obterCardOrder().map(k => hiddenFields.has(k) ? '' : (camposMontados[k] || '')).join('');
-
-    return `
-      <div class="queue-item${isNewClass}" data-id="${id}" data-status="${statusEsc}" style="border-left: 5px solid ${localColor}; ${estiloEspecial}">
-        ${corpoCard}
-      </div>
-    `;
-  }).join('');
-
-  if (filtered.length > KDS_LIMIT) {
-    queueList.innerHTML += `
-      <div style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--text-secondary); background: rgba(0,0,0,0.02); border-radius: 12px; margin-top: 15px;">
-        <i class="ph ph-warning-circle" style="font-size:24px; color:#f59e0b; margin-bottom:8px;"></i><br>
-        <strong>Muitos pedidos simultâneos (${filtered.length})</strong><br>
-        Mostrando os primeiros ${KDS_LIMIT} para manter o tablet rápido. 
-        Finalize os atuais ou use os filtros (Setor/Pesquisa) para ver os demais.
-      </div>`;
+  if (status === 'Em espera' || status === 'Pendente') {
+    btnIcon = 'ph-fire';
+    btnColor = '#eb5757';
+    nextStatus = 'Em preparo';
+    btnTitle = 'Iniciar preparo';
+    btnText = 'Iniciar Preparo';
+  } else if (status === 'Em preparo') {
+    btnIcon = 'ph-bowl-food';
+    btnColor = '#10b981';
+    nextStatus = 'Pronto';
+    btnTitle = 'Marcar como Pronto';
+    btnText = 'Marcar Pronto';
+    prevStatus = 'Em espera';
+    prevIcon = 'ph-arrow-u-up-left';
+    prevTitle = 'Voltar para Em espera';
+  } else {
+    isPronto = true;
+    btnIcon = 'ph-bell-ringing';
+    btnColor = '#8b5cf6';
+    btnText = item._chamado ? 'Chamar Novamente' : 'Chamar Garçom';
+    prevStatus = 'Em preparo';
+    prevIcon = 'ph-arrow-u-up-left';
+    prevTitle = 'Voltar para Em preparo';
   }
 
+  const revertBtn = prevStatus
+    ? `<button class="btn-reverter" onclick="window.alterarStatusPedido(${id}, '${prevStatus}')" title="${prevTitle}"><i class="ph ${prevIcon}"></i> <span>Voltar</span></button>`
+    : '';
 
-  // Re-aplicar larguras das colunas
-  ['quantidade', 'produto', 'local', 'pronto'].forEach(col => {
-    const savedCol = localStorage.getItem(`filaColWidth-${col}`);
-    if (savedCol) applyColumnWidth(col, savedCol);
-  });
+  const chamadoClass = (isPronto && item._chamado) ? ' chamado' : '';
+  const especial = iaPedidosEspeciais.get(item.id);
+  const isManobra = especial && especial.tipo === 'manobra';
+  const corSegura = especial && /^#[0-9a-fA-F]{3,8}$/.test(String(especial.cor || '')) ? especial.cor : '#ff6b35';
+  const estiloEspecial = especial ? `border-left: 4px solid ${corSegura} !important; box-shadow: 0 0 12px ${corSegura}33;${isManobra ? 'animation: pulseManobra 1.5s infinite;' : ''}` : '';
 
+  const badgeEspecial = especial
+    ? `<span class="kds-badge-especial" style="background:${corSegura};color:white;${isManobra ? 'animation: pulseBadge 1.5s infinite;' : ''}">${isManobra ? '🔥 ' : ''}${escHtml(especial.mensagem)}</span>`
+    : '';
+
+  const mainBtn = isPronto
+    ? `<button class="btn-chamar${chamadoClass}" onclick="window.chamarGarcom(${id}, ${escJs(item.productName)}, ${qty}, ${escJs(item.localName)}, ${escJs(item.userName)})" title="Chamar garçom para entregar" style="background: #8b5cf6; color: white;"><i class="ph ${btnIcon}"></i> <span>${btnText}</span></button>`
+    : `<button class="btn-pronto" onclick="window.alterarStatusPedido(${id}, '${nextStatus}')" style="background: ${btnColor}; color: white;" title="${btnTitle}"><i class="ph ${btnIcon}"></i> <span>${btnText}</span></button>`;
+
+  const isMultipleClass = qty > 1 ? ' is-multiple' : '';
+  const isNewClass = newOrderIds.has(id) ? ' new-order-entry-pulse' : '';
+
+  const statusEsc = escHtml(status);
+  const nomeEsc = escHtml(item.productName || item.nome || 'Produto');
+  const emojiEsc = escHtml(item.productEmoji || '🍽️');
+  const localEsc = escHtml(item.localName || 'Mesa');
+  const userEsc = escHtml(item.userName || '');
+  const obsEsc = escHtml(item.observations || '');
+  let compsHtml = '';
+  try {
+    const comps = typeof item.composicoes === 'string' ? JSON.parse(item.composicoes) : (item.composicoes || []);
+    if (Array.isArray(comps) && comps.length > 0) {
+      const byCat = {};
+      comps.forEach(c => {
+        if (typeof c === 'object' && c.categoria) {
+          if (!byCat[c.categoria]) byCat[c.categoria] = [];
+          byCat[c.categoria].push(c.opcao || c.nome || String(c));
+        } else {
+          if (!byCat['Composição']) byCat['Composição'] = [];
+          byCat['Composição'].push(typeof c === 'object' ? (c.nome || c.opcao || JSON.stringify(c)) : String(c));
+        }
+      });
+      compsHtml = '<div class="item-composicoes">' + Object.keys(byCat).map(cat =>
+        '<span style="font-weight:700;color:#1e3a5f;">' + escHtml(cat) + ':</span> ' +
+        byCat[cat].map(o => '<span class="comp-item">' + escHtml(o) + '</span>').join(' ')
+      ).join(' &nbsp; ') + '</div>';
+    }
+  } catch(e) {}
+
+  const urgencyClass = diffMins >= 30 ? 'urgente' : (diffMins >= 15 ? 'atencao' : 'normal');
+
+  const rawUser = (item.userName || '').trim();
+  const apelidoColab = rawUser ? (kdsColabApelidos[rawUser] || kdsColabApelidos[rawUser.toLowerCase()] || '') : '';
+  const displayUser = apelidoColab || rawUser;
+
+  const idStr = String(item.id);
+  const apelidoPedido = kdsPedidoApelidos[idStr] || '';
+
+  const ptCabecalho = `
+      <div class="kds-card-mobile-header" data-field-key="cabecalho">
+        <div class="kds-card-mesa-badge">
+          <i class="ph-bold ph-table" style="color: ${localColor}; font-size: 19px; flex-shrink: 0;"></i>
+          <div class="kds-card-mesa-info">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <strong class="kds-mesa-title">${localEsc}</strong>
+              ${apelidoPedido ? `
+                <span class="kds-item-nickname-badge" onclick="event.stopPropagation(); window.cadastrarApelidoPedido(${id})" title="Apelido do Pedido: ${escHtml(apelidoPedido)}. Clique para alterar.">
+                  <i class="ph-fill ph-tag"></i> <span>${escHtml(apelidoPedido)}</span>
+                </span>
+              ` : `
+                <button type="button" class="kds-btn-add-apelido" onclick="event.stopPropagation(); window.cadastrarApelidoPedido(${id})" title="Cadastrar apelido/identificação para este pedido">
+                  <i class="ph-bold ph-tag"></i>
+                </button>
+              `}
+            </div>
+            ${rawUser ? `
+              <span class="kds-card-garcom" onclick="event.stopPropagation(); window.cadastrarApelidoColaborador('${escJs(rawUser)}')" title="Colaborador: ${escHtml(rawUser)}${apelidoColab ? ` (Apelido: ${escHtml(apelidoColab)})` : ''}. Clique para alterar apelido.">
+                <i class="ph-bold ph-user"></i>
+                <span>${escHtml(displayUser)}</span>
+                ${apelidoColab ? '<i class="ph-fill ph-tag" style="color:#fc4b15;font-size:9px;"></i>' : '<i class="ph ph-pencil-simple" style="font-size:9px;opacity:0.6;"></i>'}
+              </span>
+            ` : ''}
+          </div>
+        </div>
+        <div class="kds-card-time-badge ${urgencyClass}" title="Tempo no status atual">
+          <i class="ph ph-clock"></i>
+          <span>${formatarTempoFila(diffMins)}</span>
+        </div>
+      </div>`;
+
+  const ptQtd = `
+      <div class="kds-qty-badge" data-field-key="quantidade">${qty}x</div>`;
+
+  const ptProduto = `
+      <div class="item-produto" data-field-key="produto">
+        <div class="item-produto-title-line">
+          <span class="item-emoji" style="font-size:20px;">${emojiEsc}</span>
+          <span class="kds-product-name">${nomeEsc}</span>
+          ${badgeEspecial}
+        </div>
+        ${obsEsc ? `<div class="item-observacao" style="background:rgba(239,68,68,0.1); color:#ef4444; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;"><i class="ph-bold ph-warning-circle"></i> OBS: ${obsEsc}</div>` : ''}
+        ${compsHtml}
+      </div>`;
+
+  const ptAcao = `
+      <div class="item-pronto" data-field-key="acao">
+        ${revertBtn}
+        ${mainBtn}
+      </div>`;
+
+  const camposMontados = { cabecalho: ptCabecalho, quantidade: ptQtd, produto: ptProduto, acao: ptAcao };
+  const hiddenFields = window.obterCardHidden();
+  const corpoCard = obterCardOrder().map(k => hiddenFields.has(k) ? '' : (camposMontados[k] || '')).join('');
+
+  return `
+    <div class="queue-item${isNewClass}" data-id="${id}" data-status="${statusEsc}" style="border-left: 5px solid ${localColor}; ${estiloEspecial}">
+      ${corpoCard}
+    </div>
+  `;
+}
+
+  const modoAtual = localStorage.getItem('chef_kds_layout_mode') || 'grid';
+
+  if (modoAtual === 'kanban') {
+    const itensValidos = queueData.filter(item => {
+      if (['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(item.status)) return false;
+      const itemSector = (item.sector || '').trim().toLowerCase();
+      if (currentSector !== 'Todos' && item.sector && itemSector !== currentSector.trim().toLowerCase()) return false;
+      if (filaTipoFiltro !== 'todos' && tipoDoItem(item) !== filaTipoFiltro) return false;
+      if (filaSearchText) {
+        const productName = (item.productName || '').toLowerCase();
+        const localName = (item.localName || '').toLowerCase();
+        const mesaComanda = (item.mesa_comanda || '').toLowerCase();
+        if (!productName.includes(filaSearchText) && !localName.includes(filaSearchText) && !mesaComanda.includes(filaSearchText)) return false;
+      }
+      return true;
+    });
+
+    const itensEspera = itensValidos.filter(i => i.status === 'Pendente' || i.status === 'Em espera');
+    const itensPreparo = itensValidos.filter(i => i.status === 'Em preparo' || i.status === 'Em Preparo');
+    const itensProntos = itensValidos.filter(i => i.status === 'Pronto' || i.status === 'Prontos');
+
+    const htmlEspera = itensEspera.map(renderizarCardIndividual).join('');
+    const htmlPreparo = itensPreparo.map(renderizarCardIndividual).join('');
+    const htmlProntos = itensProntos.map(renderizarCardIndividual).join('');
+
+    const kanbanHtml = `
+      <div class="kds-kanban-column col-status-espera">
+        <div class="kds-kanban-header" style="color: #f59e0b; border-bottom: 2px solid rgba(245, 158, 11, 0.4);">
+          <span style="display:flex;align-items:center;gap:8px;"><i class="ph-bold ph-hourglass-high"></i> Em Espera</span>
+          <span class="kds-badge-count badge-espera" style="background:#f59e0b;color:#ffffff;">${itensEspera.length}</span>
+        </div>
+        <div class="kds-kanban-body">
+          ${htmlEspera || '<div class="kds-kanban-empty">Nenhum pedido em espera</div>'}
+        </div>
+      </div>
+      <div class="kds-kanban-column col-status-preparo">
+        <div class="kds-kanban-header" style="color: #3b82f6; border-bottom: 2px solid rgba(59, 130, 246, 0.4);">
+          <span style="display:flex;align-items:center;gap:8px;"><i class="ph-bold ph-fire"></i> Em Preparo</span>
+          <span class="kds-badge-count badge-preparo" style="background:#3b82f6;color:#ffffff;">${itensPreparo.length}</span>
+        </div>
+        <div class="kds-kanban-body">
+          ${htmlPreparo || '<div class="kds-kanban-empty">Nenhum pedido em preparo</div>'}
+        </div>
+      </div>
+      <div class="kds-kanban-column col-status-pronto">
+        <div class="kds-kanban-header" style="color: #10b981; border-bottom: 2px solid rgba(16, 185, 129, 0.4);">
+          <span style="display:flex;align-items:center;gap:8px;"><i class="ph-bold ph-bowl-food"></i> Prontos</span>
+          <span class="kds-badge-count badge-pronto" style="background:#10b981;color:#ffffff;">${itensProntos.length}</span>
+        </div>
+        <div class="kds-kanban-body">
+          ${htmlProntos || '<div class="kds-kanban-empty">Nenhum pedido pronto</div>'}
+        </div>
+      </div>
+    `;
+
+    queueList.innerHTML = kanbanHtml;
+    aplicarTamanhosCSS(kdsSectionSizes);
+    return;
+  }
+
+  const itemsHtml = filtered.map(renderizarCardIndividual).join('');
+
+  if (forceRerender || typeof window.morphdom !== 'function') {
+    queueList.innerHTML = itemsHtml;
+  } else {
+    const tempWrapper = queueList.cloneNode(false);
+    tempWrapper.innerHTML = itemsHtml;
+    window.morphdom(queueList, tempWrapper, {
+      getNodeKey: function(node) {
+        return node.getAttribute ? (node.getAttribute('data-field-key') || node.getAttribute('data-id') || node.id || null) : null;
+      },
+      onBeforeElChildrenUpdated: function(fromEl, toEl) {
+        if (fromEl.classList && fromEl.classList.contains('item-exiting')) {
+          return false;
+        }
+        return true;
+      }
+    });
+  }
+
+  aplicarTamanhosCSS(kdsSectionSizes);
   aplicarOrdemColunasNaFila();
 }
 
@@ -1646,43 +2237,46 @@ window.alternarLayoutRapido = function() {
 
 
 window.alterarModoDisposicao = function(modo) {
+  if (!['grid', 'lista', 'kanban'].includes(modo)) modo = 'grid';
   localStorage.setItem('chef_kds_layout_mode', modo);
   const queueList = document.getElementById('queue-list');
   const btnGrid = document.getElementById('btn-layout-grid');
   const btnLista = document.getElementById('btn-layout-lista');
-  const btnLayout3col = document.getElementById('btn-layout-3col');
-  const btnLayoutTv = document.getElementById('btn-layout-tv');
+  const btnKanban = document.getElementById('btn-layout-kanban');
 
   if (queueList) {
-    if (modo === 'lista') {
-      queueList.classList.add('modo-lista');
-      queueList.style.gridTemplateColumns = '1fr';
-    } else {
-      queueList.classList.remove('modo-lista');
-      queueList.style.gridTemplateColumns = '';
-    }
-    queueList.classList.remove('grade-2col', 'grade-3col', 'modo-tv');
-    if (modo === 'grid') queueList.classList.add('grade-2col');
-    if (modo === 'grade3') queueList.classList.add('grade-3col');
-    if (modo === 'tv') queueList.classList.add('modo-tv');
+    queueList.classList.remove('modo-lista', 'modo-kanban');
+    if (modo === 'lista') queueList.classList.add('modo-lista');
+    if (modo === 'kanban') queueList.classList.add('modo-kanban');
   }
 
-  if (btnGrid && btnLista) {
+  if (btnGrid) {
     btnGrid.style.background = modo === 'grid' ? '#fc4b15' : 'transparent';
     btnGrid.style.color = modo === 'grid' ? '#ffffff' : 'var(--text-muted, #94a3b8)';
     btnGrid.style.fontWeight = modo === 'grid' ? '800' : '700';
-
+  }
+  if (btnLista) {
     btnLista.style.background = modo === 'lista' ? '#fc4b15' : 'transparent';
     btnLista.style.color = modo === 'lista' ? '#ffffff' : 'var(--text-muted, #94a3b8)';
     btnLista.style.fontWeight = modo === 'lista' ? '800' : '700';
   }
-  if (btnLayout3col) btnLayout3col.classList.toggle('active', modo === 'grade3');
-  if (btnLayoutTv) btnLayoutTv.classList.toggle('active', modo === 'tv');
+  if (btnKanban) {
+    btnKanban.style.background = modo === 'kanban' ? '#fc4b15' : 'transparent';
+    btnKanban.style.color = modo === 'kanban' ? '#ffffff' : 'var(--text-muted, #94a3b8)';
+    btnKanban.style.fontWeight = modo === 'kanban' ? '800' : '700';
+  }
 
-  document.querySelectorAll('#modal-fila-settings .layout-btn').forEach(btn => {
-    if (btn.getAttribute('data-mode') === modo) btn.classList.add('active');
-    else btn.classList.remove('active');
+  document.querySelectorAll('.btn-mode-choice, #modal-fila-settings .layout-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-mode') === modo);
   });
+
+  const gradeOpts = document.getElementById('kds-grade-options-group');
+  if (gradeOpts) {
+    gradeOpts.style.display = modo === 'grid' ? 'flex' : 'none';
+  }
+
+  aplicarTamanhosCSS(kdsSectionSizes);
+  renderQueue();
   kdsAgendarSalvarNoServidor();
 };
 
@@ -1712,11 +2306,22 @@ window.fecharModalFilaSettings = function() {
 
 document.addEventListener('DOMContentLoaded', () => {
   try {
-    const savedLayout = localStorage.getItem('chef_kds_layout_mode');
-    if (savedLayout) window.alterarModoDisposicao(savedLayout);
+    const savedLayout = localStorage.getItem('chef_kds_layout_mode') || 'grid';
+    window.alterarModoDisposicao(savedLayout);
+    aplicarTamanhosCSS(kdsSectionSizes);
+    if (typeof renderizarCamposCardModal === 'function') renderizarCamposCardModal();
     const savedFontScale = localStorage.getItem('chef_kds_font_scale');
     if (savedFontScale && document.getElementById('queue-list')) {
       document.getElementById('queue-list').style.fontSize = (parseFloat(savedFontScale) * 100) + '%';
     }
+    atualizarBotoesAutoscroll();
+    atualizarStatusConexao(socket && socket.connected);
   } catch(e){}
 });
+
+// Intervalo suave a cada 30 segundos para atualizar tempos decorridos e criticidade via morphdom
+setInterval(() => {
+  if (Array.isArray(queueData) && queueData.length > 0) {
+    renderQueue();
+  }
+}, 30000);

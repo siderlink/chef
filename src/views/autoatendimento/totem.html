@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -13,8 +13,9 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/theme-manager.js?v=20260901paletas"></script>
   <style>
-    :root {
+    :root, [data-theme="light"], body.theme-light {
       --primary: #fc4b15;
       --primary-hover: #e03e09;
       --bg: #f4f5f7;
@@ -22,6 +23,19 @@
       --text: #0f172a;
       --text-muted: #64748b;
       --border: #e2e8f0;
+      --green: #3ab55b;
+      --radius-lg: 22px;
+      --radius-md: 14px;
+    }
+
+    [data-theme="dark"], body.dark-mode, body.theme-dark {
+      --primary: #fc4b15;
+      --primary-hover: #e03e09;
+      --bg: #0b0f19;
+      --surface: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.08);
       --green: #3ab55b;
       --radius-lg: 22px;
       --radius-md: 14px;
@@ -85,9 +99,17 @@
       display: flex; flex-direction: column; gap: 8px; min-height: 170px;
     }
     .prod-card:active { border-color: var(--primary); transform: scale(0.98); }
+    .prod-img { width: 100%; height: 130px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 6px; background: #e2e8f0; }
     .prod-emoji { font-size: 52px; line-height: 1; }
     .prod-name { font-size: 17px; font-weight: 700; }
     .prod-price { font-size: 19px; font-weight: 800; color: var(--primary); margin-top: auto; }
+    .obs-tag-btn {
+      padding: 7px 12px; border-radius: 999px; border: 1.5px solid var(--border);
+      background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .obs-tag-btn:active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .empty-msg {
       grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 60px 0;
       font-size: 18px;
@@ -384,29 +406,38 @@
     <button class="btn-checkout" onclick="window.totemOpenCart()"><i class="ph ph-arrow-right"></i> Ver carrinho</button>
   </div>
 
-  <div id="cart-overlay" class="overlay">
+  <div id="cart-overlay" class="overlay" onclick="if(event.target===this) window.totemCloseCart()">
     <div class="sheet">
       <button class="sheet-close" onclick="window.totemCloseCart()"><i class="ph ph-x"></i></button>
       <div class="sheet-title">Seu pedido</div>
       <div id="cart-items-list"></div>
       <div class="cart-total-row"><span>Total</span><span id="cart-sheet-total">R$ 0,00</span></div>
-      <button class="btn-primary" onclick="window.totemCheckout()"><i class="ph ph-check-circle"></i> Finalizar pedido</button>
+      <button id="btn-cart-checkout" class="btn-primary" onclick="window.totemCheckout()"><i class="ph ph-check-circle"></i> Finalizar pedido</button>
       <button class="btn-secondary" onclick="window.totemCloseCart()">Continuar escolhendo</button>
     </div>
   </div>
 
-  <div id="item-overlay" class="overlay center">
+  <div id="item-overlay" class="overlay center" onclick="if(event.target===this) window.totemCloseItem()">
     <div class="modal-box">
+      <img id="item-img" class="item-modal-img" style="display:none; width:100%; max-height:160px; border-radius:16px; object-fit:cover; margin:0 auto 10px;" alt="" />
       <div id="item-emoji" style="font-size:64px; line-height:1;">🍽️</div>
       <div id="item-name" style="font-size:22px; font-weight:800; margin:8px 0 2px;">Produto</div>
-      <div id="item-price" style="font-size:20px; font-weight:800; color:var(--primary); margin-bottom:18px;">R$ 0,00</div>
-      <div style="display:flex; align-items:center; justify-content:center; gap:22px; margin-bottom:8px;">
+      <div id="item-price" style="font-size:20px; font-weight:800; color:var(--primary); margin-bottom:14px;">R$ 0,00</div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:22px; margin-bottom:12px;">
         <button class="qty-btn" onclick="window.totemItemQty(-1)"><i class="ph ph-minus"></i></button>
         <span id="item-qty" style="font-size:26px; font-weight:800; min-width:40px; text-align:center;">1</span>
         <button class="qty-btn" onclick="window.totemItemQty(1)"><i class="ph ph-plus"></i></button>
       </div>
-      <input id="item-obs" placeholder="Observação (opcional)" style="width:100%; padding:13px; border:2px solid var(--border); border-radius:12px; font-size:15px; margin:10px 0 6px; outline:none;" />
-      <button class="btn-primary" onclick="window.totemAddItem()"><i class="ph ph-plus"></i> Adicionar</button>
+      <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:10px;">
+        <button type="button" class="obs-tag-btn" onclick="window.totemAppendObs('Sem cebola')">Sem cebola</button>
+        <button type="button" class="obs-tag-btn" onclick="window.totemAppendObs('Sem molho')">Sem molho</button>
+        <button type="button" class="obs-tag-btn" onclick="window.totemAppendObs('Bem passado')">Bem passado</button>
+        <button type="button" class="obs-tag-btn" onclick="window.totemAppendObs('Ao ponto')">Ao ponto</button>
+        <button type="button" class="obs-tag-btn" onclick="window.totemAppendObs('Sem gelo')">Sem gelo</button>
+        <button type="button" class="obs-tag-btn" onclick="window.totemAppendObs('Para viagem')">Para viagem</button>
+      </div>
+      <input id="item-obs" placeholder="Outra observação (opcional)" style="width:100%; padding:13px; border:2px solid var(--border); border-radius:12px; font-size:15px; margin:4px 0 8px; outline:none;" />
+      <button class="btn-primary" onclick="window.totemAddItem()"><i class="ph ph-plus"></i> Adicionar ao pedido</button>
       <button class="btn-secondary" onclick="window.totemCloseItem()">Cancelar</button>
     </div>
   </div>
@@ -425,6 +456,7 @@
       <div id="status-order-num"></div>
       <button id="status-btn-close" class="btn-primary" style="display:none;" onclick="window.totemReset()">Fazer novo pedido</button>
       <button id="status-btn-pix" class="btn-primary" style="display:none;" onclick="window.totemConfirmPix()"><i class="ph ph-check-circle"></i> Já paguei via Pix</button>
+      <button id="status-btn-cancel-pix" class="btn-secondary" style="display:none;" onclick="window.totemCancelarPix()"><i class="ph ph-arrow-left"></i> Voltar ao carrinho</button>
     </div>
   </div>
 

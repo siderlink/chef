@@ -63,8 +63,8 @@
   document.addEventListener('touchmove', function (e) {
     if (e.touches && e.touches.length > 1) e.preventDefault();
     if (window.scrollY <= 0 && e.touches && e.touches.length === 1) {
-      var area = document.getElementById('products-area');
-      if (area && !area.contains(e.target)) e.preventDefault();
+      var isScrollable = e.target && e.target.closest && e.target.closest('#products-area, #totem-home, .sheet, #cart-items-list, .destaques-row, #category-bar, .modal-box, #sec-categorias');
+      if (!isScrollable) e.preventDefault();
     }
   }, { passive: false });
 
@@ -266,8 +266,9 @@
       lista.forEach(function (p) {
         var c = document.createElement('div');
         c.className = 'mini-card';
+        var foto = p.foto_url || p.imagem || p.foto;
         c.innerHTML =
-          '<span class="mc-emoji">' + (p.emoji || '&#127869;&#65039;') + '</span>' +
+          (foto ? '<img class="mc-img" src="' + esc(foto) + '" alt="' + esc(p.nome) + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline\';" /><span class="mc-emoji" style="display:none;">' + (p.emoji || '🍽️') + '</span>' : '<span class="mc-emoji">' + (p.emoji || '🍽️') + '</span>') +
           '<span class="mc-nome">' + esc(p.nome) + '</span>' +
           '<span class="mc-preco">R$ ' + (parseFloat(p.preco) || 0).toFixed(2).replace('.', ',') + '</span>';
         c.onclick = function (ev) {
@@ -428,7 +429,8 @@
   socket.on('produtos_atualizados', function (prods) {
     PRODUTOS = (prods || []).filter(function (p) {
       return (p.categoria !== 'Mais Pedidos' || p.originalId) &&
-        (p.visibilidade === 'todos' || p.visibilidade === undefined || p.visibilidade === null);
+        (p.visibilidade === 'todos' || p.visibilidade === undefined || p.visibilidade === null || p.visibilidade === 'totem') &&
+        (p.status !== 'inativo');
     });
     var cats = [];
     PRODUTOS.forEach(function (p) {
@@ -470,8 +472,9 @@
       var card = document.createElement('div');
       card.className = 'prod-card';
       var preco = parseFloat(p.preco) || 0;
+      var foto = p.foto_url || p.imagem || p.foto;
       card.innerHTML =
-        '<div class="prod-emoji">' + (p.emoji || '&#127869;&#65039;') + '</div>' +
+        (foto ? '<img class="prod-img" src="' + esc(foto) + '" alt="' + esc(p.nome) + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';" /><div class="prod-emoji" style="display:none;">' + (p.emoji || '🍽️') + '</div>' : '<div class="prod-emoji">' + (p.emoji || '🍽️') + '</div>') +
         '<div class="prod-name">' + esc(p.nome) + '</div>' +
         '<div class="prod-price">R$ ' + preco.toFixed(2).replace('.', ',') + '</div>';
       card.onclick = function () { abrirItem(p); };
@@ -488,14 +491,34 @@
   /* ═══════════ ITEM ═══════════ */
 
   function abrirItem(p) {
-    ITEMAtual = { id: p.id, nome: p.nome, emoji: p.emoji || '', preco: parseFloat(p.preco) || 0, sector: p.setor || p.sector || '' };
+    var foto = p.foto_url || p.imagem || p.foto || '';
+    ITEMAtual = { id: p.id, nome: p.nome, emoji: p.emoji || '', preco: parseFloat(p.preco) || 0, sector: p.setor || p.sector || '', foto: foto };
     ITEM_QTD = 1;
-    $('item-emoji').textContent = ITEMAtual.emoji || '\u{1F37D}\uFE0F';
+    var imgEl = $('item-img');
+    var emojiEl = $('item-emoji');
+    if (foto) {
+      if (imgEl) { imgEl.src = foto; imgEl.style.display = 'block'; }
+      if (emojiEl) emojiEl.style.display = 'none';
+    } else {
+      if (imgEl) imgEl.style.display = 'none';
+      if (emojiEl) { emojiEl.style.display = 'block'; emojiEl.textContent = ITEMAtual.emoji || '🍽️'; }
+    }
     $('item-name').textContent = ITEMAtual.nome;
     atualizarPrecoItem();
     $('item-obs').value = '';
     $('item-overlay').style.display = 'flex';
   }
+
+  window.totemAppendObs = function (tag) {
+    var inp = $('item-obs');
+    if (!inp) return;
+    var atual = inp.value.trim();
+    if (!atual) {
+      inp.value = tag;
+    } else if (atual.indexOf(tag) === -1) {
+      inp.value = atual + ', ' + tag;
+    }
+  };
 
   function atualizarPrecoItem() {
     $('item-price').textContent = 'R$ ' + (ITEMAtual.preco * ITEM_QTD).toFixed(2).replace('.', ',');
@@ -584,6 +607,8 @@
         window.totemOpenCart();
       };
     });
+    var btnCheckout = $('btn-cart-checkout');
+    if (btnCheckout) btnCheckout.disabled = !CARRINHO.length;
     $('cart-sheet-total').textContent = 'R$ ' + carrinhoTotal().toFixed(2).replace('.', ',');
     $('cart-overlay').style.display = 'flex';
   };
@@ -601,6 +626,46 @@
     .then(function (cfgs) { CONFIGS = cfgs || {}; })
     .catch(function () { });
 
+  function gerarPixCopiaCola(chave, valor, beneficiario, cidade) {
+    function tlv(id, val) {
+      var v = String(val == null ? '' : val);
+      var len = ('00' + v.length).slice(-2);
+      return id + len + v;
+    }
+    var merchantAccount = tlv('00', 'br.gov.bcb.pix') + tlv('01', chave);
+    var payload =
+      tlv('00', '01') +
+      tlv('26', merchantAccount) +
+      tlv('52', '0000') +
+      tlv('53', '986') +
+      tlv('54', (parseFloat(valor) || 0).toFixed(2)) +
+      tlv('58', 'BR') +
+      tlv('59', (beneficiario || 'CHEF COZINHA').slice(0, 25)) +
+      tlv('60', (cidade || 'BRASILIA').slice(0, 15)) +
+      tlv('62', tlv('05', '***')) +
+      '6304';
+    var crc = 0xFFFF;
+    for (var i = 0; i < payload.length; i++) {
+      crc ^= (payload.charCodeAt(i) << 8);
+      for (var j = 0; j < 8; j++) {
+        if ((crc & 0x8000) !== 0) crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+        else crc = (crc << 1) & 0xFFFF;
+      }
+    }
+    var crcHex = ('0000' + crc.toString(16).toUpperCase()).slice(-4);
+    return payload + crcHex;
+  }
+
+  window.totemCancelarPix = function () {
+    $('status-overlay').style.display = 'none';
+    $('pix-box').style.display = 'none';
+    var btnCanc = $('status-btn-cancel-pix');
+    if (btnCanc) btnCanc.style.display = 'none';
+    $('status-btn-pix').style.display = 'none';
+    aguardandoPix = false;
+    window.totemOpenCart();
+  };
+
   window.totemCheckout = function () {
     if (!CARRINHO.length) return;
     var fluxoPix = CONFIGS.qr_order_flow === 'pix';
@@ -611,6 +676,8 @@
     $('status-icon').innerHTML = '<i class="ph ph-clock"></i>';
     $('status-btn-close').style.display = 'none';
     $('status-btn-pix').style.display = 'none';
+    var btnCanc = $('status-btn-cancel-pix');
+    if (btnCanc) btnCanc.style.display = 'none';
     $('status-order-num').innerHTML = '';
 
     if (fluxoPix && temChave) {
@@ -620,22 +687,26 @@
       $('status-title').textContent = 'Pagamento via Pix';
       $('status-desc').textContent = 'Faça o pagamento abaixo para enviar seu pedido à cozinha.';
       $('pix-total-text').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
-      var copiaCola = '00020101021226840014BR.GOV.BCB.PIX0114' + chave + '5204000053039865405' + total.toFixed(2) + '5802BR5915CHEFCOZINHABENE6008BRASILIA62070503***6304';
+      var copiaCola = gerarPixCopiaCola(chave, total, PERS ? PERS.titulo : 'CHEF COZINHA', 'BRASILIA');
       $('pix-key-text').textContent = copiaCola;
       $('pix-qr-img').src = '/api/qr?restaurante_id=' + encodeURIComponent(restauranteId) + '&size=150&data=' + encodeURIComponent(copiaCola);
       $('pix-box').style.display = 'block';
       $('status-btn-pix').style.display = 'inline-block';
+      if (btnCanc) btnCanc.style.display = 'inline-block';
     } else {
       $('status-title').textContent = 'Enviando pedido';
       $('status-desc').textContent = 'Enviando suas informações para o caixa do estabelecimento...';
       enviarPedido(false, '');
     }
+    $('cart-overlay').style.display = 'none';
     $('status-overlay').style.display = 'flex';
   };
 
   window.totemConfirmPix = function () {
     $('pix-box').style.display = 'none';
     $('status-btn-pix').style.display = 'none';
+    var btnCanc = $('status-btn-cancel-pix');
+    if (btnCanc) btnCanc.style.display = 'none';
     $('status-spinner').style.display = 'block';
     $('status-title').textContent = 'Verificando pagamento';
     $('status-desc').textContent = 'Avisamos o caixa que o Pix foi pago. Aguardando confirmação...';
@@ -650,7 +721,7 @@
         productName: c.productName,
         productEmoji: c.productEmoji,
         quantity: c.quantity,
-        total: c.preco.toFixed(2),
+        total: (c.preco * c.quantity).toFixed(2),
         sector: c.sector,
         observations: c.obs || ''
       };
@@ -684,23 +755,46 @@
     }
   });
 
+  var _countdownTimer = null;
+  function iniciarContagemNovoPedido(segundos) {
+    if (_countdownTimer) clearInterval(_countdownTimer);
+    var restante = segundos || 15;
+    var btn = $('status-btn-close');
+    if (!btn) return;
+    btn.textContent = 'Fazer novo pedido (' + restante + 's)';
+    _countdownTimer = setInterval(function () {
+      restante--;
+      if (restante <= 0) {
+        clearInterval(_countdownTimer);
+        _countdownTimer = null;
+        window.totemReset();
+      } else {
+        btn.textContent = 'Fazer novo pedido (' + restante + 's)';
+      }
+    }, 1000);
+  }
+
   socket.on('pedido_qr_atualizado', function (upd) {
     if (!upd || upd.id != ultimoPedidoId) return;
     if (upd.status === 'Aprovado') {
       $('pix-box').style.display = 'none';
+      var btnCanc = $('status-btn-cancel-pix');
+      if (btnCanc) btnCanc.style.display = 'none';
       $('status-spinner').style.display = 'none';
       $('status-icon').innerHTML = '<i class="ph ph-check-circle" style="color:#22c55e;"></i>';
       $('status-title').textContent = aguardandoPix ? 'Pagamento confirmado!' : 'Pedido confirmado!';
       $('status-desc').textContent = 'Seu pedido foi enviado para a preparação. Retire no balcão quando chamar seu número.';
       $('status-order-num').innerHTML = '<span class="order-number"><i class="ph ph-receipt"></i> Pedido #' + upd.id + '</span>';
-      $('status-btn-close').textContent = 'Fazer novo pedido';
       $('status-btn-close').style.display = 'inline-block';
+      iniciarContagemNovoPedido(15);
       CARRINHO = [];
       atualizarBarraCarrinho();
       ultimoPedidoId = null;
       aguardandoPix = false;
     } else if (upd.status === 'Recusado') {
       $('pix-box').style.display = 'none';
+      var btnCanc2 = $('status-btn-cancel-pix');
+      if (btnCanc2) btnCanc2.style.display = 'none';
       $('status-spinner').style.display = 'none';
       $('status-icon').innerHTML = '<i class="ph ph-x-circle" style="color:#ef4444;"></i>';
       $('status-title').textContent = 'Pedido recusado';
@@ -715,6 +809,7 @@
   /* ═══════════ RESETS E OVERLAYS ═══════════ */
 
   function fecharTodosOverlays() {
+    if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
     ['cart-overlay', 'item-overlay', 'status-overlay'].forEach(function (id) {
       var el = $(id);
       if (el) el.style.display = 'none';
@@ -783,7 +878,8 @@
       var rq = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
       if (rq) { try { rq.call(el); } catch (e) { } }
       if (screen.orientation && screen.orientation.lock) {
-        try { screen.orientation.lock('landscape').catch(function () { }); } catch (e) { }
+        var modoAlvo = _totemPaisagem ? 'landscape' : 'portrait';
+        try { screen.orientation.lock(modoAlvo).catch(function () { }); } catch (e) { }
       }
       document.removeEventListener('click', entrar);
       document.removeEventListener('touchstart', entrar);

@@ -18,7 +18,7 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
 
-    :root {
+    :root, [data-theme="light"], body.theme-light, body.light {
       --primary: #fc4b15;
       --primary-light: #ff7a3d;
       --primary-dark: #d43a0c;
@@ -29,9 +29,30 @@
       --text: #1c1917;
       --text-secondary: #78716c;
       --text-muted: #a8a29e;
+      --border-item: rgba(0, 0, 0, 0.05);
+      --divider-color: rgba(0, 0, 0, 0.08);
       --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
       --shadow-md: 0 8px 32px rgba(28,25,23,0.08);
       --shadow-lg: 0 16px 48px rgba(28,25,23,0.12);
+      --radius: 20px;
+    }
+
+    [data-theme="dark"], body.theme-dark, body.dark {
+      --primary: #fc4b15;
+      --primary-light: #ff7a3d;
+      --primary-dark: #d43a0c;
+      --bg-1: #0b0f19;
+      --bg-2: #0f172a;
+      --card-bg: rgba(22, 27, 34, 0.88);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border-item: rgba(255, 255, 255, 0.06);
+      --divider-color: rgba(255, 255, 255, 0.08);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+      --shadow-md: 0 8px 32px rgba(0,0,0,0.4);
+      --shadow-lg: 0 16px 48px rgba(0,0,0,0.6);
       --radius: 20px;
     }
 
@@ -96,10 +117,7 @@
       font-weight: 900;
       letter-spacing: -0.5px;
       margin-top: 4px;
-      background: linear-gradient(135deg, var(--text), #44403c);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--text);
     }
 
     .status-badge {
@@ -188,7 +206,7 @@
       align-items: flex-start;
       gap: 12px;
       padding: 14px 0;
-      border-bottom: 1px solid rgba(0,0,0,0.05);
+      border-bottom: 1px solid var(--border-item);
       animation: fadeSlideIn 0.45s ease-out forwards;
       opacity: 0;
       transform: translateY(8px);
@@ -223,7 +241,7 @@
     /* DIVIDER */
     .divider {
       height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(0,0,0,0.08), transparent);
+      background: linear-gradient(90deg, transparent, var(--divider-color), transparent);
       margin: 0;
     }
     .divider.thick {
@@ -566,6 +584,31 @@
       .footer-buttons { flex-direction: column; }
       .pix-qr-wrapper img { width: 150px; height: 150px; }
     }
+
+    .theme-toggle-floating {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 999;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(12px);
+      transition: all 0.2s ease;
+    }
+    .theme-toggle-floating:hover {
+      transform: scale(1.05);
+      border-color: var(--primary);
+    }
   </style>
   <script src="/locales.js"></script>
   <script src="/i18n.js"></script>
@@ -580,6 +623,9 @@
   <script src="/apple-transitions.js" defer></script>
 </head>
 <body>
+  <button class="theme-toggle-floating" id="theme-toggle-btn" type="button" onclick="window.ChefTheme && window.ChefTheme.toggle()" title="Alternar Modo Claro / Escuro">
+    <i class="ph ph-moon" id="theme-toggle-icon"></i>
+  </button>
 
 <div class="container">
   <div class="header">
@@ -1028,6 +1074,18 @@ const mesaQuery = urlParams.get('mesa');
     socket.emit('get_mesas');
   }, 500);
 </script>
+
+  <script>
+    function updateThemeIcon() {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light' || document.body.classList.contains('theme-light') || document.body.classList.contains('light');
+      const icon = document.getElementById('theme-toggle-icon');
+      if (icon) {
+        icon.className = isLight ? 'ph ph-sun' : 'ph ph-moon';
+      }
+    }
+    window.addEventListener('chef_theme_changed', updateThemeIcon);
+    document.addEventListener('DOMContentLoaded', updateThemeIcon);
+  </script>
 </body>
 </html>
 

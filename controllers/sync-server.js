@@ -1,15 +1,23 @@
 const crypto = require('crypto');
 
 let ctx = {};
-let connectedInstances = new Map();
+let connectedInstances = new Map(); // instance_id -> { socket, lastHeartbeat, data, ip, connectedAt }
 let offlineDetectorInterval = null;
 
 function hmacSign(payload, secret) {
-  return crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  return crypto.createHmac('sha256', secret || 'sync-secret-key').update(payload).digest('hex');
 }
 
 function generateCommandId() {
   return 'cmd_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
+}
+
+function generateActivationKeyString() {
+  const p1 = 'CHEF';
+  const p2 = new Date().getFullYear();
+  const p3 = crypto.randomBytes(2).toString('hex').toUpperCase();
+  const p4 = crypto.randomBytes(2).toString('hex').toUpperCase();
+  return `${p1}-${p2}-${p3}-${p4}`;
 }
 
 function dbRun(sql, params) {
@@ -51,44 +59,59 @@ function startOfflineDetector() {
     } catch (e) {
       console.error('[Sync Server] Erro no offline detector:', e.message);
     }
-  }, 60000);
+  }, 30000);
 }
 
 async function handleRegistration(instanceData, socket) {
-  const { instance_id, tenant_id, instance_name, software_version, os_info, secret } = instanceData;
+  const { instance_id, tenant_id, instance_name, software_version, os_info, secret } = instanceData || {};
   if (!instance_id) return { error: 'instance_id obrigatório' };
 
+  const clientIp = socket ? (socket.handshake.headers['x-forwarded-for'] || socket.handshake.address) : null;
   const existing = await dbGet(`SELECT * FROM instance_registry WHERE instance_id = ?`, [instance_id]);
 
   if (existing) {
     await dbRun(
       `UPDATE instance_registry SET status = 'online', last_heartbeat_at = datetime('now','localtime'),
-       software_version = ?, os_info = ?, ip_address = ? WHERE instance_id = ?`,
-      [software_version || existing.software_version, os_info || existing.os_info, socket.handshake.address, instance_id]
+       software_version = ?, os_info = ?, ip_address = COALESCE(?, ip_address) WHERE instance_id = ?`,
+      [software_version || existing.software_version, os_info || existing.os_info, clientIp, instance_id]
     );
   } else {
     await dbRun(
-      `INSERT INTO instance_registry (instance_id, tenant_id, instance_name, software_version, os_info, ip_address, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'online')`,
-      [instance_id, tenant_id || null, instance_name || 'On-Premise', software_version || '1.0.0', os_info || '', socket.handshake.address]
+      `INSERT INTO instance_registry (instance_id, tenant_id, instance_name, software_version, os_info, ip_address, status, last_heartbeat_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'online', datetime('now','localtime'))`,
+      [instance_id, tenant_id || null, instance_name || 'On-Premise', software_version || '1.0.0', os_info || '', clientIp]
     );
   }
 
-  return { ok: true, registered: true };
+  return { ok: true, registered: true, instance_id };
 }
 
-async function handleHeartbeat(instanceId, data) {
+async function handleHeartbeat(instanceId, data, socket) {
   if (!instanceId) return;
   try {
+    const existing = await dbGet(`SELECT status FROM instance_registry WHERE instance_id = ?`, [instanceId]);
+    const currentStatus = (existing && existing.status === 'deactivated') ? 'deactivated' : 'online';
+
     await dbRun(
-      `UPDATE instance_registry SET status = 'online', last_heartbeat_at = datetime('now','localtime'),
+      `UPDATE instance_registry SET status = ?, last_heartbeat_at = datetime('now','localtime'),
        software_version = COALESCE(?, software_version) WHERE instance_id = ?`,
-      [data.software_version, instanceId]
+      [currentStatus, data.software_version, instanceId]
     );
+
+    const prev = connectedInstances.get(instanceId) || {};
     connectedInstances.set(instanceId, {
+      socket: socket || prev.socket,
       lastHeartbeat: Date.now(),
-      data
+      data: Object.assign(prev.data || {}, data)
     });
+
+    if (ctx.io) {
+      ctx.io.emit('super:instance_heartbeat', {
+        instanceId,
+        status: currentStatus,
+        last_heartbeat_at: new Date().toISOString()
+      });
+    }
   } catch (e) {
     console.error('[Sync Server] Erro ao processar heartbeat:', e.message);
   }
@@ -101,24 +124,88 @@ async function processDataPush(instanceId, payload) {
       `UPDATE instance_registry SET last_sync_at = datetime('now','localtime') WHERE instance_id = ?`,
       [instanceId]
     );
-    console.log(`[Sync Server] Data push recebido de ${instanceId}: ${payload.table || 'unknown'}`);
+
+    // Se houver registros sincronizados (pedidos ou movimentações), podemos registrar no histórico
+    const tableName = payload.table || 'dados';
+    const recordsCount = Array.isArray(payload.records) ? payload.records.length : 0;
+    console.log(`[Sync Server] Push de dados de ${instanceId}: tabela '${tableName}' (${recordsCount} itens).`);
+
+    if (ctx.io) {
+      ctx.io.emit('super:instance_sync_event', {
+        instanceId,
+        table: tableName,
+        count: recordsCount,
+        timestamp: new Date().toISOString()
+      });
+    }
   } catch (e) {
     console.error('[Sync Server] Erro ao processar data_push:', e.message);
   }
 }
 
 async function processMetrics(instanceId, data) {
-  if (!instanceId) return;
+  if (!instanceId || !data) return;
   try {
-    const existing = await dbGet(
-      `SELECT id FROM metrica_picos WHERE restaurante_id = (SELECT tenant_id FROM instance_registry WHERE instance_id = ?) AND dia = date('now','localtime') AND hora = CAST(strftime('%H','now','localtime') AS INTEGER)`,
-      [instanceId]
+    const vendas = parseFloat(data.vendas_hoje) || 0;
+    const pedidos = parseInt(data.pedidos_hoje, 10) || parseInt(data.orders_count, 10) || 0;
+    const mesas = parseInt(data.mesas_abertas, 10) || 0;
+    const caixaAberto = data.caixa_aberto ? 1 : 0;
+    const caixaOperador = String(data.caixa_operador || '');
+    const clients = parseInt(data.connected_clients, 10) || 0;
+    const mem = parseInt(data.memory_usage_mb, 10) || 0;
+    const cpu = parseInt(data.cpu_usage_percent, 10) || 0;
+    const uptime = parseInt(data.uptime_seconds, 10) || 0;
+    const dbSize = parseInt(data.db_size_bytes, 10) || 0;
+
+    await dbRun(
+      `UPDATE instance_registry SET 
+        vendas_hoje = ?, 
+        pedidos_hoje = ?, 
+        mesas_abertas = ?, 
+        caixa_aberto = ?, 
+        caixa_operador = ?, 
+        connected_clients = ?, 
+        memory_mb = ?, 
+        cpu_percent = ?, 
+        uptime_seconds = ?, 
+        db_size_bytes = ?, 
+        last_metrics_at = datetime('now','localtime'),
+        status = CASE WHEN status = 'deactivated' THEN 'deactivated' ELSE 'online' END,
+        last_heartbeat_at = datetime('now','localtime')
+       WHERE instance_id = ?`,
+      [vendas, pedidos, mesas, caixaAberto, caixaOperador, clients, mem, cpu, uptime, dbSize, instanceId]
     );
-    if (existing) {
-      await dbRun(
-        `UPDATE metrica_picos SET sockets = ? WHERE id = ?`,
-        [data.connected_clients || 0, existing.id]
-      );
+
+    // Atualiza tabela de métricas de pico se associada a tenant
+    try {
+      const inst = await dbGet(`SELECT tenant_id FROM instance_registry WHERE instance_id = ?`, [instanceId]);
+      if (inst && inst.tenant_id) {
+        const existingPico = await dbGet(
+          `SELECT id FROM metrica_picos WHERE restaurante_id = ? AND dia = date('now','localtime') AND hora = CAST(strftime('%H','now','localtime') AS INTEGER)`,
+          [inst.tenant_id]
+        );
+        if (existingPico) {
+          await dbRun(`UPDATE metrica_picos SET sockets = ? WHERE id = ?`, [clients, existingPico.id]);
+        }
+      }
+    } catch (ePico) {}
+
+    // Notifica em tempo real o Super Admin
+    if (ctx.io) {
+      ctx.io.emit('super:instance_metrics', {
+        instanceId,
+        vendas_hoje: vendas,
+        pedidos_hoje: pedidos,
+        mesas_abertas: mesas,
+        caixa_aberto: caixaAberto,
+        caixa_operador: caixaOperador,
+        connected_clients: clients,
+        memory_mb: mem,
+        cpu_percent: cpu,
+        uptime_seconds: uptime,
+        db_size_bytes: dbSize,
+        last_metrics_at: new Date().toISOString()
+      });
     }
   } catch (e) {
     console.error('[Sync Server] Erro ao processar métricas:', e.message);
@@ -128,17 +215,45 @@ async function processMetrics(instanceId, data) {
 async function queueCommand(instanceId, command, params, issuedBy) {
   const commandId = generateCommandId();
 
-  await dbRun(
-    `INSERT INTO remote_commands (instance_id, command, params, issued_by, status) VALUES (?, ?, ?, ?, 'pending')`,
-    [instanceId, command, JSON.stringify(params || {}), issuedBy || 'super_admin']
-  );
+  const cmdRes = await dbRun(
+    `INSERT INTO remote_commands (instance_id, command, params, issued_by, status, command_id) VALUES (?, ?, ?, ?, 'pending', ?)`,
+    [instanceId, command, JSON.stringify(params || {}), issuedBy || 'super_admin', commandId]
+  ).catch(async () => {
+    // Fallback se coluna command_id ainda não existir
+    return await dbRun(
+      `INSERT INTO remote_commands (instance_id, command, params, issued_by, status) VALUES (?, ?, ?, ?, 'pending')`,
+      [instanceId, command, JSON.stringify(params || {}), issuedBy || 'super_admin']
+    );
+  });
 
-  await dbRun(
+  const qResult = await dbRun(
     `INSERT INTO sync_queue (instance_id, message_type, payload, priority, status) VALUES (?, 'command', ?, ?, 'pending')`,
-    [instanceId, JSON.stringify({ command_id: commandId, command, params: params || {} }), command === 'deactivate' ? 1 : 5]
+    [instanceId, JSON.stringify({ command_id: commandId, command, params: params || {} }), (command === 'deactivate' || command === 'wipe_sessions') ? 1 : 5]
   );
 
-  return commandId;
+  let sentLive = false;
+  const entry = connectedInstances.get(instanceId);
+  if (entry && entry.socket && entry.socket.connected) {
+    try {
+      entry.socket.emit('server:command', {
+        msg_id: (cmdRes && cmdRes.lastID) || qResult.lastID || commandId,
+        type: 'command',
+        payload: { command_id: commandId, command, params: params || {} }
+      });
+      await dbRun(
+        `UPDATE sync_queue SET status = 'sent', sent_at = datetime('now','localtime') WHERE id = ?`,
+        [qResult.lastID]
+      );
+      sentLive = true;
+      console.log(`[Sync Server] ⚡ Comando '${command}' emitido em TEMPO REAL para '${instanceId}' via WebSocket.`);
+    } catch (err) {
+      console.error('[Sync Server] Erro ao emitir comando via WS:', err.message);
+    }
+  } else {
+    console.log(`[Sync Server] 📦 Comando '${command}' enfileirado para '${instanceId}' (instância offline ou polling).`);
+  }
+
+  return { command_id: commandId, sent_live: sentLive };
 }
 
 async function pushConfig(instanceId, configs, issuedBy) {
@@ -156,24 +271,72 @@ function initialize(deps) {
 
   syncNsp.use((socket, next) => {
     const { instance_id, secret } = socket.handshake.auth || {};
-    if (!instance_id || !secret) {
-      return next(new Error('Autenticação obrigatória'));
+    if (!instance_id) {
+      return next(new Error('instance_id obrigatório'));
     }
     socket.instanceId = instance_id;
     next();
   });
 
-  syncNsp.on('connection', (socket) => {
+  syncNsp.on('connection', async (socket) => {
     const instanceId = socket.instanceId;
-    console.log(`[Sync Server] Instância conectada: ${instanceId}`);
+    const clientIp = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+    console.log(`[Sync Server] 🟢 Instância conectada: ${instanceId} (IP: ${clientIp})`);
 
+    // Registra conexão ativa e guarda a referência do socket
+    connectedInstances.set(instanceId, {
+      socket,
+      lastHeartbeat: Date.now(),
+      connectedAt: Date.now(),
+      ip: clientIp,
+      data: {}
+    });
+
+    // Atualiza status online no banco
+    try {
+      await dbRun(
+        `UPDATE instance_registry SET status = CASE WHEN status = 'deactivated' THEN 'deactivated' ELSE 'online' END,
+         last_heartbeat_at = datetime('now','localtime'), ip_address = COALESCE(?, ip_address) WHERE instance_id = ?`,
+        [clientIp, instanceId]
+      );
+    } catch (e) {}
+
+    // Despacho imediato de comandos pendentes acumulados para esta instância
+    try {
+      const pending = await dbAll(
+        `SELECT * FROM sync_queue WHERE instance_id = ? AND status = 'pending' ORDER BY priority ASC, id ASC`,
+        [instanceId]
+      );
+      for (const item of pending) {
+        socket.emit('server:command', {
+          msg_id: item.id,
+          type: 'command',
+          payload: JSON.parse(item.payload)
+        });
+        await dbRun(
+          `UPDATE sync_queue SET status = 'sent', sent_at = datetime('now','localtime') WHERE id = ?`,
+          [item.id]
+        );
+      }
+      if (pending.length) {
+        console.log(`[Sync Server] Entregues ${pending.length} comandos pendentes para ${instanceId}.`);
+      }
+    } catch (e) {
+      console.error('[Sync Server] Erro ao despachar comandos pendentes:', e.message);
+    }
+
+    if (ctx.io) {
+      ctx.io.emit('super:instance_connected', { instanceId, ip: clientIp, status: 'online' });
+    }
+
+    // ── EVENTOS DO SOCKET ──────────────────────────────────────────
     socket.on('instance:register', async (msg) => {
       const result = await handleRegistration(msg.payload || msg, socket);
       socket.emit('server:sync_ack', { type: 'register', result });
     });
 
     socket.on('instance:heartbeat', async (msg) => {
-      await handleHeartbeat(instanceId, msg.payload || {});
+      await handleHeartbeat(instanceId, msg.payload || {}, socket);
     });
 
     socket.on('instance:data_push', async (msg) => {
@@ -189,24 +352,37 @@ function initialize(deps) {
       if (msg && msg.payload && msg.payload.command_id) {
         const { command_id, status, result } = msg.payload;
         try {
-          const cmdId = parseInt(String(command_id).replace('cmd_', ''), 10);
-          if (!isNaN(cmdId)) {
-            await dbRun(
-              `UPDATE remote_commands SET status = ?, result = ?, acknowledged_at = datetime('now','localtime') WHERE id = ? AND instance_id = ? AND status = 'pending'`,
-              [status || 'completed', JSON.stringify(result || {}), cmdId, instanceId]
-            );
-          }
+          const resStr = typeof result === 'string' ? result : JSON.stringify(result || {});
+          const numId = parseInt(String(command_id).replace(/\D/g, ''), 10) || 0;
           await dbRun(
-            `UPDATE sync_queue SET status = 'acked', acked_at = datetime('now','localtime') WHERE instance_id = ? AND message_type = 'command' AND status IN ('pending', 'sent')`,
-            [instanceId]
+            `UPDATE remote_commands SET status = ?, result = ?, acknowledged_at = datetime('now','localtime') 
+             WHERE id = ? OR (instance_id = ? AND status = 'pending')`,
+            [status || 'completed', resStr, numId, instanceId]
           );
+
+          await dbRun(
+            `UPDATE sync_queue SET status = 'acked', acked_at = datetime('now','localtime') 
+             WHERE instance_id = ? AND payload LIKE ? AND status IN ('pending', 'sent')`,
+            [instanceId, '%' + command_id + '%']
+          );
+
+          console.log(`[Sync Server] ACK recebido de ${instanceId} para comando ${command_id}: ${status}`);
+
+          if (ctx.io) {
+            ctx.io.emit('super:command_ack', {
+              instanceId,
+              command_id,
+              status: status || 'completed',
+              result
+            });
+          }
         } catch (e) {
           console.error('[Sync Server] Erro ao processar command_ack:', e.message);
         }
       }
     });
 
-    socket.on('instance:sync_request', async (msg) => {
+    socket.on('instance:sync_request', async () => {
       try {
         const pending = await dbAll(
           `SELECT * FROM sync_queue WHERE instance_id = ? AND status IN ('pending') ORDER BY priority ASC, id ASC`,
@@ -229,40 +405,28 @@ function initialize(deps) {
     });
 
     socket.on('disconnect', async () => {
-      console.log(`[Sync Server] Instância desconectada: ${instanceId}`);
+      console.log(`[Sync Server] 🔴 Instância desconectada: ${instanceId}`);
       connectedInstances.delete(instanceId);
       try {
         await dbRun(
-          `UPDATE instance_registry SET status = 'offline' WHERE instance_id = ?`,
+          `UPDATE instance_registry SET status = CASE WHEN status = 'deactivated' THEN 'deactivated' ELSE 'offline' END WHERE instance_id = ?`,
           [instanceId]
         );
       } catch (e) {}
+
+      if (ctx.io) {
+        ctx.io.emit('super:instance_disconnected', { instanceId, status: 'offline' });
+      }
     });
   });
 
   startOfflineDetector();
 
   // ── HTTP FALLBACK ENDPOINTS ──────────────────────────────────────
-  // On-premise instances use these when WebSocket is unavailable.
-  // All endpoints require HMAC-SHA256 signature: sig = HMAC(instance_id + ts, secret)
-
-  function verifyHmac(req) {
-    const instanceId = req.query.instance_id || (req.body && req.body.instance_id);
-    const ts = req.query.ts || req.body && req.body.ts;
-    const sig = req.query.sig || (req.body && req.body.sig);
-    if (!instanceId || !ts || !sig) return false;
-    const now = Date.now();
-    const timestamp = parseInt(ts, 10);
-    if (isNaN(timestamp) || Math.abs(now - timestamp) > 120000) return false;
-    const crypto = require('crypto');
-    const expected = crypto.createHmac('sha256', 'sync-secret-key').update(instanceId + ts).digest('hex');
-    return sig === expected;
-  }
-
   if (ctx.app && ctx.app.post) {
-    // POST /api/sync/register — instance registration via HTTP
+    // POST /api/sync/register — registro de instância via HTTP
     ctx.app.post('/api/sync/register', async (req, res) => {
-      const { instance_id, tenant_id, instance_name, software_version, os_info } = req.body;
+      const { instance_id, tenant_id, instance_name, software_version, os_info } = req.body || {};
       if (!instance_id) return res.status(400).json({ ok: false, error: 'instance_id obrigatório' });
 
       try {
@@ -275,8 +439,8 @@ function initialize(deps) {
           );
         } else {
           await dbRun(
-            `INSERT INTO instance_registry (instance_id, tenant_id, instance_name, software_version, os_info, ip_address, status)
-             VALUES (?, ?, ?, ?, ?, ?, 'online')`,
+            `INSERT INTO instance_registry (instance_id, tenant_id, instance_name, software_version, os_info, ip_address, status, last_heartbeat_at)
+             VALUES (?, ?, ?, ?, ?, ?, 'online', datetime('now','localtime'))`,
             [instance_id, tenant_id || null, instance_name || 'On-Premise', software_version || '1.0.0', os_info || '', req.ip]
           );
         }
@@ -286,7 +450,7 @@ function initialize(deps) {
       }
     });
 
-    // POST /api/sync/activate — ativação da instância via chave de ativação ou login/senha
+    // POST /api/sync/activate — ativação via chave de ativação ou login/senha
     ctx.app.post('/api/sync/activate', async (req, res) => {
       const { type, chave_ativacao, email, senha, instance_id, machine_id, hostname } = req.body || {};
       const bcrypt = require('bcrypt');
@@ -296,8 +460,8 @@ function initialize(deps) {
           const chave = String(chave_ativacao || '').trim().toUpperCase();
           if (!chave) return res.status(400).json({ ok: false, success: false, error: 'Chave de ativação é obrigatória.' });
 
-          // Localiza restaurante por chave_ativacao ou fallback formatado CHEF-LOCAL-000X / CHEF-000X
-          const row = await dbGet(
+          // Localiza restaurante por chave_ativacao em restaurantes ou chaves_ativacao
+          let row = await dbGet(
             `SELECT * FROM restaurantes 
              WHERE UPPER(TRIM(COALESCE(chave_ativacao, ''))) = ? 
                 OR UPPER(TRIM('CHEF-LOCAL-' || printf('%04d', id))) = ?
@@ -306,8 +470,16 @@ function initialize(deps) {
             [chave, chave, chave]
           );
 
+          // Se não achou em restaurantes, procura em chaves_ativacao
           if (!row) {
-            return res.status(404).json({ ok: false, success: false, error: 'Chave de ativação inválida ou não encontrada.' });
+            const chaveRow = await dbGet(`SELECT * FROM chaves_ativacao WHERE UPPER(TRIM(chave)) = ? LIMIT 1`, [chave]);
+            if (chaveRow && chaveRow.restaurante_id) {
+              row = await dbGet(`SELECT * FROM restaurantes WHERE id = ?`, [chaveRow.restaurante_id]);
+            }
+          }
+
+          if (!row) {
+            return res.status(404).json({ ok: false, success: false, error: 'Chave de ativação inválida ou não encontrada no Super Admin.' });
           }
 
           if (row.ativo === 0) {
@@ -331,7 +503,12 @@ function initialize(deps) {
             );
           }
 
-          const finalKey = row.chave_ativacao || ('CHEF-LOCAL-' + String(row.id).padStart(4, '0'));
+          // Marca chave como usada se estiver na tabela chaves_ativacao
+          try {
+            await dbRun(`UPDATE chaves_ativacao SET status = 'usada', usada_em = datetime('now','localtime') WHERE UPPER(TRIM(chave)) = ?`, [chave]);
+          } catch (eChave) {}
+
+          const finalKey = row.chave_ativacao || chave;
           return res.json({
             ok: true,
             success: true,
@@ -339,6 +516,8 @@ function initialize(deps) {
             restaurant_name: row.nome,
             activation_key: finalKey,
             plan: row.licenca || 'premium',
+            validade: row.validade_licenca || null,
+            max_dispositivos: row.max_dispositivos || 999,
             instance_id: instId,
             message: `Restaurante '${row.nome}' ativado com sucesso via chave!`
           });
@@ -352,7 +531,7 @@ function initialize(deps) {
           }
 
           const user = await dbGet(
-            `SELECT u.*, r.id as r_id, r.nome as r_nome, r.chave_ativacao as r_chave, r.ativo as r_ativo, r.licenca as r_licenca, r.dono_email
+            `SELECT u.*, r.id as r_id, r.nome as r_nome, r.chave_ativacao as r_chave, r.ativo as r_ativo, r.licenca as r_licenca, r.validade_licenca, r.dono_email
              FROM usuarios u
              JOIN restaurantes r ON u.restaurante_id = r.id
              WHERE (LOWER(u.username) = ? OR LOWER(COALESCE(r.dono_email, '')) = ?) AND u.ativo = 1
@@ -399,6 +578,7 @@ function initialize(deps) {
             activation_key: finalKey,
             account_email: user.username,
             plan: user.r_licenca || 'premium',
+            validade: user.validade_licenca || null,
             instance_id: instId,
             message: `Restaurante '${user.r_nome}' logado e ativado com sucesso!`
           });
@@ -412,68 +592,76 @@ function initialize(deps) {
       }
     });
 
-    // GET /api/sync/poll — on-premise polls for pending commands/data
+    // GET /api/sync/poll — polling HTTP quando WebSocket não está conectado
     ctx.app.get('/api/sync/poll', async (req, res) => {
       const { instance_id } = req.query;
       if (!instance_id) return res.status(400).json({ ok: false, error: 'instance_id obrigatório' });
 
       try {
         await dbRun(
-          `UPDATE instance_registry SET status = 'online', last_heartbeat_at = datetime('now','localtime') WHERE instance_id = ?`,
+          `UPDATE instance_registry SET status = CASE WHEN status = 'deactivated' THEN 'deactivated' ELSE 'online' END,
+           last_heartbeat_at = datetime('now','localtime') WHERE instance_id = ?`,
           [instance_id]
         );
         const rows = await dbAll(
-          `SELECT sq.id as queue_id, rc.id as command_id, rc.command, rc.params
+          `SELECT sq.id as queue_id, sq.payload
            FROM sync_queue sq
-           JOIN remote_commands rc ON rc.instance_id = sq.instance_id
            WHERE sq.instance_id = ? AND sq.status = 'pending'
            ORDER BY sq.priority ASC, sq.id ASC LIMIT 20`,
           [instance_id]
         );
-        const commands = rows.map(r => ({
-          command_id: r.command_id,
-          command: r.command,
-          params: r.params ? JSON.parse(r.params) : {}
-        }));
+        const commands = rows.map(r => {
+          try {
+            return JSON.parse(r.payload);
+          } catch(e) {
+            return null;
+          }
+        }).filter(Boolean);
+
+        for (const r of rows) {
+          await dbRun(`UPDATE sync_queue SET status = 'sent', sent_at = datetime('now','localtime') WHERE id = ?`, [r.queue_id]);
+        }
+
         res.json({ ok: true, commands });
       } catch (e) {
         res.status(500).json({ ok: false, error: e.message });
       }
     });
 
-    // POST /api/sync/push — on-premise pushes data up
+    // POST /api/sync/push — push HTTP de métricas ou dados
     ctx.app.post('/api/sync/push', async (req, res) => {
-      const { instance_id, message_type, payload } = req.body;
+      const { instance_id, message_type, payload } = req.body || {};
       if (!instance_id) return res.status(400).json({ ok: false, error: 'instance_id obrigatório' });
 
       try {
-        await dbRun(
-          `UPDATE instance_registry SET last_sync_at = datetime('now','localtime') WHERE instance_id = ?`,
-          [instance_id]
-        );
-        console.log(`[Sync Server] HTTP push de ${instance_id}: ${message_type || 'unknown'}`);
+        if (message_type === 'instance:metrics' || message_type === 'metrics') {
+          await processMetrics(instance_id, payload);
+        } else {
+          await processDataPush(instance_id, payload);
+        }
         res.json({ ok: true, received: true });
       } catch (e) {
         res.status(500).json({ ok: false, error: e.message });
       }
     });
 
-    // POST /api/sync/ack — on-premise acknowledges command execution
+    // POST /api/sync/ack — confirmação de execução de comando via HTTP
     ctx.app.post('/api/sync/ack', async (req, res) => {
-      const { instance_id, command_id, status, result } = req.body;
+      const { instance_id, command_id, status, result } = req.body || {};
       if (!instance_id || !command_id) return res.status(400).json({ ok: false, error: 'instance_id e command_id obrigatórios' });
 
       try {
-        const cmdId = parseInt(String(command_id), 10);
-        if (!isNaN(cmdId)) {
-          await dbRun(
-            `UPDATE remote_commands SET status = ?, result = ?, acknowledged_at = datetime('now','localtime') WHERE id = ? AND instance_id = ? AND status = 'pending'`,
-            [status || 'completed', JSON.stringify(result || {}), cmdId, instance_id]
-          );
-        }
+        const resStr = typeof result === 'string' ? result : JSON.stringify(result || {});
+        const numId = parseInt(String(command_id).replace(/\D/g, ''), 10) || 0;
         await dbRun(
-          `UPDATE sync_queue SET status = 'acked', acked_at = datetime('now','localtime') WHERE instance_id = ? AND message_type = 'command' AND status IN ('pending', 'sent')`,
-          [instance_id]
+          `UPDATE remote_commands SET status = ?, result = ?, acknowledged_at = datetime('now','localtime') 
+           WHERE id = ? OR (instance_id = ? AND status = 'pending')`,
+          [status || 'completed', resStr, numId, instance_id]
+        );
+        await dbRun(
+          `UPDATE sync_queue SET status = 'acked', acked_at = datetime('now','localtime') 
+           WHERE instance_id = ? AND payload LIKE ? AND status IN ('pending', 'sent')`,
+          [instance_id, '%' + command_id + '%']
         );
         res.json({ ok: true, acked: true });
       } catch (e) {
@@ -482,15 +670,28 @@ function initialize(deps) {
     });
   }
 
-  console.log('[Sync Server] Inicializado. Namespace /sync + HTTP fallback ativos.');
+  console.log('[Sync Server] 🚀 Inicializado com sucesso. Namespace /sync WebSocket & HTTP ativos.');
 }
 
 async function getAllInstances() {
-  return dbAll(`SELECT * FROM instance_registry ORDER BY last_heartbeat_at DESC`);
+  const rows = await dbAll(`SELECT * FROM instance_registry ORDER BY last_heartbeat_at DESC`);
+  return (rows || []).map(r => {
+    const isLive = connectedInstances.has(r.instance_id) && connectedInstances.get(r.instance_id).socket && connectedInstances.get(r.instance_id).socket.connected;
+    return Object.assign({}, r, {
+      is_ws_connected: Boolean(isLive),
+      status: (r.status === 'deactivated' || r.status === 'bloqueado') ? 'deactivated' : (isLive ? 'online' : r.status)
+    });
+  });
 }
 
 async function getInstance(instanceId) {
-  return dbGet(`SELECT * FROM instance_registry WHERE instance_id = ?`, [instanceId]);
+  const r = await dbGet(`SELECT * FROM instance_registry WHERE instance_id = ?`, [instanceId]);
+  if (!r) return null;
+  const isLive = connectedInstances.has(r.instance_id) && connectedInstances.get(r.instance_id).socket && connectedInstances.get(r.instance_id).socket.connected;
+  return Object.assign({}, r, {
+    is_ws_connected: Boolean(isLive),
+    status: (r.status === 'deactivated' || r.status === 'bloqueado') ? 'deactivated' : (isLive ? 'online' : r.status)
+  });
 }
 
 async function getPendingCommands(instanceId) {
@@ -515,6 +716,54 @@ async function getSyncQueue(instanceId) {
   );
 }
 
+async function generateActivationKey(options = {}) {
+  const { restaurante_id, restaurante_nome, plano, tipo, validade_dias } = options;
+  const chave = generateActivationKeyString();
+  const dias = parseInt(validade_dias, 10) || 30;
+
+  let restId = restaurante_id ? parseInt(restaurante_id, 10) : null;
+
+  // Se não foi passado restaurante_id, mas foi passado restaurante_nome, cria ou busca
+  if (!restId && restaurante_nome) {
+    const existing = await dbGet(`SELECT id FROM restaurantes WHERE LOWER(nome) = LOWER(?)`, [restaurante_nome]);
+    if (existing) {
+      restId = existing.id;
+    } else {
+      const res = await dbRun(
+        `INSERT INTO restaurantes (nome, licenca, ativo, chave_ativacao, validade_licenca) 
+         VALUES (?, ?, 1, ?, datetime('now', '+${dias} days'))`,
+        [restaurante_nome, plano || 'premium', chave]
+      );
+      restId = res.lastID;
+    }
+  }
+
+  // Atualiza chave no restaurante
+  if (restId) {
+    await dbRun(
+      `UPDATE restaurantes SET chave_ativacao = ?, licenca = COALESCE(?, licenca), validade_licenca = datetime('now', '+${dias} days'), ativo = 1 WHERE id = ?`,
+      [chave, plano || 'premium', restId]
+    );
+  }
+
+  // Registra na tabela chaves_ativacao
+  await dbRun(
+    `INSERT INTO chaves_ativacao (chave, tipo, status, restaurante_id, observacao, criada_em)
+     VALUES (?, ?, 'ativa', ?, ?, datetime('now','localtime'))`,
+    [chave, tipo || 'offline_first', restId, `Gerada para ${restaurante_nome || 'Restaurante #' + restId} (${plano || 'premium'}, ${dias} dias)`]
+  );
+
+  return {
+    ok: true,
+    chave,
+    restaurante_id: restId,
+    restaurante_nome: restaurante_nome || `Restaurante #${restId}`,
+    plano: plano || 'premium',
+    validade_dias: dias,
+    validade_data: new Date(Date.now() + dias * 24 * 3600 * 1000).toISOString().slice(0, 10)
+  };
+}
+
 module.exports = {
   initialize,
   queueCommand,
@@ -525,5 +774,6 @@ module.exports = {
   getPendingCommands,
   getSyncConflicts,
   getSyncQueue,
+  generateActivationKey,
   getConnectedInstances: () => connectedInstances
 };

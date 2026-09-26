@@ -4,7 +4,9 @@
 (function () {
   'use strict';
 
-  var restauranteId = localStorage.getItem('restaurante_id') || '1';
+  var params = new URLSearchParams(window.location.search);
+  var restauranteId = params.get('restaurante_id') || localStorage.getItem('restaurante_id') || '1';
+  try { localStorage.setItem('restaurante_id', String(restauranteId)); } catch (e) { }
   var token = localStorage.getItem('chef_token') || '';
 
   function $id(id) { return document.getElementById(id); }
@@ -183,6 +185,7 @@
 
     var payload = {
       totem_enabled: $id('cfg-enabled').checked ? 'true' : 'false',
+      mod_totem: $id('cfg-enabled').checked ? 'true' : 'false',
       totem_mesa: ($id('cfg-mesa').value || 'Totem 1').trim(),
       totem_idle_timeout: String(parseInt($id('cfg-idle').value, 10) || 45),
       totem_home_layout: layoutAtual,

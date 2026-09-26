@@ -7,21 +7,20 @@
   <meta name="theme-color" content="#fc4b15">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Caixa Mobile - Chef</title>
   <link rel="icon" href="/icons/icon.ico">
+  <title>Caixa Mobile - Chef</title>
   <link rel="manifest" href="/manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
   <link rel="stylesheet" href="/pdv-mobile.css">
-
+  <script src="/theme-manager.js?v=20260901paletas"></script>
   <script src="/socket.io.min.js"></script>
   <script src="/vendor/qrcode/qrcode-generator.js"></script>
   <script src="/vendor/qrcode/qr-helper.js"></script>
   <script src="/fuzzy-search.js"></script>
   <script src="/vendor/html5-qrcode/html5-qrcode.min.js" type="text/javascript"></script>
-
   <script src="/locales.js"></script>
   <script src="/broadcast.js"></script>
   <script src="/i18n.js"></script>
@@ -45,7 +44,7 @@
       <button class="header-btn"
         onclick="alert('Central de Notificações em breve! Aqui você receberá avisos como: Garçom chamado na mesa, novo delivery, etc.')"><i
           class="ph ph-bell"></i></button>
-      <button class="header-btn" title="Alternar para Caixa Completo" onclick="window.location.href = (localStorage.getItem('chef_caixa_versao') === 'v11' ? '/index.html' : '/caixa-classico.html')"><i class="ph ph-monitor"></i></button>
+      <button class="header-btn" title="Alternar para Caixa Completo" onclick="window.location.href = (localStorage.getItem('chef_caixa_versao') === 'v1' ? '/caixa-classico.html' : '/index.html')"><i class="ph ph-monitor"></i></button>
     </div>
   </header>
 

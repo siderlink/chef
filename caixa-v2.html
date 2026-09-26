@@ -23,6 +23,8 @@
   <script src="/socket.io/socket.io.js"></script>
   <!-- Auth Guard -->
   <script src="/auth.js"></script>
+  <!-- Theme Manager Universal -->
+  <script src="/theme-manager.js?v=20260901paletas"></script>
 </head>
 <body>
 
@@ -296,10 +298,15 @@
 
   <script>
     function toggleTheme() {
+      if (window.ChefTheme && typeof window.ChefTheme.toggle === 'function') {
+        return window.ChefTheme.toggle();
+      }
       const html = document.documentElement;
-      const current = html.getAttribute('data-theme') || 'dark';
+      const current = html.getAttribute('data-theme') || (localStorage.getItem('chef_theme') || 'light');
       const next = current === 'dark' ? 'light' : 'dark';
       html.setAttribute('data-theme', next);
+      try { localStorage.setItem('chef_theme', next); } catch (e) {}
+      return next;
     }
 
     function toggleFullscreen() {

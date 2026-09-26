@@ -2707,24 +2707,33 @@ document.addEventListener('DOMContentLoaded', () => {
   const themeToggleBtn = document.getElementById('btn-theme-toggle');
   if (!themeToggleBtn) return;
 
-  // Restaurar preferência salva (padrão: claro)
-  const savedTheme = localStorage.getItem('chef_garcom_theme');
-  if (savedTheme === 'dark') {
-    document.body.classList.add('dark-mode');
-    themeToggleBtn.innerHTML = '<i class="ph ph-sun"></i>';
-  } else {
-    document.body.classList.remove('dark-mode');
-    themeToggleBtn.innerHTML = '<i class="ph ph-moon"></i>';
-  }
-
-  themeToggleBtn.addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode');
-    const isDark = document.body.classList.contains('dark-mode');
-    localStorage.setItem('chef_garcom_theme', isDark ? 'dark' : 'light');
+  function updateGarcomThemeUI(theme) {
+    const isDark = (theme === 'dark');
+    document.body.classList.toggle('dark-mode', isDark);
     themeToggleBtn.innerHTML = isDark
       ? '<i class="ph ph-sun"></i>'
       : '<i class="ph ph-moon"></i>';
-  });
+  }
+
+  if (window.ChefTheme && typeof window.ChefTheme.get === 'function') {
+    updateGarcomThemeUI(window.ChefTheme.get());
+    window.addEventListener('chef_theme_changed', (e) => {
+      if (e && e.detail && e.detail.theme) updateGarcomThemeUI(e.detail.theme);
+    });
+    themeToggleBtn.addEventListener('click', () => {
+      window.ChefTheme.toggle();
+    });
+  } else {
+    const savedTheme = localStorage.getItem('chef_theme') || localStorage.getItem('chef_garcom_theme');
+    updateGarcomThemeUI(savedTheme === 'dark' ? 'dark' : 'light');
+    themeToggleBtn.addEventListener('click', () => {
+      const isDark = !document.body.classList.contains('dark-mode');
+      const next = isDark ? 'dark' : 'light';
+      updateGarcomThemeUI(next);
+      try { localStorage.setItem('chef_theme', next); } catch (e) {}
+      try { localStorage.setItem('chef_garcom_theme', next); } catch (e) {}
+    });
+  }
 });
 
 // ═════════════════════════════════════════════════════════════════════

@@ -242,3 +242,32 @@ canvas[data-gestures]:active,
 #mapa-parceiros-cliente:active {
   cursor: grabbing;
 }
+
+#chef-tabs-restore {
+  display: none !important;
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10002;
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+body.tabs-collapsed #chef-tabs-restore {
+  display: flex !important;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (min-width: 769px) {
+  #chef-tabs-restore {
+    display: none !important;
+  }
+}
+

@@ -20,15 +20,32 @@
     };
   </script>
 
+  <script src="/theme-manager.js"></script>
   <style>
-    :root {
+    :root, [data-theme="light"], body.theme-light {
+      --bg-page: #f8fafc;
+      --bg-panel: #ffffff;
+      --border-panel: #e2e8f0;
+      --text-light: #0f172a;
+      --text-muted: #64748b;
+      --primary-color: #fc4b15;
+      --nav-tabs-bg: #f1f5f9;
+      --tab-active-bg: #ffffff;
+      --tab-active-text: #0f172a;
+    }
+
+    [data-theme="dark"], body.theme-dark, body.dark-mode {
       --bg-page: #0b0f19;
       --bg-panel: #111827;
       --border-panel: #1f2937;
       --text-light: #f3f4f6;
       --text-muted: #9ca3af;
       --primary-color: #fc4b15;
+      --nav-tabs-bg: #1f2937;
+      --tab-active-bg: #374151;
+      --tab-active-text: #ffffff;
     }
+
     body {
       margin: 0;
       padding: 0;
@@ -39,6 +56,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      transition: background 0.25s ease, color 0.25s ease;
     }
     .theme-navbar {
       height: 60px;
@@ -54,7 +72,7 @@
     .main-nav-tabs {
       display: flex;
       gap: 6px;
-      background: #1f2937;
+      background: var(--nav-tabs-bg);
       padding: 4px;
       border-radius: 10px;
     }
@@ -73,9 +91,9 @@
       transition: all 0.2s;
     }
     .nav-tab-btn.active {
-      background: #374151;
-      color: #ffffff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      background: var(--tab-active-bg);
+      color: var(--tab-active-text);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .nav-tab-btn.active[data-role="store"] {
       border-left: 3px solid #22c55e;
@@ -88,7 +106,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: #1f2937;
+      background: var(--nav-tabs-bg);
       padding: 4px;
       border-radius: 8px;
     }
@@ -545,6 +563,10 @@
           <i class="ph-bold ph-arrow-u-up-right"></i> Refazer (Ctrl+Y)
         </button>
       </div>
+
+      <button onclick="window.ChefTheme && window.ChefTheme.toggle()" id="btn-theme-toggle" title="Alternar Modo Claro / Escuro" style="background: var(--nav-tabs-bg); border: 1px solid var(--border-panel); color: var(--text-light); padding: 7px 12px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <i class="ph ph-moon" id="theme-toggle-icon"></i>
+      </button>
 
       <button onclick="fecharOuVoltarStudio()" style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; padding: 7px 14px; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
         <i class="ph-bold ph-arrow-left"></i> Voltar ao Painel

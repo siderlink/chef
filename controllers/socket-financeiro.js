@@ -140,8 +140,6 @@ module.exports = function(socket, io, db, helpers) {
         console.log(`✅ [CAIXA] Caixa já aberto (Turno ID: ${turnoAtual.id})`);
         io.emit('estado_caixa', turnoAtual);
         io.emit('caixa_aberto_sucesso');
-        socket.emit('estado_caixa', turnoAtual);
-        socket.emit('caixa_aberto_sucesso');
         return;
       }
       
@@ -271,6 +269,28 @@ module.exports = function(socket, io, db, helpers) {
     );
   });
 
+    socket.on('fechar_caixa_cego', async (data) => {
+    const contado = (data && typeof data.valorContado === 'number') ? data.valorContado : 0;
+    const obs = (data && data.observacao) ? String(data.observacao).trim() : '';
+    const op = (data && data.operador) ? data.operador : 'Caixa';
+
+    db.run(
+      "UPDATE turnos_caixa SET status = 'Fechado', data_fechamento = datetime('now', 'localtime') WHERE status = 'Aberto'",
+      function (err) {
+        if (!err) {
+          if (typeof global.registrarAuditoria === 'function') {
+            try {
+              global.registrarAuditoria(op, 'FECHAMENTO_CEGO_CAIXA', 'Caixa encerrado com R$ ' + contado.toFixed(2) + ' contados na gaveta', obs || 'Fechamento Cego de Turno', 'ALTO');
+            } catch(eAudit){}
+          }
+          io.emit('estado_caixa', null);
+          io.emit('atualizacao_caixa');
+          socket.emit('caixa_fechado_sucesso');
+        }
+      }
+    );
+  });
+
   socket.on('get_relatorio_caixa', () => {
     checkCaixa(turno => {
       if (!turno) {
@@ -299,20 +319,22 @@ module.exports = function(socket, io, db, helpers) {
         };
         if (rows) {
           rows.forEach(r => {
-            if (r.tipo === 'Entrada') {
-              const fp = (r.forma_pagamento || '').toLowerCase();
-              if (fp.includes('dinheiro')) stats.total_dinheiro += r.valor;
-              else if (fp.includes('pix')) stats.total_pix += r.valor;
-              else if (fp.includes('débito') || fp.includes('debito')) stats.total_debito += r.valor;
-              else if (fp.includes('crédito') || fp.includes('credito') || fp.includes('cartão') || fp.includes('cartao')) stats.total_credito += r.valor;
-              else if (fp.includes('fiado') || fp.includes('conta')) stats.total_fiado += r.valor;
-              else stats.total_credito += r.valor;
-            } else if (r.tipo === 'Sangria') {
-              stats.total_sangria += r.valor;
-            } else if (r.tipo === 'Suprimento') {
-              stats.total_suprimento += r.valor;
-            } else if (r.tipo === 'Desconto') {
-              stats.total_desconto += r.valor;
+            const t = String(r.tipo || '').toLowerCase().trim();
+            const fp = String(r.forma_pagamento || '').toLowerCase().trim();
+            const val = parseFloat(r.valor) || 0;
+            if (t === 'entrada') {
+              if (fp.includes('dinheiro')) stats.total_dinheiro += val;
+              else if (fp.includes('pix')) stats.total_pix += val;
+              else if (fp.includes('débito') || fp.includes('debito')) stats.total_debito += val;
+              else if (fp.includes('crédito') || fp.includes('credito') || fp.includes('cartão') || fp.includes('cartao')) stats.total_credito += val;
+              else if (fp.includes('fiado') || fp.includes('conta')) stats.total_fiado += val;
+              else stats.total_credito += val;
+            } else if (t === 'sangria' || t === 'saida' || t === 'saída' || t === 'despesa') {
+              stats.total_sangria += val;
+            } else if (t === 'suprimento' || t === 'reforco' || t === 'aporte') {
+              stats.total_suprimento += val;
+            } else if (t === 'desconto') {
+              stats.total_desconto += val;
             }
           });
         }
@@ -473,8 +495,8 @@ socket.on('pagamento_parcial_valor', ({ mesaName, valor, metodo, userName, comTa
         const descStr = comandaName ? `Pgto Parcial (${metodo}) - Comanda ${comandaName}` : `Pgto Parcial (${metodo})`;
         
         db.run(
-          `INSERT INTO pedidos (productName, productEmoji, quantity, total, status, localName, userName, time, sector, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
-          [descStr, '💸', 1, negativeTotal, 'Entregue', mesaName, userName, timeStr, 'Caixa'],
+          `INSERT INTO pedidos (productName, productEmoji, quantity, total, status, localName, userName, time, sector, turno_id, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
+          [descStr, '💸', 1, negativeTotal, 'Entregue', mesaName, userName, timeStr, 'Caixa', turno.id],
           function (err) {
             if (err) {
               console.error('Erro no pagamento_parcial:', err);
@@ -704,6 +726,39 @@ socket.on('pagamento_parcial_valor', ({ mesaName, valor, metodo, userName, comTa
           function (err) {
             if (err) console.error(err);
             activePaymentLocks.delete(closingLockKey);
+
+            // Registrar pagamentos no fechamento caso ainda houvesse saldo pendente não registrado por parciais
+            if (pendenteComTaxa > 0.01) {
+              let pgtosParaLancar = [];
+              if (Array.isArray(payments) && payments.length > 0) {
+                // Filtra itens que já possuem id de pedido (já registrados por pagamento_parcial_valor)
+                const novos = payments.filter(p => !p.id && (parseFloat(p.valor) || 0) > 0);
+                if (novos.length > 0) {
+                  pgtosParaLancar = novos;
+                } else {
+                  pgtosParaLancar = [{ metodo: primaryMethod, valor: pendenteComTaxa }];
+                }
+              } else {
+                pgtosParaLancar = [{ metodo: primaryMethod, valor: pendenteComTaxa }];
+              }
+
+              pgtosParaLancar.forEach(p => {
+                const v = parseFloat(p.valor) || 0;
+                if (v > 0) {
+                  db.run(
+                    `INSERT INTO movimentacoes (turno_id, tipo, valor, forma_pagamento, descricao, data) VALUES (?, 'Entrada', ?, ?, ?, datetime('now', 'localtime'))`,
+                    [turno.id, Math.round(v * 100) / 100, p.metodo || primaryMethod, `Pgto Fechamento: ${mesaName}`]
+                  );
+                }
+              });
+
+              if (descontoFinal > 0) {
+                db.run(
+                  `INSERT INTO movimentacoes (turno_id, tipo, valor, forma_pagamento, descricao, data) VALUES (?, 'Desconto', ?, ?, ?, datetime('now', 'localtime'))`,
+                  [turno.id, Math.round(descontoFinal * 100) / 100, primaryMethod, `Desconto: ${mesaName}`]
+                );
+              }
+            }
             
             setTimeout(() => io.emit('atualizacao_caixa'), 300);
 

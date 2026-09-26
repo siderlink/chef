@@ -1,0 +1,21 @@
+{
+  "id": "fila-espera",
+  "name": "Fila de Espera Digital",
+  "version": "1.0.0",
+  "author": "Chef Cozinha Dev Team",
+  "description": "Fila de espera digital com QR Code no salão, acompanhamento de posição pelo celular do cliente e pré-pedidos.",
+  "category": "atendimento",
+  "icon": "ph-users-three",
+  "enabled": true,
+  "targets": [
+    "caixa_v11",
+    "pdv_classico",
+    "caixa_ultra",
+    "configuracoes"
+  ],
+  "hooks": {
+    "server": "index.js",
+    "client": "client.js",
+    "style": "style.css"
+  }
+}

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Chef Cozinha Ultra 3D Studio — Alta Performance (> 6GB RAM)</title>
+
+  <!-- Google Fonts: Outfit, Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- Phosphor Icons (Regular, Bold & Fill) -->
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Three.js (r128) & OrbitControls para Salão 3D e Partículas de Fluxo -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Estilos Exclusivos Caixa Ultra 3D -->
+  <link rel="stylesheet" href="/caixa-ultra.css">
+</head>
+<body>
+
+  <!-- Canvas Three.js Ambiente (Aura Fluida de Fundo) -->
+  <canvas id="threejs-ambient-canvas"></canvas>
+
+  <!-- BANNER DE INFOGRÁFICO DE FLUXO DE PEDIDO (ANIMAÇÃO DESENHADA) -->
+  <div id="ultra-order-flow-banner" class="ultra-order-flow-banner"></div>
+
+  <div class="ultra-app-shell">
+
+    <!-- ═════════════════════════════════════════════════════════════════════
+         HEADER ULTRA HUD
+         ═════════════════════════════════════════════════════════════════════ -->
+    <header class="ultra-header">
+      <div class="ultra-brand-group">
+        <div class="ultra-brand-icon">
+          <i class="ph-bold ph-lightning"></i>
+        </div>
+        <div class="ultra-brand-text">
+          <div class="ultra-brand-title">
+            <span>Chef Cozinha</span>
+            <span class="ultra-tag-pro">Ultra 3D</span>
+          </div>
+          <div class="ultra-brand-sub">
+            <span id="ultra-conn-badge" style="display:flex; align-items:center; gap:5px; color:var(--ultra-emerald);">
+              <span class="ultra-dot-live"></span> Conectado
+            </span>
+            <span>•</span>
+            <span id="ultra-clock">--:--:--</span>
+          </div>
+        </div>
+
+        <!-- Indicador de Hardware / 6GB+ RAM -->
+        <div class="ultra-hw-badge" title="Aceleração de Hardware WebGL 2.0 ativada para dispositivos com mais de 6GB de RAM">
+          <i class="ph-bold ph-cpu"></i>
+          <span>6GB+ Ultra Active</span>
+        </div>
+      </div>
+
+      <!-- Barra de Busca de Mesas e Comandas (F4) -->
+      <div class="ultra-search-container">
+        <i class="ph ph-magnifying-glass ultra-search-icon"></i>
+        <input type="text" id="ultra-search-input" class="ultra-search-input" placeholder="Buscar mesa ou comanda (F4)..." oninput="ChefUltraApp.termoBusca = this.value; ChefUltraApp.renderMesasGrid();">
+        <span class="ultra-search-badge" onclick="document.getElementById('ultra-search-input').focus()">F4</span>
+      </div>
+
+      <!-- Seletor de Modo de Visualização: Grade vs Salão 3D -->
+      <div class="ultra-view-switch">
+        <button id="btn-view-grid" class="ultra-view-btn active" onclick="ChefUltraApp.toggleSalonView('grid')" title="Visualização em Grade de Cards">
+          <i class="ph-bold ph-squares-four"></i> Grade
+        </button>
+        <button id="btn-view-3d" class="ultra-view-btn" onclick="ChefUltraApp.toggleSalonView('3d')" title="Visualização 3D do Salão com Three.js (F11)">
+          <i class="ph-bold ph-cube"></i> Salão 3D
+        </button>
+      </div>
+
+      <!-- Status do Caixa & Ações Rápidas -->
+      <div class="ultra-header-actions">
+        <div id="ultra-caixa-status-pill" class="ultra-caixa-status-pill aberto" onclick="window.location.href='/index.html'">
+          <i class="ph ph-lock-key-open"></i> Caixa Aberto
+        </div>
+
+        <!-- Dropdown Seletor de Versão do Caixa -->
+        <div style="position:relative;">
+          <button id="btn-versao-caixa" class="ultra-btn-icon" style="width:auto; padding:0 12px; gap:6px; font-weight:700; font-size:12px; color:var(--ultra-coral);" onclick="document.getElementById('ultra-version-dropdown').classList.toggle('active')" title="Alternar versão do Caixa">
+            <i class="ph-bold ph-tag"></i> Ultra v3.0 <i class="ph ph-caret-down" style="font-size:10px;"></i>
+          </button>
+          <div id="ultra-version-dropdown" style="display:none; position:absolute; top:44px; right:0; width:220px; background:var(--ultra-surface); border:1px solid var(--ultra-border); border-radius:var(--ultra-radius-sm); box-shadow:var(--ultra-shadow-lg); z-index:9999; backdrop-filter:blur(20px); overflow:hidden;">
+            <div style="padding:10px 14px; font-weight:700; font-size:12px; background:rgba(252,75,21,0.15); color:var(--ultra-coral); display:flex; justify-content:space-between;">
+              <span>Ultra 3D (> 6GB)</span> <span>✓ Ativo</span>
+            </div>
+            <div style="padding:10px 14px; font-size:12px; color:var(--ultra-text-secondary); cursor:pointer;" onclick="localStorage.setItem('chef_caixa_versao', 'v1.1.1'); location.href='/index.html'">
+              Caixa v1.1.1 (Padrão)
+            </div>
+            <div style="padding:10px 14px; font-size:12px; color:var(--ultra-text-secondary); cursor:pointer;" onclick="localStorage.setItem('chef_caixa_versao', 'v1'); location.href='/caixa-classico.html'">
+              Caixa v1 (Clássico Leve)
+            </div>
+          </div>
+        </div>
+
+        <!-- Alternar Tema Claro/Escuro -->
+        <button class="ultra-btn-icon" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'" title="Alternar Tema">
+          <i class="ph-bold ph-moon"></i>
+        </button>
+
+        <!-- Fila Cozinha (F12) -->
+        <button class="ultra-btn-icon" onclick="window.location.href='/fila-pedidos.html'" title="Fila da Cozinha (F12)">
+          <i class="ph-bold ph-cooking-pot"></i>
+        </button>
+
+        <!-- Tela Cheia -->
+        <button class="ultra-btn-icon" onclick="if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen();" title="Tela Cheia">
+          <i class="ph-bold ph-arrows-out-cardinal"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ═════════════════════════════════════════════════════════════════════
+         CORPO PRINCIPAL (3 COLUNAS ERGONÔMICAS)
+         ═════════════════════════════════════════════════════════════════════ -->
+    <main class="ultra-main-content">
+
+      <!-- COLUNA 1: SALÃO / MESAS / GRADE / 3D -->
+      <section class="ultra-salon-column">
+        <!-- Barra de Filtros Rápidos -->
+        <div class="ultra-filter-bar">
+          <div class="ultra-filter-chips">
+            <button class="ultra-chip active" id="chip-todas" onclick="ChefUltraApp.filtroAtivo='todas'; document.querySelectorAll('.ultra-chip').forEach(c=>c.classList.remove('active')); this.classList.add('active'); ChefUltraApp.renderMesasGrid();">
+              <i class="ph ph-squares-four"></i> Todas <span class="ultra-chip-count" id="count-todas">0</span>
+            </button>
+            <button class="ultra-chip" id="chip-ocupadas" onclick="ChefUltraApp.filtroAtivo='ocupadas'; document.querySelectorAll('.ultra-chip').forEach(c=>c.classList.remove('active')); this.classList.add('active'); ChefUltraApp.renderMesasGrid();">
+              <i class="ph ph-users"></i> Ocupadas <span class="ultra-chip-count" id="count-ocupadas">0</span>
+            </button>
+            <button class="ultra-chip" id="chip-livres" onclick="ChefUltraApp.filtroAtivo='livres'; document.querySelectorAll('.ultra-chip').forEach(c=>c.classList.remove('active')); this.classList.add('active'); ChefUltraApp.renderMesasGrid();">
+              <i class="ph ph-chair"></i> Livres <span class="ultra-chip-count" id="count-livres">0</span>
+            </button>
+            <button class="ultra-chip" id="chip-reservadas" onclick="ChefUltraApp.filtroAtivo='reservadas'; document.querySelectorAll('.ultra-chip').forEach(c=>c.classList.remove('active')); this.classList.add('active'); ChefUltraApp.renderMesasGrid();">
+              <i class="ph ph-bookmark-simple"></i> Reservadas <span class="ultra-chip-count" id="count-reservadas">0</span>
+            </button>
+          </div>
+
+          <div style="font-size:11px; color:var(--ultra-text-muted); font-weight:600;">
+            <i class="ph ph-info"></i> Clique para gerenciar
+          </div>
+        </div>
+
+        <!-- Grade de Cards de Mesas -->
+        <div id="ultra-grid-container" class="ultra-grid-container">
+          <!-- Gerado dinamicamente por caixa-ultra.js -->
+        </div>
+
+        <!-- Viewport do Salão 3D Three.js -->
+        <div id="threejs-salon-container">
+          <canvas id="threejs-salon-canvas"></canvas>
+          <div style="position:absolute; bottom:16px; left:16px; background:rgba(15,23,42,0.85); border:1px solid var(--ultra-border); padding:8px 14px; border-radius:20px; font-size:11px; color:var(--ultra-text-secondary); backdrop-filter:blur(10px); pointer-events:none;">
+            <i class="ph ph-arrows-clockwise" style="color:var(--ultra-cyan);"></i> Arraste com o mouse para orbitar • Clique numa mesa para abrir
+          </div>
+        </div>
+      </section>
+
+      <!-- COLUNA 2: ITENS DA MESA SELECIONADA -->
+      <section class="ultra-order-column">
+        <!-- Banner da Mesa -->
+        <div class="ultra-order-banner">
+          <div class="ultra-order-title-box">
+            <div id="ultra-mesa-titulo" class="ultra-order-mesa-name">
+              <i class="ph ph-hand-pointing"></i> Nenhuma mesa selecionada
+            </div>
+            <div id="ultra-mesa-meta" class="ultra-order-meta">
+              Clique em uma mesa para abrir seus detalhes
+            </div>
+          </div>
+        </div>
+
+        <!-- Ações Rápidas da Mesa -->
+        <div class="ultra-order-quick-actions">
+          <button class="ultra-btn-action primary" onclick="ChefUltraApp.abrirModalProdutos()">
+            <i class="ph-bold ph-plus-circle"></i> + Lançar Item (F1)
+          </button>
+          <button class="ultra-btn-action" onclick="ChefUltraApp.abrirModalRacha()">
+            <i class="ph ph-users-three"></i> Racha Conta (F2)
+          </button>
+          <button id="ultra-btn-taxa" class="ultra-btn-action primary" onclick="ChefUltraApp.toggleTaxaServico()">
+            <i class="ph ph-percent"></i> 10% Serviço (F7)
+          </button>
+        </div>
+
+        <!-- Tabela de Itens Consumidos -->
+        <div class="ultra-table-wrapper">
+          <table class="ultra-items-table">
+            <thead>
+              <tr>
+                <th style="width:40px;">#</th>
+                <th>Produto / Descrição</th>
+                <th style="width:50px;">Qtd</th>
+                <th style="width:90px;">Total</th>
+                <th style="width:80px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="ultra-tbody-itens">
+              <tr>
+                <td colspan="5" style="text-align:center; padding:30px; color:var(--ultra-text-muted);">
+                  Selecione uma mesa no Salão para ver seus itens
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Resumo de Valores -->
+        <div class="ultra-order-summary">
+          <div class="ultra-summary-row">
+            <span>Subtotal Consumo</span>
+            <span id="ultra-val-subtotal" style="font-family:var(--ultra-font-mono);">R$ 0,00</span>
+          </div>
+          <div class="ultra-summary-row">
+            <span>Taxa de Serviço (10%)</span>
+            <span id="ultra-val-taxa" style="font-family:var(--ultra-font-mono);">R$ 0,00</span>
+          </div>
+          <div class="ultra-summary-row">
+            <span>Descontos Promocionais</span>
+            <span id="ultra-val-desconto" style="font-family:var(--ultra-font-mono); color:var(--ultra-rose);">- R$ 0,00</span>
+          </div>
+          <div class="ultra-summary-row total">
+            <span>Total da Conta</span>
+            <span id="ultra-val-total" class="value">R$ 0,00</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLUNA 3: CHECKOUT EXPRESS & PAGAMENTOS TÁTEIS -->
+      <section class="ultra-checkout-column">
+        <div class="ultra-checkout-header">
+          <div class="ultra-checkout-title">
+            <i class="ph-bold ph-credit-card" style="color:var(--ultra-coral);"></i>
+            <span>Pagamento Express</span>
+          </div>
+          <span style="font-size:11px; font-family:var(--ultra-font-mono); color:var(--ultra-text-muted);">F3</span>
+        </div>
+
+        <!-- Visor Numérico -->
+        <div class="ultra-visor">
+          <span class="ultra-visor-label">Valor a Receber</span>
+          <div id="ultra-visor-amount" class="ultra-visor-amount">R$ 0,00</div>
+          <div class="ultra-visor-sub">
+            <span>Forma: <strong id="ultra-forma-nome">Dinheiro</strong></span>
+          </div>
+          <!-- Notificação Dinâmica de Troco em Tempo Real -->
+          <div id="ultra-troco-info" class="ultra-troco-info" style="display:none; margin-top:8px;"></div>
+        </div>
+
+        <!-- Chips de Sugestão de Dinheiro / Valores Rápidos -->
+        <div class="ultra-quick-cash-chips" style="margin-bottom: 4px;">
+          <button class="ultra-cash-chip" onclick="ChefUltraApp.sugerirValor('exato')" title="Valor exato da conta">Exato</button>
+          <button class="ultra-cash-chip" onclick="ChefUltraApp.sugerirValor('+10')">+R$10</button>
+          <button class="ultra-cash-chip" onclick="ChefUltraApp.sugerirValor('20')">R$20</button>
+          <button class="ultra-cash-chip" onclick="ChefUltraApp.sugerirValor('50')">R$50</button>
+          <button class="ultra-cash-chip" onclick="ChefUltraApp.sugerirValor('100')">R$100</button>
+          <button class="ultra-cash-chip" onclick="ChefUltraApp.sugerirValor('200')">R$200</button>
+        </div>
+
+        <!-- Formas de Pagamento Rápidas -->
+        <div class="ultra-payment-methods">
+          <button id="pay-btn-dinheiro" class="ultra-payment-btn active dinheiro" onclick="ChefUltraApp.selecionarMetodo('Dinheiro')">
+            <i class="ph-bold ph-money"></i> Dinheiro
+          </button>
+          <button id="pay-btn-pix" class="ultra-payment-btn pix" onclick="ChefUltraApp.selecionarMetodo('PIX')">
+            <i class="ph-bold ph-qr-code"></i> PIX Dinâmico
+          </button>
+          <button id="pay-btn-credito" class="ultra-payment-btn credito" onclick="ChefUltraApp.selecionarMetodo('Crédito')">
+            <i class="ph-bold ph-credit-card"></i> Cartão Crédito
+          </button>
+          <button id="pay-btn-debito" class="ultra-payment-btn debito" onclick="ChefUltraApp.selecionarMetodo('Débito')">
+            <i class="ph-bold ph-bank"></i> Cartão Débito
+          </button>
+        </div>
+
+        <!-- Teclado Numérico POS Tátil -->
+        <div class="ultra-keypad">
+          <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('1')">1</button>
+          <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('2')">2</button>
+          <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('3')">3</button>
+          <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('4')">4</button>
+          <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('5')">5</button>
+          <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('6')">6</button>
+          <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('7')">7</button>
+          <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('8')">8</button>
+          <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('9')">9</button>
+          <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('C')">C</button>
+          <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('0')">0</button>
+          <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('BS')"><i class="ph ph-backspace"></i></button>
+        </div>
+
+        <!-- Ações Operacionais: Split/Parcial e Balança Serial -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+          <button id="ultra-btn-pagamento-parcial" class="ultra-btn-action" onclick="ChefUltraApp.abrirPagamentoParcial()" style="background:rgba(14,165,233,0.15); border:1px solid rgba(14,165,233,0.4); color:var(--ultra-cyan); font-weight:700; font-size:12px; height:38px; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:8px; cursor:pointer;" title="Divisão e Pagamento Parcial de Itens Desagrupados (F2)">
+            <i class="ph-bold ph-receipt"></i> Split / Parcial (F2)
+          </button>
+          <button id="ultra-btn-conectar-balanca" class="ultra-btn-action" onclick="ChefUltraApp.conectarBalancaSerial()" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); color:var(--ultra-emerald); font-weight:700; font-size:12px; height:38px; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:8px; cursor:pointer;" title="Conectar Balança Serial Toledo / Filizola / Urano">
+            <i class="ph-bold ph-scales"></i> Balança Serial
+          </button>
+        </div>
+
+        <!-- Botão Concluir Venda -->
+        <button id="ultra-btn-concluir-venda" class="ultra-btn-finalize" onclick="ChefUltraApp.concluirVenda()" disabled>
+          <i class="ph-bold ph-check-circle" style="font-size:22px;"></i>
+          <span>Fechar Conta (F3)</span>
+        </button>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: LANÇADOR RÁPIDO DE PRODUTOS (F1) -->
+  <div id="ultra-modal-produtos" class="ultra-modal-overlay">
+    <div class="ultra-modal-card">
+      <div class="ultra-modal-header">
+        <div class="ultra-modal-title">
+          <i class="ph-bold ph-lightning" style="color:var(--ultra-coral);"></i>
+          <span>Lançamento Rápido no PDV — Cardápio Visual</span>
+        </div>
+        <button class="ultra-btn-icon" onclick="ChefUltraApp.fecharModalProdutos()" style="width:32px; height:32px;">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+
+      <div class="ultra-modal-body">
+        <!-- Campo de Pesquisa do Cardápio -->
+        <div style="position:relative; margin-bottom:12px;">
+          <input type="text" id="ultra-prod-search" class="ultra-search-input" placeholder="Filtrar produto..." oninput="ChefUltraApp.renderCatalogModal(undefined, this.value)" style="width:100%; height:40px; padding:0 36px 0 14px; font-size:13px;">
+          <i class="ph ph-magnifying-glass" style="position:absolute; right:12px; top:12px; color:var(--ultra-text-muted);"></i>
+        </div>
+
+        <!-- Categorias -->
+        <div id="ultra-modal-cat-chips" class="ultra-filter-chips" style="margin-bottom:12px; flex-wrap:wrap;"></div>
+
+        <!-- Grid de Produtos -->
+        <div id="ultra-modal-prods-grid" class="ultra-prods-grid">
+          <!-- Injetado por caixa-ultra.js -->
+        </div>
+      </div>
+
+      <div class="ultra-modal-footer">
+        <span style="font-size:11.5px; color:var(--ultra-text-muted); margin-right:auto;">
+          <i class="ph ph-info"></i> Clique em qualquer item para lançar diretamente na mesa ativa
+        </span>
+        <button class="ultra-btn-action" onclick="ChefUltraApp.fecharModalProdutos()">
+          Fechar (ESC)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ESTÚDIO DE DIVISÃO DE CONTA (RACHA ILUSTRADO E DESENHADO) -->
+  <div id="ultra-modal-racha" class="ultra-modal-overlay">
+    <div class="ultra-modal-card ultra-racha-modal-card">
+      <div class="ultra-modal-header">
+        <div class="ultra-modal-title">
+          <i class="ph-bold ph-users-three" style="color:var(--ultra-coral);"></i>
+          <span>Estúdio de Divisão de Conta — Racha Visual Explicativo</span>
+        </div>
+        <button class="ultra-btn-icon" onclick="ChefUltraApp.fecharModalRacha()" style="width:32px; height:32px;">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+
+      <!-- Abas de Navegação do Modo de Divisão -->
+      <div class="ultra-racha-nav-tabs">
+        <button id="tab-racha-valores" class="ultra-racha-tab active" onclick="ChefUltraApp.alternarAbaRacha('valores')">
+          <i class="ph-bold ph-chart-pie-slice"></i> Divisão de Valores (Pizza Ilustrada)
+        </button>
+        <button id="tab-racha-itens" class="ultra-racha-tab" onclick="ChefUltraApp.alternarAbaRacha('itens')">
+          <i class="ph-bold ph-fork-knife"></i> Divisão por Itens Consumidos (Quem comeu o quê)
+        </button>
+
+        <!-- Seletor Rápido de Pessoas -->
+        <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:11px; color:var(--ultra-text-secondary); font-weight:700;">Pessoas:</span>
+          <button class="ultra-btn-icon" style="width:28px; height:28px;" onclick="ChefUltraApp.alterarQtdPessoasRacha(-1)">-</button>
+          <input type="number" id="ultra-racha-pessoas-input" value="2" min="1" max="8" style="width:40px; height:28px; text-align:center; font-family:var(--ultra-font-mono); font-size:13px; font-weight:800; background:var(--ultra-surface); border:1px solid var(--ultra-border); border-radius:4px; color:var(--ultra-text-primary);" onchange="ChefUltraApp.rachaQtdPessoas = parseInt(this.value)||2; ChefUltraApp.renderRachaStudio();">
+          <button class="ultra-btn-icon" style="width:28px; height:28px;" onclick="ChefUltraApp.alterarQtdPessoasRacha(1)">+</button>
+        </div>
+      </div>
+
+      <div class="ultra-modal-body">
+        <!-- ABA 1: DIVISÃO DE VALORES (PIZZA / PRATO FATIADO EM SVG) -->
+        <div id="pane-racha-valores" class="ultra-racha-content-pane active">
+          <div class="ultra-racha-pie-grid">
+            <!-- Coluna Visual da Pizza / Prato -->
+            <div class="ultra-pie-visual-container">
+              <div class="ultra-pie-svg-wrapper">
+                <svg id="ultra-pie-svg" class="ultra-pie-svg" viewBox="0 0 220 220"></svg>
+                <div class="ultra-pie-center-hub">
+                  <span class="ultra-pie-center-label">Total Mesa</span>
+                  <span id="ultra-pie-center-val" class="ultra-pie-center-value">R$ 0,00</span>
+                </div>
+              </div>
+              <div style="font-size:11px; color:var(--ultra-text-muted); text-align:center; margin-top:12px;">
+                <i class="ph ph-hand-pointing"></i> Clique em qualquer fatia ou cota para lançar no Visor de Pagamento
+              </div>
+            </div>
+
+            <!-- Coluna de Pessoas / Cotas -->
+            <div id="ultra-pie-persons-container" class="ultra-pie-persons-list">
+              <!-- Gerado dinamicamente por renderRachaValores -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 2: DIVISÃO POR ITENS CONSUMIDOS (QUEM CONSUMIU O QUÊ) -->
+        <div id="pane-racha-itens" class="ultra-racha-content-pane">
+          <div class="ultra-items-split-grid">
+            <!-- Painel Esquerdo: Itens da Mesa -->
+            <div class="ultra-pool-panel">
+              <div class="ultra-pool-title">
+                <span>Itens da Mesa</span>
+                <span style="font-size:10px; color:var(--ultra-cyan);"><i class="ph ph-cursor-click"></i> Clique p/ atribuir</span>
+              </div>
+              <div id="ultra-pool-items-container" class="ultra-pool-items-list">
+                <!-- Gerado dinamicamente por renderRachaItens -->
+              </div>
+            </div>
+
+            <!-- Painel Direito: Bandejas Individuais -->
+            <div>
+              <div style="font-size:12px; font-weight:700; color:var(--ultra-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px;">
+                Pratos Individuais das Pessoas
+              </div>
+              <div id="ultra-trays-container" class="ultra-trays-panel">
+                <!-- Gerado dinamicamente por renderRachaItens -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ultra-modal-footer">
+        <span style="font-size:11.5px; color:var(--ultra-text-muted); margin-right:auto;">
+          <i class="ph ph-sparkle" style="color:var(--ultra-cyan);"></i> Divisão desenhada e explicativa: sem dúvidas entre cliente e colaborador.
+        </span>
+        <button class="ultra-btn-action" onclick="ChefUltraApp.fecharModalRacha()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts do Caixa Ultra 3D Studio -->
+  <script src="/pagamento-parcial-modal.js"></script>
+  <script src="/caixa-ultra-3d.js"></script>
+  <script src="/caixa-ultra.js"></script>
+</body>
+</html>

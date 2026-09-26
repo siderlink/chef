@@ -2340,3 +2340,1098 @@ window.executarHotReloadPlugins = async function() {
   }
 };
 
+
+
+// ══════════════════════════════════════════════════════════════════
+// HUB DO CONTADOR CHEFF — GESTÃO FISCAL, COMBOS INTELIGENTES & IA
+// ══════════════════════════════════════════════════════════════════
+
+var _demandasContadorCache = [];
+var _demandaSelecionada = null;
+var _contadorAbaAtiva = 'demandas';
+var _contadorRestauranteAtivoId = 1;
+var _contadorRestaurantesList = [];
+var _comboMontagem = { nome: 'Combo Especial da Casa', itens: [], desconto: 12 };
+var _combosIaCache = [];
+var _cardapioContadorCache = { comidas: [], bebidas: [] };
+
+async function carregarHubContador() {
+  var tbody = document.getElementById('cont-demandas-tbody');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Carregando demandas atribuídas...</td></tr>';
+  }
+
+  // Carrega lista de restaurantes no seletor global se vazio
+  if (!_contadorRestaurantesList.length) {
+    carregarRestaurantesContador();
+  }
+
+  try {
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/dashboard', {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'x-suporte-token': token
+      }
+    });
+
+    var data = await res.json();
+    if (!data.ok) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--danger);">' + (data.erro || 'Falha ao carregar hub do contador.') + '</td></tr>';
+      return;
+    }
+
+    // Atualiza KPIs
+    var kpis = data.metricas || {};
+    var pendEl = document.getElementById('cont-kpi-pendentes');
+    if (pendEl) pendEl.innerText = kpis.tarefas_pendentes || 0;
+
+    var concEl = document.getElementById('cont-kpi-concluidas');
+    if (concEl) concEl.innerText = kpis.tarefas_concluidas || 0;
+
+    var aReceberEl = document.getElementById('cont-kpi-a-receber');
+    if (aReceberEl) aReceberEl.innerText = 'R$ ' + (kpis.saldo_a_receber || 0).toFixed(2).replace('.', ',');
+
+    var recEl = document.getElementById('cont-kpi-total-recebido');
+    if (recEl) recEl.innerText = 'R$ ' + (kpis.total_recebido || 0).toFixed(2).replace('.', ',');
+
+    _demandasContadorCache = data.demandas || [];
+    renderizarTabelaDemandasContador(_demandasContadorCache);
+  } catch (err) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--danger);">Erro de conexão com o servidor.</td></tr>';
+  }
+}
+
+function renderizarTabelaDemandasContador(demandas) {
+  var tbody = document.getElementById('cont-demandas-tbody');
+  if (!tbody) return;
+
+  if (!demandas || !demandas.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2.5rem; color:var(--text-muted);"><i class="fa-solid fa-circle-check" style="color:#10b981; font-size:1.5rem; margin-bottom:8px; display:block;"></i>Você não possui demandas fiscais pendentes no momento. Bom trabalho!</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = demandas.map(function(d) {
+    var statusBadge = '<span style="background:rgba(245,158,11,0.15); color:#f59e0b; padding:3px 8px; border-radius:6px; font-weight:700; font-size:0.75rem;">A Fazer</span>';
+    if (d.status === 'concluido' || d.status === 'aprovado') {
+      statusBadge = '<span style="background:rgba(16,185,129,0.15); color:#10b981; padding:3px 8px; border-radius:6px; font-weight:700; font-size:0.75rem;">✓ Concluída</span>';
+    }
+
+    var prazo = d.data_limite ? new Date(d.data_limite).toLocaleDateString('pt-BR') : 'Sem prazo fixo';
+    var bonus = parseFloat(d.valor_bonificacao) || 45.00;
+
+    var btnAcao = d.status === 'concluido' || d.status === 'aprovado'
+      ? '<button class="btn btn-sm" onclick="abrirModalExecutarDemanda(' + d.id + ')" style="background:rgba(255,255,255,0.06); font-size:0.75rem;"><i class="fa-solid fa-eye"></i> Ver Parecer</button>'
+      : '<button class="btn btn-sm btn-primary" onclick="abrirModalExecutarDemanda(' + d.id + ')" style="background:#10b981; border:none; font-size:0.75rem; font-weight:700;"><i class="fa-solid fa-play"></i> Executar Tarefa</button>';
+
+    return '<tr style="border-bottom:1px solid var(--border-color);">' +
+      '<td style="padding:12px 14px; font-weight:700; color:#fff;">' + escH(d.restaurante_nome) + '<br><small style="color:var(--text-muted); font-weight:normal;">#' + d.restaurante_id + '</small></td>' +
+      '<td style="padding:12px 14px;"><strong>' + escH(d.titulo) + '</strong><br><small style="color:var(--text-muted);">' + escH(d.descricao || '') + '</small></td>' +
+      '<td style="padding:12px 14px; color:#38bdf8; font-weight:700;">' + escH(d.competencia || 'Atual') + '</td>' +
+      '<td style="padding:12px 14px; font-size:0.8rem; color:var(--text-muted);">' + prazo + '</td>' +
+      '<td style="padding:12px 14px; font-weight:800; color:#10b981;">+ R$ ' + bonus.toFixed(2).replace('.', ',') + '</td>' +
+      '<td style="padding:12px 14px;">' + statusBadge + '</td>' +
+      '<td style="padding:12px 14px; text-align:right;">' + btnAcao + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function filtrarDemandasContador(filtro, btn) {
+  if (btn && btn.parentElement) {
+    var btns = btn.parentElement.querySelectorAll('button');
+    btns.forEach(function(b) { b.style.outline = 'none'; });
+    btn.style.outline = '2px solid #10b981';
+  }
+
+  if (filtro === 'todos') {
+    renderizarTabelaDemandasContador(_demandasContadorCache);
+  } else if (filtro === 'pendentes') {
+    renderizarTabelaDemandasContador(_demandasContadorCache.filter(function(d) { return d.status !== 'concluido' && d.status !== 'aprovado'; }));
+  } else if (filtro === 'concluidas') {
+    renderizarTabelaDemandasContador(_demandasContadorCache.filter(function(d) { return d.status === 'concluido' || d.status === 'aprovado'; }));
+  }
+}
+
+function trocarAbaContador(aba) {
+  _contadorAbaAtiva = aba;
+  var abas = ['demandas', 'extrato', 'fiscal', 'combos', 'insights'];
+
+  abas.forEach(function(a) {
+    var sec = document.getElementById('cont-aba-' + a);
+    var btn = document.getElementById('cont-tab-' + a + '-btn');
+    if (sec) sec.style.display = (a === aba) ? 'block' : 'none';
+    if (btn) {
+      if (a === aba) {
+        btn.className = 'btn btn-sm btn-primary cont-tab-btn';
+        btn.style.background = '#10b981';
+        btn.style.color = '#fff';
+        btn.style.border = 'none';
+      } else {
+        btn.className = 'btn btn-sm btn-secondary cont-tab-btn';
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.style.border = '';
+      }
+    }
+  });
+
+  if (aba === 'demandas') {
+    carregarHubContador();
+  } else if (aba === 'extrato') {
+    carregarExtratoBonificacoesContador();
+  } else if (aba === 'fiscal') {
+    carregarDiagnosticoFiscalContador(_contadorRestauranteAtivoId);
+  } else if (aba === 'combos') {
+    carregarMotorCombosContador(_contadorRestauranteAtivoId);
+  } else if (aba === 'insights') {
+    carregarInsightsIAContador(_contadorRestauranteAtivoId);
+  }
+}
+
+async function carregarRestaurantesContador() {
+  try {
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/restaurantes', {
+      headers: { 'Authorization': 'Bearer ' + token, 'x-suporte-token': token }
+    });
+    var data = await res.json();
+    if (!data.ok) return;
+
+    _contadorRestaurantesList = data.restaurantes || [];
+    var sel = document.getElementById('cont-global-restaurante-select');
+    if (sel && _contadorRestaurantesList.length) {
+      sel.innerHTML = _contadorRestaurantesList.map(function(r) {
+        return '<option value="' + r.id + '"' + (r.id === _contadorRestauranteAtivoId ? ' selected' : '') + '>' +
+          escH(r.nome) + ' (#' + r.id + ' - ' + escH(r.regime_tributario || 'Simples') + ')' +
+        '</option>';
+      }).join('');
+      _contadorRestauranteAtivoId = parseInt(sel.value) || 1;
+    }
+  } catch (e) {
+    console.warn('Erro ao carregar lista de restaurantes no contador:', e);
+  }
+}
+
+function aoMudarRestauranteContador(id) {
+  _contadorRestauranteAtivoId = parseInt(id) || 1;
+  atualizarPainelContadorAtivo();
+}
+
+function atualizarPainelContadorAtivo() {
+  if (_contadorAbaAtiva === 'demandas') carregarHubContador();
+  else if (_contadorAbaAtiva === 'extrato') carregarExtratoBonificacoesContador();
+  else if (_contadorAbaAtiva === 'fiscal') carregarDiagnosticoFiscalContador(_contadorRestauranteAtivoId);
+  else if (_contadorAbaAtiva === 'combos') carregarMotorCombosContador(_contadorRestauranteAtivoId);
+  else if (_contadorAbaAtiva === 'insights') carregarInsightsIAContador(_contadorRestauranteAtivoId);
+}
+
+function abrirModalExecutarDemanda(id) {
+  var dem = _demandasContadorCache.find(function(d) { return d.id === id; });
+  if (!dem) return;
+  _demandaSelecionada = dem;
+
+  document.getElementById('exec-demanda-id').value = dem.id;
+  document.getElementById('exec-restaurante-id').value = dem.restaurante_id;
+  document.getElementById('exec-demanda-titulo').innerText = dem.titulo;
+  document.getElementById('exec-demanda-restaurante').innerText = dem.restaurante_nome + ' (Comp: ' + (dem.competencia || 'Atual') + ')';
+
+  var bonus = parseFloat(dem.valor_bonificacao) || 45.00;
+  document.getElementById('exec-demanda-bonus').innerText = '+ R$ ' + bonus.toFixed(2).replace('.', ',') + ' Bonificação';
+  document.getElementById('exec-demanda-desc').innerText = dem.descricao || 'Sem instruções adicionais.';
+
+  document.getElementById('exec-parecer').value = dem.parecer_contador || '';
+  document.getElementById('exec-guia-url').value = dem.documento_anexo_url || '';
+  document.getElementById('exec-codigo-barras').value = dem.codigo_barras_guia || '';
+
+  var fb = document.getElementById('exec-feedback');
+  if (fb) fb.style.display = 'none';
+
+  var btn = document.getElementById('btn-concluir-demanda-cont');
+  if (btn) {
+    if (dem.status === 'concluido' || dem.status === 'aprovado') {
+      btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Atualizar Parecer Contábil';
+    } else {
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Concluir Tarefa & Liberar Bonificação';
+    }
+  }
+
+  var modal = document.getElementById('modal-executar-demanda-contador');
+  if (modal) modal.classList.add('active');
+}
+
+function fecharModalExecutarDemanda() {
+  var modal = document.getElementById('modal-executar-demanda-contador');
+  if (modal) modal.classList.remove('active');
+}
+
+function verDadosRestauranteDaDemanda() {
+  if (!_demandaSelecionada) return;
+  abrirModalDadosRestauranteContador(_demandaSelecionada.restaurante_id);
+}
+
+async function abrirModalDadosRestauranteContador(restauranteId) {
+  var modal = document.getElementById('modal-dados-restaurante-contador');
+  if (modal) modal.classList.add('active');
+
+  var loading = document.getElementById('dados-rest-loading');
+  var content = document.getElementById('dados-rest-content');
+  if (loading) loading.style.display = 'block';
+  if (content) content.style.display = 'none';
+
+  try {
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/restaurante-dados/' + restauranteId, {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'x-suporte-token': token
+      }
+    });
+
+    var data = await res.json();
+    if (!data.ok) throw new Error(data.erro || 'Falha ao carregar dados fiscais.');
+
+    if (loading) loading.style.display = 'none';
+    if (content) content.style.display = 'flex';
+
+    var r = data.restaurante || {};
+    var f = data.fiscal || {};
+
+    document.getElementById('dados-rest-nome').innerText = r.nome || ('Restaurante #' + restauranteId);
+    document.getElementById('dados-rest-cnpj').innerText = r.cnpj || 'Não cadastrado';
+    document.getElementById('dados-rest-regime').innerText = r.regime_tributario || 'Simples Nacional';
+    document.getElementById('dados-rest-plano').innerText = r.plano || 'Essencial Fiscal';
+
+    document.getElementById('dados-rest-fat').innerText = 'R$ ' + (f.faturamento_apurado || 0).toFixed(2).replace('.', ',');
+    document.getElementById('dados-rest-pedidos').innerText = (f.total_pedidos || 0) + ' pedidos';
+
+    var metodosDiv = document.getElementById('dados-rest-metodos');
+    if (metodosDiv) {
+      var metodos = f.metodos_pagamento || [];
+      if (!metodos.length) {
+        metodosDiv.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem;">Nenhum pagamento registrado no período.</div>';
+      } else {
+        metodosDiv.innerHTML = metodos.map(function(m) {
+          return '<div style="display:flex; justify-content:space-between; background:#111827; padding:6px 10px; border-radius:6px; font-size:0.8rem;">' +
+            '<span style="color:#e2e8f0;">' + escH(m.metodo || 'Outro') + ' (' + m.qtd + 'x)</span>' +
+            '<strong style="color:#10b981;">R$ ' + (m.subtotal || 0).toFixed(2).replace('.', ',') + '</strong>' +
+          '</div>';
+        }).join('');
+      }
+    }
+  } catch (err) {
+    if (loading) loading.innerHTML = '<span style="color:var(--danger);">' + err.message + '</span>';
+  }
+}
+
+function fecharModalDadosRestaurante() {
+  var modal = document.getElementById('modal-dados-restaurante-contador');
+  if (modal) modal.classList.remove('active');
+}
+
+async function concluirDemandaContador() {
+  var demandaId = document.getElementById('exec-demanda-id').value;
+  var parecer = document.getElementById('exec-parecer').value;
+  var guiaUrl = document.getElementById('exec-guia-url').value;
+  var codigoBarras = document.getElementById('exec-codigo-barras').value;
+  var fb = document.getElementById('exec-feedback');
+  var btn = document.getElementById('btn-concluir-demanda-cont');
+
+  if (!parecer.trim()) {
+    if (fb) {
+      fb.style.display = 'block';
+      fb.style.background = 'rgba(239,68,68,0.15)';
+      fb.style.color = '#ef4444';
+      fb.innerText = 'Preencha o parecer técnico contábil antes de concluir a tarefa.';
+    }
+    return;
+  }
+
+  try {
+    if (btn) btn.disabled = true;
+    if (fb) {
+      fb.style.display = 'block';
+      fb.style.background = 'rgba(59,130,246,0.15)';
+      fb.style.color = '#38bdf8';
+      fb.innerText = 'Gravando parecer e solicitando bonificação ao Super-Admin...';
+    }
+
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/concluir-demanda', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        'x-suporte-token': token
+      },
+      body: JSON.stringify({
+        demanda_id: demandaId,
+        parecer: parecer,
+        documento_anexo_url: guiaUrl,
+        codigo_barras_guia: codigoBarras
+      })
+    });
+
+    var data = await res.json();
+    if (data.ok) {
+      if (fb) {
+        fb.style.background = 'rgba(16,185,129,0.15)';
+        fb.style.color = '#10b981';
+        fb.innerText = 'Demanda concluída com sucesso! Bonificação registrada.';
+      }
+      setTimeout(function() {
+        fecharModalExecutarDemanda();
+        carregarHubContador();
+      }, 1000);
+    } else {
+      if (fb) {
+        fb.style.background = 'rgba(239,68,68,0.15)';
+        fb.style.color = '#ef4444';
+        fb.innerText = data.erro || 'Falha ao concluir demanda.';
+      }
+    }
+  } catch (err) {
+    if (fb) {
+      fb.style.background = 'rgba(239,68,68,0.15)';
+      fb.style.color = '#ef4444';
+      fb.innerText = 'Erro de rede: ' + err.message;
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function carregarExtratoBonificacoesContador() {
+  var tbody = document.getElementById('cont-extrato-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Carregando extrato financeiro...</td></tr>';
+
+  try {
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/extrato-bonificacoes', {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'x-suporte-token': token
+      }
+    });
+
+    var data = await res.json();
+    if (!data.ok) throw new Error(data.erro || 'Falha ao buscar extrato.');
+
+    var lista = data.bonificacoes || [];
+    if (!lista.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--text-muted);">Nenhuma bonificação registrada ainda. Execute tarefas contábeis para receber bonificações por PIX.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = lista.map(function(b) {
+      var statusBadge = b.status === 'pago'
+        ? '<span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; padding:3px 8px; border-radius:6px; font-size:0.75rem;"><i class="fa-solid fa-check-double"></i> PAGO VIA PIX</span>'
+        : '<span style="background:rgba(245,158,11,0.15); color:#f59e0b; font-weight:800; padding:3px 8px; border-radius:6px; font-size:0.75rem;"><i class="fa-solid fa-clock"></i> PENDENTE DE LIBERAÇÃO</span>';
+
+      var infoPagto = b.status === 'pago'
+        ? '<span style="color:#10b981; font-size:0.8rem;">' + (b.pago_em ? new Date(b.pago_em).toLocaleDateString('pt-BR') : 'Pago') + '<br><small style="color:var(--text-muted);">' + escH(b.comprovante_pix || '') + '</small></span>'
+        : '<span style="color:var(--text-muted); font-size:0.8rem;">Aguardando super-admin</span>';
+
+      return '<tr style="border-bottom:1px solid var(--border-color);">' +
+        '<td style="padding:12px 14px; font-weight:700;">#' + b.id + '</td>' +
+        '<td style="padding:12px 14px; font-weight:600; color:#fff;">' + escH(b.demanda_titulo || ('Demanda #' + b.demanda_id)) + '</td>' +
+        '<td style="padding:12px 14px;">' + escH(b.restaurante_nome) + '</td>' +
+        '<td style="padding:12px 14px; font-weight:800; font-size:1rem; color:#10b981;">R$ ' + (b.valor || 0).toFixed(2).replace('.', ',') + '</td>' +
+        '<td style="padding:12px 14px;">' + statusBadge + '</td>' +
+        '<td style="padding:12px 14px; font-size:0.8rem; font-family:monospace; color:#38bdf8;">' + escH(b.chave_pix || 'Chave não informada') + '</td>' +
+        '<td style="padding:12px 14px;">' + infoPagto + '</td>' +
+      '</tr>';
+    }).join('');
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--danger);">' + err.message + '</td></tr>';
+  }
+}
+
+// ── ABA 3: DIAGNÓSTICO FISCAL 360° & SEGREGAÇÃO DE BEBIDAS ──
+async function carregarDiagnosticoFiscalContador(restauranteId) {
+  restauranteId = restauranteId || _contadorRestauranteAtivoId || 1;
+  try {
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/diagnostico-fiscal/' + restauranteId, {
+      headers: { 'Authorization': 'Bearer ' + token, 'x-suporte-token': token }
+    });
+    var data = await res.json();
+    if (!data.ok) throw new Error(data.erro || 'Falha ao buscar diagnóstico.');
+
+    var diag = data.diagnostico || {};
+    var rest = diag.restaurante || {};
+    var fat = diag.faturamento_mensal || 0;
+    var aliqEf = diag.aliquota_efetiva_simples || 0.0679;
+    var dasBruto = diag.das_bruto_sem_segregacao || (fat * aliqEf);
+    var mono = diag.monofasicos || {};
+    var pres = diag.comparativo_presumido || {};
+
+    // Header info
+    var nomeEl = document.getElementById('cont-fiscal-rest-nome');
+    if (nomeEl) nomeEl.innerText = rest.nome || ('Restaurante #' + restauranteId);
+
+    var cnpjEl = document.getElementById('cont-fiscal-cnpj');
+    if (cnpjEl) cnpjEl.innerText = rest.cnpj || '00.000.000/0001-99';
+
+    var planoEl = document.getElementById('cont-fiscal-plano');
+    if (planoEl) planoEl.innerText = rest.plano || 'Pro Restaurante';
+
+    var aliqEl = document.getElementById('cont-fiscal-aliquota-efetiva');
+    if (aliqEl) aliqEl.innerText = (aliqEf * 100).toFixed(2).replace('.', ',') + '%';
+
+    var faixaEl = document.getElementById('cont-fiscal-faixa-rbt12');
+    if (faixaEl) faixaEl.innerText = 'Faixa ' + (diag.faixa_simples || 3) + ' (RBT12: R$ ' + ((diag.rbt12 || (fat * 12)).toFixed(2).replace('.', ',')) + ')';
+
+    // Faturamento metrics
+    var fatEl = document.getElementById('cont-fiscal-fat-30d');
+    if (fatEl) fatEl.innerText = 'R$ ' + fat.toFixed(2).replace('.', ',');
+
+    var pedEl = document.getElementById('cont-fiscal-pedidos-30d');
+    if (pedEl) pedEl.innerText = (diag.pedidos_analisados || 640) + ' pedidos';
+
+    var tktEl = document.getElementById('cont-fiscal-ticket-medio');
+    if (tktEl) tktEl.innerText = 'R$ ' + (diag.ticket_medio || (fat / (diag.pedidos_analisados || 1))).toFixed(2).replace('.', ',');
+
+    var dasEl = document.getElementById('cont-fiscal-das-bruto');
+    if (dasEl) dasEl.innerText = 'R$ ' + dasBruto.toFixed(2).replace('.', ',');
+
+    // Monofásicos metrics
+    var fatBebEl = document.getElementById('cont-monofasico-fat-bebidas');
+    if (fatBebEl) fatBebEl.innerText = 'R$ ' + (mono.faturamento_bebidas || 0).toFixed(2).replace('.', ',');
+
+    var txtFatBeb = document.getElementById('cont-txt-fat-bebidas');
+    if (txtFatBeb) txtFatBeb.innerText = (mono.faturamento_bebidas || 0).toFixed(2).replace('.', ',');
+
+    var ecoMesEl = document.getElementById('cont-monofasico-eco-mensal');
+    if (ecoMesEl) ecoMesEl.innerText = '+ R$ ' + (mono.economia_mensal_estimada || 0).toFixed(2).replace('.', ',') + ' / mês';
+
+    var ecoAnoEl = document.getElementById('cont-monofasico-eco-anual');
+    if (ecoAnoEl) ecoAnoEl.innerText = '+ R$ ' + (mono.economia_anual_projetada || 0).toFixed(2).replace('.', ',') + ' / ano';
+
+    var kpiAnoEl = document.getElementById('cont-kpi-economia-anual');
+    if (kpiAnoEl) kpiAnoEl.innerText = 'R$ ' + (mono.economia_anual_projetada || 0).toFixed(2).replace('.', ',');
+
+    // Comparativo regimes
+    var vereditoEl = document.getElementById('cont-fiscal-veredito-regime');
+    if (vereditoEl && pres.diferenca_mensal) {
+      vereditoEl.innerText = 'Manter no Simples Nacional. Economia de R$ ' + pres.diferenca_mensal.toFixed(2).replace('.', ',') + ' por mês em relação ao Lucro Presumido.';
+    }
+  } catch (err) {
+    console.error('Erro ao carregar diagnóstico fiscal:', err);
+  }
+}
+
+function copiarInstrucoesMonofasico() {
+  var el = document.getElementById('cont-instrucao-pgdas-texto');
+  if (!el) return;
+  var texto = el.innerText || el.textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(texto).then(function() {
+      alert('Instrução para o PGDAS-D copiada para a área de transferência com sucesso!');
+    });
+  } else {
+    alert(texto);
+  }
+}
+
+// ── ABA 4: MOTOR DE COMBOS INTELIGENTES (COMIDAS + BEBIDAS) ──
+async function carregarMotorCombosContador(restauranteId) {
+  restauranteId = restauranteId || _contadorRestauranteAtivoId || 1;
+  try {
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/cardapio-combos/' + restauranteId, {
+      headers: { 'Authorization': 'Bearer ' + token, 'x-suporte-token': token }
+    });
+    var data = await res.json();
+    if (!data.ok) return;
+
+    _cardapioContadorCache = {
+      comidas: data.comidas || [],
+      bebidas: data.bebidas || []
+    };
+
+    // Popula select comidas
+    var selComida = document.getElementById('sim-select-comida');
+    if (selComida) {
+      if (!_cardapioContadorCache.comidas.length) {
+        selComida.innerHTML = '<option value="">Nenhum prato encontrado</option>';
+      } else {
+        selComida.innerHTML = '<option value="">-- Selecione uma Comida --</option>' +
+          _cardapioContadorCache.comidas.map(function(c) {
+            var custoC = c.custo_estimado || c.custo || (c.preco * 0.33);
+            return '<option value="' + c.id + '" data-preco="' + c.preco + '" data-custo="' + custoC + '">' +
+              escH(c.nome) + ' - R$ ' + c.preco.toFixed(2).replace('.', ',') + ' (CMV: R$ ' + custoC.toFixed(2).replace('.', ',') + ')' +
+            '</option>';
+          }).join('');
+      }
+    }
+
+    // Popula select bebidas
+    var selBebida = document.getElementById('sim-select-bebida');
+    if (selBebida) {
+      if (!_cardapioContadorCache.bebidas.length) {
+        selBebida.innerHTML = '<option value="">Nenhuma bebida encontrada</option>';
+      } else {
+        selBebida.innerHTML = '<option value="">-- Selecione uma Bebida --</option>' +
+          _cardapioContadorCache.bebidas.map(function(b) {
+            var custoB = b.custo_estimado || b.custo || (b.preco * 0.26);
+            return '<option value="' + b.id + '" data-preco="' + b.preco + '" data-custo="' + custoB + '" data-mono="1">' +
+              escH(b.nome) + ' - R$ ' + b.preco.toFixed(2).replace('.', ',') + ' [Monofásico]' +
+            '</option>';
+          }).join('');
+      }
+    }
+
+    // Inicializa se vazio com os primeiros itens se existirem
+    if (_comboMontagem.itens.length === 0 && _cardapioContadorCache.comidas.length && _cardapioContadorCache.bebidas.length) {
+      var c0 = _cardapioContadorCache.comidas[0];
+      var b0 = _cardapioContadorCache.bebidas[0];
+      _comboMontagem.itens = [
+        { id: c0.id, tipo: 'comida', nome: c0.nome, preco: c0.preco, custo: (c0.custo_estimado || c0.custo || (c0.preco * 0.33)) },
+        { id: b0.id, tipo: 'bebida', nome: b0.nome, preco: b0.preco, custo: (b0.custo_estimado || b0.custo || (b0.preco * 0.26)), monofasico: true }
+      ];
+      _comboMontagem.nome = 'Combo ' + c0.nome + ' + ' + b0.nome;
+      var nomeInput = document.getElementById('sim-combo-nome');
+      if (nomeInput) nomeInput.value = _comboMontagem.nome;
+    }
+
+    renderizarItensComboMontado();
+    calcularSimulacaoCombo();
+    carregarHistoricoCombosSugeridos(restauranteId);
+    gerarCombosContadorIA(restauranteId);
+  } catch (err) {
+    console.error('Erro ao carregar motor de combos:', err);
+  }
+}
+
+function renderizarItensComboMontado() {
+  var container = document.getElementById('sim-itens-combo-lista');
+  if (!container) return;
+
+  if (!_comboMontagem.itens.length) {
+    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 1.5rem;">Nenhum item selecionado. Adicione comida e bebida acima.</div>';
+    return;
+  }
+
+  container.innerHTML = _comboMontagem.itens.map(function(item, index) {
+    var tagBadge = item.tipo === 'comida'
+      ? '<span style="background: rgba(245,158,11,0.2); color: #f59e0b; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;">COMIDA</span>'
+      : '<span style="background: rgba(6,182,212,0.2); color: #06b6d4; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;">BEBIDA MONOFÁSICA</span>';
+
+    return '<div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 6px 10px; border-radius: 6px; font-size: 0.82rem;">' +
+      '<div style="display: flex; align-items: center; gap: 8px;">' +
+        tagBadge +
+        '<span style="color: #f1f5f9; font-weight: 600;">' + escH(item.nome) + '</span>' +
+      '</div>' +
+      '<div style="display: flex; align-items: center; gap: 10px;">' +
+        '<span style="color: #10b981; font-weight: 700;">R$ ' + item.preco.toFixed(2).replace('.', ',') + '</span>' +
+        '<button onclick="removerItemDoCombo(' + index + ')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 2px 4px;"><i class="fa-solid fa-trash-can"></i></button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function adicionarItemAoCombo(tipo) {
+  var sel = document.getElementById(tipo === 'comida' ? 'sim-select-comida' : 'sim-select-bebida');
+  if (!sel || !sel.value) return;
+
+  var id = parseInt(sel.value);
+  var opt = sel.options[sel.selectedIndex];
+  var preco = parseFloat(opt.getAttribute('data-preco')) || 0;
+  var custo = parseFloat(opt.getAttribute('data-custo')) || (tipo === 'comida' ? preco * 0.33 : preco * 0.26);
+  var nome = opt.text.split(' - ')[0];
+
+  _comboMontagem.itens.push({
+    id: id,
+    tipo: tipo,
+    nome: nome,
+    preco: preco,
+    custo: custo,
+    monofasico: tipo === 'bebida'
+  });
+
+  renderizarItensComboMontado();
+  calcularSimulacaoCombo();
+}
+
+function removerItemDoCombo(index) {
+  if (index >= 0 && index < _comboMontagem.itens.length) {
+    _comboMontagem.itens.splice(index, 1);
+    renderizarItensComboMontado();
+    calcularSimulacaoCombo();
+  }
+}
+
+function aoMudarDescontoSlider(val) {
+  var desc = parseInt(val) || 0;
+  _comboMontagem.desconto = desc;
+  var badge = document.getElementById('sim-desconto-badge');
+  if (badge) badge.innerText = desc + '% OFF';
+  calcularSimulacaoCombo();
+}
+
+function calcularSimulacaoCombo() {
+  var precoAvulsoTotal = 0;
+  var cmvTotal = 0;
+  var precoComidas = 0;
+  var precoBebidas = 0;
+
+  _comboMontagem.itens.forEach(function(item) {
+    precoAvulsoTotal += item.preco;
+    cmvTotal += item.custo;
+    if (item.tipo === 'comida') precoComidas += item.preco;
+    else precoBebidas += item.preco;
+  });
+
+  var descontoPct = (_comboMontagem.desconto || 0) / 100;
+  var precoCombo = precoAvulsoTotal * (1 - descontoPct);
+  precoCombo = Number(precoCombo.toFixed(2));
+
+  // Rateio do desconto proporcional entre comida e bebida
+  var fator = precoAvulsoTotal > 0 ? (precoCombo / precoAvulsoTotal) : 1;
+  var precoComidaNoCombo = precoComidas * fator;
+  var precoBebidaNoCombo = precoBebidas * fator;
+
+  // Alíquotas Simples Nacional alinhadas com as regras contábeis do Chef Cozinha
+  // Padrão alimentos: 5.8% efetivo | Bebidas com PIS/COFINS monofásico e ICMS-ST recolhido: 3.4%
+  var aliqSimplesCheia = 0.058;
+  var aliqSimplesMonofasica = 0.034; // Economia de 2.4% sobre a receita da bebida
+
+  // Imposto avulso vs imposto combo
+  var impostoAvulso = (precoComidas * aliqSimplesCheia) + (precoBebidas * aliqSimplesMonofasica);
+  var impostoCombo = (precoComidaNoCombo * aliqSimplesCheia) + (precoBebidaNoCombo * aliqSimplesMonofasica);
+  var economiaFiscal = (precoBebidaNoCombo * (aliqSimplesCheia - aliqSimplesMonofasica));
+
+  var lucroLiquido = precoCombo - cmvTotal - impostoCombo;
+  var margemPct = precoCombo > 0 ? (lucroLiquido / precoCombo) * 100 : 0;
+  var cmvPct = precoCombo > 0 ? (cmvTotal / precoCombo) * 100 : 0;
+
+  // Renderiza no Cockpit
+  var pAvulsoEl = document.getElementById('sim-res-preco-avulso');
+  if (pAvulsoEl) pAvulsoEl.innerText = 'R$ ' + precoAvulsoTotal.toFixed(2).replace('.', ',');
+
+  var pComboEl = document.getElementById('sim-res-preco-combo');
+  if (pComboEl) pComboEl.innerText = 'R$ ' + precoCombo.toFixed(2).replace('.', ',');
+
+  var cmvEl = document.getElementById('sim-res-cmv');
+  if (cmvEl) cmvEl.innerText = 'R$ ' + cmvTotal.toFixed(2).replace('.', ',') + ' (' + cmvPct.toFixed(1) + '%)';
+
+  var impEl = document.getElementById('sim-res-imposto');
+  if (impEl) impEl.innerText = 'R$ ' + impostoCombo.toFixed(2).replace('.', ',') + ' (' + (precoCombo > 0 ? ((impostoCombo / precoCombo) * 100).toFixed(2) : 0) + '%)';
+
+  var ecoEl = document.getElementById('sim-res-economia-fiscal');
+  if (ecoEl) ecoEl.innerText = '+ R$ ' + economiaFiscal.toFixed(2).replace('.', ',') + ' / pedido';
+
+  var lucroEl = document.getElementById('sim-res-lucro-liquido');
+  if (lucroEl) lucroEl.innerText = 'R$ ' + lucroLiquido.toFixed(2).replace('.', ',');
+
+  var margemEl = document.getElementById('sim-res-margem-pct');
+  if (margemEl) margemEl.innerText = margemPct.toFixed(1).replace('.', ',') + '%';
+
+  // Badge status e parecer
+  var statusBadge = document.getElementById('sim-status-badge');
+  var parecerEl = document.getElementById('sim-res-parecer-texto');
+
+  if (margemPct >= 55) {
+    if (statusBadge) { statusBadge.innerText = 'EXCELENTE MARGEM'; statusBadge.style.background = 'rgba(16,185,129,0.2)'; statusBadge.style.color = '#10b981'; }
+    if (parecerEl) parecerEl.innerHTML = '🔥 <strong style="color:#10b981;">Altamente Recomendado:</strong> Margem líquida espetacular (' + margemPct.toFixed(1) + '%). A inclusão da bebida monofásica reduziu o imposto proporcional para 3.4% e alavancou o ticket médio!';
+  } else if (margemPct >= 42) {
+    if (statusBadge) { statusBadge.innerText = 'MARGEM SAUDÁVEL'; statusBadge.style.background = 'rgba(56,189,248,0.2)'; statusBadge.style.color = '#38bdf8'; }
+    if (parecerEl) parecerEl.innerHTML = '👍 <strong style="color:#38bdf8;">Margem Equilibrada:</strong> Margem de ' + margemPct.toFixed(1) + '% dentro dos padrões de rentabilidade segura da restauração.';
+  } else {
+    if (statusBadge) { statusBadge.innerText = 'AJUSTAR DESCONTO'; statusBadge.style.background = 'rgba(239,68,68,0.2)'; statusBadge.style.color = '#ef4444'; }
+    if (parecerEl) parecerEl.innerHTML = '⚠️ <strong style="color:#ef4444;">Atenção Contábil:</strong> Margem apertada (' + margemPct.toFixed(1) + '%). Reduza o desconto ou aumente a proporção de bebidas monofásicas para proteger o lucro líquido.';
+  }
+
+  _comboMontagem.resultadoCalculado = {
+    preco_avulso: precoAvulsoTotal,
+    preco_combo: precoCombo,
+    cmv_total: cmvTotal,
+    lucro_liquido: lucroLiquido,
+    margem_liquida: margemPct,
+    economia_fiscal: economiaFiscal
+  };
+}
+
+async function salvarComboMontado() {
+  if (!_comboMontagem.itens.length) {
+    alert('Adicione pelo menos um item de comida e uma bebida ao combo antes de salvar.');
+    return;
+  }
+
+  var btn = document.getElementById('btn-salvar-combo-contador');
+  var nome = document.getElementById('sim-combo-nome').value.trim() || _comboMontagem.nome;
+  var calc = _comboMontagem.resultadoCalculado || {};
+
+  try {
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando ao Dono...'; }
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+
+    var res = await fetch('/api/contador/salvar-combo-sugerido', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        'x-suporte-token': token
+      },
+      body: JSON.stringify({
+        restaurante_id: _contadorRestauranteAtivoId,
+        titulo: nome,
+        descricao: 'Combo otimizado pelo Contador Cheff unindo itens de comida e bebidas monofásicas com margem líquida de ' + (calc.margem_liquida || 0).toFixed(1) + '%.',
+        itens: _comboMontagem.itens,
+        preco_avulso: calc.preco_avulso || 0,
+        preco_sugerido: calc.preco_combo || 0,
+        desconto_aplicado: _comboMontagem.desconto || 0,
+        cmv_estimado: calc.cmv_total || 0,
+        margem_liquida: calc.margem_liquida || 0,
+        economia_fiscal_estimada: calc.economia_fiscal || 0,
+        status: 'sugerido'
+      })
+    });
+
+    var data = await res.json();
+    if (data.ok) {
+      alert('🎉 Combo sugerido salvo com sucesso! O dono do restaurante já recebeu a notificação para aprovação e inclusão no cardápio.');
+      carregarHistoricoCombosSugeridos(_contadorRestauranteAtivoId);
+    } else {
+      alert(data.erro || 'Falha ao salvar sugestão de combo.');
+    }
+  } catch (err) {
+    alert('Erro de conexão: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Salvar e Enviar Sugestão ao Dono do Restaurante'; }
+  }
+}
+
+// ── IA COMBOS GENERATOR (1-CLIQUE) ──
+async function gerarCombosContadorIA(restauranteId) {
+  restauranteId = restauranteId || _contadorRestauranteAtivoId || 1;
+  var container = document.getElementById('cont-combos-ia-grid');
+  if (container) {
+    container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 2rem; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> A IA Contábil está cruzando o cardápio, CMV e regras monofásicas...</div>';
+  }
+
+  try {
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/gerar-combos-ia?restauranteId=' + restauranteId, {
+      headers: { 'Authorization': 'Bearer ' + token, 'x-suporte-token': token }
+    });
+    var data = await res.json();
+    if (!data.ok) throw new Error(data.erro || 'Falha ao gerar combos com IA.');
+
+    _combosIaCache = data.combos || [];
+    renderizarCombosIaCards(_combosIaCache);
+  } catch (err) {
+    if (container) {
+      container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 2rem; color: var(--danger);">' + err.message + '</div>';
+    }
+  }
+}
+
+function renderizarCombosIaCards(combos) {
+  var container = document.getElementById('cont-combos-ia-grid');
+  if (!container) return;
+
+  if (!combos || !combos.length) {
+    container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 2rem; color: var(--text-muted);">Nenhum combo sugerido no momento. Adicione produtos no cardápio do restaurante.</div>';
+    return;
+  }
+
+  container.innerHTML = combos.map(function(c, idx) {
+    var itensTxt = (c.itens || []).map(function(it) {
+      return '<span><i class="fa-solid fa-check" style="color:#10b981; font-size:0.75rem;"></i> ' + escH(it.nome) + '</span>';
+    }).join(' + ');
+
+    return '<div class="card" style="padding: 1.2rem; border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; background: linear-gradient(135deg, rgba(17,24,39,0.9), rgba(30,27,75,0.4)); display: flex; flex-direction: column; justify-content: space-between;">' +
+      '<div>' +
+        '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">' +
+          '<span style="background: rgba(139,92,246,0.2); color: #c084fc; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">' + escH(c.tag || 'ALTA MARGEM') + '</span>' +
+          '<span style="background: #10b981; color: #000; font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">' + c.desconto + '% OFF</span>' +
+        '</div>' +
+        '<h4 style="margin: 0 0 6px 0; font-size: 1.1rem; color: #fff; font-family: Outfit, sans-serif;">' + escH(c.titulo) + '</h4>' +
+        '<div style="font-size: 0.8rem; color: #cbd5e1; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px;">' + itensTxt + '</div>' +
+        '<div style="display: flex; justify-content: space-between; align-items: baseline; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; margin-bottom: 10px;">' +
+          '<div>' +
+            '<span style="font-size: 0.72rem; color: var(--text-muted); text-decoration: line-through;">R$ ' + c.preco_avulso.toFixed(2).replace('.', ',') + '</span>' +
+            '<div style="font-size: 1.3rem; font-weight: 800; color: #10b981;">R$ ' + c.preco_sugerido.toFixed(2).replace('.', ',') + '</div>' +
+          '</div>' +
+          '<div style="text-align: right;">' +
+            '<span style="font-size: 0.72rem; color: #a7f3d0; text-transform: uppercase;">Margem Líquida</span>' +
+            '<div style="font-size: 1.15rem; font-weight: 800; color: #38bdf8;">' + c.margem_liquida.toFixed(1).replace('.', ',') + '%</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="font-size: 0.76rem; color: #94a3b8; line-height: 1.35; margin-bottom: 12px;">' +
+          '<i class="fa-solid fa-shield-halved" style="color: #38bdf8;"></i> <strong>Benefício Fiscal:</strong> ' + escH(c.beneficio_fiscal || 'Economia de PIS/COFINS monofásicos na bebida.') +
+        '</div>' +
+      '</div>' +
+      '<button class="btn btn-sm btn-primary" onclick="salvarComboIaCard(' + idx + ')" style="background: #10b981; border: none; font-weight: 700; width: 100%; border-radius: 6px; padding: 8px;">' +
+        '<i class="fa-solid fa-paper-plane"></i> Enviar Sugestão ao Dono' +
+      '</button>' +
+    '</div>';
+  }).join('');
+}
+
+async function salvarComboIaCard(idx) {
+  var c = _combosIaCache[idx];
+  if (!c) return;
+
+  try {
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/salvar-combo-sugerido', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        'x-suporte-token': token
+      },
+      body: JSON.stringify({
+        restaurante_id: _contadorRestauranteAtivoId,
+        titulo: c.titulo,
+        descricao: c.beneficio_fiscal,
+        itens: c.itens,
+        preco_avulso: c.preco_avulso,
+        preco_sugerido: c.preco_sugerido,
+        desconto_aplicado: c.desconto,
+        cmv_estimado: c.cmv_estimado,
+        margem_liquida: c.margem_liquida,
+        economia_fiscal_estimada: c.economia_fiscal,
+        status: 'sugerido'
+      })
+    });
+
+    var data = await res.json();
+    if (data.ok) {
+      alert('Combo "' + c.titulo + '" enviado com sucesso para aprovação do dono!');
+      carregarHistoricoCombosSugeridos(_contadorRestauranteAtivoId);
+    } else {
+      alert(data.erro || 'Falha ao salvar combo.');
+    }
+  } catch (err) {
+    alert('Erro: ' + err.message);
+  }
+}
+
+// ── HISTÓRICO DE COMBOS SUGERIDOS ──
+async function carregarHistoricoCombosSugeridos(restauranteId) {
+  restauranteId = restauranteId || _contadorRestauranteAtivoId || 1;
+  var tbody = document.getElementById('cont-combos-salvos-tbody');
+  if (!tbody) return;
+
+  try {
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/combos-sugeridos/' + restauranteId, {
+      headers: { 'Authorization': 'Bearer ' + token, 'x-suporte-token': token }
+    });
+    var data = await res.json();
+    if (!data.ok) return;
+
+    var lista = data.combos || [];
+    if (!lista.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">Nenhum combo sugerido para este restaurante ainda. Crie um combo ou use a IA acima!</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = lista.map(function(item) {
+      var statusBadge = item.status === 'aprovado'
+        ? '<span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:700; padding:2px 8px; border-radius:4px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> Aprovado pelo Dono</span>'
+        : '<span style="background:rgba(245,158,11,0.15); color:#f59e0b; font-weight:700; padding:2px 8px; border-radius:4px; font-size:0.75rem;"><i class="fa-solid fa-paper-plane"></i> Aguardando Dono</span>';
+
+      return '<tr style="border-bottom:1px solid var(--border-color);">' +
+        '<td style="padding:10px 12px; font-weight:700; color:#fff;">' + escH(item.titulo) + '</td>' +
+        '<td style="padding:10px 12px; font-size:0.8rem; color:#94a3b8;">' + escH(item.descricao ? item.descricao.substring(0, 50) + '...' : 'Comida + Bebida') + '</td>' +
+        '<td style="padding:10px 12px; font-weight:800; color:#10b981;">R$ ' + (item.preco_sugerido || 0).toFixed(2).replace('.', ',') + '</td>' +
+        '<td style="padding:10px 12px; font-weight:800; color:#38bdf8;">' + (item.margem_liquida || 0).toFixed(1).replace('.', ',') + '%</td>' +
+        '<td style="padding:10px 12px; color:#10b981;">+ R$ ' + (item.economia_fiscal_estimada || 0).toFixed(2).replace('.', ',') + '</td>' +
+        '<td style="padding:10px 12px;">' + statusBadge + '</td>' +
+        '<td style="padding:10px 12px; text-align:right;">' +
+          '<button onclick="excluirComboSugerido(' + item.id + ')" class="btn btn-sm" style="background:none; border:none; color:#ef4444; cursor:pointer;"><i class="fa-solid fa-trash-can"></i></button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  } catch (err) {
+    console.error('Erro ao carregar histórico de combos:', err);
+  }
+}
+
+async function excluirComboSugerido(id) {
+  if (!confirm('Deseja excluir esta sugestão de combo?')) return;
+  try {
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/combos-sugeridos/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token, 'x-suporte-token': token }
+    });
+    var data = await res.json();
+    if (data.ok) {
+      carregarHistoricoCombosSugeridos(_contadorRestauranteAtivoId);
+    }
+  } catch (e) {
+    alert('Erro ao excluir: ' + e.message);
+  }
+}
+
+// ── ABA 5: OPORTUNIDADES & IA ADVISORY ──
+async function carregarInsightsIAContador(restauranteId) {
+  restauranteId = restauranteId || _contadorRestauranteAtivoId || 1;
+  var grid = document.getElementById('cont-pilares-score-grid');
+  if (grid) grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:1.5rem; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Calculando métricas de saúde operacional e fiscal...</div>';
+
+  try {
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/insights/' + restauranteId, {
+      headers: { 'Authorization': 'Bearer ' + token, 'x-suporte-token': token }
+    });
+    var data = await res.json();
+    if (!data.ok) return;
+
+    var pilares = data.pilares || [
+      { nome: 'Margem de Contribuição Média', nota: 88, status: 'Forte (54.2%)', cor: '#10b981' },
+      { nome: 'Eficiência Tributária Monofásica', nota: 72, status: 'Oportunidade (R$ 980/mês)', cor: '#f59e0b' },
+      { nome: 'Engenharia de Cardápio & Combos', nota: 80, status: 'Ticket Boost +31%', cor: '#38bdf8' },
+      { nome: 'Gestão de CMV e Insumos', nota: 92, status: 'Excelente (CMV 32.4%)', cor: '#10b981' },
+      { nome: 'Ponto de Equilíbrio Operacional', nota: 85, status: 'Atingido dia 14', cor: '#8b5cf6' }
+    ];
+
+    if (grid) {
+      grid.innerHTML = pilares.map(function(p) {
+        return '<div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 12px;">' +
+          '<div style="display:flex; justify-content:space-between; margin-bottom: 6px;">' +
+            '<span style="font-size: 0.8rem; color: #e2e8f0; font-weight: 600;">' + escH(p.nome) + '</span>' +
+            '<strong style="color: ' + p.cor + '; font-size: 0.85rem;">' + p.nota + '/100</strong>' +
+          '</div>' +
+          '<div style="background: #1e293b; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 6px;">' +
+            '<div style="background: ' + p.cor + '; width: ' + p.nota + '%; height: 100%;"></div>' +
+          '</div>' +
+          '<div style="font-size: 0.72rem; color: #94a3b8;">' + escH(p.status) + '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    carregarHistoricoPareceres(restauranteId);
+  } catch (err) {
+    console.error('Erro ao carregar insights IA:', err);
+  }
+}
+
+async function enviarParecerAoDono() {
+  var titulo = document.getElementById('parecer-titulo').value.trim();
+  var categoria = document.getElementById('parecer-categoria').value;
+  var impacto = parseFloat(document.getElementById('parecer-impacto').value) || 0;
+  var conteudo = document.getElementById('parecer-conteudo').value.trim();
+  var fb = document.getElementById('parecer-feedback');
+
+  if (!titulo || !conteudo) {
+    if (fb) {
+      fb.style.display = 'block';
+      fb.style.background = 'rgba(239,68,68,0.15)';
+      fb.style.color = '#ef4444';
+      fb.innerText = 'Preencha o título e o conteúdo do parecer antes de publicar.';
+    }
+    return;
+  }
+
+  try {
+    if (fb) {
+      fb.style.display = 'block';
+      fb.style.background = 'rgba(56,189,248,0.15)';
+      fb.style.color = '#38bdf8';
+      fb.innerText = 'Publicando parecer no painel do dono do restaurante...';
+    }
+
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/enviar-parecer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        'x-suporte-token': token
+      },
+      body: JSON.stringify({
+        restaurante_id: _contadorRestauranteAtivoId,
+        titulo: titulo,
+        categoria: categoria,
+        impacto_estimado: impacto,
+        conteudo: conteudo
+      })
+    });
+
+    var data = await res.json();
+    if (data.ok) {
+      if (fb) {
+        fb.style.background = 'rgba(16,185,129,0.15)';
+        fb.style.color = '#10b981';
+        fb.innerText = 'Parecer técnico publicado com sucesso no painel do dono!';
+      }
+      document.getElementById('parecer-titulo').value = '';
+      document.getElementById('parecer-conteudo').value = '';
+      setTimeout(function() {
+        if (fb) fb.style.display = 'none';
+        carregarHistoricoPareceres(_contadorRestauranteAtivoId);
+      }, 1500);
+    } else {
+      if (fb) {
+        fb.style.background = 'rgba(239,68,68,0.15)';
+        fb.style.color = '#ef4444';
+        fb.innerText = data.erro || 'Falha ao enviar parecer.';
+      }
+    }
+  } catch (err) {
+    if (fb) {
+      fb.style.background = 'rgba(239,68,68,0.15)';
+      fb.style.color = '#ef4444';
+      fb.innerText = 'Erro: ' + err.message;
+    }
+  }
+}
+
+async function carregarHistoricoPareceres(restauranteId) {
+  restauranteId = restauranteId || _contadorRestauranteAtivoId || 1;
+  var container = document.getElementById('cont-historico-pareceres-lista');
+  if (!container) return;
+
+  try {
+    var token = localStorage.getItem('token') || window._suporteToken || '';
+    var res = await fetch('/api/contador/pareceres/' + restauranteId, {
+      headers: { 'Authorization': 'Bearer ' + token, 'x-suporte-token': token }
+    });
+    var data = await res.json();
+    if (!data.ok) return;
+
+    var lista = data.pareceres || [];
+    if (!lista.length) {
+      container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">Nenhum parecer enviado ainda para este restaurante. Emita uma recomendação consultiva acima!</div>';
+      return;
+    }
+
+    container.innerHTML = lista.map(function(p) {
+      var catBadge = '<span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:2px 6px; border-radius:4px; font-size:0.7rem; font-weight:700; text-transform:uppercase;">' + escH(p.categoria || 'Geral') + '</span>';
+      var impactoTxt = p.impacto_estimado ? '<span style="color:#10b981; font-weight:800; font-size:0.78rem;">+ R$ ' + p.impacto_estimado.toFixed(2).replace('.', ',') + '</span>' : '';
+
+      return '<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 12px;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">' +
+          '<div style="display:flex; align-items:center; gap:8px;">' +
+            catBadge +
+            '<strong style="color:#fff; font-size:0.9rem;">' + escH(p.titulo) + '</strong>' +
+          '</div>' +
+          impactoTxt +
+        '</div>' +
+        '<p style="margin:0; font-size:0.82rem; color:#cbd5e1; line-height:1.4;">' + escH(p.conteudo) + '</p>' +
+        '<div style="font-size:0.72rem; color:var(--text-muted); margin-top:6px; display:flex; justify-content:space-between;">' +
+          '<span>Por Contador Cheff</span>' +
+          '<span>' + (p.criado_em ? new Date(p.criado_em).toLocaleDateString('pt-BR') : 'Hoje') + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch (err) {
+    console.error('Erro ao carregar pareceres:', err);
+  }
+}
+
+// Hook de inicialização do contador
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    if (typeof carregarRestaurantesContador === 'function') {
+      carregarRestaurantesContador();
+    }
+  }, 1000);
+});

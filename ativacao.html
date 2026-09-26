@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -9,7 +9,7 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
+    :root, [data-theme="dark"], body.theme-dark, body.dark {
       --orange: #fc4b15;
       --orange-dark: #e03d0e;
       --bg: #0d0d1a;
@@ -18,9 +18,25 @@
       --text: #f0f0f8;
       --muted: #888aaa;
       --border: rgba(255,255,255,0.08);
+      --card-shadow: 0 24px 80px rgba(0,0,0,0.5);
       --success: #22c55e;
       --warning: #f59e0b;
       --error: #ef4444;
+    }
+
+    [data-theme="light"], body.theme-light, body.light {
+      --orange: #fc4b15;
+      --orange-dark: #e03d0e;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface2: #f1f5f9;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --card-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+      --success: #16a34a;
+      --warning: #d97706;
+      --error: #dc2626;
     }
 
     body {
@@ -33,6 +49,7 @@
       justify-content: center;
       padding: 24px;
       overflow: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
     /* Background glow */
@@ -54,7 +71,7 @@
       max-width: 480px;
       position: relative;
       z-index: 1;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+      box-shadow: var(--card-shadow); transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
       animation: fadeUp 0.5s ease;
     }
 
@@ -255,7 +272,32 @@
       text-align: center;
       line-height: 1.6;
     }
+
+    .theme-toggle-floating {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 999;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
+    }
+    .theme-toggle-floating:hover {
+      transform: scale(1.05);
+      border-color: var(--orange);
+    }
   </style>
+  <script src="/theme-manager.js"></script>
   <script src="/locales.js"></script>
   <script src="/i18n.js"></script>
 <link rel="icon" href="/icons/icon.ico">
@@ -267,6 +309,9 @@
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 </head>
 <body>
+  <button class="theme-toggle-floating" id="theme-toggle-btn" type="button" onclick="window.ChefTheme && window.ChefTheme.toggle()" title="Alternar Modo Claro / Escuro">
+    <span id="theme-toggle-icon" style="font-size:18px;">🌙</span>
+  </button>
   <div class="card" id="card">
     <div class="logo">
       <div class="logo-icon">🍳</div>
@@ -337,6 +382,132 @@
   
 <script src="/fullscreen.js"></script>
 
+
+  <script src="/confetti.js"></script>
+  <script>
+    function updateThemeIcon() {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light' || document.body.classList.contains('theme-light') || document.body.classList.contains('light');
+      const icon = document.getElementById('theme-toggle-icon');
+      if (icon) {
+        icon.textContent = isLight ? '☀️' : '🌙';
+      }
+    }
+    window.addEventListener('chef_theme_changed', updateThemeIcon);
+    document.addEventListener('DOMContentLoaded', function() {
+      updateThemeIcon();
+      verificarEstadoInicial();
+
+      const keyInput = document.getElementById('key-input');
+      if (keyInput) {
+        keyInput.addEventListener('input', function(e) {
+          let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+          let parts = [];
+          if (val.length > 0) parts.push(val.substring(0, 4));
+          if (val.length > 4) parts.push(val.substring(4, 8));
+          if (val.length > 8) parts.push(val.substring(8, 12));
+          if (val.length > 12) parts.push(val.substring(12, 16));
+          e.target.value = parts.join('-');
+        });
+        keyInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') activar();
+        });
+      }
+    });
+
+    async function verificarEstadoInicial() {
+      try {
+        const res = await fetch('/api/status-bloqueio');
+        const data = await res.json();
+        const badge = document.getElementById('status-badge');
+        const statusText = document.getElementById('status-text');
+        const restrictedBanner = document.getElementById('restricted-banner');
+
+        if (data && data.bloqueado) {
+          if (badge) {
+            badge.className = 'status-badge error';
+            if (statusText) statusText.textContent = 'Bloqueado';
+          }
+          if (restrictedBanner) {
+            restrictedBanner.classList.remove('hidden');
+            restrictedBanner.innerHTML = '⚠️ <strong>Instalação Bloqueada:</strong> ' + (data.motivo || 'Regularize sua chave para reativar.');
+          }
+        } else {
+          if (badge && statusText) {
+            statusText.textContent = 'Aguardando Ativação';
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function activar() {
+      const keyInput = document.getElementById('key-input');
+      const btn = document.getElementById('btn-activate');
+      const errBox = document.getElementById('alert-error');
+      const succBox = document.getElementById('alert-success');
+
+      if (errBox) { errBox.style.display = 'none'; errBox.textContent = ''; }
+      if (succBox) { succBox.style.display = 'none'; succBox.textContent = ''; }
+
+      const chave = (keyInput ? keyInput.value : '').trim().toUpperCase();
+      if (!chave || chave.length < 5) {
+        if (errBox) {
+          errBox.textContent = 'Por favor, insira uma chave de licença válida.';
+          errBox.style.display = 'block';
+        }
+        if (keyInput) keyInput.focus();
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Ativando...';
+      }
+
+      try {
+        const res = await fetch('/api/sync/ativar-local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chave: chave })
+        });
+        const data = await res.json();
+
+        if (data && data.ok) {
+          if (succBox) {
+            succBox.innerHTML = '🎉 <strong>' + (data.restaurant_name || 'Restaurante') + '</strong> ativado com sucesso!<br>Plano: ' + (data.plan || 'Premium') + '. Redirecionando...';
+            succBox.style.display = 'block';
+          }
+          if (typeof confetti === 'function') {
+            confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+          }
+          setTimeout(function() {
+            window.location.href = '/index.html';
+          }, 1800);
+        } else {
+          if (errBox) {
+            errBox.textContent = (data && data.error) || 'Não foi possível validar a chave. Verifique a digitação ou contate o suporte.';
+            errBox.style.display = 'block';
+          }
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Ativar';
+          }
+        }
+      } catch (err) {
+        if (errBox) {
+          errBox.textContent = 'Erro de rede ao conectar com o servidor: ' + err.message;
+          errBox.style.display = 'block';
+        }
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Ativar';
+        }
+      }
+    }
+
+    function abrirSistema() {
+      window.location.href = '/index.html';
+    }
+  </script>
 </body>
 </html>
 

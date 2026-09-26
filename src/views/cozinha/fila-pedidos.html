@@ -11,11 +11,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/fila.css">
+  <link rel="stylesheet" href="/fila.css?v=20260921">
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
-  <link rel="stylesheet" href="/dark-mode.css">
   <script src="/theme-manager.js?v=20260901paletas"></script>
   <script src="/vendor/morphdom/morphdom.min.js"></script>
   <script src="/locales.js"></script>
@@ -30,7 +29,8 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <script src="/socket.io.min.js"></script>
   <script src="/chef-tz.js"></script>
-  <script src="fila.js?v=20260829"></script>
+  <script src="/vendor/sortablejs/Sortable.min.js"></script>
+  <script src="fila.js?v=20260921"></script>
 </head>
 
 <body class="kds-body">
@@ -85,16 +85,37 @@
       </div>
     </div>
 
-    <!-- DIREITA: SELETOR GRADE/LINHAS + BUSCA + TEMA + AJUSTES -->
+    <!-- DIREITA: SELETOR GRADE/LINHAS/KANBAN + AJUSTES DE LAYOUT + BUSCA + TEMA -->
     <div class="kds-navbar-right">
-      <!-- Seletor de Modo de Exibição: Grade vs Linhas -->
-      <div style="display: flex; background: var(--bg-tertiary, #1e293b); padding: 3px; border-radius: 10px; border: 1px solid var(--border-color, #334155);">
+      <!-- Seletor de Modo de Exibição: Grade vs Linhas vs Kanban -->
+      <div style="display: flex; background: var(--bg-tertiary, #1e293b); padding: 3px; border-radius: 10px; border: 1px solid var(--border-color, #334155); gap: 2px;">
         <button type="button" id="btn-layout-grid" onclick="window.alterarModoDisposicao('grid')" title="Modo Grade de Cards" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 800; cursor: pointer; background: #fc4b15; color: white; display: flex; align-items: center; gap: 4px;">
           <i class="ph-bold ph-squares-four"></i> <span>Grade</span>
         </button>
         <button type="button" id="btn-layout-lista" onclick="window.alterarModoDisposicao('lista')" title="Modo Exibição em Linha" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted, #94a3b8); display: flex; align-items: center; gap: 4px;">
           <i class="ph-bold ph-rows"></i> <span>Linhas</span>
         </button>
+        <button type="button" id="btn-layout-kanban" onclick="window.alterarModoDisposicao('kanban')" title="Modo Kanban (3 Colunas de Status)" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted, #94a3b8); display: flex; align-items: center; gap: 4px;">
+          <i class="ph-bold ph-columns"></i> <span>Kanban</span>
+        </button>
+      </div>
+
+      <!-- Botão Alternar para Versão V1 Clássica -->
+      <button type="button" id="btn-switch-to-v1" onclick="window.trocarVersaoFila('classica')" class="kds-nav-btn kds-btn-version-switch" title="Alternar para a Fila de Pedidos V1 (Clássica)">
+        <i class="ph-bold ph-arrow-counter-clockwise"></i>
+        <span>V1 Clássica</span>
+      </button>
+
+      <!-- Botão Ajustar Layout & Tamanhos -->
+      <button type="button" id="btn-toggle-layout-drawer" onclick="window.toggleLayoutDrawer()" class="kds-nav-btn" style="background: rgba(252,75,21,0.12); color: #fc4b15; border: 1.5px solid rgba(252,75,21,0.3); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px;" title="Configurar Layout, Largura de Seções e Posições">
+        <i class="ph-bold ph-sliders-horizontal" style="font-size: 16px;"></i>
+        <span>Layout</span>
+      </button>
+
+      <!-- Status de Conexão em Tempo Real -->
+      <div id="kds-connection-badge" class="kds-conn-badge online" title="Status da Conexão em Tempo Real">
+        <span class="kds-conn-dot"></span>
+        <span id="kds-conn-text">Online</span>
       </div>
 
       <!-- Busca rápida -->
@@ -105,7 +126,7 @@
 
       <!-- Alternar Tema Claro / Escuro -->
       <button class="kds-icon-btn" onclick="if(window.ChefTheme && window.ChefTheme.toggle) { window.ChefTheme.toggle(); } else if(typeof window.toggleTheme==='function') { window.toggleTheme(); }" title="Alternar Tema Claro / Escuro">
-        <i class="ph-bold ph-moon"></i>
+        <i class="ph-bold ph-moon" id="theme-toggle-icon"></i>
       </button>
 
       <!-- Configurações do KDS -->
@@ -114,6 +135,207 @@
       </button>
     </div>
   </header>
+
+  <!-- GAVETA FLUTUANTE DE AJUSTE DE LAYOUT & SEÇÕES (KDS LAYOUT DRAWER) -->
+  <aside id="kds-layout-drawer" class="kds-layout-drawer" aria-label="Ajustar Layout da Cozinha">
+    <div class="kds-drawer-header">
+      <div class="kds-drawer-title">
+        <i class="ph-bold ph-sliders-horizontal" style="color: var(--kds-primary, #fc4b15); font-size: 20px;"></i>
+        <span>Ajustar Layout da Fila</span>
+      </div>
+      <button type="button" class="kds-drawer-close" onclick="window.toggleLayoutDrawer(false)" title="Fechar Painel">
+        <i class="ph-bold ph-x"></i>
+      </button>
+    </div>
+
+    <!-- Abas de Navegação do Drawer -->
+    <div class="kds-drawer-tabs">
+      <button type="button" class="kds-drawer-tab-btn active" data-tab="disposicao" onclick="window.trocarAbaLayoutDrawer('disposicao')">
+        <i class="ph-bold ph-layout"></i> <span>Formato & V1/V2</span>
+      </button>
+      <button type="button" class="kds-drawer-tab-btn" data-tab="tamanhos" onclick="window.trocarAbaLayoutDrawer('tamanhos')">
+        <i class="ph-bold ph-arrows-out-line-horizontal"></i> <span>Tamanhos & Textos</span>
+      </button>
+      <button type="button" class="kds-drawer-tab-btn" data-tab="posicao" onclick="window.trocarAbaLayoutDrawer('posicao')">
+        <i class="ph-bold ph-arrows-down-up"></i> <span>Posição</span>
+      </button>
+      <button type="button" class="kds-drawer-tab-btn" data-tab="apelidos" onclick="window.trocarAbaLayoutDrawer('apelidos')">
+        <i class="ph-bold ph-identification-badge"></i> <span>Apelidos</span>
+      </button>
+    </div>
+
+    <div class="kds-drawer-body">
+      <!-- ABA 1: DISPOSIÇÃO & COLUNAS -->
+      <div class="kds-drawer-tab-content" data-tab="disposicao">
+        <div class="kds-control-section">
+          <span class="kds-control-title">Formato de Exibição</span>
+          <div class="kds-btn-pill-group">
+            <button type="button" class="kds-pill-btn btn-mode-choice" data-mode="grid" onclick="window.alterarModoDisposicao('grid')">
+              <i class="ph-bold ph-squares-four"></i> <span>Grade (Cards)</span>
+            </button>
+            <button type="button" class="kds-pill-btn btn-mode-choice" data-mode="lista" onclick="window.alterarModoDisposicao('lista')">
+              <i class="ph-bold ph-rows"></i> <span>Linhas (Banners)</span>
+            </button>
+            <button type="button" class="kds-pill-btn btn-mode-choice" data-mode="kanban" onclick="window.alterarModoDisposicao('kanban')">
+              <i class="ph-bold ph-columns"></i> <span>Kanban (3 Colunas)</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="kds-control-section" id="kds-grade-options-group">
+          <span class="kds-control-title">Colunas da Grade</span>
+          <div class="kds-btn-pill-group">
+            <button type="button" class="kds-pill-btn btn-col-choice" data-cols="auto" onclick="window.alterarColunasGrade('auto')">Automático</button>
+            <button type="button" class="kds-pill-btn btn-col-choice" data-cols="2" onclick="window.alterarColunasGrade('2')">2 Colunas</button>
+            <button type="button" class="kds-pill-btn btn-col-choice" data-cols="3" onclick="window.alterarColunasGrade('3')">3 Colunas</button>
+            <button type="button" class="kds-pill-btn btn-col-choice" data-cols="4" onclick="window.alterarColunasGrade('4')">4 Colunas</button>
+            <button type="button" class="kds-pill-btn btn-col-choice" data-cols="5" onclick="window.alterarColunasGrade('5')">5 Colunas</button>
+          </div>
+        </div>
+
+        <div class="kds-control-section">
+          <span class="kds-control-title">Densidade / Tamanho dos Cards</span>
+          <div class="kds-btn-pill-group">
+            <button type="button" class="kds-pill-btn btn-size-choice" data-size="p" onclick="window.alterarTamanhoCard('p')">P (Compacto)</button>
+            <button type="button" class="kds-pill-btn btn-size-choice" data-size="m" onclick="window.alterarTamanhoCard('m')">M (Padrão)</button>
+            <button type="button" class="kds-pill-btn btn-size-choice" data-size="g" onclick="window.alterarTamanhoCard('g')">G (Amplo)</button>
+            <button type="button" class="kds-pill-btn btn-size-choice" data-size="gg" onclick="window.alterarTamanhoCard('gg')">GG (TV / Telão)</button>
+          </div>
+        </div>
+
+        <div class="kds-control-section" style="margin-top: 10px; border-top: 1px solid var(--kds-card-border); padding-top: 10px;">
+          <span class="kds-control-title">Versão do Sistema KDS</span>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="kds-pill-btn active" style="flex:1;">
+              <i class="ph-bold ph-sparkle"></i> <span>Moderna (v2 Ativa)</span>
+            </button>
+            <button type="button" class="kds-pill-btn" onclick="window.trocarVersaoFila('classica')" style="flex:1; border-color: #6366f1; color: #6366f1;">
+              <i class="ph-bold ph-arrow-counter-clockwise"></i> <span>Mudar para V1 (Clássica)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 2: TAMANHOS DE CADA SEÇÃO -->
+      <div class="kds-drawer-tab-content" data-tab="tamanhos" style="display:none;">
+        <div class="kds-control-section">
+          <span class="kds-control-title">Atalhos Rápidos de Densidade</span>
+          <div class="kds-btn-pill-group">
+            <button type="button" class="kds-pill-btn" onclick="window.aplicarPresetDensidade('ultra')">⚡ Ultra Compacto</button>
+            <button type="button" class="kds-pill-btn" onclick="window.aplicarPresetDensidade('compacto')">📦 Compacto</button>
+            <button type="button" class="kds-pill-btn" onclick="window.aplicarPresetDensidade('padrao')">📋 Padrão</button>
+            <button type="button" class="kds-pill-btn" onclick="window.aplicarPresetDensidade('amplo')">🔍 Amplo</button>
+          </div>
+        </div>
+
+        <div class="kds-control-section">
+          <span class="kds-control-title">Estilo da Escrita dos Itens</span>
+          <button type="button" id="btn-toggle-caixa-alta" class="kds-pill-btn" onclick="window.toggleCaixaAlta()" style="width: 100%; justify-content: space-between; padding: 10px 14px; font-size: 13px;">
+            <span style="display:flex;align-items:center;gap:8px;"><i class="ph-bold ph-text-aa"></i> <strong>Exibir Tudo em Caixa Alta (MAIÚSCULO)</strong></span>
+            <span id="label-caixa-alta-status" style="font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 800; background: rgba(0,0,0,0.1); color: var(--kds-text-muted);">Desativado</span>
+          </button>
+        </div>
+
+        <div class="kds-control-section">
+          <span class="kds-control-title">Sliders de Ajuste Fino (Tempo Real)</span>
+
+          <!-- Slider Espaçamento entre Pedidos (Gap) -->
+          <div class="kds-slider-row">
+            <div class="kds-slider-label">
+              <span><i class="ph-bold ph-distribute-vertical"></i> Espaço entre Pedidos (Gap)</span>
+              <span id="kds-val-gap" class="kds-slider-val">12px</span>
+            </div>
+            <input type="range" id="kds-slider-gap" class="kds-slider-input" min="0" max="32" step="1" value="12" oninput="window.alterarTamanhoSecao('gap', this.value)">
+          </div>
+
+          <!-- Slider Altura da Linha -->
+          <div class="kds-slider-row">
+            <div class="kds-slider-label">
+              <span><i class="ph-bold ph-arrows-vertical"></i> Altura da Linha (Modo Linhas)</span>
+              <span id="kds-val-height" class="kds-slider-val">76px</span>
+            </div>
+            <input type="range" id="kds-slider-height" class="kds-slider-input" min="32" max="150" step="2" value="76" oninput="window.alterarTamanhoSecao('height', this.value)">
+          </div>
+
+          <!-- Slider Tamanho dos Textos -->
+          <div class="kds-slider-row">
+            <div class="kds-slider-label">
+              <span><i class="ph-bold ph-text-t"></i> Tamanho dos Textos (Fonte)</span>
+              <span id="kds-val-font" class="kds-slider-val">15px</span>
+            </div>
+            <input type="range" id="kds-slider-font" class="kds-slider-input" min="10" max="24" step="1" value="15" oninput="window.alterarTamanhoSecao('fontSize', this.value)">
+          </div>
+
+          <!-- Slider Mesa/Comanda (Cabeçalho) -->
+          <div class="kds-slider-row">
+            <div class="kds-slider-label">
+              <span><i class="ph-bold ph-table"></i> Mesa / Tempo (Cabeçalho)</span>
+              <span id="kds-val-header" class="kds-slider-val">260px</span>
+            </div>
+            <input type="range" id="kds-slider-header" class="kds-slider-input" min="140" max="400" step="5" value="260" oninput="window.alterarTamanhoSecao('header', this.value)">
+          </div>
+
+          <!-- Slider Quantidade -->
+          <div class="kds-slider-row">
+            <div class="kds-slider-label">
+              <span><i class="ph-bold ph-number-square-four"></i> Badge Quantidade (1x, 2x)</span>
+              <span id="kds-val-qty" class="kds-slider-val">54px</span>
+            </div>
+            <input type="range" id="kds-slider-qty" class="kds-slider-input" min="38" max="110" step="2" value="54" oninput="window.alterarTamanhoSecao('qty', this.value)">
+          </div>
+
+          <!-- Slider Botões de Ação -->
+          <div class="kds-slider-row">
+            <div class="kds-slider-label">
+              <span><i class="ph-bold ph-lightning"></i> Botões de Ação (Pronto / Chamar)</span>
+              <span id="kds-val-action" class="kds-slider-val">230px</span>
+            </div>
+            <input type="range" id="kds-slider-action" class="kds-slider-input" min="140" max="380" step="5" value="230" oninput="window.alterarTamanhoSecao('action', this.value)">
+          </div>
+
+          <button type="button" onclick="window.restaurarTamanhosPadrao()" style="margin-top: 8px; padding: 10px 14px; background: var(--kds-btn-bg, #1e293b); border: 1.5px solid var(--kds-card-border, #334155); border-radius: 10px; color: var(--kds-text-primary, #ffffff); font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <i class="ph-bold ph-arrows-counter-clockwise"></i> <span>Restaurar Tamanhos Padrão</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ABA 3: POSIÇÃO E VISIBILIDADE DAS SEÇÕES -->
+      <div class="kds-drawer-tab-content" data-tab="posicao" style="display:none;">
+        <div class="kds-control-section">
+          <span class="kds-control-title">Ordem das Seções no Pedido</span>
+          <p style="font-size: 12px; color: var(--kds-text-muted, #94a3b8); margin: 0 0 8px 0; line-height: 1.4;">
+            Arraste com <i class="ph-bold ph-dots-six-vertical"></i> para <strong>mudar a posição</strong>, ou use as setas <strong>⬆ ⬇</strong>. Clique no olho <strong>👁</strong> para ocultar ou mostrar.
+          </p>
+          <div id="kds-card-fields-drawer" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+      </div>
+
+      <!-- ABA 4: APELIDOS DE COLABORADORES E PEDIDOS -->
+      <div class="kds-drawer-tab-content" data-tab="apelidos" style="display:none;">
+        <div class="kds-control-section">
+          <span class="kds-control-title">Apelidos de Colaboradores / Garçons</span>
+          <p style="font-size: 12px; color: var(--kds-text-muted, #94a3b8); margin: 0 0 10px 0; line-height: 1.4;">
+            Cadastre apelidos amigáveis para exibir na cozinha (ex: "Carlos Eduardo" → "Cadu"). Você também pode <strong>clicar no nome do garçom</strong> diretamente em qualquer card da fila!
+          </p>
+          <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <input type="text" id="kds-input-colab-orig" placeholder="Nome original (ex: Carlos)" style="flex:1; padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--kds-card-border); background: var(--kds-btn-bg); color: var(--kds-text-primary); font-size: 13px;">
+            <input type="text" id="kds-input-colab-apelido" placeholder="Apelido (ex: Cadu)" style="flex:1; padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--kds-card-border); background: var(--kds-btn-bg); color: var(--kds-text-primary); font-size: 13px;">
+            <button type="button" onclick="window.salvarApelidoColaboradorDoDrawer()" style="padding: 8px 14px; border-radius: 8px; border: none; background: #fc4b15; color: white; font-weight: 800; font-size: 12px; cursor: pointer; white-space:nowrap;">Salvar</button>
+          </div>
+          <div id="kds-lista-colab-apelidos" style="display: flex; flex-direction: column; gap: 6px; max-height: 190px; overflow-y: auto;">
+            <!-- Itens de apelidos cadastrados gerados dinamicamente -->
+          </div>
+        </div>
+
+        <div class="kds-control-section" style="margin-top: 10px; border-top: 1px solid var(--kds-card-border); padding-top: 10px;">
+          <span class="kds-control-title">Apelidos de Pedidos / Mesas</span>
+          <p style="font-size: 12px; color: var(--kds-text-muted, #94a3b8); margin: 0; line-height: 1.4;">
+            Para etiquetar um pedido específico (ex: "Mesa do Aniversário", "VIP", "Pedido do Zé"), clique no ícone de tag <i class="ph-bold ph-tag"></i> ao lado da mesa no próprio card.
+          </p>
+        </div>
+      </div>
+    </div>
+  </aside>
 
   <!-- ÁREA PRINCIPAL DA FILA DE PEDIDOS -->
   <main class="kds-main-container">
@@ -187,14 +409,43 @@
         <!-- SEÇÃO DISPOSIÇÃO -->
         <div class="fila-settings-group">
           <span class="fila-settings-label">Disposição dos Cards</span>
-          <div class="fila-settings-grid">
+          <div class="fila-settings-grid" style="grid-template-columns: 1fr 1fr 1fr;">
             <button class="fila-settings-btn layout-btn active" data-mode="grid" onclick="window.alterarModoDisposicao && window.alterarModoDisposicao('grid')">
               <i class="ph ph-squares-four"></i><span>Grade KDS</span>
             </button>
             <button class="fila-settings-btn layout-btn" data-mode="lista" onclick="window.alterarModoDisposicao && window.alterarModoDisposicao('lista')">
               <i class="ph ph-list-bullets"></i><span>Linhas</span>
             </button>
+            <button class="fila-settings-btn layout-btn" data-mode="kanban" onclick="window.alterarModoDisposicao && window.alterarModoDisposicao('kanban')">
+              <i class="ph ph-columns"></i><span>Kanban</span>
+            </button>
           </div>
+          <button type="button" onclick="window.fecharModalFilaSettings(); window.toggleLayoutDrawer(true);" class="fila-settings-btn" style="width:100%; margin-top:8px; border-color:#fc4b15; color:#fc4b15; background:rgba(252,75,21,0.08); font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <i class="ph-bold ph-sliders-horizontal"></i>
+            <span>Painel Completo de Layout & Larguras</span>
+          </button>
+        </div>
+
+        <!-- SEÇÃO ESTILO VISUAL DA COZINHA (MODERNA V2 / CLÁSSICA V1) -->
+        <div class="fila-settings-group">
+          <span class="fila-settings-label">Versão da Cozinha (V1 / V2)</span>
+          <div class="fila-settings-grid" style="grid-template-columns: 1fr 1fr;">
+            <button type="button" class="fila-settings-btn active" style="border-color: #fc4b15; background: rgba(252,75,21,0.1); color: #fc4b15;" title="Design Moderno v2 Ativo">
+              <i class="ph-fill ph-sparkle" style="color: #fc4b15;"></i><span>Moderna (v2)</span>
+            </button>
+            <button type="button" class="fila-settings-btn" onclick="window.trocarVersaoFila('classica')" style="cursor:pointer;" title="Usar visual clássico da versão 1.0">
+              <i class="ph ph-clock-counter-clockwise"></i><span>Clássica (v1)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SEÇÃO MODO CAIXA ALTA -->
+        <div class="fila-settings-group">
+          <span class="fila-settings-label">Escrita dos Itens (Caixa Alta)</span>
+          <button type="button" class="fila-settings-btn" onclick="window.toggleCaixaAlta()" style="width: 100%; justify-content: space-between;">
+            <span style="display:flex;align-items:center;gap:8px;"><i class="ph-bold ph-text-aa"></i> <strong>Forçar Letras Maiúsculas</strong></span>
+            <span style="font-size:11px; font-weight:700; color:var(--kds-primary, #fc4b15);">Alternar (A-Z)</span>
+          </button>
         </div>
 
         <!-- SEÇÃO CAMPOS DO CARD (ORDEM E VISIBILIDADE) -->
@@ -213,6 +464,19 @@
             </button>
             <button class="fila-settings-btn flex-1" id="popup-btn-font-inc" onclick="window.alterarTamanhoFonte && window.alterarTamanhoFonte(1)">
               <i class="ph ph-text-aa-offset-increase"></i><span>A+</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SEÇÃO AUTO-SCROLL (ROLAGEM AUTOMÁTICA) -->
+        <div class="fila-settings-group">
+          <span class="fila-settings-label">Rolagem Automática (Novos Pedidos)</span>
+          <div class="fila-settings-grid" style="grid-template-columns: 1fr 1fr;">
+            <button type="button" class="fila-settings-btn autoscroll-btn active" id="btn-autoscroll-on" onclick="window.setAutoscrollMode(true)">
+              <i class="ph ph-check-circle" style="color: #10b981;"></i><span>Ativada</span>
+            </button>
+            <button type="button" class="fila-settings-btn autoscroll-btn" id="btn-autoscroll-off" onclick="window.setAutoscrollMode(false)">
+              <i class="ph ph-x-circle" style="color: #ef4444;"></i><span>Desativada</span>
             </button>
           </div>
         </div>
@@ -250,11 +514,26 @@
     <div id="ia-gerente-content"></div>
   </div>
 
+  <!-- Container de Toast para Desfazer (Undo) -->
+  <div id="kds-undo-container" class="kds-undo-container"></div>
+
   <script src="/fullscreen.js"></script>
   <script>window.PUSH_ROLE = 'cozinha';</script>
   <script src="/push-client.js"></script>
   <script src="/chef-colaborador-dock.js"></script>
   <script src="/chef-layout-injetor.js"></script>
+
+  <script>
+    function updateThemeIcon() {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light' || document.body.classList.contains('theme-light') || document.body.classList.contains('light');
+      const icon = document.getElementById('theme-toggle-icon');
+      if (icon) {
+        icon.className = isLight ? 'ph-bold ph-sun' : 'ph-bold ph-moon';
+      }
+    }
+    window.addEventListener('chef_theme_changed', updateThemeIcon);
+    document.addEventListener('DOMContentLoaded', updateThemeIcon);
+  </script>
 </body>
 
 </html>

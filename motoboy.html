@@ -11,28 +11,48 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
   <script src="/socket.io.min.js"></script>
 
+  <script src="/theme-manager.js"></script>
   <style>
+    :root, [data-theme="light"], body.theme-light {
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-item: #f1f5f9;
+      --border-card: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+    }
+
+    [data-theme="dark"], body.theme-dark, body.dark-mode {
+      --bg-page: #0f172a;
+      --bg-card: #1e293b;
+      --bg-item: #0f172a;
+      --border-card: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
     body {
       margin: 0;
       padding: 0;
       font-family: 'Inter', system-ui, sans-serif;
-      background: #0f172a;
-      color: #f8fafc;
+      background: var(--bg-page);
+      color: var(--text-main);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      transition: background 0.25s ease, color 0.25s ease;
     }
     .motoboy-header {
       padding: 16px;
-      background: #1e293b;
-      border-bottom: 1px solid #334155;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-card);
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
     .motoboy-card-rota {
-      background: #1e293b;
-      border: 1px solid #334155;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
       border-radius: 14px;
       padding: 16px;
       margin: 14px;
@@ -41,8 +61,8 @@
       gap: 12px;
     }
     .item-entrega {
-      background: #0f172a;
-      border: 1px solid #334155;
+      background: var(--bg-item);
+      border: 1px solid var(--border-card);
       border-radius: 10px;
       padding: 12px;
       display: flex;
@@ -84,15 +104,18 @@
     <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 16px; color: #fb923c;">
       <i class="ph-bold ph-moped" style="font-size: 24px;"></i> CheffEntregas
     </div>
-    <div id="gps-status-badge" style="font-size: 11px; background: rgba(34,197,94,0.2); color: #4ade80; padding: 4px 10px; border-radius: 20px; font-weight: 700;">
-      📍 GPS Ligado
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button onclick="window.ChefTheme && window.ChefTheme.toggle()" title="Alternar Modo Claro / Escuro" style="background: none; border: 1px solid var(--border-card); color: var(--text-main); padding: 4px 8px; border-radius: 8px; cursor: pointer;"><i class="ph ph-moon" id="theme-toggle-icon"></i></button>
+      <div id="gps-status-badge" style="font-size: 11px; background: rgba(34,197,94,0.2); color: #4ade80; padding: 4px 10px; border-radius: 20px; font-weight: 700;">
+        📍 GPS Ligado
+      </div>
     </div>
   </header>
 
   <main style="flex: 1;" id="conteudo-motoboy">
-    <div style="padding: 24px; text-align: center; color: #94a3b8;">
+    <div style="padding: 24px; text-align: center; color: var(--text-muted);">
       <i class="ph-bold ph-hourglass-medium" style="font-size: 40px; color: #fb923c; margin-bottom: 12px;"></i>
-      <h3 style="color: #f8fafc; margin: 0 0 6px 0;">Você está na Sala de Espera</h3>
+      <h3 style="color: var(--text-main); margin: 0 0 6px 0;">Você está na Sala de Espera</h3>
       <p style="font-size: 13px; margin: 0;">Aguardando o restaurante despachar sua próxima rota de entregas...</p>
     </div>
   </main>

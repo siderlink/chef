@@ -14,7 +14,7 @@ module.exports = function({ app, db, io, options, log }) {
     });
   });
 
-  app.get('/api/logs-api', (req, res) => {
+  app.get('/api/logs-api', verificarToken, (req, res) => {
     db.all(`SELECT * FROM api_logs ORDER BY id DESC LIMIT 300`, [], (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows || []);

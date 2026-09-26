@@ -64,6 +64,12 @@
     var restore = document.createElement('button');
     restore.id = 'chef-tabs-restore';
     restore.type = 'button';
+    restore.style.display = 'none';
+    restore.style.position = 'fixed';
+    restore.style.bottom = '8px';
+    restore.style.left = '50%';
+    restore.style.transform = 'translateX(-50%)';
+    restore.style.zIndex = '10002';
     restore.innerHTML = '<i class="ph ph-caret-up"></i> Mostrar abas';
     document.body.appendChild(restore);
 

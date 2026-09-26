@@ -1098,6 +1098,60 @@ document.addEventListener('DOMContentLoaded', () => {
   // Aba control
   const STORAGE_KEY = 'config_active_tab';
 
+  const CONFIG_TAB_TITLES = {
+    'inicio':          { title: 'Central de Operações',          subtitle: 'Painel modular de status, atalhos rápidos e monitoramento da operação',                                  icon: 'ph-squares-four',         color: '#fc4b15' },
+    'perfil':          { title: 'Dados do Restaurante',          subtitle: 'Informações cadastrais, logotipo, endereço, contatos e redes sociais',                                 icon: 'ph-storefront',           color: '#10b981' },
+    'gerais':          { title: 'Sistema & Cardápio',            subtitle: 'Taxas, tempos médios, parâmetros operacionais e regras de pedidos',                                    icon: 'ph-sliders',              color: '#fc4b15' },
+    'resolucao':       { title: 'Resolução & Escala de Tela',   subtitle: 'Ajuste de zoom, proporções, densidade visual e modos de exibição',                                    icon: 'ph-monitor',              color: '#3b82f6' },
+    'sons':            { title: 'Sons & Notificações',           subtitle: 'Alertas sonoros de novos pedidos, chamados de garçom e volumes',                                       icon: 'ph-speaker-high',         color: '#f59e0b' },
+    'atalhos':         { title: 'Atalhos de Teclado',            subtitle: 'Combinações de teclas para agilizar a operação do caixa e garçons',                                  icon: 'ph-keyboard',             color: '#6366f1' },
+    'mesas':           { title: 'Mesas & Comandas',              subtitle: 'Gerenciamento de mesas físicas, cartões de comanda e QR Codes',                                       icon: 'ph-table',                color: '#0ea5e9' },
+    'salao':           { title: 'Layout do Salão',               subtitle: 'Organizador visual interativo de plantas, setores e posicionamento de mesas',                        icon: 'ph-blueprint',            color: '#0ea5e9' },
+    'reservas':        { title: 'Reservas Futuras',              subtitle: 'Gestão de agendamentos de mesas, confirmações e histórico de reservas',                              icon: 'ph-calendar-check',       color: '#0ea5e9' },
+    'fila-espera':     { title: 'Fila de Espera',                subtitle: 'Controle de recepção de clientes, chamadas e tempos médios de espera',                               icon: 'ph-hourglass-high',       color: '#f59e0b' },
+    'produtos':        { title: 'Produtos & Categorias',         subtitle: 'Catálogo de itens do cardápio, preços, fotos, estoques e descrições',                               icon: 'ph-hamburger',            color: '#f97316' },
+    'montaveis':       { title: 'Itens Montáveis & Adicionais', subtitle: 'Personalizações de pratos, etapas de montagem, grupos de adicionais e limites',                     icon: 'ph-puzzle-piece',         color: '#8b5cf6' },
+    'funcionarios':    { title: 'Funcionários & Acessos',        subtitle: 'Cadastro de equipe, cargos, níveis de permissão e senhas de acesso',                                icon: 'ph-users',                color: '#8b5cf6' },
+    'pins':            { title: 'PINs Temporários',              subtitle: 'Códigos rápidos de liberação de descontos, cancelamentos e estornos',                               icon: 'ph-key',                  color: '#8b5cf6' },
+    'clientes':        { title: 'Base de Clientes',              subtitle: 'Histórico de consumo, contatos, aniversários e preferências de clientes',                           icon: 'ph-address-book',         color: '#ec4899' },
+    'rh':              { title: 'RH, Folha & Caixa',            subtitle: 'Comissões, adiantamentos, vales e fechamentos financeiros de colaboradores',                         icon: 'ph-hand-coins',           color: '#10b981' },
+    'metricas':        { title: 'Métricas de Atendimento',       subtitle: 'Produtividade de garçons, tempo de atendimento e rankings de vendas',                              icon: 'ph-chart-line-up',        color: '#f59e0b' },
+    'promocoes':       { title: 'Promoções & Cupons',            subtitle: 'Descontos automáticos por dia da semana, horários de happy hour e cupons',                         icon: 'ph-tag',                  color: '#ec4899' },
+    'inteligencia':    { title: 'Inteligência de Vendas (IA)',   subtitle: 'Sugestões preditivas, combos inteligentes e insights de faturamento por IA',                        icon: 'ph-brain',                color: '#3b82f6' },
+    'fidelidade':      { title: 'Programa de Fidelidade',        subtitle: 'Pontuação por compra, resgate de prêmios e clube de benefícios exclusivos',                         icon: 'ph-gift',                 color: '#f59e0b' },
+    'jogos':           { title: 'Jogos & Prêmios',              subtitle: 'Gamificação interativa na mesa com roleta da sorte e raspadinhas premiadas',                        icon: 'ph-game-controller',      color: '#8b5cf6' },
+    'formas-pagamento':{ title: 'Formas de Pagamento',           subtitle: 'Configuração de cartões, dinheiro, PIX integrado e taxas de operadoras',                           icon: 'ph-wallet',               color: '#10b981' },
+    'maquininhas':     { title: 'Maquininhas de Cartão',         subtitle: 'Integrações diretas TEF, Smart POS e terminais de pagamento',                                       icon: 'ph-credit-card',          color: '#10b981' },
+    'nfce':            { title: 'Configuração NFC-e',            subtitle: 'Certificado digital A1, CSC, série, ambiente de emissão e enquadramento fiscal',                    icon: 'ph-receipt',              color: '#10b981' },
+    'gerenciar-notas': { title: 'Gerenciar Notas Fiscais',       subtitle: 'Consulta de documentos emitidos, cancelamentos, inutilizações e arquivos XML',                     icon: 'ph-list-magnifying-glass',color: '#10b981' },
+    'funcionalidades': { title: 'Funcionalidades Ativas',        subtitle: 'Habilitar ou desabilitar módulos e recursos operacionais do estabelecimento',                       icon: 'ph-toggle-left',          color: '#10b981' },
+    'funcoes':         { title: 'Funções do Sistema',            subtitle: 'Controle detalhado de permissões de cargos por tela e por ação',                                   icon: 'ph-sliders',              color: '#22d3ee' },
+    'modulos':         { title: 'Módulos & Extensões',           subtitle: 'Pacotes opcionais contratados, add-ons e integrações com terceiros',                               icon: 'ph-puzzle-piece',         color: '#8b5cf6' },
+    'dispositivos':    { title: 'Dispositivos & Terminais',      subtitle: 'Gerenciamento de impressoras térmicas, tablets de comandas e KDS de cozinha',                      icon: 'ph-devices',              color: '#0284c7' },
+    'backup':          { title: 'Backup & Restauração',          subtitle: 'Cópias de segurança locais e em nuvem, exportação de dados e restaurações',                         icon: 'ph-hard-drives',          color: '#fc4b15' },
+    'auditoria':       { title: 'Auditoria & Anti-Fraude',       subtitle: 'Histórico de eventos sensíveis, cancelamentos de itens e alterações de preços',                    icon: 'ph-shield-warning',       color: '#e11d48' },
+    'licenca':         { title: 'Ativação & Licença',            subtitle: 'Chave de produto, validade da licença e status da assinatura Chef Cozinha',                       icon: 'ph-seal-check',           color: '#a78bfa' }
+  };
+
+  function atualizarCabecalhoEBannerConfig(tabId, contentEl) {
+    const info = CONFIG_TAB_TITLES[tabId] || {
+      title: 'Configurações', subtitle: 'Parâmetros operacionais do restaurante', icon: 'ph-sliders', color: '#fc4b15'
+    };
+    const pTitle    = document.getElementById('panel-title');
+    const pSubtitle = document.getElementById('panel-subtitle');
+    if (pTitle)    pTitle.textContent    = info.title;
+    if (pSubtitle) pSubtitle.textContent = info.subtitle;
+    if (!contentEl) return;
+    let banner = contentEl.querySelector(':scope > .info-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.className = 'info-banner';
+      contentEl.insertBefore(banner, contentEl.firstChild);
+    }
+    banner.style.borderLeftColor = info.color;
+    banner.innerHTML = '<div class="info-banner-icon" style="background:' + info.color + '18;color:' + info.color + ';"><i class="ph-bold ' + info.icon + '"></i></div><div class="info-banner-content"><h3>' + info.title + '</h3><p>' + info.subtitle + '</p></div>';
+  }
+
     function activateTab(tabId, skipSave) {
 
     if (tabId === 'montaveis') {
@@ -1126,13 +1180,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('.admin-tab-btn').forEach(b => {
       b.classList.remove('active');
-      b.style.fontWeight = 'normal';
     });
     btn.classList.add('active');
-    btn.style.fontWeight = 'bold';
     /* Garante que o grupo da aba ativa esteja expandido no acordeão */
-    const grp = btn.closest('.action-group');
-    if (grp) grp.classList.remove('collapsed');
+    const grp = btn.closest('.menu-categoria, .action-group');
+    if (grp) { grp.classList.add('aberta'); grp.classList.remove('collapsed'); }
 
     document.querySelectorAll('.admin-tab-content').forEach(c => {
       c.classList.remove('active');
@@ -1142,6 +1194,9 @@ document.addEventListener('DOMContentLoaded', () => {
     content.classList.add('active');
     content.style.display = 'flex';
     content.scrollTop = 0;
+
+    // Atualiza cabeçalho dinâmico e injeta .info-banner na aba
+    atualizarCabecalhoEBannerConfig(tabId, content);
 
     // Auto-scroll sidebar button into view (mobile horizontal scroll)
     try { btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch(e) {}
@@ -2830,7 +2885,7 @@ window.gerarCupomPromocaoIA = async function(encodedPromo) {
     const p = JSON.parse(decodeURIComponent(encodedPromo));
     const res = await fetch('/api/ia/cupom-rapido', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
       body: JSON.stringify({
         titulo: p.titulo,
         codigo: String((p.titulo || 'PROMO').split(' ').slice(0, 3).join('-')).toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 12),
@@ -9645,7 +9700,7 @@ window.salvarMarcaSuporteUI = function() {
 
   window.carregarConfigIA = async function() {
     try {
-      const res = await fetch('/api/ia/config', { credentials: 'same-origin' });
+      const res = await fetch('/api/ia/config', { credentials: 'same-origin', headers: typeof authHeaders === 'function' ? authHeaders() : {} });
       const data = await res.json();
       if (!data || !data.ok || !data.config) return;
 
@@ -9697,7 +9752,7 @@ window.salvarMarcaSuporteUI = function() {
     try {
       const res = await fetch('/api/ia/config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
         body: JSON.stringify(payload)
       });
       const data = await res.json();
@@ -9725,7 +9780,7 @@ window.salvarMarcaSuporteUI = function() {
     try {
       const res = await fetch('/api/ia/test-key', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
         body: JSON.stringify({
           apiKey: keyInput ? keyInput.value.trim() : '',
           model: modelSelect ? modelSelect.value : 'gemini-2.5-flash'
@@ -9763,7 +9818,7 @@ window.salvarMarcaSuporteUI = function() {
     try {
       const res = await fetch('/api/ia/gerar-promocoes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
         body: JSON.stringify({ objetivo: focoSelect ? focoSelect.value : '' })
       });
       const data = await res.json();
@@ -9876,7 +9931,7 @@ window.salvarMarcaSuporteUI = function() {
       const p = JSON.parse(decodeURIComponent(encodedPromo));
       const res = await fetch('/api/ia/aplicar-promocao', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
         body: JSON.stringify({
           titulo: p.titulo,
           preco: p.preco_promocional,
@@ -9923,7 +9978,7 @@ window.salvarMarcaSuporteUI = function() {
     try {
       const res = await fetch('/api/ia/gerar-copy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
         body: JSON.stringify({
           canal: canalSelect ? canalSelect.value : 'whatsapp',
           promocao: temaInput ? temaInput.value.trim() : ''
@@ -10002,7 +10057,7 @@ window.salvarMarcaSuporteUI = function() {
     try {
       const res = await fetch('/api/ia/consultor', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Object.assign({ 'Content-Type': 'application/json' }, typeof authHeaders === 'function' ? authHeaders() : {}),
         body: JSON.stringify({
           pergunta,
           historico: _iaChatHistory.slice(-6)

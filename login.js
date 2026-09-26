@@ -13,7 +13,7 @@ window.abrirModalEscolhaEstacao = function(data) {
   const nomeColab = data.nome || 'Proprietário';
   const isDono = data.is_dono || data.role === 'dono' || data.role === 'admin';
 
-  const caixaUrl = localStorage.getItem('chef_caixa_versao') === 'v11' ? '/index.html' : '/caixa-classico.html';
+  const caixaUrl = localStorage.getItem('chef_caixa_versao') === 'v1' ? '/caixa-classico.html' : '/index.html';
   const estacoesConfig = {
     gestao: { titulo: 'Painel do Dono & Gestão', sub: 'Relatórios, Faturamento e Métricas DRE', icone: 'ph-crown', cor: '#a855f7', url: '/painel-dono.html' },
     caixa: { titulo: 'Terminal de Caixa (PDV)', sub: 'Operação de Caixa, Fechamento e Pagamentos', icone: 'ph-desktop', cor: '#3b82f6', url: caixaUrl },
@@ -92,7 +92,7 @@ window.abrirModalEscolhaEstacao = function(data) {
   const estacoes = data.estacoes || ['garcom'];
   const nomeColab = data.nome || 'Colaborador';
 
-  const caixaUrl = localStorage.getItem('chef_caixa_versao') === 'v11' ? '/index.html' : '/caixa-classico.html';
+  const caixaUrl = localStorage.getItem('chef_caixa_versao') === 'v1' ? '/caixa-classico.html' : '/index.html';
   const estacoesConfig = {
     garcom: { titulo: 'Salão de Mesas & Comandas', sub: 'Atendimento e Lançamento de Pedidos', icone: 'ph-fork-knife', cor: '#fc4b15', url: '/garcom.html' },
     caixa: { titulo: 'Terminal de Caixa (PDV)', sub: 'Operação de Caixa, Fechamento e Pagamentos', icone: 'ph-desktop', cor: '#3b82f6', url: caixaUrl },
@@ -328,7 +328,7 @@ function ensureLoginSocket() {
       }
       
       if (estacoes.length === 1) {
-        const caixaTarget = localStorage.getItem('chef_caixa_versao') === 'v11' ? '/index.html' : '/caixa-classico.html';
+        const caixaTarget = localStorage.getItem('chef_caixa_versao') === 'v1' ? '/caixa-classico.html' : '/index.html';
         const estacoesConfig = {
           garcom: '/garcom.html',
           cozinha: '/fila-pedidos.html',

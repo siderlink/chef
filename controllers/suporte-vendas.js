@@ -125,9 +125,11 @@ module.exports = function(app, masterDb, sqlite3, options) {
 
     masterDb.run(`CREATE TABLE IF NOT EXISTS suporte_logs_audit (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      suporte_id INTEGER, operador_nome TEXT, acao TEXT, detalhes TEXT, ip TEXT,
+      suporte_id INTEGER, suporte_nome TEXT, operador_nome TEXT, acao TEXT, detalhes TEXT, ip TEXT,
       data_acao DATETIME DEFAULT (datetime('now','localtime'))
     )`);
+    try { masterDb.run(`ALTER TABLE suporte_logs_audit ADD COLUMN operador_nome TEXT`, () => {}); } catch(e) {}
+    try { masterDb.run(`ALTER TABLE suporte_logs_audit ADD COLUMN suporte_nome TEXT`, () => {}); } catch(e) {}
 
     masterDb.run(`CREATE TABLE IF NOT EXISTS suporte_missoes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -166,12 +168,26 @@ module.exports = function(app, masterDb, sqlite3, options) {
   }
 
   function registrarAuditLog(suporteId, operadorNome, acao, detalhes, req) {
-    const rawIp = req ? (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '127.0.0.1') : '127.0.0.1';
-    const ip = String(rawIp).replace('::ffff:', '');
-    masterDb.run(
-      `INSERT INTO suporte_logs_audit (suporte_id, operador_nome, acao, detalhes, ip) VALUES (?, ?, ?, ?, ?)`,
-      [suporteId || null, operadorNome || 'Sistema', acao, detalhes || '', ip]
-    );
+    try {
+      const rawIp = req ? (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '127.0.0.1') : '127.0.0.1';
+      const ip = String(rawIp).replace('::ffff:', '');
+      const nome = operadorNome || 'Sistema';
+      masterDb.run(
+        `INSERT INTO suporte_logs_audit (suporte_id, suporte_nome, operador_nome, acao, detalhes, ip) VALUES (?, ?, ?, ?, ?, ?)`,
+        [suporteId || null, nome, nome, acao, detalhes || '', ip],
+        (err) => {
+          if (err) {
+            masterDb.run(
+              `INSERT INTO suporte_logs_audit (suporte_id, suporte_nome, acao, detalhes, ip) VALUES (?, ?, ?, ?, ?)`,
+              [suporteId || null, nome, acao, detalhes || '', ip],
+              () => {}
+            );
+          }
+        }
+      );
+    } catch (err) {
+      console.error('[AuditLog Error]', err);
+    }
   }
 
   function gerarXP(suporteId, pontos, tipo, descricao, restauranteId) {

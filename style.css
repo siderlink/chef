@@ -1980,23 +1980,23 @@ body {
   .community-trigger {
     display: none !important;
   }
-}
 
-.mobile-tabs {
-  display: flex
-}
+  .mobile-tabs {
+    display: flex;
+  }
 
-.resizer {
-  display: none !important
-}
+  .resizer {
+    display: none !important;
+  }
 
-.workspace {
-  flex-direction: column;
-  flex: 1 !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
-  padding-top: 0 !important;
+  .workspace {
+    flex-direction: column;
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-top: 0 !important;
+  }
 }
 
 /* Strip exibida quando a seção de mesas está recolhida: lista as
@@ -2059,24 +2059,36 @@ body {
 
 /* Tablet: esconde a sidebar de Ações no painel de Mesas para dar mais espaço */
 @media (min-width: 768px) and (max-width: 1024px) {
-  .left-actions {
+  .left-actions,
+  aside.left-actions,
+  #left-panel,
+  #resizer-left {
     display: none !important;
   }
   .workspace .main-workspace,
+  #main-panel,
   #mesas-section-container,
   .mesas-container {
     flex: 1 1 100% !important;
     min-width: 0 !important;
+    width: 100% !important;
   }
 }
 
 @media (max-width: 767px) {
 
+  .workspace.active-tab-mesas #left-panel,
+  .workspace.active-tab-mesas aside.left-actions,
   .workspace.active-tab-mesas .left-actions,
+  .workspace.active-tab-mesas #right-panel,
+  .workspace.active-tab-mesas aside.right-info,
   .workspace.active-tab-mesas .right-info,
   .workspace.active-tab-mesas .products-container,
   .workspace.active-tab-mesas #products-section-container,
-  .workspace.active-tab-mesas .middle-v-splitter {
+  .workspace.active-tab-mesas .middle-v-splitter,
+  .workspace.active-tab-mesas #splitter-middle-v,
+  .workspace.active-tab-mesas #resizer-left,
+  .workspace.active-tab-mesas #resizer-right {
     display: none !important;
   }
 
@@ -2856,7 +2868,10 @@ body {
 
 /* --- SPLITTER HORIZONTAL / RESIZER ENTRE MESAS E PRODUTOS --- */
 .middle-v-splitter {
-  height: 8px;
+  height: 10px;
+  min-height: 10px;
+  touch-action: none;
+  z-index: 10;
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
   border-bottom: 1px solid var(--border-color);
@@ -2921,6 +2936,7 @@ body {
   border-left: 1px solid var(--border-color) !important;
   border-right: 1px solid var(--border-color) !important;
   cursor: col-resize !important;
+  touch-action: none !important;
   z-index: 99 !important;
   align-items: center !important;
   justify-content: center !important;
@@ -6518,4 +6534,244 @@ body:not(.dark-mode) .left-actions .btn-action {
   box-shadow: 0 0 16px rgba(252, 75, 21, 0.4) !important;
   transform: scale(1.04);
   transition: all 0.15s ease;
+}
+
+
+/* === DOCK ULTRA-COMPACTO ICON-ONLY (SEM TÍTULOS) === */
+.left-actions.mode-mini,
+aside.left-actions.mode-mini,
+#left-panel.mode-mini,
+.left-actions.sidebar-mini,
+aside.left-actions.sidebar-mini,
+#left-panel.sidebar-mini,
+.left-actions.dock-icon-only,
+aside.left-actions.dock-icon-only,
+#left-panel.dock-icon-only {
+  width: 68px !important;
+  min-width: 68px !important;
+  max-width: 68px !important;
+  padding: 8px 4px !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  align-items: center !important;
+}
+
+.left-actions.mode-mini .panel-content-inner,
+.left-actions.sidebar-mini .panel-content-inner,
+.left-actions.dock-icon-only .panel-content-inner,
+#left-panel.mode-mini .panel-content-inner,
+#left-panel.sidebar-mini .panel-content-inner,
+#left-panel.dock-icon-only .panel-content-inner,
+#inner-left-panel.mode-mini,
+#inner-left-panel.dock-icon-only {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow-x: hidden !important;
+}
+
+.left-actions.mode-mini .mobile-acoes-summary,
+.left-actions.sidebar-mini .mobile-acoes-summary,
+.left-actions.dock-icon-only .mobile-acoes-summary,
+#left-panel.mode-mini .mobile-acoes-summary,
+#left-panel.sidebar-mini .mobile-acoes-summary,
+#left-panel.dock-icon-only .mobile-acoes-summary,
+.left-actions.mode-mini .group-title,
+.left-actions.sidebar-mini .group-title,
+.left-actions.dock-icon-only .group-title,
+#left-panel.mode-mini .group-title,
+#left-panel.sidebar-mini .group-title,
+#left-panel.dock-icon-only .group-title,
+.left-actions.mode-mini .sidebar-header-controls > div > span,
+.left-actions.sidebar-mini .sidebar-header-controls > div > span,
+.left-actions.dock-icon-only .sidebar-header-controls > div > span,
+#left-panel.mode-mini .sidebar-header-controls > div > span,
+#left-panel.sidebar-mini .sidebar-header-controls > div > span,
+#left-panel.dock-icon-only .sidebar-header-controls > div > span,
+.left-actions.mode-mini .btn-action span,
+.left-actions.sidebar-mini .btn-action span,
+.left-actions.dock-icon-only .btn-action span,
+#left-panel.mode-mini .btn-action span,
+#left-panel.sidebar-mini .btn-action span,
+#left-panel.dock-icon-only .btn-action span {
+  display: none !important;
+}
+
+.left-actions.mode-mini .sidebar-header-controls,
+.left-actions.sidebar-mini .sidebar-header-controls,
+.left-actions.dock-icon-only .sidebar-header-controls,
+#left-panel.mode-mini .sidebar-header-controls,
+#left-panel.sidebar-mini .sidebar-header-controls,
+#left-panel.dock-icon-only .sidebar-header-controls {
+  width: 100% !important;
+  padding: 2px 0 6px !important;
+  margin-bottom: 6px !important;
+  border-bottom: 1px solid var(--border-subtle, rgba(0,0,0,0.08)) !important;
+}
+
+.left-actions.mode-mini .sidebar-header-controls > div,
+.left-actions.sidebar-mini .sidebar-header-controls > div,
+.left-actions.dock-icon-only .sidebar-header-controls > div,
+#left-panel.mode-mini .sidebar-header-controls > div,
+#left-panel.sidebar-mini .sidebar-header-controls > div,
+#left-panel.dock-icon-only .sidebar-header-controls > div {
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  border-bottom: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.left-actions.mode-mini .action-group,
+.left-actions.sidebar-mini .action-group,
+.left-actions.dock-icon-only .action-group,
+#left-panel.mode-mini .action-group,
+#left-panel.sidebar-mini .action-group,
+#left-panel.dock-icon-only .action-group {
+  margin: 3px 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 5px !important;
+  width: 100% !important;
+}
+
+.left-actions.mode-mini .btn-grid-2,
+.left-actions.sidebar-mini .btn-grid-2,
+.left-actions.dock-icon-only .btn-grid-2,
+#left-panel.mode-mini .btn-grid-2,
+#left-panel.sidebar-mini .btn-grid-2,
+#left-panel.dock-icon-only .btn-grid-2 {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: 1fr !important;
+  align-items: center !important;
+  gap: 5px !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.left-actions.mode-mini .btn-action,
+.left-actions.sidebar-mini .btn-action,
+.left-actions.dock-icon-only .btn-action,
+#left-panel.mode-mini .btn-action,
+#left-panel.sidebar-mini .btn-action,
+#left-panel.dock-icon-only .btn-action,
+.left-actions.mode-mini .btn-grid-2 > .btn-action,
+.left-actions.sidebar-mini .btn-grid-2 > .btn-action,
+.left-actions.dock-icon-only .btn-grid-2 > .btn-action,
+#left-panel.mode-mini .btn-grid-2 > .btn-action,
+#left-panel.sidebar-mini .btn-grid-2 > .btn-action,
+#left-panel.dock-icon-only .btn-grid-2 > .btn-action {
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  padding: 0 !important;
+  margin: 2px auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 0 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+  border-radius: 8px !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  flex: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease !important;
+  appearance: none;
+}
+
+.left-actions.mode-mini .btn-action.primary,
+.left-actions.sidebar-mini .btn-action.primary,
+.left-actions.dock-icon-only .btn-action.primary,
+#left-panel.mode-mini .btn-action.primary,
+#left-panel.sidebar-mini .btn-action.primary,
+#left-panel.dock-icon-only .btn-action.primary {
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  padding: 0 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+}
+
+.left-actions.mode-mini .btn-action:hover,
+.left-actions.sidebar-mini .btn-action:hover,
+.left-actions.dock-icon-only .btn-action:hover,
+#left-panel.mode-mini .btn-action:hover,
+#left-panel.sidebar-mini .btn-action:hover,
+#left-panel.dock-icon-only .btn-action:hover {
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.18) !important;
+}
+
+.left-actions.mode-mini .btn-action i,
+.left-actions.sidebar-mini .btn-action i,
+.left-actions.dock-icon-only .btn-action i,
+#left-panel.mode-mini .btn-action i,
+#left-panel.sidebar-mini .btn-action i,
+#left-panel.dock-icon-only .btn-action i {
+  font-size: 22px !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  visibility: visible !important;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   RECOLHIMENTO DE OPÇÕES DE CONFIGURAR LAYOUT & TOP TOOLBAR
+   ══════════════════════════════════════════════════════════════════ */
+.mesas-layout-options-toolbar {
+  transition: all 0.2s ease;
+}
+
+@media (max-width: 1024px) {
+  /* No tablet e telas menores, recolhe a barra de atalhos redundante do topo */
+  .top-toolbar:not(.expandida) {
+    display: none !important;
+  }
+  .top-toolbar.expandida {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    padding: 6px 10px !important;
+  }
+  /* Oculta botão 'Recolher' da seção de mesas no tablet/mobile pois abas inferiores cuidam da navegação */
+  #btn-toggle-mesas-section {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .top-toolbar:not(.expandida) {
+    display: none !important;
+  }
+  #btn-toggle-mesas-section {
+    display: none !important;
+  }
+  .mesas-header {
+    padding: 4px 8px !important;
+    min-height: 36px !important;
+  }
 }

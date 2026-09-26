@@ -415,6 +415,10 @@
         <div class="menu-item" data-target="sec-restaurantes"><i class="fa-solid fa-store"></i> Restaurantes</div>
         <div class="menu-item" data-target="sec-cardapio" id="menu-cardapio" style="display:none;"><i class="fa-solid fa-book"></i> Cardápio</div>
         <div class="menu-item" data-target="sec-tarefas"><i class="fa-solid fa-list-check"></i> Atividades</div>
+        <div class="menu-item" data-target="sec-contador-hub" id="menu-contador-cheff">
+          <i class="fa-solid fa-file-invoice-dollar" style="color:#10b981;"></i> Hub Contador Cheff
+          <span style="font-size:10px; background:#10b981; color:#000; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:auto;">CONTÁBIL</span>
+        </div>
         <div class="menu-item" data-target="sec-ranking"><i class="fa-solid fa-trophy"></i> Ranking</div>
         <div class="menu-item" data-target="sec-theme-studio"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent);"></i> Theme Studio Pro</div>
         <div class="menu-item" data-target="sec-ui-component-studio"><i class="fa-solid fa-shapes" style="color:#10b981;"></i> Studio UI & Layout Preview</div>
@@ -430,6 +434,649 @@
 
       <div class="content-area">
         
+        <!-- ══════════════════════════════════════════════════════════════════
+             HUB DO CONTADOR CHEFF — ATIVIDADES, FECHAMENTOS E BONIFICAÇÕES
+             ══════════════════════════════════════════════════════════════════ -->
+        <div class="content-section" id="sec-contador-hub">
+          <!-- CABEÇALHO DO HUB -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(15,23,42,0.6)); border: 1px solid rgba(16,185,129,0.2); border-radius: 14px; padding: 1.2rem 1.4rem;">
+            <div style="flex: 1; min-width: 280px;">
+              <h2 style="margin: 0; font-size: 1.55rem; display: flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; font-weight: 800;">
+                <i class="fa-solid fa-file-invoice-dollar" style="color:#10b981;"></i> Hub do Contador Cheff
+                <span style="font-size: 0.72rem; background: rgba(16,185,129,0.18); color: #10b981; border: 1px solid rgba(16,185,129,0.35); padding: 3px 10px; border-radius: 20px; font-weight: 800; letter-spacing: 0.5px;">CONTABILIDADE &amp; ENGENHARIA DE MARGENS</span>
+              </h2>
+              <p style="margin: 6px 0 0 0; color: var(--text-muted); font-size: 0.88rem; line-height: 1.4;">
+                Auditoria do Simples Nacional, segregação de bebidas monofásicas, gerador inteligente de combos (comida + bebida) e consultoria estratégica de lucratividade.
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <!-- Seletor Global de Estabelecimento -->
+              <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 10px;">
+                <i class="fa-solid fa-store" style="color: #10b981; font-size: 0.9rem;"></i>
+                <label for="cont-global-restaurante-select" style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Restaurante:</label>
+                <select id="cont-global-restaurante-select" onchange="aoMudarRestauranteContador(this.value)" style="background: #1e293b; border: 1px solid #334155; color: #f8fafc; font-size: 0.85rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; outline: none; cursor: pointer;">
+                  <option value="1">Restaurante Principal #1</option>
+                </select>
+              </div>
+              <button class="btn btn-sm btn-primary" onclick="atualizarPainelContadorAtivo()" style="background: #10b981; border: none; font-weight: 700; padding: 7px 14px; border-radius: 8px; box-shadow: 0 4px 12px rgba(16,185,129,0.25);">
+                <i class="fa-solid fa-rotate"></i> Atualizar Painel
+              </button>
+            </div>
+          </div>
+
+          <!-- KPIs GERAIS DO CONTADOR -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="card" style="padding: 1.2rem; border-left: 4px solid #f59e0b; background: rgba(17,24,39,0.8);">
+              <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Demandas a Fazer</div>
+              <div id="cont-kpi-pendentes" style="font-size: 1.85rem; font-weight: 800; color: #f59e0b; margin: 4px 0;">0</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Rotinas fiscais e apurações pendentes</div>
+            </div>
+            <div class="card" style="padding: 1.2rem; border-left: 4px solid #10b981; background: rgba(17,24,39,0.8);">
+              <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Demandas Concluídas</div>
+              <div id="cont-kpi-concluidas" style="font-size: 1.85rem; font-weight: 800; color: #10b981; margin: 4px 0;">0</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Entregas realizadas com sucesso</div>
+            </div>
+            <div class="card" style="padding: 1.2rem; border-left: 4px solid #3b82f6; background: rgba(17,24,39,0.8);">
+              <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Bonificações a Receber</div>
+              <div id="cont-kpi-a-receber" style="font-size: 1.85rem; font-weight: 800; color: #3b82f6; margin: 4px 0;">R$ 0,00</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Tarefas aguardando liberação PIX</div>
+            </div>
+            <div class="card" style="padding: 1.2rem; border-left: 4px solid #8b5cf6; background: rgba(17,24,39,0.8);">
+              <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Total Pago via PIX</div>
+              <div id="cont-kpi-total-recebido" style="font-size: 1.85rem; font-weight: 800; color: #8b5cf6; margin: 4px 0;">R$ 0,00</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Bonificações creditadas em conta</div>
+            </div>
+            <div class="card" style="padding: 1.2rem; border-left: 4px solid #06b6d4; background: rgba(17,24,39,0.8);">
+              <div style="font-size: 0.75rem; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Economia Tributária Anual</div>
+              <div id="cont-kpi-economia-anual" style="font-size: 1.85rem; font-weight: 800; color: #38bdf8; margin: 4px 0;">R$ 9.948,00</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Otimização PIS/COFINS monofásicos</div>
+            </div>
+          </div>
+
+          <!-- AS 5 ABAS DO HUB DO CONTADOR -->
+          <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 1.4rem; padding-bottom: 8px; overflow-x: auto;">
+            <button class="btn btn-sm cont-tab-btn" id="cont-tab-demandas-btn" onclick="trocarAbaContador('demandas')" style="background: #10b981; color: #fff; border: none; font-weight: 700; border-radius: 8px; padding: 8px 14px;">
+              <i class="fa-solid fa-list-check"></i> 1. Demandas Fiscais
+            </button>
+            <button class="btn btn-sm btn-secondary cont-tab-btn" id="cont-tab-extrato-btn" onclick="trocarAbaContador('extrato')" style="border-radius: 8px; padding: 8px 14px;">
+              <i class="fa-solid fa-wallet"></i> 2. Extrato PIX &amp; Bonificações
+            </button>
+            <button class="btn btn-sm btn-secondary cont-tab-btn" id="cont-tab-fiscal-btn" onclick="trocarAbaContador('fiscal')" style="border-radius: 8px; padding: 8px 14px;">
+              <i class="fa-solid fa-scale-balanced"></i> 3. Diagnóstico Fiscal 360° &amp; Monofásico
+            </button>
+            <button class="btn btn-sm btn-secondary cont-tab-btn" id="cont-tab-combos-btn" onclick="trocarAbaContador('combos')" style="border-radius: 8px; padding: 8px 14px;">
+              <i class="fa-solid fa-burger"></i> 4. Motor de Combos &amp; Margem vs Impostos
+            </button>
+            <button class="btn btn-sm btn-secondary cont-tab-btn" id="cont-tab-insights-btn" onclick="trocarAbaContador('insights')" style="border-radius: 8px; padding: 8px 14px;">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> 5. Oportunidades &amp; Pareceres IA
+            </button>
+          </div>
+
+          <!-- ABA 1: MINHAS DEMANDAS -->
+          <div id="cont-aba-demandas">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-sm" onclick="filtrarDemandasContador('todos', this)" style="background: rgba(255,255,255,0.06);">Todas</button>
+                <button class="btn btn-sm" onclick="filtrarDemandasContador('pendentes', this)" style="background: rgba(245,158,11,0.15); color: #f59e0b;">Pendentes</button>
+                <button class="btn btn-sm" onclick="filtrarDemandasContador('concluidas', this)" style="background: rgba(16,185,129,0.15); color: #10b981;">Concluídas</button>
+              </div>
+            </div>
+
+            <div class="card" style="padding: 0; overflow-x: auto; border: 1px solid var(--border-color); border-radius: 12px;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead>
+                  <tr style="background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); text-align: left;">
+                    <th style="padding: 12px 14px;">Restaurante</th>
+                    <th style="padding: 12px 14px;">Demanda &amp; Instruções</th>
+                    <th style="padding: 12px 14px;">Competência</th>
+                    <th style="padding: 12px 14px;">Prazo</th>
+                    <th style="padding: 12px 14px;">Bonificação Tarefa</th>
+                    <th style="padding: 12px 14px;">Status</th>
+                    <th style="padding: 12px 14px; text-align: right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="cont-demandas-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                      <i class="fa-solid fa-spinner fa-spin"></i> Carregando demandas...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ABA 2: EXTRATO DE BONIFICAÇÕES -->
+          <div id="cont-aba-extrato" style="display: none;">
+            <div class="card" style="padding: 0; overflow-x: auto; border: 1px solid var(--border-color); border-radius: 12px;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead>
+                  <tr style="background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); text-align: left;">
+                    <th style="padding: 12px 14px;">ID</th>
+                    <th style="padding: 12px 14px;">Tarefa Referente</th>
+                    <th style="padding: 12px 14px;">Restaurante</th>
+                    <th style="padding: 12px 14px;">Valor Bonificação</th>
+                    <th style="padding: 12px 14px;">Status Pagamento</th>
+                    <th style="padding: 12px 14px;">Chave PIX</th>
+                    <th style="padding: 12px 14px;">Data Pagamento / Comprovante</th>
+                  </tr>
+                </thead>
+                <tbody id="cont-extrato-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                      <i class="fa-solid fa-spinner fa-spin"></i> Carregando extrato...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ABA 3: DIAGNÓSTICO FISCAL 360° & SEGREGAÇÃO MONOFÁSICA -->
+          <div id="cont-aba-fiscal" style="display: none;">
+            <!-- CARD HERO FISCAL -->
+            <div class="card" style="background: linear-gradient(135deg, rgba(30,41,59,0.7), rgba(15,23,42,0.9)); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px; padding: 1.4rem; margin-bottom: 1.4rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="cont-fiscal-regime-badge" style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 800;">SIMPLES NACIONAL (ANEXO I - COMÉRCIO)</span>
+                    <span id="cont-fiscal-cnae-badge" style="background: rgba(255,255,255,0.06); color: #94a3b8; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem;">CNAE 56.11-2-01</span>
+                  </div>
+                  <h3 id="cont-fiscal-rest-nome" style="margin: 8px 0 2px 0; font-size: 1.35rem; color: #fff; font-family: 'Outfit', sans-serif;">Carregando Restaurante...</h3>
+                  <div style="font-size: 0.82rem; color: #94a3b8;">
+                    CNPJ: <strong id="cont-fiscal-cnpj" style="color: #f1f5f9;">--</strong> | Plano: <strong id="cont-fiscal-plano" style="color: #10b981;">Pro Restaurante</strong>
+                  </div>
+                </div>
+                <div style="text-align: right; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); padding: 10px 16px; border-radius: 10px;">
+                  <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Alíquota Efetiva do Simples</span>
+                  <div id="cont-fiscal-aliquota-efetiva" style="font-size: 1.6rem; font-weight: 800; color: #10b981;">6,79%</div>
+                  <span id="cont-fiscal-faixa-rbt12" style="font-size: 0.72rem; color: #38bdf8;">Faixa 3: RBT12 R$ 510.960,00</span>
+                </div>
+              </div>
+
+              <!-- DADOS DO FATURAMENTO -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 1.2rem; padding-top: 1.2rem; border-top: 1px solid rgba(255,255,255,0.08);">
+                <div>
+                  <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Faturamento Apurado 30d</span>
+                  <div id="cont-fiscal-fat-30d" style="font-size: 1.2rem; font-weight: 800; color: #fff;">R$ 42.580,00</div>
+                </div>
+                <div>
+                  <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Volume de Pedidos 30d</span>
+                  <div id="cont-fiscal-pedidos-30d" style="font-size: 1.2rem; font-weight: 800; color: #38bdf8;">640 pedidos</div>
+                </div>
+                <div>
+                  <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Ticket Médio do Período</span>
+                  <div id="cont-fiscal-ticket-medio" style="font-size: 1.2rem; font-weight: 800; color: #f59e0b;">R$ 66,53</div>
+                </div>
+                <div>
+                  <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">DAS Bruto sem Segregação</span>
+                  <div id="cont-fiscal-das-bruto" style="font-size: 1.2rem; font-weight: 800; color: #ef4444;">R$ 2.891,18</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CARD DE OURO: AUDITORIA DE BEBIDAS FRIAS (MONOFÁSICOS & ICMS-ST) -->
+            <div class="card" style="background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(6,78,59,0.25)); border: 2px solid #10b981; border-radius: 14px; padding: 1.5rem; margin-bottom: 1.4rem; position: relative;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 1rem;">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="background: #10b981; color: #000; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">OPORTUNIDADE DE ALTO VALOR</span>
+                    <span style="font-size: 0.75rem; color: #a7f3d0; font-weight: 600;">Fundamentação: LC 123/2006, Art. 18, § 4º-A &amp; Lei 10.147/2000</span>
+                  </div>
+                  <h3 style="margin: 8px 0 4px 0; font-size: 1.35rem; color: #10b981; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-beer-mug-empty"></i> Auditoria de Bebidas Frias (PIS/COFINS Monofásicos &amp; ICMS-ST)
+                  </h3>
+                  <p style="margin: 0; color: #cbd5e1; font-size: 0.86rem; line-height: 1.4; max-width: 850px;">
+                    Bebidas como <strong>refrigerantes, cervejas, energéticos e águas minerais</strong> possuem recolhimento de PIS e COFINS concentrado na indústria/distribuidora (tributação monofásica) e ICMS por Substituição Tributária. Na apuração do DAS (PGDAS-D), essas receitas <strong>NÃO devem sofrer bitributação</strong>!
+                  </p>
+                </div>
+              </div>
+
+              <!-- MÉTRICAS DE IMPACTO -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 1.2rem;">
+                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; padding: 12px 14px;">
+                  <span style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase;">Participação de Bebidas</span>
+                  <div id="cont-monofasico-fat-bebidas" style="font-size: 1.4rem; font-weight: 800; color: #fff; margin: 2px 0;">R$ 12.135,30</div>
+                  <div style="font-size: 0.72rem; color: #38bdf8;">~28,5% do faturamento total do restaurante</div>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; padding: 12px 14px;">
+                  <span style="font-size: 0.75rem; color: #a7f3d0; text-transform: uppercase; font-weight: 700;">Economia Mensal no DAS</span>
+                  <div id="cont-monofasico-eco-mensal" style="font-size: 1.4rem; font-weight: 800; color: #10b981; margin: 2px 0;">+ R$ 828,98 / mês</div>
+                  <div style="font-size: 0.72rem; color: #a7f3d0;">Abatimento direto na guia de recolhimento</div>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; padding: 12px 14px;">
+                  <span style="font-size: 0.75rem; color: #38bdf8; text-transform: uppercase; font-weight: 700;">Economia Anual Projetada</span>
+                  <div id="cont-monofasico-eco-anual" style="font-size: 1.4rem; font-weight: 800; color: #38bdf8; margin: 2px 0;">+ R$ 9.947,76 / ano</div>
+                  <div style="font-size: 0.72rem; color: #38bdf8;">Lucro líquido recuperado para o restaurante</div>
+                </div>
+              </div>
+
+              <!-- INSTRUÇÃO PRÁTICA PARA O CONTADOR -->
+              <div style="background: rgba(15,23,42,0.85); border: 1px solid #334155; border-radius: 10px; padding: 14px; font-size: 0.85rem; color: #e2e8f0; line-height: 1.5;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <strong style="color: #38bdf8;"><i class="fa-solid fa-clipboard-check"></i> Procedimento Contábil Recomendado no PGDAS-D:</strong>
+                  <button class="btn btn-sm" onclick="copiarInstrucoesMonofasico()" style="background: rgba(56,189,248,0.15); color: #38bdf8; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;">
+                    <i class="fa-solid fa-copy"></i> Copiar Instrução
+                  </button>
+                </div>
+                <div id="cont-instrucao-pgdas-texto">
+                  Ao preencher o PGDAS-D da competência, segregar o faturamento de R$ <span id="cont-txt-fat-bebidas">12.135,30</span> na atividade: <em>"Revenda de mercadorias com tributação monofásica de PIS/COFINS e com ICMS com substituição tributária (ST)"</em>. Isso desmarca automaticamente as alíquotas de PIS, COFINS e ICMS da parcela de bebidas, gerando economia imediata e 100% legalizada perante a Receita Federal do Brasil.
+                </div>
+              </div>
+            </div>
+
+            <!-- COMPARATIVO DE REGIMES E CALENDÁRIO TRIBUTÁRIO -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.4rem;">
+              <!-- Comparativo Simples vs Presumido -->
+              <div class="card" style="padding: 1.4rem; border: 1px solid var(--border-color); border-radius: 12px; background: rgba(17,24,39,0.85);">
+                <h4 style="margin: 0 0 10px 0; font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-balance-scale" style="color: #f59e0b;"></i> Comparativo de Enquadramento Fiscal
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem;">
+                  <div style="display: flex; justify-content: space-between; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); padding: 8px 12px; border-radius: 8px;">
+                    <span><strong>Simples Nacional (com segregação):</strong></span>
+                    <strong style="color: #10b981;">R$ 2.062,20 / mês</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); padding: 8px 12px; border-radius: 8px;">
+                    <span><strong>Lucro Presumido (~9.93% efetivo):</strong></span>
+                    <strong style="color: #ef4444;">R$ 4.228,19 / mês</strong>
+                  </div>
+                  <div style="background: rgba(0,0,0,0.25); padding: 10px; border-radius: 8px; font-size: 0.82rem; color: #94a3b8; border-left: 3px solid #10b981;">
+                    <strong style="color: #fff;">Veredito do Contador:</strong> <span id="cont-fiscal-veredito-regime">Manter no Simples Nacional. Economia de R$ 2.165,99 por mês em relação ao Lucro Presumido.</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Calendário de Obrigações Fiscais -->
+              <div class="card" style="padding: 1.4rem; border: 1px solid var(--border-color); border-radius: 12px; background: rgba(17,24,39,0.85);">
+                <h4 style="margin: 0 0 10px 0; font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-calendar-days" style="color: #38bdf8;"></i> Calendário de Obrigações Acessórias
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem;" id="cont-calendario-fiscal-lista">
+                  <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:6px;">
+                    <div><strong>DAS - Simples Nacional</strong><br><small style="color:var(--text-muted);">Vencimento: Dia 20 do mês</small></div>
+                    <span style="background:rgba(245,158,11,0.15); color:#f59e0b; padding:2px 6px; border-radius:4px; font-weight:700;">Apurar</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:6px;">
+                    <div><strong>DCTFWeb</strong><br><small style="color:var(--text-muted);">Vencimento: Dia 15 do mês</small></div>
+                    <span style="background:rgba(16,185,129,0.15); color:#10b981; padding:2px 6px; border-radius:4px; font-weight:700;">Transmitida</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:6px;">
+                    <div><strong>DEFIS Anual</strong><br><small style="color:var(--text-muted);">Vencimento: 31 de Março</small></div>
+                    <span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:700;">Planejada</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ABA 4: MOTOR DE COMBOS & OTIMIZAÇÃO DE MARGENS (COMIDAS + BEBIDAS) -->
+          <div id="cont-aba-combos" style="display: none;">
+            <!-- BANNER DA TESE DE NEGÓCIO -->
+            <div class="card" style="background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(15,23,42,0.85)); border: 1px solid rgba(245,158,11,0.3); border-radius: 14px; padding: 1.3rem; margin-bottom: 1.4rem;">
+              <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+                <div style="background: rgba(245,158,11,0.2); color: #f59e0b; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+                  <i class="fa-solid fa-lightbulb"></i>
+                </div>
+                <div style="flex: 1; min-width: 280px;">
+                  <h4 style="margin: 0 0 4px 0; font-size: 1.15rem; color: #fff; font-family: 'Outfit', sans-serif;">
+                    A Alquimia dos Combos: Comida + Bebida = Lucro Máximo com Eficiência Fiscal
+                  </h4>
+                  <p style="margin: 0; color: #cbd5e1; font-size: 0.85rem; line-height: 1.45;">
+                    Pratos de comida têm CMV médio de <strong>33%</strong> e imposto integral. Bebidas frias têm CMV baixo (<strong>18% a 25%</strong>) e <strong>PIS/COFINS monofásicos (0% na saída)</strong>. Ao unir comida + bebida num combo, o CMV global é diluído, o ticket médio sobe em até <strong>38%</strong> e a margem líquida supera <strong>58%</strong>!
+                  </p>
+                </div>
+                <button class="btn btn-primary" onclick="gerarCombosContadorIA()" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-weight: 800; font-size: 0.88rem; padding: 10px 18px; border-radius: 8px; box-shadow: 0 4px 14px rgba(245,158,11,0.3);">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> ⚡ Gerar Combos com IA
+                </button>
+              </div>
+            </div>
+
+            <!-- GRID PRINCIPAL: CONSTRUTOR DE COMBO + SIMULADOR FINANCEIRO EM TEMPO REAL -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.4rem; margin-bottom: 1.5rem;">
+              <!-- COLUNA ESQUERDA: CONSTRUTOR INTERATIVO -->
+              <div class="card" style="padding: 1.4rem; border: 1px solid var(--border-color); border-radius: 14px; background: rgba(17,24,39,0.9);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+                  <h4 style="margin: 0; font-size: 1.1rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-puzzle-piece" style="color: #10b981;"></i> Montador de Combo Estratégico
+                  </h4>
+                  <span style="font-size: 0.72rem; color: #94a3b8;">Itens do Cardápio</span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <!-- Nome do Combo -->
+                  <div>
+                    <label style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">Nome Comercial do Combo:</label>
+                    <input type="text" id="sim-combo-nome" placeholder="Ex: Combo Burger Artesanal + Refrigerante" value="Combo Especial da Casa" style="width: 100%; background: #1e293b; border: 1px solid #334155; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.88rem; font-weight: 700; margin-top: 4px; box-sizing: border-box;">
+                  </div>
+
+                  <!-- Seletor de Comidas -->
+                  <div>
+                    <label style="font-size: 0.8rem; color: #94a3b8; font-weight: 700; display: flex; justify-content: space-between;">
+                      <span><i class="fa-solid fa-utensils" style="color: #f59e0b;"></i> Adicionar Prato / Porção / Comida:</span>
+                      <small style="color: #cbd5e1;">(Custo padrão ~33%)</small>
+                    </label>
+                    <div style="display: flex; gap: 8px; margin-top: 4px;">
+                      <select id="sim-select-comida" style="flex: 1; background: #1e293b; border: 1px solid #334155; color: #fff; padding: 8px; border-radius: 8px; font-size: 0.82rem;">
+                        <option value="">Carregando pratos...</option>
+                      </select>
+                      <button class="btn btn-sm btn-secondary" onclick="adicionarItemAoCombo('comida')" style="background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid rgba(245,158,11,0.4); font-weight: 700;">
+                        <i class="fa-solid fa-plus"></i> Adicionar
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Seletor de Bebidas -->
+                  <div>
+                    <label style="font-size: 0.8rem; color: #94a3b8; font-weight: 700; display: flex; justify-content: space-between;">
+                      <span><i class="fa-solid fa-bottle-water" style="color: #06b6d4;"></i> Adicionar Bebida Monofásica:</span>
+                      <small style="color: #10b981;">(PIS/COFINS Monofásico + CMV ~22%)</small>
+                    </label>
+                    <div style="display: flex; gap: 8px; margin-top: 4px;">
+                      <select id="sim-select-bebida" style="flex: 1; background: #1e293b; border: 1px solid #334155; color: #fff; padding: 8px; border-radius: 8px; font-size: 0.82rem;">
+                        <option value="">Carregando bebidas...</option>
+                      </select>
+                      <button class="btn btn-sm btn-secondary" onclick="adicionarItemAoCombo('bebida')" style="background: rgba(6,182,212,0.2); color: #06b6d4; border: 1px solid rgba(6,182,212,0.4); font-weight: 700;">
+                        <i class="fa-solid fa-plus"></i> Adicionar
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Lista de Itens no Combo Atual -->
+                  <div>
+                    <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Composição do Combo:</span>
+                    <div id="sim-itens-combo-lista" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; min-height: 80px; max-height: 160px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                      <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 1.5rem;">
+                        Nenhum item selecionado. Adicione comida e bebida acima.
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Slider de Desconto -->
+                  <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px 14px; border-radius: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                      <label style="font-size: 0.82rem; color: #e2e8f0; font-weight: 700;">Desconto Estratégico no Combo:</label>
+                      <span id="sim-desconto-badge" style="background: #f59e0b; color: #000; font-weight: 800; font-size: 0.82rem; padding: 2px 8px; border-radius: 6px;">12% OFF</span>
+                    </div>
+                    <input type="range" id="sim-desconto-slider" min="0" max="30" value="12" step="1" oninput="aoMudarDescontoSlider(this.value)" style="width: 100%; cursor: pointer;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                      <span>0% (Sem desconto)</span>
+                      <span>15% (Equilibrado)</span>
+                      <span>30% (Agressivo)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- COLUNA DIREITA: COCKPIT FINANCEIRO & PARECER CONTÁBIL -->
+              <div class="card" style="padding: 1.4rem; border: 1px solid rgba(16,185,129,0.3); border-radius: 14px; background: linear-gradient(135deg, rgba(17,24,39,0.95), rgba(6,78,59,0.25)); display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+                    <h4 style="margin: 0; font-size: 1.1rem; color: #10b981; display: flex; align-items: center; gap: 8px;">
+                      <i class="fa-solid fa-chart-line"></i> Cockpit Financeiro &amp; Fiscal do Combo
+                    </h4>
+                    <span id="sim-status-badge" style="background: rgba(16,185,129,0.2); color: #10b981; font-weight: 800; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;">
+                      EXCELENTE MARGEM
+                    </span>
+                  </div>
+
+                  <!-- PREÇOS E MARGENS -->
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div style="background: rgba(0,0,0,0.35); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                      <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase;">Preço Avulso Total</span>
+                      <div id="sim-res-preco-avulso" style="font-size: 1.25rem; font-weight: 800; color: #94a3b8; text-decoration: line-through;">R$ 0,00</div>
+                    </div>
+                    <div style="background: rgba(16,185,129,0.15); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(16,185,129,0.4);">
+                      <span style="font-size: 0.72rem; color: #a7f3d0; text-transform: uppercase; font-weight: 700;">Preço Sugerido Combo</span>
+                      <div id="sim-res-preco-combo" style="font-size: 1.45rem; font-weight: 800; color: #10b981;">R$ 0,00</div>
+                    </div>
+                  </div>
+
+                  <!-- DETALHAMENTO DE CUSTOS E TRIBUTOS -->
+                  <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.84rem; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between;">
+                      <span style="color: #cbd5e1;">Custo de Insumos (CMV Total):</span>
+                      <strong id="sim-res-cmv" style="color: #f87171;">R$ 0,00 (0%)</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                      <span style="color: #cbd5e1;">Carga Fiscal do Simples (com dedução):</span>
+                      <strong id="sim-res-imposto" style="color: #fbbf24;">R$ 0,00</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 4px;">
+                      <span style="color: #38bdf8; font-weight: 600;">Benefício Monofásico (Bebida Fria):</span>
+                      <strong id="sim-res-economia-fiscal" style="color: #38bdf8;">+ R$ 0,00 / pedido</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 6px; margin-top: 2px;">
+                      <span style="color: #fff; font-weight: 800; font-size: 0.95rem;">LUCRO LÍQUIDO REAL POR VENDA:</span>
+                      <strong id="sim-res-lucro-liquido" style="color: #10b981; font-size: 1.15rem;">R$ 0,00</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                      <span style="color: #a7f3d0; font-weight: 700;">MARGEM LÍQUIDA FINAL:</span>
+                      <strong id="sim-res-margem-pct" style="color: #10b981; font-size: 1.15rem;">0%</strong>
+                    </div>
+                  </div>
+
+                  <!-- PARECER TÉCNICO INSTANTÂNEO -->
+                  <div style="background: rgba(30,41,59,0.7); border-left: 3px solid #10b981; padding: 10px 12px; border-radius: 6px; font-size: 0.8rem; color: #cbd5e1; line-height: 1.4; margin-bottom: 12px;">
+                    <strong style="color: #fff;">Parecer do Contador Cheff:</strong>
+                    <div id="sim-res-parecer-texto">Monte o combo ao lado para visualizar a análise tributária e viabilidade financeira.</div>
+                  </div>
+                </div>
+
+                <button class="btn btn-primary" id="btn-salvar-combo-contador" onclick="salvarComboMontado()" style="width: 100%; background: #10b981; border: none; font-weight: 800; padding: 10px; font-size: 0.9rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">
+                  <i class="fa-solid fa-paper-plane"></i> Salvar e Enviar Sugestão ao Dono do Restaurante
+                </button>
+              </div>
+            </div>
+
+            <!-- SEÇÃO DE COMBOS INTELIGENTES GERADOS POR IA -->
+            <div style="margin-bottom: 1.8rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+                <div>
+                  <h3 style="margin: 0; font-size: 1.25rem; color: #fff; font-family: 'Outfit', sans-serif; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-brain" style="color: #8b5cf6;"></i> Sugestões de Combos Prontos por IA (Alta Margem &amp; Monofásicos)
+                  </h3>
+                  <p style="margin: 2px 0 0 0; color: var(--text-muted); font-size: 0.82rem;">
+                    Combinações calibradas para ticket médio elevado e carga fiscal reduzida.
+                  </p>
+                </div>
+              </div>
+
+              <div id="cont-combos-ia-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+                <!-- Preenchido via script -->
+              </div>
+            </div>
+
+            <!-- TABELA DE COMBOS SALVOS E SUGERIDOS -->
+            <div class="card" style="padding: 1.2rem; border: 1px solid var(--border-color); border-radius: 12px; background: rgba(17,24,39,0.85);">
+              <h4 style="margin: 0 0 10px 0; font-size: 1.1rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-clock-rotate-left" style="color: #38bdf8;"></i> Histórico de Combos Sugeridos para este Restaurante
+              </h4>
+              <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                  <thead>
+                    <tr style="background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); text-align: left;">
+                      <th style="padding: 10px 12px;">Título do Combo</th>
+                      <th style="padding: 10px 12px;">Composição</th>
+                      <th style="padding: 10px 12px;">Preço Sugerido</th>
+                      <th style="padding: 10px 12px;">Margem Líquida</th>
+                      <th style="padding: 10px 12px;">Economia Fiscal</th>
+                      <th style="padding: 10px 12px;">Status</th>
+                      <th style="padding: 10px 12px; text-align: right;">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cont-combos-salvos-tbody">
+                    <tr>
+                      <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        Carregando histórico de combos...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ABA 5: OPORTUNIDADES & IA ADVISORY (HEALTH SCORE, BCG & PARECERES) -->
+          <div id="cont-aba-insights" style="display: none;">
+            <!-- HEALTH SCORE 360° -->
+            <div class="card" style="background: linear-gradient(135deg, rgba(30,41,59,0.8), rgba(15,23,42,0.95)); border: 1px solid rgba(139,92,246,0.3); border-radius: 14px; padding: 1.5rem; margin-bottom: 1.4rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 1.2rem;">
+                <div>
+                  <span style="background: rgba(139,92,246,0.18); color: #c084fc; border: 1px solid rgba(139,92,246,0.3); padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">AUDITORIA CONTÁBIL CONTÍNUA</span>
+                  <h3 style="margin: 6px 0 2px 0; font-size: 1.4rem; color: #fff; font-family: 'Outfit', sans-serif;">
+                    Health Score Fiscal &amp; Operacional do Estabelecimento
+                  </h3>
+                  <div style="font-size: 0.82rem; color: #94a3b8;">Avaliação global de eficiência tributária, CMV e alavancagem de cardápio.</div>
+                </div>
+                <div style="text-align: center; background: rgba(139,92,246,0.12); border: 2px solid #8b5cf6; padding: 10px 20px; border-radius: 12px;">
+                  <div style="font-size: 2.2rem; font-weight: 800; color: #c084fc; line-height: 1;">86<span style="font-size: 1.1rem; color: #94a3b8;">/100</span></div>
+                  <div style="font-size: 0.72rem; color: #a78bfa; font-weight: 700; margin-top: 4px;">SAUDÁVEL COM POTENCIAL</div>
+                </div>
+              </div>
+
+              <!-- PILARES DO HEALTH SCORE -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;" id="cont-pilares-score-grid">
+                <!-- Preenchido via script -->
+              </div>
+            </div>
+
+            <!-- MATRIZ DE ENGENHARIA DE CARDÁPIO BCG -->
+            <div class="card" style="padding: 1.4rem; border: 1px solid var(--border-color); border-radius: 14px; background: rgba(17,24,39,0.85); margin-bottom: 1.4rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 8px;">
+                <div>
+                  <h4 style="margin: 0; font-size: 1.15rem; color: #fff; font-family: 'Outfit', sans-serif; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-table-cells-large" style="color: #f59e0b;"></i> Matriz de Engenharia de Cardápio (Consultoria Contábil BCG)
+                  </h4>
+                  <p style="margin: 2px 0 0 0; color: var(--text-muted); font-size: 0.82rem;">
+                    Classificação dos itens por Margem de Contribuição vs Volume de Vendas.
+                  </p>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+                <!-- ESTRELAS -->
+                <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; padding: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="color: #10b981; font-size: 0.95rem;">🌟 ESTRELAS</strong>
+                    <span style="font-size: 0.72rem; background: #10b981; color: #000; font-weight: 800; padding: 2px 6px; border-radius: 4px;">ALTA MARGEM | ALTA SAÍDA</span>
+                  </div>
+                  <p style="font-size: 0.78rem; color: #cbd5e1; margin: 8px 0; line-height: 1.35;">
+                    Campeões de faturamento. Mantenha receita padronizada e destaque no topo do cardápio.
+                  </p>
+                  <ul style="margin: 0; padding-left: 18px; font-size: 0.8rem; color: #e2e8f0; line-height: 1.4;">
+                    <li>Smash Burger Bacon Artesanal</li>
+                    <li>Parmegiana de Alcatra c/ Fritas</li>
+                    <li>Coca-Cola Lata 350ml</li>
+                  </ul>
+                </div>
+
+                <!-- CAVALOS DE BATALHA -->
+                <div style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); border-radius: 10px; padding: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="color: #f59e0b; font-size: 0.95rem;">🐎 CAVALOS DE BATALHA</strong>
+                    <span style="font-size: 0.72rem; background: #f59e0b; color: #000; font-weight: 800; padding: 2px 6px; border-radius: 4px;">BAIXA MARGEM | ALTA SAÍDA</span>
+                  </div>
+                  <p style="font-size: 0.78rem; color: #cbd5e1; margin: 8px 0; line-height: 1.35;">
+                    Vendem muito mas o CMV aperta. Reajuste 5% ou una a bebidas em combos lucrativos.
+                  </p>
+                  <ul style="margin: 0; padding-left: 18px; font-size: 0.8rem; color: #e2e8f0; line-height: 1.4;">
+                    <li>Picanha na Chapa Executiva</li>
+                    <li>Porção de Batata Frita Simples</li>
+                  </ul>
+                </div>
+
+                <!-- QUEBRA-CABEÇAS -->
+                <div style="background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.3); border-radius: 10px; padding: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="color: #38bdf8; font-size: 0.95rem;">🧩 QUEBRA-CABEÇAS</strong>
+                    <span style="font-size: 0.72rem; background: #38bdf8; color: #000; font-weight: 800; padding: 2px 6px; border-radius: 4px;">ALTA MARGEM | BAIXA SAÍDA</span>
+                  </div>
+                  <p style="font-size: 0.78rem; color: #cbd5e1; margin: 8px 0; line-height: 1.35;">
+                    Altamente lucrativos porém com baixa saída. Melhore a foto, crie combos promocionais.
+                  </p>
+                  <ul style="margin: 0; padding-left: 18px; font-size: 0.8rem; color: #e2e8f0; line-height: 1.4;">
+                    <li>Cerveja Artesanal IPA 500ml</li>
+                    <li>Pizza Especial Quatro Queijos</li>
+                  </ul>
+                </div>
+
+                <!-- CÃES -->
+                <div style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="color: #ef4444; font-size: 0.95rem;">🐕 CÃES (RETIRAR/MUDAR)</strong>
+                    <span style="font-size: 0.72rem; background: #ef4444; color: #fff; font-weight: 800; padding: 2px 6px; border-radius: 4px;">BAIXA MARGEM | BAIXA SAÍDA</span>
+                  </div>
+                  <p style="font-size: 0.78rem; color: #cbd5e1; margin: 8px 0; line-height: 1.35;">
+                    Imobilizam estoque e geram desperdício de insumos. Considere retirar do cardápio.
+                  </p>
+                  <ul style="margin: 0; padding-left: 18px; font-size: 0.8rem; color: #e2e8f0; line-height: 1.4;">
+                    <li>Sobremesa Especial de Frutas</li>
+                    <li>Prato Light de Salmão</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- CENTRAL DE PARECERES & PLANOS DE AÇÃO DO CONTADOR -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.4rem;">
+              <!-- FORMULÁRIO DE ENVIO DE PARECER AO DONO -->
+              <div class="card" style="padding: 1.4rem; border: 1px solid var(--border-color); border-radius: 14px; background: rgba(17,24,39,0.9);">
+                <h4 style="margin: 0 0 12px 0; font-size: 1.1rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-file-pen" style="color: #10b981;"></i> Emitir Parecer Consultivo para o Dono
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <div>
+                    <label style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">Título da Recomendação:</label>
+                    <input type="text" id="parecer-titulo" placeholder="Ex: Ajuste Tributário no PGDAS-D ou Novo Combo de Almoço" style="width: 100%; background: #1e293b; border: 1px solid #334155; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; box-sizing: border-box;">
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                      <label style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">Categoria:</label>
+                      <select id="parecer-categoria" style="width: 100%; background: #1e293b; border: 1px solid #334155; color: #fff; padding: 8px; border-radius: 8px; font-size: 0.82rem;">
+                        <option value="tributario">Tributário &amp; Impostos</option>
+                        <option value="combos">Engenharia de Combos</option>
+                        <option value="margens">Margem &amp; CMV</option>
+                        <option value="operacional">Ponto de Equilíbrio</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">Impacto Estimado (R$):</label>
+                      <input type="number" id="parecer-impacto" placeholder="Ex: 9800.00" value="11760.00" style="width: 100%; background: #1e293b; border: 1px solid #334155; color: #10b981; font-weight: 800; padding: 8px; border-radius: 8px; font-size: 0.85rem; box-sizing: border-box;">
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">Parecer Técnico &amp; Plano de Ação Recomendado:</label>
+                    <textarea id="parecer-conteudo" rows="4" placeholder="Escreva a orientação estratégica para o dono do restaurante..." style="width: 100%; background: #1e293b; border: 1px solid #334155; color: #fff; padding: 10px; border-radius: 8px; font-size: 0.85rem; box-sizing: border-box; line-height: 1.4;"></textarea>
+                  </div>
+
+                  <div id="parecer-feedback" style="display: none; padding: 8px 12px; border-radius: 6px; font-size: 0.82rem;"></div>
+
+                  <button class="btn btn-primary" onclick="enviarParecerAoDono()" style="background: #10b981; border: none; font-weight: 800; padding: 10px; border-radius: 8px; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">
+                    <i class="fa-solid fa-paper-plane"></i> Publicar Parecer no Painel do Dono
+                  </button>
+                </div>
+              </div>
+
+              <!-- HISTÓRICO DE PARECERES ENVIADOS -->
+              <div class="card" style="padding: 1.4rem; border: 1px solid var(--border-color); border-radius: 14px; background: rgba(17,24,39,0.9);">
+                <h4 style="margin: 0 0 12px 0; font-size: 1.1rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-clock-rotate-left" style="color: #38bdf8;"></i> Pareceres Enviados ao Estabelecimento
+                </h4>
+                <div id="cont-historico-pareceres-lista" style="display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto;">
+                  <div style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.85rem;">
+                    Carregando pareceres...
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ══════════════════════════════════════════════════════════════════
              STUDIO UI & LIVE COMPONENT PREVIEW (SUPORTE & CRIAÇÃO)
              ══════════════════════════════════════════════════════════════════ -->
@@ -2784,6 +3431,117 @@
         <button class="btn btn-primary" style="background:#10b981; border-color:#10b981;" onclick="enviarSolicitacaoResgateBonus()">
           <i class="fa-solid fa-paper-plane"></i> Enviar Solicitação de PIX
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EXECUTAR DEMANDA DO CONTADOR -->
+  <div class="modal-overlay" id="modal-executar-demanda-contador">
+    <div class="modal-content" style="max-width:620px; background:#111827; border:1px solid #374151; border-radius:14px;">
+      <div class="modal-header" style="background:#1f2937; border-bottom:1px solid #374151; border-radius:14px 14px 0 0; padding:1rem 1.4rem;">
+        <h3 style="margin:0; color:#10b981; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-file-signature"></i> Execução de Demanda Contábil
+        </h3>
+        <button class="modal-close" onclick="fecharModalExecutarDemanda()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="padding:1.4rem; display:flex; flex-direction:column; gap:12px; max-height:78vh; overflow-y:auto;">
+        <input type="hidden" id="exec-demanda-id">
+        <input type="hidden" id="exec-restaurante-id">
+
+        <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: 10px; padding: 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <div id="exec-demanda-titulo" style="font-weight: 800; font-size: 1rem; color: #fff;">Título da Demanda</div>
+            <div id="exec-demanda-restaurante" style="font-size: 0.8rem; color: var(--text-muted);">Restaurante</div>
+          </div>
+          <div>
+            <span id="exec-demanda-bonus" style="background: #10b981; color: #000; font-weight: 800; font-size: 0.85rem; padding: 4px 10px; border-radius: 20px;">
+              + R$ 0,00 Bonificação
+            </span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-sm btn-secondary" onclick="verDadosRestauranteDaDemanda()" style="font-size: 0.78rem;">
+            <i class="fa-solid fa-calculator"></i> Ver Faturamento &amp; Dados Fiscais deste Restaurante
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label style="font-size:0.8rem; color:#94a3b8;">Instruções Solicitadas:</label>
+          <div id="exec-demanda-desc" style="background:#1f2937; padding:10px; border-radius:8px; font-size:0.82rem; color:#e2e8f0; line-height:1.4;">
+            Instruções...
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label style="font-size:0.8rem; color:#94a3b8;">Parecer Técnico Contábil / Relatório do Fechamento *</label>
+          <textarea id="exec-parecer" rows="3" placeholder="Ex: Fechamento fiscal apurado com sucesso. DAS gerado com segregação de ICMS/PIS/COFINS de bebidas monofásicas, gerando economia de R$ 380,00." style="background:#1f2937; border:1px solid #374151; color:#fff; border-radius:8px; padding:10px; font-size:0.85rem;"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label style="font-size:0.8rem; color:#94a3b8;">Link para Download da Guia DAS ou PDF do Relatório</label>
+          <input type="text" id="exec-guia-url" placeholder="https://... ou caminho do arquivo" style="background:#1f2937; border:1px solid #374151; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:0.85rem;">
+        </div>
+
+        <div class="form-group">
+          <label style="font-size:0.8rem; color:#94a3b8;">Linha Digitável / Código de Barras (Opcional, para pagamento fácil pelo dono)</label>
+          <input type="text" id="exec-codigo-barras" placeholder="Ex: 85890000001 2 4589028... " style="background:#1f2937; border:1px solid #374151; color:#f59e0b; border-radius:8px; padding:8px 10px; font-size:0.85rem; font-family:monospace;">
+        </div>
+
+        <div id="exec-feedback" style="display:none; font-size:0.82rem; padding:8px; border-radius:6px;"></div>
+      </div>
+      <div class="modal-footer" style="padding:1rem 1.4rem; border-top:1px solid #374151; display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn" onclick="fecharModalExecutarDemanda()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-concluir-demanda-cont" style="background:#10b981; border:none;" onclick="concluirDemandaContador()">
+          <i class="fa-solid fa-check"></i> Concluir Tarefa &amp; Liberar Bonificação
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DADOS FISCAIS DO RESTAURANTE (INSPEÇÃO CONTÁBIL) -->
+  <div class="modal-overlay" id="modal-dados-restaurante-contador">
+    <div class="modal-content" style="max-width:560px; background:#111827; border:1px solid #374151; border-radius:14px;">
+      <div class="modal-header" style="background:#1f2937; border-bottom:1px solid #374151; border-radius:14px 14px 0 0; padding:1rem 1.4rem;">
+        <h3 style="margin:0; color:#38bdf8; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-store"></i> Dados Contábeis &amp; Fiscais do Restaurante
+        </h3>
+        <button class="modal-close" onclick="fecharModalDadosRestaurante()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="padding:1.4rem; display:flex; flex-direction:column; gap:14px; max-height:75vh; overflow-y:auto;">
+        <div id="dados-rest-loading" style="text-align:center; padding:1.5rem; color:var(--text-muted);">
+          <i class="fa-solid fa-spinner fa-spin"></i> Carregando dados do restaurante...
+        </div>
+        <div id="dados-rest-content" style="display:none; flex-direction:column; gap:14px;">
+          <div style="background:#1f2937; border-radius:10px; padding:12px;">
+            <div style="font-weight:800; font-size:1.1rem; color:#fff;" id="dados-rest-nome">Nome do Restaurante</div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">
+              CNPJ: <strong id="dados-rest-cnpj" style="color:#e2e8f0;">-</strong> | Regime: <strong id="dados-rest-regime" style="color:#10b981;">-</strong>
+            </div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">
+              Plano: <strong id="dados-rest-plano" style="color:#f59e0b;">-</strong>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div style="background:#1f2937; border-radius:10px; padding:12px; text-align:center;">
+              <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Faturamento Apurado</span>
+              <div id="dados-rest-fat" style="font-size:1.3rem; font-weight:800; color:#10b981; margin-top:4px;">R$ 0,00</div>
+            </div>
+            <div style="background:#1f2937; border-radius:10px; padding:12px; text-align:center;">
+              <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Total de Pedidos</span>
+              <div id="dados-rest-pedidos" style="font-size:1.3rem; font-weight:800; color:#38bdf8; margin-top:4px;">0</div>
+            </div>
+          </div>
+
+          <div>
+            <b style="font-size:0.82rem; color:#94a3b8; display:block; margin-bottom:6px;">Detalhamento por Meio de Pagamento (Conciliação):</b>
+            <div id="dados-rest-metodos" style="display:flex; flex-direction:column; gap:6px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding:0.8rem 1.4rem; border-top:1px solid #374151; display:flex; justify-content:flex-end;">
+        <button class="btn btn-sm" onclick="fecharModalDadosRestaurante()">Fechar</button>
       </div>
     </div>
   </div>

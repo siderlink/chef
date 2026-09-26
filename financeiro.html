@@ -12,15 +12,28 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
-  <link rel="stylesheet" href="/dark-mode.css">
   <script src="/theme-manager.js?v=20260901paletas"></script>
   <style>
-    :root, [data-theme="light"], [data-theme="dark"] {
+    :root, [data-theme="light"], body.theme-light {
+      --fin-bg: #f8fafc;
+      --fin-card: #ffffff;
+      --fin-sidebar: #ffffff;
+      --fin-text: #0f172a;
+      --fin-text-muted: #64748b;
+      --fin-border: #e2e8f0;
+      --fin-hover: rgba(0, 0, 0, 0.04);
+      --fin-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="dark"], body.dark-mode, body.theme-dark {
       --fin-bg: #0f172a;
-      --fin-card: rgba(30, 41, 59, 0.7);
+      --fin-card: #1e293b;
+      --fin-sidebar: #0f172a;
       --fin-text: #f8fafc;
       --fin-text-muted: #94a3b8;
-      --fin-border: rgba(255, 255, 255, 0.1);
+      --fin-border: #334155;
+      --fin-hover: rgba(255, 255, 255, 0.05);
+      --fin-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
     }
     
     body, html, .app-container {
@@ -28,12 +41,12 @@
       color: var(--fin-text) !important;
     }
     aside.sidebar {
-      background: #1e293b !important;
+      background: var(--fin-sidebar) !important;
       border-right: 1px solid var(--fin-border) !important;
     }
     .sidebar-header h2 { color: var(--fin-text) !important; }
     .nav-item { color: var(--fin-text-muted) !important; }
-    .nav-item:hover { background: rgba(255,255,255,0.05) !important; color: var(--fin-text) !important; }
+    .nav-item:hover { background: var(--fin-hover) !important; color: var(--fin-text) !important; }
     .nav-item.active { background: rgba(252, 75, 21, 0.15) !important; color: #fc4b15 !important; }
     
     @keyframes fadeInUp {
@@ -45,21 +58,21 @@
       animation: fadeInUp 0.5s ease-out forwards;
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
-      border-color: var(--fin-border) !important;
+      box-shadow: var(--fin-shadow) !important;
+      border: 1px solid var(--fin-border) !important;
       background: var(--fin-card) !important;
       color: var(--fin-text) !important;
       transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     }
     #section-resumo-caixa > div:nth-child(2) > div:hover {
       transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
       border-color: rgba(252, 75, 21, 0.4) !important;
     }
     table { color: var(--fin-text) !important; }
     thead th { border-bottom: 2px solid var(--fin-border) !important; color: var(--fin-text-muted) !important; }
     tbody tr { border-bottom: 1px solid var(--fin-border) !important; }
-    tbody tr:hover { background: rgba(255,255,255,0.05) !important; }
+    tbody tr:hover { background: var(--fin-hover) !important; }
     
     /* Make text neon glow in KPI */
     #card-faturado {
@@ -67,22 +80,6 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       font-weight: 900 !important;
-    }
-    
-    :root, [data-theme="light"] {
-      --fin-bg: #f8fafc;
-      --fin-card: #ffffff;
-      --fin-text: #0f172a;
-      --fin-text-muted: #64748b;
-      --fin-border: #e2e8f0;
-    }
-
-    [data-theme="dark"] {
-      --fin-bg: #0f172a;
-      --fin-card: #1e293b;
-      --fin-text: #f8fafc;
-      --fin-text-muted: #94a3b8;
-      --fin-border: #334155;
     }
 
     * { box-sizing: border-box; }
@@ -368,6 +365,21 @@
         padding: 6px 10px !important;
       }
     }
+
+    .tab-table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 10px;
+    }
+
+    .tab-table-scroll table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .tab-table-scroll table tbody tr:hover {
+      background-color: rgba(252, 75, 21, 0.04) !important;
+    }
   </style>
   <script src="/locales.js"></script>
   <script src="/broadcast.js"></script>
@@ -414,8 +426,23 @@
         <button id="tab-btn-relatorio" style="background: transparent; border: none; font-size: 15px; font-weight: 600; padding: 8px 14px; cursor: pointer; color: var(--fin-text-muted); border-bottom: 3px solid transparent; outline: none; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;">
           <i class="ph ph-chart-bar" style="margin-right: 4px;"></i> Relatório Avançado
         </button>
+        <button id="tab-btn-dre" style="background: transparent; border: none; font-size: 15px; font-weight: 600; padding: 8px 14px; cursor: pointer; color: var(--fin-text-muted); border-bottom: 3px solid transparent; outline: none; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;">
+          <i class="ph ph-trend-up" style="margin-right: 4px;"></i> DRE Gerencial
+        </button>
+        <button id="tab-btn-abc" style="background: transparent; border: none; font-size: 15px; font-weight: 600; padding: 8px 14px; cursor: pointer; color: var(--fin-text-muted); border-bottom: 3px solid transparent; outline: none; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;">
+          <i class="ph ph-chart-donut" style="margin-right: 4px;"></i> Curva ABC &amp; Engenharia
+        </button>
+        <button id="tab-btn-despesas" style="background: transparent; border: none; font-size: 15px; font-weight: 600; padding: 8px 14px; cursor: pointer; color: var(--fin-text-muted); border-bottom: 3px solid transparent; outline: none; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;">
+          <i class="ph ph-minus-circle" style="margin-right: 4px;"></i> Despesas &amp; Contas
+        </button>
+        <button id="tab-btn-turnos" style="background: transparent; border: none; font-size: 15px; font-weight: 600; padding: 8px 14px; cursor: pointer; color: var(--fin-text-muted); border-bottom: 3px solid transparent; outline: none; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;">
+          <i class="ph ph-clock-counter-clockwise" style="margin-right: 4px;"></i> Auditoria de Turnos
+        </button>
         <button id="tab-btn-contador" style="background: transparent; border: none; font-size: 15px; font-weight: 600; padding: 8px 14px; cursor: pointer; color: var(--fin-text-muted); border-bottom: 3px solid transparent; outline: none; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;">
           <i class="ph ph-paper-plane-tilt" style="margin-right: 4px;"></i> Enviar ao Contador
+        </button>
+        <button id="btn-abrir-config-financeiro" style="margin-left: auto; background: rgba(0,0,0,0.04); border: 1px solid var(--fin-border); font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 8px; cursor: pointer; color: var(--fin-text); display: flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0;">
+          <i class="ph ph-sliders" style="color: #fc4b15; font-size: 16px;"></i> Parâmetros &amp; Regras
         </button>
       </div>
 
@@ -894,111 +921,709 @@
           </div>
         </div>
       </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!-- SECTION: DRE GERENCIAL (DEMONSTRATIVO DO RESULTADO DO EXERCÍCIO)  -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <div id="section-dre" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h1 style="margin: 0; font-size: 22px; display: flex; align-items: center; gap: 8px;">
+              <i class="ph ph-trend-up" style="color: #10b981;"></i> DRE Gerencial &amp; Lucratividade Real
+            </h1>
+            <p style="margin: 4px 0 0 0; color: var(--fin-text-muted); font-size: 13px;">
+              Demonstrativo de Resultado com apuração contábil, CMV, Margem de Contribuição e Lucro Líquido.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <select id="dre-filtro-periodo" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-card); color: var(--fin-text); font-size: 13px; font-weight: 600;">
+              <option value="hoje">Hoje</option>
+              <option value="7dias">Últimos 7 Dias</option>
+              <option value="mes" selected>Este Mês (Atual)</option>
+              <option value="mes_anterior">Mês Anterior</option>
+            </select>
+            <button id="btn-dre-recarregar" class="btn-action" style="padding: 8px 14px; background: #fc4b15; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+              <i class="ph ph-arrows-clockwise"></i> Atualizar DRE
+            </button>
+            <button id="btn-dre-exportar" class="btn-action" style="padding: 8px 14px; background: var(--fin-card); color: var(--fin-text); border: 1px solid var(--fin-border); border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+              <i class="ph ph-download-simple"></i> Exportar CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Cards do DRE -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 24px;">
+          <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color: var(--fin-text-muted); font-size: 12.5px; font-weight: 600;">(+) Receita Bruta</div>
+            <div id="dre-kpi-bruta" style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 4px;">R$ 0,00</div>
+            <small style="color: var(--fin-text-muted); font-size: 11px;">Total faturado no período</small>
+          </div>
+          <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color: #ef4444; font-size: 12.5px; font-weight: 600;">(-) Taxas &amp; Deduções</div>
+            <div id="dre-kpi-deducoes" style="font-size: 22px; font-weight: 800; color: #ef4444; margin-top: 4px;">R$ 0,00</div>
+            <small style="color: var(--fin-text-muted); font-size: 11px;">Maquininhas e gateways</small>
+          </div>
+          <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color: #f59e0b; font-size: 12.5px; font-weight: 600;">(-) CMV dos Pratos</div>
+            <div id="dre-kpi-cmv" style="font-size: 22px; font-weight: 800; color: #f59e0b; margin-top: 4px;">R$ 0,00</div>
+            <small id="dre-kpi-cmv-pct" style="color: var(--fin-text-muted); font-size: 11px;">0% da receita</small>
+          </div>
+          <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color: #3b82f6; font-size: 12.5px; font-weight: 600;">(=) Margem Contribuição</div>
+            <div id="dre-kpi-margem" style="font-size: 22px; font-weight: 800; color: #3b82f6; margin-top: 4px;">R$ 0,00</div>
+            <small id="dre-kpi-margem-pct" style="color: #3b82f6; font-size: 11px; font-weight: 700;">0% líquida</small>
+          </div>
+          <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color: #8b5cf6; font-size: 12.5px; font-weight: 600;">(-) Despesas Fixas</div>
+            <div id="dre-kpi-despesas" style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin-top: 4px;">R$ 0,00</div>
+            <small style="color: var(--fin-text-muted); font-size: 11px;">Aluguel, equipe, energia</small>
+          </div>
+          <div style="background: rgba(34, 197, 94, 0.08); padding: 18px; border-radius: 12px; border: 1px solid rgba(34, 197, 94, 0.3); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color: #16a34a; font-size: 12.5px; font-weight: 700;">(=) Lucro Líquido Real</div>
+            <div id="dre-kpi-lucro" style="font-size: 22px; font-weight: 800; color: #16a34a; margin-top: 4px;">R$ 0,00</div>
+            <small id="dre-kpi-lucro-pct" style="color: #16a34a; font-size: 11px; font-weight: 700;">Margem Líquida: 0%</small>
+          </div>
+        </div>
+
+        <!-- Card Ponto de Equilíbrio & Cobertura de Custos Fixos -->
+        <div style="background: var(--fin-card); border: 1px solid var(--fin-border); border-radius: 14px; padding: 18px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="ph ph-target" style="color: #f59e0b; font-size: 22px;"></i>
+              <strong style="font-size: 15px; color: var(--fin-text);">Termômetro do Ponto de Equilíbrio (Break-Even Point)</strong>
+            </div>
+            <span id="dre-pe-badge-status" style="padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 12px; background: #fef3c7; color: #b45309;">
+              Calculando cobertura...
+            </span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px;">
+            <div>
+              <small style="color: var(--fin-text-muted); font-size: 11px;">Receita Operacional Líquida</small>
+              <div id="dre-pe-receita-atual" style="font-size: 18px; font-weight: 800; color: #0284c7;">R$ 0,00</div>
+            </div>
+            <div>
+              <small style="color: var(--fin-text-muted); font-size: 11px;">Meta Mínima para Cobrir Custos (Ponto de Equilíbrio)</small>
+              <div id="dre-pe-valor-meta" style="font-size: 18px; font-weight: 800; color: #f59e0b;">R$ 0,00</div>
+            </div>
+            <div>
+              <small style="color: var(--fin-text-muted); font-size: 11px;">Percentual de Cobertura</small>
+              <div id="dre-pe-pct-cobertura" style="font-size: 18px; font-weight: 800; color: var(--fin-text);">0%</div>
+            </div>
+          </div>
+
+          <!-- Barra de Progresso Visual -->
+          <div style="background: rgba(0,0,0,0.06); height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 8px;">
+            <div id="dre-pe-progresso-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #f59e0b, #10b981); transition: width 0.5s ease;"></div>
+          </div>
+          <p id="dre-pe-descricao-status" style="margin: 0; font-size: 12px; color: var(--fin-text-muted);">
+            Acompanhe o momento exato em que seu restaurante cobre todos os custos fixos e variáveis e passa a gerar lucro real.
+          </p>
+        </div>
+
+        <!-- Estrutura Contábil Detalhada do DRE -->
+        <div style="background: var(--fin-card); border: 1px solid var(--fin-border); border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 24px;">
+          <h3 style="margin: 0 0 16px 0; font-size: 16px; color: var(--fin-text); display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="ph ph-list-numbers" style="color:#fc4b15;"></i> Demonstrativo Contábil do Exercício</span>
+            <span id="dre-periodo-label" style="font-size: 12px; color: var(--fin-text-muted); font-weight: normal;">Período</span>
+          </h3>
+
+          <div class="tab-table-scroll">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--fin-border); text-align: left; background: rgba(0,0,0,0.02);">
+                  <th style="padding: 10px 14px;">Linha Contábil / Descrição</th>
+                  <th style="padding: 10px 14px; text-align: right;">Valor (R$)</th>
+                  <th style="padding: 10px 14px; text-align: right; width: 120px;">% s/ Receita Líq.</th>
+                  <th style="padding: 10px 14px; text-align: center; width: 140px;">Proporção Visual</th>
+                </tr>
+              </thead>
+              <tbody id="dre-tabela-corpo">
+                <!-- Preenchido via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!-- SECTION: CURVA ABC & ENGENHARIA DE CARDÁPIO                      -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <div id="section-curva-abc" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h1 style="margin: 0; font-size: 22px; display: flex; align-items: center; gap: 8px;">
+              <i class="ph ph-chart-donut" style="color: #6366f1;"></i> Curva ABC &amp; Engenharia de Cardápio
+            </h1>
+            <p style="margin: 4px 0 0 0; color: var(--fin-text-muted); font-size: 13px;">
+              Análise de Pareto (Classes A 80%, B 15%, C 5%) e Matriz de Lucratividade vs Popularidade.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <select id="abc-filtro-categoria" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-card); color: var(--fin-text); font-size: 13px; font-weight: 600;">
+              <option value="todas">Todas as Categorias</option>
+            </select>
+            <select id="abc-filtro-periodo" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-card); color: var(--fin-text); font-size: 13px; font-weight: 600;">
+              <option value="hoje">Hoje</option>
+              <option value="7dias">Últimos 7 Dias</option>
+              <option value="mes" selected>Este Mês</option>
+              <option value="mes_anterior">Mês Anterior</option>
+            </select>
+            <button id="btn-abc-recarregar" class="btn-action" style="padding: 8px 14px; background: #6366f1; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+              <i class="ph ph-arrows-clockwise"></i> Atualizar Curva ABC
+            </button>
+            <button id="btn-abc-exportar" class="btn-action" style="padding: 8px 14px; background: var(--fin-card); color: var(--fin-text); border: 1px solid var(--fin-border); border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+              <i class="ph ph-download-simple"></i> Exportar CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Matriz de Engenharia de Cardápio (Cards dos 4 Quadrantes) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 24px;">
+          <div onclick="filtrarPorQuadranteABC('Estrela')" class="quad-card-btn" style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 14px; padding: 18px; cursor: pointer; transition: all 0.2s;" title="Clique para filtrar apenas os Campeões">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 800; font-size: 15px; color: #16a34a;">⭐ Estrelas</span>
+              <span id="abc-badge-estrelas" style="padding: 2px 10px; border-radius: 12px; background: #16a34a; color: white; font-weight: 800; font-size: 12px;">0 itens</span>
+            </div>
+            <p style="font-size: 12px; color: var(--fin-text-muted); margin: 6px 0 0 0;">Alta popularidade &amp; Alta margem de lucro. Seus carros-chefes mais lucrativos.</p>
+          </div>
+
+          <div onclick="filtrarPorQuadranteABC('Cavalo de Carga')" class="quad-card-btn" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 14px; padding: 18px; cursor: pointer; transition: all 0.2s;" title="Clique para filtrar apenas Cavalos de Carga">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 800; font-size: 15px; color: #2563eb;">🐴 Cavalos de Carga</span>
+              <span id="abc-badge-cavalos" style="padding: 2px 10px; border-radius: 12px; background: #2563eb; color: white; font-weight: 800; font-size: 12px;">0 itens</span>
+            </div>
+            <p style="font-size: 12px; color: var(--fin-text-muted); margin: 6px 0 0 0;">Alta saída, margem apertada. Ajuste porções ou renegocie insumos.</p>
+          </div>
+
+          <div onclick="filtrarPorQuadranteABC('Quebra-Cabeça')" class="quad-card-btn" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 14px; padding: 18px; cursor: pointer; transition: all 0.2s;" title="Clique para filtrar apenas Quebra-Cabeças">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 800; font-size: 15px; color: #d97706;">🧩 Quebra-Cabeças</span>
+              <span id="abc-badge-puzzles" style="padding: 2px 10px; border-radius: 12px; background: #d97706; color: white; font-weight: 800; font-size: 12px;">0 itens</span>
+            </div>
+            <p style="font-size: 12px; color: var(--fin-text-muted); margin: 6px 0 0 0;">Alta margem, pouca saída. Estimule vendas com garçons e banners.</p>
+          </div>
+
+          <div onclick="filtrarPorQuadranteABC('Cão')" class="quad-card-btn" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 14px; padding: 18px; cursor: pointer; transition: all 0.2s;" title="Clique para filtrar apenas Cães">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 800; font-size: 15px; color: #dc2626;">🐕 Cães</span>
+              <span id="abc-badge-caes" style="padding: 2px 10px; border-radius: 12px; background: #dc2626; color: white; font-weight: 800; font-size: 12px;">0 itens</span>
+            </div>
+            <p style="font-size: 12px; color: var(--fin-text-muted); margin: 6px 0 0 0;">Baixa saída e baixa margem. Candidatos ideais para renovar no cardápio.</p>
+          </div>
+        </div>
+
+        <!-- Tabela Analítica Pareto ABC -->
+        <div style="background: var(--fin-card); border: 1px solid var(--fin-border); border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <h3 style="margin: 0; font-size: 16px; color: var(--fin-text);"><i class="ph ph-table"></i> Ranking de Faturamento &amp; Margem Unitária</h3>
+            <div style="display: flex; gap: 8px;">
+              <span style="padding: 4px 10px; border-radius: 8px; background: #dcfce7; color: #16a34a; font-weight: 700; font-size: 11.5px;">Classe A: até 80%</span>
+              <span style="padding: 4px 10px; border-radius: 8px; background: #fef3c7; color: #d97706; font-weight: 700; font-size: 11.5px;">Classe B: 80-95%</span>
+              <span style="padding: 4px 10px; border-radius: 8px; background: #fee2e2; color: #dc2626; font-weight: 700; font-size: 11.5px;">Classe C: 95-100%</span>
+            </div>
+          </div>
+
+          <div class="tab-table-scroll">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--fin-border); text-align: left; background: rgba(0,0,0,0.02);">
+                  <th style="padding: 10px 12px;">Item / Produto</th>
+                  <th style="padding: 10px 12px; text-align: center;">Qtd Vendida</th>
+                  <th style="padding: 10px 12px; text-align: right;">Preço Médio</th>
+                  <th style="padding: 10px 12px; text-align: right;">Custo Unit.</th>
+                  <th style="padding: 10px 12px; text-align: right;">Margem Unit.</th>
+                  <th style="padding: 10px 12px; text-align: right;">Faturamento</th>
+                  <th style="padding: 10px 12px; text-align: right;">% Acumulada</th>
+                  <th style="padding: 10px 12px; text-align: center;">Classe</th>
+                  <th style="padding: 10px 12px; text-align: center;">Quadrante</th>
+                </tr>
+              </thead>
+              <tbody id="abc-tabela-corpo">
+                <!-- Preenchido via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!-- SECTION: DESPESAS & CUSTOS OPERACIONAIS                           -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <div id="section-despesas" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h1 style="margin: 0; font-size: 22px; display: flex; align-items: center; gap: 8px;">
+              <i class="ph ph-minus-circle" style="color: #ef4444;"></i> Despesas Operacionais &amp; Contas a Pagar
+            </h1>
+            <p style="margin: 4px 0 0 0; color: var(--fin-text-muted); font-size: 13px;">
+              Controle de saídas, fornecedores, aluguel e custos fixos que alimentam o DRE do restaurante.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button id="btn-nova-despesa" class="btn-action" style="padding: 10px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(239,68,68,0.25);">
+              <i class="ph ph-plus-circle"></i> + Nova Despesa
+            </button>
+          </div>
+        </div>
+
+        <!-- Cards de Resumo de Despesas -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+          <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border);">
+            <div style="color: var(--fin-text-muted); font-size: 12.5px; font-weight: 600;">Total Lançado</div>
+            <div id="despesas-kpi-total" style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 4px;">R$ 0,00</div>
+          </div>
+          <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border);">
+            <div style="color: #16a34a; font-size: 12.5px; font-weight: 600;">Total Pago</div>
+            <div id="despesas-kpi-pagas" style="font-size: 22px; font-weight: 800; color: #16a34a; margin-top: 4px;">R$ 0,00</div>
+          </div>
+          <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border);">
+            <div style="color: #ea580c; font-size: 12.5px; font-weight: 600;">Pendente / A Pagar</div>
+            <div id="despesas-kpi-pendentes" style="font-size: 22px; font-weight: 800; color: #ea580c; margin-top: 4px;">R$ 0,00</div>
+          </div>
+        </div>
+
+        <!-- Filtros e Tabela de Despesas -->
+        <div style="background: var(--fin-card); border: 1px solid var(--fin-border); border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+          <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
+            <input type="text" id="despesas-filtro-busca" placeholder="🔍 Buscar por descrição..." style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 13px; min-width: 200px;">
+            <select id="despesas-filtro-categoria" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-card); color: var(--fin-text); font-size: 13px;">
+              <option value="todas">Todas as Categorias</option>
+              <option value="Aluguel">Aluguel / Imóvel</option>
+              <option value="Equipe">Equipe / Folha de Pagamento</option>
+              <option value="Insumos">Fornecedores &amp; Insumos</option>
+              <option value="Contas de Consumo">Energia / Água / Gás / Internet</option>
+              <option value="Marketing">Marketing / Tráfego / Anúncios</option>
+              <option value="Manutenção">Manutenção &amp; Equipamentos</option>
+              <option value="Outros">Outras Despesas</option>
+            </select>
+            <select id="despesas-filtro-status" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-card); color: var(--fin-text); font-size: 13px;">
+              <option value="todos">Todos os Status</option>
+              <option value="Pago">Apenas Pagas</option>
+              <option value="Pendente">Apenas Pendentes</option>
+            </select>
+            <button id="btn-despesas-recarregar" style="padding: 8px 14px; background: transparent; border: 1px solid var(--fin-border); border-radius: 8px; cursor: pointer; color: var(--fin-text); font-size: 13px;">
+              <i class="ph ph-arrows-clockwise"></i> Filtrar
+            </button>
+          </div>
+
+          <div class="tab-table-scroll">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--fin-border); text-align: left; background: rgba(0,0,0,0.02);">
+                  <th style="padding: 10px 12px;">Descrição</th>
+                  <th style="padding: 10px 12px;">Categoria</th>
+                  <th style="padding: 10px 12px;">Competência</th>
+                  <th style="padding: 10px 12px;">Vencimento</th>
+                  <th style="padding: 10px 12px; text-align: right;">Valor</th>
+                  <th style="padding: 10px 12px; text-align: center;">Status</th>
+                  <th style="padding: 10px 12px; text-align: center;">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="despesas-tabela-corpo">
+                <!-- Preenchido via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!-- SECTION: AUDITORIA DE TURNOS & HISTÓRICO DE FECHAMENTOS          -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <div id="section-turnos" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h1 style="margin: 0; font-size: 22px; display: flex; align-items: center; gap: 8px;">
+              <i class="ph ph-clock-counter-clockwise" style="color: #f59e0b;"></i> Histórico de Turnos &amp; Auditoria de Caixa
+            </h1>
+            <p style="margin: 4px 0 0 0; color: var(--fin-text-muted); font-size: 13px;">
+              Relatório permanente de conferência de turnos, apuração de quebra de caixa e justificativas de operadores.
+            </p>
+          </div>
+          <button id="btn-turnos-recarregar" class="btn-action" style="padding: 8px 14px; background: #f59e0b; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+            <i class="ph ph-arrows-clockwise"></i> Atualizar Histórico
+          </button>
+        </div>
+
+        <div style="background: var(--fin-card); border: 1px solid var(--fin-border); border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+          <div class="tab-table-scroll">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--fin-border); text-align: left; background: rgba(0,0,0,0.02);">
+                  <th style="padding: 10px 12px;">Turno</th>
+                  <th style="padding: 10px 12px;">Abertura / Encerramento</th>
+                  <th style="padding: 10px 12px;">Operador</th>
+                  <th style="padding: 10px 12px; text-align: right;">Fundo Troco</th>
+                  <th style="padding: 10px 12px; text-align: right;">Total Declarado</th>
+                  <th style="padding: 10px 12px; text-align: center;">Quebra de Caixa</th>
+                  <th style="padding: 10px 12px;">Justificativa</th>
+                  <th style="padding: 10px 12px; text-align: center;">Comprovante</th>
+                </tr>
+              </thead>
+              <tbody id="turnos-tabela-corpo">
+                <!-- Preenchido via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
-  <!-- Modal Fechamento -->
-  <div id="fechamento-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; padding: 16px;">
-    <div style="background: var(--fin-card); border-radius: 16px; padding: 24px; max-width: 850px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh; box-sizing: border-box;">
+  <!-- Modal Fechamento Avançado & Auditado -->
+  <div id="fechamento-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); align-items: center; justify-content: center; z-index: 1000; padding: 16px; backdrop-filter: blur(4px);">
+    <div style="background: var(--fin-card); border-radius: 16px; padding: 24px; max-width: 880px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: 92vh; box-sizing: border-box; border: 1px solid var(--fin-border);">
       
       <!-- Cabeçalho do Modal -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--fin-border); padding-bottom: 12px;">
         <div>
-          <h2 style="margin: 0; color: #1a202c; display: flex; align-items: center; gap: 8px; font-size: 20px;">
-            <i class="ph ph-receipt" style="color: #fc4b15;"></i> Relatório de Fechamento de Turno
+          <h2 style="margin: 0; color: var(--fin-text); display: flex; align-items: center; gap: 8px; font-size: 20px;">
+            <i class="ph ph-lock-key" style="color: #fc4b15;"></i> Fechamento de Caixa Auditado
           </h2>
-          <span id="fechamento-turno-info" style="font-size: 12px; color: #718096; margin-top: 4px; display: block;">Turno em andamento</span>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+            <span id="fechamento-turno-info" style="font-size: 12px; color: var(--fin-text-muted);">Turno em andamento</span>
+            <span id="fechamento-modo-badge" style="padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; background: #e0e7ff; color: #4338ca;">Modo: Conferência Cega</span>
+          </div>
         </div>
-        <div class="modal-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button id="btn-fechamento-salvar-txt" style="padding: 8px 14px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-            <i class="ph ph-file-text"></i> Salvar Local (TXT)
+        <div class="modal-actions" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <button id="btn-fechamento-salvar-txt" style="padding: 7px 12px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12.5px; display: flex; align-items: center; gap: 5px;">
+            <i class="ph ph-file-text"></i> TXT
           </button>
-          <button id="btn-fechamento-sheets" style="padding: 8px 14px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-            <i class="ph ph-microsoft-excel"></i> Enviar Sheets
+          <button id="btn-fechamento-sheets" style="padding: 7px 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12.5px; display: flex; align-items: center; gap: 5px;">
+            <i class="ph ph-microsoft-excel"></i> CSV
           </button>
-          <button id="btn-fechamento-wa" style="padding: 8px 14px; background: #25d366; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-            <i class="ph ph-whatsapp-logo"></i> Enviar WhatsApp
+          <button id="btn-fechamento-wa" style="padding: 7px 12px; background: #25d366; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12.5px; display: flex; align-items: center; gap: 5px;">
+            <i class="ph ph-whatsapp-logo"></i> WhatsApp
           </button>
-          <button id="btn-print" style="padding: 8px 14px; background: #3ab55b; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-            <i class="ph ph-printer"></i> Imprimir e Encerrar
-          </button>
-          <button onclick="document.getElementById('fechamento-modal').style.display='none'" style="padding: 6px; background: transparent; border: none; font-size: 24px; cursor: pointer; color: #718096;"><i class="ph ph-x"></i></button>
+          <button onclick="document.getElementById('fechamento-modal').style.display='none'" style="padding: 6px; background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--fin-text-muted);"><i class="ph ph-x"></i></button>
         </div>
       </div>
       
       <div style="overflow-y: auto; padding-right: 8px; margin-bottom: 16px;" id="fechamento-print-area">
         
-        <!-- Métricas de Itens e Pedidos -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; background: #f8fafc; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="background: #e0f2fe; color: #0284c7; padding: 10px; border-radius: 10px;"><i class="ph ph-receipt" style="font-size: 20px;"></i></div>
+        <!-- Instruções de Conferência -->
+        <div id="fechamento-instrucoes-box" style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: var(--fin-text);">
+          <i class="ph ph-shield-check" style="color: #6366f1; font-size: 16px; margin-right: 4px;"></i>
+          <strong>Conferência Física de Valores:</strong> Conte o dinheiro da gaveta e os comprovantes de maquininha/PIX. Digite os valores reais apurados fisicamente para validação do turno.
+        </div>
+
+        <!-- Bloco de Contagem Física (Inputs Declarados) -->
+        <div style="background: var(--fin-card); border: 1px solid var(--fin-border); border-radius: 12px; padding: 16px; margin-bottom: 18px;">
+          <h3 style="margin: 0 0 12px 0; font-size: 14.5px; color: var(--fin-text); display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="ph ph-coins" style="color: #f59e0b;"></i> Contagem Física Declarada pelo Operador</span>
+            <span style="font-size: 12px; color: var(--fin-text-muted);">Campos em Reais (R$)</span>
+          </h3>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px;">
             <div>
-              <div style="font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase;">Total de Pedidos</div>
-              <div id="fechamento-total-pedidos" style="font-size: 20px; font-weight: 800; color: #0f172a;">0</div>
+              <label style="font-size: 11.5px; font-weight: 600; color: var(--fin-text-muted); display: block; margin-bottom: 4px;">Cédulas (Dinheiro)</label>
+              <input type="number" step="0.01" min="0" id="contagem-cedulas" placeholder="0.00" class="contagem-input" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 14px; font-weight: bold; box-sizing: border-box;">
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 600; color: var(--fin-text-muted); display: block; margin-bottom: 4px;">Moedas</label>
+              <input type="number" step="0.01" min="0" id="contagem-moedas" placeholder="0.00" class="contagem-input" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 14px; font-weight: bold; box-sizing: border-box;">
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 600; color: #0284c7; display: block; margin-bottom: 4px;">Cartão Débito</label>
+              <input type="number" step="0.01" min="0" id="contagem-debito" placeholder="0.00" class="contagem-input" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 14px; font-weight: bold; box-sizing: border-box;">
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 600; color: #2563eb; display: block; margin-bottom: 4px;">Cartão Crédito</label>
+              <input type="number" step="0.01" min="0" id="contagem-credito" placeholder="0.00" class="contagem-input" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 14px; font-weight: bold; box-sizing: border-box;">
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 600; color: #ea580c; display: block; margin-bottom: 4px;">PIX Conferido</label>
+              <input type="number" step="0.01" min="0" id="contagem-pix" placeholder="0.00" class="contagem-input" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 14px; font-weight: bold; box-sizing: border-box;">
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 600; color: var(--fin-text-muted); display: block; margin-bottom: 4px;">Voucher / Outros</label>
+              <input type="number" step="0.01" min="0" id="contagem-outros" placeholder="0.00" class="contagem-input" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 14px; font-weight: bold; box-sizing: border-box;">
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="background: #fef3c7; color: #d97706; padding: 10px; border-radius: 10px;"><i class="ph ph-package" style="font-size: 20px;"></i></div>
-            <div>
-              <div style="font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase;">Itens Vendidos</div>
-              <div id="fechamento-total-itens" style="font-size: 20px; font-weight: 800; color: #0f172a;">0x</div>
-            </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="background: #dcfce7; color: #16a34a; padding: 10px; border-radius: 10px;"><i class="ph ph-currency-dollar" style="font-size: 20px;"></i></div>
-            <div>
-              <div style="font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase;">Total Faturado</div>
-              <div id="fechamento-total-faturado" style="font-size: 20px; font-weight: 800; color: #16a34a;">R$ 0,00</div>
-            </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px dashed var(--fin-border);">
+            <span style="font-size: 13px; color: var(--fin-text-muted); font-weight: 600;">Total Físico Declarado:</span>
+            <span id="contagem-total-declarado" style="font-size: 18px; font-weight: 800; color: #fc4b15;">R$ 0,00</span>
           </div>
         </div>
 
-        <h3 style="margin-top: 0; margin-bottom: 12px; color: #1e293b; font-size: 15px;">Arrecadação Financeira Detalhada</h3>
-        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 24px;">
-          <div class="stat-card" style="padding: 12px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0;">
-            <h3 style="font-size: 12px; color: #64748b;">Fundo Troco</h3>
-            <p id="fechamento-fundo" style="color: #334155; font-size: 16px; font-weight: bold; margin: 4px 0 0 0;">R$ 0,00</p>
+        <!-- Painel de Apuração e Quebra de Caixa (Sobra/Falta) -->
+        <div id="fechamento-conferencia-painel" style="background: rgba(0,0,0,0.02); border: 1px solid var(--fin-border); border-radius: 12px; padding: 16px; margin-bottom: 18px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <h3 style="margin: 0; font-size: 14.5px; color: var(--fin-text);"><i class="ph ph-scales"></i> Apuração &amp; Comparativo com o Sistema</h3>
+            <span id="quebra-status-badge" style="padding: 3px 10px; border-radius: 12px; font-weight: 800; font-size: 12px; background: #e2e8f0; color: #475569;">Aguardando contagem</span>
           </div>
-          <div class="stat-card" style="padding: 12px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0;">
-            <h3 style="font-size: 12px; color: #64748b;">Dinheiro</h3>
-            <p id="fechamento-dinheiro" style="color: #16a34a; font-size: 16px; font-weight: bold; margin: 4px 0 0 0;">R$ 0,00</p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px;">
+            <div style="background: var(--fin-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--fin-border);">
+              <small style="color: var(--fin-text-muted); font-size: 11px;">Esperado Gaveta</small>
+              <div id="fechamento-gaveta-esperada" style="font-weight: 700; font-size: 15px; color: var(--fin-text);">R$ 0,00</div>
+            </div>
+            <div style="background: var(--fin-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--fin-border);">
+              <small style="color: var(--fin-text-muted); font-size: 11px;">Dinheiro Declarado</small>
+              <div id="fechamento-dinheiro-declarado" style="font-weight: 700; font-size: 15px; color: var(--fin-text);">R$ 0,00</div>
+            </div>
+            <div style="background: var(--fin-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--fin-border);">
+              <small style="color: var(--fin-text-muted); font-size: 11px;">Quebra Gaveta</small>
+              <div id="fechamento-diferenca-gaveta" style="font-weight: 800; font-size: 15px; color: #16a34a;">R$ 0,00</div>
+            </div>
+            <div style="background: var(--fin-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--fin-border);">
+              <small style="color: var(--fin-text-muted); font-size: 11px;">Diferença Geral</small>
+              <div id="fechamento-diferenca-geral" style="font-weight: 800; font-size: 15px; color: #16a34a;">R$ 0,00</div>
+            </div>
           </div>
-          <div class="stat-card" style="padding: 12px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0;">
-            <h3 style="font-size: 12px; color: #64748b;">Pix</h3>
-            <p id="fechamento-pix" style="color: #ea580c; font-size: 16px; font-weight: bold; margin: 4px 0 0 0;">R$ 0,00</p>
-          </div>
-          <div class="stat-card" style="padding: 12px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0;">
-            <h3 style="font-size: 12px; color: #64748b;">Crédito</h3>
-            <p id="fechamento-credito" style="color: #2563eb; font-size: 16px; font-weight: bold; margin: 4px 0 0 0;">R$ 0,00</p>
-          </div>
-          <div class="stat-card" style="padding: 12px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0;">
-            <h3 style="font-size: 12px; color: #64748b;">Débito</h3>
-            <p id="fechamento-debito" style="color: #0284c7; font-size: 16px; font-weight: bold; margin: 4px 0 0 0;">R$ 0,00</p>
-          </div>
-          <div class="stat-card" style="padding: 12px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0;">
-            <h3 style="font-size: 12px; color: #64748b;">Fiado</h3>
-            <p id="fechamento-fiado" style="color: #9333ea; font-size: 16px; font-weight: bold; margin: 4px 0 0 0;">R$ 0,00</p>
+
+          <!-- Campo de Justificativa de Divergência -->
+          <div id="fechamento-justificativa-box" style="margin-top: 10px;">
+            <label style="font-size: 12px; font-weight: 600; color: var(--fin-text); display: block; margin-bottom: 4px;">
+              Justificativa da Divergência (obrigatório se houver sobra ou falta):
+            </label>
+            <input type="text" id="fechamento-justificativa" placeholder="Ex: Diferença de troco registrado na mesa 4, sangria sem comprovante, etc." style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 13px; box-sizing: border-box;">
           </div>
         </div>
 
-        <h3 style="margin: 20px 0 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 6px; color: #1e293b; font-size: 15px;">Produtos mais Vendidos no Turno</h3>
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+        <!-- Arrecadação por Formas de Pagamento Registradas -->
+        <h4 style="margin: 16px 0 8px; color: var(--fin-text-muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Resumo Registrado no Sistema</h4>
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 16px;">
+          <div class="stat-card" style="padding: 10px; border-radius: 8px; background: var(--fin-card); border: 1px solid var(--fin-border);">
+            <h3 style="font-size: 11px; color: var(--fin-text-muted);">Fundo Troco</h3>
+            <p id="fechamento-fundo" style="color: var(--fin-text); font-size: 14px; font-weight: bold; margin: 2px 0 0 0;">R$ 0,00</p>
+          </div>
+          <div class="stat-card" style="padding: 10px; border-radius: 8px; background: var(--fin-card); border: 1px solid var(--fin-border);">
+            <h3 style="font-size: 11px; color: var(--fin-text-muted);">Dinheiro</h3>
+            <p id="fechamento-dinheiro" style="color: #16a34a; font-size: 14px; font-weight: bold; margin: 2px 0 0 0;">R$ 0,00</p>
+          </div>
+          <div class="stat-card" style="padding: 10px; border-radius: 8px; background: var(--fin-card); border: 1px solid var(--fin-border);">
+            <h3 style="font-size: 11px; color: var(--fin-text-muted);">Pix</h3>
+            <p id="fechamento-pix" style="color: #ea580c; font-size: 14px; font-weight: bold; margin: 2px 0 0 0;">R$ 0,00</p>
+          </div>
+          <div class="stat-card" style="padding: 10px; border-radius: 8px; background: var(--fin-card); border: 1px solid var(--fin-border);">
+            <h3 style="font-size: 11px; color: var(--fin-text-muted);">Crédito</h3>
+            <p id="fechamento-credito" style="color: #2563eb; font-size: 14px; font-weight: bold; margin: 2px 0 0 0;">R$ 0,00</p>
+          </div>
+          <div class="stat-card" style="padding: 10px; border-radius: 8px; background: var(--fin-card); border: 1px solid var(--fin-border);">
+            <h3 style="font-size: 11px; color: var(--fin-text-muted);">Débito</h3>
+            <p id="fechamento-debito" style="color: #0284c7; font-size: 14px; font-weight: bold; margin: 2px 0 0 0;">R$ 0,00</p>
+          </div>
+          <div class="stat-card" style="padding: 10px; border-radius: 8px; background: var(--fin-card); border: 1px solid var(--fin-border);">
+            <h3 style="font-size: 11px; color: var(--fin-text-muted);">Total Faturado</h3>
+            <p id="fechamento-total-faturado" style="color: #fc4b15; font-size: 14px; font-weight: bold; margin: 2px 0 0 0;">R$ 0,00</p>
+          </div>
+        </div>
+
+        <h4 style="margin: 16px 0 8px; color: var(--fin-text-muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Produtos mais Vendidos no Turno</h4>
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12.5px;">
           <thead>
-            <tr style="border-bottom: 1px solid #cbd5e1; background: #f8fafc;">
+            <tr style="border-bottom: 1px solid var(--fin-border); background: rgba(0,0,0,0.02);">
               <th style="padding: 8px;">Produto</th>
-              <th style="padding: 8px; text-align: center;">Qtd Vendida</th>
-              <th style="padding: 8px; text-align: right;">Total Arrecadado</th>
+              <th style="padding: 8px; text-align: center;">Qtd</th>
+              <th style="padding: 8px; text-align: right;">Total</th>
             </tr>
           </thead>
-          <tbody id="fechamento-produtos">
-            <!-- JS Populates -->
-          </tbody>
+          <tbody id="fechamento-produtos"></tbody>
         </table>
+      </div>
+
+      <!-- Rodapé de Ações do Fechamento -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--fin-border); padding-top: 14px; flex-wrap: wrap; gap: 10px;">
+        <button onclick="document.getElementById('fechamento-modal').style.display='none'" style="padding: 10px 18px; border-radius: 8px; background: transparent; border: 1px solid var(--fin-border); color: var(--fin-text); font-weight: 600; cursor: pointer; font-size: 13px;">
+          Cancelar / Continuar Operação
+        </button>
+        <button id="btn-confirmar-fechamento-auditado" style="padding: 11px 24px; border-radius: 8px; background: #eb5757; color: white; border: none; font-weight: 800; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(235,87,87,0.35);">
+          <i class="ph ph-lock-key"></i> Confirmar Fechamento &amp; Encerrar Turno
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Modal Exportação -->
+  <!-- Modal Configurações Financeiras & Regras de Execução -->
+  <div id="modal-config-financeiro" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1002; padding: 16px; backdrop-filter: blur(4px);">
+    <div style="background: var(--fin-card); border-radius: 16px; padding: 24px; max-width: 500px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--fin-border);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--fin-border); padding-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 18px; color: var(--fin-text); display: flex; align-items: center; gap: 8px;">
+          <i class="ph ph-sliders" style="color: #fc4b15;"></i> Parâmetros Financeiros &amp; BI
+        </h3>
+        <button onclick="document.getElementById('modal-config-financeiro').style.display='none'" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: var(--fin-text-muted);"><i class="ph ph-x"></i></button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: var(--fin-text); display: block; margin-bottom: 4px;">Modo do Fechamento de Caixa *</label>
+          <select id="cfg-fechamento-modo" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 13.5px; box-sizing: border-box;">
+            <option value="cego">Conferência Cega (Recomendado - Operador não vê totais antes de declarar)</option>
+            <option value="aberto">Conferência Aberta (Operador vê totais do sistema durante a contagem)</option>
+          </select>
+          <small style="font-size: 11px; color: var(--fin-text-muted); margin-top: 4px; display: block;">No modo cego, evita que o operador ajuste valores antes de auditar gaveta e maquininhas.</small>
+        </div>
+
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: var(--fin-text); display: block; margin-bottom: 4px;">CMV Padrão Paramétrico (%) *</label>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="number" step="0.5" min="0" max="100" id="cfg-cmv-padrao" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 14px; font-weight: bold; box-sizing: border-box;">
+            <span style="font-weight: 700; color: var(--fin-text); font-size: 14px;">%</span>
+          </div>
+          <small style="font-size: 11px; color: var(--fin-text-muted); margin-top: 4px; display: block;">Aplicado automaticamente no DRE em pratos que ainda não possuem Preço de Custo cadastrado.</small>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.02); padding: 12px; border-radius: 10px; border: 1px solid var(--fin-border);">
+          <label style="font-size: 12px; font-weight: 700; color: var(--fin-text); display: block; margin-bottom: 8px;">Taxas Médias de Pagamentos (%)</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+            <div>
+              <span style="font-size: 11px; color: var(--fin-text-muted); display: block;">Débito</span>
+              <input type="number" step="0.1" min="0" max="20" id="cfg-taxa-debito" style="width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 13px; font-weight: bold; box-sizing: border-box;">
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--fin-text-muted); display: block;">Crédito</span>
+              <input type="number" step="0.1" min="0" max="30" id="cfg-taxa-credito" style="width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 13px; font-weight: bold; box-sizing: border-box;">
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--fin-text-muted); display: block;">PIX</span>
+              <input type="number" step="0.1" min="0" max="10" id="cfg-taxa-pix" style="width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 13px; font-weight: bold; box-sizing: border-box;">
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; border-top: 1px solid var(--fin-border); padding-top: 14px;">
+          <button onclick="document.getElementById('modal-config-financeiro').style.display='none'" style="padding: 9px 16px; border-radius: 8px; background: transparent; border: 1px solid var(--fin-border); color: var(--fin-text); font-weight: 600; cursor: pointer; font-size: 13px;">
+            Cancelar
+          </button>
+          <button id="btn-salvar-config-financeiro" style="padding: 9px 20px; border-radius: 8px; background: #fc4b15; color: white; border: none; font-weight: 700; cursor: pointer; font-size: 13px;">
+            Salvar Parâmetros
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nova Despesa Operacional -->
+  <div id="modal-nova-despesa" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1001; padding: 16px; backdrop-filter: blur(4px);">
+    <div style="background: var(--fin-card); border-radius: 16px; padding: 24px; max-width: 520px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--fin-border);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--fin-border); padding-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 18px; color: var(--fin-text); display: flex; align-items: center; gap: 8px;">
+          <i class="ph ph-plus-circle" style="color: #ef4444;"></i> Nova Despesa Operacional
+        </h3>
+        <button onclick="document.getElementById('modal-nova-despesa').style.display='none'" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: var(--fin-text-muted);"><i class="ph ph-x"></i></button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--fin-text-muted); display: block; margin-bottom: 4px;">Descrição da Despesa *</label>
+          <input type="text" id="despesa-input-descricao" placeholder="Ex: Aluguel do Mês, Conta de Luz, Reposição de Hortifruti" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 13.5px; box-sizing: border-box;">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="font-size: 12px; font-weight: 600; color: var(--fin-text-muted); display: block; margin-bottom: 4px;">Categoria *</label>
+            <select id="despesa-input-categoria" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 13px; box-sizing: border-box;">
+              <option value="Aluguel">Aluguel / Imóvel</option>
+              <option value="Equipe">Equipe / Salários</option>
+              <option value="Insumos">Fornecedores / Insumos</option>
+              <option value="Contas de Consumo">Energia / Água / Gás / Internet</option>
+              <option value="Marketing">Marketing / Anúncios</option>
+              <option value="Manutenção">Manutenção</option>
+              <option value="Outros">Outras Despesas</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 600; color: var(--fin-text-muted); display: block; margin-bottom: 4px;">Valor (R$) *</label>
+            <input type="number" step="0.01" min="0.01" id="despesa-input-valor" placeholder="0.00" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 13.5px; font-weight: bold; box-sizing: border-box;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="font-size: 12px; font-weight: 600; color: var(--fin-text-muted); display: block; margin-bottom: 4px;">Data Competência</label>
+            <input type="date" id="despesa-input-competencia" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 13px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 600; color: var(--fin-text-muted); display: block; margin-bottom: 4px;">Status Inicial</label>
+            <select id="despesa-input-status" style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 13px; box-sizing: border-box;">
+              <option value="Pago">Pago</option>
+              <option value="Pendente">Pendente (A Pagar)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--fin-text-muted); display: block; margin-bottom: 4px;">Observação (opcional)</label>
+          <input type="text" id="despesa-input-obs" placeholder="Ex: Pago via PIX pelo Dono" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--fin-border); background: var(--fin-bg); color: var(--fin-text); font-size: 13px; box-sizing: border-box;">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; border-top: 1px solid var(--fin-border); padding-top: 14px;">
+          <button onclick="document.getElementById('modal-nova-despesa').style.display='none'" style="padding: 9px 16px; border-radius: 8px; background: transparent; border: 1px solid var(--fin-border); color: var(--fin-text); font-weight: 600; cursor: pointer; font-size: 13px;">
+            Cancelar
+          </button>
+          <button id="btn-despesa-salvar-modal" style="padding: 9px 20px; border-radius: 8px; background: #ef4444; color: white; border: none; font-weight: 700; cursor: pointer; font-size: 13px;">
+            Salvar Despesa
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detalhes & Reimpressão de Turno de Caixa -->
+  <div id="modal-detalhes-turno" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); align-items: center; justify-content: center; z-index: 1010; padding: 16px; backdrop-filter: blur(4px);">
+    <div style="background: var(--fin-card); border-radius: 16px; padding: 24px; max-width: 680px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: 90vh; border: 1px solid var(--fin-border);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--fin-border); padding-bottom: 12px;">
+        <h3 id="mdt-titulo" style="margin: 0; font-size: 18px; color: var(--fin-text); display: flex; align-items: center; gap: 8px;">
+          <i class="ph ph-receipt" style="color: #fc4b15;"></i> Detalhes do Turno
+        </h3>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button id="btn-mdt-reimprimir" style="padding: 6px 12px; border-radius: 8px; background: #fc4b15; color: white; border: none; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+            <i class="ph ph-printer"></i> Imprimir Cupom
+          </button>
+          <button id="btn-mdt-whatsapp" style="padding: 6px 12px; border-radius: 8px; background: #25d366; color: white; border: none; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+            <i class="ph ph-whatsapp-logo"></i> WhatsApp
+          </button>
+          <button onclick="document.getElementById('modal-detalhes-turno').style.display='none'" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: var(--fin-text-muted);"><i class="ph ph-x"></i></button>
+        </div>
+      </div>
+
+      <div style="overflow-y: auto; padding-right: 6px; font-size: 13px;">
+        <!-- Cabeçalho do turno -->
+        <div style="background: rgba(0,0,0,0.03); border: 1px solid var(--fin-border); border-radius: 12px; padding: 14px; margin-bottom: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
+          <div>
+            <span style="color: var(--fin-text-muted); font-size: 11px; display: block;">Período do Turno:</span>
+            <strong id="mdt-datas" style="color: var(--fin-text); font-size: 12.5px;">-</strong>
+          </div>
+          <div>
+            <span style="color: var(--fin-text-muted); font-size: 11px; display: block;">Operador Responsável:</span>
+            <strong id="mdt-operador" style="color: var(--fin-text); font-size: 12.5px;">-</strong>
+          </div>
+          <div>
+            <span style="color: var(--fin-text-muted); font-size: 11px; display: block;">Situação da Quebra:</span>
+            <span id="mdt-quebra-badge" style="padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 11.5px; display: inline-block;">-</span>
+          </div>
+        </div>
+
+        <!-- Tabela Comparativa de Auditoria -->
+        <h4 style="margin: 0 0 8px 0; color: var(--fin-text); font-size: 13px; text-transform: uppercase;">Conferência de Valores Declarados vs Sistema</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12.5px;">
+          <thead>
+            <tr style="background: rgba(0,0,0,0.02); border-bottom: 1px solid var(--fin-border); text-align: left;">
+              <th style="padding: 8px;">Forma / Item</th>
+              <th style="padding: 8px; text-align: right;">Esperado Sistema</th>
+              <th style="padding: 8px; text-align: right;">Declarado Operador</th>
+              <th style="padding: 8px; text-align: right;">Divergência</th>
+            </tr>
+          </thead>
+          <tbody id="mdt-tabela-conferencia">
+            <!-- Preenchido via JS -->
+          </tbody>
+        </table>
+
+        <!-- Justificativa -->
+        <div id="mdt-justificativa-box" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 12px; margin-bottom: 16px;">
+          <strong style="color: #d97706; display: block; margin-bottom: 4px;">Justificativa Registrada pelo Operador:</strong>
+          <span id="mdt-justificativa-texto" style="color: var(--fin-text);">-</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Modal Exportação -->
   <div id="export-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1001; padding: 24px;">
     <div style="background: var(--fin-card); border-radius: 12px; padding: 28px; max-width: 500px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">

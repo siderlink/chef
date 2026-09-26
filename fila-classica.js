@@ -1,4 +1,4 @@
-﻿const HOST = window.location.hostname;
+const HOST = window.location.hostname;
 // Parse timestamps stored as UTC in DB (SQLite datetime('now') = UTC)
 function parseUtc(s) { if (!s) return Date.now(); const t = s.includes('T') ? s : s + 'Z'; const d = new Date(t); return isNaN(d.getTime()) ? Date.now() : d.getTime(); }
 // (Seguran├ºa) Escapa valor para string JS dentro de onclick.
@@ -162,11 +162,35 @@ function carregarPedidos() {
   }
 }
 
+function atualizarStatusConexao(online) {
+  const badge = document.getElementById('kds-connection-badge');
+  const text = document.getElementById('kds-conn-text');
+  if (!badge || !text) return;
+  if (online) {
+    badge.className = 'kds-conn-badge online';
+    badge.title = 'Conectado ao servidor (tempo real ativo)';
+    text.textContent = 'Online';
+  } else {
+    badge.className = 'kds-conn-badge reconnecting';
+    badge.title = 'Desconectado do servidor. Tentando reconectar...';
+    text.textContent = 'Reconectando...';
+  }
+}
+
 socket.on('connect', () => {
+  atualizarStatusConexao(true);
   carregarPedidos();
   aplicarFiltrosSalvos();
   sincronizarSecoesFilaDoServidor();
   socket.emit('get_produtos');
+});
+
+socket.on('disconnect', () => {
+  atualizarStatusConexao(false);
+});
+
+socket.on('connect_error', () => {
+  atualizarStatusConexao(false);
 });
 
 socket.on('produtos_atualizados', (prods) => {
@@ -461,25 +485,27 @@ function playOrderSoundAndVibrate(status = 'Em espera', sector = '') {
 }
 
 socket.on('pedidos_atualizados', (data) => {
-  if (Array.isArray(data)) {
-    const oldIds = new Set(queueData.map(p => p.id));
-    queueData = data;
-    let newestId = null;
-    data.forEach(p => {
-      if (!oldIds.has(p.id)) {
-        newOrderIds.add(safeId(p.id));
-        newestId = p.id;
-        setTimeout(() => {
-          newOrderIds.delete(safeId(p.id));
-          renderQueue();
-        }, (iaConfig.segundosPulseNovoPedido || 8) * 1000);
-      }
-    });
-    renderQueue();
-    renderizarSecoesFila();
-    if (newestId) {
-      autoScrollToNewOrders(newestId);
+  if (!data || !Array.isArray(data)) {
+    if (socket && socket.emit) socket.emit('get_pedidos');
+    return;
+  }
+  const oldIds = new Set(queueData.map(p => p.id));
+  queueData = data;
+  let newestId = null;
+  data.forEach(p => {
+    if (!oldIds.has(p.id)) {
+      newOrderIds.add(safeId(p.id));
+      newestId = p.id;
+      setTimeout(() => {
+        newOrderIds.delete(safeId(p.id));
+        renderQueue();
+      }, (iaConfig.segundosPulseNovoPedido || 8) * 1000);
     }
+  });
+  renderQueue();
+  renderizarSecoesFila();
+  if (newestId) {
+    autoScrollToNewOrders(newestId);
   }
 });
 
@@ -499,6 +525,19 @@ socket.on('pedido_adicionado', (pedido) => {
   }
 });
 
+window.setAutoscrollMode = function(enabled) {
+  localStorage.setItem('chef_kds_autoscroll', enabled ? 'true' : 'false');
+  atualizarBotoesAutoscroll();
+};
+
+function atualizarBotoesAutoscroll() {
+  const enabled = localStorage.getItem('chef_kds_autoscroll') !== 'false';
+  const btnOn = document.getElementById('btn-autoscroll-on');
+  const btnOff = document.getElementById('btn-autoscroll-off');
+  if (btnOn) btnOn.classList.toggle('active', enabled);
+  if (btnOff) btnOff.classList.toggle('active', !enabled);
+}
+
 let scrollTimer = null;
 function autoScrollToNewOrders(targetId) {
   requestAnimationFrame(() => {
@@ -509,24 +548,33 @@ function autoScrollToNewOrders(targetId) {
     if (!targetEl) targetEl = document.querySelector('.queue-item.is-new');
 
     const pulseSecs = parseInt(localStorage.getItem('chef_kds_pulse_seconds')) || 3;
+    const isAutoscrollEnabled = localStorage.getItem('chef_kds_autoscroll') !== 'false';
 
     if (targetEl) {
-      // 1. Rolar suavemente at├® o pedido no final/posi├º├úo da fila
-      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // 1. Rolar suavemente até o pedido se o autoscroll estiver ativado
+      if (isAutoscrollEnabled) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       targetEl.classList.add('new-order-entry-pulse');
 
-      // 2. Tocar som configurado (por se├º├úo e etapa) e vibrar o celular
+      // 2. Tocar som configurado (por seção e etapa) e vibrar o celular
       const novoPedido = queueData.find(x => x.id === targetId);
       playOrderSoundAndVibrate(novoPedido ? novoPedido.status : 'Em espera', novoPedido ? novoPedido.sector : '');
 
-      // 3. Ap├│s o tempo configurado (ex: 3s), rolar de volta suavemente para o topo da tela
-      if (scrollTimer) clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(() => {
-        queueSection.scrollTo({ top: 0, behavior: 'smooth' });
+      // 3. Após o tempo configurado (ex: 3s), rolar de volta suavemente para o topo se autoscroll ligado
+      if (isAutoscrollEnabled) {
+        if (scrollTimer) clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => {
+          queueSection.scrollTo({ top: 0, behavior: 'smooth' });
+          setTimeout(() => {
+            if (targetEl) targetEl.classList.remove('new-order-entry-pulse');
+          }, 1000);
+        }, pulseSecs * 1000);
+      } else {
         setTimeout(() => {
           if (targetEl) targetEl.classList.remove('new-order-entry-pulse');
-        }, 1000);
-      }, pulseSecs * 1000);
+        }, pulseSecs * 1000);
+      }
     }
   });
 }
@@ -719,11 +767,67 @@ window.filtrarFila = function(statusText) {
   renderQueue();
 };
 
-window.alterarStatusPedido = function(id, novoStatus) {
-  socket.emit('atualizar_status', { id, status: novoStatus });
+let undoToastTimeout = null;
+function mostrarToastUndo(id, productName, localName, statusAnterior, novoStatus) {
+  const container = document.getElementById('kds-undo-container');
+  if (!container) return;
+
+  container.innerHTML = '';
+  if (undoToastTimeout) clearTimeout(undoToastTimeout);
+
+  const toast = document.createElement('div');
+  toast.className = 'kds-undo-toast';
+  toast.innerHTML = `
+    <div class="kds-undo-content">
+      <i class="ph ph-check-circle" style="color: #10b981; font-size: 18px;"></i>
+      <span><strong>${escHtml(productName || 'Item')}</strong> (${escHtml(localName || 'Mesa')}) → <em>${escHtml(novoStatus)}</em></span>
+    </div>
+    <button class="kds-undo-btn" id="btn-undo-action" title="Desfazer e voltar para ${escHtml(statusAnterior)}">
+      <i class="ph ph-arrow-u-up-left"></i> Desfazer
+    </button>
+    <div class="kds-undo-progress"></div>
+  `;
+
+  const btnUndo = toast.querySelector('#btn-undo-action');
+  if (btnUndo) {
+    btnUndo.onclick = function() {
+      if (undoToastTimeout) clearTimeout(undoToastTimeout);
+      toast.remove();
+      window.alterarStatusPedido(id, statusAnterior, true);
+    };
+  }
+
+  container.appendChild(toast);
+  undoToastTimeout = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => toast.remove(), 350);
+  }, 5000);
+}
+
+window.alterarStatusPedido = function(id, novoStatus, isUndo = false) {
   const p = queueData.find(x => x.id === id);
-  if (p) {
+  if (!p) {
+    socket.emit('atualizar_status', { id, status: novoStatus });
+    return;
+  }
+
+  const statusAnterior = p.status;
+  if (!isUndo && statusAnterior !== novoStatus) {
+    mostrarToastUndo(id, p.productName, p.localName, statusAnterior, novoStatus);
+  }
+
+  const cardEl = document.querySelector(`.queue-item[data-id="${safeId(id)}"]`);
+  if (cardEl && !isUndo) {
+    cardEl.classList.add('item-exiting');
+    setTimeout(() => {
+      p.status = novoStatus;
+      socket.emit('atualizar_status', { id, status: novoStatus });
+      renderQueue();
+    }, 220);
+  } else {
     p.status = novoStatus;
+    socket.emit('atualizar_status', { id, status: novoStatus });
     renderQueue();
   }
 };
@@ -824,12 +928,30 @@ function renderQueue() {
     return filaSortDelay ? (tb - ta) : (ta - tb);
   });
 
+  const queueMode = localStorage.getItem('modo_disposicao_fila') || 'lista';
+  const isModoTv = queueMode === 'tv';
+
   if (filtered.length === 0) {
-    queueList.innerHTML = `
-      <div style="text-align: center; padding: 40px; color: #94a3b8;">
-        <i class="ph ph-check-circle" style="font-size: 44px; color: #cbd5e1; margin-bottom: 8px;"></i>
-        <div style="font-size: 15px; font-weight: 600; color: #64748b;">Nenhum pedido pendente nesta fila</div>
+    const emptyHtml = `
+      <div class="queue-list${isModoTv ? ' modo-tv' : ''}" id="queue-list">
+        <div style="text-align: center; padding: 40px; color: #94a3b8;">
+          <i class="ph ph-check-circle" style="font-size: 44px; color: #cbd5e1; margin-bottom: 8px;"></i>
+          <div style="font-size: 15px; font-weight: 600; color: #64748b;">Nenhum pedido pendente nesta fila</div>
+        </div>
       </div>`;
+    if (typeof window.morphdom === 'function') {
+      window.morphdom(queueList, emptyHtml, {
+        getNodeKey: function(node) {
+          return node.getAttribute ? (node.getAttribute('data-id') || node.id || null) : null;
+        }
+      });
+    } else {
+      queueList.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: #94a3b8;">
+          <i class="ph ph-check-circle" style="font-size: 44px; color: #cbd5e1; margin-bottom: 8px;"></i>
+          <div style="font-size: 15px; font-weight: 600; color: #64748b;">Nenhum pedido pendente nesta fila</div>
+        </div>`;
+    }
     return;
   }
 
@@ -950,6 +1072,23 @@ function renderQueue() {
       </div>
     `;
   }).join('');
+
+  if (typeof window.morphdom === 'function') {
+    const targetWrapperHtml = `<div class="queue-list${isModoTv ? ' modo-tv' : ''}" id="queue-list">${itemsHtml}</div>`;
+    window.morphdom(queueList, targetWrapperHtml, {
+      getNodeKey: function(node) {
+        return node.getAttribute ? (node.getAttribute('data-id') || node.id || null) : null;
+      },
+      onBeforeElChildrenUpdated: function(fromEl, toEl) {
+        if (fromEl.classList && fromEl.classList.contains('item-exiting')) {
+          return false;
+        }
+        return true;
+      }
+    });
+  } else {
+    queueList.innerHTML = itemsHtml;
+  }
 
   // Re-aplicar larguras das colunas
   ['quantidade', 'produto', 'local', 'pronto'].forEach(col => {
@@ -1495,4 +1634,15 @@ setInterval(() => {
       initialPinchDistance = null;
     }
   });
+
+  // Inicializar estado dos botões de autoscroll e status inicial de conexão
+  atualizarBotoesAutoscroll();
+  atualizarStatusConexao(socket && socket.connected);
+
+  // Intervalo suave a cada 30 segundos para atualizar tempos decorridos e criticidade via morphdom
+  setInterval(() => {
+    if (Array.isArray(queueData) && queueData.length > 0) {
+      renderQueue();
+    }
+  }, 30000);
 })();

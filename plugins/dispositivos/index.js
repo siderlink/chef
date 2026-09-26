@@ -112,6 +112,52 @@ module.exports = function({ app, db, io, options, log }) {
         socket.emit('connected_devices', deduped);
       });
     });
+
+    socket.on('dono_ativar_totem_dispositivo', (data) => {
+      const deviceId = data && data.device_id;
+      if (!deviceId) return;
+      const targetSocket = io.sockets.sockets.get(deviceId);
+      if (targetSocket) {
+        targetSocket.emit('navegar_para', { destino: 'totem.html', solicitadoPor: 'Dono' });
+        targetSocket.emit('ir_para_totem');
+      }
+      if (activeSockets && activeSockets.has(deviceId)) {
+        const conn = activeSockets.get(deviceId);
+        conn.tipo = 'totem';
+        conn.cargo = 'Totem';
+        if (conn.serial) {
+          db.run(`UPDATE dispositivos SET modo = 'totem', tipo = 'totem' WHERE serial = ?`, [conn.serial], () => {});
+        }
+      }
+      io.emit('connected_devices_updated');
+    });
+
+    socket.on('dono_liberar_totem_dispositivo', (data) => {
+      const deviceId = data && data.device_id;
+      if (!deviceId) return;
+      const targetSocket = io.sockets.sockets.get(deviceId);
+      if (targetSocket) {
+        targetSocket.emit('totem_liberado');
+      }
+      if (activeSockets && activeSockets.has(deviceId)) {
+        const conn = activeSockets.get(deviceId);
+        conn.tipo = 'tablet';
+        conn.cargo = 'Normal';
+        if (conn.serial) {
+          db.run(`UPDATE dispositivos SET modo = 'normal' WHERE serial = ?`, [conn.serial], () => {});
+        }
+      }
+      io.emit('connected_devices_updated');
+    });
+
+    socket.on('dono_rotacionar_totem_dispositivo', (data) => {
+      const deviceId = data && data.device_id;
+      if (!deviceId) return;
+      const targetSocket = io.sockets.sockets.get(deviceId);
+      if (targetSocket) {
+        targetSocket.emit('totem_rotacionar');
+      }
+    });
   });
 
   log('Routes + sockets registered.');

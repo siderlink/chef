@@ -52,14 +52,32 @@ function showToast(text, type) {
 }
 
 /* ═══ AUTH ═══ */
+function getSuperAdminToken() {
+  try {
+    return localToken || localStorage.getItem('chef_super_admin_local_token') || localStorage.getItem('super_admin_token') || localStorage.getItem('super_token') || sessionStorage.getItem('super_admin_token') || '';
+  } catch (e) {
+    return localToken || '';
+  }
+}
+
 function authHeaders() {
-  return { 'Content-Type': 'application/json', 'x-super-admin-token': localToken };
+  var t = getSuperAdminToken();
+  var h = { 'Content-Type': 'application/json' };
+  if (t) {
+    h['x-super-admin-token'] = t;
+    h['Authorization'] = 'Bearer ' + t;
+  }
+  return h;
 }
 
 function apiGet(url, cb) {
+  var t = getSuperAdminToken();
   var x = new XMLHttpRequest();
   x.open('GET', url, true);
-  x.setRequestHeader('x-super-admin-token', localToken);
+  if (t) {
+    x.setRequestHeader('x-super-admin-token', t);
+    x.setRequestHeader('Authorization', 'Bearer ' + t);
+  }
   x.onreadystatechange = function() {
     if (x.readyState === 4) {
       try { cb(null, JSON.parse(x.responseText)); }
@@ -71,10 +89,14 @@ function apiGet(url, cb) {
 }
 
 function apiPost(url, data, cb) {
+  var t = getSuperAdminToken();
   var x = new XMLHttpRequest();
   x.open('POST', url, true);
   x.setRequestHeader('Content-Type', 'application/json');
-  x.setRequestHeader('x-super-admin-token', localToken);
+  if (t) {
+    x.setRequestHeader('x-super-admin-token', t);
+    x.setRequestHeader('Authorization', 'Bearer ' + t);
+  }
   x.onreadystatechange = function() {
     if (x.readyState === 4) {
       try { cb(null, JSON.parse(x.responseText)); }
@@ -86,10 +108,14 @@ function apiPost(url, data, cb) {
 }
 
 function apiPut(url, data, cb) {
+  var t = getSuperAdminToken();
   var x = new XMLHttpRequest();
   x.open('PUT', url, true);
   x.setRequestHeader('Content-Type', 'application/json');
-  x.setRequestHeader('x-super-admin-token', localToken);
+  if (t) {
+    x.setRequestHeader('x-super-admin-token', t);
+    x.setRequestHeader('Authorization', 'Bearer ' + t);
+  }
   x.onreadystatechange = function() {
     if (x.readyState === 4) {
       try { cb(null, JSON.parse(x.responseText)); }
@@ -103,12 +129,16 @@ function apiPut(url, data, cb) {
 function apiDelete(url, dataOrCb, maybeCb) {
   var data = (typeof dataOrCb === 'function') ? null : dataOrCb;
   var cb = (typeof dataOrCb === 'function') ? dataOrCb : (maybeCb || function(){});
+  var t = getSuperAdminToken();
   var x = new XMLHttpRequest();
   x.open('DELETE', url, true);
   if (data) {
     x.setRequestHeader('Content-Type', 'application/json');
   }
-  x.setRequestHeader('x-super-admin-token', localToken);
+  if (t) {
+    x.setRequestHeader('x-super-admin-token', t);
+    x.setRequestHeader('Authorization', 'Bearer ' + t);
+  }
   x.onreadystatechange = function() {
     if (x.readyState === 4) {
       try { cb(null, JSON.parse(x.responseText)); }
@@ -120,12 +150,19 @@ function apiDelete(url, dataOrCb, maybeCb) {
 }
 
 function escapeHtml(s) {
-  if (!s) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
-var escHtml = escapeHtml;
+function escHtml(s) {
+  return escapeHtml(s);
+}
+window.escapeHtml = escapeHtml;
+window.escHtml = escHtml;
+window.toggleCentralNotificacoesSuper = function() {
+  if (typeof switchTab === 'function') switchTab('sec-notificacoes');
+};
 
-/* ═══ LOGIN & CARREGAMENTO DINÂMICO DO PAINEL ═══ */
+/* ═══ LOGIN LOCAL ═══ */
 function loginLocal() {
   var senhaInput = document.getElementById('local-senha');
   var senha = senhaInput ? senhaInput.value.trim() : '';
@@ -140,7 +177,10 @@ function loginLocal() {
         var data = JSON.parse(x.responseText);
         if (data.ok) {
           localToken = data.token || '';
-          localStorage.setItem('chef_super_admin_local_token', data.token);
+          localStorage.setItem('chef_super_admin_local_token', localToken);
+          localStorage.setItem('super_admin_token', localToken);
+          localStorage.setItem('super_token', localToken);
+          sessionStorage.setItem('super_admin_token', localToken);
           entrarNoPainel(true);
         } else {
           showToast(data.erro || 'Erro ao realizar login.', 'danger');
@@ -154,10 +194,15 @@ function loginLocal() {
 }
 
 function entrarNoPainel(isExplicitLogin) {
+  var token = getSuperAdminToken();
+  if (token && !localToken) localToken = token;
   var headers = {};
-  if (localToken) headers['x-super-admin-token'] = localToken;
+  if (token) {
+    headers['x-super-admin-token'] = token;
+    headers['Authorization'] = 'Bearer ' + token;
+  }
 
-  fetch('/api/super/panel-template', { credentials: 'same-origin', headers: headers })
+  fetch('/api/super/panel-template?t=' + Date.now(), { credentials: 'same-origin', headers: headers, cache: 'no-store' })
     .then(function(res) {
       if (res.ok) return res.text();
       throw new Error('Acesso não autorizado.');
@@ -273,6 +318,19 @@ function initSuperAdminSockets() {
     _superAdminSocket.on('modulo_tenant_atualizado', function(data) {
       console.log('🔌 [SuperAdmin] Módulo tenant atualizado:', data);
     });
+
+    _superAdminSocket.on('super_admin_notificacao_push', function(notif) {
+      console.log('🔔 [SuperAdmin] Notificação Enterprise recebida:', notif);
+      tocarNotificacaoSom();
+      showToast((notif.prioridade === 'P1_CRITICA' ? '🚨 ' : '🔔 ') + (notif.titulo || 'Nova Notificação'), notif.prioridade === 'P1_CRITICA' ? 'danger' : 'info');
+      
+      var secNotif = document.getElementById('sec-notificacoes');
+      if (secNotif && secNotif.classList.contains('active')) {
+        if (typeof carregarCentralNotificacoes === 'function') carregarCentralNotificacoes();
+      } else {
+        if (typeof carregarCentralNotificacoesStats === 'function') carregarCentralNotificacoesStats();
+      }
+    });
   } catch (e) {
     console.error('Erro ao conectar socket super-admin:', e);
   }
@@ -381,6 +439,9 @@ function logout() {
   stopInactivityMonitor();
   try { apiPost('/api/super/logout', {}, function() {}); } catch(e) {}
   localStorage.removeItem('chef_super_admin_local_token');
+  localStorage.removeItem('super_admin_token');
+  localStorage.removeItem('super_token');
+  sessionStorage.removeItem('super_admin_token');
   localToken = '';
   isLocalMode = false;
   document.getElementById('login-container').style.display = 'flex';
@@ -579,6 +640,7 @@ function switchTab(targetId) {
   var sections = document.querySelectorAll('.content-section');
   var titles = {
     'sec-dash': ['Dashboard', 'Visão geral do ecossistema Chef Cozinha'],
+    'sec-notificacoes': ['Central de Notificações Enterprise', 'Monitoramento e broadcast em tempo real para estabelecimentos'],
     'sec-bi': ['BI / Franquias', 'Comparativo de desempenho entre restaurantes'],
     'sec-restaurantes': ['Restaurantes', 'Gerencie todos os restaurantes da plataforma'],
     'sec-usuarios': ['Usuários', 'Gerencie todos os usuários do sistema'],
@@ -586,6 +648,7 @@ function switchTab(targetId) {
     'sec-mensagens': ['Mensagens', 'Envie atualizações e avisos para todos os restaurantes'],
     'sec-logs': ['Logs do Sistema', 'Auditoria e logs de requisições API'],
     'sec-config': ['Configurações', 'Configurações globais da plataforma'],
+    'sec-ia-global': ['Inteligência Artificial Global', 'Configuração Master do Google Gemini e operação de IA para restaurantes'],
     'sec-funcoes': ['Funções', 'Gerencie funcionalidades habilitadas por restaurante'],
     'sec-features-restaurante': ['Features Restaurante', 'Configure funcionalidades operacionais por restaurante'],
     'sec-dominios': ['Domínios', 'Configure subdomínios e domínios próprios por restaurante'],
@@ -598,6 +661,7 @@ function switchTab(targetId) {
     'sec-suporte': ['Equipe de Suporte', 'Funcionários que prestam suporte aos restaurantes'],
     'sec-terminal': ['Terminal', 'Execute comandos no servidor local'],
     'sec-instancias': ['Instâncias On-Premise', 'Gerencie instalações locais conectadas ao servidor'],
+    'sec-suporte-remoto': ['Suporte Remoto 1-Clique', 'Acesse, visualize e repare terminais de clientes instantaneamente'],
     'sec-tarefas': ['Tarefas de Suporte', 'Acompanhe e atribua demandas para a equipe de suporte'],
     'sec-site-vendas': ['Site de Vendas', 'Edite conteúdo, planos, gateways e configurações da landing page'],
     'sec-afiliados': ['Afiliados & Parceiros', 'Gerenciamento completo da rede de revenda, cadastros e comissões'],
@@ -607,9 +671,15 @@ function switchTab(targetId) {
     'sec-tema-custom': ['Aparência & Tema Global', 'Estúdio de personalização de cores, botões, fontes e marcas'],
     'sec-supabase': ['Supabase', 'Conexão guiada ao banco em nuvem: backup, sync e relatórios centralizados'],
     'sec-alterar-senha': ['Alterar Senha', 'Atualize a senha de acesso ao painel super admin'],
+    'sec-synccheff': ['SyncCheff & Root Shield', 'Auditoria criptográfica, proteção Anti-Tamper e nós locais invioláveis'],
     'sec-infra-cloud': ['Infraestrutura Cloud', 'Backup remoto R2, Redis cache, backups agendados e alertas de crash'],
     'sec-tuneis': ['Túneis & Fallback', 'Túneis de acesso externo: Cloudflare, ngrok, Localtunnel, localhost.run'],
-    'sec-image-providers': ['Provedores de Imagem', 'Pool de upload de imagens: ImgBB, Cloudinary, Imgur, Custom']
+    'sec-image-providers': ['Provedores de Imagem', 'Pool de upload de imagens: ImgBB, Cloudinary, Imgur, Custom'],
+    'sec-contador-gestao': ['Contador Cheff (Gestão & Repasse)', 'Gestão centralizada de assinaturas contábeis, repasse de demandas e payouts de bonificação'],
+    'sec-fin-custodia': ['Custódia & Repasses (Garantia de 15 Dias)', 'Retenção de segurança operacional de 15 dias e liberação automática sem contestações'],
+    'sec-fin-assinaturas': ['Assinaturas dos Estabelecimentos (Tenants)', 'Controle de planos SaaS, faturamento recorrente (MRR), status e cobranças'],
+    'sec-fin-contratacoes': ['Contratações & Freelancers', 'Escalas de diaristas, vagas preenchidas e fluxo financeiro integrado à custódia'],
+    'sec-fin-gateways': ['Gateways de Pagamento & Custódia', 'Configuração de Asaas, Mercado Pago, ambiente e parâmetros da plataforma']
   };
 
   for (var i = 0; i < items.length; i++) {
@@ -730,42 +800,87 @@ function switchTab(targetId) {
   else if (targetId === 'sec-tema-custom') { carregarTemaCustomGlobal(); carregarTemasLista(); }
   else if (targetId === 'sec-logs') carregarLogs(0);
   else if (targetId === 'sec-config') carregarConfig();
+  else if (targetId === 'sec-ia-global') carregarConfig();
   else if (targetId === 'sec-licencas') carregarLicencas();
-   else if (targetId === 'sec-clientes') carregarClientes();
-   else if (targetId === 'sec-suporte') carregarSuporte();
-   else if (targetId === 'sec-funcoes') { renderFuncoes(); carregarSolicitacoesFeatures(); }
-   else if (targetId === 'sec-features-restaurante') renderFeaturesRestaurante();
-   else if (targetId === 'sec-dominios') renderDominios();
-   else if (targetId === 'sec-capacidade') renderCapacidade();
-   else if (targetId === 'sec-mapa') renderMapa();
-   else if (targetId === 'sec-load-control') renderLoadControl();
-   else if (targetId === 'sec-terminal') { resetInactivityTimer(); popularAlvosTerminal(); }
-   else if (targetId === 'sec-instancias') carregarInstancias();
-   else if (targetId === 'sec-recuperar-acesso') carregarUsuariosRecovery();
-   else if (targetId === 'sec-tarefas') { if (typeof carregarTarefas === 'function') carregarTarefas(); }
-   else if (targetId === 'sec-site-vendas') carregarSiteVendas();
-   else if (targetId === 'sec-afiliados') carregarPainelAfiliadosCompleto();
-   else if (targetId === 'sec-seguranca-waf') carregarConfigSeguranca();
-   else if (targetId === 'sec-deploy-updates') { carregarCommitsGit(); carregarGitStatus(); }
-   else if (targetId === 'sec-plugins-modulos') carregarPlugins();
-   else if (targetId === 'sec-supabase') carregarSupabase();
-   else if (targetId === 'sec-infra-cloud') carregarInfraCloud();
-   else if (targetId === 'sec-tuneis') carregarTuneis();
-   else if (targetId === 'sec-image-providers') carregarImageProviders();
-   else if (targetId === 'sec-notificacoes') carregarCentralNotificacoes();
+  else if (targetId === 'sec-clientes') carregarClientes();
+  else if (targetId === 'sec-suporte') carregarSuporte();
+  else if (targetId === 'sec-funcoes') { renderFuncoes(); carregarSolicitacoesFeatures(); }
+  else if (targetId === 'sec-features-restaurante') renderFeaturesRestaurante();
+  else if (targetId === 'sec-dominios') renderDominios();
+  else if (targetId === 'sec-capacidade') renderCapacidade();
+  else if (targetId === 'sec-mapa') renderMapa();
+  else if (targetId === 'sec-load-control') renderLoadControl();
+  else if (targetId === 'sec-terminal') { resetInactivityTimer(); popularAlvosTerminal(); }
+  else if (targetId === 'sec-instancias') carregarInstancias();
+  else if (targetId === 'sec-suporte-remoto') { if (typeof abrirSecaoSuporteRemoto === 'function') abrirSecaoSuporteRemoto(); }
+  else if (targetId === 'sec-recuperar-acesso') carregarUsuariosRecovery();
+  else if (targetId === 'sec-tarefas') { if (typeof carregarTarefas === 'function') carregarTarefas(); }
+  else if (targetId === 'sec-site-vendas') carregarSiteVendas();
+  else if (targetId === 'sec-afiliados') carregarPainelAfiliadosCompleto();
+  else if (targetId === 'sec-seguranca-waf') carregarConfigSeguranca();
+  else if (targetId === 'sec-alterar-senha') { var inp = document.getElementById('senha-atual-input'); if (inp) inp.focus(); }
+  else if (targetId === 'sec-synccheff') { if (typeof window.carregarSyncCheffStatus === 'function') window.carregarSyncCheffStatus(); }
+  else if (targetId === 'sec-deploy-updates') { carregarCommitsGit(); carregarGitStatus(); }
+  else if (targetId === 'sec-plugins-modulos') carregarPlugins();
+  else if (targetId === 'sec-supabase') carregarSupabase();
+  else if (targetId === 'sec-infra-cloud') carregarInfraCloud();
+  else if (targetId === 'sec-tuneis') carregarTuneis();
+  else if (targetId === 'sec-image-providers') carregarImageProviders();
+  else if (targetId === 'sec-notificacoes') {
+    if (typeof carregarCentralNotificacoes === 'function') carregarCentralNotificacoes();
+    else if (typeof window.carregarCentralNotificacoes === 'function') window.carregarCentralNotificacoes();
+  }
+  else if (targetId === 'sec-contador-gestao') {
+    carregarGestaoContadorCheff();
+  }
+  else if (targetId === 'sec-fin-custodia') {
+    carregarFinCustodia();
+  }
+  else if (targetId === 'sec-fin-assinaturas') {
+    carregarFinAssinaturas();
+  }
+  else if (targetId === 'sec-fin-contratacoes') {
+    carregarFinContratacoes();
+  }
+  else if (targetId === 'sec-fin-gateways') {
+    carregarFinGateways();
+  }
 }
 
-/* ═══ SUPABASE — ASSISTENTE GUIADO ═══ */
+/* ═══ SUPABASE — ASSISTENTE GUIADO & REGRAS DE EXECUÇÃO ═══ */
 function carregarSupabase() {
   apiGet('/api/super/supabase-config', function(err, data) {
     if (err || !data || !data.ok) { showToast('Erro ao carregar configuração do Supabase.', 'error'); return; }
     var c = data.config || {};
-    document.getElementById('supabase-url').value = c.url || '';
-    document.getElementById('supabase-anon-key').value = c.anon_key || '';
-    document.getElementById('supabase-service-key').value = '';
-    document.getElementById('supabase-service-key').placeholder = c.service_role_key ? '•••••••••• (salva) — digite para substituir' : '••••••••••••••••';
-    document.getElementById('supabase-enabled').checked = c.enabled === 'true';
+    var urlEl = document.getElementById('supabase-url');
+    var anonEl = document.getElementById('supabase-anon-key');
+    var srvEl = document.getElementById('supabase-service-key');
+    var enEl = document.getElementById('supabase-enabled');
+    var modeEl = document.getElementById('supabase-sync-mode');
+    var freqEl = document.getElementById('supabase-sync-frequency');
+    var tenEl = document.getElementById('supabase-sync-tenants');
+    var bkpEl = document.getElementById('supabase-sync-backups');
+    var telEl = document.getElementById('supabase-sync-telemetry');
+    var bktEl = document.getElementById('supabase-storage-bucket');
+    var retEl = document.getElementById('supabase-backup-retention');
+
+    if (urlEl) urlEl.value = c.url || '';
+    if (anonEl) anonEl.value = c.anon_key || '';
+    if (srvEl) {
+      srvEl.value = '';
+      srvEl.placeholder = c.service_role_key ? '•••••••••• (salva) — digite para substituir' : '••••••••••••••••';
+    }
+    if (enEl) enEl.checked = c.enabled === 'true';
+    if (modeEl) modeEl.value = c.sync_mode || 'hybrid';
+    if (freqEl) freqEl.value = c.sync_frequency || 'manual';
+    if (tenEl) tenEl.checked = c.sync_tenants !== false;
+    if (bkpEl) bkpEl.checked = c.sync_backups !== false;
+    if (telEl) telEl.checked = c.sync_telemetry !== false;
+    if (bktEl) bktEl.value = c.storage_bucket || 'chef-backups';
+    if (retEl) retEl.value = c.backup_retention || 14;
+
     atualizarBadgeSupabase(c.enabled === 'true');
+    carregarStatusSyncSupabase();
   });
 }
 
@@ -776,14 +891,16 @@ function atualizarBadgeSupabase(ativo) {
 }
 
 window.testarSupabase = function() {
-  var url = document.getElementById('supabase-url').value.trim();
-  var anon = document.getElementById('supabase-anon-key').value.trim();
+  var url = (document.getElementById('supabase-url') ? document.getElementById('supabase-url').value : '').trim();
+  var anon = (document.getElementById('supabase-anon-key') ? document.getElementById('supabase-anon-key').value : '').trim();
+  var service = (document.getElementById('supabase-service-key') ? document.getElementById('supabase-service-key').value : '').trim();
   var box = document.getElementById('supabase-test-resultado');
+  if (!box) return;
   box.style.display = 'block';
   box.style.background = 'rgba(59,130,246,0.12)';
   box.style.color = '#93c5fd';
-  box.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testando conexão...';
-  apiPost('/api/super/supabase-test', { url: url, anon_key: anon }, function(err, data) {
+  box.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testando conexão com Supabase...';
+  apiPost('/api/super/supabase-test', { url: url, anon_key: anon, service_role_key: service }, function(err, data) {
     if (err || !data || !data.ok) {
       var erro = data ? data.erro : (err || 'Erro de conexão');
       box.style.background = 'rgba(239,68,68,0.12)';
@@ -793,22 +910,132 @@ window.testarSupabase = function() {
     }
     box.style.background = 'rgba(34,197,94,0.12)';
     box.style.color = '#86efac';
-    box.innerHTML = '<i class="fa-solid fa-circle-check"></i> Conexão estabelecida! Agora salve a configuração.';
+    box.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + escapeHtml(data.mensagem || 'Conexão estabelecida com sucesso!');
   });
 };
 
 window.salvarSupabase = function() {
-  var url = document.getElementById('supabase-url').value.trim();
-  var anon = document.getElementById('supabase-anon-key').value.trim();
-  var service = document.getElementById('supabase-service-key').value.trim();
-  var enabled = document.getElementById('supabase-enabled').checked;
+  var url = (document.getElementById('supabase-url') ? document.getElementById('supabase-url').value : '').trim();
+  var anon = (document.getElementById('supabase-anon-key') ? document.getElementById('supabase-anon-key').value : '').trim();
+  var service = (document.getElementById('supabase-service-key') ? document.getElementById('supabase-service-key').value : '').trim();
+  var enabled = document.getElementById('supabase-enabled') ? document.getElementById('supabase-enabled').checked : false;
+  var mode = document.getElementById('supabase-sync-mode') ? document.getElementById('supabase-sync-mode').value : 'hybrid';
+  var freq = document.getElementById('supabase-sync-frequency') ? document.getElementById('supabase-sync-frequency').value : 'manual';
+  var tenants = document.getElementById('supabase-sync-tenants') ? document.getElementById('supabase-sync-tenants').checked : true;
+  var backups = document.getElementById('supabase-sync-backups') ? document.getElementById('supabase-sync-backups').checked : true;
+  var telemetry = document.getElementById('supabase-sync-telemetry') ? document.getElementById('supabase-sync-telemetry').checked : true;
+  var bucket = (document.getElementById('supabase-storage-bucket') ? document.getElementById('supabase-storage-bucket').value : '').trim() || 'chef-backups';
+  var retention = parseInt(document.getElementById('supabase-backup-retention') ? document.getElementById('supabase-backup-retention').value : '14', 10) || 14;
+
   if (!url || !anon) { showToast('URL e Anon Key são obrigatórios.', 'warning'); return; }
-  apiPost('/api/super/supabase-config', { url: url, anon_key: anon, service_role_key: service, enabled: enabled }, function(err, data) {
+
+  var payload = {
+    url: url,
+    anon_key: anon,
+    service_role_key: service,
+    enabled: enabled,
+    sync_mode: mode,
+    sync_frequency: freq,
+    sync_tenants: tenants,
+    sync_backups: backups,
+    sync_telemetry: telemetry,
+    storage_bucket: bucket,
+    backup_retention: retention
+  };
+
+  apiPost('/api/super/supabase-config', payload, function(err, data) {
     if (err || !data || !data.ok) { showToast('Erro ao salvar: ' + (data ? data.erro : err), 'error'); return; }
-    showToast('Configuração do Supabase salva!', 'success');
+    showToast('Configurações e regras de sincronização salvas!', 'success');
     atualizarBadgeSupabase(enabled);
-    document.getElementById('supabase-service-key').value = '';
-    document.getElementById('supabase-service-key').placeholder = service ? '•••••••••• (salva) — digite para substituir' : '••••••••••••••••';
+    var srvEl = document.getElementById('supabase-service-key');
+    if (srvEl) {
+      srvEl.value = '';
+      srvEl.placeholder = service ? '•••••••••• (salva) — digite para substituir' : '••••••••••••••••';
+    }
+    carregarStatusSyncSupabase();
+  });
+};
+
+window.carregarStatusSyncSupabase = function() {
+  apiGet('/api/super/supabase-sync-status', function(err, data) {
+    if (err || !data || !data.ok) return;
+    var badge = document.getElementById('supabase-sync-status-badge');
+    var timeEl = document.getElementById('supabase-sync-last-time');
+    var logsTerminal = document.getElementById('supabase-sync-logs-terminal');
+
+    if (badge) {
+      if (data.is_syncing) {
+        badge.style.background = '#f59e0b';
+        badge.style.color = '#fff';
+        badge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+      } else if (data.last_sync_status === 'success') {
+        badge.style.background = '#10b981';
+        badge.style.color = '#fff';
+        badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Sincronizado';
+      } else if (data.last_sync_status === 'error') {
+        badge.style.background = '#ef4444';
+        badge.style.color = '#fff';
+        badge.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Erro na última sync';
+      } else {
+        badge.style.background = 'rgba(100,116,139,0.2)';
+        badge.style.color = 'var(--text-muted)';
+        badge.textContent = 'Pendente / Não executado';
+      }
+    }
+
+    if (timeEl) {
+      if (data.last_sync_time) {
+        try {
+          var d = new Date(data.last_sync_time);
+          timeEl.textContent = 'Última sincronização: ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
+        } catch(e) {
+          timeEl.textContent = 'Última sincronização: ' + data.last_sync_time;
+        }
+      } else {
+        timeEl.textContent = 'Última sincronização: Nunca';
+      }
+    }
+
+    if (logsTerminal && data.last_sync_log && Array.isArray(data.last_sync_log) && data.last_sync_log.length > 0) {
+      logsTerminal.innerHTML = data.last_sync_log.map(function(item) {
+        var cor = item.tipo === 'erro' ? '#f87171' : (item.tipo === 'aviso' ? '#fde047' : '#a7f3d0');
+        var hora = item.ts ? ('[' + item.ts.slice(11, 19) + '] ') : '';
+        return '<div style="color:' + cor + ';padding:2px 0;">' + escapeHtml(hora + item.msg) + '</div>';
+      }).join('');
+      logsTerminal.scrollTop = logsTerminal.scrollHeight;
+    }
+  });
+};
+
+window.sincronizarSupabaseAgora = function() {
+  var btn = document.getElementById('btn-supabase-sync-now');
+  var logsTerminal = document.getElementById('supabase-sync-logs-terminal');
+  var badge = document.getElementById('supabase-sync-status-badge');
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+  }
+  if (badge) {
+    badge.style.background = '#f59e0b';
+    badge.style.color = '#fff';
+    badge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Em andamento';
+  }
+  if (logsTerminal) {
+    logsTerminal.innerHTML = '<div style="color:#93c5fd;"><i class="fa-solid fa-circle-notch fa-spin"></i> Iniciando sincronização em tempo real com Supabase...</div>';
+  }
+
+  apiPost('/api/super/supabase-sync-now', {}, function(err, data) {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sincronizar Agora';
+    }
+    if (err || !data || !data.ok) {
+      showToast('Falha na sincronização: ' + (data ? (data.erro || data.mensagem) : err), 'error');
+    } else {
+      showToast('Sincronização concluída com sucesso!', 'success');
+    }
+    window.carregarStatusSyncSupabase();
   });
 };
 
@@ -1295,7 +1522,25 @@ document.addEventListener('DOMContentLoaded', function() {
   if (btn) btn.addEventListener('click', carregarBiFranquias);
 });
 
-/* ═══ RESTAURANTES ═══ */
+/* ═══ RESTAURANTES & ARQUITETURA (OFFLINE-FIRST VS CLOUD) ═══ */
+window.grupoArquiteturaAtivo = 'todos';
+
+window.filtrarGrupoArquitetura = function(grupo) {
+  window.grupoArquiteturaAtivo = grupo || 'todos';
+  ['todos', 'offline', 'cloud'].forEach(function(k) {
+    var btn = document.getElementById('tab-grupo-' + k);
+    if (!btn) return;
+    if (k === (grupo === 'offline_first' ? 'offline' : grupo)) {
+      btn.style.background = k === 'offline' ? '#10b981' : (k === 'cloud' ? '#0284c7' : 'var(--primary, #fc4b15)');
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--text-muted, #94a3b8)';
+    }
+  });
+  renderRestaurantes();
+};
+
 function carregarRestaurantes() {
   apiGet('/api/super/restaurantes', function(err, data) {
     if (err || !data || !data.ok) {
@@ -1303,6 +1548,64 @@ function carregarRestaurantes() {
       return;
     }
     restaurantesData = data.clients || [];
+    var mg = data.metricas_grupos || null;
+    if (mg) {
+      var off = mg.offline_first || {};
+      var cld = mg.cloud || {};
+
+      var elTodos = document.getElementById('cont-grupo-todos');
+      var elOff = document.getElementById('cont-grupo-offline');
+      var elCld = document.getElementById('cont-grupo-cloud');
+      if (elTodos) elTodos.innerText = restaurantesData.length;
+      if (elOff) elOff.innerText = off.total_restaurantes || 0;
+      if (elCld) elCld.innerText = cld.total_restaurantes || 0;
+
+      // Métricas Offline-First
+      var stOffTot = document.getElementById('stat-offline-total');
+      var stOffNos = document.getElementById('stat-offline-nos');
+      var stOffPed = document.getElementById('stat-offline-pedidos');
+      var stOffFat = document.getElementById('stat-offline-faturamento');
+      var stOffLat = document.getElementById('stat-offline-latencia');
+      var bdgOffTax = document.getElementById('badge-offline-taxa');
+      if (stOffTot) stOffTot.innerText = off.total_restaurantes || 0;
+      if (stOffNos) stOffNos.innerText = off.total_nos_ativos || 0;
+      if (stOffPed) stOffPed.innerText = Number(off.total_pedidos || 0).toLocaleString();
+      if (stOffFat) stOffFat.innerText = 'R$ ' + Number(off.faturamento_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (stOffLat) stOffLat.innerText = (off.latencia_media_ms || 14) + 'ms';
+      if (bdgOffTax) bdgOffTax.innerText = 'Sync: ' + (off.taxa_sincronizacao || 99.8) + '%';
+
+      // Projeções Offline-First
+      var prOffVol = document.getElementById('proj-offline-volume');
+      var prOffEco = document.getElementById('proj-offline-economia');
+      var prOffAut = document.getElementById('proj-offline-autonomia');
+      var prOff = off.projecoes || {};
+      if (prOffVol) prOffVol.innerText = (prOff.volume_mensal_mb || 0) + ' MB/mês';
+      if (prOffEco) prOffEco.innerText = 'R$ ' + Number(prOff.economia_cloud_mensal_brl || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '/mês';
+      if (prOffAut) prOffAut.innerText = (prOff.autonomia_offgrid_horas || 720) + 'h (30 dias)';
+
+      // Métricas Cloud
+      var stCldTot = document.getElementById('stat-cloud-total');
+      var stCldSoc = document.getElementById('stat-cloud-sockets');
+      var stCldPed = document.getElementById('stat-cloud-pedidos');
+      var stCldFat = document.getElementById('stat-cloud-faturamento');
+      var stCldLat = document.getElementById('stat-cloud-latencia');
+      var bdgCldDsp = document.getElementById('badge-cloud-dispo');
+      if (stCldTot) stCldTot.innerText = cld.total_restaurantes || 0;
+      if (stCldSoc) stCldSoc.innerText = cld.sockets_ao_vivo || 0;
+      if (stCldPed) stCldPed.innerText = Number(cld.total_pedidos || 0).toLocaleString();
+      if (stCldFat) stCldFat.innerText = 'R$ ' + Number(cld.faturamento_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (stCldLat) stCldLat.innerText = (cld.tempo_resposta_ms || 24) + 'ms';
+      if (bdgCldDsp) bdgCldDsp.innerText = 'Uptime: ' + (cld.disponibilidade || '99.95%');
+
+      // Projeções Cloud
+      var prCldThr = document.getElementById('proj-cloud-throughput');
+      var prCldCst = document.getElementById('proj-cloud-custo');
+      var prCldMrr = document.getElementById('proj-cloud-mrr');
+      var prCld = cld.projecoes || {};
+      if (prCldThr) prCldThr.innerText = Number(prCld.requisicoes_mensais_projetadas || 0).toLocaleString() + ' req/mês';
+      if (prCldCst) prCldCst.innerText = 'R$ ' + Number(prCld.custo_infra_mensal_brl || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '/mês';
+      if (prCldMrr) prCldMrr.innerText = 'R$ ' + Number(prCld.mrr_projetado_brl || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '/mês';
+    }
     renderRestaurantes();
     popularAlvosTerminal();
   });
@@ -1326,6 +1629,8 @@ function popularFiltroDispositivosRestaurantes() {
 function renderRestaurantes() {
   var search = (document.getElementById('rest-search').value || '').toLowerCase();
   var filter = document.getElementById('rest-filter-status').value;
+  var gArq = window.grupoArquiteturaAtivo || 'todos';
+
   // Filtros inteligentes
   var fDe = (document.getElementById('rest-f-de') || {}).value || '';
   var fAte = (document.getElementById('rest-f-ate') || {}).value || '';
@@ -1340,6 +1645,10 @@ function renderRestaurantes() {
   var filtered = [];
   for (var i = 0; i < restaurantesData.length; i++) {
     var r = restaurantesData[i];
+    // Filtro por Grupo de Arquitetura
+    if (gArq === 'offline_first' && r.modo_arquitetura !== 'offline_first') continue;
+    if (gArq === 'cloud' && r.modo_arquitetura !== 'cloud') continue;
+
     if (search && r.restaurante.toLowerCase().indexOf(search) === -1 && String(r.id).indexOf(search) === -1 && (r.dono_nome || '').toLowerCase().indexOf(search) === -1 && (r.telefone || '').indexOf(search) === -1) continue;
     if (filter && r.status !== filter) continue;
     // Inteligência
@@ -1360,7 +1669,7 @@ function renderRestaurantes() {
   }
   var tbody = document.getElementById('restaurantes-tbody');
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">Nenhum restaurante encontrado.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">Nenhum restaurante encontrado no grupo selecionado.</td></tr>';
     return;
   }
   var html = '';
@@ -1377,9 +1686,31 @@ function renderRestaurantes() {
         '</div>';
     }
 
+    var arqBadge = '';
+    if (r2.modo_arquitetura === 'offline_first') {
+      arqBadge = '<div style="display:flex;flex-direction:column;gap:4px;">' +
+        '<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);font-size:0.72rem;font-weight:800;padding:2px 8px;border-radius:6px;width:fit-content;">' +
+          '<i class="fa-solid fa-bolt"></i> Sync Offline' +
+        '</span>' +
+        '<span style="font-size:0.7rem;color:var(--text-muted);font-family:monospace;">' +
+          '<i class="fa-solid fa-server" style="font-size:9px;"></i> ' + esc(r2.servidor_node || 'Nó Local') +
+        '</span>' +
+      '</div>';
+    } else {
+      arqBadge = '<div style="display:flex;flex-direction:column;gap:4px;">' +
+        '<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);font-size:0.72rem;font-weight:800;padding:2px 8px;border-radius:6px;width:fit-content;">' +
+          '<i class="fa-solid fa-cloud"></i> Cloud' +
+        '</span>' +
+        '<span style="font-size:0.7rem;color:var(--text-muted);font-family:monospace;">' +
+          '<i class="fa-solid fa-wifi" style="font-size:9px;color:#38bdf8;"></i> Nuvem Central' +
+        '</span>' +
+      '</div>';
+    }
+
     html += '<tr>';
     html += '<td><small style="font-family:monospace;">#' + r2.id + '</small></td>';
     html += '<td><div style="font-weight:600;color:white;">' + esc(r2.restaurante) + '</div>' + donoInfo + (r2.login_mode === 'single' ? '<div><span class="badge badge-plano" style="background:#7c3aed;color:#fff;">login único</span></div>' : '') + '</td>';
+    html += '<td>' + arqBadge + '</td>';
     html += '<td><span class="badge badge-plano">' + esc(r2.plano) + '</span></td>';
     html += '<td><span class="badge badge-' + r2.status + '">' + r2.status + '</span></td>';
     html += '<td style="text-align:center;">';
@@ -1389,6 +1720,7 @@ function renderRestaurantes() {
     html += '<td><small>' + (r2.ultimaVer ? new Date(r2.ultimaVer).toLocaleDateString('pt-BR') : '--') + '</small></td>';
     html += '<td>';
     html += '<div class="row-actions">';
+    html += '<button class="btn-row-action" onclick="window.alternarArquiteturaRestaurante(' + r2.id + ', \'' + (r2.modo_arquitetura === 'offline_first' ? 'cloud' : 'offline_first') + '\')" title="Alternar para ' + (r2.modo_arquitetura === 'offline_first' ? 'Cloud Version' : 'Sync Offline-First') + '"><i class="fa-solid ' + (r2.modo_arquitetura === 'offline_first' ? 'fa-cloud' : 'fa-bolt') + '" style="color:' + (r2.modo_arquitetura === 'offline_first' ? '#38bdf8' : '#10b981') + ';"></i></button>';
     html += '<button class="btn-row-action edit-action" onclick="editarRestaurante(' + r2.id + ')" title="Editar"><i class="fa-regular fa-pen-to-square"></i></button>';
     html += '<button class="btn-row-action block-action" onclick="toggleBloquearRest(' + r2.id + ',' + escJs(r2.status) + ')" title="' + (r2.status === 'bloqueado' ? 'Reativar' : 'Bloquear') + '"><i class="fa-solid ' + (r2.status === 'bloqueado' ? 'fa-unlock' : 'fa-ban') + '"></i></button>';
     html += '<button class="btn-row-action delete-action" onclick="excluirRestaurante(' + r2.id + ',' + escJs(r2.restaurante) + ')" title="Excluir"><i class="fa-regular fa-trash-can"></i></button>';
@@ -1396,6 +1728,19 @@ function renderRestaurantes() {
   }
   tbody.innerHTML = html;
 }
+
+window.alternarArquiteturaRestaurante = function(id, novoModo) {
+  var label = novoModo === 'offline_first' ? 'Sync Offline-First (Nó Local)' : 'Cloud Version (Nuvem Central)';
+  if (!confirm('Deseja migrar o restaurante #' + id + ' para ' + label + '?')) return;
+  apiPost('/api/super/restaurantes/' + id + '/alternar-arquitetura', { modo: novoModo }, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro: ' + (data ? data.erro : 'Falha ao alternar arquitetura'), 'danger');
+      return;
+    }
+    showToast(data.mensagem || 'Arquitetura alterada com sucesso!', 'success');
+    carregarRestaurantes();
+  });
+};
 
 function editarRestaurante(id) {
   var r = null;
@@ -2169,32 +2514,116 @@ function carregarLogs(page) {
   });
 }
 
-/* ═══ CONFIGURAÇÕES ═══ */
+/* ═══ CONFIGURAÇÕES & IA GLOBAL (GOOGLE GEMINI) ═══ */
 function carregarConfig() {
   apiGet('/api/super/config-global', function(err, data) {
     if (err || !data || !data.ok) return;
     var c = data.configs || {};
-    document.getElementById('cfg-update-ver').value = c.updateVer || '';
-    document.getElementById('cfg-update-url').value = c.updateUrl || '';
-    document.getElementById('cfg-update-msg').value = c.updateMsg || '';
-    document.getElementById('cfg-whatsapp').value = c.whatsappSuporte || '';
-    document.getElementById('cfg-email-suporte').value = c.emailSuporte || '';
+    if (document.getElementById('cfg-update-ver')) document.getElementById('cfg-update-ver').value = c.updateVer || '';
+    if (document.getElementById('cfg-update-url')) document.getElementById('cfg-update-url').value = c.updateUrl || '';
+    if (document.getElementById('cfg-update-msg')) document.getElementById('cfg-update-msg').value = c.updateMsg || '';
+    if (document.getElementById('cfg-whatsapp')) document.getElementById('cfg-whatsapp').value = c.whatsappSuporte || '';
+    if (document.getElementById('cfg-email-suporte')) document.getElementById('cfg-email-suporte').value = c.emailSuporte || '';
+
+    // IA Global (Gemini)
+    var elIaKey = document.getElementById('cfg-ia-global-key');
+    var elIaModel = document.getElementById('cfg-ia-global-model');
+    var elIaMode = document.getElementById('cfg-ia-global-mode');
+    var elIaBadge = document.getElementById('super-ia-status-badge');
+    if (elIaKey) elIaKey.value = c.ia_global_key || '';
+    if (elIaModel && c.ia_global_model) elIaModel.value = c.ia_global_model;
+    if (elIaMode && c.ia_global_mode) elIaMode.value = c.ia_global_mode;
+    if (elIaBadge) {
+      var modeLabels = {
+        'hibrido': 'Modo Híbrido Ativo',
+        'global': 'SaaS Total (Chave Master)',
+        'propria': 'Chaves Próprias por Restaurante',
+        'desativado': 'IA Desativada'
+      };
+      elIaBadge.innerText = modeLabels[c.ia_global_mode || 'hibrido'] || 'Modo Híbrido Ativo';
+    }
   });
 }
 
 function salvarConfig() {
   var payload = {
-    updateVer: document.getElementById('cfg-update-ver').value.trim(),
-    updateUrl: document.getElementById('cfg-update-url').value.trim(),
-    updateMsg: document.getElementById('cfg-update-msg').value.trim(),
-    whatsappSuporte: document.getElementById('cfg-whatsapp').value.trim(),
-    emailSuporte: document.getElementById('cfg-email-suporte').value.trim()
+    updateVer: (document.getElementById('cfg-update-ver') || {}).value || '',
+    updateUrl: (document.getElementById('cfg-update-url') || {}).value || '',
+    updateMsg: (document.getElementById('cfg-update-msg') || {}).value || '',
+    whatsappSuporte: (document.getElementById('cfg-whatsapp') || {}).value || '',
+    emailSuporte: (document.getElementById('cfg-email-suporte') || {}).value || ''
   };
   apiPost('/api/super/config-global', payload, function(err, data) {
     if (err || !data || !data.ok) { showToast('Erro ao salvar configurações', 'danger'); return; }
     showToast('Configurações salvas com sucesso!', 'success');
   });
 }
+
+window.salvarIaGlobal = function() {
+  var key = (document.getElementById('cfg-ia-global-key') || {}).value || '';
+  var model = (document.getElementById('cfg-ia-global-model') || {}).value || 'gemini-2.5-flash';
+  var mode = (document.getElementById('cfg-ia-global-mode') || {}).value || 'hibrido';
+
+  var payload = {
+    ia_global_key: key.trim(),
+    ia_global_model: model,
+    ia_global_mode: mode
+  };
+  apiPost('/api/super/config-global', payload, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao salvar IA: ' + (data ? data.erro : 'Falha'), 'danger');
+      return;
+    }
+    showToast('✨ Configurações de IA salvas com sucesso!', 'success');
+    var elIaBadge = document.getElementById('super-ia-status-badge');
+    if (elIaBadge) {
+      var modeLabels = {
+        'hibrido': 'Modo Híbrido Ativo',
+        'global': 'SaaS Total (Chave Master)',
+        'propria': 'Chaves Próprias por Restaurante',
+        'desativado': 'IA Desativada'
+      };
+      elIaBadge.innerText = modeLabels[mode] || 'Modo Híbrido Ativo';
+    }
+  });
+};
+
+window.toggleShowSuperIaKey = function() {
+  var input = document.getElementById('cfg-ia-global-key');
+  var icon = document.getElementById('super-ia-key-icon');
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (icon) { icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash'); }
+  } else {
+    input.type = 'password';
+    if (icon) { icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
+  }
+};
+
+window.testarSuperIaGlobal = function() {
+  var input = document.getElementById('cfg-ia-global-key');
+  var fb = document.getElementById('super-ia-test-feedback');
+  var key = input ? input.value.trim() : '';
+  if (!key) {
+    if (fb) { fb.style.color = '#ef4444'; fb.innerText = '⚠️ Digite uma chave de API para testar.'; }
+    return;
+  }
+  if (fb) { fb.style.color = '#38bdf8'; fb.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testando chave no Google AI...'; }
+  fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(key))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && data.models) {
+        if (fb) { fb.style.color = '#10b981'; fb.innerHTML = '✅ Chave válida! ' + data.models.length + ' modelos disponíveis.'; }
+      } else {
+        var msg = (data && data.error && data.error.message) ? data.error.message : 'Chave inválida.';
+        if (fb) { fb.style.color = '#ef4444'; fb.innerText = '❌ ' + msg; }
+      }
+    })
+    .catch(function(e) {
+      if (fb) { fb.style.color = '#ef4444'; fb.innerText = '❌ Erro de conexão: ' + e.message; }
+    });
+};
 
 /* ═══ RECUPERAR ACESSO (existente) ═══ */
 var recoveryUsersData = [];
@@ -2767,9 +3196,11 @@ function initAdminPanelUI() {
   var btnRefreshMsg = document.getElementById('btn-refresh-mensagens');
   if (btnRefreshMsg) btnRefreshMsg.addEventListener('click', carregarMensagens);
 
-  /* Config */
+  /* Config & IA */
   var btnSaveConfig = document.getElementById('btn-save-config');
   if (btnSaveConfig) btnSaveConfig.addEventListener('click', salvarConfig);
+  var btnSaveIaGlobal = document.getElementById('btn-save-ia-global');
+  if (btnSaveIaGlobal) btnSaveIaGlobal.addEventListener('click', window.salvarIaGlobal);
 
   /* Recuperar Acesso */
   var btnLoadUsers = document.getElementById('btn-load-users');
@@ -3037,6 +3468,79 @@ function initAdminPanelUI() {
     });
   }
 
+  /* ═══ MÓDULOS EXTRAS: SENHA, BI, INFRA CLOUD, TÚNEIS, NOTIFICAÇÕES ═══ */
+  if (typeof initAlterarSenha === 'function') initAlterarSenha();
+
+  var selBi = document.getElementById('bi-periodo');
+  if (selBi && !selBi._bound) {
+    selBi._bound = true;
+    selBi.addEventListener('change', carregarBiFranquias);
+  }
+  var btnBi = document.getElementById('btn-bi-atualizar');
+  if (btnBi && !btnBi._bound) {
+    btnBi._bound = true;
+    btnBi.addEventListener('click', carregarBiFranquias);
+  }
+
+  var btnSaveR2 = document.getElementById('btn-r2-save');
+  if (btnSaveR2 && !btnSaveR2._bound) {
+    btnSaveR2._bound = true;
+    btnSaveR2.addEventListener('click', function() {
+      var payload = {
+        account_id: (document.getElementById('r2-account-id').value || '').trim(),
+        bucket: (document.getElementById('r2-bucket').value || '').trim(),
+        access_key: (document.getElementById('r2-access-key').value || '').trim(),
+        secret_key: (document.getElementById('r2-secret-key').value || '').trim()
+      };
+      if (!payload.account_id || !payload.bucket || !payload.access_key || !payload.secret_key) {
+        showToast('Preencha todos os campos do R2.', 'error'); return;
+      }
+      apiPost('/api/super/infra-cloud/r2', payload, function(err, data) {
+        if (err || !data || !data.ok) { showToast(data ? data.erro : 'Erro ao salvar.', 'error'); return; }
+        showToast('Config R2 salva! Testando conexão...', 'success');
+        apiPost('/api/super/infra-cloud/r2/test', {}, function(e2, d2) {
+          var fb = document.getElementById('r2-feedback');
+          if (d2 && d2.ok) {
+            if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + d2.mensagem; }
+            var st = document.getElementById('r2-status');
+            if (st) st.textContent = 'Conectado';
+            var badge = document.getElementById('infra-cloud-badge');
+            if (badge) { badge.style.display = ''; badge.textContent = 'R2 ✓'; }
+          } else {
+            if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (d2 ? d2.erro : 'Erro'); }
+          }
+        });
+      });
+    });
+  }
+
+  var btnSaveTunelGlobal = document.getElementById('btn-tunel-global-save');
+  if (btnSaveTunelGlobal && !btnSaveTunelGlobal._bound) {
+    btnSaveTunelGlobal._bound = true;
+    btnSaveTunelGlobal.addEventListener('click', function() {
+      var payload = {
+        port: parseInt(document.getElementById('tunel-global-port').value, 10),
+        mode: document.getElementById('tunel-global-mode').value,
+        priority: document.getElementById('tunel-global-priority').value
+      };
+      apiPost('/api/super/tuneis/config-global', payload, function(err, data) {
+        var fb = document.getElementById('tunel-global-feedback');
+        if (err || !data || !data.ok) {
+          if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
+        } else {
+          if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + data.mensagem; }
+          var pEl = document.getElementById('tuneis-porta');
+          if (pEl) pEl.textContent = payload.port;
+          var aEl = document.getElementById('tuneis-autostart');
+          if (aEl) aEl.textContent = payload.mode === 'auto' ? 'Ligado' : 'Desligado';
+        }
+      });
+    });
+  }
+
+  if (typeof window.carregarCentralNotificacoesStats === 'function') {
+    window.carregarCentralNotificacoesStats();
+  }
 }
 
 /* ═══ TAREFAS E AVISOS DE SUPORTE (SUPER ADMIN) ═══ */
@@ -3262,8 +3766,13 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   /* Auto-autenticação ao carregar a página */
-  var savedToken = localStorage.getItem('chef_super_admin_local_token');
-  if (savedToken) localToken = savedToken;
+  var savedToken = localStorage.getItem('chef_super_admin_local_token') || localStorage.getItem('super_admin_token') || localStorage.getItem('super_token');
+  if (savedToken) {
+    localToken = savedToken;
+    localStorage.setItem('chef_super_admin_local_token', savedToken);
+    localStorage.setItem('super_admin_token', savedToken);
+    localStorage.setItem('super_token', savedToken);
+  }
 
   entrarNoPainel(false);
 });
@@ -4517,32 +5026,46 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  /* ═══ INSTÂNCIAS ON-PREMISE ═══ */
+  /* ═══ REDE DISTRIBUÍDA & INSTÂNCIAS (SYNC HUB) ═══ */
+  var instancesCache = [];
+  var chavesCache = [];
+
   window.carregarInstancias = function() {
     apiGet('/api/super/instances', function(err, data) {
-      if (err || !data || !data.ok) return;
-      renderInstancias(data.instances || []);
+      if (!err && data && data.ok) {
+        instancesCache = data.instances || [];
+        renderInstancias(instancesCache);
+      }
     });
     apiGet('/api/super/servers', function(err, data) {
       if (!err && data && data.ok) renderServidoresHub(data.servers || [], data.strategy);
     });
+    carregarChavesDistribuicao();
+    carregarFilaSync();
+    carregarConflitosSync();
+  };
+
+  window.carregarFilaSync = function() {
     apiGet('/api/super/sync-queue', function(err, data) {
       var box = document.getElementById('sync-queue-body');
       if (!box) return;
       if (err || !data || !data.ok) { box.innerHTML = '<span style="color:var(--danger);">Erro ao carregar fila.</span>'; return; }
       var itens = data.queue || [];
-      if (!itens.length) { box.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> Fila vazia — tudo sincronizado.'; return; }
+      if (!itens.length) { box.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> Fila vazia — todos os nós sincronizados.'; return; }
       var h = '<div style="display:flex;flex-direction:column;gap:8px;">';
       itens.forEach(function(f) {
         h += '<div style="border:1px solid rgba(245,158,11,0.25);background:rgba(245,158,11,0.06);border-radius:8px;padding:8px 10px;">'
-          + '<strong style="color:#fbbf24;">' + escapeHtml(f.message_type || 'item') + '</strong>'
-          + ' — <span>' + escapeHtml(f.status || 'pending') + '</span>'
-          + ' <small style="color:var(--text-muted);">inst. ' + escapeHtml(String(f.instance_id || '?')).substring(0, 12) + '</small>'
+          + '<strong style="color:#fbbf24;">' + escHtml(f.message_type || 'comando') + '</strong>'
+          + ' — <span>' + escHtml(f.status || 'pending') + '</span>'
+          + ' <small style="color:var(--text-muted);">inst. ' + escHtml(String(f.instance_id || '?')).substring(0, 12) + '</small>'
           + (f.created_at ? ' <small style="color:var(--text-muted);">(' + timeAgo(f.created_at) + ')</small>' : '')
           + '</div>';
       });
       box.innerHTML = h + '</div>';
     });
+  };
+
+  window.carregarConflitosSync = function() {
     apiGet('/api/super/sync-conflicts', function(err, data) {
       var box = document.getElementById('sync-conflicts-body');
       if (!box) return;
@@ -4552,10 +5075,10 @@ document.addEventListener('DOMContentLoaded', function() {
       var h2 = '<div style="display:flex;flex-direction:column;gap:8px;">';
       conflitos.forEach(function(c) {
         h2 += '<div style="border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.07);border-radius:8px;padding:8px 10px;">'
-          + '<strong style="color:#fca5a5;">' + escapeHtml(c.table_name || 'registro') + '</strong>'
-          + (c.record_id != null ? ' #' + escapeHtml(String(c.record_id)) : '')
-          + (c.resolution ? '<br><small>Resolução: ' + escapeHtml(c.resolution) + '</small>' : '')
-          + (c.resolved_at ? '<br><small style="color:var(--text-muted);">' + escapeHtml(c.resolved_at) + '</small>' : '')
+          + '<strong style="color:#fca5a5;">' + escHtml(c.table_name || 'registro') + '</strong>'
+          + (c.record_id != null ? ' #' + escHtml(String(c.record_id)) : '')
+          + (c.resolution ? '<br><small>Resolução: ' + escHtml(c.resolution) + '</small>' : '')
+          + (c.resolved_at ? '<br><small style="color:var(--text-muted);">' + escHtml(c.resolved_at) + '</small>' : '')
           + '</div>';
       });
       box.innerHTML = h2 + '</div>';
@@ -4647,187 +5170,1151 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
 
-  function renderInstancias(instances) {
-    var total = instances.length;
-    var online = instances.filter(function(i) { return i.status === 'online'; }).length;
-    var offline = instances.filter(function(i) { return i.status === 'offline'; }).length;
-    var pendingBadge = document.getElementById('offline-count-badge');
-
-    document.getElementById('inst-total').textContent = total;
-    document.getElementById('inst-online').textContent = online;
-    document.getElementById('inst-offline').textContent = offline;
-
-    if (pendingBadge) {
-      if (offline > 0) {
-        pendingBadge.style.display = 'inline';
-        pendingBadge.textContent = offline;
-      } else {
-        pendingBadge.style.display = 'none';
+  /* ═══ SUB-ABAS DE INSTÂNCIAS & DISTRIBUIÇÃO ═══ */
+  window.alternarSubabaInstancias = function(aba) {
+    var abas = ['inst', 'chaves', 'sync', 'servers', 'remoto'];
+    abas.forEach(function(a) {
+      var view = document.getElementById('subaba-view-' + a);
+      var btn = document.getElementById('subtab-btn-' + a);
+      if (view) view.style.display = (a === aba) ? 'block' : 'none';
+      if (btn) {
+        if (a === aba) {
+          btn.classList.add('active');
+          btn.style.borderBottom = '3px solid var(--primary)';
+          btn.style.color = 'var(--text-main)';
+        } else {
+          btn.classList.remove('active');
+          btn.style.borderBottom = '3px solid transparent';
+          btn.style.color = 'var(--text-muted)';
+        }
       }
-    }
-
-    var tbody = document.getElementById('instances-table-body');
-    if (!instances.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">Nenhuma instância on-premise registrada.</td></tr>';
-      document.getElementById('inst-pending').textContent = '0';
-      return;
-    }
-
-    var pendingCount = 0;
-    var html = '';
-    instances.forEach(function(inst) {
-      var statusColor = inst.status === 'online' ? '#00c853' : inst.status === 'deactivated' ? '#ffc107' : '#ff5252';
-      var statusIcon = inst.status === 'online' ? 'fa-circle-check' : inst.status === 'deactivated' ? 'fa-circle-pause' : 'fa-circle-xmark';
-      var lastHb = inst.last_heartbeat_at ? timeAgo(inst.last_heartbeat_at) : 'Nunca';
-      var lastSync = inst.last_sync_at ? timeAgo(inst.last_sync_at) : 'Nunca';
-
-      html += '<tr>';
-      html += '<td><strong>' + escHtml(inst.instance_name || 'Sem nome') + '</strong><br><small style="color:var(--text-muted);">' + escHtml(inst.instance_id || '').substring(0, 12) + '...</small></td>';
-      html += '<td><span style="color:' + statusColor + ';font-weight:600;"><i class="fa-solid ' + statusIcon + '"></i> ' + escHtml(inst.status || 'unknown') + '</span></td>';
-      html += '<td>' + escHtml(inst.software_version || '-') + '</td>';
-      html += '<td><small>' + escHtml(lastHb) + '</small></td>';
-      html += '<td><small>' + escHtml(lastSync) + '</small></td>';
-      html += '<td>';
-      html += '<button class="btn-row-action" onclick="detalharInstancia(\'' + escHtml(inst.instance_id) + '\')" title="Detalhes"><i class="fa-solid fa-eye"></i></button> ';
-      html += '<button class="btn-row-action" onclick="enviarComandoInstancia(\'' + escHtml(inst.instance_id) + '\', \'force_sync\')" title="Forçar Sync" style="color:#2196f3;"><i class="fa-solid fa-rotate"></i></button> ';
-      if (inst.status !== 'deactivated') {
-        html += '<button class="btn-row-action" onclick="enviarComandoInstancia(\'' + escHtml(inst.instance_id) + '\', \'deactivate\')" title="Desativar" style="color:#ff5252;"><i class="fa-solid fa-power-off"></i></button>';
-      } else {
-        html += '<button class="btn-row-action" onclick="enviarComandoInstancia(\'' + escHtml(inst.instance_id) + '\', \'reactivate\')" title="Reativar" style="color:#00c853;"><i class="fa-solid fa-power-off"></i></button>';
-      }
-      html += '</td>';
-      html += '</tr>';
     });
-    tbody.innerHTML = html;
-    document.getElementById('inst-pending').textContent = pendingCount || '0';
+    if (aba === 'chaves') carregarChavesDistribuicao();
+    else if (aba === 'sync') { carregarFilaSync(); carregarConflitosSync(); }
+    else if (aba === 'remoto') { if (typeof carregarSessoesSuporte === 'function') carregarSessoesSuporte(); }
+  };
+
+  function formatMoney(val) {
+    var n = parseFloat(val) || 0;
+    return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatBytes(bytes) {
+    var b = parseInt(bytes, 10) || 0;
+    if (b === 0) return '0 B';
+    var k = 1024;
+    var sizes = ['B', 'KB', 'MB', 'GB'];
+    var i = Math.floor(Math.log(b) / Math.log(k));
+    return parseFloat((b / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   }
 
   function timeAgo(dateStr) {
-    if (!dateStr) return '-';
+    if (!dateStr) return 'Nunca';
     var now = new Date();
     var then = new Date(dateStr);
     var diffMs = now - then;
-    var mins = Math.floor(diffMs / 60000);
-    if (mins < 1) return 'agora';
-    if (mins < 60) return mins + 'min atrás';
+    if (diffMs < 0) diffMs = 0;
+    var secs = Math.floor(diffMs / 1000);
+    if (secs < 30) return 'agora';
+    if (secs < 60) return secs + 's atrás';
+    var mins = Math.floor(secs / 60);
+    if (mins < 60) return mins + 'm atrás';
     var hours = Math.floor(mins / 60);
     if (hours < 24) return hours + 'h atrás';
     var days = Math.floor(hours / 24);
     return days + 'd atrás';
   }
 
-  window.detalharInstancia = function(instanceId) {
-    apiGet('/api/super/instances/' + encodeURIComponent(instanceId), function(err, data) {
-      if (err || !data || !data.ok) return alert('Erro ao carregar detalhes da instância.');
-      var inst = data.instance;
-      var commands = data.commands || [];
-      var conflicts = data.conflicts || [];
+  function copiarParaClipboard(texto, msgSucesso) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(function() {
+        showToast(msgSucesso || 'Copiado para a área de transferência!', 'success');
+      }).catch(function() {
+        promptCopiarFallback(texto);
+      });
+    } else {
+      promptCopiarFallback(texto);
+    }
+  }
 
-      var html = '<div style="max-height:60vh;overflow-y:auto;">';
-      html += '<h3 style="margin-bottom:1rem;">' + escHtml(inst.instance_name || 'Instância') + '</h3>';
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1rem;">';
-      html += '<div><strong>ID:</strong> <small>' + escHtml(inst.instance_id) + '</small></div>';
-      html += '<div><strong>Status:</strong> ' + escHtml(inst.status) + '</div>';
-      html += '<div><strong>Versão:</strong> ' + escHtml(inst.software_version || '-') + '</div>';
-      html += '<div><strong>Tenant ID:</strong> ' + (inst.tenant_id || '-') + '</div>';
-      html += '<div><strong>IP:</strong> ' + escHtml(inst.ip_address || '-') + '</div>';
-      html += '<div><strong>OS:</strong> ' + escHtml(inst.os_info || '-') + '</div>';
-      html += '<div><strong>Registrado:</strong> ' + escHtml(inst.registered_at || '-') + '</div>';
-      html += '<div><strong>Último Heartbeat:</strong> ' + escHtml(inst.last_heartbeat_at || '-') + '</div>';
-      html += '</div>';
+  function promptCopiarFallback(texto) {
+    var ta = document.createElement('textarea');
+    ta.value = texto;
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      showToast('Copiado com sucesso!', 'success');
+    } catch (e) {
+      prompt('Copie manualmente (Ctrl+C):', texto);
+    }
+    document.body.removeChild(ta);
+  }
 
-      html += '<div style="margin-bottom:1rem;">';
-      html += '<button class="btn-action btn-primary-action" onclick="enviarComandoInstancia(\'' + escHtml(inst.instance_id) + '\', \'get_status\')" style="margin-right:0.5rem;"><i class="fa-solid fa-circle-info"></i> Status Remoto</button>';
-      html += '<button class="btn-action" onclick="enviarComandoInstancia(\'' + escHtml(inst.instance_id) + '\', \'force_sync\')" style="margin-right:0.5rem;"><i class="fa-solid fa-rotate"></i> Forçar Sync</button>';
-      html += '<button class="btn-action" onclick="enviarComandoInstancia(\'' + escHtml(inst.instance_id) + '\', \'restart\')" style="margin-right:0.5rem;color:#ffc107;"><i class="fa-solid fa-rotate-right"></i> Reiniciar</button>';
-      html += '<button class="btn-action" onclick="pushConfigInstancia(\'' + escHtml(inst.instance_id) + '\')" style="margin-right:0.5rem;"><i class="fa-solid fa-paper-plane"></i> Push Config</button>';
-      html += '</div>';
+  /* ═══ RENDERIZAÇÃO DE INSTÂNCIAS COM TELEMETRIA ═══ */
+  function renderInstancias(instances) {
+    var total = instances.length;
+    var online = 0;
+    var offline = 0;
+    var vendasTotal = 0;
+    var pedidosTotal = 0;
+    var caixasAbertos = 0;
 
-      if (commands.length) {
-        html += '<h4 style="margin:1rem 0 0.5rem;">Últimos Comandos</h4>';
-        html += '<table class="custom-table" style="font-size:0.8rem;"><thead><tr><th>Comando</th><th>Status</th><th>Emitido</th><th>Resultado</th></tr></thead><tbody>';
-        commands.forEach(function(c) {
-          var sColor = c.status === 'completed' ? '#00c853' : c.status === 'failed' ? '#ff5252' : '#ffc107';
-          html += '<tr>';
-          html += '<td>' + escHtml(c.command) + '</td>';
-          html += '<td style="color:' + sColor + ';">' + escHtml(c.status) + '</td>';
-          html += '<td><small>' + escHtml(c.issued_at || '-') + '</small></td>';
-          html += '<td><small>' + escHtml((c.result || '').substring(0, 80)) + '</small></td>';
-          html += '</tr>';
-        });
-        html += '</tbody></table>';
+    instances.forEach(function(inst) {
+      var isOnline = (inst.is_ws_connected === true || inst.status === 'online');
+      if (isOnline) online++; else offline++;
+      vendasTotal += parseFloat(inst.vendas_hoje) || 0;
+      pedidosTotal += parseInt(inst.pedidos_hoje, 10) || 0;
+      if (inst.caixa_aberto == 1) caixasAbertos++;
+    });
+
+    var elTotal = document.getElementById('inst-total');
+    var elOnline = document.getElementById('inst-online');
+    var elOffline = document.getElementById('inst-offline');
+    var elVendas = document.getElementById('inst-vendas-hoje');
+    var elPedidos = document.getElementById('inst-pedidos-hoje');
+    var elCaixas = document.getElementById('inst-caixas-abertos');
+    var elBadge = document.getElementById('inst-badge-count');
+
+    if (elTotal) elTotal.textContent = total;
+    if (elOnline) elOnline.textContent = online;
+    if (elOffline) elOffline.textContent = offline;
+    if (elVendas) elVendas.textContent = formatMoney(vendasTotal);
+    if (elPedidos) elPedidos.textContent = pedidosTotal;
+    if (elCaixas) elCaixas.textContent = caixasAbertos;
+    if (elBadge) elBadge.textContent = total;
+
+    var tbody = document.getElementById('instances-table-body');
+    if (!tbody) return;
+
+    if (!instances.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2.5rem;color:var(--text-muted);">'
+        + '<i class="fa-solid fa-server" style="font-size:2rem;margin-bottom:0.8rem;display:block;opacity:0.4;"></i>'
+        + 'Nenhuma instância on-premise registrada ainda.<br>'
+        + '<small style="color:#888;">Gere uma chave de ativação para distribuir aos seus clientes.</small>'
+        + '</td></tr>';
+      return;
+    }
+
+    var html = '';
+    instances.forEach(function(inst) {
+      var isBloqueado = (inst.status === 'deactivated' || inst.status === 'bloqueado');
+      var isOnline = !isBloqueado && (inst.is_ws_connected === true || inst.status === 'online');
+
+      var statusBadge = '';
+      if (isBloqueado) {
+        statusBadge = '<span class="badge" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;"><i class="fa-solid fa-lock"></i> BLOQUEADO</span>'
+          + (inst.bloqueado_motivo ? '<br><small style="color:#f87171;font-size:10px;display:inline-block;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escHtml(inst.bloqueado_motivo) + '">' + escHtml(inst.bloqueado_motivo) + '</small>' : '');
+      } else if (isOnline) {
+        statusBadge = '<span class="badge" style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;">'
+          + '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;"></span> ONLINE'
+          + '</span>';
+      } else {
+        statusBadge = '<span class="badge" style="background:rgba(100,116,139,0.15);color:#94a3b8;border:1px solid rgba(100,116,139,0.3);padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;"><i class="fa-solid fa-circle-xmark"></i> OFFLINE</span>';
       }
 
-      if (conflicts.length) {
-        html += '<h4 style="margin:1rem 0 0.5rem;">Conflitos de Sync</h4>';
-        html += '<table class="custom-table" style="font-size:0.8rem;"><thead><tr><th>Tabela</th><th>Registro</th><th>Resolução</th><th>Data</th></tr></thead><tbody>';
-        conflicts.forEach(function(c) {
-          html += '<tr>';
-          html += '<td>' + escHtml(c.table_name) + '</td>';
-          html += '<td>' + (c.record_id || '-') + '</td>';
-          html += '<td>' + escHtml(c.resolution || '-') + '</td>';
-          html += '<td><small>' + escHtml(c.resolved_at || '-') + '</small></td>';
-          html += '</tr>';
-        });
-        html += '</tbody></table>';
+      var nome = escHtml(inst.instance_name || 'Restaurante Sem Nome');
+      var idCurto = escHtml(inst.instance_id || '');
+      var ip = escHtml(inst.ip_address || 'IP não inf.');
+      var tenant = inst.tenant_id ? '<span style="font-size:11px;color:#93c5fd;">Tenant #' + inst.tenant_id + '</span>' : '';
+      var vendas = formatMoney(inst.vendas_hoje || 0);
+      var pedidos = parseInt(inst.pedidos_hoje, 10) || 0;
+      var mesas = parseInt(inst.mesas_abertas, 10) || 0;
+      var caixaAberto = (inst.caixa_aberto == 1);
+      var operador = inst.caixa_operador ? ' (' + escHtml(inst.caixa_operador) + ')' : '';
+
+      html += '<tr>';
+      html += '<td><strong>' + nome + '</strong><br>'
+        + '<small style="color:var(--text-muted);font-family:monospace;">ID: ' + idCurto.substring(0, 16) + (idCurto.length > 16 ? '...' : '') + '</small><br>'
+        + '<small style="color:#64748b;">' + ip + ' ' + (inst.os_info ? '• ' + escHtml(inst.os_info) : '') + '</small> ' + tenant + '</td>';
+      html += '<td>' + statusBadge + '</td>';
+      html += '<td><strong style="color:#10b981;font-size:13px;">' + vendas + '</strong></td>';
+      html += '<td>'
+        + '<span>' + pedidos + ' pedidos • ' + mesas + ' mesas</span><br>'
+        + '<small style="color:' + (caixaAberto ? '#10b981' : '#94a3b8') + ';font-weight:600;">'
+        + '<i class="fa-solid fa-cash-register"></i> Caixa: ' + (caixaAberto ? 'Aberto' + operador : 'Fechado') + '</small></td>';
+      html += '<td>'
+        + '<span>CPU: ' + (inst.cpu_percent || 0) + '% • RAM: ' + (inst.memory_mb || 0) + 'MB</span><br>'
+        + '<small style="color:var(--text-muted);"><i class="fa-solid fa-database"></i> DB: ' + formatBytes(inst.db_size_bytes || 0) + ' • ' + (inst.connected_clients || 0) + ' telas</small></td>';
+      html += '<td>'
+        + '<span>v' + escHtml(inst.software_version || '1.0.0') + '</span><br>'
+        + '<small style="color:var(--text-muted);">' + timeAgo(inst.last_heartbeat_at) + '</small></td>';
+      html += '<td style="text-align:center;">';
+      html += '<div style="display:inline-flex;gap:5px;flex-wrap:wrap;justify-content:center;">';
+
+      if (isBloqueado) {
+        html += '<button class="btn-row-action" onclick="desbloquearInstancia(\'' + escHtml(inst.instance_id) + '\', \'' + nome.replace(/'/g, "\\'") + '\')" title="Desbloquear Instância" style="color:#22c55e;"><i class="fa-solid fa-lock-open"></i></button>';
+      } else {
+        html += '<button class="btn-row-action" onclick="abrirModalBloquear(\'' + escHtml(inst.instance_id) + '\', \'' + nome.replace(/'/g, "\\'") + '\')" title="Bloquear / Congelar Restaurante" style="color:#ef4444;"><i class="fa-solid fa-lock"></i></button>';
       }
 
-      html += '</div>';
+      html += '<button class="btn-row-action" onclick="abrirModalMensagem(\'' + escHtml(inst.instance_id) + '\', \'' + nome.replace(/'/g, "\\'") + '\')" title="Enviar Mensagem / Alerta ao Restaurante" style="color:#3b82f6;"><i class="fa-solid fa-bullhorn"></i></button>';
+      html += '<button class="btn-row-action" onclick="forcarSyncInstancia(\'' + escHtml(inst.instance_id) + '\')" title="Forçar Sincronização Agora" style="color:#06b6d4;"><i class="fa-solid fa-rotate"></i></button>';
+      html += '<button class="btn-row-action" onclick="reiniciarInstancia(\'' + escHtml(inst.instance_id) + '\', \'' + nome.replace(/'/g, "\\'") + '\')" title="Reiniciar Instância Remotamente" style="color:#f59e0b;"><i class="fa-solid fa-power-off"></i></button>';
+      html += '<button class="btn-row-action" onclick="verDiagnosticoInstancia(\'' + escHtml(inst.instance_id) + '\')" title="Diagnóstico & Telemetria Profunda" style="color:var(--text-muted);"><i class="fa-solid fa-magnifying-glass-chart"></i></button>';
 
-      var overlay = document.createElement('div');
-      overlay.className = 'modal-overlay';
-      overlay.style.display = 'flex';
-      overlay.innerHTML = '<div class="modal-content" style="max-width:700px;"><div class="modal-header"><h3>Detalhes da Instância</h3><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()"><i class="fa-solid fa-xmark"></i></button></div><div class="modal-body" style="padding:1.5rem;">' + html + '</div></div>';
-      document.body.appendChild(overlay);
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+      html += '</div></td>';
+      html += '</tr>';
+    });
+
+    tbody.innerHTML = html;
+  }
+
+  window.filtrarTabelaInstancias = function() {
+    var termo = (document.getElementById('filtro-busca-instancias').value || '').toLowerCase().trim();
+    if (!termo) {
+      renderInstancias(instancesCache);
+      return;
+    }
+    var filtradas = instancesCache.filter(function(i) {
+      return (i.instance_name || '').toLowerCase().indexOf(termo) !== -1
+        || (i.instance_id || '').toLowerCase().indexOf(termo) !== -1
+        || (i.ip_address || '').toLowerCase().indexOf(termo) !== -1
+        || (i.bloqueado_motivo || '').toLowerCase().indexOf(termo) !== -1;
+    });
+    renderInstancias(filtradas);
+  };
+
+  /* ═══ CHAVES DE DISTRIBUIÇÃO & ONBOARDING ═══ */
+  window.carregarChavesDistribuicao = function() {
+    apiGet('/api/super/distribution/keys', function(err, data) {
+      var tbody = document.getElementById('chaves-table-body');
+      if (!tbody) return;
+      if (err || !data || !data.ok) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:var(--danger);">Erro ao carregar chaves.</td></tr>';
+        return;
+      }
+      chavesCache = data.keys || [];
+      if (!chavesCache.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">'
+          + 'Nenhuma chave de ativação gerada ainda.<br>'
+          + '<button class="btn-action" onclick="abrirModalGerarChave()" style="margin-top:0.8rem;background:#22c55e;color:#fff;">+ Gerar Primeira Chave</button>'
+          + '</td></tr>';
+        return;
+      }
+      var html = '';
+      chavesCache.forEach(function(c) {
+        var statusColor = c.status === 'ativa' ? '#22c55e' : (c.status === 'utilizada' ? '#3b82f6' : '#ef4444');
+        var planoBadge = escHtml((c.restaurante_licenca || 'premium').toUpperCase());
+        html += '<tr>';
+        html += '<td><span style="font-family:monospace;font-weight:700;color:#22c55e;font-size:13px;letter-spacing:1px;">' + escHtml(c.chave) + '</span></td>';
+        html += '<td><strong>' + escHtml(c.restaurante_nome || ('Restaurante #' + (c.restaurante_id || ''))) + '</strong>'
+          + (c.observacao ? '<br><small style="color:var(--text-muted);">' + escHtml(c.observacao) + '</small>' : '') + '</td>';
+        html += '<td><span class="badge" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.3);">' + planoBadge + '</span></td>';
+        html += '<td><span style="color:' + statusColor + ';font-weight:600;text-transform:capitalize;"><i class="fa-solid fa-circle" style="font-size:7px;vertical-align:middle;margin-right:4px;"></i>' + escHtml(c.status) + '</span></td>';
+        html += '<td><small>' + (c.expira_em ? escHtml(c.expira_em) : '30 dias') + '</small></td>';
+        html += '<td><small style="color:var(--text-muted);">' + timeAgo(c.criada_em) + '</small></td>';
+        html += '<td style="text-align:center;"><div style="display:inline-flex;gap:6px;">'
+          + '<button class="btn-row-action" onclick="abrirModalInstaladorSync(\'' + escHtml(c.chave) + '\', \'' + escHtml(c.restaurante_nome || '').replace(/'/g, "\\'") + '\')" title="Instalador do Sync para este Restaurante" style="color:#3b82f6;"><i class="fa-solid fa-cloud-arrow-down"></i></button> '
+          + '<button class="btn-row-action" onclick="copiarParaClipboard(\'' + escHtml(c.chave) + '\', \'Chave copiada!\')" title="Copiar Chave"><i class="fa-solid fa-copy"></i></button> '
+          + '<button class="btn-row-action" onclick="copiarTemplateWhatsAppLinha(\'' + escHtml(c.chave) + '\', \'' + escHtml(c.restaurante_nome || '').replace(/'/g, "\\'") + '\', \'' + escHtml(c.restaurante_licenca || 'premium') + '\')" title="Copiar Mensagem WhatsApp" style="color:#25d366;"><i class="fa-brands fa-whatsapp"></i></button> ';
+        if (c.status === 'ativa') {
+          html += '<button class="btn-row-action" onclick="revogarChaveDistribuicao(\'' + escHtml(c.chave) + '\')" title="Revogar Chave" style="color:#ef4444;"><i class="fa-solid fa-ban"></i></button>';
+        }
+        html += '</div></td></tr>';
+      });
+      tbody.innerHTML = html;
     });
   };
 
-  window.enviarComandoInstancia = function(instanceId, command) {
-    var confirmMsg = {
-      'deactivate': 'Tem certeza que deseja DESATIVAR esta instância?',
-      'restart': 'Tem certeza que deseja REINICIAR esta instância?',
-      'force_sync': 'Forçar sincronização imediata?',
-      'get_status': 'Solicitar status remoto?'
-    };
-    if (confirmMsg[command] && !confirm(confirmMsg[command])) return;
+  /* ═══ AUTO-INSTALADOR MULTIPLATAFORMA DO SYNC ═══ */
+  window.abrirModalInstaladorSync = function(chaveOpcional, restauranteNome) {
+    var modal = document.getElementById('modal-instalador-sync');
+    if (!modal) return;
 
-    var params = {};
-    if (command === 'send_message') {
-      params = { title: 'Aviso do Admin', body: 'Mensagem do super admin', type: 'info' };
+    var inputKey = document.getElementById('modal-inst-input-key');
+    var inputHub = document.getElementById('modal-inst-input-hub');
+
+    if (inputKey) inputKey.value = chaveOpcional || '';
+    if (inputHub) inputHub.value = window.location.origin;
+
+    selecionarOsInstalador('win');
+    atualizarComandosInstalador();
+    modal.style.display = 'flex';
+  };
+
+  window.fecharModalInstaladorSync = function() {
+    var modal = document.getElementById('modal-instalador-sync');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.selecionarOsInstalador = function(os) {
+    var sistemas = ['win', 'linux', 'mac'];
+    sistemas.forEach(function(s) {
+      var content = document.getElementById('content-os-' + s);
+      var btn = document.getElementById('btn-os-' + s);
+      if (content) content.style.display = (s === os) ? 'block' : 'none';
+      if (btn) {
+        if (s === os) {
+          btn.classList.add('active');
+          var cor = (s === 'win') ? '#00a4ef' : (s === 'linux' ? '#f59e0b' : '#e2e8f0');
+          btn.style.borderBottom = '3px solid ' + cor;
+          btn.style.color = 'var(--text-main)';
+        } else {
+          btn.classList.remove('active');
+          btn.style.borderBottom = '3px solid transparent';
+          btn.style.color = 'var(--text-muted)';
+        }
+      }
+    });
+  };
+
+  window.atualizarComandosInstalador = function() {
+    var inputKey = document.getElementById('modal-inst-input-key');
+    var inputHub = document.getElementById('modal-inst-input-hub');
+    var key = (inputKey ? inputKey.value : '').trim();
+    var hub = (inputHub ? inputHub.value : '').trim() || window.location.origin;
+
+    var batQuery = hub + '/api/sync/installers/windows.bat' + (key ? '?key=' + encodeURIComponent(key) : '');
+    var ps1Query = hub + '/api/sync/installers/install.ps1' + (key ? '?key=' + encodeURIComponent(key) : '');
+    var shQuery = hub + '/api/sync/installers/install.sh' + (key ? '?key=' + encodeURIComponent(key) : '');
+
+    var btnDownloadBat = document.getElementById('btn-download-bat');
+    if (btnDownloadBat) btnDownloadBat.href = batQuery;
+
+    var cmdWinPs = document.getElementById('cmd-win-ps');
+    if (cmdWinPs) {
+      cmdWinPs.value = 'powershell -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=3072; (New-Object Net.WebClient).DownloadFile(\'' + batQuery + '\', \'Instalador-ChefSync.bat\'); Start-Process \'Instalador-ChefSync.bat\' -Wait"';
     }
 
-    apiPost('/api/super/remote-command', { instance_id: instanceId, command: command, params: params }, function(err, data) {
-      if (err || !data || !data.ok) return alert('Erro ao enviar comando: ' + (data ? data.error : err));
-      alert('Comando enviado! ID: ' + data.command_id);
+    var cmdLinuxSh = document.getElementById('cmd-linux-sh');
+    if (cmdLinuxSh) {
+      cmdLinuxSh.value = 'curl -fsSL "' + shQuery + '" | sudo bash';
+    }
+
+    var cmdMacSh = document.getElementById('cmd-mac-sh');
+    if (cmdMacSh) {
+      cmdMacSh.value = 'curl -fsSL "' + shQuery + '" | bash';
+    }
+  };
+
+  window.copiarComandoInstalador = function(elemId, msg) {
+    var el = document.getElementById(elemId);
+    if (!el) return;
+    copiarParaClipboard(el.value, msg || 'Comando copiado!');
+  };
+
+  /* ═══ ASSISTÊNCIA REMOTA 1-CLIQUE & TELEPRESENÇA ═══ */
+  var suporteSessaoAtivaId = null;
+  var suporteSocket = null;
+  var suportePeerConnection = null;
+  var laserAtivo = false;
+  var sessaoGeradaRecente = null;
+
+  window.abrirSecaoSuporteRemoto = function() {
+    var item = document.querySelector('.menu-item[data-target="sec-instancias"]');
+    if (item) item.click();
+    alternarSubabaInstancias('remoto');
+  };
+
+  window.carregarSessoesSuporte = function() {
+    apiGet('/api/support/sessions-active', function(err, data) {
+      var grid = document.getElementById('sup-sessoes-grid');
+      var badgeSubtab = document.getElementById('badge-sessoes-count');
+      var badgeSidebar = document.getElementById('suporte-remoto-active-badge');
+      var countEl = document.getElementById('sup-sessoes-count');
+
+      if (!grid) return;
+      if (err || !data || !data.ok) {
+        grid.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--danger);grid-column:1/-1;">Erro ao carregar atendimentos remotos.</div>';
+        return;
+      }
+
+      var sessoes = data.sessions || [];
+      if (countEl) countEl.textContent = sessoes.length;
+      if (badgeSubtab) {
+        badgeSubtab.textContent = sessoes.length;
+        badgeSubtab.style.display = sessoes.length ? 'inline-block' : 'none';
+      }
+      if (badgeSidebar) {
+        badgeSidebar.textContent = sessoes.length;
+        badgeSidebar.style.display = sessoes.length ? 'inline-block' : 'none';
+      }
+
+      if (!sessoes.length) {
+        grid.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted);background:rgba(0,0,0,0.15);border-radius:12px;border:1px dashed var(--border-color);grid-column:1/-1;">'
+          + '<i class="fa-solid fa-headset" style="font-size:2rem;color:#38bdf8;margin-bottom:0.8rem;display:block;opacity:0.4;"></i>'
+          + 'Nenhum atendimento remoto aberto no momento.<br>'
+          + '<button class="btn-action" onclick="abrirModalGerarLinkSuporte()" style="margin-top:10px;background:#22c55e;color:#fff;font-weight:700;padding:7px 16px;border-radius:6px;">'
+          + '<i class="fa-solid fa-plus"></i> Gerar Link de Ajuda para Cliente</button>'
+          + '</div>';
+        return;
+      }
+
+      var html = '';
+      sessoes.forEach(function(s) {
+        var statusBadge = '';
+
+        if (s.screenSharing) {
+          statusBadge = '<span style="color:#22c55e;font-weight:700;"><i class="fa-solid fa-desktop"></i> Tela Compartilhada</span>';
+        } else if (s.tunnelConnected) {
+          statusBadge = '<span style="color:#38bdf8;font-weight:700;"><i class="fa-solid fa-terminal"></i> Acesso Total Ativo</span>';
+        } else if (s.clientConnected) {
+          statusBadge = '<span style="color:#f59e0b;font-weight:700;"><i class="fa-solid fa-user-check"></i> Cliente Conectado</span>';
+        } else {
+          statusBadge = '<span style="color:#94a3b8;"><i class="fa-solid fa-clock"></i> Aguardando Cliente Clicar</span>';
+        }
+
+        var isSelected = (suporteSessaoAtivaId === s.id);
+        var cardBorder = isSelected ? 'border:2px solid #22c55e;' : 'border:1px solid var(--border-color);';
+
+        html += '<div class="card" style="padding:14px;border-radius:10px;' + cardBorder + 'background:rgba(0,0,0,0.3);display:flex;flex-direction:column;justify-content:space-between;gap:10px;">';
+        html += '<div>';
+        html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">';
+        html += '<strong style="font-size:14px;color:#f8fafc;">' + escHtml(s.restauranteNome || 'Restaurante') + '</strong>';
+        html += '<span style="font-family:monospace;font-size:11px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.12);padding:2px 6px;border-radius:4px;">PIN ' + escHtml(s.pin) + '</span>';
+        html += '</div>';
+        html += '<div style="font-size:11.5px;color:var(--text-muted);margin-bottom:8px;">' + statusBadge + '</div>';
+        if (s.deviceInfo && s.deviceInfo.platform) {
+          html += '<div style="font-size:11px;color:#64748b;"><i class="fa-brands fa-windows"></i> ' + escHtml(s.deviceInfo.platform) + ' (' + escHtml(s.deviceInfo.screen || '') + ')</div>';
+        }
+        html += '</div>';
+        html += '<div style="display:flex;gap:6px;margin-top:6px;">';
+        html += '<button class="btn-action" onclick="conectarSessaoSuporte(\'' + escHtml(s.id) + '\')" style="flex:1;background:' + (isSelected ? '#15803d' : '#0284c7') + ';color:#fff;font-weight:700;padding:6px;font-size:12px;border-radius:6px;">'
+          + (isSelected ? '<i class="fa-solid fa-plug"></i> Conectado' : '<i class="fa-solid fa-desktop"></i> Abrir Console') + '</button>';
+        html += '<button class="btn-action" onclick="copiarLinkSessaoSuporteDireto(\'' + escHtml(s.id) + '\', \'' + escHtml(s.pin) + '\')" title="Copiar Link de Atendimento" style="padding:6px 10px;font-size:12px;"><i class="fa-solid fa-copy"></i></button>';
+        html += '</div>';
+        html += '</div>';
+      });
+
+      grid.innerHTML = html;
+    });
+  };
+
+  window.copiarLinkSessaoSuporteDireto = function(sessionId, pin) {
+    var link = window.location.origin + '/ajuda?sessao=' + encodeURIComponent(sessionId) + '&pin=' + encodeURIComponent(pin);
+    copiarParaClipboard(link, 'Link de ajuda remota copiado!');
+  };
+
+  window.abrirModalGerarLinkSuporte = function() {
+    var modal = document.getElementById('modal-gerar-link-suporte');
+    if (!modal) return;
+    document.getElementById('sup-form-gerar-box').style.display = 'block';
+    document.getElementById('sup-result-gerar-box').style.display = 'none';
+    document.getElementById('sup-input-restaurante').value = '';
+    modal.style.display = 'flex';
+  };
+
+  window.fecharModalGerarLinkSuporte = function() {
+    var modal = document.getElementById('modal-gerar-link-suporte');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.confirmarGerarLinkSuporte = function() {
+    var restNome = (document.getElementById('sup-input-restaurante').value || '').trim() || 'Restaurante';
+    var atendente = (document.getElementById('sup-input-atendente').value || '').trim() || 'Suporte Chef Cozinha';
+
+    apiPost('/api/support/sessions/create', {
+      restaurante_nome: restNome,
+      atendente_nome: atendente
+    }, function(err, data) {
+      if (err || !data || !data.ok) {
+        showToast('Erro ao criar sessão de suporte: ' + (data && data.erro || 'Falha no servidor'), 'error');
+        return;
+      }
+      sessaoGeradaRecente = data;
+      document.getElementById('sup-form-gerar-box').style.display = 'none';
+      var resBox = document.getElementById('sup-result-gerar-box');
+      resBox.style.display = 'block';
+      document.getElementById('sup-result-pin').textContent = data.pin;
+      document.getElementById('sup-result-link').textContent = data.link;
+      carregarSessoesSuporte();
+    });
+  };
+
+  window.copiarMensagemWhatsAppSuporte = function() {
+    if (!sessaoGeradaRecente || !sessaoGeradaRecente.mensagemWhatsApp) return;
+    copiarParaClipboard(sessaoGeradaRecente.mensagemWhatsApp, 'Mensagem formatada para WhatsApp copiada!');
+  };
+
+  window.conectarSessaoPeloModal = function() {
+    if (!sessaoGeradaRecente || !sessaoGeradaRecente.sessionId) return;
+    fecharModalGerarLinkSuporte();
+    conectarSessaoSuporte(sessaoGeradaRecente.sessionId);
+  };
+
+  /* ═══ CONEXÃO DO CONSOLE COM O COMPUTADOR DO CLIENTE ═══ */
+  window.conectarSessaoSuporte = function(sId) {
+    suporteSessaoAtivaId = sId;
+
+    apiGet('/api/support/sessions/' + sId, function(err, data) {
+      if (err || !data || !data.ok) {
+        showToast('Erro ao abrir sessão de suporte.', 'error');
+        return;
+      }
+      var s = data.session;
+      var consoleBox = document.getElementById('sup-active-session-console');
+      if (consoleBox) consoleBox.style.display = 'block';
+
+      document.getElementById('sup-console-restaurante').textContent = s.restauranteNome || 'Restaurante';
+      document.getElementById('sup-console-pin').textContent = 'PIN: ' + (s.pin || '-');
+
+      atualizarBadgeConsole(s);
+      inicializarSocketSuporte(sId);
+      carregarSessoesSuporte();
+    });
+  };
+
+  function atualizarBadgeConsole(s) {
+    var b = document.getElementById('sup-live-status-badge');
+    var place = document.getElementById('sup-screen-placeholder');
+    if (!b) return;
+
+    if (s.screenSharing) {
+      b.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;margin-right:4px;"></span> TELA AO VIVO';
+      b.style.color = '#22c55e';
+      b.style.background = 'rgba(34,197,94,0.15)';
+      b.style.borderColor = 'rgba(34,197,94,0.3)';
+      if (place) place.style.display = 'none';
+    } else if (s.clientConnected) {
+      b.innerHTML = '<i class="fa-solid fa-circle-check"></i> CLIENTE CONECTADO';
+      b.style.color = '#38bdf8';
+      b.style.background = 'rgba(56,189,248,0.15)';
+      b.style.borderColor = 'rgba(56,189,248,0.3)';
+      if (place) place.style.display = 'flex';
+    } else {
+      b.innerHTML = '<i class="fa-solid fa-clock"></i> AGUARDANDO CLIENTE';
+      b.style.color = '#f59e0b';
+      b.style.background = 'rgba(245,158,11,0.15)';
+      b.style.borderColor = 'rgba(245,158,11,0.3)';
+      if (place) place.style.display = 'flex';
+    }
+  }
+
+  function inicializarSocketSuporte(sId) {
+    if (typeof io === 'undefined') return;
+
+    if (!suporteSocket) {
+      suporteSocket = io('/remote-support');
+    }
+
+    suporteSocket.emit('join', { sessionId: sId, role: 'support' });
+
+    suporteSocket.off('screen_frame');
+    suporteSocket.off('screen_sharing_status');
+    suporteSocket.off('command_output');
+    suporteSocket.off('chat_message');
+    suporteSocket.off('tunnel_connected');
+    suporteSocket.off('webrtc_offer');
+
+    // Recebe frames da tela via Canvas fallback
+    suporteSocket.on('screen_frame', function(data) {
+      var canvas = document.getElementById('sup-screen-canvas');
+      var place = document.getElementById('sup-screen-placeholder');
+      if (place) place.style.display = 'none';
+
+      if (canvas && data.frame) {
+        var img = new Image();
+        img.onload = function() {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = data.frame;
+      }
+    });
+
+    // Mudança de status da tela
+    suporteSocket.on('screen_sharing_status', function(st) {
+      var place = document.getElementById('sup-screen-placeholder');
+      if (st.active) {
+        if (place) place.style.display = 'none';
+        showToast('🖥️ Cliente iniciou o compartilhamento da tela!', 'success');
+      } else {
+        if (place) place.style.display = 'flex';
+      }
+    });
+
+    // Saída de comandos executados no terminal do cliente
+    suporteSocket.on('command_output', function(res) {
+      var term = document.getElementById('sup-terminal-output');
+      if (!term) return;
+      var time = new Date().toLocaleTimeString();
+      var output = '\n[' + time + '] ' + (res.ok ? 'SAÍDA:' : 'ERRO:') + '\n' + (res.stdout || res.stderr || '(nenhum retorno)');
+      term.textContent += output + '\n';
+      term.scrollTop = term.scrollHeight;
+    });
+
+    // Chat
+    suporteSocket.on('chat_message', function(msg) {
+      var box = document.getElementById('sup-chat-output');
+      if (!box) return;
+      var div = document.createElement('div');
+      div.style.marginBottom = '6px';
+      div.style.padding = '4px 8px';
+      div.style.borderRadius = '4px';
+      if (msg.from === 'support') {
+        div.style.background = 'rgba(56,189,248,0.12)';
+        div.style.color = '#38bdf8';
+        div.innerHTML = '<strong>Você:</strong> ' + escHtml(msg.text);
+      } else {
+        div.style.background = 'rgba(34,197,94,0.12)';
+        div.style.color = '#86efac';
+        div.innerHTML = '<strong>Cliente:</strong> ' + escHtml(msg.text);
+        showToast('Mensagem do Cliente: ' + msg.text, 'info');
+      }
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    });
+
+    // WebRTC Offer do cliente
+    suporteSocket.on('webrtc_offer', function(offer) {
+      var video = document.getElementById('sup-screen-video');
+      var canvas = document.getElementById('sup-screen-canvas');
+      var place = document.getElementById('sup-screen-placeholder');
+
+      var config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+      suportePeerConnection = new RTCPeerConnection(config);
+
+      suportePeerConnection.ontrack = function(event) {
+        if (video) {
+          video.srcObject = event.streams[0];
+          video.style.display = 'block';
+          if (canvas) canvas.style.display = 'none';
+          if (place) place.style.display = 'none';
+        }
+      };
+
+      suportePeerConnection.onicecandidate = function(event) {
+        if (event.candidate && suporteSocket) {
+          suporteSocket.emit('webrtc_ice_candidate', event.candidate);
+        }
+      };
+
+      suportePeerConnection.setRemoteDescription(new RTCSessionDescription(offer)).then(function() {
+        return suportePeerConnection.createAnswer();
+      }).then(function(answer) {
+        return suportePeerConnection.setLocalDescription(answer);
+      }).then(function() {
+        if (suporteSocket) suporteSocket.emit('webrtc_answer', suportePeerConnection.localDescription);
+      }).catch(function(err) {
+        console.warn('WebRTC answer error:', err);
+      });
+    });
+
+    suporteSocket.on('tunnel_connected', function() {
+      showToast('⚡ Assistente Total conectado no terminal do cliente!', 'success');
+      var term = document.getElementById('sup-terminal-output');
+      if (term) term.textContent += '\n[CONEXÃO TOTAL ATIVA] O cliente abriu o ChefSuporte.bat. Terminal pronto.\n';
+    });
+  }
+
+  window.fecharConsoleSessao = function() {
+    var consoleBox = document.getElementById('sup-active-session-console');
+    if (consoleBox) consoleBox.style.display = 'none';
+    suporteSessaoAtivaId = null;
+  };
+
+  window.toggleLaserPointer = function() {
+    laserAtivo = !laserAtivo;
+    var btn = document.getElementById('btn-toggle-laser');
+    if (btn) {
+      btn.style.background = laserAtivo ? '#ef4444' : 'rgba(239,68,68,0.2)';
+      btn.style.color = '#fff';
+    }
+    if (!laserAtivo && suporteSocket) {
+      suporteSocket.emit('pointer_move', { visible: false });
+    }
+  };
+
+  window.enviarLaserParaCliente = function(event) {
+    if (!laserAtivo || !suporteSocket) return;
+    var container = document.getElementById('sup-screen-container');
+    if (!container) return;
+
+    var rect = container.getBoundingClientRect();
+    var xRatio = (event.clientX - rect.left) / rect.width;
+    var yRatio = (event.clientY - rect.top) / rect.height;
+
+    suporteSocket.emit('pointer_move', {
+      visible: true,
+      x: Math.max(0, Math.min(1, xRatio)),
+      y: Math.max(0, Math.min(1, yRatio))
+    });
+  };
+
+  window.fullscreenScreenViewer = function() {
+    var container = document.getElementById('sup-screen-container');
+    if (container && container.requestFullscreen) {
+      container.requestFullscreen();
+    }
+  };
+
+  window.alternarToolTab = function(tab) {
+    var tabs = ['actions', 'shell', 'chat'];
+    tabs.forEach(function(t) {
+      var content = document.getElementById('tool-content-' + t);
+      var btn = document.getElementById('tool-tab-btn-' + t);
+      if (content) content.style.display = (t === tab) ? 'block' : 'none';
+      if (btn) {
+        if (t === tab) {
+          btn.classList.add('active');
+          btn.style.background = 'rgba(56,189,248,0.15)';
+          btn.style.borderColor = 'rgba(56,189,248,0.3)';
+          btn.style.color = '#38bdf8';
+        } else {
+          btn.classList.remove('active');
+          btn.style.background = 'transparent';
+          btn.style.borderColor = 'transparent';
+          btn.style.color = 'var(--text-muted)';
+        }
+      }
+    });
+  };
+
+  window.executarAcaoRemota = function(action) {
+    if (!suporteSessaoAtivaId) {
+      showToast('Nenhuma sessão de suporte selecionada.', 'warning');
+      return;
+    }
+    var term = document.getElementById('sup-terminal-output');
+    if (term) {
+      term.textContent += '\n>>> Enviando ação remota: ' + action + '...\n';
+      term.scrollTop = term.scrollHeight;
+    }
+
+    apiPost('/api/support/sessions/' + suporteSessaoAtivaId + '/command', { action: action }, function(err, data) {
+      if (err || !data || !data.ok) {
+        showToast('Falha ao enfileirar ação remota: ' + (data && data.erro || 'Erro no servidor'), 'error');
+        return;
+      }
+      showToast('Ação "' + action + '" enviada para a máquina do cliente!', 'success');
+    });
+  };
+
+  window.executarAvisoRemoto = function() {
+    var msg = prompt('Digite a mensagem a ser exibida na tela do cliente:', 'Suporte Chef Cozinha: Manutenção finalizada!');
+    if (!msg) return;
+    if (!suporteSessaoAtivaId) return;
+
+    apiPost('/api/support/sessions/' + suporteSessaoAtivaId + '/command', {
+      action: 'show_alert',
+      params: { message: msg }
+    }, function(err, data) {
+      if (err || !data || !data.ok) {
+        showToast('Falha ao enviar alerta.', 'error');
+        return;
+      }
+      showToast('Alerta enviado para a tela do restaurante!', 'success');
+    });
+  };
+
+  window.enviarComandoShell = function() {
+    if (!suporteSessaoAtivaId) return;
+    var inp = document.getElementById('sup-shell-input');
+    var cmd = (inp ? inp.value : '').trim();
+    if (!cmd) return;
+
+    var term = document.getElementById('sup-terminal-output');
+    if (term) {
+      term.textContent += '\n$ ' + cmd + '\n';
+      term.scrollTop = term.scrollHeight;
+    }
+    inp.value = '';
+
+    apiPost('/api/support/sessions/' + suporteSessaoAtivaId + '/command', {
+      action: 'custom',
+      custom_command: cmd
+    }, function(err, data) {
+      if (err || !data || !data.ok) {
+        showToast('Erro ao enviar comando shell.', 'error');
+      }
+    });
+  };
+
+  window.enviarMensagemSuporteChat = function() {
+    if (!suporteSessaoAtivaId || !suporteSocket) return;
+    var inp = document.getElementById('sup-chat-input');
+    var txt = (inp ? inp.value : '').trim();
+    if (!txt) return;
+
+    var speak = document.getElementById('sup-chat-speak') ? document.getElementById('sup-chat-speak').checked : true;
+    suporteSocket.emit('chat_message', {
+      from: 'support',
+      text: txt,
+      speak: speak
+    });
+    inp.value = '';
+  };
+
+  window.copiarTemplateWhatsAppLinha = function(chave, nome, plano) {
+    var baseUrl = window.location.origin;
+    var link = baseUrl + '/ativacao.html?chave=' + encodeURIComponent(chave);
+    var texto = '🍽️ *Bem-vindo ao Chef Cozinha!*\n\n'
+      + 'Olá, equipe do *' + (nome || 'Restaurante') + '*! Segue a chave para ativação do seu sistema:\n\n'
+      + '🔑 *Chave de Ativação:* `' + chave + '`\n'
+      + '📦 *Plano:* ' + (plano || 'Premium').toUpperCase() + '\n\n'
+      + '📲 *Como Ativar em 1 Clique:*\n'
+      + '1. No computador ou tablet do restaurante, acesse o link:\n'
+      + link + '\n'
+      + '2. Clique em "Ativar Sistema Agora"\n'
+      + 'Seu PDV e comanda eletrônica já estarão conectados e prontos para vender!';
+    copiarParaClipboard(texto, 'Template do WhatsApp copiado!');
+  };
+
+  window.abrirModalGerarChave = function() {
+    var modal = document.getElementById('modal-gerar-chave');
+    if (modal) {
+      document.getElementById('form-gerar-chave-box').style.display = 'block';
+      document.getElementById('resultado-chave-box').style.display = 'none';
+      document.getElementById('chave-input-nome').value = '';
+      document.getElementById('chave-input-obs').value = '';
+      modal.style.display = 'flex';
+    }
+  };
+
+  window.fecharModalGerarChave = function() {
+    var modal = document.getElementById('modal-gerar-chave');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.confirmarGerarChave = function() {
+    var nome = (document.getElementById('chave-input-nome').value || '').trim();
+    if (!nome) return alert('Por favor, informe o nome do restaurante.');
+    var plano = document.getElementById('chave-input-plano').value;
+    var dias = document.getElementById('chave-input-dias').value;
+    var obs = (document.getElementById('chave-input-obs').value || '').trim();
+
+    apiPost('/api/super/distribution/generate-key', {
+      restaurante_nome: nome,
+      plano: plano,
+      validade_dias: dias,
+      observacao: obs
+    }, function(err, data) {
+      if (err || !data || !data.ok) return alert('Erro ao gerar chave: ' + (data ? data.error : err));
+      showToast('Chave gerada com sucesso!', 'success');
+
+      var boxResultado = document.getElementById('resultado-chave-box');
+      var txtChave = document.getElementById('chave-gerada-texto');
+      var linkPreview = document.getElementById('link-ativacao-preview');
+
+      txtChave.textContent = data.chave;
+      var link = window.location.origin + '/ativacao.html?chave=' + encodeURIComponent(data.chave);
+      linkPreview.innerHTML = 'Link de Ativação: <a href="' + link + '" target="_blank" style="color:#3b82f6;">' + link + '</a>';
+
+      boxResultado.style.display = 'block';
+      window.__ULTIMA_CHAVE_GERADA = {
+        chave: data.chave,
+        nome: nome,
+        plano: plano,
+        dias: dias
+      };
+
+      carregarChavesDistribuicao();
       carregarInstancias();
     });
   };
 
-  window.pushConfigInstancia = function(instanceId) {
-    var configStr = prompt('Configs JSON (chave: valor):', '{"restaurant_status": "ativo"}');
-    if (!configStr) return;
+  window.copiarChaveGerada = function() {
+    if (window.__ULTIMA_CHAVE_GERADA && window.__ULTIMA_CHAVE_GERADA.chave) {
+      copiarParaClipboard(window.__ULTIMA_CHAVE_GERADA.chave, 'Chave copiada!');
+    }
+  };
+
+  window.copiarTemplateWhatsApp = function() {
+    if (window.__ULTIMA_CHAVE_GERADA) {
+      copiarTemplateWhatsAppLinha(
+        window.__ULTIMA_CHAVE_GERADA.chave,
+        window.__ULTIMA_CHAVE_GERADA.nome,
+        window.__ULTIMA_CHAVE_GERADA.plano
+      );
+    }
+  };
+
+  window.revogarChaveDistribuicao = function(chave) {
+    if (!confirm('Deseja realmente revogar a chave "' + chave + '"? Ela não poderá mais ser usada para ativações.')) return;
+    apiPost('/api/super/distribution/revoke-key', { chave: chave }, function(err, data) {
+      if (err || !data || !data.ok) return alert('Erro ao revogar chave: ' + (data ? data.error : err));
+      showToast('Chave revogada com sucesso.', 'info');
+      carregarChavesDistribuicao();
+    });
+  };
+
+  /* ═══ COMANDOS REMOTOS: BLOQUEIO / DESBLOQUEIO / MENSAGENS ═══ */
+  window.abrirModalBloquear = function(instanceId, instanceNome) {
+    document.getElementById('bloquear-id-instancia').value = instanceId;
+    document.getElementById('bloquear-nome-instancia').textContent = instanceNome || instanceId;
+    document.getElementById('bloquear-select-motivo').value = 'Inadimplência financeira — Pagamento pendente';
+    document.getElementById('bloquear-custom-motivo-box').style.display = 'none';
+    var modal = document.getElementById('modal-bloquear-instancia');
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.fecharModalBloquear = function() {
+    var modal = document.getElementById('modal-bloquear-instancia');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.aoMudarMotivoBloqueio = function() {
+    var val = document.getElementById('bloquear-select-motivo').value;
+    var customBox = document.getElementById('bloquear-custom-motivo-box');
+    if (customBox) customBox.style.display = (val === 'outro') ? 'block' : 'none';
+  };
+
+  window.executarBloqueioConfirmado = function() {
+    var instanceId = document.getElementById('bloquear-id-instancia').value;
+    var motivoSelect = document.getElementById('bloquear-select-motivo').value;
+    var motivoCustom = (document.getElementById('bloquear-custom-motivo').value || '').trim();
+    var motivoFinal = (motivoSelect === 'outro' && motivoCustom) ? motivoCustom : motivoSelect;
+    var contato = (document.getElementById('bloquear-contato-suporte').value || '').trim();
+
+    apiPost('/api/super/remote-command', {
+      instance_id: instanceId,
+      command: 'deactivate',
+      params: { reason: motivoFinal, contact: contato }
+    }, function(err, data) {
+      fecharModalBloquear();
+      if (err || !data || !data.ok) return alert('Erro ao emitir bloqueio: ' + (data ? data.error : err));
+      showToast('🔒 Comando de bloqueio transmitido com sucesso!', 'warning');
+      carregarInstancias();
+    });
+  };
+
+  window.desbloquearInstancia = function(instanceId, instanceNome) {
+    if (!confirm('Deseja restabelecer o acesso e DESBLOQUEAR o restaurante "' + (instanceNome || instanceId) + '"?')) return;
+    apiPost('/api/super/remote-command', {
+      instance_id: instanceId,
+      command: 'reactivate',
+      params: {}
+    }, function(err, data) {
+      if (err || !data || !data.ok) return alert('Erro ao reativar: ' + (data ? data.error : err));
+      showToast('🔓 Instância reativada com sucesso!', 'success');
+      carregarInstancias();
+    });
+  };
+
+  window.abrirModalMensagem = function(instanceId, instanceNome) {
+    document.getElementById('msg-id-instancia').value = instanceId;
+    document.getElementById('msg-titulo').value = '';
+    document.getElementById('msg-corpo').value = '';
+    var modal = document.getElementById('modal-mensagem-instancia');
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.fecharModalMensagem = function() {
+    var modal = document.getElementById('modal-mensagem-instancia');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.transmitirMensagemConfirmada = function() {
+    var instanceId = document.getElementById('msg-id-instancia').value;
+    var tipo = document.getElementById('msg-tipo').value;
+    var titulo = (document.getElementById('msg-titulo').value || '').trim();
+    var corpo = (document.getElementById('msg-corpo').value || '').trim();
+
+    if (!titulo || !corpo) return alert('Preencha título e mensagem.');
+
+    apiPost('/api/super/remote-command', {
+      instance_id: instanceId,
+      command: 'send_message',
+      params: { title: titulo, body: corpo, type: tipo }
+    }, function(err, data) {
+      fecharModalMensagem();
+      if (err || !data || !data.ok) return alert('Erro ao transmitir mensagem: ' + (data ? data.error : err));
+      showToast('📢 Alerta transmitido a todos os terminais!', 'info');
+    });
+  };
+
+  window.forcarSyncInstancia = function(instanceId) {
+    apiPost('/api/super/remote-command', {
+      instance_id: instanceId,
+      command: 'force_sync',
+      params: {}
+    }, function(err, data) {
+      if (err || !data || !data.ok) return alert('Erro ao solicitar sync: ' + (data ? data.error : err));
+      showToast('Sincronização forçada enviada!', 'info');
+      carregarFilaSync();
+    });
+  };
+
+  window.reiniciarInstancia = function(instanceId, instanceNome) {
+    if (!confirm('Deseja reiniciar remotamente a aplicação do restaurante "' + (instanceNome || instanceId) + '"?')) return;
+    apiPost('/api/super/remote-command', {
+      instance_id: instanceId,
+      command: 'restart',
+      params: { reason: 'Comando do Super Admin' }
+    }, function(err, data) {
+      if (err || !data || !data.ok) return alert('Erro ao reiniciar: ' + (data ? data.error : err));
+      showToast('Comando de reinicialização enviado!', 'warning');
+      carregarInstancias();
+    });
+  };
+
+  /* ═══ DIAGNÓSTICO PROFUNDO & AUDITORIA ═══ */
+  window.verDiagnosticoInstancia = function(instanceId) {
+    var modal = document.getElementById('modal-diagnostico-instancia');
+    var corpo = document.getElementById('modal-diagnostico-corpo');
+    if (!modal || !corpo) return;
+    corpo.innerHTML = '<div style="text-align:center;padding:2rem;"><i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;color:var(--primary);"></i><p style="margin-top:1rem;">Carregando telemetria avançada...</p></div>';
+    modal.style.display = 'flex';
+
+    apiGet('/api/super/instances/' + encodeURIComponent(instanceId), function(err, data) {
+      if (err || !data || !data.ok) {
+        corpo.innerHTML = '<p style="color:var(--danger);">Erro ao carregar dados de diagnóstico.</p>';
+        return;
+      }
+      var inst = data.instance || {};
+      var commands = data.commands || [];
+      var conflicts = data.conflicts || [];
+
+      var html = '<div style="display:flex;flex-direction:column;gap:1.5rem;">';
+
+      // Header com identificação
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);padding:1rem 1.2rem;border-radius:10px;border:1px solid var(--border-color);">'
+        + '<div><h3 style="margin:0 0 4px;font-size:1.2rem;">' + escHtml(inst.instance_name || 'Instância') + '</h3>'
+        + '<small style="color:var(--text-muted);font-family:monospace;">ID: ' + escHtml(inst.instance_id) + '</small></div>'
+        + '<div><span class="badge" style="background:rgba(34,197,94,0.15);color:#22c55e;padding:6px 12px;border-radius:8px;font-weight:700;">' + escHtml(inst.status || 'online').toUpperCase() + '</span></div>'
+        + '</div>';
+
+      // Grid de Hardware e Telemetria
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">'
+        + '<div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:8px;border:1px solid var(--border-color);text-align:center;"><small style="color:#888;">CPU Uso</small><div style="font-size:1.2rem;font-weight:700;color:#3b82f6;">' + (inst.cpu_percent || 0) + '%</div></div>'
+        + '<div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:8px;border:1px solid var(--border-color);text-align:center;"><small style="color:#888;">Memória RAM</small><div style="font-size:1.2rem;font-weight:700;color:#10b981;">' + (inst.memory_mb || 0) + ' MB</div></div>'
+        + '<div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:8px;border:1px solid var(--border-color);text-align:center;"><small style="color:#888;">Banco SQLite</small><div style="font-size:1.2rem;font-weight:700;color:#f59e0b;">' + formatBytes(inst.db_size_bytes || 0) + '</div></div>'
+        + '<div style="background:rgba(0,0,0,0.25);padding:10px;border-radius:8px;border:1px solid var(--border-color);text-align:center;"><small style="color:#888;">Telas / Sockets</small><div style="font-size:1.2rem;font-weight:700;color:#a855f7;">' + (inst.connected_clients || 0) + '</div></div>'
+        + '</div>';
+
+      // Métricas Financeiras e Operacionais
+      html += '<div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);padding:1rem;border-radius:10px;">'
+        + '<h4 style="margin:0 0 10px;color:#10b981;font-size:0.95rem;"><i class="fa-solid fa-chart-line"></i> Telemetria Comercial de Hoje</h4>'
+        + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">'
+        + '<div><span style="font-size:11px;color:#94a3b8;">Faturamento:</span><div style="font-size:1.1rem;font-weight:700;color:#10b981;">' + formatMoney(inst.vendas_hoje) + '</div></div>'
+        + '<div><span style="font-size:11px;color:#94a3b8;">Pedidos Emitidos:</span><div style="font-size:1.1rem;font-weight:700;">' + (inst.pedidos_hoje || 0) + '</div></div>'
+        + '<div><span style="font-size:11px;color:#94a3b8;">Mesas Ativas:</span><div style="font-size:1.1rem;font-weight:700;">' + (inst.mesas_abertas || 0) + '</div></div>'
+        + '<div><span style="font-size:11px;color:#94a3b8;">Caixa:</span><div style="font-size:1.1rem;font-weight:700;color:' + (inst.caixa_aberto ? '#10b981' : '#94a3b8') + ';">' + (inst.caixa_aberto ? 'Aberto' : 'Fechado') + '</div></div>'
+        + '</div></div>';
+
+      // Histórico de Comandos Remotos
+      html += '<div><h4 style="margin:0 0 8px;font-size:0.95rem;"><i class="fa-solid fa-terminal"></i> Histórico de Comandos &amp; ACKs</h4>';
+      if (commands.length) {
+        html += '<table class="custom-table" style="font-size:12px;margin:0;"><thead><tr><th>Comando</th><th>Status</th><th>Emitido</th><th>Resultado</th></tr></thead><tbody>';
+        commands.slice(0, 10).forEach(function(c) {
+          var sColor = c.status === 'completed' ? '#22c55e' : (c.status === 'failed' ? '#ef4444' : '#f59e0b');
+          html += '<tr><td><strong>' + escHtml(c.command) + '</strong></td>'
+            + '<td style="color:' + sColor + ';font-weight:600;">' + escHtml(c.status) + '</td>'
+            + '<td><small>' + timeAgo(c.issued_at) + '</small></td>'
+            + '<td><small style="color:var(--text-muted);">' + escHtml((c.result || '-').substring(0, 60)) + '</small></td></tr>';
+        });
+        html += '</tbody></table>';
+      } else {
+        html += '<p style="color:var(--text-muted);font-size:12px;">Nenhum comando enviado ainda.</p>';
+      }
+      html += '</div>';
+
+      // Push Config Remoto Rápido
+      html += '<div style="border-top:1px solid var(--border-color);padding-top:1rem;">'
+        + '<h4 style="margin:0 0 6px;font-size:0.95rem;"><i class="fa-solid fa-sliders"></i> Push de Configuração Remota</h4>'
+        + '<div style="display:flex;gap:8px;">'
+        + '<input type="text" id="diag-push-config-json" value=\'{"restaurant_status":"ativo"}\' style="flex:1;padding:8px 12px;font-family:monospace;font-size:12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;">'
+        + '<button class="btn-action" onclick="executarPushConfigRapido(\'' + escHtml(inst.instance_id) + '\')" style="padding:6px 14px;font-size:12px;background:#3b82f6;color:#fff;"><i class="fa-solid fa-paper-plane"></i> Push</button>'
+        + '</div></div>';
+
+      html += '</div>';
+      corpo.innerHTML = html;
+    });
+  };
+
+  window.fecharModalDiagnostico = function() {
+    var modal = document.getElementById('modal-diagnostico-instancia');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.executarPushConfigRapido = function(instanceId) {
+    var str = document.getElementById('diag-push-config-json').value;
     try {
-      var configs = JSON.parse(configStr);
+      var configs = JSON.parse(str);
       apiPost('/api/super/push-config', { instance_id: instanceId, configs: configs }, function(err, data) {
-        if (err || !data || !data.ok) return alert('Erro ao enviar config: ' + (data ? data.error : err));
-        alert('Config push enviado! ID: ' + data.command_id);
+        if (err || !data || !data.ok) return alert('Erro: ' + (data ? data.error : err));
+        showToast('Configurações atualizadas na instância!', 'success');
       });
     } catch (e) {
       alert('JSON inválido: ' + e.message);
     }
   };
 
+  /* ═══ REAL-TIME SOCKET.IO ENGINE (SUPER ADMIN) ═══ */
+  function setupSuperAdminSocket() {
+    if (typeof io !== 'undefined' && !window.socket) {
+      try {
+        window.socket = io({ transports: ['websocket', 'polling'] });
+      } catch (e) {
+        console.warn('[Super Admin] Falha ao conectar Socket.IO:', e);
+      }
+    }
+
+    if (window.socket && typeof window.socket.on === 'function') {
+      window.socket.on('super:instance_connected', function(data) {
+        showToast('🟢 Instância conectada: ' + (data.instanceId || ''), 'info');
+        carregarInstancias();
+      });
+
+      window.socket.on('super:instance_disconnected', function(data) {
+        carregarInstancias();
+      });
+
+      window.socket.on('super:instance_heartbeat', function(data) {
+        if (!data || !data.instanceId) return;
+        for (var i = 0; i < instancesCache.length; i++) {
+          if (instancesCache[i].instance_id === data.instanceId) {
+            instancesCache[i].status = data.status || 'online';
+            instancesCache[i].is_ws_connected = true;
+            instancesCache[i].last_heartbeat_at = data.last_heartbeat_at || new Date().toISOString();
+            renderInstancias(instancesCache);
+            break;
+          }
+        }
+      });
+
+      window.socket.on('super:instance_metrics', function(data) {
+        if (!data || !data.instanceId) return;
+        for (var i = 0; i < instancesCache.length; i++) {
+          if (instancesCache[i].instance_id === data.instanceId) {
+            Object.assign(instancesCache[i], data);
+            renderInstancias(instancesCache);
+            break;
+          }
+        }
+      });
+
+      window.socket.on('super:command_ack', function(data) {
+        showToast('⚡ Comando ' + (data.command_id || '') + ' confirmado pela instância!', 'success');
+        carregarInstancias();
+      });
+
+      window.socket.on('super:instance_sync_event', function(data) {
+        carregarFilaSync();
+      });
+    }
+  }
+
+  // Inicializa socket assim que carregar o script
+  try {
+    setupSuperAdminSocket();
+  } catch (e) {}
+
   var btnRefreshInstances = document.getElementById('btn-refresh-instances');
   if (btnRefreshInstances) {
     btnRefreshInstances.addEventListener('click', function() { carregarInstancias(); });
   }
 
-  /* Supabase wizard */
+  /* Supabase wizard & sync */
   var btnSbTest = document.getElementById('btn-supabase-testar');
   var btnSbSave = document.getElementById('btn-supabase-salvar');
+  var btnSbSync = document.getElementById('btn-supabase-sync-now');
+  var btnSbRefresh = document.getElementById('btn-supabase-refresh-status');
   if (btnSbTest) btnSbTest.addEventListener('click', function() { window.testarSupabase(); });
   if (btnSbSave) btnSbSave.addEventListener('click', function() { window.salvarSupabase(); });
+  if (btnSbSync) btnSbSync.addEventListener('click', function() { window.sincronizarSupabaseAgora(); });
+  if (btnSbRefresh) btnSbRefresh.addEventListener('click', function() { window.carregarStatusSyncSupabase(); });
+
+  if (window.socket && typeof window.socket.on === 'function') {
+    window.socket.on('supabase_sync_completed', function() {
+      if (typeof window.carregarStatusSyncSupabase === 'function') {
+        window.carregarStatusSyncSupabase();
+      }
+    });
+  }
 
 
 
@@ -6996,7 +8483,7 @@ var _temasCache = [];
 var _temaEdicao = null; // { id, versao, nome, modo }
 
 window.carregarTemasLista = function() {
-  fetch('/api/super/temas')
+  fetch('/api/super/temas', { headers: authHeaders() })
     .then(function(res) { return res.json(); })
     .then(function(data) {
       var box = document.getElementById('temas-lista');
@@ -7210,7 +8697,7 @@ window.carregarTemaCustomGlobal = function() {
   /* Preencher dropdown de tenants para escopo */
   var sel = document.getElementById('theme-scope-tenant');
   if (sel && sel.options.length <= 1) {
-    fetch('/api/super/restaurantes', { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('super_token') || '') } })
+    fetch('/api/super/restaurantes', { headers: authHeaders() })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         if (d && d.ok && Array.isArray(d.restaurantes)) {
@@ -7548,6 +9035,281 @@ function saCentralRenderLista() {
   });
   painel.innerHTML = html;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CENTRAL DE NOTIFICAÇÕES ENTERPRISE (31k Tenants)
+   ═══════════════════════════════════════════════════════════════════ */
+var notifFiltroAtivo = {
+  busca: '',
+  categoria: 'todas',
+  prioridade: 'todas',
+  lida: '0',
+  limit: 50,
+  offset: 0
+};
+window.notifFiltroAtivo = notifFiltroAtivo;
+
+function toggleCentralNotificacoesSuper() {
+  switchTab('sec-notificacoes');
+}
+window.toggleCentralNotificacoesSuper = toggleCentralNotificacoesSuper;
+
+function carregarCentralNotificacoesStats() {
+  apiGet('/api/super/notificacoes/stats', function(err, data) {
+    if (!err && data && data.ok && data.stats) {
+      var s = data.stats;
+      var elCrit = document.getElementById('stat-notif-criticas');
+      var elQuar = document.getElementById('stat-notif-quarentena');
+      var elSync = document.getElementById('stat-notif-sync');
+      var elNaoLidas = document.getElementById('stat-notif-nao-lidas');
+      if (elCrit) elCrit.textContent = s.criticas || 0;
+      if (elQuar) elQuar.textContent = s.quarentena || 0;
+      if (elSync) elSync.textContent = s.sync || 0;
+      if (elNaoLidas) elNaoLidas.textContent = s.naoLidas || 0;
+
+      var n = s.naoLidas || 0;
+      var badgeHeader = document.getElementById('notif-header-badge');
+      if (badgeHeader) {
+        badgeHeader.textContent = n > 99 ? '99+' : String(n);
+        badgeHeader.style.display = n > 0 ? 'inline-block' : 'none';
+      }
+      var badgeMenu = document.getElementById('notif-menu-badge');
+      if (badgeMenu) {
+        badgeMenu.textContent = n > 99 ? '99+' : String(n);
+        badgeMenu.style.display = n > 0 ? 'inline-block' : 'none';
+      }
+    }
+  });
+}
+window.carregarCentralNotificacoesStats = carregarCentralNotificacoesStats;
+
+function carregarCentralNotificacoes(resetOffset) {
+  if (resetOffset) window.notifFiltroAtivo.offset = 0;
+
+  var inpBusca = document.getElementById('notif-search-input');
+  var selCat = document.getElementById('notif-filter-cat');
+  var selPrio = document.getElementById('notif-filter-prio');
+  var selLida = document.getElementById('notif-filter-lida');
+
+  if (inpBusca) window.notifFiltroAtivo.busca = inpBusca.value.trim();
+  if (selCat) window.notifFiltroAtivo.categoria = selCat.value;
+  if (selPrio) window.notifFiltroAtivo.prioridade = selPrio.value;
+  if (selLida) window.notifFiltroAtivo.lida = selLida.value;
+
+  window.carregarCentralNotificacoesStats();
+
+  var qs = '?limit=' + (window.notifFiltroAtivo.limit || 50) + '&offset=' + (window.notifFiltroAtivo.offset || 0);
+  if (window.notifFiltroAtivo.busca) qs += '&busca=' + encodeURIComponent(window.notifFiltroAtivo.busca);
+  if (window.notifFiltroAtivo.categoria && window.notifFiltroAtivo.categoria !== 'todas') qs += '&categoria=' + encodeURIComponent(window.notifFiltroAtivo.categoria);
+  if (window.notifFiltroAtivo.prioridade && window.notifFiltroAtivo.prioridade !== 'todas') qs += '&prioridade=' + encodeURIComponent(window.notifFiltroAtivo.prioridade);
+  if (window.notifFiltroAtivo.lida && window.notifFiltroAtivo.lida !== 'todas') qs += '&lida=' + encodeURIComponent(window.notifFiltroAtivo.lida);
+
+  var feed = document.getElementById('notif-feed-container');
+  if (feed) {
+    feed.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:0.5rem;">Carregando notificações dos estabelecimentos...</p></div>';
+  }
+
+  apiGet('/api/super/notificacoes' + qs, function(err, data) {
+    if (!feed) return;
+    if (err || !data || !data.ok) {
+      feed.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--danger);"><i class="fa-solid fa-triangle-exclamation fa-2x"></i><p style="margin-top:0.5rem;">Erro ao carregar notificações: ' + escapeHtml((data && data.erro) || err || 'Falha de conexão') + '</p></div>';
+      return;
+    }
+
+    var list = data.notificacoes || [];
+    var total = data.total || 0;
+
+    if (list.length === 0) {
+      feed.innerHTML = '<div style="text-align:center;padding:3rem 1.5rem;background:var(--bg-card,#161a2b);border:1px dashed var(--border-color,#2a2d3e);border-radius:12px;color:var(--text-muted);">' +
+        '<i class="fa-solid fa-bell-slash fa-3x" style="opacity:0.4;margin-bottom:1rem;"></i>' +
+        '<h4 style="margin:0 0 6px 0;color:var(--text-main,#fff);">Tudo em dia!</h4>' +
+        '<p style="margin:0;font-size:0.88rem;">Nenhuma notificação encontrada com os filtros selecionados.</p>' +
+        '</div>';
+      var pag = document.getElementById('notif-pagination');
+      if (pag) pag.innerHTML = '<span>Total: 0</span>';
+      return;
+    }
+
+    var prioCores = {
+      'P1_CRITICA': { bg: 'rgba(239,68,68,0.15)', border: '#ef4444', text: '#ef4444', label: '🚨 P1 - Crítica' },
+      'P2_ALTA': { bg: 'rgba(245,158,11,0.15)', border: '#f59e0b', text: '#f59e0b', label: '⚠️ P2 - Alta' },
+      'P3_MEDIA': { bg: 'rgba(59,130,246,0.15)', border: '#3b82f6', text: '#3b82f6', label: '💡 P3 - Média' },
+      'P4_INFO': { bg: 'rgba(100,116,139,0.15)', border: '#64748b', text: '#94a3b8', label: 'ℹ️ P4 - Info' }
+    };
+
+    var catIcones = {
+      'licenca': 'fa-key',
+      'fraude': 'fa-shield-halved',
+      'quarentena': 'fa-virus-slash',
+      'sync': 'fa-rotate',
+      'vendas': 'fa-dollar-sign',
+      'broadcast': 'fa-bullhorn',
+      'sistema': 'fa-server'
+    };
+
+    var html = '';
+    list.forEach(function(item) {
+      var prio = prioCores[item.prioridade] || prioCores['P4_INFO'];
+      var icon = catIcones[item.categoria] || 'fa-bell';
+      var timeStr = item.created_at ? new Date(item.created_at).toLocaleString('pt-BR') : '';
+      var isLida = Number(item.lida) === 1;
+
+      html += '<div class="notif-card" style="background:var(--bg-card,#161a2b);border:1px solid ' + (isLida ? 'var(--border-color,#2a2d3e)' : prio.border) + ';border-left:4px solid ' + prio.border + ';border-radius:12px;padding:1rem;display:flex;align-items:flex-start;gap:14px;box-shadow:0 4px 15px rgba(0,0,0,0.15);opacity:' + (isLida ? '0.75' : '1') + ';">';
+      
+      html += '<div style="width:40px;height:40px;border-radius:10px;background:' + prio.bg + ';color:' + prio.text + ';display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">';
+      html += '<i class="fa-solid ' + icon + '"></i>';
+      html += '</div>';
+
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">';
+      html += '<span style="background:' + prio.bg + ';color:' + prio.text + ';font-size:0.72rem;font-weight:800;padding:2px 8px;border-radius:6px;text-transform:uppercase;">' + prio.label + '</span>';
+      html += '<span style="background:rgba(255,255,255,0.06);color:var(--text-muted,#94a3b8);font-size:0.72rem;padding:2px 8px;border-radius:6px;text-transform:uppercase;">' + escapeHtml(item.categoria) + '</span>';
+      if (item.restaurante_nome) {
+        html += '<span style="color:var(--primary,#fc4b15);font-size:0.78rem;font-weight:700;">🏪 ' + escapeHtml(item.restaurante_nome) + (item.restaurante_id && item.restaurante_id !== '0' ? ' (ID: ' + item.restaurante_id + ')' : '') + '</span>';
+      }
+      html += '<span style="color:var(--text-muted,#64748b);font-size:0.75rem;margin-left:auto;">' + timeStr + '</span>';
+      html += '</div>';
+
+      html += '<h4 style="margin:4px 0;font-size:0.95rem;color:var(--text-main,#fff);font-weight:700;">' + escapeHtml(item.titulo) + '</h4>';
+      html += '<p style="margin:0 0 6px 0;font-size:0.85rem;color:var(--text-muted,#cbd5e1);line-height:1.45;">' + escapeHtml(item.mensagem) + '</p>';
+
+      if (item.meta_json) {
+        try {
+          var metaObj = typeof item.meta_json === 'string' ? JSON.parse(item.meta_json) : item.meta_json;
+          html += '<div style="background:rgba(0,0,0,0.2);padding:6px 10px;border-radius:6px;font-family:monospace;font-size:0.75rem;color:#94a3b8;margin-top:4px;">' + escapeHtml(JSON.stringify(metaObj)) + '</div>';
+        } catch(e) {}
+      }
+      html += '</div>';
+
+      html += '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">';
+      if (!isLida) {
+        html += '<button onclick="window.marcarNotificacaoLida(\'' + item.id + '\')" title="Marcar como lida" style="background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.25);border-radius:6px;padding:6px 10px;font-size:0.78rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;">';
+        html += '<i class="fa-solid fa-check"></i> Lida</button>';
+      } else {
+        html += '<span style="color:var(--text-muted,#64748b);font-size:0.75rem;"><i class="fa-solid fa-check-double"></i> Lida</span>';
+      }
+
+      if (item.acao_url) {
+        html += '<a href="' + escapeHtml(item.acao_url) + '" class="btn btn-sm" style="background:var(--primary,#fc4b15);color:#fff;border-radius:6px;padding:6px 10px;font-size:0.78rem;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:4px;">Ver Detalhes</a>';
+      }
+      html += '</div>';
+
+      html += '</div>';
+    });
+
+    feed.innerHTML = html;
+
+    var pag = document.getElementById('notif-pagination');
+    if (pag) {
+      var currentOffset = window.notifFiltroAtivo.offset || 0;
+      var limit = window.notifFiltroAtivo.limit || 50;
+      var hasPrev = currentOffset > 0;
+      var hasNext = (currentOffset + limit) < total;
+      
+      var pagHtml = '<div>Exibindo ' + (list.length > 0 ? (currentOffset + 1) : 0) + ' a ' + (currentOffset + list.length) + ' de <strong>' + total + '</strong> notificações</div>';
+      pagHtml += '<div style="display:flex;gap:8px;">';
+      if (hasPrev) {
+        pagHtml += '<button onclick="window.notifFiltroAtivo.offset = Math.max(0, ' + (currentOffset - limit) + '); window.carregarCentralNotificacoes();" style="padding:6px 12px;border-radius:6px;background:var(--bg-secondary);border:1px solid var(--border-color);color:#fff;cursor:pointer;"><i class="fa-solid fa-chevron-left"></i> Anterior</button>';
+      }
+      if (hasNext) {
+        pagHtml += '<button onclick="window.notifFiltroAtivo.offset = ' + (currentOffset + limit) + '; window.carregarCentralNotificacoes();" style="padding:6px 12px;border-radius:6px;background:var(--bg-secondary);border:1px solid var(--border-color);color:#fff;cursor:pointer;">Próxima <i class="fa-solid fa-chevron-right"></i></button>';
+      }
+      pagHtml += '</div>';
+      pag.innerHTML = pagHtml;
+    }
+  });
+}
+window.carregarCentralNotificacoes = carregarCentralNotificacoes;
+
+var _filtroNotifTimeout = null;
+window.filtrarNotificacoesSuper = function() {
+  clearTimeout(_filtroNotifTimeout);
+  _filtroNotifTimeout = setTimeout(function() {
+    window.carregarCentralNotificacoes(true);
+  }, 300);
+};
+
+window.marcarNotificacaoLida = function(id) {
+  apiPost('/api/super/notificacoes/marcar-lida/' + encodeURIComponent(id), {}, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao marcar notificação como lida.', 'danger');
+      return;
+    }
+    window.carregarCentralNotificacoes();
+  });
+};
+
+window.marcarTodasNotificacoesLidas = function() {
+  if (!confirm('Deseja marcar TODAS as notificações como lidas?')) return;
+  apiPost('/api/super/notificacoes/marcar-todas-lidas', {}, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao marcar todas como lidas.', 'danger');
+      return;
+    }
+    showToast('Todas as notificações foram marcadas como lidas!', 'success');
+    window.carregarCentralNotificacoes();
+  });
+};
+
+window.abrirModalBroadcastSuper = function() {
+  var modal = document.getElementById('modal-broadcast-super');
+  if (!modal) return;
+  modal.classList.add('active');
+  modal.style.display = 'flex';
+
+  var selTarget = document.getElementById('broad-target');
+  if (selTarget) {
+    apiGet('/api/super/restaurantes', function(err, data) {
+      if (!err && data && data.ok && Array.isArray(data.clients)) {
+        var opts = '<option value="ALL">📢 Todos os ' + (data.clients.length || 0) + ' Restaurantes Conectados</option>';
+        data.clients.forEach(function(r) {
+          opts += '<option value="' + r.id + '">🏪 ' + escapeHtml(r.nome || 'Restaurante #' + r.id) + '</option>';
+        });
+        selTarget.innerHTML = opts;
+      }
+    });
+  }
+};
+
+window.fecharModalBroadcastSuper = function() {
+  var modal = document.getElementById('modal-broadcast-super');
+  if (modal) {
+    modal.classList.remove('active');
+    modal.style.display = 'none';
+  }
+};
+
+window.enviarBroadcastSuper = function() {
+  var target = (document.getElementById('broad-target') || {}).value || 'ALL';
+  var titulo = (document.getElementById('broad-titulo') || {}).value || '';
+  var mensagem = (document.getElementById('broad-mensagem') || {}).value || '';
+  var prio = (document.getElementById('broad-prio') || {}).value || 'P3_MEDIA';
+
+  if (!titulo.trim() || !mensagem.trim()) {
+    showToast('Informe o título e o corpo da mensagem.', 'warning');
+    return;
+  }
+
+  var payload = {
+    titulo: titulo.trim(),
+    mensagem: mensagem.trim(),
+    prioridade: prio,
+    categoria: 'broadcast',
+    target_restaurante_id: target === 'ALL' ? null : target
+  };
+
+  apiPost('/api/super/notificacoes/broadcast', payload, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao transmitir broadcast: ' + ((data && data.erro) || err), 'danger');
+      return;
+    }
+    showToast('📢 Broadcast transmitido com sucesso para os restaurantes!', 'success');
+    window.fecharModalBroadcastSuper();
+    document.getElementById('broad-titulo').value = '';
+    document.getElementById('broad-mensagem').value = '';
+    window.carregarCentralNotificacoes(true);
+  });
+};
 
 // ═══════════════════════════════════════════════════════════════════
 // INFRAESTRUTURA CLOUD — R2, Redis, Backups, Alertas
@@ -8719,12 +10481,8 @@ initSuperAdminSockets = function () {
   };
 
   window.carregarSyncCheffStatus = function () {
-    const token = localStorage.getItem('super_admin_token') || sessionStorage.getItem('super_admin_token');
     fetch('/api/super/synccheff/status', {
-      headers: {
-        'Content-Type': 'application/json',
-        'x-super-admin-token': token || ''
-      }
+      headers: authHeaders()
     })
     .then(r => r.json())
     .then(data => {
@@ -8835,13 +10593,9 @@ initSuperAdminSockets = function () {
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Auditando hash criptográfico contra Master Root Key...</div>';
 
-    const token = localStorage.getItem('super_admin_token') || sessionStorage.getItem('super_admin_token');
     fetch('/api/super/synccheff/validar-script', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-super-admin-token': token || ''
-      },
+      headers: authHeaders(),
       body: JSON.stringify({ script: codigo })
     })
     .then(r => r.json())
@@ -8912,13 +10666,9 @@ initSuperAdminSockets = function () {
     const restId = inputId ? inputId.value : '1';
     const restNome = inputNome ? inputNome.value : 'Restaurante';
 
-    const token = localStorage.getItem('super_admin_token') || sessionStorage.getItem('super_admin_token');
     fetch('/api/super/synccheff/gerar-script', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-super-admin-token': token || ''
-      },
+      headers: authHeaders(),
       body: JSON.stringify({ restaurante_id: restId, restaurante_nome: restNome })
     })
     .then(r => r.json())
@@ -8940,13 +10690,9 @@ initSuperAdminSockets = function () {
 
   window.redefinirStatusViolacao = function (restauranteId) {
     if (!confirm('Redefinir status de segurança do restaurante #' + restauranteId + ' para INVIOLADO?')) return;
-    const token = localStorage.getItem('super_admin_token') || sessionStorage.getItem('super_admin_token');
     fetch('/api/super/synccheff/redefinir-status', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-super-admin-token': token || ''
-      },
+      headers: authHeaders(),
       body: JSON.stringify({ restaurante_id: restauranteId })
     })
     .then(r => r.json())
@@ -8986,14 +10732,35 @@ initSuperAdminSockets = function () {
 
 
 // ─── CONTROLE DO VITE DEV SERVER (SUPER-ADMIN) ───
-window.atualizarStatusViteDevServer = function () {
-  fetch('/api/super/vite/status')
-    .then(r => r.json())
-    .then(data => {
-      const badge = document.getElementById('badge-vite-status');
-      const inputPort = document.getElementById('input-super-vite-port');
-      const linkOpen = document.getElementById('link-super-vite-open');
+function getSuperAdminToken() {
+  try {
+    return localStorage.getItem('super_admin_token') || sessionStorage.getItem('super_admin_token') || localStorage.getItem('chef_super_admin_local_token') || localStorage.getItem('super_token') || (typeof localToken !== 'undefined' ? localToken : '') || '';
+  } catch (e) {
+    return '';
+  }
+}
 
+window.atualizarStatusViteDevServer = function () {
+  const badge = document.getElementById('badge-vite-status');
+  const inputPort = document.getElementById('input-super-vite-port');
+  const linkOpen = document.getElementById('link-super-vite-open');
+  if (!badge && !inputPort && !linkOpen) return;
+
+  const token = getSuperAdminToken();
+  if (!token) return;
+
+  fetch('/api/super/vite/status', {
+    headers: {
+      'x-super-admin-token': token,
+      'Authorization': 'Bearer ' + token
+    }
+  })
+    .then(r => {
+      if (r.status === 401) return null;
+      return r.json();
+    })
+    .then(data => {
+      if (!data) return;
       if (inputPort && data.port) inputPort.value = data.port;
       if (linkOpen && data.url) linkOpen.href = data.url;
 
@@ -9016,9 +10783,14 @@ window.controlarViteDevServer = function (action) {
   const port = document.getElementById('input-super-vite-port') ? document.getElementById('input-super-vite-port').value : 5173;
   if (typeof showToast === 'function') showToast('Processando comando do Vite...', 'info');
 
+  const token = getSuperAdminToken();
   fetch('/api/super/vite/control', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-super-admin-token': token,
+      'Authorization': 'Bearer ' + token
+    },
     body: JSON.stringify({ action: action, port: parseInt(port) || 5173 })
   })
     .then(r => r.json())
@@ -9049,7 +10821,9 @@ window.carregarMetricasHeatmap = function () {
   const colab = colabSelect ? colabSelect.value : 'todos';
   const periodo = periodoSelect ? periodoSelect.value : '7dias';
 
-  fetch(`/api/super/metricas/heatmap-clicks?restaurante_id=${encodeURIComponent(restId)}&colaborador=${encodeURIComponent(colab)}&periodo=${encodeURIComponent(periodo)}`)
+  fetch(`/api/super/metricas/heatmap-clicks?restaurante_id=${encodeURIComponent(restId)}&colaborador=${encodeURIComponent(colab)}&periodo=${encodeURIComponent(periodo)}`, {
+    headers: authHeaders()
+  })
     .then(r => r.json())
     .then(data => {
       if (!data || !data.ok) return;
@@ -9167,3 +10941,1828 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 1500);
 });
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CENTRAL DE SUPORTE REMOTO 1-CLIQUE & TELEPRESENÇA (WEB-BASED REMOTE ACCESS)
+   Projetado para clientes leigos/idosos: zero burocracia, WebRTC + Canvas Fallback,
+   Túnel bidirecional de comandos, Laser pointer interativo e Text-to-Speech
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+var _supportSocket = null;
+var _activeSupportSessionId = null;
+var _activeSupportSessionData = null;
+var _laserPointerActive = false;
+var _webrtcPeerConnection = null;
+
+function escapeHtmlSupport(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+window.abrirSecaoSuporteRemoto = function() {
+  if (typeof mostrarSecao === 'function') {
+    mostrarSecao('sec-instancias');
+  }
+  if (typeof alternarSubabaInstancias === 'function') {
+    alternarSubabaInstancias('remoto');
+  }
+  carregarSessoesSuporte();
+};
+
+window.carregarSessoesSuporte = function() {
+  apiGet('/api/support/sessions-active', function(err, data) {
+    var grid = document.getElementById('sup-sessoes-grid');
+    var badgeCount = document.getElementById('sup-sessoes-count');
+    var navBadge = document.getElementById('suporte-remoto-active-badge');
+    var subtabBadge = document.getElementById('badge-sessoes-count');
+
+    if (err || !data || !data.ok) {
+      if (grid) grid.innerHTML = '<div style="padding:1.5rem;text-align:center;color:#ef4444;grid-column:1/-1;">Erro ao carregar atendimentos remotos.</div>';
+      return;
+    }
+
+    var list = data.sessions || [];
+    var count = list.length;
+
+    if (badgeCount) badgeCount.textContent = count;
+    if (subtabBadge) {
+      subtabBadge.textContent = count;
+      subtabBadge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+    if (navBadge) {
+      navBadge.textContent = count;
+      navBadge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+
+    if (!grid) return;
+    if (count === 0) {
+      grid.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted);background:rgba(0,0,0,0.15);border-radius:10px;border:1px dashed var(--border-color);grid-column:1/-1;">' +
+        '<i class="fa-solid fa-headset" style="font-size:2.2rem;margin-bottom:10px;opacity:0.4;display:block;color:#22c55e;"></i>' +
+        '<strong style="color:var(--text-main);font-size:1rem;">Nenhum atendimento remoto aberto no momento.</strong><br>' +
+        '<p style="font-size:12px;margin:6px 0 14px;color:#94a3b8;">Gere um link amigável de WhatsApp para o dono do restaurante e acerte tudo na máquina dele.</p>' +
+        '<button class="btn-action" onclick="abrirModalGerarLinkSuporte()" style="background:#22c55e;color:#fff;font-weight:700;font-size:12px;padding:8px 16px;border-radius:8px;">' +
+          '<i class="fa-solid fa-plus"></i> Gerar Link de Ajuda para Cliente' +
+        '</button>' +
+        '</div>';
+      return;
+    }
+
+    var html = '';
+    list.forEach(function(s) {
+      var isConnected = s.clientConnected;
+      var statusColor = isConnected ? '#22c55e' : '#f59e0b';
+      var statusText = isConnected ? 'Cliente Conectado' : 'Aguardando Cliente';
+      var statusIcon = isConnected ? 'fa-circle-check' : 'fa-hourglass-half';
+
+      var screenBadge = s.screenSharing
+        ? '<span style="font-size:10px;background:rgba(56,189,248,0.2);color:#38bdf8;padding:2px 6px;border-radius:6px;border:1px solid rgba(56,189,248,0.3);"><i class="fa-solid fa-desktop"></i> Tela Ativa</span>'
+        : '';
+      var tunnelBadge = s.tunnelConnected
+        ? '<span style="font-size:10px;background:rgba(168,85,247,0.2);color:#c084fc;padding:2px 6px;border-radius:6px;border:1px solid rgba(168,85,247,0.3);"><i class="fa-solid fa-terminal"></i> Túnel Ativo</span>'
+        : '';
+
+      html += '<div class="card" style="padding:14px;border:1px solid var(--border-color);border-radius:10px;background:rgba(15,23,42,0.6);display:flex;flex-direction:column;gap:10px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">' +
+          '<div>' +
+            '<h4 style="margin:0 0 4px;font-size:1rem;color:#f8fafc;display:flex;align-items:center;gap:6px;">' +
+              '<i class="fa-solid fa-store" style="color:var(--primary);font-size:13px;"></i> ' + escapeHtmlSupport(s.restauranteNome || 'Restaurante') +
+            '</h4>' +
+            '<div style="font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:8px;">' +
+              '<span>PIN: <strong style="font-family:monospace;color:#22c55e;font-size:13px;">' + escapeHtmlSupport(s.pin || '') + '</strong></span>' +
+              '<span>•</span>' +
+              '<span>' + (s.atendenteNome ? escapeHtmlSupport(s.atendenteNome) : 'Suporte') + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<span style="font-size:11px;padding:3px 8px;border-radius:10px;background:' + (isConnected ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)') + ';color:' + statusColor + ';border:1px solid ' + (isConnected ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)') + ';font-weight:700;white-space:nowrap;">' +
+            '<i class="fa-solid ' + statusIcon + '"></i> ' + statusText +
+          '</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + screenBadge + tunnelBadge + '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:auto;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06);">' +
+          '<button class="btn-action" onclick="abrirConsoleSessao(\'' + s.id + '\')" style="flex:1;background:#0284c7;color:#fff;font-weight:700;padding:7px 10px;font-size:12px;border-radius:6px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+            '<i class="fa-solid fa-desktop"></i> Assumir Console' +
+          '</button>' +
+          '<button class="btn-action" onclick="copiarLinkSessaoDireto(\'' + s.id + '\', \'' + s.pin + '\')" style="background:rgba(37,211,102,0.15);color:#25d366;border:1px solid rgba(37,211,102,0.3);padding:7px 10px;font-size:12px;border-radius:6px;" title="Copiar Mensagem do WhatsApp">' +
+            '<i class="fa-brands fa-whatsapp"></i>' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+    });
+
+    grid.innerHTML = html;
+  });
+};
+
+window.abrirModalGerarLinkSuporte = function() {
+  var modal = document.getElementById('modal-gerar-link-suporte');
+  var formBox = document.getElementById('sup-form-gerar-box');
+  var resBox = document.getElementById('sup-result-gerar-box');
+  if (formBox) formBox.style.display = 'block';
+  if (resBox) resBox.style.display = 'none';
+  if (modal) modal.style.display = 'flex';
+  var inp = document.getElementById('sup-input-restaurante');
+  if (inp) { inp.value = ''; inp.focus(); }
+};
+
+window.fecharModalGerarLinkSuporte = function() {
+  var modal = document.getElementById('modal-gerar-link-suporte');
+  if (modal) modal.style.display = 'none';
+};
+
+window.confirmarGerarLinkSuporte = function() {
+  var rest = (document.getElementById('sup-input-restaurante') || {}).value || '';
+  var atend = (document.getElementById('sup-input-atendente') || {}).value || 'Equipe Chef Cozinha';
+
+  if (!rest.trim()) {
+    showToast('Informe o nome do restaurante.', 'warning');
+    return;
+  }
+
+  apiPost('/api/support/sessions/create', { restaurante_nome: rest.trim(), atendente_nome: atend.trim() }, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao criar sessão de suporte: ' + (err || (data && data.erro) || 'Falha'), 'error');
+      return;
+    }
+
+    window._ultimaSessaoSuporteCriada = data;
+
+    var formBox = document.getElementById('sup-form-gerar-box');
+    var resBox = document.getElementById('sup-result-gerar-box');
+    var pinEl = document.getElementById('sup-result-pin');
+    var linkEl = document.getElementById('sup-result-link');
+
+    if (pinEl) pinEl.textContent = data.pin;
+    if (linkEl) linkEl.textContent = data.link;
+
+    if (formBox) formBox.style.display = 'none';
+    if (resBox) resBox.style.display = 'block';
+
+    carregarSessoesSuporte();
+    showToast('Sessão gerada com sucesso!', 'success');
+  });
+};
+
+window.copiarMensagemWhatsAppSuporte = function() {
+  if (!window._ultimaSessaoSuporteCriada || !window._ultimaSessaoSuporteCriada.mensagemWhatsApp) {
+    showToast('Nenhuma mensagem disponível para copiar.', 'warning');
+    return;
+  }
+  var texto = window._ultimaSessaoSuporteCriada.mensagemWhatsApp;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(function() {
+      showToast('Mensagem pronta para WhatsApp copiada!', 'success');
+    }).catch(function() {
+      copiarFallbackTexto(texto);
+    });
+  } else {
+    copiarFallbackTexto(texto);
+  }
+};
+
+window.copiarLinkSessaoDireto = function(sessionId, pin) {
+  var proto = window.location.protocol;
+  var host = window.location.host;
+  var link = proto + '//' + host + '/ajuda?sessao=' + sessionId + '&pin=' + pin;
+  var msg = '🍽️ *Chef Cozinha — Suporte Técnico Remoto*\n\n' +
+    'Olá! Nossa equipe está pronta para te atender.\n\n' +
+    '👉 *Clique no link abaixo no computador do restaurante para receber ajuda imediata:*\n' +
+    link + '\n\nDepois clique no botão verde "Permitir Ajuda". Faremos tudo remotamente para você!';
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg).then(function() {
+      showToast('Mensagem pronta copiada!', 'success');
+    }).catch(function() {
+      copiarFallbackTexto(msg);
+    });
+  } else {
+    copiarFallbackTexto(msg);
+  }
+};
+
+function copiarFallbackTexto(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showToast('Texto copiado com sucesso!', 'success');
+  } catch(e) {
+    prompt('Copie o texto abaixo:', text);
+  }
+  document.body.removeChild(ta);
+}
+
+window.conectarSessaoPeloModal = function() {
+  if (window._ultimaSessaoSuporteCriada && window._ultimaSessaoSuporteCriada.sessionId) {
+    fecharModalGerarLinkSuporte();
+    abrirConsoleSessao(window._ultimaSessaoSuporteCriada.sessionId);
+  }
+};
+
+window.abrirConsoleSessao = function(sessionId) {
+  _activeSupportSessionId = sessionId;
+  var consoleEl = document.getElementById('sup-active-session-console');
+  if (consoleEl) {
+    consoleEl.style.display = 'block';
+    consoleEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  apiGet('/api/support/sessions/' + sessionId, function(err, data) {
+    if (!err && data && data.ok && data.session) {
+      _activeSupportSessionData = data.session;
+      var restEl = document.getElementById('sup-console-restaurante');
+      var pinEl = document.getElementById('sup-console-pin');
+      if (restEl) restEl.textContent = data.session.restauranteNome || 'Restaurante';
+      if (pinEl) pinEl.textContent = 'PIN: ' + (data.session.pin || '-');
+
+      atualizarBadgeStatusConsole(data.session.clientConnected);
+    }
+  });
+
+  conectarSocketSuporte(sessionId);
+};
+
+window.fecharConsoleSessao = function() {
+  var consoleEl = document.getElementById('sup-active-session-console');
+  if (consoleEl) consoleEl.style.display = 'none';
+
+  if (_supportSocket) {
+    try { _supportSocket.disconnect(); } catch(e) {}
+    _supportSocket = null;
+  }
+  if (_webrtcPeerConnection) {
+    try { _webrtcPeerConnection.close(); } catch(e) {}
+    _webrtcPeerConnection = null;
+  }
+  var vid = document.getElementById('sup-screen-video');
+  if (vid) {
+    if (vid.srcObject) {
+      vid.srcObject.getTracks().forEach(function(t) { t.stop(); });
+      vid.srcObject = null;
+    }
+    vid.style.display = 'none';
+  }
+  var ph = document.getElementById('sup-screen-placeholder');
+  if (ph) ph.style.display = 'flex';
+
+  _activeSupportSessionId = null;
+  _activeSupportSessionData = null;
+};
+
+function atualizarBadgeStatusConsole(conectado) {
+  var badge = document.getElementById('sup-live-status-badge');
+  if (!badge) return;
+  if (conectado) {
+    badge.style.background = 'rgba(34,197,94,0.15)';
+    badge.style.color = '#22c55e';
+    badge.style.border = '1px solid rgba(34,197,94,0.3)';
+    badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Cliente Online';
+  } else {
+    badge.style.background = 'rgba(245,158,11,0.15)';
+    badge.style.color = '#f59e0b';
+    badge.style.border = '1px solid rgba(245,158,11,0.3)';
+    badge.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> Aguardando Cliente Clicar no Link...';
+  }
+}
+
+function conectarSocketSuporte(sessionId) {
+  if (typeof io === 'undefined') {
+    console.warn('[Suporte Remoto] Socket.IO client não encontrado na página.');
+    return;
+  }
+
+  if (_supportSocket) {
+    try { _supportSocket.disconnect(); } catch(e) {}
+  }
+
+  _supportSocket = io('/remote-support', {
+    transports: ['websocket', 'polling'],
+    reconnection: true
+  });
+
+  _supportSocket.on('connect', function() {
+    _supportSocket.emit('join', { sessionId: sessionId, role: 'support' });
+    logAoTerminal('🟢 Conectado ao canal de assistência remota.');
+  });
+
+  _supportSocket.on('client_joined', function(data) {
+    atualizarBadgeStatusConsole(true);
+    showToast('O dono do restaurante abriu a tela de ajuda!', 'info');
+    logAoTerminal('👤 Cliente conectou à sessão. Dispositivo: ' + JSON.stringify(data.deviceInfo || {}));
+  });
+
+  _supportSocket.on('screen_sharing_status', function(data) {
+    var ph = document.getElementById('sup-screen-placeholder');
+    if (data.active) {
+      if (ph) ph.style.display = 'none';
+      showToast('🖥️ Tela do cliente compartilhada!', 'success');
+      logAoTerminal('🖥️ Transmissão de tela iniciada pelo cliente.');
+    } else {
+      if (ph) ph.style.display = 'flex';
+      logAoTerminal('🖥️ Transmissão de tela pausada pelo cliente.');
+    }
+  });
+
+  _supportSocket.on('webrtc_offer', function(offer) {
+    handleWebRtcOffer(offer);
+  });
+
+  _supportSocket.on('webrtc_ice_candidate', function(candidate) {
+    if (_webrtcPeerConnection && candidate) {
+      _webrtcPeerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(function(e) {
+        console.warn('Erro ao adicionar ICE Candidate:', e);
+      });
+    }
+  });
+
+  _supportSocket.on('screen_frame', function(frameData) {
+    var ph = document.getElementById('sup-screen-placeholder');
+    if (ph) ph.style.display = 'none';
+
+    var canvas = document.getElementById('sup-screen-canvas');
+    var rawImg = frameData && (frameData.image || frameData.frame);
+    if (canvas && rawImg) {
+      var img = new Image();
+      img.onload = function() {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+      };
+      img.src = rawImg;
+    }
+  });
+
+  _supportSocket.on('command_output', function(data) {
+    var txt = (data.ok ? '✅ [OK] ' : '❌ [ERRO] ') + (data.stdout || '') + (data.stderr ? ('\n' + data.stderr) : '');
+    logAoTerminal(txt);
+  });
+
+  _supportSocket.on('chat_message', function(msg) {
+    var chatBox = document.getElementById('sup-chat-output');
+    if (chatBox) {
+      var isMe = msg.sender === 'Atendente' || msg.from === 'support';
+      var senderLabel = msg.sender || (msg.from === 'client' ? 'Cliente' : 'Atendente');
+      var cor = isMe ? '#38bdf8' : '#22c55e';
+      var el = document.createElement('div');
+      el.style.marginBottom = '6px';
+      el.innerHTML = '<strong style="color:' + cor + ';">' + escapeHtmlSupport(senderLabel) + ':</strong> ' +
+        '<span style="color:#f8fafc;">' + escapeHtmlSupport(msg.text || '') + '</span>' +
+        (msg.speak ? ' <small style="color:#a855f7;">🔊 (falado)</small>' : '');
+      chatBox.appendChild(el);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  });
+
+  _supportSocket.on('peer_disconnected', function(data) {
+    if (data.role === 'client') {
+      atualizarBadgeStatusConsole(false);
+      logAoTerminal('⚠️ Cliente desconectou ou fechou a página.');
+    }
+  });
+}
+
+function handleWebRtcOffer(offer) {
+  var vid = document.getElementById('sup-screen-video');
+  var ph = document.getElementById('sup-screen-placeholder');
+
+  if (window.RTCPeerConnection) {
+    _webrtcPeerConnection = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    });
+
+    _webrtcPeerConnection.ontrack = function(event) {
+      if (vid && event.streams[0]) {
+        vid.srcObject = event.streams[0];
+        vid.style.display = 'block';
+        if (ph) ph.style.display = 'none';
+        var canvas = document.getElementById('sup-screen-canvas');
+        if (canvas) canvas.style.display = 'none';
+      }
+    };
+
+    _webrtcPeerConnection.onicecandidate = function(event) {
+      if (event.candidate && _supportSocket) {
+        _supportSocket.emit('webrtc_ice_candidate', event.candidate);
+      }
+    };
+
+    _webrtcPeerConnection.setRemoteDescription(new RTCSessionDescription(offer))
+      .then(function() {
+        return _webrtcPeerConnection.createAnswer();
+      })
+      .then(function(answer) {
+        return _webrtcPeerConnection.setLocalDescription(answer);
+      })
+      .then(function() {
+        if (_supportSocket) {
+          _supportSocket.emit('webrtc_answer', _webrtcPeerConnection.localDescription);
+        }
+      })
+      .catch(function(err) {
+        console.warn('[Suporte Remoto] WebRTC negotiation fallback para canvas:', err.message);
+      });
+  }
+}
+
+function logAoTerminal(msg) {
+  var term = document.getElementById('sup-terminal-output');
+  if (term) {
+    term.textContent += '\n' + msg;
+    term.scrollTop = term.scrollHeight;
+  }
+}
+
+window.alternarToolTab = function(tab) {
+  var tabs = ['actions', 'shell', 'chat'];
+  tabs.forEach(function(t) {
+    var view = document.getElementById('tool-content-' + t);
+    var btn = document.getElementById('tool-tab-btn-' + t);
+    if (view) view.style.display = (t === tab) ? 'block' : 'none';
+    if (btn) {
+      if (t === tab) {
+        btn.classList.add('active');
+        btn.style.background = 'rgba(56,189,248,0.15)';
+        btn.style.border = '1px solid rgba(56,189,248,0.3)';
+        btn.style.color = '#38bdf8';
+        btn.style.fontWeight = '700';
+      } else {
+        btn.classList.remove('active');
+        btn.style.background = 'transparent';
+        btn.style.border = '1px solid transparent';
+        btn.style.color = 'var(--text-muted)';
+        btn.style.fontWeight = '600';
+      }
+    }
+  });
+};
+
+window.executarAcaoRemota = function(action) {
+  if (!_activeSupportSessionId) {
+    showToast('Nenhuma sessão conectada.', 'warning');
+    return;
+  }
+
+  logAoTerminal('⏳ Enviando comando de 1-Clique: ' + action + '...');
+  apiPost('/api/support/sessions/' + _activeSupportSessionId + '/command', { action: action }, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao enviar ação: ' + (err || (data && data.erro) || 'Falha'), 'error');
+      logAoTerminal('❌ Falha ao enfileirar ação: ' + (err || (data && data.erro)));
+      return;
+    }
+    showToast('Ação enviada! Executando no computador do cliente...', 'info');
+    logAoTerminal('🚀 Ação enfileirada [ID: ' + data.command_id + ']. Aguardando retorno da máquina...');
+  });
+};
+
+window.executarAvisoRemoto = function() {
+  if (!_activeSupportSessionId) {
+    showToast('Nenhuma sessão conectada.', 'warning');
+    return;
+  }
+  var msg = prompt('Digite a mensagem de alerta para aparecer na tela do restaurante:', 'A equipe de suporte técnico do Chef Cozinha está realizando a manutenção.');
+  if (!msg) return;
+
+  apiPost('/api/support/sessions/' + _activeSupportSessionId + '/command', {
+    action: 'show_alert',
+    params: { message: msg }
+  }, function(err, data) {
+    if (!err && data && data.ok) {
+      showToast('Pop-up de alerta enviado!', 'success');
+      logAoTerminal('📢 Pop-up exibido na tela do cliente: "' + msg + '"');
+    }
+  });
+};
+
+window.enviarComandoShell = function() {
+  if (!_activeSupportSessionId) {
+    showToast('Nenhuma sessão conectada.', 'warning');
+    return;
+  }
+  var inp = document.getElementById('sup-shell-input');
+  if (!inp) return;
+  var cmd = inp.value.trim();
+  if (!cmd) return;
+
+  logAoTerminal('$ ' + cmd);
+  inp.value = '';
+
+  apiPost('/api/support/sessions/' + _activeSupportSessionId + '/command', {
+    action: 'custom',
+    custom_command: cmd
+  }, function(err, data) {
+    if (err || !data || !data.ok) {
+      logAoTerminal('❌ Erro ao enviar comando: ' + (err || (data && data.erro)));
+      return;
+    }
+    logAoTerminal('⏳ Comando enfileirado para execução no terminal...');
+  });
+};
+
+window.enviarMensagemSuporteChat = function() {
+  var inp = document.getElementById('sup-chat-input');
+  var speakCheck = document.getElementById('sup-chat-speak');
+  if (!inp) return;
+  var txt = inp.value.trim();
+  if (!txt) return;
+
+  var speak = speakCheck ? speakCheck.checked : true;
+
+  if (_supportSocket) {
+    _supportSocket.emit('chat_message', {
+      sender: 'Atendente',
+      from: 'support',
+      text: txt,
+      speak: speak,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  inp.value = '';
+};
+
+window.toggleLaserPointer = function() {
+  _laserPointerActive = !_laserPointerActive;
+  var btn = document.getElementById('btn-toggle-laser');
+  if (btn) {
+    if (_laserPointerActive) {
+      btn.style.background = '#ef4444';
+      btn.style.color = '#fff';
+      btn.style.boxShadow = '0 0 10px rgba(239,68,68,0.6)';
+      showToast('Laser Pointer ATIVADO. Mova o mouse sobre a tela para apontar!', 'info');
+    } else {
+      btn.style.background = 'rgba(239,68,68,0.2)';
+      btn.style.color = '#ef4444';
+      btn.style.boxShadow = 'none';
+      if (_supportSocket) _supportSocket.emit('pointer_move', { hide: true });
+    }
+  }
+};
+
+window.enviarLaserParaCliente = function(e) {
+  if (!_laserPointerActive || !_supportSocket) return;
+  var container = document.getElementById('sup-screen-container');
+  if (!container) return;
+
+  var rect = container.getBoundingClientRect();
+  var x = ((e.clientX - rect.left) / rect.width) * 100;
+  var y = ((e.clientY - rect.top) / rect.height) * 100;
+
+  if (x >= 0 && x <= 100 && y >= 0 && y <= 100) {
+    _supportSocket.emit('pointer_move', { x: x, y: y });
+  }
+};
+
+window.fullscreenScreenViewer = function() {
+  var el = document.getElementById('sup-screen-container');
+  if (!el) return;
+  if (el.requestFullscreen) el.requestFullscreen();
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+};
+
+/* ═════════════════════════════════════════════════════════════════════
+   CONTADOR CHEFF — GESTÃO CENTRALIZADA, REPASSE & BONIFICAÇÕES
+   ═════════════════════════════════════════════════════════════════════ */
+
+var _demandasContadorCache = [];
+var _contadoresCheffCache = [];
+var _restaurantesContadorCache = [];
+
+function formatarMoedaBR(valor) {
+  var v = parseFloat(valor) || 0;
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+window.trocarAbaSuperContador = function(aba) {
+  var abas = ['dist', 'assinantes', 'payout', 'contadores'];
+  abas.forEach(function(a) {
+    var btn = document.getElementById('super-cont-tab-btn-' + a);
+    var div = document.getElementById('super-cont-aba-' + a);
+    if (btn) {
+      if (a === aba) {
+        btn.style.background = '#10b981';
+        btn.style.color = '#ffffff';
+      } else {
+        btn.style.background = 'rgba(255,255,255,0.06)';
+        btn.style.color = 'var(--text)';
+      }
+    }
+    if (div) {
+      div.style.display = (a === aba) ? 'block' : 'none';
+    }
+  });
+};
+
+window.carregarGestaoContadorCheff = function() {
+  // 1. Carregar Métricas Financeiras
+  fetch('/api/super/contador/metricas', { headers: authHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && data.ok) {
+        var f = data.financeiro || data.metricas || {};
+        var elMrr = document.getElementById('super-cont-mrr');
+        var elQtd = document.getElementById('super-cont-assinantes-qtd');
+        var elPagas = document.getElementById('super-cont-bonif-pagas');
+        var elPend = document.getElementById('super-cont-bonif-pendentes');
+        var elLucro = document.getElementById('super-cont-lucro-liquido');
+        var elMargem = document.getElementById('super-cont-margem-pct');
+
+        var mrr = f.mrr_total !== undefined ? f.mrr_total : (f.mrrTotal || 0);
+        var qtd = f.total_assinantes !== undefined ? f.total_assinantes : (f.assinantesAtivos || 0);
+        var pagas = f.total_bonificacoes_pagas !== undefined ? f.total_bonificacoes_pagas : (f.bonificacoesPagas || 0);
+        var pend = f.total_bonificacoes_pendentes !== undefined ? f.total_bonificacoes_pendentes : (f.bonificacoesPendentes || 0);
+        var lucro = f.margem_liquida !== undefined ? f.margem_liquida : (f.lucroLiquido || 0);
+        var pct = f.percentual_margem !== undefined ? f.percentual_margem : (f.margemLucroPct || 100);
+
+        if (elMrr) elMrr.textContent = formatarMoedaBR(mrr);
+        if (elQtd) elQtd.textContent = qtd;
+        if (elPagas) elPagas.textContent = formatarMoedaBR(pagas);
+        if (elPend) elPend.textContent = formatarMoedaBR(pend);
+        if (elLucro) elLucro.textContent = formatarMoedaBR(lucro);
+        if (elMargem) elMargem.textContent = (typeof pct === 'number' ? pct.toFixed(1) : pct) + '%';
+      }
+    })
+    .catch(function(err) {
+      console.warn('Erro ao carregar métricas de contabilidade:', err);
+    });
+
+  // 2. Carregar Contadores (para popular selects e lista)
+  carregarContadoresSuperAdmin();
+
+  // 3. Carregar Demandas
+  carregarDemandasSuperAdmin();
+
+  // 4. Carregar Assinantes
+  carregarAssinantesSuperAdmin();
+
+  // 5. Carregar Bonificações
+  carregarBonificacoesSuperAdmin();
+};
+
+window.carregarContadoresSuperAdmin = function() {
+  fetch('/api/super/contador/contadores', { headers: authHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var contadores = (data && data.ok) ? (data.contadores || []) : [];
+      _contadoresCheffCache = contadores;
+      
+      // Atualizar selects de atribuição
+      var selAtrib = document.getElementById('atribuir-contador-select');
+      var selNova = document.getElementById('nova-dem-contador');
+      
+      var optionsHtml = '<option value="">Selecione um contador...</option>';
+      contadores.forEach(function(c) {
+        optionsHtml += '<option value="' + c.id + '">' + (c.nome || 'Contador #' + c.id) + ' (' + (c.cargo || 'Contador') + ') - PIX: ' + (c.pix_chave || 'Não cadastrado') + '</option>';
+      });
+
+      if (selAtrib) selAtrib.innerHTML = optionsHtml;
+      if (selNova) selNova.innerHTML = '<option value="">Deixar na fila de distribuição</option>' + optionsHtml;
+
+      // Renderizar tabela de contadores
+      var tbody = document.getElementById('super-cont-contadores-tbody');
+      if (!tbody) return;
+
+      if (!contadores.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);"><i class="fa-solid fa-user-slash" style="font-size:24px; margin-bottom:8px; display:block;"></i>Nenhum contador cadastrado na equipe de suporte. Cadastre usuários com cargo/função de suporte/contador na aba "Equipe de Suporte".</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = contadores.map(function(c) {
+        return '<tr>' +
+          '<td><strong>' + (c.nome || '-') + '</strong></td>' +
+          '<td>' + (c.email || '-') + '<br><small style="color:var(--text-muted);">' + (c.telefone || '') + '</small></td>' +
+          '<td><span style="background:rgba(59,130,246,0.15); color:#3b82f6; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:600;">' + (c.cargo || 'Contador Especialista') + '</span></td>' +
+          '<td style="font-family:monospace; color:#38bdf8; font-weight:600;">' + (c.pix_chave || '<span style="color:var(--text-muted);">Não informada</span>') + '</td>' +
+          '<td style="text-align:center;"><span style="background:rgba(245,158,11,0.15); color:#f59e0b; padding:2px 8px; border-radius:6px; font-weight:700;">' + (c.tarefas_ativas || 0) + '</span></td>' +
+          '<td style="text-align:center;"><span style="background:rgba(16,185,129,0.15); color:#10b981; padding:2px 8px; border-radius:6px; font-weight:700;">' + (c.tarefas_concluidas || 0) + '</span></td>' +
+          '<td style="font-weight:700; color:#10b981;">' + formatarMoedaBR(c.total_bonificacoes_recebidas) + '</td>' +
+        '</tr>';
+      }).join('');
+    })
+    .catch(function(err) {
+      console.warn('Erro ao carregar contadores:', err);
+    });
+};
+
+window.carregarDemandasSuperAdmin = function() {
+  fetch('/api/super/contador/demandas', { headers: authHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      _demandasContadorCache = (data && data.ok) ? (data.demandas || []) : [];
+      renderDemandasSuperAdmin(_demandasContadorCache);
+    })
+    .catch(function(err) {
+      console.warn('Erro ao carregar demandas:', err);
+    });
+};
+
+function renderDemandasSuperAdmin(demandas) {
+  var tbody = document.getElementById('super-cont-demandas-tbody');
+  if (!tbody) return;
+
+  if (!demandas.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-muted);"><i class="fa-solid fa-folder-open" style="font-size:24px; margin-bottom:8px; display:block;"></i>Nenhuma demanda encontrada nesta visualização.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = demandas.map(function(d) {
+    var statusBadge = '';
+    if (d.status === 'pendente_distribuicao') {
+      statusBadge = '<span style="background:rgba(245,158,11,0.15); color:#f59e0b; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700;"><i class="fa-solid fa-clock"></i> Pendente Distribuição</span>';
+    } else if (d.status === 'em_andamento') {
+      statusBadge = '<span style="background:rgba(59,130,246,0.15); color:#3b82f6; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700;"><i class="fa-solid fa-spinner fa-spin"></i> Em Execução</span>';
+    } else if (d.status === 'concluido') {
+      statusBadge = '<span style="background:rgba(16,185,129,0.15); color:#10b981; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700;"><i class="fa-solid fa-check"></i> Concluída</span>';
+    } else {
+      statusBadge = '<span style="background:rgba(107,114,128,0.15); color:#9ca3af; padding:3px 8px; border-radius:6px; font-size:11px;">' + d.status + '</span>';
+    }
+
+    var contadorHtml = d.contador_nome 
+      ? ('<strong style="color:#fff;">' + d.contador_nome + '</strong>') 
+      : '<span style="color:#f59e0b; font-size:12px; font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> Sem Contador</span>';
+
+    var acoesHtml = '';
+    if (d.status !== 'concluido') {
+      acoesHtml += '<button class="btn-action btn-sm" style="background:#10b981; color:white; font-size:11.5px; padding:4px 8px;" onclick="abrirModalAtribuirDemandaSuperAdmin(' + d.id + ', \'' + (d.titulo || '').replace(/'/g, "\\'") + '\', \'' + (d.restaurante_nome || '').replace(/'/g, "\\'") + '\')">' +
+        '<i class="fa-solid fa-user-check"></i> ' + (d.contador_id ? 'Reatribuir' : 'Atribuir / Repassar') +
+      '</button>';
+    } else {
+      acoesHtml += '<span style="color:#10b981; font-size:11.5px; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Entregue</span>';
+      if (d.documento_anexo_url) {
+        acoesHtml += ' <a href="' + d.documento_anexo_url + '" target="_blank" class="btn-action btn-sm" style="background:rgba(59,130,246,0.15); color:#3b82f6; text-decoration:none; padding:4px 8px; font-size:11.5px; margin-left:4px;" title="Ver Guia/Arquivo"><i class="fa-solid fa-file-arrow-down"></i></a>';
+      }
+    }
+
+    return '<tr>' +
+      '<td style="font-family:monospace; color:var(--text-muted);">#' + d.id + '</td>' +
+      '<td><strong>' + (d.restaurante_nome || 'Restaurante #' + d.restaurante_id) + '</strong></td>' +
+      '<td>' + (d.titulo || '-') + '<br><small style="color:var(--text-muted);">' + (d.tipo || '') + '</small></td>' +
+      '<td>' + (d.competencia || '-') + '</td>' +
+      '<td>' + contadorHtml + '</td>' +
+      '<td style="font-weight:800; color:#10b981;">' + formatarMoedaBR(d.valor_bonificacao) + '</td>' +
+      '<td>' + statusBadge + '</td>' +
+      '<td style="text-align:right;">' + acoesHtml + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+window.filtrarDemandasSuperAdmin = function(status, btn) {
+  if (btn && btn.parentElement) {
+    var btns = btn.parentElement.querySelectorAll('button');
+    btns.forEach(function(b) {
+      b.style.opacity = '0.6';
+    });
+    btn.style.opacity = '1';
+  }
+
+  if (status === 'todos') {
+    renderDemandasSuperAdmin(_demandasContadorCache);
+  } else {
+    var filtradas = _demandasContadorCache.filter(function(d) {
+      return d.status === status;
+    });
+    renderDemandasSuperAdmin(filtradas);
+  }
+};
+
+window.carregarAssinantesSuperAdmin = function() {
+  fetch('/api/super/contador/assinantes', { headers: authHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var assinantes = (data && data.ok) ? (data.assinantes || []) : [];
+      _restaurantesContadorCache = assinantes;
+
+      // Atualizar select de novo restaurante no modal de criar demanda
+      var selRest = document.getElementById('nova-dem-restaurante');
+      if (selRest) {
+        if (!assinantes.length) {
+          selRest.innerHTML = '<option value="1">Restaurante Principal (Padrão)</option>';
+        } else {
+          selRest.innerHTML = assinantes.map(function(a) {
+            return '<option value="' + a.restaurante_id + '">' + a.restaurante_nome + ' (Plano: ' + a.plano_nome + ')</option>';
+          }).join('');
+        }
+      }
+
+      var tbody = document.getElementById('super-cont-assinantes-tbody');
+      if (!tbody) return;
+
+      if (!assinantes.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-muted);"><i class="fa-solid fa-store-slash" style="font-size:24px; margin-bottom:8px; display:block;"></i>Nenhum restaurante assinou o Contador Cheff ainda.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = assinantes.map(function(a) {
+        var planoBadge = '<span style="background:rgba(16,185,129,0.15); color:#10b981; padding:3px 8px; border-radius:6px; font-weight:700; font-size:11.5px;">' + (a.plano_nome || a.plano) + '</span>';
+        return '<tr>' +
+          '<td><strong>' + (a.restaurante_nome || '-') + '</strong></td>' +
+          '<td>' + planoBadge + '</td>' +
+          '<td style="font-weight:900; color:#10b981;">' + formatarMoedaBR(a.valor_mensal) + ' <small style="color:var(--text-muted); font-weight:normal;">/mês</small></td>' +
+          '<td>' + (a.regime_tributario === 'simples_nacional' ? 'Simples Nacional' : (a.regime_tributario || '-')) + '</td>' +
+          '<td style="font-family:monospace;">' + (a.cnpj || '-') + '</td>' +
+          '<td>' + (a.responsavel_nome || a.rest_dono || '-') + '<br><small style="color:var(--text-muted);">' + (a.responsavel_whatsapp || a.rest_telefone || '') + '</small></td>' +
+          '<td>' + (a.contador_responsavel_nome ? ('<strong style="color:#fff;">' + a.contador_responsavel_nome + '</strong>') : '<span style="color:var(--text-muted);">Não fixado</span>') + '</td>' +
+          '<td><span style="background:rgba(16,185,129,0.15); color:#10b981; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Ativo</span></td>' +
+        '</tr>';
+      }).join('');
+    })
+    .catch(function(err) {
+      console.warn('Erro ao carregar assinantes:', err);
+    });
+};
+
+window.carregarBonificacoesSuperAdmin = function() {
+  fetch('/api/super/contador/bonificacoes', { headers: authHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var bonificacoes = (data && data.ok) ? (data.bonificacoes || []) : [];
+      var tbody = document.getElementById('super-cont-bonificacoes-tbody');
+      if (!tbody) return;
+
+      if (!bonificacoes.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-muted);"><i class="fa-solid fa-receipt" style="font-size:24px; margin-bottom:8px; display:block;"></i>Nenhuma bonificação de tarefa registrada até o momento.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = bonificacoes.map(function(b) {
+        var statusBadge = '';
+        var acaoHtml = '';
+        var chavePix = b.contador_pix_cadastrado || b.chave_pix || 'Não informada';
+
+        if (b.status === 'pendente') {
+          statusBadge = '<span style="background:rgba(239,68,68,0.15); color:#ef4444; padding:3px 8px; border-radius:6px; font-weight:700; font-size:11px;"><i class="fa-solid fa-clock"></i> Pendente de Pagamento</span>';
+          acaoHtml = '<button class="btn-action btn-sm" style="background:#10b981; color:white; font-size:11.5px; padding:4px 10px;" onclick="abrirModalPagarBonificacaoSuperAdmin(' + b.id + ', \'' + (b.contador_nome || '').replace(/'/g, "\\'") + '\', ' + b.valor + ', \'' + (chavePix).replace(/'/g, "\\'") + '\')">' +
+            '<i class="fa-brands fa-pix"></i> Pagar PIX' +
+          '</button>';
+        } else {
+          statusBadge = '<span style="background:rgba(16,185,129,0.15); color:#10b981; padding:3px 8px; border-radius:6px; font-weight:700; font-size:11px;"><i class="fa-solid fa-circle-check"></i> Pago</span>';
+          acaoHtml = '<span style="color:var(--text-muted); font-size:11px;" title="' + (b.comprovante_pix || 'Pago') + '"><i class="fa-solid fa-check-double" style="color:#10b981;"></i> PIX Enviado</span>';
+        }
+
+        return '<tr>' +
+          '<td style="font-family:monospace; color:var(--text-muted);">#' + b.id + '</td>' +
+          '<td><strong>' + (b.contador_nome || 'Contador #' + b.contador_id) + '</strong></td>' +
+          '<td>' + (b.demanda_titulo || 'Demanda #' + b.demanda_id) + '</td>' +
+          '<td>' + (b.restaurante_nome || '-') + '</td>' +
+          '<td style="font-size:15px; font-weight:900; color:#10b981;">' + formatarMoedaBR(b.valor) + '</td>' +
+          '<td style="font-family:monospace; color:#38bdf8; font-weight:600;">' + chavePix + '</td>' +
+          '<td>' + statusBadge + '</td>' +
+          '<td style="text-align:right;">' + acaoHtml + '</td>' +
+        '</tr>';
+      }).join('');
+    })
+    .catch(function(err) {
+      console.warn('Erro ao carregar bonificações:', err);
+    });
+};
+
+/* ── MODAL: ATRIBUIR DEMANDA ── */
+window.abrirModalAtribuirDemandaSuperAdmin = function(demandaId, titulo, restNome) {
+  var idEl = document.getElementById('atribuir-demanda-id');
+  var titEl = document.getElementById('atribuir-demanda-titulo-txt');
+  var restEl = document.getElementById('atribuir-demanda-rest-txt');
+  var modal = document.getElementById('modal-atribuir-demanda-superadmin');
+
+  if (idEl) idEl.value = demandaId;
+  if (titEl) titEl.textContent = titulo || 'Demanda #' + demandaId;
+  if (restEl) restEl.textContent = 'Restaurante: ' + (restNome || 'Não informado');
+
+  if (modal) modal.style.display = 'flex';
+};
+
+window.fecharModalAtribuirDemandaSuperAdmin = function() {
+  var modal = document.getElementById('modal-atribuir-demanda-superadmin');
+  if (modal) modal.style.display = 'none';
+};
+
+window.confirmarAtribuicaoDemandaSuperAdmin = function() {
+  var demandaId = document.getElementById('atribuir-demanda-id').value;
+  var contadorId = document.getElementById('atribuir-contador-select').value;
+  var valorBonus = parseFloat(document.getElementById('atribuir-bonus-input').value) || 0;
+  var dataLimite = document.getElementById('atribuir-prazo-input').value;
+
+  if (!contadorId) {
+    alert('Por favor, selecione um contador para atribuir esta demanda.');
+    return;
+  }
+  if (valorBonus < 10) {
+    alert('O valor mínimo de bonificação da tarefa é R$ 10,00.');
+    return;
+  }
+
+  fetch('/api/super/contador/atribuir-demanda', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({
+      demanda_id: demandaId,
+      contador_id: contadorId,
+      valor_bonificacao: valorBonus,
+      data_limite: dataLimite
+    })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && data.ok) {
+        showToast('Demanda atribuída com sucesso ao contador!', 'success');
+        fecharModalAtribuirDemandaSuperAdmin();
+        carregarGestaoContadorCheff();
+      } else {
+        alert(data.erro || 'Erro ao atribuir demanda.');
+      }
+    })
+    .catch(function(err) {
+      console.error(err);
+      alert('Erro de conexão ao atribuir demanda.');
+    });
+};
+
+/* ── MODAL: CRIAR DEMANDA ── */
+window.abrirModalCriarDemandaSuperAdmin = function() {
+  var modal = document.getElementById('modal-criar-demanda-superadmin');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.fecharModalCriarDemandaSuperAdmin = function() {
+  var modal = document.getElementById('modal-criar-demanda-superadmin');
+  if (modal) modal.style.display = 'none';
+};
+
+window.confirmarCriarDemandaSuperAdmin = function() {
+  var restId = document.getElementById('nova-dem-restaurante').value;
+  var tipo = document.getElementById('nova-dem-tipo').value;
+  var titulo = (document.getElementById('nova-dem-titulo').value || '').trim();
+  var comp = (document.getElementById('nova-dem-comp').value || '').trim();
+  var contId = document.getElementById('nova-dem-contador').value;
+  var bonus = parseFloat(document.getElementById('nova-dem-bonus').value) || 0;
+  var prazo = document.getElementById('nova-dem-prazo').value;
+  var desc = (document.getElementById('nova-dem-desc').value || '').trim();
+
+  if (!titulo) {
+    alert('Por favor, informe o título da demanda contábil.');
+    return;
+  }
+
+  fetch('/api/super/contador/criar-demanda', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({
+      restaurante_id: restId,
+      tipo: tipo,
+      titulo: titulo,
+      competencia: comp,
+      contador_id: contId || null,
+      valor_bonificacao: bonus,
+      data_limite: prazo,
+      descricao: desc
+    })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && data.ok) {
+        showToast('Demanda contábil criada com sucesso!', 'success');
+        document.getElementById('nova-dem-titulo').value = '';
+        document.getElementById('nova-dem-desc').value = '';
+        fecharModalCriarDemandaSuperAdmin();
+        carregarGestaoContadorCheff();
+      } else {
+        alert(data.erro || 'Erro ao criar demanda.');
+      }
+    })
+    .catch(function(err) {
+      console.error(err);
+      alert('Erro de conexão ao criar demanda.');
+    });
+};
+
+/* ── MODAL: PAGAR BONIFICAÇÃO PIX ── */
+window.abrirModalPagarBonificacaoSuperAdmin = function(bonifId, contadorNome, valor, chavePix) {
+  var idEl = document.getElementById('pagar-bonif-id');
+  var nomeEl = document.getElementById('pagar-bonif-nome');
+  var valEl = document.getElementById('pagar-bonif-valor');
+  var pixEl = document.getElementById('pagar-bonif-pix');
+  var compEl = document.getElementById('pagar-bonif-comprovante');
+  var modal = document.getElementById('modal-pagar-bonificacao-superadmin');
+
+  if (idEl) idEl.value = bonifId;
+  if (nomeEl) nomeEl.textContent = contadorNome || 'Contador';
+  if (valEl) valEl.textContent = formatarMoedaBR(valor);
+  if (pixEl) pixEl.textContent = chavePix || 'Não informada';
+  if (compEl) compEl.value = '';
+
+  if (modal) modal.style.display = 'flex';
+};
+
+window.fecharModalPagarBonificacaoSuperAdmin = function() {
+  var modal = document.getElementById('modal-pagar-bonificacao-superadmin');
+  if (modal) modal.style.display = 'none';
+};
+
+window.confirmarPagamentoBonificacaoSuperAdmin = function() {
+  var bonifId = document.getElementById('pagar-bonif-id').value;
+  var comprovante = (document.getElementById('pagar-bonif-comprovante').value || '').trim();
+
+  if (!comprovante) {
+    comprovante = 'PIX-CONFIRMADO-' + Date.now();
+  }
+
+  fetch('/api/super/contador/pagar-bonificacao', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({
+      bonificacao_id: bonifId,
+      comprovante_pix: comprovante
+    })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && data.ok) {
+        showToast('Bonificação paga e comprovante PIX arquivado!', 'success');
+        fecharModalPagarBonificacaoSuperAdmin();
+        carregarGestaoContadorCheff();
+      } else {
+        alert(data.erro || 'Erro ao registrar pagamento.');
+      }
+    })
+    .catch(function(err) {
+      console.error(err);
+      alert('Erro de conexão ao pagar bonificação.');
+    });
+};
+
+/* ═════════════════════════════════════════════════════════════════════════ */
+/* ═══ MÓDULO FINANCEIRO MASTER: CUSTÓDIA 15D, ASSINATURAS & GATEWAYS ═════ */
+/* ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. CUSTÓDIA & REPASSES DE VERBA ── */
+window.carregarFinCustodia = function() {
+  // Atualiza métricas e KPIs
+  fetch('/api/super/financeiro/metricas', { headers: authHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!res || !res.ok) return;
+      var c = (res.metricas && res.metricas.custodia) || {};
+      
+      var elTotCust = document.getElementById('fin-card-total-custodia');
+      var elQtdCust = document.getElementById('fin-card-qtd-custodia');
+      var elPronto = document.getElementById('fin-card-pronto-liberar');
+      var elQtdPronto = document.getElementById('fin-card-qtd-pronto');
+      var elContest = document.getElementById('fin-card-total-contestado');
+      var elQtdContest = document.getElementById('fin-card-qtd-contestado');
+      var elTotLib = document.getElementById('fin-card-total-liberado');
+      var elQtdLib = document.getElementById('fin-card-qtd-liberado');
+      var badgeCust = document.getElementById('custodia-pendente-badge');
+
+      if (elTotCust) elTotCust.textContent = formatarMoedaBR(c.total_em_custodia || 0);
+      if (elQtdCust) elQtdCust.textContent = c.qtd_em_custodia || 0;
+      if (elPronto) elPronto.textContent = formatarMoedaBR(c.total_pronto_liberar || 0);
+      if (elQtdPronto) elQtdPronto.textContent = c.qtd_pronto_liberar || 0;
+      if (elContest) elContest.textContent = formatarMoedaBR(c.total_contestado || 0);
+      if (elQtdContest) elQtdContest.textContent = c.qtd_contestado || 0;
+      if (elTotLib) elTotLib.textContent = formatarMoedaBR(c.total_liberado_mes || 0);
+      if (elQtdLib) elQtdLib.textContent = c.qtd_liberado_mes || 0;
+
+      if (badgeCust) {
+        var totalPend = (c.qtd_em_custodia || 0) + (c.qtd_contestado || 0);
+        if (totalPend > 0) {
+          badgeCust.textContent = totalPend;
+          badgeCust.style.display = 'inline-block';
+        } else {
+          badgeCust.style.display = 'none';
+        }
+      }
+    })
+    .catch(function(e) { console.error('Erro métricas custódia:', e); });
+
+  // Busca lista de itens
+  var busca = (document.getElementById('fin-custodia-busca') ? document.getElementById('fin-custodia-busca').value : '').trim();
+  var filtroStatus = document.getElementById('fin-custodia-filtro-status') ? document.getElementById('fin-custodia-filtro-status').value : 'todos';
+
+  var url = '/api/super/financeiro/custodia?t=' + Date.now();
+  if (filtroStatus === 'maduros') {
+    url += '&apenas_maduros=1';
+  } else if (filtroStatus && filtroStatus !== 'todos') {
+    url += '&status=' + encodeURIComponent(filtroStatus);
+  }
+  if (busca) url += '&busca=' + encodeURIComponent(busca);
+
+  var tbody = document.getElementById('fin-custodia-tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Carregando repasses sob custódia...</td></tr>';
+
+  fetch(url, { headers: authHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!res || !res.ok) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#ef4444;">Erro ao carregar itens de custódia.</td></tr>';
+        return;
+      }
+      renderFinCustodia(res.itens || []);
+    })
+    .catch(function(err) {
+      console.error(err);
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#ef4444;">Erro de conexão ao carregar custódia.</td></tr>';
+    });
+};
+
+function renderFinCustodia(itens) {
+  var tbody = document.getElementById('fin-custodia-tbody');
+  if (!tbody) return;
+
+  if (!itens || itens.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:35px; color:var(--text-muted);"><i class="fa-solid fa-box-open" style="font-size:24px; margin-bottom:8px; display:block;"></i>Nenhum pagamento em custódia encontrado com os filtros atuais.</td></tr>';
+    return;
+  }
+
+  var html = '';
+  itens.forEach(function(item) {
+    var vLiq = parseFloat(item.valor_liquido) || 0;
+    var vBruto = parseFloat(item.valor_bruto) || 0;
+    var vTaxa = parseFloat(item.taxa_plataforma) || 0;
+    var diasRest = item.dias_restantes_calc !== null ? parseInt(item.dias_restantes_calc) : 0;
+    var prontoLiberar = !!item.pronto_para_liberar;
+    var status = item.status || 'em_custodia';
+
+    // Badge do status da verba
+    var statusBadge = '';
+    if (status === 'em_custodia') {
+      if (prontoLiberar) {
+        statusBadge = '<span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-clock-check"></i> 15 Dias Concluídos (Pronto)</span>';
+      } else {
+        statusBadge = '<span style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-shield-halved"></i> Em Custódia (' + Math.max(0, diasRest) + 'd restantes)</span>';
+      }
+    } else if (status === 'liberado') {
+      statusBadge = '<span style="background:rgba(59,130,246,0.15); color:#3b82f6; border:1px solid rgba(59,130,246,0.3); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-check-double"></i> Liberado &amp; Quitado</span>';
+    } else if (status === 'contestado') {
+      statusBadge = '<span style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Contestado (Bloqueado)</span>';
+    } else if (status === 'estornado') {
+      statusBadge = '<span style="background:rgba(168,85,247,0.15); color:#a855f7; border:1px solid rgba(168,85,247,0.3); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-rotate-left"></i> Estornado ao Restaurante</span>';
+    } else {
+      statusBadge = '<span style="background:rgba(255,255,255,0.06); color:var(--text-muted); padding:4px 8px; border-radius:6px; font-size:11px;">' + escapeHtml(status) + '</span>';
+    }
+
+    // Informação de aprovação imediata
+    var aprovInfo = '<div style="font-size:11.5px; color:#10b981; font-weight:700; display:flex; align-items:center; gap:4px; margin-bottom:2px;"><i class="fa-solid fa-bolt"></i> Aprovado Imediato</div>' +
+      '<div style="font-size:11px; color:var(--text-muted);">Expira em: ' + (item.data_liberacao_prevista ? escapeHtml(item.data_liberacao_prevista.slice(0, 16)) : '15 dias') + '</div>';
+
+    if (item.motivo_contestacao) {
+      aprovInfo += '<div style="margin-top:4px; font-size:11px; color:#ef4444; background:rgba(239,68,68,0.08); padding:3px 6px; border-radius:4px; max-width:260px;" title="' + escapeHtml(item.motivo_contestacao) + '">' +
+        '<strong>Erro reportado:</strong> ' + escapeHtml(item.motivo_contestacao.length > 50 ? item.motivo_contestacao.slice(0, 48) + '...' : item.motivo_contestacao) + '</div>';
+    }
+
+    // Botões de ação
+    var acoesHtml = '<div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">';
+    
+    if (status === 'em_custodia') {
+      acoesHtml += '<button class="btn-action" style="background:#10b981; color:white; padding:5px 9px; font-size:11.5px;" onclick="liberarRepasseCustodia(' + item.id + ')" title="Liberar repasse imediatamente">' +
+        '<i class="fa-solid fa-check"></i> Liberar</button>';
+      
+      acoesHtml += '<button class="btn-action" style="background:#ef4444; color:white; padding:5px 9px; font-size:11.5px;" onclick="abrirModalContestarCustodia(' + item.id + ')" title="Reportar erro operacional e congelar pagamento">' +
+        '<i class="fa-solid fa-triangle-exclamation"></i> Contestar</button>';
+    } else if (status === 'contestado') {
+      acoesHtml += '<button class="btn-action" style="background:#3b82f6; color:white; padding:5px 9px; font-size:11.5px;" onclick="abrirModalResolverDisputa(' + item.id + ', \'' + escapeHtml(item.motivo_contestacao || '').replace(/'/g, "\\'") + '\')" title="Resolver disputa">' +
+        '<i class="fa-solid fa-scale-balanced"></i> Resolver Disputa</button>';
+    } else if (status === 'liberado') {
+      acoesHtml += '<span style="color:#10b981; font-size:12px; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Concluído</span>';
+    }
+
+    if (status !== 'estornado' && status !== 'liberado') {
+      acoesHtml += '<button class="btn-action" style="background:rgba(255,255,255,0.06); color:var(--text-muted); padding:5px 8px; font-size:11px;" onclick="estornarRepasseCustodia(' + item.id + ')" title="Estornar valor ao restaurante">' +
+        '<i class="fa-solid fa-rotate-left"></i></button>';
+    }
+
+    acoesHtml += '</div>';
+
+    var origemNome = item.origem_tipo === 'escala_freelancer' ? 'Diária Freelancer' : (item.origem_tipo || 'Tarefa');
+
+    html += '<tr style="border-bottom:1px solid var(--border-color);">' +
+      '<td style="padding:12px 14px;">' +
+        '<div style="font-weight:700;">#' + item.id + '</div>' +
+        '<span style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">' + escapeHtml(origemNome) + '</span>' +
+      '</td>' +
+      '<td style="padding:12px 14px;">' +
+        '<div style="font-weight:600;">' + escapeHtml(item.restaurante_nome || item.restaurante_nome_real || 'Restaurante #' + item.restaurante_id) + '</div>' +
+        '<small style="color:var(--text-muted);">ID #' + item.restaurante_id + '</small>' +
+      '</td>' +
+      '<td style="padding:12px 14px;">' +
+        '<div style="font-weight:600; color:var(--text);">' + escapeHtml(item.beneficiario_nome) + '</div>' +
+        '<div style="font-size:11.5px; color:var(--text-muted);"><i class="fa-brands fa-pix" style="color:#00bd8d;"></i> ' + escapeHtml(item.beneficiario_chave_pix || 'Chave não cadastrada') + '</div>' +
+      '</td>' +
+      '<td style="padding:12px 14px;">' +
+        '<div style="font-weight:800; font-size:14px; color:#10b981;">' + formatarMoedaBR(vLiq) + '</div>' +
+        '<div style="font-size:11px; color:var(--text-muted);">Bruto: ' + formatarMoedaBR(vBruto) + ' (Taxa: ' + formatarMoedaBR(vTaxa) + ')</div>' +
+      '</td>' +
+      '<td style="padding:12px 14px;">' + aprovInfo + '</td>' +
+      '<td style="padding:12px 14px;">' + statusBadge + '</td>' +
+      '<td style="padding:12px 14px; text-align:center;">' + acoesHtml + '</td>' +
+    '</tr>';
+  });
+
+  tbody.innerHTML = html;
+}
+
+window.processarLiberacoesMaduras = function() {
+  if (!confirm('Deseja executar o motor de liberação automática agora?\n\nTodos os repasses que completaram os 15 dias de custódia e NÃO possuem erros operacionais ou contestações serão liberados e quitados.')) {
+    return;
+  }
+
+  fetch('/api/super/financeiro/custodia/processar-liberacoes', {
+    method: 'POST',
+    headers: authHeaders()
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res && res.ok) {
+        showToast(res.mensagem || 'Liberações processadas com sucesso!', 'success');
+        carregarFinCustodia();
+      } else {
+        alert(res.erro || 'Erro ao processar liberações maduras.');
+      }
+    })
+    .catch(function(err) {
+      console.error(err);
+      alert('Erro de conexão ao processar liberações.');
+    });
+};
+
+window.liberarRepasseCustodia = function(id) {
+  if (!confirm('Autorizar liberação imediata do repasse #' + id + '?\n\nO valor sairá da custódia de 15 dias e será marcado como liberado para pagamento ao beneficiário.')) {
+    return;
+  }
+
+  fetch('/api/super/financeiro/custodia/' + id + '/liberar', {
+    method: 'PUT',
+    headers: authHeaders()
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res && res.ok) {
+        showToast(res.mensagem || 'Repasse liberado com sucesso!', 'success');
+        carregarFinCustodia();
+      } else {
+        alert(res.erro || 'Erro ao liberar repasse.');
+      }
+    })
+    .catch(function(err) {
+      console.error(err);
+      alert('Erro de conexão ao liberar repasse.');
+    });
+};
+
+/* ── MODAL CONTESTAR CUSTÓDIA ── */
+window.abrirModalContestarCustodia = function(id) {
+  var idEl = document.getElementById('contestar-custodia-id');
+  var motEl = document.getElementById('contestar-motivo');
+  var modal = document.getElementById('modal-contestar-custodia');
+
+  if (idEl) idEl.value = id;
+  if (motEl) motEl.value = '';
+  if (modal) modal.style.display = 'flex';
+};
+
+window.fecharModalContestarCustodia = function() {
+  var modal = document.getElementById('modal-contestar-custodia');
+  if (modal) modal.style.display = 'none';
+};
+
+window.confirmarContestacaoCustodia = function() {
+  var id = document.getElementById('contestar-custodia-id').value;
+  var motivo = (document.getElementById('contestar-motivo').value || '').trim();
+
+  if (!motivo) {
+    alert('Descreva o erro operacional ou motivo da contestação.');
+    return;
+  }
+
+  fetch('/api/super/financeiro/custodia/' + id + '/contestar', {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify({ motivo: motivo })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res && res.ok) {
+        showToast('Pagamento contestado e CONGELADO com sucesso!', 'warning');
+        fecharModalContestarCustodia();
+        carregarFinCustodia();
+      } else {
+        alert(res.erro || 'Erro ao registrar contestação.');
+      }
+    })
+    .catch(function(err) {
+      console.error(err);
+      alert('Erro de conexão ao contestar.');
+    });
+};
+
+/* ── MODAL RESOLVER DISPUTA ── */
+window.abrirModalResolverDisputa = function(id, motivo) {
+  var idEl = document.getElementById('resolver-disputa-id');
+  var detEl = document.getElementById('resolver-disputa-detalhes');
+  var resEl = document.getElementById('resolver-disputa-resolucao');
+  var modal = document.getElementById('modal-resolver-disputa');
+
+  if (idEl) idEl.value = id;
+  if (detEl) detEl.innerHTML = '<strong>Motivo da Contestação:</strong> ' + escapeHtml(motivo || 'Erro operacional informado.');
+  if (resEl) resEl.value = '';
+  if (modal) modal.style.display = 'flex';
+};
+
+window.fecharModalResolverDisputa = function() {
+  var modal = document.getElementById('modal-resolver-disputa');
+  if (modal) modal.style.display = 'none';
+};
+
+window.confirmarResolucaoDisputa = function() {
+  var id = document.getElementById('resolver-disputa-id').value;
+  var decisao = document.getElementById('resolver-disputa-decisao').value;
+  var resolucao = (document.getElementById('resolver-disputa-resolucao').value || '').trim();
+
+  fetch('/api/super/financeiro/custodia/' + id + '/resolver-contestacao', {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify({ decisao: decisao, resolucao: resolucao })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res && res.ok) {
+        showToast(res.mensagem || 'Disputa resolvida com sucesso!', 'success');
+        fecharModalResolverDisputa();
+        carregarFinCustodia();
+      } else {
+        alert(res.erro || 'Erro ao resolver disputa.');
+      }
+    })
+    .catch(function(err) {
+      console.error(err);
+      alert('Erro de conexão ao resolver disputa.');
+    });
+};
+
+window.estornarRepasseCustodia = function(id) {
+  if (!confirm('Deseja estornar o valor do repasse #' + id + ' de volta para o restaurante?')) {
+    return;
+  }
+
+  fetch('/api/super/financeiro/custodia/' + id + '/estornar', {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify({ motivo: 'Estorno manual autorizado pelo Super Admin' })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res && res.ok) {
+        showToast(res.mensagem || 'Estorno realizado com sucesso!', 'info');
+        carregarFinCustodia();
+      } else {
+        alert(res.erro || 'Erro ao estornar repasse.');
+      }
+    })
+    .catch(function(err) {
+      console.error(err);
+      alert('Erro de conexão ao estornar.');
+    });
+};
+
+/* ── NOVO REPASSE MANUAL CUSTÓDIA ── */
+window.abrirModalNovaCustodia = function() {
+  var selRest = document.getElementById('nova-custodia-rest-id');
+  if (selRest) {
+    selRest.innerHTML = '<option value="">Carregando restaurantes...</option>';
+    fetch('/api/super/restaurantes', { headers: authHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var rests = (data && data.restaurantes) || [];
+        selRest.innerHTML = rests.map(function(r) {
+          return '<option value="' + r.id + '">' + escapeHtml(r.nome || 'Restaurante #' + r.id) + ' (ID ' + r.id + ')</option>';
+        }).join('');
+      })
+      .catch(function() { selRest.innerHTML = '<option value="1">Restaurante Principal #1</option>'; });
+  }
+
+  var modal = document.getElementById('modal-nova-custodia');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.fecharModalNovaCustodia = function() {
+  var modal = document.getElementById('modal-nova-custodia');
+  if (modal) modal.style.display = 'none';
+};
+
+window.salvarNovoRepasseCustodia = function() {
+  var restId = document.getElementById('nova-custodia-rest-id').value;
+  var nome = (document.getElementById('nova-custodia-nome').value || '').trim();
+  var pix = (document.getElementById('nova-custodia-pix').value || '').trim();
+  var valor = parseFloat(document.getElementById('nova-custodia-valor').value) || 0;
+  var dias = parseInt(document.getElementById('nova-custodia-dias').value) || 15;
+  var desc = (document.getElementById('nova-custodia-desc').value || '').trim();
+
+  if (!restId || !nome || valor <= 0) {
+    alert('Preencha o restaurante, nome do beneficiário e valor bruto válido.');
+    return;
+  }
+
+  fetch('/api/super/financeiro/custodia', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({
+      restaurante_id: parseInt(restId),
+      beneficiario_nome: nome,
+      beneficiario_chave_pix: pix,
+      valor_bruto: valor,
+      dias_custodia: dias,
+      descricao: desc || ('Repasse Tarefa / Diária - ' + nome)
+    })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res && res.ok) {
+        showToast('Repasse aprovado imediatamente e alocado em custódia por 15 dias!', 'success');
+        fecharModalNovaCustodia();
+        carregarFinCustodia();
+      } else {
+        alert(res.erro || 'Erro ao registrar repasse em custódia.');
+      }
+    })
+    .catch(function(err) {
+      console.error(err);
+      alert('Erro de conexão ao criar repasse.');
+    });
+};
+
+/* ── 2. ASSINATURAS TENANTS ── */
+window.carregarFinAssinaturas = function() {
+  var busca = (document.getElementById('fin-assin-busca') ? document.getElementById('fin-assin-busca').value : '').trim();
+  var status = document.getElementById('fin-assin-filtro-status') ? document.getElementById('fin-assin-filtro-status').value : 'todos';
+
+  var url = '/api/super/financeiro/assinaturas?t=' + Date.now();
+  if (status && status !== 'todos') url += '&status=' + encodeURIComponent(status);
+  if (busca) url += '&busca=' + encodeURIComponent(busca);
+
+  var tbody = document.getElementById('fin-assinaturas-tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Carregando assinaturas...</td></tr>';
+
+  fetch(url, { headers: authHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!res || !res.ok) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#ef4444;">Erro ao carregar assinaturas.</td></tr>';
+        return;
+      }
+      renderFinAssinaturas(res.assinaturas || []);
+    })
+    .catch(function(err) {
+      console.error(err);
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#ef4444;">Erro de conexão ao carregar assinaturas.</td></tr>';
+    });
+};
+
+function renderFinAssinaturas(assinaturas) {
+  var tbody = document.getElementById('fin-assinaturas-tbody');
+  if (!tbody) return;
+
+  var mrr = 0;
+  var qtdAtivas = 0;
+  var qtdVencidas = 0;
+  var qtdTrial = 0;
+
+  assinaturas.forEach(function(a) {
+    if (a.status === 'em_dia') {
+      mrr += parseFloat(a.valor_mensal) || 0;
+      qtdAtivas++;
+    } else if (a.status === 'vencida') {
+      qtdVencidas++;
+    } else if (a.status === 'trial') {
+      qtdTrial++;
+    }
+  });
+
+  var elMrr = document.getElementById('fin-assin-mrr');
+  var elAtivas = document.getElementById('fin-assin-qtd-ativas');
+  var elVenc = document.getElementById('fin-assin-vencidas-count');
+  var elTrial = document.getElementById('fin-assin-trial-count');
+  var elTot = document.getElementById('fin-assin-total-tenants');
+  var badgeVenc = document.getElementById('assinaturas-vencidas-badge');
+
+  if (elMrr) elMrr.textContent = formatarMoedaBR(mrr);
+  if (elAtivas) elAtivas.textContent = qtdAtivas;
+  if (elVenc) elVenc.textContent = qtdVencidas;
+  if (elTrial) elTrial.textContent = qtdTrial;
+  if (elTot) elTot.textContent = assinaturas.length;
+
+  if (badgeVenc) {
+    if (qtdVencidas > 0) {
+      badgeVenc.textContent = qtdVencidas;
+      badgeVenc.style.display = 'inline-block';
+    } else {
+      badgeVenc.style.display = 'none';
+    }
+  }
+
+  if (assinaturas.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:35px; color:var(--text-muted);">Nenhuma assinatura encontrada.</td></tr>';
+    return;
+  }
+
+  var html = '';
+  assinaturas.forEach(function(a) {
+    var statusBadge = '';
+    if (a.status === 'em_dia') {
+      statusBadge = '<span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11.5px;">Em Dia</span>';
+    } else if (a.status === 'vencida') {
+      statusBadge = '<span style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11.5px;">Vencida</span>';
+    } else if (a.status === 'trial') {
+      statusBadge = '<span style="background:rgba(139,92,246,0.15); color:#8b5cf6; border:1px solid rgba(139,92,246,0.3); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11.5px;">Trial (' + (a.dias_trial_restantes || 14) + 'd)</span>';
+    } else if (a.status === 'pendente') {
+      statusBadge = '<span style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11.5px;">Pendente</span>';
+    } else {
+      statusBadge = '<span style="background:rgba(255,255,255,0.06); color:var(--text-muted); padding:4px 8px; border-radius:6px; font-size:11.5px;">' + escapeHtml(a.status) + '</span>';
+    }
+
+    var rNome = escapeHtml(a.restaurante_nome || a.restaurante_nome_real || 'Restaurante #' + a.restaurante_id);
+    var donoInfo = a.dono_nome ? ('<div style="font-size:11.5px; color:var(--text-muted);">' + escapeHtml(a.dono_nome) + ' &bull; ' + escapeHtml(a.dono_telefone || a.dono_email || '') + '</div>') : '';
+
+    html += '<tr style="border-bottom:1px solid var(--border-color);">' +
+      '<td style="padding:12px 14px;">' +
+        '<div style="font-weight:700;">' + rNome + '</div>' +
+        donoInfo +
+      '</td>' +
+      '<td style="padding:12px 14px;"><span class="badge badge-plano">' + escapeHtml(a.plano || 'Profissional') + '</span></td>' +
+      '<td style="padding:12px 14px; font-weight:700; color:#10b981;">' + formatarMoedaBR(a.valor_mensal || 0) + '</td>' +
+      '<td style="padding:12px 14px; color:var(--text-muted); font-size:12.5px;">' + escapeHtml(a.proximo_vencimento || '—') + '</td>' +
+      '<td style="padding:12px 14px;">' + statusBadge + '</td>' +
+      '<td style="padding:12px 14px; font-size:12px;"><i class="fa-solid fa-credit-card" style="color:#fc4b15; margin-right:4px;"></i>' + escapeHtml(a.gateway || 'Asaas') + ' (' + escapeHtml(a.forma_pagamento || 'PIX') + ')</td>' +
+      '<td style="padding:12px 14px; text-align:center;">' +
+        '<button class="btn-action" style="padding:6px 12px; font-size:12px;" onclick="abrirModalEditarAssinatura(' + a.restaurante_id + ', \'' + rNome.replace(/'/g, "\\'") + '\', \'' + escapeHtml(a.plano || 'Profissional') + '\', ' + (a.valor_mensal || 149) + ', \'' + (a.status || 'em_dia') + '\', \'' + (a.proximo_vencimento || '') + '\', \'' + escapeHtml(a.observacoes || '').replace(/'/g, "\\'") + '\')">' +
+          '<i class="fa-solid fa-pen"></i> Editar' +
+        '</button>' +
+      '</td>' +
+    '</tr>';
+  });
+
+  tbody.innerHTML = html;
+}
+
+window.abrirModalEditarAssinatura = function(restId, restNome, plano, valor, status, vencimento, obs) {
+  var idEl = document.getElementById('edit-assin-rest-id');
+  var nomeEl = document.getElementById('edit-assin-rest-nome');
+  var planoEl = document.getElementById('edit-assin-plano');
+  var valEl = document.getElementById('edit-assin-valor');
+  var statEl = document.getElementById('edit-assin-status');
+  var vencEl = document.getElementById('edit-assin-vencimento');
+  var obsEl = document.getElementById('edit-assin-obs');
+  var modal = document.getElementById('modal-editar-assinatura');
+
+  if (idEl) idEl.value = restId;
+  if (nomeEl) nomeEl.value = restNome;
+  if (planoEl) planoEl.value = plano || 'Profissional';
+  if (valEl) valEl.value = valor || 149;
+  if (statEl) statEl.value = status || 'em_dia';
+  if (vencEl) vencEl.value = vencimento || '';
+  if (obsEl) obsEl.value = obs || '';
+
+  if (modal) modal.style.display = 'flex';
+};
+
+window.fecharModalEditarAssinatura = function() {
+  var modal = document.getElementById('modal-editar-assinatura');
+  if (modal) modal.style.display = 'none';
+};
+
+window.salvarAssinaturaTenant = function() {
+  var restId = document.getElementById('edit-assin-rest-id').value;
+  var plano = document.getElementById('edit-assin-plano').value;
+  var valor = parseFloat(document.getElementById('edit-assin-valor').value) || 0;
+  var status = document.getElementById('edit-assin-status').value;
+  var vencimento = document.getElementById('edit-assin-vencimento').value;
+  var obs = (document.getElementById('edit-assin-obs').value || '').trim();
+
+  fetch('/api/super/financeiro/assinaturas/' + restId, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify({
+      plano: plano,
+      valor_mensal: valor,
+      status: status,
+      proximo_vencimento: vencimento,
+      observacoes: obs
+    })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res && res.ok) {
+        showToast('Assinatura do restaurante atualizada com sucesso!', 'success');
+        fecharModalEditarAssinatura();
+        carregarFinAssinaturas();
+      } else {
+        alert(res.erro || 'Erro ao atualizar assinatura.');
+      }
+    })
+    .catch(function(err) {
+      console.error(err);
+      alert('Erro de conexão ao salvar assinatura.');
+    });
+};
+
+/* ── 3. CONTRATAÇÕES & FREELANCERS ── */
+window.carregarFinContratacoes = function() {
+  var tbody = document.getElementById('fin-contratacoes-tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Carregando contratações e escalas...</td></tr>';
+
+  fetch('/api/super/financeiro/contratacoes?t=' + Date.now(), { headers: authHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!res || !res.ok) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#ef4444;">Erro ao carregar contratações.</td></tr>';
+        return;
+      }
+      renderFinContratacoes(res.contratacoes || []);
+    })
+    .catch(function(err) {
+      console.error(err);
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#ef4444;">Erro de conexão.</td></tr>';
+    });
+};
+
+function renderFinContratacoes(contratacoes) {
+  var tbody = document.getElementById('fin-contratacoes-tbody');
+  if (!tbody) return;
+
+  if (!contratacoes || contratacoes.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:35px; color:var(--text-muted);">Nenhuma contratação ou escala de freelancer registrada no momento.</td></tr>';
+    return;
+  }
+
+  var html = '';
+  contratacoes.forEach(function(c) {
+    var vDiaria = parseFloat(c.valor_diaria) || 0;
+    var statusEscala = c.status_escala || 'agendado';
+    var statusCustodia = c.custodia_status || 'sem_custodia';
+
+    var statusEscalaBadge = '';
+    if (statusEscala === 'pago') {
+      statusEscalaBadge = '<span style="background:rgba(16,185,129,0.15); color:#10b981; padding:3px 7px; border-radius:5px; font-weight:700; font-size:11px;">Pago (Caixa)</span>';
+    } else {
+      statusEscalaBadge = '<span style="background:rgba(245,158,11,0.15); color:#f59e0b; padding:3px 7px; border-radius:5px; font-weight:700; font-size:11px;">' + escapeHtml(statusEscala) + '</span>';
+    }
+
+    var custodiaBadge = '';
+    if (statusCustodia === 'em_custodia') {
+      custodiaBadge = '<span style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); padding:3px 8px; border-radius:5px; font-size:11px; font-weight:700;"><i class="fa-solid fa-shield-halved"></i> Retido 15 Dias (#' + c.custodia_id + ')</span>';
+    } else if (statusCustodia === 'liberado') {
+      custodiaBadge = '<span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:3px 8px; border-radius:5px; font-size:11px; font-weight:700;"><i class="fa-solid fa-check"></i> Liberado</span>';
+    } else if (statusCustodia === 'contestado') {
+      custodiaBadge = '<span style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:3px 8px; border-radius:5px; font-size:11px; font-weight:700;"><i class="fa-solid fa-lock"></i> Contestado</span>';
+    } else {
+      custodiaBadge = '<span style="color:var(--text-muted); font-size:11px;">Pendente</span>';
+    }
+
+    html += '<tr style="border-bottom:1px solid var(--border-color);">' +
+      '<td style="padding:12px 14px;"><strong>' + escapeHtml(c.data_turno || '—') + '</strong><br><small style="color:var(--text-muted);">' + escapeHtml(c.periodo || '') + '</small></td>' +
+      '<td style="padding:12px 14px;">' + escapeHtml(c.restaurante_nome || 'Restaurante #' + c.restaurante_id) + '</td>' +
+      '<td style="padding:12px 14px;"><strong>' + escapeHtml(c.talento_nome) + '</strong><br><small style="color:var(--text-muted);">' + escapeHtml(c.cargo || 'Freelancer') + '</small></td>' +
+      '<td style="padding:12px 14px; font-weight:700; color:#10b981;">' + formatarMoedaBR(vDiaria) + '</td>' +
+      '<td style="padding:12px 14px;">' + statusEscalaBadge + '</td>' +
+      '<td style="padding:12px 14px;">' + custodiaBadge + '</td>' +
+      '<td style="padding:12px 14px; text-align:center; font-size:12px; font-family:monospace;">' + escapeHtml(c.chave_pix || '—') + '</td>' +
+    '</tr>';
+  });
+
+  tbody.innerHTML = html;
+}
+
+/* ── 4. CONFIGURAÇÃO DE GATEWAYS (ASAAS / MERCADO PAGO) ── */
+window.carregarFinGateways = function() {
+  fetch('/api/super/financeiro/gateways?t=' + Date.now(), { headers: authHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!res || !res.ok) return;
+      var c = res.config || {};
+
+      var elAsaasAtivo = document.getElementById('cfg-asaas-ativo');
+      var elAsaasSb = document.getElementById('cfg-asaas-sandbox');
+      var elAsaasKey = document.getElementById('cfg-asaas-api-key');
+      var elAsaasWb = document.getElementById('cfg-asaas-webhook-token');
+
+      var elMpAtivo = document.getElementById('cfg-mp-ativo');
+      var elMpSb = document.getElementById('cfg-mp-sandbox');
+      var elMpToken = document.getElementById('cfg-mp-access-token');
+      var elMpKey = document.getElementById('cfg-mp-public-key');
+
+      var elDias = document.getElementById('cfg-dias-custodia');
+      var elTaxa = document.getElementById('cfg-taxa-plataforma');
+      var elGwPadrao = document.getElementById('cfg-gateway-padrao');
+      var elAutoLib = document.getElementById('cfg-auto-liberar');
+      var elBloqCont = document.getElementById('cfg-bloqueio-contestacao');
+
+      if (elAsaasAtivo) elAsaasAtivo.checked = !!c.asaas_ativo;
+      if (elAsaasSb) elAsaasSb.value = c.asaas_sandbox ? 'true' : 'false';
+      if (elAsaasKey) elAsaasKey.value = c.asaas_api_key || '';
+      if (elAsaasWb) elAsaasWb.value = c.asaas_webhook_token || '';
+
+      if (elMpAtivo) elMpAtivo.checked = !!c.mp_ativo;
+      if (elMpSb) elMpSb.value = c.mp_sandbox ? 'true' : 'false';
+      if (elMpToken) elMpToken.value = c.mp_access_token || '';
+      if (elMpKey) elMpKey.value = c.mp_public_key || '';
+
+      if (elDias) elDias.value = c.dias_custodia_padrao !== undefined ? c.dias_custodia_padrao : 15;
+      if (elTaxa) elTaxa.value = c.taxa_plataforma_percentual !== undefined ? c.taxa_plataforma_percentual : 10;
+      if (elGwPadrao) elGwPadrao.value = c.gateway_padrao || 'asaas';
+      if (elAutoLib) elAutoLib.checked = c.auto_liberar_maduros !== undefined ? !!c.auto_liberar_maduros : true;
+      if (elBloqCont) elBloqCont.checked = c.bloqueio_automatico_contestacao !== undefined ? !!c.bloqueio_automatico_contestacao : true;
+    })
+    .catch(function(e) { console.error('Erro ao carregar gateways:', e); });
+};
+
+window.salvarConfigGatewaysSuperAdmin = function() {
+  var payload = {
+    asaas_ativo: document.getElementById('cfg-asaas-ativo').checked,
+    asaas_sandbox: document.getElementById('cfg-asaas-sandbox').value === 'true',
+    asaas_api_key: document.getElementById('cfg-asaas-api-key').value,
+    asaas_webhook_token: document.getElementById('cfg-asaas-webhook-token').value,
+
+    mp_ativo: document.getElementById('cfg-mp-ativo').checked,
+    mp_sandbox: document.getElementById('cfg-mp-sandbox').value === 'true',
+    mp_access_token: document.getElementById('cfg-mp-access-token').value,
+    mp_public_key: document.getElementById('cfg-mp-public-key').value,
+
+    dias_custodia_padrao: parseInt(document.getElementById('cfg-dias-custodia').value) || 15,
+    taxa_plataforma_percentual: parseFloat(document.getElementById('cfg-taxa-plataforma').value) || 0,
+    gateway_padrao: document.getElementById('cfg-gateway-padrao').value,
+    auto_liberar_maduros: document.getElementById('cfg-auto-liberar').checked,
+    bloqueio_automatico_contestacao: document.getElementById('cfg-bloqueio-contestacao').checked
+  };
+
+  fetch('/api/super/financeiro/gateways', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload)
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res && res.ok) {
+        showToast('Configurações de gateways e custódia salvas com sucesso!', 'success');
+      } else {
+        alert(res.erro || 'Erro ao salvar configurações.');
+      }
+    })
+    .catch(function(err) {
+      console.error(err);
+      alert('Erro de conexão ao salvar gateways.');
+    });
+};
+
+window.testarConexaoGateway = function(gw) {
+  var statusEl = document.getElementById(gw === 'asaas' ? 'asaas-test-status' : 'mp-test-status');
+  if (statusEl) {
+    statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testando conexão...';
+    statusEl.style.color = '#f59e0b';
+  }
+
+  var body = { gateway: gw };
+  if (gw === 'asaas') {
+    body.asaas_api_key = document.getElementById('cfg-asaas-api-key').value;
+    body.asaas_sandbox = document.getElementById('cfg-asaas-sandbox').value === 'true';
+  } else {
+    body.mp_access_token = document.getElementById('cfg-mp-access-token').value;
+  }
+
+  fetch('/api/super/financeiro/gateways/testar', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body)
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res && res.ok) {
+        if (statusEl) {
+          statusEl.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#10b981;"></i> Conectado!';
+          statusEl.style.color = '#10b981';
+        }
+        showToast(res.mensagem || 'Conexão realizada com sucesso!', 'success');
+      } else {
+        if (statusEl) {
+          statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:#ef4444;"></i> Erro na conexão';
+          statusEl.style.color = '#ef4444';
+        }
+        alert(res.erro || 'Falha ao conectar no gateway.');
+      }
+    })
+    .catch(function(err) {
+      if (statusEl) {
+        statusEl.innerHTML = '<i class="fa-solid fa-circle-exmark" style="color:#ef4444;"></i> Erro de rede';
+        statusEl.style.color = '#ef4444';
+      }
+      alert('Erro de rede ao testar gateway.');
+    });
+};
+
+

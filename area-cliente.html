@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/theme-manager.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   
   <style>
@@ -80,7 +81,7 @@
       font-size: 28px;
       font-weight: 800;
       margin-bottom: 10px;
-      background: linear-gradient(135deg, #fff, #cbd5e1);
+      background: var(--title-grad);
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -191,7 +192,7 @@
       transition: 0.2s;
     }
 
-    .logout-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .logout-btn:hover { background: var(--card-sub-hover); }
 
     .points-card {
       padding: 30px;
@@ -424,7 +425,7 @@
       align-items: center;
       margin-top: 10px;
       padding-top: 10px;
-      border-top: 1px solid rgba(255,255,255,0.06);
+      border-top: 1px solid var(--card-sub-border);
       font-weight: 700;
       font-size: 14px;
     }
@@ -541,6 +542,7 @@
 
   <!-- TELA DE LOGIN -->
   <div id="login-screen">
+    <button class="logout-btn" id="btn-theme-login" onclick="window.ChefTheme && window.ChefTheme.toggle()" title="Alternar Modo Claro / Escuro" style="position:fixed; top:18px; right:18px; z-index:99;"><i class="ph ph-moon" id="theme-toggle-icon"></i></button>
     <div class="glass-card login-box">
       <i class="ph-fill ph-crown"></i>
       <h1>Clube de Vantagens</h1>

@@ -5,10 +5,10 @@
 const fs = require('fs');
 const fsSync = require('fs');
 const path = require('path');
-const sqlite3 = require('./sqlite3-wrapper').verbose();
+const sqlite3 = require('../../sqlite3-wrapper').verbose();
 
 module.exports = function({ app, db, io, options }) {
-  const { verificarToken, withTenant, upload, getTenantDbPath, tenantDbs, isTenantFeatureEnabled, tenantContext } = options;
+  const { verificarToken, withTenant, upload, getTenantDbPath, tenantDbs, isTenantFeatureEnabled, tenantContext, resolveTenantId } = options || {};
 
   // ── TESTE DE CONEXÃO COM MAQUININHA ──
   app.post('/api/maquininha/testar', (req, res) => {
@@ -163,21 +163,22 @@ module.exports = function({ app, db, io, options }) {
 
   // ── TOTEM: status + personalização ──
   app.get('/api/totem/status', (req, res) => {
-    withTenant(req, () => {
-      const tid = tenantContext.getStore() || 1;
-      const featureAtiva = isTenantFeatureEnabled(tid, 'totem');
-      db.all(`SELECT chave, valor FROM configuracoes WHERE chave LIKE 'totem_%'`, [], (err, rows) => {
+    const runHandler = () => {
+      const tid = (typeof resolveTenantId === 'function' ? resolveTenantId(req) : null) || (tenantContext && tenantContext.getStore()) || 1;
+      const featureAtiva = typeof isTenantFeatureEnabled === 'function' ? isTenantFeatureEnabled(tid, 'totem') : true;
+      db.all(`SELECT chave, valor FROM configuracoes WHERE chave LIKE 'totem_%' OR chave = 'mod_totem'`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: 'Erro ao ler configurações do totem.' });
         const cfg = {};
         (rows || []).forEach(r => { cfg[r.chave] = r.valor; });
-        const enabledDono = cfg.totem_enabled === 'true';
+        const rawEnabled = cfg.totem_enabled !== undefined ? cfg.totem_enabled : cfg.mod_totem;
+        const enabledDono = rawEnabled === undefined ? !!featureAtiva : (rawEnabled === 'true' || rawEnabled === true);
         let slides = [];
         try { slides = JSON.parse(cfg.totem_slides_json || '[]'); } catch (e) { slides = []; }
         if (!Array.isArray(slides)) slides = [];
         res.json({
           feature_ativa: !!featureAtiva,
-          enabled: enabledDono,
-          ativo: !!featureAtiva && enabledDono,
+          enabled: !!enabledDono,
+          ativo: !!featureAtiva && !!enabledDono,
           mesa: cfg.totem_mesa || 'Totem 1',
           idle_timeout_min: parseInt(cfg.totem_idle_timeout, 10) || 45,
           personalizacao: {
@@ -207,7 +208,13 @@ module.exports = function({ app, db, io, options }) {
           }
         });
       });
-    });
+    };
+
+    if (typeof withTenant === 'function') {
+      withTenant(req, runHandler);
+    } else {
+      runHandler();
+    }
   });
 
   // ── MESA PERFIL ──
