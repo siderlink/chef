@@ -38,6 +38,9 @@
   <!-- Canvas Three.js Ambiente (Aura Fluida de Fundo) -->
   <canvas id="threejs-ambient-canvas"></canvas>
 
+  <!-- Canvas de Efeitos Arcade & Partículas do Jogo Tycoon (Moedas, Estrelas, Números) -->
+  <canvas id="ultra-game-fx-canvas"></canvas>
+
   <!-- BANNER DE INFOGRÁFICO DE FLUXO DE PEDIDO (ANIMAÇÃO DESENHADA) -->
   <div id="ultra-order-flow-banner" class="ultra-order-flow-banner"></div>
 
@@ -71,6 +74,9 @@
           <span>6GB+ Ultra Active</span>
         </div>
       </div>
+
+      <!-- 🎮 ARCADE GAME HUD (Nível, XP, Combos, Estrelas e Rush Hour) -->
+      <div id="ultra-game-hud-bar" class="ultra-game-hud-bar"></div>
 
       <!-- Barra de Busca de Mesas e Comandas (F4) -->
       <div class="ultra-search-container">
@@ -465,6 +471,7 @@
   </div>
 
   <!-- Scripts do Caixa Ultra 3D Studio -->
+  <script src="/caixa-ultra-game.js"></script>
   <script src="/pagamento-parcial-modal.js"></script>
   <script src="/plugins/fila-espera/client.js" defer></script>
   <script src="/caixa-ultra-3d.js"></script>

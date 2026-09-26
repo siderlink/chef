@@ -410,6 +410,9 @@
       window.mesaAtual = mesa;
       window.ordersData = this.ordersData;
       this.soundClick();
+      if (window.ChefUltraGame && window.ChefUltraGame.sfx) {
+        window.ChefUltraGame.sfx.playTableSelect();
+      }
       this.renderAll();
 
       if (mesa.isOcupada) {
@@ -527,6 +530,9 @@
      */
     teclarNumero: function (digito) {
       this.soundClick();
+      if (window.ChefUltraGame && window.ChefUltraGame.sfx) {
+        window.ChefUltraGame.sfx.playBlip(920);
+      }
       if (digito === 'C') {
         this.valorDigitado = '';
       } else if (digito === 'BS') {
@@ -670,6 +676,9 @@
 
       const emitFinalizar = (emitirNfce = false, cpfCnpj = '') => {
         this.soundSuccess();
+        if (window.ChefUltraGame) {
+          window.ChefUltraGame.onVendaConcluida(valor, metodo);
+        }
         this.socket.emit('finalizar_mesa', {
           mesaName: mesaNome,
           metodoPagamento: metodo,
@@ -884,6 +893,9 @@
     lancarProdutoDireto: function (id, nome, emoji, preco) {
       if (!this.mesaAtual) return;
       this.soundSuccess();
+      if (window.ChefUltraGame) {
+        window.ChefUltraGame.onItemLaunched(nome, preco);
+      }
 
       const mesaNome = this.mesaAtual.nome;
       const novoItem = {

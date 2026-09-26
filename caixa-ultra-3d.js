@@ -26,6 +26,11 @@
     flowParticles: [],
     kitchenBeacon: null,
     barBeacon: null,
+    kitchenSmokeParticles: [],
+    kitchenFireLight: null,
+    tableSpotlight: null,
+    cameraTargetPos: null,
+    cameraLookAtTarget: null,
 
     isSalonActive: false,
     hoveredTable: null,
@@ -197,9 +202,15 @@
       gridHelper.position.y = 0.6;
       this.salonScene.add(gridHelper);
 
-      // Beacons da Cozinha e Bar
-      this.kitchenBeacon = this.createBeacon('Cozinha 1', -460, 0, -280, 0xfc4b15);
-      this.barBeacon = this.createBeacon('Bar & Bebidas', 460, 0, -280, 0x06b6d4);
+      // Holofote de Foco Cinematográfico na Mesa Selecionada (Estilo Jogo de Estratégia / Tycoon)
+      this.tableSpotlight = new THREE.SpotLight(0xfff176, 0, 480, Math.PI / 5, 0.45, 1.2);
+      this.tableSpotlight.position.set(0, 320, 0);
+      this.salonScene.add(this.tableSpotlight);
+      this.salonScene.add(this.tableSpotlight.target);
+
+      // Estações 3D Vivas: Cozinha com Fogão a Gás e Fumaça / Bar com Bebidas Iluminadas
+      this.kitchenBeacon = this.createKitchenDiorama(-460, 0, -280);
+      this.barBeacon = this.createBarDiorama(460, 0, -280);
       this.salonScene.add(this.kitchenBeacon);
       this.salonScene.add(this.barBeacon);
 
@@ -223,8 +234,10 @@
         this.salonAnimId = requestAnimationFrame(animateSalon);
         if (this.isSalonActive) {
           if (this.salonControls) this.salonControls.update();
+          this.updateDioramaAnimations();
           this.updateFlowStreams();
           this.updateHoverAnimation();
+          this.updateCameraLerp();
           this.salonRenderer.render(this.salonScene, this.salonCamera);
         }
       };
@@ -269,9 +282,11 @@
       (ordersData || []).forEach(o => {
         const mesa = (o.mesa_grupo || o.localName || '').trim();
         if (!mesa) return;
-        if (!groupedByMesa[mesa]) groupedByMesa[mesa] = { count: 0, total: 0, status: o.status };
+        if (!groupedByMesa[mesa]) groupedByMesa[mesa] = { count: 0, total: 0, status: o.status, items: [] };
         const val = parseFloat(String(o.total || '0').replace(',', '.')) || 0;
         groupedByMesa[mesa].count++;
+        const prod = o.productName || o.nome || o.productEmoji || '🍽️';
+        groupedByMesa[mesa].items.push(prod);
         if (o.status !== 'Pago') groupedByMesa[mesa].total += val;
       });
 
@@ -287,7 +302,7 @@
         const posX = startX + col * spacingX;
         const posZ = startZ + row * spacingZ;
 
-        const info = groupedByMesa[m.nome] || { count: 0, total: 0, status: m.status };
+        const info = groupedByMesa[m.nome] || { count: 0, total: 0, status: m.status, items: [] };
         let mesaStatus = 'livre';
         if (info.count > 0 || m.status === 'Ocupada') {
           mesaStatus = (m.status === 'Conta Solicitada') ? 'solicitada' : 'ocupada';
@@ -302,7 +317,7 @@
           this.tableMeshes.set(m.nome, mesh);
         }
 
-        this.applyTableStatus(mesh, mesaStatus, info.total);
+        this.applyTableStatus(mesh, mesaStatus, info.total, info.items);
       });
     },
 
@@ -310,7 +325,7 @@
       const group = new THREE.Group();
       group.position.set(x, y, z);
 
-      // Perna da mesa
+      // Perna da mesa (aço escovado)
       const legGeo = new THREE.CylinderGeometry(4.5, 5.5, 44, 16);
       const legMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.25 });
       const leg = new THREE.Mesh(legGeo, legMat);
@@ -318,7 +333,7 @@
       leg.castShadow = true;
       group.add(leg);
 
-      // Base
+      // Base pesada circular
       const baseGeo = new THREE.CylinderGeometry(20, 22, 4.5, 24);
       const base = new THREE.Mesh(baseGeo, legMat);
       base.position.y = 2.2;
@@ -349,37 +364,73 @@
       glow.position.y = 44;
       group.add(glow);
 
-      // 4 Cadeiras ao redor
-      const chairMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 });
+      // 4 Cadeiras Realistas de Bistrô ao redor, viradas para a mesa
+      const seatMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 });
+      const chairLegMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 });
+      const backrestMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 });
+      const chairLegGeo = new THREE.CylinderGeometry(0.9, 1.1, 18, 8);
+
       [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].forEach(ang => {
-        const chair = new THREE.Mesh(new THREE.BoxGeometry(15, 26, 15), chairMat);
-        chair.position.set(Math.cos(ang) * 48, 13, Math.sin(ang) * 48);
-        chair.castShadow = true;
-        group.add(chair);
+        const chairGroup = new THREE.Group();
+        chairGroup.position.set(Math.cos(ang) * 50, 0, Math.sin(ang) * 50);
+        chairGroup.rotation.y = -ang - Math.PI / 2;
+
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(16, 2.8, 16), seatMat);
+        seat.position.y = 18;
+        seat.castShadow = true;
+        chairGroup.add(seat);
+
+        [[-6, -6], [6, -6], [-6, 6], [6, 6]].forEach(([lx, lz]) => {
+          const cl = new THREE.Mesh(chairLegGeo, chairLegMat);
+          cl.position.set(lx, 9, lz);
+          cl.castShadow = true;
+          chairGroup.add(cl);
+        });
+
+        const backrest = new THREE.Mesh(new THREE.BoxGeometry(16, 18, 2.5), backrestMat);
+        backrest.position.set(0, 27, -7);
+        backrest.castShadow = true;
+        chairGroup.add(backrest);
+
+        group.add(chairGroup);
       });
 
-      // Sprite flutuante
+      // Grupo de Adereços 3D sobre a Mesa (Pratos, Bebidas e Enfeite)
+      const propsGroup = new THREE.Group();
+      propsGroup.position.y = 49;
+      group.add(propsGroup);
+
+      // Sprite flutuante de Status / Valor
       const sprite = this.createTableTextSprite(nome, 'R$ 0,00', 'Livre');
       sprite.position.y = 80;
       group.add(sprite);
+
+      // Balão de Pensamento / Pedido do Jogo (Overcooked / The Sims style)
+      const thoughtBubble = this.createThoughtBubbleSprite('🍽️', 'livre');
+      thoughtBubble.position.y = 112;
+      group.add(thoughtBubble);
 
       group.userData = {
         nome: nome,
         topMesh: top,
         glowMesh: glow,
         spriteMesh: sprite,
+        thoughtBubble: thoughtBubble,
+        propsGroup: propsGroup,
         origY: 0,
         status: 'livre',
-        total: 0
+        total: 0,
+        bobOffset: Math.random() * Math.PI * 2
       };
 
       return group;
     },
 
-    applyTableStatus: function (tableGroup, status, total) {
+    applyTableStatus: function (tableGroup, status, total, items = []) {
       const ud = tableGroup.userData;
       ud.status = status;
       ud.total = total;
+      ud.items = items;
 
       let colorHex = 0x10b981; // Livre
       let statusLabel = 'Livre';
@@ -407,6 +458,368 @@
       }
 
       this.updateSpriteCanvas(ud.spriteMesh, ud.nome, statusLabel, colorHex);
+      this.updateTableProps(tableGroup, status, items);
+      this.updateThoughtBubble(ud.thoughtBubble, status, items);
+    },
+
+    updateTableProps: function (tableGroup, status, items = []) {
+      const propsGroup = tableGroup.userData.propsGroup;
+      if (!propsGroup) return;
+
+      while (propsGroup.children.length > 0) {
+        const c = propsGroup.children.pop();
+        if (c.geometry) c.geometry.dispose();
+        if (c.material) c.material.dispose();
+      }
+
+      if (status === 'livre') {
+        // Enfeite minimalista: vasinho de mesa
+        const vaseGeo = new THREE.CylinderGeometry(2, 2.8, 7, 12);
+        const vaseMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3 });
+        const vase = new THREE.Mesh(vaseGeo, vaseMat);
+        vase.position.y = 3.5;
+        propsGroup.add(vase);
+
+        const flowerGeo = new THREE.SphereGeometry(3, 8, 8);
+        const flowerMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.6 });
+        const flower = new THREE.Mesh(flowerGeo, flowerMat);
+        flower.position.y = 8;
+        propsGroup.add(flower);
+      } else {
+        // Mesa ocupada: Pratos com comida e copos
+        const plateGeo = new THREE.CylinderGeometry(7, 6, 1.4, 16);
+        const plateMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 });
+
+        const foodColors = [0xd97706, 0xef4444, 0x10b981, 0x854d0e];
+        const glassGeo = new THREE.CylinderGeometry(2.2, 2.5, 6.5, 12);
+        const glassMat = new THREE.MeshStandardMaterial({
+          color: 0x38bdf8,
+          transparent: true,
+          opacity: 0.65,
+          roughness: 0.1
+        });
+
+        [-15, 15].forEach((offset, idx) => {
+          const plate = new THREE.Mesh(plateGeo, plateMat);
+          plate.position.set(offset, 1, 0);
+          propsGroup.add(plate);
+
+          const foodGeo = new THREE.DodecahedronGeometry(3.5, 0);
+          const foodMat = new THREE.MeshStandardMaterial({ color: foodColors[idx % foodColors.length], roughness: 0.7 });
+          const food = new THREE.Mesh(foodGeo, foodMat);
+          food.position.set(offset, 3.5, 0);
+          propsGroup.add(food);
+
+          const glass = new THREE.Mesh(glassGeo, glassMat);
+          glass.position.set(offset, 3.5, offset > 0 ? 12 : -12);
+          propsGroup.add(glass);
+        });
+
+        const napkin = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 3), new THREE.MeshStandardMaterial({ color: 0x94a3b8 }));
+        napkin.position.set(0, 2, 0);
+        propsGroup.add(napkin);
+      }
+    },
+
+    createThoughtBubbleSprite: function (initialEmoji, status) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 160;
+      canvas.height = 110;
+      const ctx = canvas.getContext('2d');
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(material);
+      sprite.scale.set(38, 26, 1);
+      sprite.userData = { canvas, ctx, texture };
+
+      this.renderThoughtBubbleCanvas(sprite, initialEmoji, status);
+      return sprite;
+    },
+
+    renderThoughtBubbleCanvas: function (sprite, emoji, status) {
+      if (!sprite || !sprite.userData || !sprite.userData.ctx) return;
+      const { canvas, ctx, texture } = sprite.userData;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (status === 'livre') {
+        texture.needsUpdate = true;
+        sprite.visible = false;
+        return;
+      }
+      sprite.visible = true;
+
+      const w = canvas.width;
+      const h = canvas.height - 18;
+
+      ctx.save();
+      ctx.shadowColor = (status === 'solicitada') ? 'rgba(59, 130, 246, 0.7)' : 'rgba(252, 75, 21, 0.6)';
+      ctx.shadowBlur = 12;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = (status === 'solicitada') ? '#3b82f6' : '#fc4b15';
+      ctx.lineWidth = 4;
+
+      ctx.beginPath();
+      ctx.roundRect(8, 6, w - 16, h - 12, 22);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(w / 2 - 10, h - 6);
+      ctx.lineTo(w / 2, canvas.height - 2);
+      ctx.lineTo(w / 2 + 10, h - 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.font = '46px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const displayEmoji = (status === 'solicitada') ? '🧾' : (emoji || '🍕');
+      ctx.fillText(displayEmoji, w / 2, h / 2);
+
+      texture.needsUpdate = true;
+    },
+
+    updateThoughtBubble: function (sprite, status, items = []) {
+      if (!sprite) return;
+      let emoji = '🍕';
+      if (items && items.length > 0) {
+        const itemStr = items.join(' ').toLowerCase();
+        if (itemStr.includes('burg') || itemStr.includes('smash')) emoji = '🍔';
+        else if (itemStr.includes('picanha') || itemStr.includes('carne') || itemStr.includes('costela')) emoji = '🥩';
+        else if (itemStr.includes('chopp') || itemStr.includes('cerveja')) emoji = '🍺';
+        else if (itemStr.includes('gin') || itemStr.includes('drink')) emoji = '🍹';
+        else if (itemStr.includes('peixe') || itemStr.includes('frutos')) emoji = '🍤';
+        else if (itemStr.includes('sorvete') || itemStr.includes('gateau')) emoji = '🍨';
+        else if (itemStr.includes('batata') || itemStr.includes('porção')) emoji = '🍟';
+      }
+      this.renderThoughtBubbleCanvas(sprite, emoji, status);
+    },
+
+    createKitchenDiorama: function (x, y, z) {
+      const group = new THREE.Group();
+      group.position.set(x, y, z);
+
+      const baseGeo = new THREE.BoxGeometry(110, 36, 60);
+      const steelMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        roughness: 0.2,
+        metalness: 0.85
+      });
+      const base = new THREE.Mesh(baseGeo, steelMat);
+      base.position.y = 18;
+      base.castShadow = true;
+      group.add(base);
+
+      const stoveMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        roughness: 0.5,
+        metalness: 0.9
+      });
+      const stove = new THREE.Mesh(new THREE.BoxGeometry(90, 4, 44), stoveMat);
+      stove.position.y = 38;
+      group.add(stove);
+
+      const burnerMat = new THREE.MeshStandardMaterial({
+        color: 0xff3d00,
+        emissive: 0xff5722,
+        emissiveIntensity: 1.8,
+        roughness: 0.2
+      });
+      [[-24, -12], [24, -12], [-24, 12], [24, 12]].forEach(([bx, bz]) => {
+        const burner = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 2, 16), burnerMat);
+        burner.position.set(bx, 40, bz);
+        group.add(burner);
+      });
+
+      this.kitchenFireLight = new THREE.PointLight(0xff7043, 1.8, 160);
+      this.kitchenFireLight.position.set(0, 52, 0);
+      group.add(this.kitchenFireLight);
+
+      const hoodMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.9, roughness: 0.15 });
+      const hood = new THREE.Mesh(new THREE.BoxGeometry(84, 18, 48), hoodMat);
+      hood.position.y = 100;
+      group.add(hood);
+
+      const chimneyGeo = new THREE.CylinderGeometry(10, 10, 70, 16);
+      const chimney = new THREE.Mesh(chimneyGeo, hoodMat);
+      chimney.position.y = 145;
+      group.add(chimney);
+
+      this.kitchenSmokeParticles = [];
+      const smokeGeo = new THREE.SphereGeometry(3.5, 8, 8);
+      for (let s = 0; s < 12; s++) {
+        const smokeMat = new THREE.MeshBasicMaterial({
+          color: 0x94a3b8,
+          transparent: true,
+          opacity: 0.25 - s * 0.015
+        });
+        const sp = new THREE.Mesh(smokeGeo, smokeMat);
+        const sy = 180 + s * 7;
+        sp.position.set((Math.random() - 0.5) * 6, sy, (Math.random() - 0.5) * 6);
+        sp.userData = {
+          origX: 0,
+          origY: 180,
+          origZ: 0,
+          speedY: 0.6 + Math.random() * 0.4,
+          origOpacity: 0.28
+        };
+        group.add(sp);
+        this.kitchenSmokeParticles.push(sp);
+      }
+
+      const signSprite = this.createLocationSignSprite('🔥 COZINHA 1', '#fc4b15');
+      signSprite.position.set(0, 130, 32);
+      group.add(signSprite);
+
+      return group;
+    },
+
+    createBarDiorama: function (x, y, z) {
+      const group = new THREE.Group();
+      group.position.set(x, y, z);
+
+      const counterMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        roughness: 0.35,
+        metalness: 0.3
+      });
+      const counter = new THREE.Mesh(new THREE.BoxGeometry(110, 42, 46), counterMat);
+      counter.position.y = 21;
+      counter.castShadow = true;
+      group.add(counter);
+
+      const topMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        roughness: 0.1,
+        metalness: 0.8
+      });
+      const top = new THREE.Mesh(new THREE.BoxGeometry(116, 5, 52), topMat);
+      top.position.y = 44;
+      group.add(top);
+
+      const neonMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+      const neonStrip = new THREE.Mesh(new THREE.BoxGeometry(114, 2, 2), neonMat);
+      neonStrip.position.set(0, 41, 24);
+      group.add(neonStrip);
+
+      const stoolSeatMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.4 });
+      const stoolLegMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9, roughness: 0.2 });
+      [-36, 0, 36].forEach(sx => {
+        const stoolGroup = new THREE.Group();
+        stoolGroup.position.set(sx, 0, 36);
+
+        const seat = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 3, 16), stoolSeatMat);
+        seat.position.y = 28;
+        stoolGroup.add(seat);
+
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2, 28, 8), stoolLegMat);
+        pole.position.y = 14;
+        stoolGroup.add(pole);
+
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(9, 10, 2, 16), stoolLegMat);
+        base.position.y = 1;
+        stoolGroup.add(base);
+
+        group.add(stoolGroup);
+      });
+
+      const shelfMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4 });
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(90, 3, 16), shelfMat);
+      shelf.position.set(0, 65, -20);
+      group.add(shelf);
+
+      const bottleColors = [0xf59e0b, 0x06b6d4, 0x10b981, 0xf43f5e, 0x8b5cf6, 0xeab308];
+      [-35, -21, -7, 7, 21, 35].forEach((bx, idx) => {
+        const bCol = bottleColors[idx % bottleColors.length];
+        const bMat = new THREE.MeshStandardMaterial({
+          color: bCol,
+          emissive: bCol,
+          emissiveIntensity: 0.6,
+          roughness: 0.1,
+          metalness: 0.2
+        });
+        const bottle = new THREE.Mesh(new THREE.CylinderGeometry(2, 2.5, 14, 12), bMat);
+        bottle.position.set(bx, 73, -20);
+        group.add(bottle);
+      });
+
+      const barLight = new THREE.PointLight(0x06b6d4, 1.4, 180);
+      barLight.position.set(0, 60, 10);
+      group.add(barLight);
+
+      const signSprite = this.createLocationSignSprite('🍸 BAR & DRINKS', '#06b6d4');
+      signSprite.position.set(0, 95, -16);
+      group.add(signSprite);
+
+      return group;
+    },
+
+    createLocationSignSprite: function (texto, corHex) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 80;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.strokeStyle = corHex;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.roundRect(6, 6, 244, 68, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = corHex;
+      ctx.font = 'bold 24px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(texto, 128, 40);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      const mat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(65, 22, 1);
+      return sprite;
+    },
+
+    updateDioramaAnimations: function () {
+      const time = Date.now() * 0.001;
+
+      // 1. Bobbing dos balões de pensamento nas mesas ocupadas
+      this.tableMeshes.forEach(group => {
+        const ud = group.userData;
+        if (ud && ud.thoughtBubble && ud.status !== 'livre') {
+          const offset = ud.bobOffset || 0;
+          ud.thoughtBubble.position.y = 112 + Math.sin(time * 3 + offset) * 4;
+        }
+      });
+
+      // 2. Tremulação do fogo dos queimadores da cozinha
+      if (this.kitchenFireLight) {
+        this.kitchenFireLight.intensity = 1.4 + Math.sin(time * 18) * 0.5 + Math.cos(time * 26) * 0.3;
+      }
+
+      // 3. Fumaça saindo da chaminé
+      if (this.kitchenSmokeParticles && this.kitchenSmokeParticles.length > 0) {
+        this.kitchenSmokeParticles.forEach(p => {
+          p.position.y += p.userData.speedY;
+          p.position.x += Math.sin(time * 2 + p.position.y * 0.05) * 0.25;
+          p.scale.multiplyScalar(1.008);
+          p.material.opacity -= 0.0035;
+
+          if (p.material.opacity <= 0 || p.position.y > 230) {
+            p.position.set(p.userData.origX, p.userData.origY, p.userData.origZ);
+            p.scale.set(1, 1, 1);
+            p.material.opacity = p.userData.origOpacity;
+          }
+        });
+      }
     },
 
     createTableTextSprite: function (nome, valor, status) {
@@ -644,8 +1057,40 @@
           window.ChefUltraApp.selecionarMesa(mesaNome);
         }
 
-        if (this.salonControls) {
-          this.salonControls.target.copy(tableGroup.position);
+        this.focusOnTable(tableGroup);
+      }
+    },
+
+    focusOnTable: function (tableGroup) {
+      if (!tableGroup) return;
+      this.selectedTable = tableGroup;
+
+      const tx = tableGroup.position.x;
+      const tz = tableGroup.position.z;
+
+      this.cameraTargetPos = new THREE.Vector3(tx, 220, tz + 220);
+      this.cameraLookAtTarget = new THREE.Vector3(tx, 40, tz);
+
+      if (this.tableSpotlight) {
+        this.tableSpotlight.position.set(tx, 320, tz);
+        this.tableSpotlight.target.position.set(tx, 40, tz);
+        this.tableSpotlight.intensity = 2.8;
+      }
+
+      this.pulseTable(tableGroup, 0xfc4b15);
+      if (window.ChefUltraGame && window.ChefUltraGame.sfx) {
+        window.ChefUltraGame.sfx.playTableSelect();
+      }
+    },
+
+    updateCameraLerp: function () {
+      if (this.cameraTargetPos && this.salonCamera) {
+        this.salonCamera.position.lerp(this.cameraTargetPos, 0.06);
+        if (this.salonControls && this.cameraLookAtTarget) {
+          this.salonControls.target.lerp(this.cameraLookAtTarget, 0.06);
+        }
+        if (this.salonCamera.position.distanceTo(this.cameraTargetPos) < 2) {
+          this.cameraTargetPos = null;
         }
       }
     },

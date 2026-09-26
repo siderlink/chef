@@ -1711,3 +1711,412 @@ html, body {
     display: none;
   }
 }
+
+/* ═════════════════════════════════════════════════════════════════════════
+   ARCADE GAME HUD & RESTAURANT TYCOON SIMULATOR INTERFACE
+   ═════════════════════════════════════════════════════════════════════════ */
+.ultra-game-hud-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--ultra-radius-md);
+  padding: 4px 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 16px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* 1. Player Card (Avatar + Rank + XP Bar) */
+.ultra-player-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ultra-player-avatar-wrap {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ultra-player-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  border: 1.5px solid var(--ultra-coral);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  box-shadow: 0 0 10px rgba(252, 75, 21, 0.35);
+  animation: avatarFloat 3s ease-in-out infinite alternate;
+}
+
+@keyframes avatarFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-2px); }
+}
+
+.ultra-player-level-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #0f172a;
+  font-family: var(--ultra-font-mono);
+  font-size: 9px;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 6px;
+  border: 1.5px solid #0f172a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.ultra-player-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 120px;
+}
+
+.ultra-player-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ultra-player-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.ultra-player-xp-text {
+  font-family: var(--ultra-font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.ultra-xp-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.ultra-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b 0%, #10b981 60%, #06b6d4 100%);
+  border-radius: 99px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+}
+
+.ultra-xp-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  animation: xpShimmer 2s infinite linear;
+}
+
+@keyframes xpShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* 2. Combo Streak Widget (Fogo & Multiplicador) */
+.ultra-combo-widget {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(234, 88, 12, 0.12);
+  border: 1px solid rgba(234, 88, 12, 0.28);
+  border-radius: var(--ultra-radius-sm);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.ultra-combo-widget.active {
+  background: rgba(234, 88, 12, 0.24);
+  border-color: rgba(249, 115, 22, 0.85);
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.4);
+  animation: comboPulse 1.2s infinite alternate;
+}
+
+@keyframes comboPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.04); }
+}
+
+.ultra-combo-flame {
+  font-size: 15px;
+  filter: drop-shadow(0 0 6px #f97316);
+  animation: flameFlicker 0.6s infinite alternate;
+}
+
+@keyframes flameFlicker {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-1.5px) scale(1.15); }
+}
+
+.ultra-combo-info {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.ultra-combo-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #fb923c;
+}
+
+.ultra-combo-val {
+  font-family: var(--ultra-font-mono);
+  font-size: 13px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 8px #ea580c;
+}
+
+.ultra-combo-timer-track {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2.5px;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.ultra-combo-timer-fill {
+  height: 100%;
+  background: #f97316;
+  transition: width 1s linear;
+}
+
+/* 3. Customer Satisfaction Stars */
+.ultra-satisfaction-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--ultra-radius-xs);
+}
+
+.ultra-sat-stars {
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.ultra-sat-score {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+/* 4. Rush Hour Frenzy Mode Toggle */
+.ultra-rush-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: var(--ultra-radius-sm);
+  color: #fbbf24;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.03em;
+}
+
+.ultra-rush-toggle-btn:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #f59e0b;
+  transform: translateY(-1px);
+}
+
+.ultra-rush-toggle-btn.active {
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+  color: #0f172a;
+  border-color: #fef08a;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+  animation: rushPulse 0.8s infinite alternate;
+}
+
+@keyframes rushPulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.05); filter: brightness(1.2); }
+}
+
+/* 5. Rush Hour Full-Screen Vignette Glow */
+.ultra-app-shell.rush-active::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  box-shadow: inset 0 0 70px 10px rgba(245, 158, 11, 0.25), inset 0 0 140px 30px rgba(234, 88, 12, 0.15);
+  animation: vignettePulse 2s infinite ease-in-out;
+}
+
+@keyframes vignettePulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* 6. Level Up Victory Modal (RPG / Tycoon Celebratory Card) */
+.ultra-levelup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(7, 9, 19, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.ultra-levelup-card {
+  width: 90%;
+  max-width: 440px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #fbbf24;
+  border-radius: var(--ultra-radius-xl);
+  padding: 36px 28px 28px;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(251, 191, 36, 0.35), 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+  position: relative;
+  animation: popInScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popInScale {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.ultra-levelup-crown {
+  font-size: 56px;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 0 20px #fbbf24);
+  animation: crownBounce 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes crownBounce {
+  0% { transform: translateY(0) rotate(-4deg); }
+  100% { transform: translateY(-8px) rotate(4deg); }
+}
+
+.ultra-levelup-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #fbbf24;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.ultra-levelup-title {
+  font-family: var(--ultra-font-title);
+  font-size: 28px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+  text-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+}
+
+.ultra-levelup-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--ultra-radius-md);
+  padding: 14px 18px;
+  margin-bottom: 18px;
+}
+
+.ultra-levelup-icon {
+  font-size: 34px;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
+}
+
+.ultra-levelup-details {
+  text-align: left;
+}
+
+.ultra-levelup-subtitle {
+  display: block;
+  font-size: 10px;
+  color: var(--ultra-text-muted);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.ultra-levelup-rank {
+  font-size: 16px;
+  color: #38bdf8;
+  font-weight: 800;
+}
+
+.ultra-levelup-desc {
+  font-size: 12.5px;
+  color: var(--ultra-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.ultra-levelup-btn {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+  border: none;
+  border-radius: var(--ultra-radius-sm);
+  color: #0f172a;
+  font-family: var(--ultra-font-title);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ultra-levelup-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.6);
+}
+
