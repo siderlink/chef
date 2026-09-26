@@ -3766,7 +3766,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   /* Auto-autenticação ao carregar a página */
-  var savedToken = localStorage.getItem('chef_super_admin_local_token') || localStorage.getItem('super_admin_token') || localStorage.getItem('super_token');
+  var savedToken = getSuperAdminToken();
   if (savedToken) {
     localToken = savedToken;
     localStorage.setItem('chef_super_admin_local_token', savedToken);
@@ -8611,7 +8611,7 @@ window.excluirTema = function(id) {
   var xhr = new XMLHttpRequest();
   xhr.open('DELETE', '/api/super/temas/' + id, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
-  var tok = localStorage.getItem('super_admin_token') || '';
+  var tok = getSuperAdminToken();
   if (tok) xhr.setRequestHeader('Authorization', 'Bearer ' + tok);
   xhr.onload = function() {
     try {
@@ -10332,7 +10332,7 @@ initSuperAdminSockets = function () {
   const _pluginTabInitFns = {};
 
   function superAuthHeaders() {
-    return { 'Authorization': 'Bearer ' + (localStorage.getItem('super_token') || ''), 'Content-Type': 'application/json' };
+    return { 'Authorization': 'Bearer ' + getSuperAdminToken(), 'Content-Type': 'application/json' };
   }
 
   function escPlugin(str) {

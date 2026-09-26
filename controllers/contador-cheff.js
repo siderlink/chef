@@ -20,7 +20,11 @@ module.exports = function(app, masterDb, sqlite3, options) {
     res.status(401).json({ ok: false, erro: 'Acesso não autorizado' });
   });
   const { JWT_SECRET, io } = options || {};
-  const suporteJwtSecret = process.env.SUPORTE_JWT_SECRET || (options && options.suporteJwtSecret) || 'chef-suporte-secret-key-2026';
+  // (Segurança) O secret do JWT de suporte nunca deve ser um valor fixo conhecido.
+  // Usa loadOrCreateSecret do servidor quando disponível, ou gera um aleatório na memória.
+  const suporteJwtSecret = process.env.SUPORTE_JWT_SECRET
+    || (options && options.suporteJwtSecret)
+    || (typeof loadOrCreateSecret === 'function' ? loadOrCreateSecret('suporte_jwt') : require('crypto').randomBytes(32).toString('hex'));
 
   // ─── CRIAÇÃO DE TABELAS NO MASTER DB ─────────────────────────
   masterDb.serialize(() => {

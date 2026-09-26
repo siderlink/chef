@@ -4306,6 +4306,36 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('emitir_nfce_balcao', async (data) => {
+    try {
+      db.all(`SELECT * FROM configuracoes`, async (errConfig, configRows) => {
+        const config = {};
+        if (configRows) configRows.forEach(r => config[r.chave] = r.valor);
+        const result = await nfceService.emitirNFCe({
+          db,
+          pedidoId: data.pedidoId || null,
+          localName: data.mesaName || 'Balcão',
+          items: data.items || [],
+          totalValue: parseFloat(data.totalValue) || 0,
+          cpfCnpj: data.cpfCnpj || '',
+          clienteNome: data.clienteNome || '',
+          paymentMethods: data.metodo || 'Dinheiro',
+          config
+        });
+        if (result.ok) {
+          socket.emit('nfce_emitida_sucesso', result);
+          db.all(`SELECT id, pedido_id, localName, cliente_nome, cpf_cnpj, valor_total, chave_acesso, numero_nota, serie, ambiente, status, protocolo, created_at FROM nfce_notas ORDER BY id DESC LIMIT 50`, (e, notasRows) => {
+            io.emit('nfce_lista_atualizada', notasRows || []);
+          });
+        } else {
+          socket.emit('erro_nfce', `Erro ao emitir NFC-e: ${result.erro}`);
+        }
+      });
+    } catch (e) {
+      socket.emit('erro_nfce', `Erro interno ao emitir NFC-e: ${e.message}`);
+    }
+  });
+
   socket.on('garcom_buscando', ({ pedidoId, garcomNome, localName, productName }) => {
     if (typeof pedidoId === 'number' || !isNaN(pedidoId)) {
       db.run(`UPDATE pedidos SET garcom_call = NULL WHERE id = ?`, [pedidoId], function () {

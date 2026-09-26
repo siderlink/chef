@@ -306,6 +306,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const os = require('os');
 const sqlite3 = require('./sqlite3-wrapper').verbose();
 const path = require('path');
@@ -382,12 +383,25 @@ if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 const upload = multer({ dest: UPLOAD_DIR });
 
 const app  = express();
-app.post('/log-error', express.json(), (req, res) => {
-  console.log('CLIENT ERROR:', req.body);
+// (Segurança) Rate-limit simples para endpoints de log públicos — evita log poisoning / DoS
+const _logErrHits = new Map();
+function _logErrLimit(req, res, next) {
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const now = Date.now();
+  const hits = (_logErrHits.get(ip) || []).filter(t => now - t < 60000);
+  if (hits.length >= 20) return res.sendStatus(429);
+  hits.push(now);
+  _logErrHits.set(ip, hits);
+  next();
+}
+app.post('/log-error', express.json({ limit: '10kb' }), _logErrLimit, (req, res) => {
+  const safe = JSON.stringify(req.body || {}).substring(0, 500);
+  console.log('CLIENT ERROR:', safe);
   res.sendStatus(200);
 });
-app.post('/api/log-error', express.json(), (req, res) => {
-  console.log('CLIENT ERROR:', req.body);
+app.post('/api/log-error', express.json({ limit: '10kb' }), _logErrLimit, (req, res) => {
+  const safe = JSON.stringify(req.body || {}).substring(0, 500);
+  console.log('CLIENT ERROR:', safe);
   res.sendStatus(200);
 });
 app.disable('x-powered-by');
@@ -437,13 +451,32 @@ app.use((req, res, next) => {
     }
   }
 
-  // 3. Fallback: Headers HTTP ou parâmetro query
+  // 3. Token JWT: se a requisição estiver autenticada, o restaurante_id do token é estritamente prioritário
+  if (!tenantId) {
+    const authHeader = req.headers['authorization'] || '';
+    if (authHeader.startsWith('Bearer ')) {
+      const rawToken = authHeader.slice(7).trim();
+      if (rawToken) {
+        try {
+          const decoded = jwt.decode(rawToken);
+          if (decoded && Number.isFinite(decoded.restaurante_id) && decoded.restaurante_id > 0) {
+            tenantId = decoded.restaurante_id;
+          }
+        } catch (e) { }
+      }
+    }
+  }
+
+  // 4. Header HTTP interno de proxy (ex: x-tenant-id)
   if (!tenantId) {
     const headerTid = req.headers['x-tenant-id'] || req.headers['x-restaurante-id'];
     if (headerTid) tenantId = parseInt(headerTid, 10);
   }
+
+  // 5. Query string para rotas públicas (Cardápio QR code, autoatendimento, agendamento de reservas)
   if (!tenantId && req.query && req.query.restaurante_id) {
-    tenantId = parseInt(req.query.restaurante_id, 10);
+    const qTid = parseInt(req.query.restaurante_id, 10);
+    if (Number.isFinite(qTid) && qTid > 0) tenantId = qTid;
   }
 
   const finalTid = (Number.isFinite(tenantId) && tenantId > 0) ? tenantId : 1;
@@ -501,6 +534,17 @@ app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.removeHeader('X-Powered-By');
+  // (Segurança) CSP — restringe execução de scripts a origens confiáveis e protege contra injeção de iframes
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.socket.io; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; " +
+    "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://unpkg.com data:; " +
+    "img-src 'self' data: blob: https: http:; " +
+    "media-src 'self' data: blob: https: http:; " +
+    "connect-src 'self' ws: wss: https: http:; " +
+    "frame-ancestors 'self';"
+  );
   next();
 });
 
@@ -716,7 +760,8 @@ let activeCertInfo = null;
 // como fallback quando não há nenhum ativo configurado.
 const CERTS_DIR = path.join(APP_DATA_DIR, 'certs');
 const CERTS_CFG = path.join(CERTS_DIR, 'ativo.txt');
-const CERT_PASSPHRASE = 'chefcozinha';
+// (Segurança) Use a variável CERT_PASSPHRASE no .env para sobrescrever o padrão de instalação.
+const CERT_PASSPHRASE = process.env.CERT_PASSPHRASE || 'chefcozinha';
 
 function ensureCertsDir() {
   try { if (!fs.existsSync(CERTS_DIR)) fs.mkdirSync(CERTS_DIR, { recursive: true }); } catch (e) { }
@@ -844,7 +889,12 @@ if (activeCertLoaded) {
 } else {
   server = http.createServer(app);
 }
-const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
+// (Segurança) Socket.IO CORS: restrinja as origens em produção via CORS_ORIGIN no .env.
+// Em instalações locais/LAN sem CORS_ORIGIN configurada, mantém '*' para compatibilidade.
+const ioAllowedOrigins = process.env.CORS_ORIGIN
+  ? (process.env.CORS_ORIGIN === '*' ? '*' : process.env.CORS_ORIGIN.split(',').map(o => o.trim()))
+  : '*';
+const io = new Server(server, { cors: { origin: ioAllowedOrigins, methods: ['GET', 'POST'] } });
 if (serverHttp) io.attach(serverHttp);
 io.setMaxListeners(100);
 
@@ -932,11 +982,14 @@ const db = {
 
 // ── NOTIFICAÇÕES PUSH (Web Push API) ──
 const webpush = require('web-push');
-const VAPID_PUBLIC_KEY = 'BCaA01Z--nSI2tJaXLNEf_mlW959ex1fW7x-jAH1tYSEqVYemjVApDllzr1jpwQqB_nlyjX3GIRb9uEyP_IUuRI';
-const VAPID_PRIVATE_KEY = '3Jo6x74iIdc7-YUIFTpbxflkElTMTn-OpKTBvvyCVNQ';
+// (Segurança) Chaves VAPID: configure via variáveis de ambiente no .env ou painel de hosting.
+// NUNCA deixe a chave privada real em texto no código-fonte em produção.
+// Para gerar um novo par: node -e "const wp=require('web-push'); const k=wp.generateVAPIDKeys(); console.log(JSON.stringify(k,null,2))"
+const VAPID_PUBLIC_KEY  = process.env.VAPID_PUBLIC_KEY  || 'BCaA01Z--nSI2tJaXLNEf_mlW959ex1fW7x-jAH1tYSEqVYemjVApDllzr1jpwQqB_nlyjX3GIRb9uEyP_IUuRI';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '3Jo6x74iIdc7-YUIFTpbxflkElTMTn-OpKTBvvyCVNQ';
 try {
   webpush.setVapidDetails(
-    'mailto:notificacoes@chefcozinha.local',
+    process.env.VAPID_CONTACT || 'mailto:notificacoes@chefcozinha.local',
     VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY
   );
@@ -983,7 +1036,7 @@ async function sendPush(role, title, body, tag, url) {
 // precisa — autenticação local, seed do instalador e fila de sincronização
 // offline → hub do super admin.
 // ══════════════════════════════════════════════════════════════════════════
-const jwt = require('jsonwebtoken');
+// jwt já declarado no topo do arquivo
 const crypto = require('crypto');
 let bcrypt;
 try {
@@ -4689,6 +4742,36 @@ io.on('connection', (socket) => {
         db.run(`UPDATE pedidos SET garcom_call = datetime('now', 'localtime') WHERE id = ?`, [id]);
         broadcastPedidos();
       }
+    }
+  });
+
+  socket.on('emitir_nfce_balcao', async (data) => {
+    try {
+      db.all(`SELECT * FROM configuracoes`, async (errConfig, configRows) => {
+        const config = {};
+        if (configRows) configRows.forEach(r => config[r.chave] = r.valor);
+        const result = await nfceService.emitirNFCe({
+          db,
+          pedidoId: data.pedidoId || null,
+          localName: data.mesaName || 'Balcão',
+          items: data.items || [],
+          totalValue: parseFloat(data.totalValue) || 0,
+          cpfCnpj: data.cpfCnpj || '',
+          clienteNome: data.clienteNome || '',
+          paymentMethods: data.metodo || 'Dinheiro',
+          config
+        });
+        if (result.ok) {
+          socket.emit('nfce_emitida_sucesso', result);
+          db.all(`SELECT id, pedido_id, localName, cliente_nome, cpf_cnpj, valor_total, chave_acesso, numero_nota, serie, ambiente, status, protocolo, created_at FROM nfce_notas ORDER BY id DESC LIMIT 50`, (e, notasRows) => {
+            io.emit('nfce_lista_atualizada', notasRows || []);
+          });
+        } else {
+          socket.emit('erro_nfce', `Erro ao emitir NFC-e: ${result.erro}`);
+        }
+      });
+    } catch (e) {
+      socket.emit('erro_nfce', `Erro interno ao emitir NFC-e: ${e.message}`);
     }
   });
 
