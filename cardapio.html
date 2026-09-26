@@ -261,6 +261,47 @@
       background: var(--primary-hover);
     }
 
+    /* Layouts Personalizados de Cardápio por Restaurante */
+    .menu-grid.layout-compacta {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+    }
+    .menu-grid.layout-compacta .menu-card {
+      padding: 8px 12px;
+      gap: 10px;
+    }
+    .menu-grid.layout-compacta .menu-card-emoji {
+      width: 42px;
+      height: 42px;
+      font-size: 20px;
+      border-radius: 8px;
+    }
+    .menu-grid.layout-compacta .btn-add-to-cart {
+      width: 36px;
+      height: 36px;
+      font-size: 16px;
+    }
+
+    .menu-grid.layout-bistro {
+      grid-template-columns: 1fr !important;
+      gap: 14px !important;
+    }
+    .menu-grid.layout-bistro .menu-card {
+      background: transparent !important;
+      border: none !important;
+      border-bottom: 1px dashed var(--border) !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      padding: 10px 4px !important;
+    }
+    .menu-grid.layout-bistro .menu-card-emoji {
+      display: none !important;
+    }
+    .menu-grid.layout-bistro .menu-card-price {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
     /* Floating Cart Button */
     #fab-cart {
       position: fixed;
@@ -2097,9 +2138,63 @@
       .then(conf => {
         CONFIGS = conf;
         CONFIGS.qr_order_enabled = (CONFIGS.qr_order_enabled === 'true' || CONFIGS.qr_order_enabled === true);
-        if (CONFIGS.nome_restaurante) {
-          document.getElementById('restaurant-name-header').innerText = CONFIGS.nome_restaurante;
-          document.title = `${CONFIGS.nome_restaurante} | Cardápio`;
+        const nomeRest = CONFIGS.rest_nome || CONFIGS.nome_restaurante;
+        if (nomeRest) {
+          document.getElementById('restaurant-name-header').innerText = nomeRest;
+          document.title = `${nomeRest} | Cardápio`;
+        }
+
+        // Customizações Visuais & White-label do Restaurante
+        if (CONFIGS.rest_cor_primaria) {
+          document.documentElement.style.setProperty('--primary', CONFIGS.rest_cor_primaria);
+        }
+        if (CONFIGS.rest_cor_secundaria) {
+          document.documentElement.style.setProperty('--primary-hover', CONFIGS.rest_cor_secundaria);
+        }
+        if (CONFIGS.rest_fonte_familia) {
+          document.documentElement.style.setProperty('--app-font', CONFIGS.rest_fonte_familia);
+          document.body.style.fontFamily = CONFIGS.rest_fonte_familia;
+        }
+        if (CONFIGS.rest_slogan) {
+          const w = document.getElementById('welcome-user-crm');
+          if (w) w.innerText = CONFIGS.rest_slogan;
+        }
+        if (CONFIGS.rest_logo_url && /^https?:\/\//i.test(CONFIGS.rest_logo_url)) {
+          const hInfo = document.querySelector('.header-info');
+          if (hInfo && !document.getElementById('rest-logo-img-header')) {
+            const img = document.createElement('img');
+            img.id = 'rest-logo-img-header';
+            img.src = CONFIGS.rest_logo_url;
+            img.alt = 'Logo';
+            img.style.cssText = 'max-height: 40px; width: auto; border-radius: 8px; object-fit: contain; margin-bottom: 4px;';
+            hInfo.prepend(img);
+          }
+        }
+        if (CONFIGS.rest_banner_url && /^https?:\/\//i.test(CONFIGS.rest_banner_url)) {
+          const mainArea = document.getElementById('main-menu-area');
+          if (mainArea && !document.getElementById('rest-banner-hero')) {
+            const hero = document.createElement('div');
+            hero.id = 'rest-banner-hero';
+            hero.style.cssText = `width: 100%; height: 130px; background-image: url('${CONFIGS.rest_banner_url}'); background-size: cover; background-position: center; border-radius: 14px; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.08);`;
+            mainArea.prepend(hero);
+          }
+        }
+        if (CONFIGS.rest_tempo_preparo) {
+          const hInfo = document.querySelector('.header-info');
+          if (hInfo && !document.getElementById('badge-tempo-preparo')) {
+            const badge = document.createElement('span');
+            badge.id = 'badge-tempo-preparo';
+            badge.innerHTML = `<i class="ph ph-clock"></i> Preparo: ${CONFIGS.rest_tempo_preparo}`;
+            badge.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; font-size: 11px; background: rgba(252,75,21,0.12); color: var(--primary); padding: 2px 8px; border-radius: 10px; font-weight: 700; margin-top: 4px;';
+            hInfo.appendChild(badge);
+          }
+        }
+        if (CONFIGS.rest_layout_cardapio) {
+          const container = document.getElementById('menu-items');
+          if (container) {
+            if (CONFIGS.rest_layout_cardapio === 'lista_compacta') container.classList.add('layout-compacta');
+            else if (CONFIGS.rest_layout_cardapio === 'minimalista_bistro') container.classList.add('layout-bistro');
+          }
         }
 
         if (CONFIGS.qr_order_enabled === false) {

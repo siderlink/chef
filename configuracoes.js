@@ -8008,6 +8008,62 @@ socket.on('restaurante_config', (cfg) => {
     if (document.getElementById('rest-fila-alocacao-auto')) {
       document.getElementById('rest-fila-alocacao-auto').value = cfg['rest_fila_alocacao_auto'] || 'manual';
     }
+    // Personalizações Visuais & White-label
+    if (document.getElementById('rest-cor-primaria')) {
+      const corPrim = cfg['rest_cor_primaria'] || '#fc4b15';
+      document.getElementById('rest-cor-primaria').value = corPrim;
+      if (document.getElementById('rest-cor-primaria-hex')) document.getElementById('rest-cor-primaria-hex').value = corPrim;
+    }
+    if (document.getElementById('rest-cor-secundaria')) {
+      const corSec = cfg['rest_cor_secundaria'] || '#ff8c00';
+      document.getElementById('rest-cor-secundaria').value = corSec;
+      if (document.getElementById('rest-cor-secundaria-hex')) document.getElementById('rest-cor-secundaria-hex').value = corSec;
+    }
+    if (document.getElementById('rest-fonte-familia')) {
+      document.getElementById('rest-fonte-familia').value = cfg['rest_fonte_familia'] || 'Inter, sans-serif';
+    }
+    if (document.getElementById('rest-logo-url')) {
+      document.getElementById('rest-logo-url').value = cfg['rest_logo_url'] || '';
+    }
+    if (document.getElementById('rest-banner-url')) {
+      document.getElementById('rest-banner-url').value = cfg['rest_banner_url'] || '';
+    }
+    // Cardápio & Autoatendimento
+    if (document.getElementById('rest-layout-cardapio')) {
+      document.getElementById('rest-layout-cardapio').value = cfg['rest_layout_cardapio'] || 'grid_fotos';
+    }
+    if (document.getElementById('rest-slogan')) {
+      document.getElementById('rest-slogan').value = cfg['rest_slogan'] || '';
+    }
+    if (document.getElementById('rest-tempo-preparo')) {
+      document.getElementById('rest-tempo-preparo').value = cfg['rest_tempo_preparo'] || '';
+    }
+    if (document.getElementById('rest-msg-boas-vindas')) {
+      document.getElementById('rest-msg-boas-vindas').value = cfg['rest_msg_boas_vindas'] || '';
+    }
+    if (document.getElementById('rest-pedido-minimo-delivery')) {
+      document.getElementById('rest-pedido-minimo-delivery').value = cfg['rest_pedido_minimo_delivery'] || '';
+    }
+    // Taxas do Salão
+    if (document.getElementById('rest-taxa-servico')) {
+      document.getElementById('rest-taxa-servico').value = cfg['rest_taxa_servico'] !== undefined ? cfg['rest_taxa_servico'] : '10';
+    }
+    if (document.getElementById('rest-couvert-artistico')) {
+      document.getElementById('rest-couvert-artistico').value = cfg['rest_couvert_artistico'] || '';
+    }
+    if (document.getElementById('rest-taxa-desperdicio')) {
+      document.getElementById('rest-taxa-desperdicio').value = cfg['rest_taxa_desperdicio'] || '';
+    }
+    // Cupom Térmico
+    if (document.getElementById('rest-cupom-rodape')) {
+      document.getElementById('rest-cupom-rodape').value = cfg['rest_cupom_rodape'] || '';
+    }
+    if (document.getElementById('rest-cupom-wifi')) {
+      document.getElementById('rest-cupom-wifi').value = cfg['rest_cupom_wifi'] || '';
+    }
+    if (document.getElementById('rest-cupom-google-review')) {
+      document.getElementById('rest-cupom-google-review').value = cfg['rest_cupom_google_review'] || '';
+    }
     // Dias de funcionamento
     let dias = [];
     try { dias = JSON.parse(cfg['rest_dias_funcionamento'] || '[]'); } catch(e) {}
@@ -8042,6 +8098,23 @@ if (_btnSalvarPerfil) _btnSalvarPerfil.onclick = () => {
     'rest_fechamento': document.getElementById('rest-fechamento').value,
     'rest_obs': document.getElementById('rest-obs').value,
     'rest_dias_funcionamento': JSON.stringify(dias),
+    // Personalizações Adicionais
+    'rest_cor_primaria': (document.getElementById('rest-cor-primaria') || {}).value || '#fc4b15',
+    'rest_cor_secundaria': (document.getElementById('rest-cor-secundaria') || {}).value || '#ff8c00',
+    'rest_fonte_familia': (document.getElementById('rest-fonte-familia') || {}).value || 'Inter, sans-serif',
+    'rest_logo_url': (document.getElementById('rest-logo-url') || {}).value || '',
+    'rest_banner_url': (document.getElementById('rest-banner-url') || {}).value || '',
+    'rest_layout_cardapio': (document.getElementById('rest-layout-cardapio') || {}).value || 'grid_fotos',
+    'rest_slogan': (document.getElementById('rest-slogan') || {}).value || '',
+    'rest_tempo_preparo': (document.getElementById('rest-tempo-preparo') || {}).value || '',
+    'rest_msg_boas_vindas': (document.getElementById('rest-msg-boas-vindas') || {}).value || '',
+    'rest_pedido_minimo_delivery': (document.getElementById('rest-pedido-minimo-delivery') || {}).value || '0',
+    'rest_taxa_servico': (document.getElementById('rest-taxa-servico') || {}).value || '10',
+    'rest_couvert_artistico': (document.getElementById('rest-couvert-artistico') || {}).value || '0',
+    'rest_taxa_desperdicio': (document.getElementById('rest-taxa-desperdicio') || {}).value || '0',
+    'rest_cupom_rodape': (document.getElementById('rest-cupom-rodape') || {}).value || '',
+    'rest_cupom_wifi': (document.getElementById('rest-cupom-wifi') || {}).value || '',
+    'rest_cupom_google_review': (document.getElementById('rest-cupom-google-review') || {}).value || '',
   };
   socket.emit('save_restaurante_config', config);
 
@@ -8059,6 +8132,29 @@ if (_btnSalvarPerfil) _btnSalvarPerfil.onclick = () => {
 socket.on('restaurante_config_salvo', () => {
   alert('Perfil salvo com sucesso!');
 });
+
+// Sincronização e presets do seletor de cores da marca
+(function initColorPresets() {
+  const pickerPrim = document.getElementById('rest-cor-primaria');
+  const hexPrim = document.getElementById('rest-cor-primaria-hex');
+  if (pickerPrim && hexPrim) {
+    pickerPrim.addEventListener('input', () => { hexPrim.value = pickerPrim.value.toUpperCase(); });
+    hexPrim.addEventListener('input', () => { if (/^#[0-9A-Fa-f]{6}$/.test(hexPrim.value)) pickerPrim.value = hexPrim.value; });
+  }
+  const pickerSec = document.getElementById('rest-cor-secundaria');
+  const hexSec = document.getElementById('rest-cor-secundaria-hex');
+  if (pickerSec && hexSec) {
+    pickerSec.addEventListener('input', () => { hexSec.value = pickerSec.value.toUpperCase(); });
+    hexSec.addEventListener('input', () => { if (/^#[0-9A-Fa-f]{6}$/.test(hexSec.value)) pickerSec.value = hexSec.value; });
+  }
+  document.querySelectorAll('#presets-cores-primarias .cor-preset').forEach(preset => {
+    preset.addEventListener('click', () => {
+      const cor = preset.dataset.cor;
+      if (pickerPrim) pickerPrim.value = cor;
+      if (hexPrim) hexPrim.value = cor.toUpperCase();
+    });
+  });
+})();
 
 // === SLUG & DOMÍNIO PERSONALIZADO ===
 (function() {

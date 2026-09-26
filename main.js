@@ -5495,8 +5495,14 @@ document.addEventListener('DOMContentLoaded', () => {
       `).join('');
 
       const subtotal = window.mesaAtual.total;
-      const taxaVal = window.servicoAdicional + (document.getElementById('taxa-servico')?.checked ? Math.max(0, subtotal - window.descontoAdicional) * 0.1 : 0);
+      const taxaPct = parseFloat(qrConfig?.rest_taxa_servico !== undefined ? qrConfig.rest_taxa_servico : '10') / 100;
+      const taxaVal = window.servicoAdicional + (document.getElementById('taxa-servico')?.checked ? Math.max(0, subtotal - window.descontoAdicional) * taxaPct : 0);
       const totalFinal = subtotal - window.descontoAdicional + taxaVal;
+
+      const restNomePrint = (qrConfig?.rest_nome || 'CHEF COZINHA').toUpperCase();
+      const cupomRodape = qrConfig?.rest_cupom_rodape || 'Obrigado pela preferência!';
+      const cupomWifi = qrConfig?.rest_cupom_wifi || '';
+      const cupomReview = qrConfig?.rest_cupom_google_review || '';
 
       printWindow.document.write(`
         <html><head><style>
@@ -5505,18 +5511,20 @@ document.addEventListener('DOMContentLoaded', () => {
           .bold { font-weight: bold; }
           .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
         </style></head><body>
-          <div class="center bold" style="font-size:16px;">CHEF COZINHA</div>
-          <div class="center" style="margin-bottom:10px;">CONFERÊNCIA DE MESA</div>
+          <div class="center bold" style="font-size:16px;">${restNomePrint}</div>
+          <div class="center" style="margin-bottom:10px; font-size:12px;">CONFERÊNCIA DE MESA</div>
           <div>Mesa: <span class="bold">${window.mesaAtual.isGroup ? window.mesaAtual.mesaName : window.mesaAtual.nome}</span></div>
           <div class="divider"></div>
           ${itemsHtml}
           <div class="divider"></div>
           <div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>R$ ${subtotal.toFixed(2).replace('.', ',')}</span></div>
           ${window.descontoAdicional > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Desconto:</span><span>- R$ ${window.descontoAdicional.toFixed(2).replace('.', ',')}</span></div>` : ''}
-          ${taxaVal > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Serviços/Taxas:</span><span>R$ ${taxaVal.toFixed(2).replace('.', ',')}</span></div>` : ''}
+          ${taxaVal > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Serviço (${(taxaPct*100).toFixed(0)}%):</span><span>R$ ${taxaVal.toFixed(2).replace('.', ',')}</span></div>` : ''}
           <div class="divider"></div>
           <div class="bold" style="display:flex; justify-content:space-between; font-size:14px;"><span>TOTAL:</span><span>R$ ${totalFinal.toFixed(2).replace('.', ',')}</span></div>
-          <div class="center" style="margin-top:20px; font-size:10px;">Obrigado pela preferência!</div>
+          ${cupomWifi ? `<div class="center" style="margin-top:12px; font-size:10px; border-top:1px dotted #ccc; padding-top:6px;">📶 ${cupomWifi}</div>` : ''}
+          <div class="center" style="margin-top:14px; font-size:10px; font-weight:bold;">${cupomRodape}</div>
+          ${cupomReview ? `<div class="center" style="margin-top:6px; font-size:9px;">⭐ Avalie no Google: ${cupomReview}</div>` : ''}
         </body></html>
       `);
       printWindow.document.close();

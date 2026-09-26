@@ -5845,11 +5845,162 @@
           </div>
           <div style="grid-column: span 3;">
             <label style="font-size:12px; font-weight:600; color:var(--cfg-text-muted);">Observações</label>
-            <textarea id="rest-obs" rows="3" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; resize:vertical;"></textarea>
+            <textarea id="rest-obs" rows="3" style="width:100%; margin-top:6px; padding:8px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:13px; resize:vertical;"></textarea>
+          </div>
+          <!-- ── 1. IDENTIDADE VISUAL & BRANDING WHITE-LABEL ── -->
+          <div style="grid-column: span 3; background: var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 14px; padding: 20px; margin-top: 10px;">
+            <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 800; color: var(--cfg-text); display: flex; align-items: center; gap: 8px;">
+              <i class="ph ph-paint-brush-broad" style="color: var(--primary, #fc4b15); font-size: 18px;"></i> Identidade Visual & Branding do Restaurante
+            </h4>
+            <p style="margin: 0 0 16px; font-size: 12.5px; color: var(--cfg-text-muted);">Personalize as cores, logomarca e fontes para que o cardápio e totens reflitam a identidade única da sua marca.</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Cor Primária da Marca</label>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                  <input type="color" id="rest-cor-primaria" value="#fc4b15" style="width: 44px; height: 38px; border: 1px solid #d1d5db; border-radius: 8px; cursor: pointer; padding: 2px; background: transparent;">
+                  <input type="text" id="rest-cor-primaria-hex" value="#fc4b15" style="flex: 1; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase;">
+                </div>
+                <div style="display: flex; gap: 6px; margin-top: 8px;" id="presets-cores-primarias">
+                  <span class="cor-preset" data-cor="#e11d48" style="width: 20px; height: 20px; border-radius: 50%; background: #e11d48; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Burguer / Carnes (#e11d48)"></span>
+                  <span class="cor-preset" data-cor="#fc4b15" style="width: 20px; height: 20px; border-radius: 50%; background: #fc4b15; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Laranja Clássico (#fc4b15)"></span>
+                  <span class="cor-preset" data-cor="#16a34a" style="width: 20px; height: 20px; border-radius: 50%; background: #16a34a; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Verde Fresh / Saudável (#16a34a)"></span>
+                  <span class="cor-preset" data-cor="#d97706" style="width: 20px; height: 20px; border-radius: 50%; background: #d97706; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Dourado Bistrô / Bar (#d97706)"></span>
+                  <span class="cor-preset" data-cor="#8b5cf6" style="width: 20px; height: 20px; border-radius: 50%; background: #8b5cf6; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Roxo / Açaí (#8b5cf6)"></span>
+                  <span class="cor-preset" data-cor="#2563eb" style="width: 20px; height: 20px; border-radius: 50%; background: #2563eb; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Azul Náutico (#2563eb)"></span>
+                  <span class="cor-preset" data-cor="#18181b" style="width: 20px; height: 20px; border-radius: 50%; background: #18181b; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Preto Gourmet (#18181b)"></span>
+                </div>
+              </div>
+
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Cor Secundária / Hover</label>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                  <input type="color" id="rest-cor-secundaria" value="#ff8c00" style="width: 44px; height: 38px; border: 1px solid #d1d5db; border-radius: 8px; cursor: pointer; padding: 2px; background: transparent;">
+                  <input type="text" id="rest-cor-secundaria-hex" value="#ff8c00" style="flex: 1; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase;">
+                </div>
+                <span style="font-size: 11px; color: var(--cfg-text-muted); display: block; margin-top: 4px;">Usada em efeitos de foco e botões secundários.</span>
+              </div>
+
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Tipografia / Fonte do Cardápio</label>
+                <select id="rest-fonte-familia" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; background: var(--cfg-card-bg);">
+                  <option value="Inter, sans-serif">Inter (Moderna & Clean)</option>
+                  <option value="'Poppins', sans-serif">Poppins (Arredondada & Acolhedora)</option>
+                  <option value="'Montserrat', sans-serif">Montserrat (Moderna & Marcante)</option>
+                  <option value="'Playfair Display', serif">Playfair Display (Alta Gastronomia & Bistrô)</option>
+                  <option value="'Roboto', sans-serif">Roboto (Clássica & Neutra)</option>
+                </select>
+              </div>
+
+              <div style="grid-column: span 1;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">URL da Logomarca (PNG/SVG transparente)</label>
+                <input type="text" id="rest-logo-url" placeholder="https://meusite.com/logo.png" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;">
+              </div>
+
+              <div style="grid-column: span 2;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">URL do Banner de Capa (Panorâmico para Cardápio e Totem)</label>
+                <input type="text" id="rest-banner-url" placeholder="https://images.unsplash.com/photo-exemplo..." style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- ── 2. CARDÁPIO DIGITAL & EXPERIÊNCIA DO CLIENTE ── -->
+          <div style="grid-column: span 3; background: var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 14px; padding: 20px;">
+            <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 800; color: var(--cfg-text); display: flex; align-items: center; gap: 8px;">
+              <i class="ph ph-device-mobile" style="color: #6366f1; font-size: 18px;"></i> Cardápio Digital & Autoatendimento
+            </h4>
+            <p style="margin: 0 0 16px; font-size: 12.5px; color: var(--cfg-text-muted);">Defina como os pratos são apresentados na mesa e no totem de autoatendimento.</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Layout dos Pratos no Cardápio</label>
+                <select id="rest-layout-cardapio" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; background: var(--cfg-card-bg);">
+                  <option value="grid_fotos">📸 Cards Grandes com Fotos (Hamburguerias, Pizzarias)</option>
+                  <option value="lista_compacta">📋 Lista Dinâmica com Miniaturas (Restaurante Tradicional)</option>
+                  <option value="minimalista_bistro">🍷 Minimalista Bistrô Textual (Alta Gastronomia)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Slogan / Subtítulo da Casa</label>
+                <input type="text" id="rest-slogan" placeholder="Ex: Tradição e sabor feito na brasa" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;">
+              </div>
+
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Tempo Médio de Preparo</label>
+                <input type="text" id="rest-tempo-preparo" placeholder="Ex: 20 a 35 min" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;">
+              </div>
+
+              <div style="grid-column: span 2;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Mensagem de Boas-Vindas no Cardápio</label>
+                <input type="text" id="rest-msg-boas-vindas" placeholder="Ex: Bem-vindo! Faça seus pedidos direto pelo celular e receba na mesa." style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;">
+              </div>
+
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Pedido Mínimo Delivery (R$)</label>
+                <input type="number" step="0.50" id="rest-pedido-minimo-delivery" placeholder="0.00" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- ── 3. TAXAS DO SALÃO & GORJETAS ── -->
+          <div style="grid-column: span 3; background: var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 14px; padding: 20px;">
+            <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 800; color: var(--cfg-text); display: flex; align-items: center; gap: 8px;">
+              <i class="ph ph-receipt" style="color: #10b981; font-size: 18px;"></i> Taxas do Salão, Couvert & Gorjetas
+            </h4>
+            <p style="margin: 0 0 16px; font-size: 12.5px; color: var(--cfg-text-muted);">Configure percentuais de serviço e taxas automáticas aplicadas ao fechar contas de mesas e comandas.</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Taxa de Serviço do Salão (%)</label>
+                <select id="rest-taxa-servico" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; background: var(--cfg-card-bg);">
+                  <option value="10">10% (Padrão de Mercado)</option>
+                  <option value="12">12%</option>
+                  <option value="13">13%</option>
+                  <option value="15">15%</option>
+                  <option value="0">0% (Sem Taxa de Serviço)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Couvert Artístico por Pessoa (R$)</label>
+                <input type="number" step="0.50" id="rest-couvert-artistico" placeholder="0.00" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;">
+              </div>
+
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Taxa Desperdício Rodízio (R$)</label>
+                <input type="number" step="1.00" id="rest-taxa-desperdicio" placeholder="0.00" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- ── 4. PERSONALIZAÇÃO DO CUPOM TÉRMICO DE IMPRESSÃO ── -->
+          <div style="grid-column: span 3; background: var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 14px; padding: 20px;">
+            <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 800; color: var(--cfg-text); display: flex; align-items: center; gap: 8px;">
+              <i class="ph ph-printer" style="color: #f59e0b; font-size: 18px;"></i> Personalização do Cupom Térmico (Impressão)
+            </h4>
+            <p style="margin: 0 0 16px; font-size: 12.5px; color: var(--cfg-text-muted);">Textos e informações impressas no rodapé dos comprovantes de conferência e entrega.</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Mensagem de Rodapé do Cupom</label>
+                <input type="text" id="rest-cupom-rodape" placeholder="Ex: Agradecemos a preferência! Volte sempre!" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;">
+              </div>
+
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Dados de Wi-Fi para o Cliente</label>
+                <input type="text" id="rest-cupom-wifi" placeholder="Ex: Wi-Fi: Restaurante | Senha: clientelegal" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;">
+              </div>
+
+              <div style="grid-column: span 2;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--cfg-text-muted);">Link de Avaliação Google Maps (imprime QR Code de avaliação no cupom)</label>
+                <input type="text" id="rest-cupom-google-review" placeholder="https://g.page/r/..." style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;">
+              </div>
+            </div>
           </div>
         </div>
         <button id="btn-salvar-rest-perfil" style="margin-top:20px; padding:12px 32px; background:#059669; color:white; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer;">
-          <i class="ph ph-check-circle"></i> Salvar Perfil
+          <i class="ph ph-check-circle"></i> Salvar Perfil & Personalizações
         </button>
       </div>
 
