@@ -1546,6 +1546,14 @@
         <!-- Injected via JS -->
       </div>
 
+      <!-- CHEFF AI: UPSELLING & CROSS-SELLING RECOMENDAÇÕES -->
+      <div id="cheff-ai-upsell-container" style="display:none; margin:10px 0; padding:12px; background:linear-gradient(135deg, rgba(252,75,21,0.06), rgba(245,158,11,0.06)); border:1.5px dashed rgba(252,75,21,0.35); border-radius:14px;">
+        <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
+          <i class="ph-fill ph-sparkle"></i> <span>Cheff AI Recomenda:</span>
+        </div>
+        <div id="cheff-ai-upsell-items" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
       <div
         style="display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid var(--border); padding-top: 12px; font-weight: 800;">
         <span>Total:</span>
@@ -2538,7 +2546,62 @@
       const total = CART.reduce((acc, c) => acc + c.total, 0);
       totalVal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
 
+      // Cheff AI: Buscar recomendações de upselling/cross-selling dinâmico
+      const upsellContainer = document.getElementById('cheff-ai-upsell-container');
+      const upsellList = document.getElementById('cheff-ai-upsell-items');
+      if (upsellContainer && upsellList) {
+        const itemNames = CART.map(c => c.productName).join(',');
+        fetch(`/api/cheff-ai/upsell?itens=${encodeURIComponent(itemNames)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data && data.success && data.recomendacoes && data.recomendacoes.length > 0) {
+              upsellList.innerHTML = data.recomendacoes.map(rec => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px 10px; border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                  <div style="flex:1; min-width:0; margin-right:8px;">
+                    <div style="font-size:12px; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${rec.nome}</div>
+                    <div style="font-size:10px; color:#f59e0b; font-weight:600;">${rec.motivo || 'Combina perfeitamente!'}</div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:12px; font-weight:800; color:var(--primary);">+R$ ${Number(rec.preco).toFixed(2).replace('.', ',')}</span>
+                    <button type="button" onclick='window.adicionarUpsellItemDirect(${JSON.stringify(rec.id)}, ${JSON.stringify(rec.nome)}, ${rec.preco}, ${JSON.stringify(rec.categoria || "")})' style="background:var(--primary); color:#fff; border:none; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:3px;">
+                      + Adicionar
+                    </button>
+                  </div>
+                </div>
+              `).join('');
+              upsellContainer.style.display = 'block';
+            } else {
+              upsellContainer.style.display = 'none';
+            }
+          })
+          .catch(() => {
+            upsellContainer.style.display = 'none';
+          });
+      }
+
       document.getElementById('modal-cart').style.display = 'flex';
+    };
+
+    window.adicionarUpsellItemDirect = (id, nome, preco, categoria) => {
+      const existing = CART.find(c => c.productId === id);
+      if (existing) {
+        existing.quantity += 1;
+        existing.total = existing.quantity * existing.preco;
+      } else {
+        CART.push({
+          productId: id,
+          productName: nome,
+          productEmoji: '✨',
+          quantity: 1,
+          preco: Number(preco),
+          obs: 'Adicionado via Sugestão Cheff AI',
+          composicoes: [],
+          sector: categoria === 'Bebidas' ? 'Bebidas' : 'Cozinha 1',
+          total: Number(preco)
+        });
+      }
+      atualizarCartBadge();
+      window.abrirCarrinho();
     };
 
     window.fecharCarrinho = () => {

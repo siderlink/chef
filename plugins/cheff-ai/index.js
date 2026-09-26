@@ -374,11 +374,182 @@ module.exports = function ({ app, db, masterDb, io, options, log }) {
     });
   }));
 
+  // ═══════════════════════════════════════════
+  // 8. CHEFF AI UPSELLING & CROSS-SELLING
+  // ═══════════════════════════════════════════
+  app.get('/api/cheff-ai/upsell', safe(async (req, res) => {
+    const { itens = '', categoria = '' } = req.query;
+    const itensArray = String(itens).split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+
+    // 1. Busca todos os produtos ativos do cardápio
+    const todosProdutos = await dbAll(
+      `SELECT id, nome, preco, categoria, COALESCE(imagem, '') as imagem
+       FROM produtos
+       WHERE ativo = 1
+       ORDER BY preco ASC`
+    );
+
+    if (!todosProdutos || todosProdutos.length === 0) {
+      return res.json({ ok: true, recomendacoes: [] });
+    }
+
+    // 2. Filtra produtos que NÃO estão no carrinho
+    const disponiveis = todosProdutos.filter(p => {
+      const nomeLower = String(p.nome).trim().toLowerCase();
+      return !itensArray.some(it => nomeLower.includes(it) || it.includes(nomeLower));
+    });
+
+    // 3. Regras inteligentes por categoria
+    const categoriasBebidas = ['bebidas', 'bebida', 'sucos', 'refrigerantes', 'cervejas', 'drinks'];
+    const categoriasSobremesas = ['sobremesas', 'sobremesa', 'doces'];
+    const categoriasAcompanhamentos = ['acompanhamentos', 'porções', 'porcoes', 'entradas'];
+
+    let prioritarios = [];
+
+    // Prioriza bebidas se o carrinho ainda não tem bebida
+    const temBebida = itensArray.some(it => categoriasBebidas.some(cb => it.includes(cb)));
+    const bebidas = disponiveis.filter(p => categoriasBebidas.includes(String(p.categoria).toLowerCase()));
+    const sobremesas = disponiveis.filter(p => categoriasSobremesas.includes(String(p.categoria).toLowerCase()));
+    const acompanhamentos = disponiveis.filter(p => categoriasAcompanhamentos.includes(String(p.categoria).toLowerCase()));
+
+    if (!temBebida && bebidas.length > 0) {
+      const topBebida = bebidas[0];
+      prioritarios.push({
+        ...topBebida,
+        motivo: 'Refresque seu pedido',
+        call_to_action: `Que tal adicionar ${topBebida.nome} por apenas + R$ ${Number(topBebida.preco).toFixed(2).replace('.', ',')}?`,
+        tipo: 'cross_sell'
+      });
+    }
+
+    if (acompanhamentos.length > 0) {
+      const topAcomp = acompanhamentos[0];
+      prioritarios.push({
+        ...topAcomp,
+        motivo: 'Mais pedido com seu prato',
+        call_to_action: `Turbine sua refeição com ${topAcomp.nome} por + R$ ${Number(topAcomp.preco).toFixed(2).replace('.', ',')}!`,
+        tipo: 'upsell'
+      });
+    }
+
+    if (sobremesas.length > 0) {
+      const topDoc = sobremesas[0];
+      prioritarios.push({
+        ...topDoc,
+        motivo: 'Adoce seu momento',
+        call_to_action: `Finalize com chave de ouro: ${topDoc.nome} por + R$ ${Number(topDoc.preco).toFixed(2).replace('.', ',')}!`,
+        tipo: 'sobremesa'
+      });
+    }
+
+    // Se ainda restou espaço, completa com produtos mais baratos (ticket boosters)
+    if (prioritarios.length < 3) {
+      disponiveis.slice(0, 3 - prioritarios.length).forEach(p => {
+        if (!prioritarios.some(pr => pr.id === p.id)) {
+          prioritarios.push({
+            ...p,
+            motivo: 'Destaque da Cozinha',
+            call_to_action: `Experimente também ${p.nome} por + R$ ${Number(p.preco).toFixed(2).replace('.', ',')}!`,
+            tipo: 'sugestao'
+          });
+        }
+      });
+    }
+
+    res.json({
+      ok: true,
+      total: prioritarios.length,
+      recomendacoes: prioritarios
+    });
+  }));
+
+  // ═══════════════════════════════════════════
+  // 9. ROBÔ DE REATIVAÇÃO DE CLIENTES VIA WHATSAPP (CHEFF AI)
+  // ═══════════════════════════════════════════
+  app.post('/api/cheff-ai/crm/reativacao-automatica', verificarToken, safe(async (req, res) => {
+    const { dias = 20, cupom_prefixo = 'VOLTA', desconto_pct = 15, limite = 30 } = req.body || {};
+
+    // 1. Busca clientes inativos com telefone válido
+    const inativos = await dbAll(
+      `SELECT c.id, c.nome, c.telefone,
+         MAX(p.criado_em) AS ultima_compra,
+         COUNT(p.id) AS total_pedidos
+       FROM clientes c
+       LEFT JOIN pedidos p ON p.cliente_id = c.id
+       WHERE c.ativo = 1 AND c.telefone IS NOT NULL AND LENGTH(c.telefone) >= 8
+       GROUP BY c.id
+       HAVING ultima_compra IS NULL OR ultima_compra < datetime('now','localtime','-' || ? || ' days')
+       ORDER BY ultima_compra ASC LIMIT ?`,
+      [parseInt(dias), parseInt(limite)]
+    );
+
+    if (!inativos || inativos.length === 0) {
+      return res.json({ ok: true, mensagem: 'Nenhum cliente inativo elegível no período selecionado.', disparados: 0 });
+    }
+
+    // 2. Busca nome do restaurante nas configurações
+    const cfgNome = await dbGet(`SELECT valor FROM configuracoes WHERE chave = 'nome_restaurante'`).catch(() => null);
+    const nomeRestaurante = (cfgNome && cfgNome.valor) || 'Chef Cozinha';
+
+    // 3. Cria cupom de retorno ativo por 7 dias
+    const codigoCupom = `${String(cupom_prefixo).toUpperCase()}${desconto_pct}-${Math.floor(100 + Math.random() * 900)}`;
+    const validade = new Date();
+    validade.setDate(validade.getDate() + 7);
+
+    await dbRun(
+      `INSERT INTO cheff_ai_cupons (titulo, descricao, codigo, tipo, valor, validade_em, usos_max, ativo)
+       VALUES (?, ?, ?, 'percentual', ?, ?, ?, 1)`,
+      [
+        `Cupom de Reativação ${desconto_pct}%`,
+        `Exclusivo para clientes que estão com saudades de nosso cardápio`,
+        codigoCupom,
+        parseFloat(desconto_pct),
+        validade.toISOString(),
+        inativos.length * 2
+      ]
+    );
+
+    // 4. Dispara mensagens personalizadas para cada cliente inativo
+    let disparados = 0;
+    for (const c of inativos) {
+      const primeiroNome = (c.nome || 'Amigo').split(' ')[0];
+      const mensagem = `Olá ${primeiroNome}! 🍽️✨ Sentimos sua falta aqui no *${nomeRestaurante}*!\n\n` +
+        `Para comemorar seu retorno, liberamos um cupom especial de *${desconto_pct}% OFF* para o seu próximo pedido:\n\n` +
+        `🎟️ Cupom: *${codigoCupom}*\n` +
+        `⏰ Válido pelos próximos 7 dias.\n\n` +
+        `Acesse nosso cardápio e aproveite agora! Esperamos por você! 😊`;
+
+      // Registra mensagem na conversa
+      await dbRun(
+        `INSERT INTO cheff_ai_conversas (telefone, nome_cliente, direcao, tipo, conteudo, status)
+         VALUES (?, ?, 'out', 'text', ?, 'enviado')`,
+        [c.telefone, c.nome, mensagem]
+      );
+
+      // Registra ação no CRM
+      await dbRun(
+        `INSERT INTO cheff_ai_crm_acoes (cliente_id, tipo, descricao)
+         VALUES (?, 'whatsapp_reativacao_ia', ?)`,
+        [c.id, `Disparo de cupom ${codigoCupom} (${desconto_pct}% OFF) após ${dias} dias inativo`]
+      );
+
+      disparados++;
+    }
+
+    res.json({
+      ok: true,
+      mensagem: `Robô Cheff AI disparou reativação para ${disparados} cliente(s) inativo(s)!`,
+      cupom_gerado: codigoCupom,
+      validade: validade.toISOString().slice(0, 10),
+      total_disparados: disparados
+    });
+  }));
+
   if (io) {
     io.on('connection', socket => {
       socket.on('cheff_ai:join', () => socket.join('cheff_ai_room'));
     });
   }
 
-  log('CheffAI inicializado. Rotas: /api/cheff-ai/*');
+  log('CheffAI inicializado. Rotas: /api/cheff-ai/* (Upsell, Cross-sell, Reativação CRM)');
 };
