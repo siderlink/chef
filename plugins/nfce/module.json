@@ -1,0 +1,14 @@
+{
+  "id": "nfce",
+  "name": "NFC-e / Cupom Fiscal SEFAZ",
+  "version": "1.0.0",
+  "author": "Chef Cozinha Dev Team",
+  "category": "fiscal",
+  "icon": "ph-receipt",
+  "enabled": true,
+  "description": "Emissão de Nota Fiscal de Consumidor Eletrônica (Modelo 65), DANFE térmico e Contingência Offline automática.",
+  "targets": ["caixa", "caixa_v11", "pdv", "configuracoes", "all"],
+  "hooks": {
+    "server": "index.js"
+  }
+}

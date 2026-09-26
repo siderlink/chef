@@ -13,6 +13,8 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/resilience-guard.js"></script>
+  <script src="/offline-queue.js"></script>
   <script src="/theme-manager.js?v=20260901paletas"></script>
   <style>
     :root, [data-theme="light"], body.theme-light {
@@ -385,6 +387,9 @@
       <h1 id="restaurant-name">Autoatendimento <small>Chef Cozinha</small></h1>
     </div>
     <div style="display:flex; align-items:center; gap:12px;">
+      <button onclick="window.location.href='/plugins/pesagem-selfservice/totem'" class="header-badge" style="background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.4); color:#f59e0b; cursor:pointer;" title="Alternar para Totem de Pesagem Buffet">
+        <i class="ph ph-scales"></i> <span>Buffet / Balança</span>
+      </button>
       <span class="header-badge"><i class="ph ph-storefront"></i> <span id="totem-mesa-label">Totem 1</span></span>
       <button class="home-btn" onclick="window.totemReset()" title="Voltar ao início"><i class="ph ph-house"></i></button>
     </div>
