@@ -169,6 +169,15 @@
             <button type="button" class="btn-pgto-parcial-metodo" data-metodo="PIX" onclick="window.setMetodoPgtoParcial('PIX', this)" style="padding:8px; border-radius:8px; border:1px solid #cbd5e1; background:white; color:#334155; font-size:12px; font-weight:700; cursor:pointer;">⚡ PIX</button>
           </div>
 
+          <!-- OPÇÃO FISCAL NFC-e / CPF NA NOTA -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:rgba(6,182,212,0.08); border-radius:10px; border:1px solid rgba(6,182,212,0.25); gap:8px;">
+            <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#0e7490; cursor:pointer; white-space:nowrap;">
+              <input type="checkbox" id="chk-emitir-nfce-parcial" style="width:16px; height:16px; accent-color:#0891b2; cursor:pointer;">
+              <span>🧾 Emitir NFC-e</span>
+            </label>
+            <input type="text" id="input-cpf-nfce-parcial" placeholder="CPF/CNPJ (opcional)" style="flex:1; max-width:180px; font-size:11.5px; padding:5px 8px; border-radius:6px; border:1px solid #cbd5e1; background:white; color:#1e293b;">
+          </div>
+
           <button type="button" onclick="window.confirmarPagamentoParcialSelecionado()" style="background:#10b981; color:white; border:none; padding:14px; border-radius:12px; font-weight:800; font-size:14.5px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(16,185,129,0.3);">
             <i class="ph-bold ph-check-circle"></i> Confirmar Pagamento Parcial
           </button>
@@ -241,6 +250,31 @@
         });
       }
     });
+
+    // Emite NFC-e se solicitado
+    var chkEl = document.getElementById('chk-emitir-nfce-parcial');
+    var cpfEl = document.getElementById('input-cpf-nfce-parcial');
+    var emitirNfce = chkEl ? chkEl.checked : false;
+    var cpfCnpj = cpfEl ? cpfEl.value.trim() : '';
+
+    if (emitirNfce && typeof socket !== 'undefined') {
+      var nfceItems = selecionados.map(function(s) {
+        return {
+          nome: s.productName,
+          qtd: 1,
+          preco: s.valorUnit,
+          total: s.valorUnit
+        };
+      });
+      socket.emit('emitir_nfce_balcao', {
+        mesaName: nomeMesa,
+        items: nfceItems,
+        totalValue: total,
+        metodo: metodo,
+        cpfCnpj: cpfCnpj
+      });
+      _toast('🧾 Solicitando emissão da NFC-e à SEFAZ...', 'info');
+    }
 
     var modal = document.getElementById('modal-pagamento-parcial-desagrupado');
     if (modal) modal.style.display = 'none';

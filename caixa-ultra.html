@@ -76,13 +76,16 @@
         <span class="ultra-search-badge" onclick="document.getElementById('ultra-search-input').focus()">F4</span>
       </div>
 
-      <!-- Seletor de Modo de Visualização: Grade vs Salão 3D -->
+      <!-- Seletor de Modo de Visualização: Grade vs Salão 3D vs Fila de Espera -->
       <div class="ultra-view-switch">
         <button id="btn-view-grid" class="ultra-view-btn active" onclick="ChefUltraApp.toggleSalonView('grid')" title="Visualização em Grade de Cards">
           <i class="ph-bold ph-squares-four"></i> Grade
         </button>
         <button id="btn-view-3d" class="ultra-view-btn" onclick="ChefUltraApp.toggleSalonView('3d')" title="Visualização 3D do Salão com Three.js (F11)">
           <i class="ph-bold ph-cube"></i> Salão 3D
+        </button>
+        <button id="btn-view-fila-espera" class="ultra-view-btn" onclick="window.abrirFilaEsperaModal()" title="Fila de Espera Digital com QR Code no Salão" style="color:var(--ultra-coral);">
+          <i class="ph-bold ph-users-three"></i> Fila Espera
         </button>
       </div>
 
@@ -303,13 +306,16 @@
           <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('BS')"><i class="ph ph-backspace"></i></button>
         </div>
 
-        <!-- Ações Operacionais: Split/Parcial e Balança Serial -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
-          <button id="ultra-btn-pagamento-parcial" class="ultra-btn-action" onclick="ChefUltraApp.abrirPagamentoParcial()" style="background:rgba(14,165,233,0.15); border:1px solid rgba(14,165,233,0.4); color:var(--ultra-cyan); font-weight:700; font-size:12px; height:38px; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:8px; cursor:pointer;" title="Divisão e Pagamento Parcial de Itens Desagrupados (F2)">
-            <i class="ph-bold ph-receipt"></i> Split / Parcial (F2)
+        <!-- Ações Operacionais: Split/Parcial, Balança Serial e Fiscal NFC-e -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:10px;">
+          <button id="ultra-btn-pagamento-parcial" class="ultra-btn-action" onclick="ChefUltraApp.abrirPagamentoParcial()" style="background:rgba(14,165,233,0.15); border:1px solid rgba(14,165,233,0.4); color:var(--ultra-cyan); font-weight:700; font-size:11px; height:38px; display:flex; align-items:center; justify-content:center; gap:4px; border-radius:8px; cursor:pointer;" title="Divisão e Pagamento Parcial de Itens Desagrupados (F2)">
+            <i class="ph-bold ph-receipt"></i> Split (F2)
           </button>
-          <button id="ultra-btn-conectar-balanca" class="ultra-btn-action" onclick="ChefUltraApp.conectarBalancaSerial()" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); color:var(--ultra-emerald); font-weight:700; font-size:12px; height:38px; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:8px; cursor:pointer;" title="Conectar Balança Serial Toledo / Filizola / Urano">
-            <i class="ph-bold ph-scales"></i> Balança Serial
+          <button id="ultra-btn-conectar-balanca" class="ultra-btn-action" onclick="ChefUltraApp.conectarBalancaSerial()" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); color:var(--ultra-emerald); font-weight:700; font-size:11px; height:38px; display:flex; align-items:center; justify-content:center; gap:4px; border-radius:8px; cursor:pointer;" title="Conectar Balança Serial Toledo / Filizola / Urano">
+            <i class="ph-bold ph-scales"></i> Balança
+          </button>
+          <button id="ultra-btn-nfce-fiscal" class="ultra-btn-action" onclick="ChefUltraApp.emitirNfceAvulsa()" style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:var(--ultra-amber); font-weight:700; font-size:11px; height:38px; display:flex; align-items:center; justify-content:center; gap:4px; border-radius:8px; cursor:pointer;" title="Emitir Cupom Fiscal NFC-e SEFAZ">
+            <i class="ph-bold ph-file-text"></i> NFC-e
           </button>
         </div>
 
@@ -457,6 +463,7 @@
 
   <!-- Scripts do Caixa Ultra 3D Studio -->
   <script src="/pagamento-parcial-modal.js"></script>
+  <script src="/plugins/fila-espera/client.js" defer></script>
   <script src="/caixa-ultra-3d.js"></script>
   <script src="/caixa-ultra.js"></script>
 </body>

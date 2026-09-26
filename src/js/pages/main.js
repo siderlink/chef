@@ -152,7 +152,7 @@ window.submeterLoginFuncionarioMobile = function() {
       if (fb) {
         fb.style.background = '#f0fdf4';
         fb.style.color = '#16a34a';
-        fb.innerHTML = `✅ Bem-vindo(a), ${data.nome}!`;
+        fb.innerHTML = `✅ Bem-vindo(a), ${escHtml(data.nome)}!`;
       }
       setTimeout(() => {
         window.fecharModalLoginFuncionarioMobile();
@@ -9531,7 +9531,13 @@ function processIaToastQueue() {
   var item = window._iaToastQueue.shift();
   var el = document.createElement('div');
   el.style.cssText = 'position:fixed;top:60px;right:16px;background:' + (item.bg || '#1e293b') + ';color:white;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;max-width:350px;box-shadow:0 4px 16px rgba(0,0,0,0.2);animation:slideToast 0.2s ease-out;transition:opacity 0.3s;';
-  el.innerHTML = item.msg;
+  // (Segurança) Usar textContent para evitar XSS. Emojis e texto são preservados.
+  // Se item.html === true for explicitamente passado, permite HTML apenas de strings internas.
+  if (item.html === true) {
+    el.innerHTML = item.msg; // somente para mensagens internas do sistema (não do servidor)
+  } else {
+    el.textContent = item.msg;
+  }
   document.body.appendChild(el);
   setTimeout(function () { el.style.opacity = '0'; }, 4000);
   setTimeout(function () {

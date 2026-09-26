@@ -208,6 +208,38 @@
       this.socket.on('formas_pagamento_atualizadas', (formas) => {
         this.formasPagamento = Array.isArray(formas) ? formas : [];
       });
+
+      this.socket.on('nfce_emitida_sucesso', (data) => {
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'success',
+            title: 'NFC-e Autorizada pela SEFAZ!',
+            html: `<div style="font-size:13px; text-align:left; background:rgba(16,185,129,0.1); border:1px solid #10b981; padding:10px; border-radius:8px; margin-top:8px;">
+                    <div><strong>Chave de Acesso:</strong></div>
+                    <code style="font-size:11px; color:#10b981; word-break:break-all;">${data.chave}</code>
+                   </div>
+                   <div style="margin-top:14px; display:flex; gap:8px; justify-content:center;">
+                     <button onclick="window.open('/api/fiscal/danfe/${data.chave}', '_blank')" style="background:#10b981; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer;">
+                       <i class='ph ph-printer'></i> Imprimir DANFE NFC-e
+                     </button>
+                   </div>`,
+            background: '#0f172a',
+            color: '#f8fafc'
+          });
+        }
+      });
+
+      this.socket.on('nfce_emitida_erro', (data) => {
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Aviso Fiscal (NFC-e)',
+            text: data.erro || 'Falha na emissão fiscal ou servidor em modo homologação offline.',
+            background: '#0f172a',
+            color: '#f8fafc'
+          });
+        }
+      });
     },
 
     fetchInitialCatalog: function () {
@@ -636,7 +668,7 @@
 
       const valor = parseFloat(this.valorDigitado || totalPagar);
 
-      const emitFinalizar = () => {
+      const emitFinalizar = (emitirNfce = false, cpfCnpj = '') => {
         this.soundSuccess();
         this.socket.emit('finalizar_mesa', {
           mesaName: mesaNome,
@@ -644,12 +676,30 @@
           valorFinal: valor.toFixed(2),
           operador: 'Operador Ultra'
         });
+
+        if (emitirNfce) {
+          const itens = (this.mesaAtual.itens || []).map(i => ({
+            nome: i.nome || i.produto_nome || 'Consumo Restaurante',
+            quantidade: i.quantidade || 1,
+            preco: i.preco || i.preco_unitario || valor,
+            ncm: i.ncm || '21069090',
+            cfop: i.cfop || '5102'
+          }));
+          this.socket.emit('emitir_nfce_balcao', {
+            mesaId: mesaNome,
+            itens: itens.length > 0 ? itens : [{ nome: 'Consumo Salão ' + mesaNome, quantidade: 1, preco: valor }],
+            totalValue: valor,
+            formaPagamento: metodo,
+            cpfCnpj: cpfCnpj || null
+          });
+        }
+
         if (window.Swal) {
           Swal.fire({
             icon: 'success',
             title: 'Venda Concluída!',
-            text: `${mesaNome} finalizada com sucesso via ${metodo}!`,
-            timer: 2000,
+            text: `${mesaNome} finalizada com sucesso via ${metodo}!${emitirNfce ? ' Solicitando autorização SEFAZ...' : ''}`,
+            timer: 2500,
             showConfirmButton: false,
             background: '#0f172a',
             color: '#f8fafc'
@@ -660,7 +710,14 @@
       if (window.Swal) {
         Swal.fire({
           title: `Fechar ${mesaNome}?`,
-          html: `<div style="font-size:14px; margin-top:8px;">Forma: <strong>${metodo}</strong><br>Total Final: <strong style="color:#10b981; font-size:22px; font-family:monospace;">R$ ${valor.toFixed(2).replace('.', ',')}</strong></div>`,
+          html: `<div style="font-size:14px; margin-top:8px;">Forma: <strong>${metodo}</strong><br>Total Final: <strong style="color:#10b981; font-size:22px; font-family:monospace;">R$ ${valor.toFixed(2).replace('.', ',')}</strong></div>
+          <div style="margin-top:14px; padding:10px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; text-align:left;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; color:#f8fafc;">
+              <input type="checkbox" id="swal-nfce-emitir" checked style="accent-color:#10b981; width:16px; height:16px;">
+              <span><strong>🧾 Emitir Cupom Fiscal (NFC-e)</strong></span>
+            </label>
+            <input type="text" id="swal-nfce-cpf" placeholder="CPF/CNPJ na Nota (Opcional)" style="width:100%; box-sizing:border-box; margin-top:8px; padding:6px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:#f8fafc; font-size:12px;">
+          </div>`,
           icon: 'question',
           showCancelButton: true,
           confirmButtonColor: '#10b981',
@@ -671,13 +728,87 @@
           color: '#f8fafc'
         }).then((result) => {
           if (result.isConfirmed) {
-            emitFinalizar();
+            const chkNfce = document.getElementById('swal-nfce-emitir');
+            const txtCpf = document.getElementById('swal-nfce-cpf');
+            const emitirNfce = chkNfce ? chkNfce.checked : false;
+            const cpfCnpj = txtCpf ? txtCpf.value.trim() : '';
+            emitFinalizar(emitirNfce, cpfCnpj);
           }
         });
       } else {
         if (confirm(`Confirmar fechamento da ${mesaNome} via ${metodo} no valor de R$ ${valor.toFixed(2)}?`)) {
-          emitFinalizar();
+          emitFinalizar(false, '');
         }
+      }
+    },
+
+    emitirNfceAvulsa: function () {
+      if (!this.mesaAtual || !this.mesaAtual.isOcupada) {
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Módulo Fiscal NFC-e',
+            text: 'Selecione uma mesa com consumo para emitir cupom fiscal avulso.',
+            background: '#0f172a',
+            color: '#f8fafc'
+          });
+        } else {
+          alert('Selecione uma mesa com consumo para emitir cupom fiscal avulso.');
+        }
+        return;
+      }
+
+      const mesaNome = this.mesaAtual.nome;
+      const valor = parseFloat(this.mesaAtual.total || 0);
+
+      if (window.Swal) {
+        Swal.fire({
+          title: `Emitir NFC-e: ${mesaNome}`,
+          html: `<div style="font-size:13px; text-align:left; color:#cbd5e1; margin-top:6px;">
+                  <div>Valor dos Itens: <strong style="color:#10b981; font-family:monospace; font-size:16px;">R$ ${valor.toFixed(2).replace('.', ',')}</strong></div>
+                  <div style="margin-top:10px;">
+                    <label style="font-size:12px; font-weight:700;">CPF ou CNPJ do Cliente (Opcional):</label>
+                    <input type="text" id="swal-nfce-avulsa-cpf" placeholder="000.000.000-00" style="width:100%; box-sizing:border-box; margin-top:4px; padding:6px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:#f8fafc; font-size:13px;">
+                  </div>
+                 </div>`,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#f59e0b',
+          confirmButtonText: 'Emitir NFC-e na SEFAZ',
+          cancelButtonText: 'Cancelar',
+          background: '#0f172a',
+          color: '#f8fafc'
+        }).then((res) => {
+          if (res.isConfirmed) {
+            const txtCpf = document.getElementById('swal-nfce-avulsa-cpf');
+            const cpfCnpj = txtCpf ? txtCpf.value.trim() : '';
+            const itens = (this.mesaAtual.itens || []).map(i => ({
+              nome: i.nome || i.produto_nome || 'Consumo Restaurante',
+              quantidade: i.quantidade || 1,
+              preco: i.preco || i.preco_unitario || valor,
+              ncm: i.ncm || '21069090',
+              cfop: i.cfop || '5102'
+            }));
+
+            this.socket.emit('emitir_nfce_balcao', {
+              mesaId: mesaNome,
+              itens: itens.length > 0 ? itens : [{ nome: 'Consumo Salão ' + mesaNome, quantidade: 1, preco: valor }],
+              totalValue: valor,
+              formaPagamento: this.metodoPagamentoAtivo || 'DINHEIRO',
+              cpfCnpj: cpfCnpj || null
+            });
+
+            Swal.fire({
+              icon: 'info',
+              title: 'Processando NFC-e...',
+              text: 'Transmitindo dados fiscais para a SEFAZ.',
+              timer: 1800,
+              showConfirmButton: false,
+              background: '#0f172a',
+              color: '#f8fafc'
+            });
+          }
+        });
       }
     },
 

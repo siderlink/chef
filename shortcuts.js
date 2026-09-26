@@ -1,10 +1,51 @@
+// Definições canônicas de atalhos operacionais (evita dependência de ordem de carregamento com main.js)
+const DEFAULT_SHORTCUTS = {
+  "adicionar_produtos": "F1",
+  "pagamento_parcial": "F2",
+  "fechar_mesa": "F3",
+  "buscar_mesa": "F4",
+  "atualizar_mesas": "F5",
+  "desconto": "F6",
+  "taxa_servico": "F7",
+  "ver_comissao": "F8",
+  "imprimir_conta": "F9",
+  "alterar_mesa": "F10",
+  "juntar_mesa": "F11",
+  "fila_cozinha": "F12",
+  "venda_balcao": "F2",
+  "venda_delivery": "F3"
+};
+
+const SHORTCUT_LABELS = {
+  "adicionar_produtos": { title: "Lançar Produtos / PDV", icon: "ph-shopping-cart-simple" },
+  "pagamento_parcial": { title: "Pagamento Parcial / Comanda", icon: "ph-receipt" },
+  "fechar_mesa": { title: "Fechar Conta / Checkout", icon: "ph-check-circle" },
+  "buscar_mesa": { title: "Buscar Mesa / Comanda", icon: "ph-magnifying-glass" },
+  "atualizar_mesas": { title: "Recarregar / Atualizar Mesas", icon: "ph-arrows-clockwise" },
+  "desconto": { title: "Aplicar Desconto", icon: "ph-percent" },
+  "taxa_servico": { title: "Taxa de Serviço (10%)", icon: "ph-wine" },
+  "ver_comissao": { title: "Ver Comissão do Garçom", icon: "ph-coins" },
+  "imprimir_conta": { title: "Imprimir Conferência", icon: "ph-printer" },
+  "alterar_mesa": { title: "Alterar / Transferir Mesa", icon: "ph-arrows-left-right" },
+  "juntar_mesa": { title: "Juntar Mesas", icon: "ph-grid-four" },
+  "tela_cheia": { title: "Alternar Tela Cheia", icon: "ph-arrows-out-cardinal" },
+  "fila_cozinha": { title: "Fila de Preparo da Cozinha", icon: "ph-cooking-pot" },
+  "venda_balcao": { title: "Atalho Venda Balcão", icon: "ph-storefront" },
+  "venda_delivery": { title: "Atalho Delivery", icon: "ph-truck" }
+};
+
+if (typeof window !== 'undefined') {
+  window.DEFAULT_SHORTCUTS = window.DEFAULT_SHORTCUTS || DEFAULT_SHORTCUTS;
+  window.SHORTCUT_LABELS = window.SHORTCUT_LABELS || SHORTCUT_LABELS;
+}
 
 const getCustomShortcuts = function () {
+  const defaults = (typeof window !== 'undefined' && window.DEFAULT_SHORTCUTS) ? window.DEFAULT_SHORTCUTS : DEFAULT_SHORTCUTS;
   try {
     const saved = localStorage.getItem('custom_keyboard_shortcuts');
-    if (saved) return { ...window.DEFAULT_SHORTCUTS, ...JSON.parse(saved) };
+    if (saved) return { ...defaults, ...JSON.parse(saved) };
   } catch (err) { }
-  return { ...window.DEFAULT_SHORTCUTS };
+  return { ...defaults };
 };
 
 const saveCustomShortcuts = function (newShortcuts) {
@@ -264,17 +305,30 @@ document.addEventListener('keydown', (e) => {
 
   if (isTriggered('adicionar_produtos')) {
     e.preventDefault();
-    document.getElementById('btn-adicionar-produtos')?.click();
+    if (window.ChefUltraApp && typeof window.ChefUltraApp.abrirModalProdutos === 'function') {
+      window.ChefUltraApp.abrirModalProdutos();
+    } else {
+      document.getElementById('btn-adicionar-produtos')?.click();
+    }
   } else if (isTriggered('pagamento_parcial')) {
     e.preventDefault();
-    document.getElementById('btn-movimento-parcial')?.click();
+    if (window.ChefUltraApp && typeof window.ChefUltraApp.abrirPagamentoParcial === 'function') {
+      window.ChefUltraApp.abrirPagamentoParcial();
+    } else {
+      document.getElementById('btn-movimento-parcial')?.click();
+    }
   } else if (isTriggered('fechar_mesa')) {
     e.preventDefault();
-    if (window.abrirCheckoutModal) window.abrirCheckoutModal();
-    else document.getElementById('btn-movimento-concluir')?.click();
+    if (window.ChefUltraApp && typeof window.ChefUltraApp.concluirVenda === 'function') {
+      window.ChefUltraApp.concluirVenda();
+    } else if (window.abrirCheckoutModal) {
+      window.abrirCheckoutModal();
+    } else {
+      document.getElementById('btn-movimento-concluir')?.click();
+    }
   } else if (isTriggered('buscar_mesa')) {
     e.preventDefault();
-    const searchInput = document.getElementById('caixa-ux-search') || document.querySelector('.search-mesa-input');
+    const searchInput = document.getElementById('ultra-search-input') || document.getElementById('caixa-ux-search') || document.querySelector('.search-mesa-input');
     if (searchInput) {
       searchInput.focus();
       searchInput.select();
@@ -290,7 +344,11 @@ document.addEventListener('keydown', (e) => {
     document.getElementById('btn-aplicar-desconto')?.click();
   } else if (isTriggered('taxa_servico')) {
     e.preventDefault();
-    document.getElementById('btn-aplicar-servico')?.click();
+    if (window.ChefUltraApp && typeof window.ChefUltraApp.toggleTaxaServico === 'function') {
+      window.ChefUltraApp.toggleTaxaServico();
+    } else {
+      document.getElementById('btn-aplicar-servico')?.click();
+    }
   } else if (isTriggered('ver_comissao')) {
     e.preventDefault();
     document.getElementById('btn-ver-comissao')?.click();
@@ -299,7 +357,12 @@ document.addEventListener('keydown', (e) => {
     document.getElementById('btn-alterar-mesa')?.click();
   } else if (isTriggered('juntar_mesa')) {
     e.preventDefault();
-    document.getElementById('btn-juntar-mesa')?.click();
+    if (window.ChefUltraApp && typeof window.ChefUltraApp.toggleSalonView === 'function') {
+      const is3d = window.ChefUltra3D && window.ChefUltra3D.isSalonActive;
+      window.ChefUltraApp.toggleSalonView(is3d ? 'grid' : '3d');
+    } else {
+      document.getElementById('btn-juntar-mesa')?.click();
+    }
   } else if (isTriggered('tela_cheia')) {
     e.preventDefault();
     if (!document.fullscreenElement) {
@@ -708,5 +771,21 @@ const confirmarJuncaoMesasModal = function (mode) {
 // --- SISTEMA ANTI-FRAUDE E SOLICITAÇÃO DE SENHA ADMIN / GERENTE (TOUCH PIN) ---
 window.pendingAdminAction = null;
 let _pinValidating = false;
+
+// Garante exposição segura no objeto window para acessibilidade global
+if (typeof window !== 'undefined') {
+  window.getCustomShortcuts = getCustomShortcuts;
+  window.saveCustomShortcuts = saveCustomShortcuts;
+  window.restaurarAtalhosPadrao = restaurarAtalhosPadrao;
+  window.abrirModalPersonalizarAtalhos = abrirModalPersonalizarAtalhos;
+  window.iniciarGravacaoAtalho = iniciarGravacaoAtalho;
+  window.renderGuiaAtalhosUI = renderGuiaAtalhosUI;
+  window.abrirGuiaAtalhos = abrirGuiaAtalhos;
+  window.setMesasSectionCollapsed = setMesasSectionCollapsed;
+  window.abrirModalJuntarMesas = abrirModalJuntarMesas;
+  window.selecionarMesaTargetJuntar = selecionarMesaTargetJuntar;
+  window.filtrarMesasJuntar = filtrarMesasJuntar;
+  window.confirmarJuncaoMesasModal = confirmarJuncaoMesasModal;
+}
 
 export { getCustomShortcuts, saveCustomShortcuts, restaurarAtalhosPadrao, abrirModalPersonalizarAtalhos, iniciarGravacaoAtalho, renderGuiaAtalhosUI, abrirGuiaAtalhos, setMesasSectionCollapsed, abrirModalJuntarMesas, selecionarMesaTargetJuntar, filtrarMesasJuntar, confirmarJuncaoMesasModal };
