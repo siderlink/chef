@@ -322,7 +322,8 @@ const sqlite3 = require('./sqlite3-wrapper').verbose();
 
 // Monkey-patch global para capturar INSERT INTO pedidos e efetuar a baixa de estoque automático
 const originalRun = sqlite3.Database.prototype.run;
-sqlite3.Database.prototype.run = function (sql, params, callback) {
+sqlite3.Database.prototype.run = function (...args) {
+  let [sql, params, callback] = args;
   if (typeof params === 'function') {
     callback = params;
     params = [];
@@ -351,7 +352,17 @@ sqlite3.Database.prototype.run = function (sql, params, callback) {
       if (origCb) return origCb.apply(this, [err, ...rest]);
     };
   }
-  return originalRun.call(this, sql, params, interceptedCallback);
+  if (interceptedCallback !== undefined) {
+    if (params !== undefined) {
+      return originalRun.call(this, sql, params, interceptedCallback);
+    } else {
+      return originalRun.call(this, sql, interceptedCallback);
+    }
+  } else if (params !== undefined) {
+    return originalRun.call(this, sql, params);
+  } else {
+    return originalRun.call(this, sql);
+  }
 };
 const path = require('path');
 const fs = require('fs');
@@ -779,6 +790,30 @@ app.get([
     if (fs.existsSync(f)) return res.sendFile(f);
   }
   res.status(404).send('Página de Vendas 3D não encontrada.');
+});
+
+// Rotas amigáveis para as páginas de vendas por nicho especializado
+app.get([
+  '/nichos', '/vendas-nichos', '/site-vendas-nichos', '/vendas-nicho',
+  '/pizzarias', '/pizzaria',
+  '/hamburguerias', '/hamburgueria', '/burgers',
+  '/bares', '/bar', '/choperias', '/pub',
+  '/buffets', '/buffet', '/self-service',
+  '/sushi', '/japones', '/rodizio-japones',
+  '/cafeterias', '/cafeteria', '/docerias',
+  '/restaurantes', '/alacarte', '/alta-gastronomia',
+  '/site-vendas-nichos.html', '/vendas-nichos.html'
+], (req, res) => {
+  const candidates = [
+    path.join(BASE_DIR, 'site-vendas-nichos.html'),
+    path.join(DIST_DIR, 'site-vendas-nichos.html'),
+    path.join(BASE_DIR, 'vendas-nichos.html'),
+    path.join(DIST_DIR, 'vendas-nichos.html')
+  ];
+  for (const f of candidates) {
+    if (fs.existsSync(f)) return res.sendFile(f);
+  }
+  res.status(404).send('Página de Vendas por Nicho não encontrada.');
 });
 
 // Middleware dinâmico para servir qualquer página .html sem precisar digitar .html na URL
@@ -1343,6 +1378,18 @@ masterDb.serialize(() => {
   masterDb.run(`ALTER TABLE restaurantes ADD COLUMN dono_email TEXT`, err => { if (err) {} });
   masterDb.run(`ALTER TABLE restaurantes ADD COLUMN slug TEXT`, err => { if (err) {} });
   masterDb.run(`ALTER TABLE restaurantes ADD COLUMN custom_domain TEXT`, err => { if (err) {} });
+  masterDb.run(`ALTER TABLE restaurantes ADD COLUMN modalidade TEXT`, err => { if (err) {} });
+  masterDb.run(`CREATE TABLE IF NOT EXISTS leads_nichos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nicho TEXT,
+    restaurante_nome TEXT,
+    cidade TEXT,
+    whatsapp TEXT,
+    faturamento_estimado TEXT,
+    roi_estimado REAL,
+    ip TEXT,
+    criado_em DATETIME DEFAULT (datetime('now', 'localtime'))
+  )`, err => { if (err) {} });
   masterDb.run(`CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     restaurante_id INTEGER,
@@ -11147,8 +11194,9 @@ io.on('connection', (socket) => {
 });
 
 app.post('/api/auth/registro', async (req, res) => {
-  const { restauranteNome, nome, email, telefone, senha, chaveRef, chaveAtivacao } = req.body || {};
+  const { restauranteNome, nome, email, telefone, senha, chaveRef, chaveAtivacao, segmento, modalidade } = req.body || {};
   const chaveRefFinal = (chaveRef || chaveAtivacao || '').trim(); // compatibilidade: HTML envia 'chaveAtivacao'
+  const modalidadeClean = String(segmento || modalidade || 'a_la_carte').trim().toLowerCase();
   if (!restauranteNome || !nome || !email || !senha) {
     return res.status(400).json({ success: false, error: 'Preencha todos os campos obrigatórios.' });
   }
@@ -11202,8 +11250,8 @@ app.post('/api/auth/registro', async (req, res) => {
       // 2. E-mail novo: Criar restaurante trial
       const hash = await bcrypt.hash(senha, 10);
       masterDb.run(
-        `INSERT INTO restaurantes (nome, licenca, ativo, telefone, dono_nome, dono_telefone, dono_email) VALUES (?, 'trial', 1, ?, ?, ?, ?)`,
-        [restauranteNome, telFormatado, nome, telFormatado, emailClean],
+        `INSERT INTO restaurantes (nome, licenca, ativo, telefone, dono_nome, dono_telefone, dono_email, modalidade) VALUES (?, 'trial', 1, ?, ?, ?, ?, ?)`,
+        [restauranteNome, telFormatado, nome, telFormatado, emailClean, modalidadeClean],
         function (errRest) {
           if (errRest) return res.status(500).json({ success: false, error: 'Erro ao criar restaurante.' });
 
@@ -11235,12 +11283,48 @@ app.post('/api/auth/registro', async (req, res) => {
                     [nome, emailClean, hash, restauranteId, pinHash],
                     (eF) => {
                       if (eF) console.error('[Tenant Init] Erro ao cadastrar dono em funcionarios:', eF.message);
-                      tdbCreated.close(() => resFunc());
+                      // Configurar modalidade no banco do tenant
+                      tdbCreated.run(
+                        `INSERT INTO configuracoes (chave, valor) VALUES ('rest_modalidade', ?)
+                         ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor`,
+                        [modalidadeClean],
+                        () => tdbCreated.close(() => resFunc())
+                      );
                     }
                   );
                 });
                 tenantOk = true;
-                console.log(`✅ [SaaS] Banco do Restaurante #${restauranteId} criado com sucesso em: ${tenantDbPath}`);
+
+                // Provisionar módulos específicos do nicho
+                const modulosNicho = {
+                  a_la_carte:   ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'producao', 'formas_pagamento'],
+                  alacarte:     ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'producao', 'formas_pagamento'],
+                  restaurante:  ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'producao', 'formas_pagamento'],
+                  pizzaria:     ['montaveis', 'reservas', 'fidelidade', 'delivery', 'cardapio_foto', 'producao', 'formas_pagamento'],
+                  hamburgueria: ['montaveis', 'delivery', 'totem', 'cardapio_foto', 'producao', 'formas_pagamento'],
+                  lanchonete:   ['montaveis', 'delivery', 'totem', 'cardapio_foto', 'producao', 'formas_pagamento'],
+                  a_kilo:       ['balanca', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
+                  buffet:       ['balanca', 'reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
+                  bar:          ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
+                  choperia:     ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
+                  pub:          ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
+                  balada:       ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'fila_senhas', 'formas_pagamento'],
+                  sushi:        ['comandas', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
+                  japones:      ['comandas', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
+                  cafeteria:    ['totem', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
+                  doceria:      ['totem', 'fidelidade', 'cardapio_foto', 'formas_pagamento']
+                };
+                const modulosAtivar = modulosNicho[modalidadeClean] || modulosNicho['a_la_carte'];
+                modulosAtivar.forEach(modId => {
+                  masterDb.run(
+                    `INSERT INTO tenant_modulos (restaurante_id, modulo_id, ativo, atualizado_em)
+                     VALUES (?, ?, 1, datetime('now','localtime'))
+                     ON CONFLICT(restaurante_id, modulo_id) DO UPDATE SET ativo = 1, atualizado_em = datetime('now','localtime')`,
+                    [restauranteId, modId], () => {}
+                  );
+                });
+
+                console.log(`✅ [SaaS] Banco do Restaurante #${restauranteId} criado com sucesso (${modalidadeClean}): ${tenantDbPath}`);
               } catch (eDbInit) {
                 console.error('[Tenant Init] FALHA CRÍTICA ao preparar banco do restaurante:', eDbInit);
                 // Rollback: remover usuário e restaurante criados
@@ -11338,8 +11422,48 @@ app.post('/api/auth/registro', async (req, res) => {
   }
 });
 
+// ── Captura de Leads Qualificados dos Sites de Nicho ──
+app.post('/api/leads/nicho', (req, res) => {
+  const { nicho, restaurante_nome, cidade, whatsapp, faturamento_estimado, roi_estimado } = req.body || {};
+  if (!whatsapp) {
+    return res.status(400).json({ ok: false, erro: 'Informe o número de WhatsApp para receber o diagnóstico.' });
+  }
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  masterDb.run(
+    `INSERT INTO leads_nichos (nicho, restaurante_nome, cidade, whatsapp, faturamento_estimado, roi_estimado, ip)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [nicho || 'geral', restaurante_nome || '', cidade || '', whatsapp, faturamento_estimado || '', parseFloat(roi_estimado) || 0, ip],
+    function(err) {
+      if (err) console.error('[Lead Nicho] Erro ao salvar:', err.message);
+      const leadId = this ? this.lastID : 0;
+      const notifData = {
+        id: leadId,
+        nicho: nicho || 'geral',
+        restaurante_nome: restaurante_nome || 'Restaurante Interessado',
+        cidade: cidade || 'Brasil',
+        whatsapp,
+        faturamento_estimado: faturamento_estimado || null,
+        roi_estimado: parseFloat(roi_estimado) || 0,
+        criado_em: getLocalTimestamp()
+      };
+      if (io) {
+        io.emit('novo_lead_nicho', notifData);
+        io.to('super_admin').emit('novo_lead_vendas', notifData);
+      }
+      console.log(`🎯 [Lead Nicho] Novo lead capturado (${nicho}): ${restaurante_nome || 'Sem nome'} | Wpp: ${whatsapp}`);
+      return res.json({ ok: true, lead_id: leadId, mensagem: 'Diagnóstico gerado com sucesso!' });
+    }
+  );
+});
 
-// ═══════════════════════════════════════════════════════════════
+app.get('/api/leads/nicho', (req, res) => {
+  masterDb.all(`SELECT * FROM leads_nichos ORDER BY id DESC LIMIT 50`, (err, rows) => {
+    if (err) return res.status(500).json({ ok: false, erro: err.message });
+    res.json({ ok: true, leads: rows || [] });
+  });
+});
+
+
 // PAINEL DO DONO — SOCKET HANDLERS (Controle Remoto & RH)
 // ═══════════════════════════════════════════════════════════════
 io.on('connection', (socket) => {
@@ -11770,7 +11894,14 @@ const FUNCOES_MODULOS = [
   { chave: 'crm_whatsapp_ia', nome: 'WhatsApp CRM & Reativação por IA', desc: 'Piloto automático para reconquistar clientes inativos, felicitar aniversariantes e pós-venda NPS.', icone: 'ph-robot', categorias: ['Marketing', 'Vendas'], preco: 'R$ 99/mês', roi: 'Reativa de 20 a 50 clientes sumidos por mês', badge: 'IA Lucrativa' },
   { chave: 'clube_assinaturas', nome: 'Clube de Assinaturas & Fidelidade VIP', desc: 'Criação de planos de mensalidade (Chopp, Pizza, Executivo VIP) com receita recorrente garantida.', icone: 'ph-crown', categorias: ['Vendas', 'Marketing'], preco: 'R$ 79/mês', roi: 'Garante faturamento fixo antes do mês começar', badge: 'Receita Recorrente' },
   { chave: 'auditor_cartoes', nome: 'Auditor de Taxas de Cartão & Conciliador', desc: 'Audita taxas de adquirentes (Stone, Cielo, Rede) e recupera cobranças divergentes de MDR.', icone: 'ph-credit-card', categorias: ['Financeiro'], preco: 'R$ 99/mês', roi: 'Recupera de R$ 300 a R$ 2.000 cobrados a mais', badge: 'Recupere Dinheiro' },
-  { chave: 'gamificacao_gorjetas', nome: 'Gamificação do Salão & Rateio Gorjetas', desc: 'Leaderboard de vendas em tempo real para garçons e divisão da taxa de serviço (Lei 13.419).', icone: 'ph-trophy', categorias: ['Gestão', 'Equipe'], preco: 'R$ 59/mês', roi: '+18% no ticket médio e zero passivo trabalhista', badge: 'Mais Vendido' }
+  { chave: 'gamificacao_gorjetas', nome: 'Gamificação do Salão & Rateio Gorjetas', desc: 'Leaderboard de vendas em tempo real para garçons e divisão da taxa de serviço (Lei 13.419).', icone: 'ph-trophy', categorias: ['Gestão', 'Equipe'], preco: 'R$ 59/mês', roi: '+18% no ticket médio e zero passivo trabalhista', badge: 'Mais Vendido' },
+  { chave: 'roteirizador_entregas_tsp', nome: 'Roteirizador de Entregas TSP & Rastreio ao Vivo', desc: 'Otimizador de rotas com algoritmo TSP, despacho em lote e link de rastreio ao vivo para WhatsApp.', icone: 'ph-navigation-arrow', categorias: ['Delivery', 'Operação'], preco: 'R$ 69/mês', roi: '-35% em combustível e fim do cliente cobrando status', badge: 'Economia' },
+  { chave: 'seat_ordering', nome: 'Comanda por Assento & Split Instantâneo', desc: 'Organização de pedidos por cadeira/pessoa e fechamento parcial com Pix em 1 clique sem confusão.', icone: 'ph-chair', categorias: ['Operação', 'Vendas'], preco: 'R$ 49/mês', roi: 'Zera tempo de fechamento em mesas de 10+ pessoas', badge: 'Agilidade' },
+  { chave: 'bar_guardiao_chopp', nome: 'Guardião do Bar & Doses de Chopp', desc: 'Controle milimétrico de volume de barris (50L/30L), copos servidos, sangrias e prevenção de perdas.', icone: 'ph-beer-bottle', categorias: ['Operação', 'Financeiro'], preco: 'R$ 69/mês', roi: 'Economiza até R$ 2.500/mês em chopp não faturado', badge: 'Anti-Perda' },
+  { chave: 'cardapio_multilingue_i18n', nome: 'Cardápio Multilíngue Turístico por IA', desc: 'Tradução gastronômica automática para 5 idiomas (EN, ES, FR, DE, ZH) e filtro de alérgenos.', icone: 'ph-translate', categorias: ['Vendas', 'Marketing'], preco: 'R$ 59/mês', roi: '+40% de conversão de clientes estrangeiros', badge: 'Internacional' },
+  { chave: 'totem_fastpass', nome: 'Totem Fast-Pass & Reconhecimento VIP', desc: 'Identificação por CPF/QR Code com repetição do combo habitual em 1 toque e Pix dinâmico.', icone: 'ph-lightning', categorias: ['Hardware', 'Vendas'], preco: 'R$ 89/mês', roi: 'Reduz fila de autoatendimento de 90s para 15s', badge: 'Fast-Track' },
+  { chave: 'backup_nuvem_blindado', nome: 'Sentinela de Backup Criptografado em Nuvem', desc: 'Disaster recovery diário com AES-256 às 04:00, verificação de integridade e restore em 1 clique.', icone: 'ph-shield-check', categorias: ['Gestão', 'Segurança'], preco: 'R$ 49/mês', roi: 'Proteção blindada contra queima de HD ou perdas', badge: 'Segurança' },
+  { chave: 'menu_engenharia_lucro', nome: 'Engenharia de Cardápio BCG (Kasavana & Smith)', desc: 'Matriz analítica de Estrelas, Burros de Carga, Quebra-Cabeças e Cães para maximizar margem.', icone: 'ph-chart-polar', categorias: ['Inteligência', 'Financeiro'], preco: 'R$ 89/mês', roi: '+12% a +22% no lucro líquido do cardápio', badge: 'Margem Máxima' }
 ];
 
 // Config de ativação de cada módulo (restaurante liga/desliga; padrão ligado quando disponível)

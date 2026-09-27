@@ -21,15 +21,24 @@ try { bcrypt = require('bcrypt'); } catch(e) {}
 const EMERGENCY_STATE_PATH = path.join(__dirname, '..', 'emergency_state.json');
 
 const MODALIDADE_MODULOS = {
-  a_la_carte:  ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'producao', 'formas_pagamento'],
-  pizzaria:    ['montaveis', 'reservas', 'fidelidade', 'delivery', 'cardapio_foto', 'producao', 'formas_pagamento'],
-  a_kilo:      ['balanca', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
-  buffet:      ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
-  lanchonete:  ['montaveis', 'delivery', 'totem', 'cardapio_foto', 'producao', 'formas_pagamento'],
-  bar:         ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
-  balada:      ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'fila_senhas', 'formas_pagamento'],
-  quiosque:    ['totem', 'fila_senhas', 'cardapio_foto', 'formas_pagamento'],
-  eventos:     ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'producao', 'formas_pagamento'],
+  a_la_carte:   ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'producao', 'formas_pagamento'],
+  alacarte:     ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'producao', 'formas_pagamento'],
+  restaurante:  ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'producao', 'formas_pagamento'],
+  pizzaria:     ['montaveis', 'reservas', 'fidelidade', 'delivery', 'cardapio_foto', 'producao', 'formas_pagamento'],
+  hamburgueria: ['montaveis', 'delivery', 'totem', 'cardapio_foto', 'producao', 'formas_pagamento'],
+  lanchonete:   ['montaveis', 'delivery', 'totem', 'cardapio_foto', 'producao', 'formas_pagamento'],
+  a_kilo:       ['balanca', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
+  buffet:       ['balanca', 'reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
+  bar:          ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
+  choperia:     ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
+  pub:          ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
+  balada:       ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'fila_senhas', 'formas_pagamento'],
+  sushi:        ['comandas', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
+  japones:      ['comandas', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
+  cafeteria:    ['totem', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
+  doceria:      ['totem', 'fidelidade', 'cardapio_foto', 'formas_pagamento'],
+  quiosque:     ['totem', 'fila_senhas', 'cardapio_foto', 'formas_pagamento'],
+  eventos:      ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'producao', 'formas_pagamento'],
 };
 
 module.exports = function(app, masterDb, sqlite3, options) {

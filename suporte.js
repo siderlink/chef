@@ -519,7 +519,7 @@ function trocarTabPortalAfiliado(tab) {
   var target = document.getElementById('afil-view-' + tab);
   if (target) target.style.display = 'block';
 
-  var tabs = ['carreira', 'links', 'pitchs', 'calculadora', 'metas', 'vendas'];
+  var tabs = ['carreira', 'links', 'pitchs', 'assistente-ia', 'calculadora', 'metas', 'vendas'];
   tabs.forEach(function(t) {
     var btn = document.getElementById('tab-btn-' + t);
     if (!btn) return;
@@ -3435,3 +3435,193 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, 1000);
 });
+
+async function carregarImplementacoesSuporte() {
+  const box = document.getElementById('implementacoes-suporte-body');
+  if (!box) return;
+  box.innerHTML = '<span style="color:var(--text-muted);">Carregando implementações...</span>';
+
+  try {
+    const res = await fetch('/api/suporte/implementacoes', {
+      headers: { 'Authorization': 'Bearer ' + _supToken }
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      box.innerHTML = '<span style="color:var(--danger);">' + (data.erro || 'Erro ao carregar.') + '</span>';
+      return;
+    }
+
+    const impls = data.implementacoes || [];
+    if (impls.length === 0) {
+      box.innerHTML = '<span style="color:var(--text-muted);">Nenhuma implementação solicitada no momento.</span>';
+      return;
+    }
+
+    box.innerHTML = impls.map(i => {
+      let statusColor = '#94a3b8';
+      let statusText = i.status || 'solicitada';
+      if (statusText === 'solicitada') statusColor = '#f59e0b';
+      if (statusText === 'em_implementacao') statusColor = '#3b82f6';
+      if (statusText === 'implementada') statusColor = '#10b981';
+      if (statusText === 'recusada') statusColor = '#ef4444';
+
+      return `
+        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; padding:1.2rem;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.8rem;">
+            <strong style="color:#fff; font-size:1.1rem;">${escH(i.feature)}</strong>
+            <span style="font-size:0.75rem; background:${statusColor}22; color:${statusColor}; padding:4px 8px; border-radius:6px; font-weight:700; text-transform:uppercase;">${statusText.replace('_', ' ')}</span>
+          </div>
+          <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">
+            <strong>Restaurante:</strong> ${escH(i.restaurante_nome || 'ID ' + i.restaurante_id)}<br>
+            <strong>Mensagem/Observação:</strong> ${escH(i.mensagem || 'Sem observações')}
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            ${statusText === 'solicitada' ? `
+              <button class="btn btn-sm" style="background:#3b82f6; color:#fff;" onclick="salvarStatusImplementacao(${i.id}, 'em_implementacao')">Assumir Implementação</button>
+              <button class="btn btn-sm" style="background:#ef4444; color:#fff;" onclick="salvarStatusImplementacao(${i.id}, 'recusada')">Recusar</button>
+            ` : ''}
+            ${statusText === 'em_implementacao' ? `
+              <button class="btn btn-sm" style="background:#10b981; color:#fff;" onclick="salvarStatusImplementacao(${i.id}, 'implementada')">Marcar como Concluída</button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error(err);
+    box.innerHTML = '<span style="color:var(--danger);">Erro de conexão.</span>';
+  }
+}
+
+async function salvarStatusImplementacao(id, status) {
+  try {
+    const res = await fetch('/api/suporte/implementacoes/acao', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _supToken },
+      body: JSON.stringify({ id, status })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      mostrarToastSuporte('Status atualizado!', 'success');
+      carregarImplementacoesSuporte();
+    } else {
+      alert(data.erro || 'Erro ao atualizar.');
+    }
+  } catch (err) {
+    alert('Erro de conexão: ' + err.message);
+  }
+}
+
+
+
+// -----------------------------------------------------
+// VORTEX.AI - ASSISTENTE DE VENDAS
+// -----------------------------------------------------
+async function enviarMensagemIA() {
+  const inputEl = document.getElementById('ia-chat-input');
+  const historyEl = document.getElementById('ia-chat-history');
+  if (!inputEl || !historyEl) return;
+
+  const texto = inputEl.value.trim();
+  if (!texto) return;
+
+  // Render User Message
+  historyEl.innerHTML += `
+    <div style="align-self:flex-end; max-width:85%; background:rgba(0, 242, 254, 0.15); border:1px solid rgba(0, 242, 254, 0.3); border-radius:12px 0 12px 12px; padding:1rem;">
+      <p style="margin:0; font-size:0.9rem; line-height:1.5; color:#fff;">${escH(texto)}</p>
+    </div>
+  `;
+  
+  inputEl.value = '';
+  
+  // Create message bubble container for streaming AI reply
+  const msgId = 'ia-msg-' + Date.now();
+  historyEl.innerHTML += `
+    <div id="${msgId}" style="align-self:flex-start; max-width:85%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0 12px 12px 12px; padding:1rem;">
+      <p id="${msgId}-content" style="margin:0; font-size:0.9rem; line-height:1.5; color:#fff; white-space:pre-wrap;">
+        <i class="fa-solid fa-circle-notch fa-spin" style="color:#00f2fe; font-size:0.8rem; margin-right:5px;"></i>
+        <span style="font-size:0.8rem; color:var(--text-muted); font-style:italic;">Vortex está digitando...</span>
+      </p>
+    </div>
+  `;
+  historyEl.scrollTop = historyEl.scrollHeight;
+
+  try {
+    const sysPrompt = "Você é o Vortex, um mentor de vendas agressivo, persuasivo e altamente focado em quebrar objeções no mercado B2B de restaurantes (sistemas PDV, KDS, autoatendimento). O usuário vai te mandar uma objeção ou fala do dono do restaurante. Você deve retornar: 1) Qual é a verdadeira dor por trás da objeção; 2) O script exato (o que o vendedor deve falar) para contornar e fechar. Seja direto, confiante e use gatilhos mentais. Não seja prolixo. Formate com markdown.";
+    
+    // Antigravity AI Endpoint
+    const url = "http://localhost:20128/v1/chat/completions";
+    const apiKey = "sk-6dd285069ee60c6b-fcf00a-fe2a0f79";
+    
+    const body = {
+      model: "gpt-4o",
+      stream: true,
+      messages: [
+        { role: "system", content: sysPrompt },
+        { role: "user", content: texto }
+      ]
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + apiKey
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      throw new Error('Erro HTTP: ' + res.status);
+    }
+
+    const contentEl = document.getElementById(msgId + '-content');
+    contentEl.innerHTML = ''; // clear loading
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let aiText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+      
+      for (const line of lines) {
+        if (line.trim().startsWith('data: ')) {
+          const dataStr = line.replace(/^data: /, '').trim();
+          if (dataStr === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(dataStr);
+            const delta = parsed.choices[0].delta.content;
+            if (delta) {
+              aiText += delta;
+              
+              // Process markdown bold & italic progressively
+              let formatted = escH(aiText)
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+                
+              contentEl.innerHTML = formatted;
+              historyEl.scrollTop = historyEl.scrollHeight;
+            }
+          } catch (e) {
+            // ignore partial json chunk parsing errors
+          }
+        }
+      }
+    }
+
+  } catch (e) {
+    historyEl.innerHTML += `
+      <div style="align-self:flex-start; max-width:85%; background:rgba(239, 68, 68, 0.15); border:1px solid rgba(239, 68, 68, 0.3); border-radius:0 12px 12px 12px; padding:1rem;">
+        <p style="margin:0; font-size:0.9rem; line-height:1.5; color:#fca5a5;">Erro ao se conectar ao Vortex. Detalhes: ${e.message}</p>
+      </div>
+    `;
+    historyEl.scrollTop = historyEl.scrollHeight;
+  }
+}

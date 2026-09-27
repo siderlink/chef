@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>KDS Expedição e Produção</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/theme-manager.js?v=20260901paletas"></script>
+  <script src="/socket.io.min.js"></script>
+
+  <style>
+    :root {
+      --kds-bg: #0f172a;
+      --kds-card: #1e293b;
+      --kds-border: #334155;
+      --kds-text: #f8fafc;
+      --kds-muted: #94a3b8;
+      --kds-primary: #3b82f6;
+      --kds-primary-hover: #2563eb;
+      --kds-success: #10b981;
+      --kds-success-bg: rgba(16, 185, 129, 0.15);
+      --kds-danger: #ef4444;
+      --kds-danger-bg: rgba(239, 68, 68, 0.15);
+      --kds-warning: #f59e0b;
+      --kds-warning-bg: rgba(245, 158, 11, 0.15);
+    }
+
+    body {
+      background: var(--kds-bg);
+      color: var(--kds-text);
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* HEADER */
+    .kds-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: var(--kds-card);
+      border-bottom: 1px solid var(--kds-border);
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-title h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #60a5fa, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-clock {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--kds-text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .header-tabs {
+      display: flex;
+      gap: 8px;
+      background: #0f172a;
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid var(--kds-border);
+    }
+
+    .kds-tab {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--kds-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .kds-tab i {
+      font-size: 18px;
+    }
+
+    .kds-tab.active {
+      background: var(--kds-primary);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .kds-tab:not(.active):hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--kds-text);
+    }
+
+    /* MAIN CONTENT AREA */
+    .kds-workspace {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .kds-view {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 24px;
+      display: none;
+      overflow-y: auto;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .kds-view.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* -------------------------------------
+       VIEW: AGRUPADOR DE PRODUÇÃO (LOTE)
+       ------------------------------------- */
+    .production-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .prod-card {
+      background: var(--kds-card);
+      border: 1px solid var(--kds-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .prod-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .prod-info h3 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .prod-info p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--kds-muted);
+    }
+
+    .prod-qty {
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--kds-warning);
+      background: var(--kds-warning-bg);
+      padding: 8px 16px;
+      border-radius: 12px;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    /* -------------------------------------
+       VIEW: EXPEDIÇÃO (PASS)
+       ------------------------------------- */
+    .pass-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+      align-items: start;
+    }
+
+    .ticket {
+      background: var(--kds-card);
+      border: 1px solid var(--kds-border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+      position: relative;
+    }
+
+    .ticket-header {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 16px;
+      border-bottom: 1px solid var(--kds-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .ticket-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0 0 4px 0;
+    }
+
+    .ticket-meta {
+      font-size: 13px;
+      color: var(--kds-muted);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ticket-timer {
+      font-size: 16px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .ticket-timer.urgent {
+      background: var(--kds-danger-bg);
+      color: var(--kds-danger);
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .ticket-items {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ticket-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 12px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .ticket-item:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .ticket-item.done {
+      background: var(--kds-success-bg);
+      border-color: rgba(16, 185, 129, 0.3);
+      opacity: 0.7;
+    }
+    
+    .ticket-item.done .item-name {
+      text-decoration: line-through;
+      color: var(--kds-success);
+    }
+
+    .item-name {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .item-qty {
+      background: var(--kds-border);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .ticket-footer {
+      padding: 16px;
+      border-top: 1px solid var(--kds-border);
+    }
+
+    .btn-despachar {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--kds-border);
+      color: var(--kds-muted);
+      pointer-events: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Ativo apenas quando todos os itens estão .done */
+    .ticket.ready .btn-despachar {
+      background: var(--kds-success);
+      color: #fff;
+      pointer-events: auto;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+    }
+
+    .ticket.ready .btn-despachar:hover {
+      background: #059669;
+      transform: translateY(-2px);
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--kds-border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+
+<body>
+
+  <header class="kds-header">
+    <div class="header-title">
+      <i class="ph-fill ph-monitor-play" style="font-size: 28px; color: #60a5fa;"></i>
+      <div>
+        <h1>Maestro KDS</h1>
+        <div style="font-size: 12px; color: var(--kds-muted); font-weight: 600;">Expedição & Agrupador</div>
+      </div>
+    </div>
+
+    <div class="header-tabs">
+      <div class="kds-tab active" data-target="view-producao">
+        <i class="ph-bold ph-cooking-pot"></i> Produção Lote
+      </div>
+      <div class="kds-tab" data-target="view-expedicao">
+        <i class="ph-bold ph-tray"></i> Pass (Expedição)
+      </div>
+    </div>
+
+    <div class="header-clock" id="kds-clock">00:00:00</div>
+  </header>
+
+  <main class="kds-workspace">
+    <!-- VIEW: PRODUÇÃO EM LOTE -->
+    <div id="view-producao" class="kds-view active">
+      <div class="production-grid" id="production-grid">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+
+    <!-- VIEW: PASS / EXPEDIÇÃO -->
+    <div id="view-expedicao" class="kds-view">
+      <div class="pass-grid" id="pass-grid">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </main>
+
+  <script src="/kds-expedicao.js"></script>
+</body>
+
+</html>

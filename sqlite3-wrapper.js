@@ -75,6 +75,9 @@ class SQLite3Wrapper {
   }
 
   _parseArgs(args) {
+    while (args.length > 1 && args[args.length - 1] === undefined) {
+      args.pop();
+    }
     let sql = args[0];
     let params = [];
     let callback = null;

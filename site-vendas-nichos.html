@@ -1,0 +1,2448 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chef Cozinha — Soluções Especializadas para o Seu Nicho Gastronômico</title>
+  <meta name="description" content="O sistema de gestão e PDV moldado para as necessidades reais do seu nicho: Pizzarias, Hamburguerias, Bares, Buffets, Sushi, Cafeterias e Alta Gastronomia. Teste 14 dias grátis sem cartão!">
+  <meta name="keywords" content="sistema para pizzaria, sistema para hamburgueria, sistema para bares, sistema para self-service balança, sistema rodizio japones, sistema cafeteria, chef cozinha">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#fc4b15">
+
+  <link rel="icon" href="/icons/icon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+
+  <style>
+    :root {
+      --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      
+      --primary: #fc4b15;
+      --primary-hover: #e03e09;
+      --primary-glow: rgba(252, 75, 21, 0.35);
+
+      --bg-base: #07090e;
+      --bg-surface: #0f141f;
+      --bg-card: #151c2c;
+      --bg-elevated: #1e273d;
+      
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-faint: #64748b;
+      
+      --accent-green: #10b981;
+      --accent-gold: #f59e0b;
+      --accent-blue: #3b82f6;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-pill: 9999px;
+    }
+
+    [data-theme="light"] {
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-elevated: #f1f5f9;
+      --border-subtle: rgba(15, 23, 42, 0.08);
+      --border-strong: rgba(15, 23, 42, 0.16);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-faint: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      line-height: 1.6;
+      overflow-x: hidden;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* Scrollbar personalizada */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-base);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-elevated);
+      border-radius: var(--radius-pill);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* TOP BAR NAVEGAÇÃO */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      background: rgba(7, 9, 14, 0.85);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    [data-theme="light"] .header {
+      background: rgba(255, 255, 255, 0.9);
+    }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+      gap: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.3rem;
+      letter-spacing: -0.02em;
+    }
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), #ff7a45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 22px;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 22px;
+      border-radius: var(--radius-pill);
+      font-family: var(--font-body);
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 18px var(--primary-glow);
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px var(--primary-glow);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-main);
+      border-color: var(--border-strong);
+    }
+    .btn-ghost:hover {
+      background: var(--bg-elevated);
+      border-color: var(--text-muted);
+    }
+    .btn-whatsapp {
+      background: #25d366;
+      color: white;
+      box-shadow: 0 4px 16px rgba(37, 211, 102, 0.3);
+    }
+    .btn-whatsapp:hover {
+      background: #1eb857;
+      transform: translateY(-2px);
+    }
+
+    .theme-toggle-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.2s;
+    }
+    .theme-toggle-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* SELETOR HORIZONTAL DE NICHOS */
+    .niche-nav-bar {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 0;
+      position: sticky;
+      top: 72px;
+      z-index: 90;
+      backdrop-filter: blur(12px);
+    }
+    .niche-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .niche-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .niche-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .niche-pill:hover {
+      border-color: var(--border-strong);
+      color: var(--text-main);
+      background: var(--bg-elevated);
+    }
+    .niche-pill.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+    .niche-pill i {
+      font-size: 1.1rem;
+    }
+
+    /* HERO SECTION */
+    .hero {
+      padding: 64px 0 48px;
+      position: relative;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 48px;
+      align-items: center;
+    }
+    @media (max-width: 960px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 36px;
+      }
+    }
+
+    .hero-badge-niche {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      background: rgba(252, 75, 21, 0.12);
+      border: 1px solid rgba(252, 75, 21, 0.35);
+      color: var(--primary);
+      font-size: 0.84rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 20px;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      color: var(--text-main);
+    }
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 2.3rem;
+      }
+    }
+
+    .hero-subtitle {
+      font-size: 1.14rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      margin-bottom: 32px;
+      max-width: 620px;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .trust-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      color: var(--text-faint);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .trust-badge-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .trust-badge-item i {
+      color: var(--accent-green);
+      font-size: 1rem;
+    }
+
+    /* SIMULADOR INTERATIVO DE ROI */
+    .simulator-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+    .simulator-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--accent-green));
+    }
+    .simulator-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .simulator-header h3 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .simulator-badge {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-green);
+      font-size: 0.78rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .range-group {
+      margin-bottom: 22px;
+    }
+    .range-label-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .range-val-highlight {
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 1.05rem;
+    }
+    .range-slider {
+      width: 100%;
+      height: 6px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-elevated);
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+    .range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .range-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    .simulator-result-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      text-align: center;
+      margin-top: 24px;
+    }
+    .simulator-result-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-faint);
+      margin-bottom: 6px;
+    }
+    .simulator-result-val {
+      font-family: var(--font-display);
+      font-size: 2.3rem;
+      font-weight: 900;
+      color: var(--accent-green);
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    .simulator-result-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* SEÇÃO DE PILARES / CARDS */
+    .section-pillars {
+      padding: 60px 0;
+    }
+    .section-header {
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto 48px;
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 2.3rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+      color: var(--text-main);
+    }
+    .section-desc {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+    }
+
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+    .pillar-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .pillar-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    }
+    .pillar-icon-box {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-subtle);
+    }
+    .pillar-card h4 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 12px;
+    }
+    .pillar-card p {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    /* COMPARATIVO DE MERCADO */
+    .section-comparison {
+      padding: 60px 0;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .comparison-table-wrapper {
+      overflow-x: auto;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+    }
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+    .comparison-table th, .comparison-table td {
+      padding: 16px 20px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .comparison-table th {
+      font-family: var(--font-display);
+      font-weight: 800;
+      background: var(--bg-elevated);
+      color: var(--text-main);
+      font-size: 0.95rem;
+    }
+    .comparison-table th.col-highlight {
+      background: rgba(252, 75, 21, 0.12);
+      color: var(--primary);
+      border-left: 1px solid var(--primary);
+      border-right: 1px solid var(--primary);
+    }
+    .comparison-table td.col-highlight {
+      background: rgba(252, 75, 21, 0.04);
+      border-left: 1px solid rgba(252, 75, 21, 0.2);
+      border-right: 1px solid rgba(252, 75, 21, 0.2);
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .check-yes {
+      color: var(--accent-green);
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .check-no {
+      color: var(--text-faint);
+      opacity: 0.6;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* DEPOIMENTO DO NICHO */
+    .testimonial-box {
+      background: linear-gradient(135deg, var(--bg-card), var(--bg-elevated));
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 40px 36px;
+      margin: 60px 0;
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 28px;
+      align-items: center;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2);
+    }
+    @media (max-width: 680px) {
+      .testimonial-box {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      .testimonial-avatar {
+        margin: 0 auto;
+      }
+    }
+    .testimonial-avatar {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent-gold));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      color: white;
+      box-shadow: 0 4px 16px var(--primary-glow);
+    }
+    .testimonial-quote {
+      font-size: 1.15rem;
+      font-style: italic;
+      color: var(--text-main);
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+    .testimonial-author {
+      font-weight: 800;
+      color: var(--text-main);
+      font-size: 1rem;
+    }
+    .testimonial-business {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .testimonial-badge-verified {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.78rem;
+      color: var(--accent-green);
+      font-weight: 700;
+      margin-left: 8px;
+    }
+
+    /* FAQ DO NICHO */
+    .section-faq {
+      padding: 60px 0;
+    }
+    .faq-list {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .faq-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+    .faq-question {
+      padding: 18px 22px;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+    .faq-question:hover {
+      color: var(--primary);
+    }
+    .faq-answer {
+      padding: 0 22px 18px;
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      display: none;
+    }
+    .faq-item.open .faq-answer {
+      display: block;
+    }
+    .faq-item.open .faq-question i {
+      transform: rotate(180deg);
+    }
+    .faq-question i {
+      transition: transform 0.2s;
+    }
+
+    /* CTA FINAL */
+    .cta-final-box {
+      background: radial-gradient(circle at top, var(--bg-card), var(--bg-surface));
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 60px 32px;
+      text-align: center;
+      margin-bottom: 80px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    }
+    .cta-final-box h2 {
+      font-family: var(--font-display);
+      font-size: 2.6rem;
+      font-weight: 900;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+    .cta-final-box p {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 640px;
+      margin: 0 auto 32px;
+    }
+
+    /* FOOTER */
+    .footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 40px 0;
+      background: var(--bg-surface);
+      color: var(--text-faint);
+      font-size: 0.88rem;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .footer-links {
+      display: flex;
+      gap: 18px;
+    }
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+
+    /* BARRA FIXA MOBILE */
+    .mobile-bottom-bar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 20, 31, 0.95);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border-subtle);
+      padding: 12px 16px;
+      z-index: 1000;
+    }
+    @media (max-width: 768px) {
+      .mobile-bottom-bar {
+        display: flex;
+        gap: 10px;
+      }
+      body {
+        padding-bottom: 74px;
+      }
+    }
+
+    /* SHOWCASE INTERATIVO DE DISPOSITIVOS */
+    .section-devices {
+      padding: 60px 0;
+    }
+    .device-showcase {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+    }
+    .device-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .device-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .device-dots .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+    .device-views-selector {
+      display: flex;
+      gap: 6px;
+      background: var(--bg-surface);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+    }
+    .device-view-btn {
+      padding: 7px 16px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .device-view-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 8px var(--primary-glow);
+    }
+    .device-status-badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .device-screen-body {
+      padding: 24px;
+      min-height: 380px;
+      background: var(--bg-base);
+    }
+    .mock-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 768px) {
+      .mock-grid-2 { grid-template-columns: 1fr; }
+    }
+    .mock-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 18px;
+      text-align: left;
+    }
+    .mock-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+    .mock-badge {
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .mock-badge-warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .mock-badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .mock-badge-primary { background: rgba(252, 75, 21, 0.15); color: var(--primary); }
+    .mock-badge-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .mock-item-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--border-subtle);
+    }
+    .mock-item-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      padding-left: 10px;
+    }
+    .mock-btn-action {
+      margin-top: 14px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: default;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+    .mock-btn-forno { background: rgba(252, 75, 21, 0.2); color: var(--primary); border: 1px solid var(--primary); }
+    .mock-btn-concluir { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+
+    /* DIAGNÓSTICO / LEAD FORM */
+    .lead-diag-box {
+      background: linear-gradient(135deg, rgba(252, 75, 21, 0.06), rgba(16, 185, 129, 0.04));
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 40px 32px;
+      margin: 40px auto 70px;
+      max-width: 940px;
+      text-align: left;
+    }
+    .lead-diag-header {
+      margin-bottom: 24px;
+    }
+    .lead-diag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-green);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .lead-diag-header h3 {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+    .lead-diag-header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+    .lead-diag-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 14px;
+      align-items: end;
+    }
+    @media (max-width: 900px) {
+      .lead-diag-form {
+        grid-template-columns: 1fr;
+      }
+    }
+    .lead-input-group label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .lead-input-group input {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .lead-input-group input:focus {
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="brand">
+        <div class="brand-icon">
+          <i class="ph-bold ph-cooking-pot"></i>
+        </div>
+        <span>Chef Cozinha</span>
+      </a>
+
+      <div class="header-actions">
+        <a href="/site-vendas.html" class="btn btn-ghost" style="font-size:0.85rem;">
+          <i class="ph-bold ph-squares-four"></i> Visão Geral
+        </a>
+        <button class="theme-toggle-btn" onclick="toggleTema()" title="Alternar Modo Claro / Escuro">
+          <i class="ph-bold ph-sun" id="theme-icon"></i>
+        </button>
+        <a href="/registro.html" class="btn btn-primary">
+          <i class="ph-bold ph-rocket-launch"></i> Testar 14 Dias Grátis
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- NICHES SELECTOR BAR -->
+  <nav class="niche-nav-bar">
+    <div class="container">
+      <div class="niche-scroll" id="niche-nav-list">
+        <button class="niche-pill active" onclick="selecionarNicho('pizzaria')">
+          <i class="ph-fill ph-pizza"></i> Pizzarias & Delivery
+        </button>
+        <button class="niche-pill" onclick="selecionarNicho('hamburgueria')">
+          <i class="ph-fill ph-hamburger"></i> Hamburguerias & Fast-Food
+        </button>
+        <button class="niche-pill" onclick="selecionarNicho('bar')">
+          <i class="ph-fill ph-beer-bottle"></i> Bares, Choperias & Pubs
+        </button>
+        <button class="niche-pill" onclick="selecionarNicho('buffet')">
+          <i class="ph-fill ph-scales"></i> Buffets & Self-Service (Balança)
+        </button>
+        <button class="niche-pill" onclick="selecionarNicho('sushi')">
+          <i class="ph-fill ph-fish"></i> Sushi & Rodízios Japoneses
+        </button>
+        <button class="niche-pill" onclick="selecionarNicho('cafeteria')">
+          <i class="ph-fill ph-coffee"></i> Cafeterias & Docerias
+        </button>
+        <button class="niche-pill" onclick="selecionarNicho('alacarte')">
+          <i class="ph-fill ph-wine"></i> À La Carte & Alta Gastronomia
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <!-- HERO SECTION DINÂMICA -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-grid">
+          <div>
+            <div class="hero-badge-niche" id="niche-badge">
+              <i class="ph-fill ph-pizza"></i> Solução Sob Medida para Pizzarias
+            </div>
+            <h1 class="hero-title" id="niche-title">
+              Pare de Dar 27% do Seu Faturamento para Aplicativos de Entrega.
+            </h1>
+            <p class="hero-subtitle" id="niche-subtitle">
+              Cardápio próprio sem taxas com meio a meio configurável, impressão automática no forno, comanda mobile e roteirizador TSP que economiza até 35% no custo de combustível dos seus motoboys.
+            </p>
+
+            <div class="hero-cta-group">
+              <a href="/registro.html" class="btn btn-primary" style="padding: 15px 32px; font-size: 1.05rem;">
+                <i class="ph-bold ph-lightning"></i> Iniciar Teste Grátis de 14 Dias
+              </a>
+              <a href="#" id="btn-whatsapp-nicho" target="_blank" class="btn btn-whatsapp" style="padding: 15px 24px; font-size: 1.05rem;">
+                <i class="ph-bold ph-whatsapp-logo"></i> Falar com Especialista
+              </a>
+            </div>
+
+            <div class="trust-badges">
+              <div class="trust-badge-item">
+                <i class="ph-fill ph-check-circle"></i> Sem cartão de crédito
+              </div>
+              <div class="trust-badge-item">
+                <i class="ph-fill ph-check-circle"></i> Funciona 100% Offline
+              </div>
+              <div class="trust-badge-item">
+                <i class="ph-fill ph-check-circle"></i> Migração grátis de cardápio
+              </div>
+            </div>
+          </div>
+
+          <!-- SIMULADOR DINÂMICO DE ROI -->
+          <div>
+            <div class="simulator-card">
+              <div class="simulator-header">
+                <h3 id="sim-title">Simulador de Economia Mensal</h3>
+                <span class="simulator-badge"><i class="ph-bold ph-chart-line-up"></i> ROI Instantâneo</span>
+              </div>
+
+              <div class="range-group">
+                <div class="range-label-row">
+                  <span id="sim-range1-label">Pizzas vendidas por mês:</span>
+                  <span class="range-val-highlight" id="sim-range1-val">1.200 un</span>
+                </div>
+                <input type="range" class="range-slider" id="sim-slider1" min="200" max="4000" step="50" value="1200" oninput="calcularROI()">
+              </div>
+
+              <div class="range-group">
+                <div class="range-label-row">
+                  <span id="sim-range2-label">Ticket médio por pedido:</span>
+                  <span class="range-val-highlight" id="sim-range2-val">R$ 68,00</span>
+                </div>
+                <input type="range" class="range-slider" id="sim-slider2" min="20" max="300" step="5" value="68" oninput="calcularROI()">
+              </div>
+
+              <div class="simulator-result-box">
+                <div class="simulator-result-label" id="sim-result-label">Economia Estimada no Bolso / Mês</div>
+                <div class="simulator-result-val" id="sim-result-val">R$ 8.812,00</div>
+                <div class="simulator-result-desc" id="sim-result-desc">
+                  Redução de taxas de marketplace + economia no combustível com roteirizador de motoboys.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OS 4 PILARES DO NICHO -->
+    <section class="section-pillars">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title" id="pillars-heading">As Ferramentas Pensadas Exatamente para Sua Rotina</h2>
+          <p class="section-desc" id="pillars-subheading">Desenvolvemos cada tela no calor da operação para resolver os gargalos reais do seu segmento.</p>
+        </div>
+
+        <div class="pillars-grid" id="pillars-container">
+          <!-- Injetado dinamicamente via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SHOWCASE INTERATIVO DE TELAS & HARDWARE DO NICHO -->
+    <section class="section-devices">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title" id="showcase-heading">Como Funciona na Rotina do Seu Estabelecimento</h2>
+          <p class="section-desc" id="showcase-subheading">Veja os fluxos visuais que sua equipe e clientes vão usar para acelerar a operação e zerar erros.</p>
+        </div>
+
+        <div class="device-showcase">
+          <div class="device-header-bar">
+            <div class="device-dots">
+              <span class="dot dot-red"></span>
+              <span class="dot dot-yellow"></span>
+              <span class="dot dot-green"></span>
+            </div>
+            <div class="device-views-selector">
+              <button type="button" class="device-view-btn active" id="btn-view-1" onclick="alternarVisaoDispositivo(1)">
+                <span id="tab-v1-label"><i class="ph-bold ph-cooking-pot"></i> Tela de Produção / KDS</span>
+              </button>
+              <button type="button" class="device-view-btn" id="btn-view-2" onclick="alternarVisaoDispositivo(2)">
+                <span id="tab-v2-label"><i class="ph-bold ph-device-mobile"></i> Atendimento / Cliente</span>
+              </button>
+            </div>
+            <div class="device-status-badge" id="device-status-text">
+              <i class="ph-fill ph-check-circle" style="color:var(--accent-green)"></i> 100% Offline Ready
+            </div>
+          </div>
+
+          <div class="device-screen-body" id="device-screen-container">
+            <!-- Injetado dinamicamente com base no nicho e visão -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPARATIVO: CHEF COZINHA VS SISTEMAS TRADICIONAIS -->
+    <section class="section-comparison">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Chef Cozinha vs Sistemas Genéricos / Legados</h2>
+          <p class="section-desc">Entenda por que donos de estabelecimentos estão abandonando softwares lentos e cheios de taxas abusivas.</p>
+        </div>
+
+        <div class="comparison-table-wrapper">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th style="width: 40%;">Recurso & Especialidade</th>
+                <th class="col-highlight" style="width: 30%;"><i class="ph-bold ph-shield-check"></i> Chef Cozinha</th>
+                <th style="width: 30%;">Sistemas Antigos / Genéricos</th>
+              </tr>
+            </thead>
+            <tbody id="comparison-rows">
+              <!-- Injetado dinamicamente via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEPOIMENTO REAL DO SEGMENTO -->
+    <div class="container">
+      <div class="testimonial-box" id="testimonial-container">
+        <div class="testimonial-avatar" id="test-avatar">🍕</div>
+        <div>
+          <p class="testimonial-quote" id="test-quote">
+            "Sexta-feira à noite era um caos de impressoras travando e motoboys perdidos. Com o cardápio próprio e o roteirizador do Chef Cozinha, economizamos R$ 4.800 de taxas no primeiro mês e zeramos o atraso das entregas."
+          </p>
+          <div>
+            <span class="testimonial-author" id="test-author">Marcos Silveira</span>
+            <span class="testimonial-badge-verified"><i class="ph-fill ph-check-circle"></i> Restaurante Verificado</span>
+          </div>
+          <div class="testimonial-business" id="test-business">Forno Nobre Pizzaria & Delivery • Campinas, SP</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAQ ESPECÍFICO DO NICHO -->
+    <section class="section-faq">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Dúvidas Frequentes</h2>
+          <p class="section-desc">Tudo o que você precisa saber para colocar para rodar ainda hoje.</p>
+        </div>
+
+        <div class="faq-list" id="faq-container">
+          <!-- Injetado dinamicamente -->
+        </div>
+      </div>
+    </section>
+
+    <!-- DIAGNÓSTICO OPERACIONAL & ESTUDO DE ROI PERSONALIZADO -->
+    <div class="container">
+      <div class="lead-diag-box">
+        <div class="lead-diag-header">
+          <div class="lead-diag-badge">
+            <i class="ph-bold ph-whatsapp-logo"></i> Consultoria Especializada Grátis
+          </div>
+          <h3 id="lead-box-title">Quer um Estudo de Viabilidade para o Seu Estabelecimento?</h3>
+          <p id="lead-box-subtitle">Deixe seu WhatsApp para receber uma análise sob medida comparando seus custos atuais com a economia projetada no Chef Cozinha.</p>
+        </div>
+        <form class="lead-diag-form" id="form-lead-nicho" onsubmit="enviarLeadNicho(event)">
+          <div class="lead-input-group">
+            <label><i class="ph ph-storefront"></i> Nome do Negócio</label>
+            <input type="text" id="lead-nome" placeholder="Ex: Forno & Arte" required>
+          </div>
+          <div class="lead-input-group">
+            <label><i class="ph ph-map-pin"></i> Cidade / UF</label>
+            <input type="text" id="lead-cidade" placeholder="Ex: Campinas, SP" required>
+          </div>
+          <div class="lead-input-group">
+            <label><i class="ph ph-whatsapp-logo"></i> WhatsApp com DDD</label>
+            <input type="tel" id="lead-wpp" placeholder="(11) 99999-9999" required maxlength="15">
+          </div>
+          <button type="submit" class="btn btn-primary" id="btn-enviar-lead" style="padding:13px 24px;">
+            <i class="ph-bold ph-paper-plane-tilt"></i> Receber Diagnóstico
+          </button>
+        </form>
+        <div id="lead-msg-feedback" style="display:none; margin-top:16px; font-size:0.92rem; text-align:center;"></div>
+      </div>
+    </div>
+
+    <!-- CTA FINAL DE CONVERSÃO -->
+    <div class="container">
+      <div class="cta-final-box">
+        <h2 id="cta-final-title">Transforme a Operação da Sua Pizzaria Hoje Mesmo</h2>
+        <p id="cta-final-desc">Comece o teste grátis de 14 dias sem compromisso e sem precisar cadastrar cartão. Nossa equipe migra seu cardápio gratuitamente.</p>
+        <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+          <a href="/registro.html" class="btn btn-primary" style="padding:16px 36px; font-size:1.1rem;">
+            <i class="ph-bold ph-rocket-launch"></i> Criar Minha Conta Grátis
+          </a>
+          <a href="#" id="btn-whatsapp-final" target="_blank" class="btn btn-whatsapp" style="padding:16px 28px; font-size:1.1rem;">
+            <i class="ph-bold ph-whatsapp-logo"></i> Falar com Consultor no WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>
+        <strong>Chef Cozinha</strong> — Sistema Integrado de PDV, KDS e Gestão Gastronômica.
+      </div>
+      <div class="footer-links">
+        <a href="/site-vendas.html">Visão Geral</a>
+        <a href="/pagina-vendas-2.html">Apresentação 3D</a>
+        <a href="/login.html">Entrar no Sistema</a>
+        <a href="/suporte.html">Central de Ajuda</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- BARRA FIXA MOBILE -->
+  <div class="mobile-bottom-bar">
+    <a href="/registro.html" class="btn btn-primary" style="flex:1;">
+      <i class="ph-bold ph-rocket-launch"></i> Testar Grátis
+    </a>
+    <a href="#" id="btn-whatsapp-mobile" target="_blank" class="btn btn-whatsapp" style="flex:1;">
+      <i class="ph-bold ph-whatsapp-logo"></i> WhatsApp
+    </a>
+  </div>
+
+  <script>
+    // DADOS RICOS DE CADA NICHO
+    const NICHOS_DATA = {
+      pizzaria: {
+        badgeIcon: 'ph-fill ph-pizza',
+        badgeText: 'Especialista em Pizzarias & Delivery Noturno',
+        title: 'Pare de Deixar 27% do Seu Faturamento nas Mãos de Aplicativos.',
+        subtitle: 'O sistema feito para o ritmo intenso de pizzarias: meio a meio configurável em 1 clique, envio direto para o forno, cardápio digital sem taxas e roteirizador TSP que corta até 35% do combustível dos seus motoboys.',
+        whatsappMsg: 'Olá! Tenho uma Pizzaria/Delivery e quero ver como o Chef Cozinha elimina as taxas abusivas e organiza os pedidos.',
+        sim: {
+          title: 'Simulador de Economia para Pizzarias',
+          r1Label: 'Pizzas vendidas por mês:',
+          r1Min: 300, r1Max: 5000, r1Step: 50, r1Val: 1400, r1Unit: 'pizzas',
+          r2Label: 'Preço médio da pizza:',
+          r2Min: 40, r2Max: 140, r2Step: 2, r2Val: 68, r2Prefix: 'R$ ',
+          calc: (q, t) => {
+            const faturamento = q * t;
+            const economiaIfood = (faturamento * 0.40) * 0.23;
+            const economiaCombustivel = (q * 0.8) * 0.85;
+            return economiaIfood + economiaCombustivel;
+          },
+          desc: 'Economia direta eliminando comissões de delivery + otimização de rotas de motoboy.'
+        },
+        pillars: [
+          {
+            icon: 'ph-fill ph-pizza',
+            title: 'Meio a Meio Sem Erros',
+            desc: 'Configure cobrança pelo maior valor ou média ponderada em 1 clique. Bordas recheadas, massas especiais e adicionais sem travar o garçom.'
+          },
+          {
+            icon: 'ph-fill ph-fire',
+            title: 'KDS & Impressão Direta no Forno',
+            desc: 'O pizzaiolo recebe a comanda formatada com tamanho, massa e observações na hora exata, sem papel amassado ou retrabalho.'
+          },
+          {
+            icon: 'ph-fill ph-navigation-arrow',
+            title: 'Roteirizador de Motoboys TSP',
+            desc: 'Algoritmo que organiza as entregas na sequência mais rápida, calcula km economizados e envia link com mapa ao vivo no WhatsApp do cliente.'
+          },
+          {
+            icon: 'ph-fill ph-device-mobile',
+            title: 'Cardápio Próprio Sem Comissão',
+            desc: 'Receba pedidos direto no seu WhatsApp e PDV sem pagar 27% para marketplaces. Fidelize seus clientes na sua própria marca.'
+          }
+        ],
+        comparison: [
+          { feature: 'Meio a meio com precificação automática', cheff: true, outros: 'Lento ou confuso' },
+          { feature: 'Roteirizador inteligente de motoboys por raio', cheff: true, outros: 'Não possui' },
+          { feature: 'Link de rastreio ao vivo no WhatsApp do cliente', cheff: true, outros: 'Não possui' },
+          { feature: 'Comanda mobile para garçom sem travar', cheff: true, outros: 'Requer maquininha cara' },
+          { feature: 'Zero taxas sobre seus pedidos no delivery próprio', cheff: true, outros: 'Cobram mensalidade + %' }
+        ],
+        testimonial: {
+          avatar: '🍕',
+          quote: '"Sexta-feira à noite era um caos de impressoras travando e motoboy batendo cabeça na rua. Com o roteirizador e o cardápio próprio do Chef Cozinha, economizamos mais de R$ 5.200 no primeiro mês e zeramos as reclamações de atraso."',
+          author: 'Marcos Silveira',
+          business: 'Forno Nobre Pizzaria & Delivery • Campinas, SP'
+        },
+        faqs: [
+          { q: 'Como funciona o cálculo de pizza meio a meio?', a: 'O sistema permite configurar a regra da sua pizzaria: cobrar pelo sabor de maior valor, pela média simples ou com taxa de borda recheada automática.' },
+          { q: 'O motoboy precisa instalar algum aplicativo pesado?', a: 'Não! O motoboy recebe a lista de paradas otimizada no próprio navegador do celular ou WhatsApp, com 1 toque para abrir o Waze/Google Maps.' },
+          { q: 'Se a internet cair numa sexta-feira chuvosa, o sistema para?', a: 'De jeito nenhum! O Chef Cozinha opera em modo offline nativo com banco de dados local. Você continua vendendo e imprimindo normalmente.' }
+        ]
+      },
+
+      hamburgueria: {
+        badgeIcon: 'ph-fill ph-hamburger',
+        badgeText: 'Alta Performance para Hamburguerias & Smash',
+        title: 'Zere a Fila no Caixa e Elimine os Erros de Montagem na Chapa.',
+        subtitle: 'Totem de autoatendimento com Fast-Pass no CPF em 14 segundos, KDS multi-praça que separa chapa, fritadeira e montagem, e combos sugestivos que aumentam o ticket médio em até 28%.',
+        whatsappMsg: 'Olá! Tenho uma Hamburgueria/Fast-food e quero ver como o Totem Fast-Pass e o KDS multi-praça agilizam meu pico de vendas.',
+        sim: {
+          title: 'Simulador de Lucro para Hamburguerias',
+          r1Label: 'Hambúrgueres vendidos por dia:',
+          r1Min: 80, r1Max: 1200, r1Step: 20, r1Val: 220, r1Unit: 'burgers',
+          r2Label: 'Ticket médio do combo:',
+          r2Min: 25, r2Max: 90, r2Step: 2, r2Val: 44, r2Prefix: 'R$ ',
+          calc: (q, t) => {
+            const vendasMes = q * 30;
+            const ganhoCombos = vendasMes * 7.50;
+            return ganhoCombos + 1800;
+          },
+          desc: 'Lucro adicional gerado pelo upsell automático de combos no totem e fim do desperdício de lanches.'
+        },
+        pillars: [
+          {
+            icon: 'ph-fill ph-lightning',
+            title: 'Totem Fast-Pass no CPF em 14s',
+            desc: 'O cliente digita o CPF ou escaneia o QR Code e o totem já sugere seu combo favorito com pagamento Pix na tela. Zera a fila no caixa.'
+          },
+          {
+            icon: 'ph-fill ph-cooking-pot',
+            title: 'KDS Multi-Praças Sincronizado',
+            desc: 'Chapa vê o ponto da carne, Fritadeira cronometra a batata e Montagem finaliza o combo quentinho ao mesmo tempo.'
+          },
+          {
+            icon: 'ph-fill ph-package',
+            title: 'Estoque com Ficha Técnica por Grama',
+            desc: 'Cada smash vendido abate 120g de blend, 1 pão e 2 fatias de queijo. Saiba seu CMV diário na ponta do lápis.'
+          },
+          {
+            icon: 'ph-fill ph-arrows-clockwise',
+            title: 'Upsell Inteligente de Adicionais',
+            desc: 'Oferece bacon extra, maionese artesanal e sobremesa no momento certo da compra, elevando o faturamento médio.'
+          }
+        ],
+        comparison: [
+          { feature: 'Totem de autoatendimento com compra em 14 segundos', cheff: true, outros: 'Não possui ou custa R$ 8.000' },
+          { feature: 'KDS dividido por estações (Chapa, Frita, Montagem)', cheff: true, outros: 'Apenas impressora comum' },
+          { feature: 'Ficha técnica com baixa de gramas no estoque', cheff: true, outros: 'Muito complexo ou manual' },
+          { feature: 'Combos dinâmicos com Pix na tela do totem', cheff: true, outros: 'Limitado' },
+          { feature: 'Resumo noturno automático no WhatsApp do dono', cheff: true, outros: 'Apenas relatórios em PDF' }
+        ],
+        testimonial: {
+          avatar: '🍔',
+          quote: '"Nosso maior gargalo era a fila no caixa às 20h. O cliente demorava para escolher e a chapa ficava ociosa. Com 2 totens e o KDS do Chef Cozinha, nosso faturamento subiu 38% com a mesma equipe."',
+          author: 'Rodrigo Mendes',
+          business: 'Craft Smash Burger • Curitiba, PR'
+        },
+        faqs: [
+          { q: 'O Totem funciona em qualquer tela touch?', a: 'Sim! Funciona em qualquer tablet Android, iPad ou monitor touch de PC com bloqueio kiosk de tela cheia.' },
+          { q: 'A cozinha consegue saber se o cliente pediu ponto da carne ou sem picles?', a: 'Com certeza! O KDS destaca modificações com tarjas coloridas bem visíveis para que o chapeiro nunca erre o pedido.' },
+          { q: 'Posso usar impressora térmica junto com o KDS?', a: 'Sim, você pode usar apenas o KDS digital, apenas impressoras ou ambos trabalhando em perfeita sintonia.' }
+        ]
+      },
+
+      bar: {
+        badgeIcon: 'ph-fill ph-beer-bottle',
+        badgeText: 'Blindagem Operacional para Bares, Choperias & Pubs',
+        title: 'Elimine as Filas de Fechamento de Conta e a Sangria de Chopp.',
+        subtitle: 'Comanda por assento com fechamento individual em 1 toque, controle milimétrico de barris de chopp com alerta de perda por espuma e leaderboard de garçons em tempo real (Lei 13.419).',
+        whatsappMsg: 'Olá! Sou dono de um Bar/Pub e quero conhecer o controle de chopp e a comanda por assento do Chef Cozinha.',
+        sim: {
+          title: 'Simulador de Recuperação para Bares',
+          r1Label: 'Barris de chopp (50L) por semana:',
+          r1Min: 2, r1Max: 40, r1Step: 1, r1Val: 8, r1Unit: 'barris 50L',
+          r2Label: 'Preço médio do copo (500ml):',
+          r2Min: 12, r2Max: 35, r2Step: 1, r2Val: 18, r2Prefix: 'R$ ',
+          calc: (q, t) => {
+            const litrosTotal = q * 50 * 4;
+            const litrosRecuperados = litrosTotal * 0.12;
+            const coposRecuperados = litrosRecuperados * 2;
+            return coposRecuperados * t;
+          },
+          desc: 'Dinheiro que seu bar deixa de perder todo mês controlando sangrias e garçons servindo sem registrar.'
+        },
+        pillars: [
+          {
+            icon: 'ph-fill ph-chair',
+            title: 'Comanda por Assento & Split',
+            desc: 'Cada amigo da mesa tem seu consumo apontado para a cadeira. Na hora de pagar, fecha a conta individual em 1 toque sem travar a mesa.'
+          },
+          {
+            icon: 'ph-fill ph-beer-bottle',
+            title: 'Guardião do Chopp & Barris',
+            desc: 'Cruza os copos vendidos contra o volume do barril. Detecta sangrias anormais e avisa no celular antes de acabar o chopp.'
+          },
+          {
+            icon: 'ph-fill ph-trophy',
+            title: 'Leaderboard de Gorjetas & Metas',
+            desc: 'Ranking ao vivo na tela dos garçons estimulando venda de porções e drinks, com divisão auditada conforme a Lei da Gorjeta 13.419.'
+          },
+          {
+            icon: 'ph-fill ph-receipt',
+            title: 'Auditoria de Taxas de Cartão',
+            desc: 'Compara as taxas reais cobradas pelas maquininhas contra o contrato e recupera descontos indevidos de MDR automaticamente.'
+          }
+        ],
+        comparison: [
+          { feature: 'Comanda por assento com fechamento individual', cheff: true, outros: 'Trava todo o caixa da mesa' },
+          { feature: 'Guardião de volume de barril com alerta de perda', cheff: true, outros: 'Não possui' },
+          { feature: 'Gamificação e rateio legal de gorjetas (Lei 13.419)', cheff: true, outros: 'Planilhas manuais propensas a erro' },
+          { feature: 'Divisão de conta com Pix individual instantâneo', cheff: true, outros: 'Lenta e burocrática' },
+          { feature: 'Auditor de taxas de cartão Stone/Cielo/Rede', cheff: true, outros: 'Não possui' }
+        ],
+        testimonial: {
+          avatar: '🍺',
+          quote: '"Em mesa de 20 pessoas no sábado, fechar a conta demorava 25 minutos. Com a comanda por assento e o Pix individual do Chef Cozinha, o garçom fecha em 30 segundos na própria mesa. E o guardião de chopp recuperou R$ 2.800 de desperdício."',
+          author: 'Camila Duarte',
+          business: 'Capitão Barley Pub • Belo Horizonte, MG'
+        },
+        faqs: [
+          { q: 'Como o garçom cobra apenas uma pessoa de uma mesa grande?', a: 'Na tela do garçom, basta tocar na aba "🪑 Assentos", escolher a cadeira da pessoa e tocar em "Cobrar". O sistema gera o Pix ou cartão individual e libera a cadeira.' },
+          { q: 'O sistema avisa quando o barril de chopp estiver no final?', a: 'Sim! O painel exibe porcentagem em tempo real e alerta quando estiver abaixo de 15%, permitindo trocar o barril antes do cliente pedir.' },
+          { q: 'Funciona com comanda de cartão magnético ou RFID?', a: 'Sim, você pode usar comanda por número de mesa, cartão plástico com código de barras ou cartões RFID por aproximação.' }
+        ]
+      },
+
+      buffet: {
+        badgeIcon: 'ph-fill ph-scales',
+        badgeText: 'Velocidade Máxima para Restaurantes por Quilo & Buffets',
+        title: 'Pesagem em 0,3 Segundo sem Digitação Manual e Sem Fraude.',
+        subtitle: 'Integração direta com balanças Toledo, Filizola e Urano com desconto automático de tara, gravação instantânea em comanda e controle analítico de reposição de cubas e desperdício.',
+        whatsappMsg: 'Olá! Tenho um Restaurante Self-Service/Buffet por Quilo e quero agilizar a pesagem na balança com o Chef Cozinha.',
+        sim: {
+          title: 'Simulador de Giro para Buffets',
+          r1Label: 'Clientes atendidos no almoço por dia:',
+          r1Min: 100, r1Max: 1500, r1Step: 25, r1Val: 380, r1Unit: 'clientes',
+          r2Label: 'Valor médio do prato pesado:',
+          r2Min: 22, r2Max: 65, r2Step: 1, r2Val: 36, r2Prefix: 'R$ ',
+          calc: (q, t) => {
+            const clientesExtrasDia = Math.round(q * 0.10);
+            return clientesExtrasDia * t * 24;
+          },
+          desc: 'Faturamento adicional obtido eliminando filas no meio-dia e aumentando o giro de clientes por hora.'
+        },
+        pillars: [
+          {
+            icon: 'ph-fill ph-scales',
+            title: 'Leitura de Peso em 0,3s',
+            desc: 'Basta encostar o prato na balança. O peso líquido entra instantaneamente no sistema com tara descontada. Zera erros de digitação.'
+          },
+          {
+            icon: 'ph-fill ph-barcode',
+            title: 'Gravação em Comanda / Cartão',
+            desc: 'Integração com leitor de código de barras ou cartão de consumo. A pesagem é vinculada ao cliente em 1 segundo.'
+          },
+          {
+            icon: 'ph-fill ph-arrows-down-up',
+            title: 'Controle de Desperdício de Buffet',
+            desc: 'Monitore as sobras limpas de cubas no final do expediente para calcular o custo real de preparação e ajustar as compras.'
+          },
+          {
+            icon: 'ph-fill ph-shield-check',
+            title: 'Proteção Anti-Fraude no Caixa',
+            desc: 'O operador do caixa vê o peso exato e o horário da pesagem, evitando manipulações ou troca de comandas.'
+          }
+        ],
+        comparison: [
+          { feature: 'Conexão nativa serial/USB com balanças Toledo/Urano', cheff: true, outros: 'Configuração complexa ou instável' },
+          { feature: 'Desconto de tara em 0,3 segundo sem travar', cheff: true, outros: 'Demora até 3 segundos por prato' },
+          { feature: 'Modo Buffet Livre vs Peso por horário automático', cheff: true, outros: 'Manual' },
+          { feature: 'Resumo noturno de CMV do almoço no WhatsApp', cheff: true, outros: 'Não possui' },
+          { feature: 'PDV com emissão NFC-e fiscal em 1 clique', cheff: true, outros: 'Lenta' }
+        ],
+        testimonial: {
+          avatar: '⚖️',
+          quote: '"A fila da balança no meio-dia dava volta no salão. Com a leitura automática da Toledo no Chef Cozinha, o tempo de pesagem caiu de 8 segundos para 1 segundo. Atendemos 60 clientes a mais por dia no mesmo horário."',
+          author: 'Eduardo Fontes',
+          business: 'Alecrim Grill & Buffet • São Paulo, SP'
+        },
+        faqs: [
+          { q: 'Quais marcas de balança são compatíveis?', a: 'Compatibilidade nativa com Toledo (Prix 3, Prix 4, Prix 5), Filizola (Plataforma e CS), Urano e balanças com protocolo Toledo/Filizola via porta Serial RS232 ou USB.' },
+          { q: 'O sistema desconta o peso do prato automaticamente?', a: 'Sim, a tara do prato fica memorizada e o sistema calcula o peso líquido exato instantaneamente.' },
+          { q: 'Posso usar comanda de papel impressa na balança?', a: 'Sim! Pode emitir o ticket na impressora térmica da balança ou gravar direto no cartão magnético reutilizável.' }
+        ]
+      },
+
+      sushi: {
+        badgeIcon: 'ph-fill ph-fish',
+        badgeText: 'Gestão Cirúrgica para Rodízios Japoneses & Sushibars',
+        title: 'Controle o Custo do Salmão e Elimine o Desperdício no Rodízio.',
+        subtitle: 'Cardápio digital na mesa com limite inteligente por rodada, divisão de praças entre Sushibar (frio) e Cozinha Quente (grelhados) e controle milimétrico de gramatura de pescados nobres.',
+        whatsappMsg: 'Olá! Sou proprietário de um Restaurante Japonês/Sushibar e quero conhecer as soluções para rodízio e controle de salmão.',
+        sim: {
+          title: 'Simulador de Redução de Custo para Sushi',
+          r1Label: 'Salmão/peixes nobres consumidos por mês:',
+          r1Min: 150, r1Max: 2500, r1Step: 25, r1Val: 550, r1Unit: 'kg peixe',
+          r2Label: 'Custo médio do kg do salmão limpo:',
+          r2Min: 55, r2Max: 110, r2Step: 2, r2Val: 82, r2Prefix: 'R$ ',
+          calc: (q, t) => {
+            const gastoTotal = q * t;
+            return gastoTotal * 0.15;
+          },
+          desc: 'Economia real diminuindo sobras de rodízio no prato e controlando o rendimento do peixe.'
+        },
+        pillars: [
+          {
+            icon: 'ph-fill ph-device-tablet',
+            title: 'Rodízio Inteligente na Mesa',
+            desc: 'Clientes pedem pelo tablet ou QR Code na mesa com limite de peças por rodada e intervalo configurável. Zera sobras no prato.'
+          },
+          {
+            icon: 'ph-fill ph-knife',
+            title: 'KDS Separado: Sushibar vs Cozinha',
+            desc: 'Sushis e sashimis vão para a tela do sushiman; tempurás, yakisobas e grelhados vão para a cozinha quente.'
+          },
+          {
+            icon: 'ph-fill ph-fish',
+            title: 'Rendimento de Filé & CMV de Salmão',
+            desc: 'Cadastre a peça inteira e o sistema calcula a perda de carcaça e pele, apurando o custo real de cada combinado.'
+          },
+          {
+            icon: 'ph-fill ph-warning-circle',
+            title: 'Alerta de Taxa de Desperdício',
+            desc: 'Configuração opcional de aviso de taxa de desperdício para peças intocadas no final do rodízio.'
+          }
+        ],
+        comparison: [
+          { feature: 'Rodízio com controle de rodadas por QR/Tablet', cheff: true, outros: 'Não possui' },
+          { feature: 'KDS setorizado para Sushibar e Cozinha Quente', cheff: true, outros: 'Comanda única confusa' },
+          { feature: 'Ficha técnica de rendimento de peixes nobres', cheff: true, outros: 'Apenas estoque genérico' },
+          { feature: 'Cardápio fotográfico com combinados de alto padrão', cheff: true, outros: 'Visual simples' },
+          { feature: 'Reserva de mesas com confirmação no WhatsApp', cheff: true, outros: 'Não possui' }
+        ],
+        testimonial: {
+          avatar: '🍣',
+          quote: '"O salmão é nosso maior custo. Com o limite de peças por rodada do Chef Cozinha, o cliente pede aos poucos, a comida chega fresca e o desperdício que ficava no prato caiu mais de 65%. Salvamos mais de R$ 6.000 por mês."',
+          author: 'Kenji Takahashi',
+          business: 'Oishi Sushi Lounge • Florianópolis, SC'
+        },
+        faqs: [
+          { q: 'Como funciona o limite por rodada do rodízio?', a: 'Você define no painel: por exemplo, máximo de 10 peças por pessoa por rodada com intervalo de 10 minutos. O sistema bloqueia pedidos abusivos e garante pratos sempre frescos.' },
+          { q: 'O sushiman precisa encostar na tela com a mão molhada?', a: 'Não! O KDS do Chef Cozinha suporta teclado numérico de atalho ou pedal USB para avançar os pedidos sem tocar na tela.' },
+          { q: 'Funciona para rodízio e à la carte no mesmo salão?', a: 'Sim, cada mesa pode ter seu modo configurado individualmente de forma transparente.' }
+        ]
+      },
+
+      cafeteria: {
+        badgeIcon: 'ph-fill ph-coffee',
+        badgeText: 'Fidelização & Agilidade para Cafeterias & Docerias',
+        title: 'Venda Rápida no Balcão e Clientes Voltando Todo Dia.',
+        subtitle: 'PDV balcão relâmpago de 4 segundos, cartão fidelidade digital automático no WhatsApp, ficha técnica analítica de confeitaria e combos matinais que elevam o faturamento.',
+        whatsappMsg: 'Olá! Sou dono de uma Cafeteria/Confeitaria e quero conhecer o cartão fidelidade digital e o PDV balcão do Chef Cozinha.',
+        sim: {
+          title: 'Simulador de Fidelização para Cafeterias',
+          r1Label: 'Clientes atendidos por dia:',
+          r1Min: 50, r1Max: 800, r1Step: 10, r1Val: 180, r1Unit: 'clientes',
+          r2Label: 'Ticket médio do café/lanche:',
+          r2Min: 10, r2Max: 45, r2Step: 1, r2Val: 24, r2Prefix: 'R$ ',
+          calc: (q, t) => {
+            const clientesExtras = Math.round(q * 0.22);
+            return clientesExtras * t * 26;
+          },
+          desc: 'Faturamento extra mensal conquistado transformando clientes ocasionais em clientes fiéis diários.'
+        },
+        pillars: [
+          {
+            icon: 'ph-fill ph-lightning',
+            title: 'PDV Balcão em 4 Segundos',
+            desc: 'Teclas rápidas de expresso, cappuccino, pão de queijo e fatias de bolo. Conclua a venda e emita o cupom fiscal no piscar de olhos.'
+          },
+          {
+            icon: 'ph-fill ph-gift',
+            title: 'Clube Fidelidade no WhatsApp',
+            desc: 'O cliente informa o celular e acumula selos digitais ("Compre 10 cafés e ganhe 1 fatia de bolo"). Zera cartões de papel perdidos.'
+          },
+          {
+            icon: 'ph-fill ph-cake',
+            title: 'Ficha Técnica para Confeitaria',
+            desc: 'Baixa de gramas de café especial, leite, farinha, cacau e manteiga por fatia ou bolo inteiro com controle de validade.'
+          },
+          {
+            icon: 'ph-fill ph-clock',
+            title: 'Combos de Café da Manhã & Tarde',
+            desc: 'Programe combos promocionais automáticos das 07h às 10h e das 15h às 18h para elevar o consumo nos horários de maior fluxo.'
+          }
+        ],
+        comparison: [
+          { feature: 'PDV balcão relâmpago para filas da manhã', cheff: true, outros: 'Lento com muitas telas' },
+          { feature: 'Fidelidade digital automático no WhatsApp do cliente', cheff: true, outros: 'Cartão de papel' },
+          { feature: 'Controle de receitas de confeitaria por grama', cheff: true, outros: 'Apenas produtos prontos' },
+          { feature: 'Combos automáticos por faixa de horário', cheff: true, outros: 'Precisa mudar preço manual' },
+          { feature: 'Visual limpo e elegante no balcão', cheff: true, outros: 'Interface antiga dos anos 2000' }
+        ],
+        testimonial: {
+          avatar: '☕',
+          quote: '"Nosso cliente esquece o cartão de papel, mas não esquece o celular. O clube fidelidade no WhatsApp do Chef Cozinha fez nossos clientes passarem de 2 visitas na semana para 4 visitas. Faturamento subiu 34%."',
+          author: 'Beatriz Lemos',
+          business: 'Grão & Arte Cafeteria • Porto Alegre, RS'
+        },
+        faqs: [
+          { q: 'O cliente precisa baixar aplicativo para participar do clube fidelidade?', a: 'Não! O cliente só digita o WhatsApp no caixa e recebe a notificação dos selos e prêmios na hora pelo WhatsApp.' },
+          { q: 'Consigo controlar produção de bolos que são vendidos por fatia?', a: 'Sim! O sistema permite produzir um bolo inteiro (ex: 12 fatias) e o estoque dá baixa automática nas fatias vendidas individualmente.' },
+          { q: 'Funciona com maquininhas de cartão integradas?', a: 'Sim, integração direta com TEF e maquininhas Smart das principais adquirentes para conciliação automática.' }
+        ]
+      },
+
+      alacarte: {
+        badgeIcon: 'ph-fill ph-wine',
+        badgeText: 'Sofisticação & Margem para Alta Gastronomia & À La Carte',
+        title: 'A Elegância do Seu Salão com a Eficiência da Alta Tecnologia.',
+        subtitle: 'Cardápio multilíngue por IA com filtros de alérgenos internacionais, gestão de reservas online para zerar no-show e Engenharia de Cardápio BCG (Kasavana & Smith) para maximizar o lucro dos seus pratos nobres.',
+        whatsappMsg: 'Olá! Tenho um Restaurante À La Carte/Alta Gastronomia e quero conhecer a Engenharia de Cardápio BCG e o Cardápio Multilíngue do Chef Cozinha.',
+        sim: {
+          title: 'Simulador de Margem para À La Carte',
+          r1Label: 'Couvert / pessoas atendidas no mês:',
+          r1Min: 400, r1Max: 4000, r1Step: 50, r1Val: 1200, r1Unit: 'clientes',
+          r2Label: 'Ticket médio por pessoa:',
+          r2Min: 60, r2Max: 350, r2Step: 5, r2Val: 140, r2Prefix: 'R$ ',
+          calc: (q, t) => {
+            const faturamento = q * t;
+            return faturamento * 0.12;
+          },
+          desc: 'Lucro líquido adicional gerado ajustando os Burros de Carga e promovendo as Estrelas da matriz BCG.'
+        },
+        pillars: [
+          {
+            icon: 'ph-fill ph-translate',
+            title: 'Cardápio Multilíngue Turístico por IA',
+            desc: 'Tradução gastronômica automática para Inglês, Espanhol, Francês, Alemão e Mandarim, com selos de alérgenos (Gluten-Free, Vegan, Nuts).'
+          },
+          {
+            icon: 'ph-fill ph-chart-polar',
+            title: 'Engenharia de Cardápio BCG',
+            desc: 'Matriz analítica de Kasavana & Smith que classifica seus pratos em Estrelas e Burros de Carga para calibrar preços e maximizar o lucro.'
+          },
+          {
+            icon: 'ph-fill ph-calendar-check',
+            title: 'Gestão de Reservas Anti-No-Show',
+            desc: 'Confirmação automática de presença no WhatsApp 2 horas antes da reserva, zerando o prejuízo de mesas vazias nos finais de semana.'
+          },
+          {
+            icon: 'ph-fill ph-device-mobile',
+            title: 'Comanda Mobile de Alta Precisão',
+            desc: 'Garçons lançam pontos da carne, acompanhamentos e harmonização de vinhos sem sair do lado do cliente com agilidade de restaurante Michelin.'
+          }
+        ],
+        comparison: [
+          { feature: 'Cardápio multilíngue automático para turistas (5 idiomas)', cheff: true, outros: 'Não possui' },
+          { feature: 'Matriz BCG de engenharia de lucratividade de pratos', cheff: true, outros: 'Apenas relatórios básicos' },
+          { feature: 'Gestão de reservas com confirmação no WhatsApp', cheff: true, outros: 'Requer sistema à parte caro' },
+          { feature: 'Comanda mobile fluida no próprio smartphone do garçom', cheff: true, outros: 'Equipamentos pesados' },
+          { feature: 'Backup em nuvem blindado AES-256 às 04:00', cheff: true, outros: 'Backup manual ou vulnerável' }
+        ],
+        testimonial: {
+          avatar: '🍷',
+          quote: '"Recebemos muitos turistas estrangeiros. O cardápio em 5 idiomas e o sistema de reservas do Chef Cozinha transformaram nosso bistrô. E a matriz BCG nos mostrou que dois pratos carros-chefe estavam dando margem baixa. Ajustamos e ganhamos R$ 8.400 a mais de lucro."',
+          author: 'Chef Antoine Mercier',
+          business: 'Le Jardin Bistrô • Gramado, RS'
+        },
+        faqs: [
+          { q: 'Como a Engenharia de Cardápio BCG ajuda meu lucro?', a: 'Ela cruza a popularidade (número de vendas) com a margem de contribuição real de cada prato. Pratos muito vendidos com margem apertada (Burros de Carga) recebem ajustes sutis de preço ou acompanhamento, gerando lucro imediato.' },
+          { q: 'O cardápio multilíngue traduz nomes próprios de pratos brasileiros de forma errada?', a: 'Não! Nossa engine gastronômica preserva o nome clássico (ex: "Picanha") e adiciona a explicação internacional dos cortes e guarnições com precisão de alta culinária.' },
+          { q: 'Consigo controlar a carta de vinhos por safra e produtor?', a: 'Sim, cadastro completo de vinhos, safras, uvas e estoque com ficha técnica de harmonização na tela do garçom.' }
+        ]
+      }
+    };
+
+    // TELAS E HARDWARE VISUAIS PARA CADA NICHO
+    const NICHOS_SCREENS = {
+      pizzaria: {
+        v1Title: 'KDS Forno & Produção',
+        v1Icon: 'ph-bold ph-fire',
+        v1Html: `
+          <div class="mock-grid-2">
+            <div class="mock-card">
+              <div class="mock-header">
+                <strong>#104 • Delivery (Rua das Acácias)</strong>
+                <span class="mock-badge mock-badge-warning"><i class="ph-bold ph-timer"></i> 06:45 restantes</span>
+              </div>
+              <div class="mock-item-row">
+                <span><strong>1x Pizza Grande (8 Fatias)</strong></span>
+                <span class="mock-badge mock-badge-primary">No Forno</span>
+              </div>
+              <div class="mock-item-sub">½ Frango com Catupiry Original</div>
+              <div class="mock-item-sub">½ Calabresa Especial (sem cebola)</div>
+              <div class="mock-item-sub">Borda: Vulcão de Cheddar Inglês</div>
+              <div class="mock-item-row" style="margin-top:8px;">
+                <span style="color:var(--text-muted); font-size:0.8rem;">Massa: Tradicional Fina</span>
+                <span style="font-weight:700;">R$ 74,90</span>
+              </div>
+              <div class="mock-btn-action mock-btn-forno"><i class="ph-bold ph-fire"></i> Retirar do Forno (Pizzaiolo)</div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-header">
+                <strong>#105 • Salão (Mesa 04)</strong>
+                <span class="mock-badge mock-badge-blue"><i class="ph-bold ph-clock"></i> 14:10 restantes</span>
+              </div>
+              <div class="mock-item-row">
+                <span><strong>1x Pizza Média (6 Fatias)</strong></span>
+                <span class="mock-badge mock-badge-warning">Montando</span>
+              </div>
+              <div class="mock-item-sub">Marguerita Clássica c/ Manjericão Fresco</div>
+              <div class="mock-item-sub">Borda: Gergelim Tostado</div>
+              <div class="mock-item-row" style="margin-top:8px;">
+                <span style="color:var(--text-muted); font-size:0.8rem;">Garçom: Carlos • Mesa 04</span>
+                <span style="font-weight:700;">R$ 58,00</span>
+              </div>
+              <div class="mock-btn-action mock-btn-concluir"><i class="ph-bold ph-check"></i> Enviar p/ Forno de Pedra</div>
+            </div>
+          </div>
+        `,
+        v2Title: 'Roteirizador de Motoboys TSP',
+        v2Icon: 'ph-bold ph-navigation-arrow',
+        v2Html: `
+          <div class="mock-card" style="max-width:680px; margin:0 auto;">
+            <div class="mock-header">
+              <div>
+                <strong>Rota Inteligente TSP #18</strong>
+                <div style="font-size:0.8rem; color:var(--text-muted);">Motoboy: Marcos (Honda CG 160)</div>
+              </div>
+              <span class="mock-badge mock-badge-success"><i class="ph-bold ph-gas-pump"></i> -38% Combustível (-4.2 km)</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin:12px 0;">
+              <div style="display:flex; align-items:center; gap:12px; padding:10px; background:var(--bg-surface); border-radius:8px; border-left:3px solid var(--accent-green);">
+                <span class="mock-badge mock-badge-primary">1ª Parada</span>
+                <div style="flex:1;">
+                  <div style="font-weight:700; font-size:0.9rem;">Rua das Palmeiras, 310 • Pedido #101</div>
+                  <div style="font-size:0.78rem; color:var(--text-muted);">Previsão: 19:42 (1.1 km) • Cliente notificado no WhatsApp ✓</div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px; padding:10px; background:var(--bg-surface); border-radius:8px; border-left:3px solid var(--primary);">
+                <span class="mock-badge mock-badge-blue">2ª Parada</span>
+                <div style="flex:1;">
+                  <div style="font-weight:700; font-size:0.9rem;">Av. Independência, 1420 • Pedido #102</div>
+                  <div style="font-size:0.78rem; color:var(--text-muted);">Previsão: 19:54 (2.3 km) • Link de rastreio GPS ativo</div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px; padding:10px; background:var(--bg-surface); border-radius:8px; border-left:3px solid #94a3b8;">
+                <span class="mock-badge mock-badge-warning">3ª Parada</span>
+                <div style="flex:1;">
+                  <div style="font-weight:700; font-size:0.9rem;">Rua Santos Dumont, 88 • Pedido #104</div>
+                  <div style="font-size:0.78rem; color:var(--text-muted);">Previsão: 20:07 (3.5 km) • Retorno ao restaurante: 20:18</div>
+                </div>
+              </div>
+            </div>
+            <div class="mock-btn-action" style="background:var(--primary); color:white; cursor:pointer;"><i class="ph-bold ph-navigation-arrow"></i> Abrir Sequência Otimizada no Waze / Maps</div>
+          </div>
+        `
+      },
+
+      hamburgueria: {
+        v1Title: 'Totem Autoatendimento (14s)',
+        v1Icon: 'ph-bold ph-device-tablet',
+        v1Html: `
+          <div class="mock-card" style="max-width:580px; margin:0 auto;">
+            <div class="mock-header">
+              <div>
+                <strong>Totem Fast-Pass 14s</strong>
+                <div style="font-size:0.8rem; color:var(--accent-green);"><i class="ph-bold ph-identification-card"></i> Cliente Reconhecido: Felipe S.</div>
+              </div>
+              <span class="mock-badge mock-badge-success">Seu Pedido Favorito</span>
+            </div>
+            <div style="background:var(--bg-surface); border-radius:10px; padding:14px; margin:10px 0;">
+              <div class="mock-item-row">
+                <span><strong>1x Combo Smash Bacon Duplo</strong></span>
+                <span>R$ 44,00</span>
+              </div>
+              <div class="mock-item-sub">2x Smash 90g Angus, Queijo Prato Fundido, Bacon Crispy, Maionese da Casa</div>
+              <div class="mock-item-sub">Acompanhamento: Batata Crinkle Rústica</div>
+              <div class="mock-item-sub">Bebida: Refrigerante Guaraná 350ml</div>
+            </div>
+            <div style="background:rgba(252,75,21,0.08); border:1px dashed var(--primary); border-radius:8px; padding:10px; margin:10px 0; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.85rem;"><i class="ph-bold ph-sparkle" style="color:var(--primary);"></i> Adicionar Mini Milkshake Doce de Leite por + R$ 6,00?</span>
+              <span class="mock-badge mock-badge-primary">Aceito ✓</span>
+            </div>
+            <div class="mock-item-row" style="font-size:1.1rem; font-weight:800; padding:10px 0;">
+              <span>Total do Pedido</span>
+              <span style="color:var(--accent-green);">R$ 50,00</span>
+            </div>
+            <div class="mock-btn-action" style="background:#10b981; color:white;"><i class="ph-bold ph-qr-code"></i> Pague em 1 Toque via Pix Dinâmico na Tela</div>
+          </div>
+        `,
+        v2Title: 'KDS Multi-Praça (Chapa & Montagem)',
+        v2Icon: 'ph-bold ph-hamburger',
+        v2Html: `
+          <div class="mock-grid-2">
+            <div class="mock-card">
+              <div class="mock-header">
+                <strong>Praça 1 • Chapa & Grelha</strong>
+                <span class="mock-badge mock-badge-warning">3 Lanches na Fila</span>
+              </div>
+              <div class="mock-item-row">
+                <span>4x Smash 90g (Ponto: Crostinha)</span>
+                <span class="mock-badge mock-badge-primary">01:40</span>
+              </div>
+              <div class="mock-item-sub">Pedido #67 • Chapa Quente</div>
+              <div class="mock-item-row" style="margin-top:8px;">
+                <span>2x Angus 180g (Ponto: Vermelho)</span>
+                <span class="mock-badge mock-badge-blue">04:20</span>
+              </div>
+              <div class="mock-item-sub">Pedido #68 • Brioche tostado</div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-header">
+                <strong>Praça 2 • Fritura & Montagem</strong>
+                <span class="mock-badge mock-badge-success">Sincronizado</span>
+              </div>
+              <div class="mock-item-row">
+                <span>2x Batata Rústica c/ Alecrim</span>
+                <span class="mock-badge mock-badge-success">Pronto</span>
+              </div>
+              <div class="mock-item-sub">Cesto 1 • Embalar com pedido #67</div>
+              <div class="mock-item-row" style="margin-top:8px;">
+                <span>1x Onion Rings Crocante</span>
+                <span class="mock-badge mock-badge-warning">01:10</span>
+              </div>
+              <div class="mock-item-sub">Cesto 2 • Pedido #68</div>
+            </div>
+          </div>
+        `
+      },
+
+      bar: {
+        v1Title: 'Comandas Individuais por Assento',
+        v1Icon: 'ph-bold ph-users',
+        v1Html: `
+          <div class="mock-card" style="max-width:680px; margin:0 auto;">
+            <div class="mock-header">
+              <div>
+                <strong>Mesa 12 (Deck Externo) • 3 Clientes</strong>
+                <div style="font-size:0.8rem; color:var(--text-muted);">Comandas Individuais com Split Automático</div>
+              </div>
+              <span class="mock-badge mock-badge-blue"><i class="ph-bold ph-receipt"></i> Fechamento Rápido</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:12px 0;">
+              <div style="background:var(--bg-surface); padding:10px; border-radius:8px;">
+                <div style="font-weight:700; font-size:0.85rem; color:var(--primary);">Assento 1 • Bruno</div>
+                <div style="font-size:0.78rem; margin:4px 0;">2x Chopp IPA 500ml</div>
+                <div style="font-size:0.78rem;">1x Burger Smash</div>
+                <div style="font-weight:800; font-size:0.9rem; margin-top:6px; color:var(--accent-green);">R$ 68,00</div>
+              </div>
+              <div style="background:var(--bg-surface); padding:10px; border-radius:8px;">
+                <div style="font-weight:700; font-size:0.85rem; color:var(--primary);">Assento 2 • Larissa</div>
+                <div style="font-size:0.78rem; margin:4px 0;">1x Gin Tônica Tanqueray</div>
+                <div style="font-size:0.78rem;">1x Água c/ Gás</div>
+                <div style="font-weight:800; font-size:0.9rem; margin-top:6px; color:var(--accent-green);">R$ 42,00</div>
+              </div>
+              <div style="background:var(--bg-surface); padding:10px; border-radius:8px;">
+                <div style="font-weight:700; font-size:0.85rem; color:var(--primary);">Compartilhado</div>
+                <div style="font-size:0.78rem; margin:4px 0;">1x Isca de Peixe</div>
+                <div style="font-size:0.78rem; color:var(--text-muted);">Dividido por 2</div>
+                <div style="font-weight:800; font-size:0.9rem; margin-top:6px;">R$ 29,50 cada</div>
+              </div>
+            </div>
+            <div class="mock-btn-action" style="background:var(--primary); color:white;"><i class="ph-bold ph-credit-card"></i> Cobrar Assento Individual ou Mesa Completa</div>
+          </div>
+        `,
+        v2Title: 'Monitor de Torneiras & Desperdício',
+        v2Icon: 'ph-bold ph-beer-bottle',
+        v2Html: `
+          <div class="mock-grid-2">
+            <div class="mock-card">
+              <div class="mock-header">
+                <strong>Torneira 01 • IPA Tropical</strong>
+                <span class="mock-badge mock-badge-success">Fluxo Normal</span>
+              </div>
+              <div style="font-size:1.6rem; font-weight:800; color:var(--text-main); margin:8px 0;">64% Restante</div>
+              <div style="background:var(--border-subtle); height:8px; border-radius:4px; overflow:hidden;">
+                <div style="background:#10b981; width:64%; height:100%;"></div>
+              </div>
+              <div style="font-size:0.78rem; color:var(--text-muted); margin-top:8px;">Volume restante: 32 Litros • Desperdício medido: 0.8%</div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-header">
+                <strong>Torneira 02 • Pilsen Puro Malte</strong>
+                <span class="mock-badge mock-badge-warning"><i class="ph-bold ph-warning"></i> Barril Acabando</span>
+              </div>
+              <div style="font-size:1.6rem; font-weight:800; color:#fbbf24; margin:8px 0;">11% Restante</div>
+              <div style="background:var(--border-subtle); height:8px; border-radius:4px; overflow:hidden;">
+                <div style="background:#f59e0b; width:11%; height:100%;"></div>
+              </div>
+              <div style="font-size:0.78rem; color:#fca5a5; margin-top:8px;">Alerta: Trocar barril nos próximos 18 minutos de pico!</div>
+            </div>
+          </div>
+        `
+      },
+
+      buffet: {
+        v1Title: 'Balança Serial RS-232 Integrada',
+        v1Icon: 'ph-bold ph-scales',
+        v1Html: `
+          <div class="mock-card" style="max-width:580px; margin:0 auto;">
+            <div class="mock-header">
+              <div>
+                <strong>Balança Serial RS-232 Integrada</strong>
+                <div style="font-size:0.8rem; color:var(--accent-green);"><i class="ph-bold ph-scales"></i> Toledo Prix 3 Conectada (COM1)</div>
+              </div>
+              <span class="mock-badge mock-badge-success">Estável ✓</span>
+            </div>
+            <div style="background:var(--bg-surface); padding:16px; border-radius:10px; margin:12px 0;">
+              <div class="mock-item-row">
+                <span style="color:var(--text-muted);">Peso Bruto Capturado:</span>
+                <strong>0,845 kg</strong>
+              </div>
+              <div class="mock-item-row">
+                <span style="color:var(--text-muted);">Tara Automática (Prato):</span>
+                <strong style="color:var(--primary);">- 0,315 kg</strong>
+              </div>
+              <div class="mock-item-row" style="font-size:1rem; border-top:1px solid var(--border-subtle); padding-top:8px; margin-top:4px;">
+                <span>Peso Líquido da Refeição:</span>
+                <strong style="color:var(--accent-green); font-size:1.15rem;">0,530 kg</strong>
+              </div>
+              <div class="mock-item-row">
+                <span style="color:var(--text-muted);">Valor do Quilo no Horário:</span>
+                <span>R$ 79,90 / kg</span>
+              </div>
+            </div>
+            <div class="mock-item-row" style="font-size:1.3rem; font-weight:800; padding:8px 0;">
+              <span>Valor Total da Refeição</span>
+              <span style="color:var(--accent-green);">R$ 42,35</span>
+            </div>
+            <div class="mock-btn-action" style="background:var(--primary); color:white;"><i class="ph-bold ph-barcode"></i> Lançar Instantaneamente na Comanda #42</div>
+          </div>
+        `,
+        v2Title: 'Validador de Saída & Catraca',
+        v2Icon: 'ph-bold ph-check-circle',
+        v2Html: `
+          <div class="mock-card" style="max-width:580px; margin:0 auto;">
+            <div class="mock-header">
+              <div>
+                <strong>Caixa & Validador de Saída</strong>
+                <div style="font-size:0.8rem; color:var(--text-muted);">Comanda QR #42</div>
+              </div>
+              <span class="mock-badge mock-badge-success">Pago via Pix TEF</span>
+            </div>
+            <div style="padding:10px 0;">
+              <div class="mock-item-row">
+                <span>Almoço Buffet (0,530 kg)</span>
+                <span>R$ 42,35</span>
+              </div>
+              <div class="mock-item-row">
+                <span>1x Suco Natural Laranja 400ml</span>
+                <span>R$ 9,00</span>
+              </div>
+              <div class="mock-item-row" style="font-size:1.1rem; font-weight:800; border-top:1px solid var(--border-subtle); margin-top:8px; padding-top:8px;">
+                <span>Total Pago</span>
+                <span style="color:var(--accent-green);">R$ 51,35</span>
+              </div>
+            </div>
+            <div style="background:rgba(16,185,129,0.1); border:1px solid #10b981; border-radius:8px; padding:12px; text-align:center; color:#34d399; font-weight:700; margin-top:10px;">
+              <i class="ph-bold ph-check-circle"></i> Catraca Liberada para Saída • Tempo no Caixa: 9 segundos
+            </div>
+          </div>
+        `
+      },
+
+      sushi: {
+        v1Title: 'Tablet Rodízio Digital',
+        v1Icon: 'ph-bold ph-device-tablet',
+        v1Html: `
+          <div class="mock-card" style="max-width:620px; margin:0 auto;">
+            <div class="mock-header">
+              <div>
+                <strong>Tablet de Rodízio Digital • Mesa 07</strong>
+                <div style="font-size:0.8rem; color:var(--text-muted);">2 Pessoas no Rodízio Especial</div>
+              </div>
+              <span class="mock-badge mock-badge-warning"><i class="ph-bold ph-shield-check"></i> Trava Anti-Desperdício</span>
+            </div>
+            <div style="background:var(--bg-surface); padding:12px; border-radius:8px; margin:10px 0;">
+              <div style="font-weight:700; font-size:0.88rem; margin-bottom:8px;">2ª Rodada (5 de 6 itens escolhidos):</div>
+              <div class="mock-item-row">
+                <span>8x Sashimi Salmão Trufado c/ Raspas de Limão Siciliano</span>
+                <span class="mock-badge mock-badge-primary">Sushibar</span>
+              </div>
+              <div class="mock-item-row">
+                <span>4x Niguiri Barriga de Salmão Maçaricado</span>
+                <span class="mock-badge mock-badge-primary">Sushibar</span>
+              </div>
+              <div class="mock-item-row">
+                <span>6x Uramaki Especial com Cream Cheese e Cebolinha</span>
+                <span class="mock-badge mock-badge-primary">Sushibar</span>
+              </div>
+              <div class="mock-item-row">
+                <span>4x Guioza Frito na Chapa</span>
+                <span class="mock-badge mock-badge-warning">Cozinha Quente</span>
+              </div>
+            </div>
+            <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.4; margin-bottom:10px;">
+              💡 <em>Para evitar desperdício de peixe fresco, novas peças só podem ser pedidas após consumo desta rodada (trava de 7 min).</em>
+            </div>
+            <div class="mock-btn-action" style="background:#10b981; color:white;"><i class="ph-bold ph-paper-plane-tilt"></i> Confirmar Rodada e Enviar ao Sushiman</div>
+          </div>
+        `,
+        v2Title: 'KDS Sushiman por Peças',
+        v2Icon: 'ph-bold ph-fish',
+        v2Html: `
+          <div class="mock-grid-2">
+            <div class="mock-card">
+              <div class="mock-header">
+                <strong>KDS Sushiman • Total de Peças</strong>
+                <span class="mock-badge mock-badge-primary">Fila de Montagem</span>
+              </div>
+              <div class="mock-item-row">
+                <span><strong>Sashimi Salmão Fresco</strong></span>
+                <span class="mock-badge mock-badge-warning">28 peças</span>
+              </div>
+              <div class="mock-item-sub">Mesas 04 (12x), 07 (8x), 12 (8x)</div>
+              <div class="mock-item-row" style="margin-top:8px;">
+                <span><strong>Niguiri Barriga Salmão</strong></span>
+                <span class="mock-badge mock-badge-success">14 peças</span>
+              </div>
+              <div class="mock-item-sub">Mesas 07 (4x), 09 (10x)</div>
+              <div class="mock-btn-action mock-btn-concluir" style="margin-top:14px;"><i class="ph-bold ph-check"></i> Prato Mesa 07 Montado</div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-header">
+                <strong>Praça Quente (Fritura & Chapa)</strong>
+                <span class="mock-badge mock-badge-blue">Cozinha</span>
+              </div>
+              <div class="mock-item-row">
+                <span>12x Hot Roll com Couve Crispy</span>
+                <span class="mock-badge mock-badge-warning">02:30</span>
+              </div>
+              <div class="mock-item-sub">Mesa 03 • Molho Tarê na saída</div>
+              <div class="mock-item-row" style="margin-top:8px;">
+                <span>8x Shimeji na Manteiga</span>
+                <span class="mock-badge mock-badge-success">Pronto</span>
+              </div>
+              <div class="mock-item-sub">Mesa 07 • Chapa 1</div>
+            </div>
+          </div>
+        `
+      },
+
+      cafeteria: {
+        v1Title: 'PDV Balcão Relâmpago',
+        v1Icon: 'ph-bold ph-lightning',
+        v1Html: `
+          <div class="mock-card" style="max-width:580px; margin:0 auto;">
+            <div class="mock-header">
+              <div>
+                <strong>PDV Balcão Relâmpago (2 Toques)</strong>
+                <div style="font-size:0.8rem; color:var(--text-muted);">Horário de Pico Matinal</div>
+              </div>
+              <span class="mock-badge mock-badge-success">NFC Ativo</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0;">
+              <div style="background:var(--bg-surface); padding:10px; border-radius:8px; border:1px solid var(--border-subtle);">
+                <div style="font-weight:700; font-size:0.88rem;">1x Flat White Duplo</div>
+                <div style="font-size:0.78rem; color:var(--text-muted);">Leite Aveia (+R$ 3)</div>
+                <div style="font-weight:800; color:var(--accent-green); margin-top:4px;">R$ 15,00</div>
+              </div>
+              <div style="background:var(--bg-surface); padding:10px; border-radius:8px; border:1px solid var(--border-subtle);">
+                <div style="font-weight:700; font-size:0.88rem;">1x Toast de Avocado</div>
+                <div style="font-size:0.78rem; color:var(--text-muted);">Pão Fermentação Natural</div>
+                <div style="font-weight:800; color:var(--accent-green); margin-top:4px;">R$ 22,00</div>
+              </div>
+            </div>
+            <div class="mock-item-row" style="font-size:1.15rem; font-weight:800; padding:8px 0;">
+              <span>Total do Pedido</span>
+              <span style="color:var(--accent-green);">R$ 37,00</span>
+            </div>
+            <div class="mock-btn-action" style="background:var(--primary); color:white;"><i class="ph-bold ph-contactless-payment"></i> Aproxime o Cartão ou Celular (NFC)</div>
+          </div>
+        `,
+        v2Title: 'Fidelidade Digital WhatsApp',
+        v2Icon: 'ph-bold ph-gift',
+        v2Html: `
+          <div class="mock-card" style="max-width:580px; margin:0 auto;">
+            <div class="mock-header">
+              <div>
+                <strong>Clube Fidelidade via WhatsApp</strong>
+                <div style="font-size:0.8rem; color:var(--accent-green);">Cliente: Camila Rezende</div>
+              </div>
+              <span class="mock-badge mock-badge-primary">Nível Ouro</span>
+            </div>
+            <div style="background:var(--bg-surface); padding:14px; border-radius:10px; margin:12px 0;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-weight:700; font-size:0.9rem;">Cartão Virtual de Cafés:</span>
+                <strong style="color:var(--primary);">9 de 10 Selos</strong>
+              </div>
+              <div style="display:flex; gap:6px; margin:8px 0;">
+                <span class="mock-badge mock-badge-success">☕</span>
+                <span class="mock-badge mock-badge-success">☕</span>
+                <span class="mock-badge mock-badge-success">☕</span>
+                <span class="mock-badge mock-badge-success">☕</span>
+                <span class="mock-badge mock-badge-success">☕</span>
+                <span class="mock-badge mock-badge-success">☕</span>
+                <span class="mock-badge mock-badge-success">☕</span>
+                <span class="mock-badge mock-badge-success">☕</span>
+                <span class="mock-badge mock-badge-success">☕</span>
+                <span class="mock-badge mock-badge-warning">🎁 10º Grátis</span>
+              </div>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:8px;">
+                Disparado no WhatsApp dela agora: <em>"Camila, seu próximo espresso é por conta da casa! Te esperamos amanhã."</em>
+              </div>
+            </div>
+            <div class="mock-btn-action" style="background:#10b981; color:white;"><i class="ph-bold ph-whatsapp-logo"></i> Notificação de Prêmio Enviada com Sucesso</div>
+          </div>
+        `
+      },
+
+      alacarte: {
+        v1Title: 'Cardápio Multilíngue por IA',
+        v1Icon: 'ph-bold ph-translate',
+        v1Html: `
+          <div class="mock-card" style="max-width:620px; margin:0 auto;">
+            <div class="mock-header">
+              <div>
+                <strong>Cardápio Multilíngue por IA</strong>
+                <div style="font-size:0.8rem; color:var(--text-muted);">Mesa 02 • Turistas Franceses</div>
+              </div>
+              <span class="mock-badge mock-badge-blue"><i class="ph-bold ph-translate"></i> Tradução Gastronômica</span>
+            </div>
+            <div style="background:var(--bg-surface); padding:14px; border-radius:10px; margin:10px 0;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="font-size:1.05rem;">Médaillon de Filet Mignon Truffé</strong>
+                <strong style="color:var(--accent-green); font-size:1.05rem;">R$ 118,00</strong>
+              </div>
+              <div style="font-size:0.82rem; color:var(--text-muted); margin:4px 0 8px;">
+                "Tournedos de bœuf rôti au poivre vert, mousseline de pommes de terre à l'huile de truffe et légumes glacés au beurre."
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                <span class="mock-badge mock-badge-success">Sans Gluten (Gluten-Free)</span>
+                <span class="mock-badge mock-badge-warning">Contient des Produits Laitiers</span>
+                <span class="mock-badge mock-badge-primary">🍷 Accords: Cabernet Sauvignon Gran Reserva</span>
+              </div>
+            </div>
+            <div class="mock-btn-action" style="background:var(--primary); color:white;"><i class="ph-bold ph-fork-knife"></i> Lançar com Ponto da Carne: Saignant (Mal Passado)</div>
+          </div>
+        `,
+        v2Title: 'Matriz BCG de Rentabilidade',
+        v2Icon: 'ph-bold ph-chart-polar',
+        v2Html: `
+          <div class="mock-card" style="max-width:620px; margin:0 auto;">
+            <div class="mock-header">
+              <div>
+                <strong>Matriz BCG de Rentabilidade (Kasavana & Smith)</strong>
+                <div style="font-size:0.8rem; color:var(--text-muted);">Diagnóstico de Pratos do Trimestre</div>
+              </div>
+              <span class="mock-badge mock-badge-success"><i class="ph-bold ph-chart-polar"></i> IA Financeira</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0;">
+              <div style="background:var(--bg-surface); padding:10px; border-radius:8px; border-left:3px solid #10b981;">
+                <div style="font-weight:700; font-size:0.85rem;">⭐ Estrela (Alta Margem & Venda)</div>
+                <div style="font-size:0.8rem; margin:3px 0;">Risoto de Camarão com Brie</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">Margem Líquida: 68% • Vendas: 184 un/mês</div>
+                <div style="font-size:0.75rem; color:#34d399; font-weight:700; margin-top:4px;">Ação: Manter no topo da carta</div>
+              </div>
+              <div style="background:var(--bg-surface); padding:10px; border-radius:8px; border-left:3px solid #f59e0b;">
+                <div style="font-weight:700; font-size:0.85rem;">🐴 Burro de Carga (Alta Venda/Baixa Margem)</div>
+                <div style="font-size:0.8rem; margin:3px 0;">Salmão Grelhado c/ Legumes</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">Margem Líquida: 39% • Vendas: 210 un/mês</div>
+                <div style="font-size:0.75rem; color:#fbbf24; font-weight:700; margin-top:4px;">Ação: Reajustar R$ 4 (+R$ 840 lucro)</div>
+              </div>
+            </div>
+            <div class="mock-btn-action" style="background:#10b981; color:white;"><i class="ph-bold ph-trend-up"></i> Aplicar Otimização Sugerida no Cardápio</div>
+          </div>
+        `
+      }
+    };
+
+    let nichoAtual = 'pizzaria';
+    let visaoDispositivoAtual = 1;
+
+    function alternarVisaoDispositivo(visaoNum) {
+      visaoDispositivoAtual = visaoNum;
+      document.getElementById('btn-view-1').classList.toggle('active', visaoNum === 1);
+      document.getElementById('btn-view-2').classList.toggle('active', visaoNum === 2);
+      renderizarShowcase();
+    }
+
+    function renderizarShowcase() {
+      const screens = NICHOS_SCREENS[nichoAtual] || NICHOS_SCREENS['pizzaria'];
+      if (!screens) return;
+      
+      const tab1 = document.getElementById('tab-v1-label');
+      const tab2 = document.getElementById('tab-v2-label');
+      if (tab1) tab1.innerHTML = `<i class="${screens.v1Icon}"></i> ${screens.v1Title}`;
+      if (tab2) tab2.innerHTML = `<i class="${screens.v2Icon}"></i> ${screens.v2Title}`;
+      
+      const container = document.getElementById('device-screen-container');
+      if (container) {
+        container.innerHTML = visaoDispositivoAtual === 1 ? screens.v1Html : screens.v2Html;
+      }
+    }
+
+    // ENVIO DE LEAD QUALIFICADO
+    async function enviarLeadNicho(e) {
+      e.preventDefault();
+      const nome = document.getElementById('lead-nome').value.trim();
+      const cidade = document.getElementById('lead-cidade').value.trim();
+      const wpp = document.getElementById('lead-wpp').value.trim();
+      const feedback = document.getElementById('lead-msg-feedback');
+      const btn = document.getElementById('btn-enviar-lead');
+
+      if (!wpp) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Gerando Análise...';
+
+      const d = NICHOS_DATA[nichoAtual];
+      const roiVal = document.getElementById('sim-result-val') ? document.getElementById('sim-result-val').textContent : 'R$ 5.000,00';
+
+      try {
+        const res = await fetch('/api/leads/nicho', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nicho: nichoAtual,
+            restaurante_nome: nome,
+            cidade: cidade,
+            whatsapp: wpp,
+            roi_estimado: parseFloat(roiVal.replace(/[^0-9,]/g, '').replace(',', '.')) || 0
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          feedback.style.display = 'block';
+          feedback.style.color = 'var(--accent-green)';
+          feedback.innerHTML = '<i class="ph-bold ph-check-circle"></i> Diagnóstico gerado com sucesso! Abrindo atendimento no WhatsApp...';
+          
+          const msgWpp = `Olá! Solicitei um diagnóstico operacional do Chef Cozinha para o meu negócio (${nome} - ${cidade} / Segmento: ${nichoAtual}). Economia estimada de ${roiVal}/mês. Gostaria de receber os detalhes.`;
+          const urlWpp = `https://wa.me/5511999999999?text=${encodeURIComponent(msgWpp)}`;
+          setTimeout(() => {
+            window.open(urlWpp, '_blank');
+          }, 800);
+        } else {
+          feedback.style.display = 'block';
+          feedback.style.color = '#f87171';
+          feedback.textContent = data.erro || 'Erro ao registrar solicitação.';
+        }
+      } catch (err) {
+        feedback.style.display = 'block';
+        feedback.style.color = '#f87171';
+        feedback.textContent = 'Erro ao conectar com o servidor.';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph-bold ph-paper-plane-tilt"></i> Receber Diagnóstico';
+      }
+    }
+
+    // RENDERIZAÇÃO DO NICHO SELECIONADO
+    function selecionarNicho(nichoKey) {
+      if (!NICHOS_DATA[nichoKey]) nichoKey = 'pizzaria';
+      nichoAtual = nichoKey;
+
+      // Atualizar URL sem recarregar
+      if (history.pushState) {
+        history.pushState(null, null, `?nicho=${nichoKey}`);
+      }
+
+      // Atualizar todos os botões de cadastro para passar o nicho correto
+      document.querySelectorAll('a[href^="/registro.html"]').forEach(btn => {
+        btn.href = `/registro.html?nicho=${nichoKey}`;
+      });
+
+      // Atualizar pílulas da barra
+      document.querySelectorAll('.niche-pill').forEach(btn => {
+        const isMatch = btn.getAttribute('onclick').includes(nichoKey);
+        btn.classList.toggle('active', isMatch);
+      });
+
+      const d = NICHOS_DATA[nichoKey];
+
+      // Atualizar Hero
+      const badgeEl = document.getElementById('niche-badge');
+      badgeEl.innerHTML = `<i class="${d.badgeIcon}"></i> ${d.badgeText}`;
+      document.getElementById('niche-title').textContent = d.title;
+      document.getElementById('niche-subtitle').textContent = d.subtitle;
+
+      // WhatsApp Links
+      const wppUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(d.whatsappMsg)}`;
+      document.getElementById('btn-whatsapp-nicho').href = wppUrl;
+      document.getElementById('btn-whatsapp-final').href = wppUrl;
+      document.getElementById('btn-whatsapp-mobile').href = wppUrl;
+
+      // Atualizar Simulador
+      document.getElementById('sim-title').textContent = d.sim.title;
+      document.getElementById('sim-range1-label').textContent = d.sim.r1Label;
+      document.getElementById('sim-range2-label').textContent = d.sim.r2Label;
+      
+      const s1 = document.getElementById('sim-slider1');
+      s1.min = d.sim.r1Min; s1.max = d.sim.r1Max; s1.step = d.sim.r1Step; s1.value = d.sim.r1Val;
+
+      const s2 = document.getElementById('sim-slider2');
+      s2.min = d.sim.r2Min; s2.max = d.sim.r2Max; s2.step = d.sim.r2Step; s2.value = d.sim.r2Val;
+
+      document.getElementById('sim-result-desc').textContent = d.sim.desc;
+      calcularROI();
+
+      // Renderizar telas do dispositivo do nicho
+      renderizarShowcase();
+
+      // Atualizar Pilares
+      const pillarsContainer = document.getElementById('pillars-container');
+      pillarsContainer.innerHTML = d.pillars.map(p => `
+        <div class="pillar-card">
+          <div class="pillar-icon-box">
+            <i class="${p.icon}"></i>
+          </div>
+          <h4>${p.title}</h4>
+          <p>${p.desc}</p>
+        </div>
+      `).join('');
+
+      // Atualizar Comparativo
+      const compRows = document.getElementById('comparison-rows');
+      compRows.innerHTML = d.comparison.map(c => `
+        <tr>
+          <td><strong>${c.feature}</strong></td>
+          <td class="col-highlight">
+            <span class="check-yes"><i class="ph-bold ph-check"></i> Incluso Nativo</span>
+          </td>
+          <td>
+            <span class="check-no"><i class="ph-bold ph-x"></i> ${c.outros}</span>
+          </td>
+        </tr>
+      `).join('');
+
+      // Atualizar Depoimento
+      document.getElementById('test-avatar').textContent = d.testimonial.avatar;
+      document.getElementById('test-quote').textContent = d.testimonial.quote;
+      document.getElementById('test-author').textContent = d.testimonial.author;
+      document.getElementById('test-business').textContent = d.testimonial.business;
+
+      // Atualizar FAQs
+      const faqContainer = document.getElementById('faq-container');
+      faqContainer.innerHTML = d.faqs.map((f, idx) => `
+        <div class="faq-item ${idx === 0 ? 'open' : ''}">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>${f.q}</span>
+            <i class="ph-bold ph-caret-down"></i>
+          </div>
+          <div class="faq-answer">${f.a}</div>
+        </div>
+      `).join('');
+
+      // CTA Final Title
+      document.getElementById('cta-final-title').textContent = `Transforme Sua ${d.badgeText.replace('Especialista em ', '').replace('Solução Sob Medida para ', '')} com o Chef Cozinha`;
+    }
+
+    // CALCULA VALOR DO ROI DINÂMICO
+    function calcularROI() {
+      const d = NICHOS_DATA[nichoAtual];
+      if (!d) return;
+
+      const v1 = parseFloat(document.getElementById('sim-slider1').value);
+      const v2 = parseFloat(document.getElementById('sim-slider2').value);
+
+      document.getElementById('sim-range1-val').textContent = `${v1.toLocaleString('pt-BR')} ${d.sim.r1Unit}`;
+      document.getElementById('sim-range2-val').textContent = `${(d.sim.r2Prefix || '')}${v2.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+      const resultado = d.sim.calc(v1, v2);
+      document.getElementById('sim-result-val').textContent = `R$ ${resultado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    // ACCORDION FAQ
+    function toggleFaq(el) {
+      const item = el.parentElement;
+      item.classList.toggle('open');
+    }
+
+    // TOGGLE TEMA CLARO / ESCURO
+    function toggleTema() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      const novoTema = isDark ? 'light' : 'dark';
+      html.setAttribute('data-theme', novoTema);
+      document.getElementById('theme-icon').className = isDark ? 'ph-bold ph-moon' : 'ph-bold ph-sun';
+      localStorage.setItem('chef_site_theme', novoTema);
+    }
+
+    // INICIALIZAÇÃO COM BASE NA URL
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      let nichoUrl = params.get('nicho');
+      
+      const pathname = window.location.pathname.toLowerCase();
+      if (!nichoUrl) {
+        if (pathname.includes('pizzaria')) nichoUrl = 'pizzaria';
+        else if (pathname.includes('hamburgueria')) nichoUrl = 'hamburgueria';
+        else if (pathname.includes('bar')) nichoUrl = 'bar';
+        else if (pathname.includes('buffet')) nichoUrl = 'buffet';
+        else if (pathname.includes('sushi')) nichoUrl = 'sushi';
+        else if (pathname.includes('cafeteria')) nichoUrl = 'cafeteria';
+        else if (pathname.includes('restaurante')) nichoUrl = 'alacarte';
+      }
+
+      selecionarNicho(nichoUrl || 'pizzaria');
+
+      // Aplicar tema salvo
+      const temaSalvo = localStorage.getItem('chef_site_theme');
+      if (temaSalvo) {
+        document.documentElement.setAttribute('data-theme', temaSalvo);
+        const icon = document.getElementById('theme-icon');
+        if (icon) icon.className = temaSalvo === 'light' ? 'ph-bold ph-moon' : 'ph-bold ph-sun';
+      }
+    });
+  </script>
+</body>
+</html>

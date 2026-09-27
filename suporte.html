@@ -1779,6 +1779,9 @@
             <button class="btn btn-sm portal-afil-tab" id="tab-btn-pitchs" onclick="trocarTabPortalAfiliado('pitchs')" style="border-radius:20px; font-weight:600; background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08);">
               <i class="fa-solid fa-comments"></i> 🎯 Scripts &amp; Pitchs Mastigados
             </button>
+            <button class="btn btn-sm portal-afil-tab" id="tab-btn-assistente-ia" onclick="trocarTabPortalAfiliado('assistente-ia')" style="border-radius:20px; font-weight:600; background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08);">
+              <i class="fa-solid fa-robot" style="color:#00f2fe;"></i> 🧠 Assistente IA de Vendas
+            </button>
             <button class="btn btn-sm portal-afil-tab" id="tab-btn-calculadora" onclick="trocarTabPortalAfiliado('calculadora')" style="border-radius:20px; font-weight:600; background:rgba(255,255,255,0.04); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08);">
               <i class="fa-solid fa-calculator"></i> 🧮 Calculadora de Economia Real
             </button>
@@ -1980,7 +1983,40 @@
           </div>
 
           <!-- ════ ABA 4: CALCULADORA DE ECONOMIA REAL (FECHAMENTO NA HORA) ════ -->
-          <div id="afil-view-calculadora" class="afil-view-content" style="display:none;">
+                    <!-- ════ ABA: ASSISTENTE IA DE VENDAS ════ -->
+          <div id="afil-view-assistente-ia" class="afil-view-content" style="display:none;">
+            <div class="card" style="padding:0; border:1px solid rgba(0, 242, 254, 0.3); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; height: 600px; background:linear-gradient(135deg, rgba(0, 242, 254, 0.05), rgba(79, 172, 254, 0.02));">
+              <!-- Header IA -->
+              <div style="padding:1rem 1.5rem; background:rgba(0,0,0,0.4); border-bottom:1px solid rgba(0,242,254,0.15); display:flex; align-items:center; gap:15px;">
+                <div style="width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg, #00f2fe, #4facfe); display:flex; justify-content:center; align-items:center; box-shadow:0 0 15px rgba(0,242,254,0.4);">
+                  <i class="fa-solid fa-robot" style="color:#fff; font-size:1.1rem;"></i>
+                </div>
+                <div>
+                  <h3 style="margin:0; font-family:'Outfit', sans-serif; color:#00f2fe;">Vortex.ai — Mentor de Vendas</h3>
+                  <p style="margin:0; font-size:0.75rem; color:var(--text-muted);">IA treinada nas objeções mais difíceis do mercado gastronômico</p>
+                </div>
+              </div>
+
+              <!-- Chat Area -->
+              <div id="ia-chat-history" style="flex:1; padding:1.5rem; overflow-y:auto; display:flex; flex-direction:column; gap:1.2rem;">
+                <div style="align-self:flex-start; max-width:85%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0 12px 12px 12px; padding:1rem;">
+                  <p style="margin:0; font-size:0.9rem; line-height:1.5;">
+                    Fala, mestre das vendas! Sou o Vortex, seu mentor virtual de alta conversão. Cole aqui o que o dono do restaurante te disse ou qual objeção ele levantou. Eu vou te dar na hora o script de resposta exato para quebrar a objeção e fechar a venda!
+                  </p>
+                </div>
+              </div>
+
+              <!-- Input Area -->
+              <div style="padding:1rem 1.5rem; background:rgba(0,0,0,0.3); border-top:1px solid rgba(0,242,254,0.15); display:flex; gap:10px;">
+                <textarea id="ia-chat-input" placeholder="Ex: 'O cliente disse que já usa o ifood e não precisa de sistema próprio...'" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:0.8rem; color:#fff; font-family:inherit; font-size:0.9rem; resize:none; height:50px; line-height:1.4;" onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); enviarMensagemIA(); }"></textarea>
+                <button class="btn" style="background:linear-gradient(135deg, #00f2fe, #4facfe); color:#000; font-weight:800; border:none; border-radius:8px; width:50px; display:flex; justify-content:center; align-items:center; cursor:pointer; transition:transform 0.2s;" onclick="enviarMensagemIA()" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+<div id="afil-view-calculadora" class="afil-view-content" style="display:none;">
             <div class="card" style="padding:1.6rem; background:linear-gradient(135deg, rgba(16,185,129,0.06), rgba(59,130,246,0.04)); border:1px solid rgba(16,185,129,0.3); border-radius:16px; margin-bottom:1.5rem;">
               <div style="max-width:750px;">
                 <h3 style="color:#34d399; font-size:1.4rem; margin:0 0 6px 0; font-family:'Outfit',sans-serif; display:flex; align-items:center; gap:10px;">

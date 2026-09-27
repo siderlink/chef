@@ -1306,5 +1306,45 @@ module.exports = function(app, masterDb, sqlite3, options) {
     });
   });
 
+  // GET /api/suporte/implementacoes — Lista implementações solicitadas para o suporte agir
+  app.get('/api/suporte/implementacoes', suporteAuth, (req, res) => {
+    masterDb.all(
+      `SELECT s.*, r.nome as restaurante_nome 
+       FROM solicitacoes_features s
+       LEFT JOIN restaurantes r ON s.restaurante_id = r.id
+       ORDER BY s.id DESC LIMIT 100`,
+      [],
+      (err, rows) => {
+        if (err) return res.json({ ok: false, erro: err.message });
+        res.json({ ok: true, implementacoes: rows || [] });
+      }
+    );
+  });
+
+  // POST /api/suporte/implementacoes/acao — Atualiza status de uma implementação (aceitar, recusar, concluir)
+  app.post('/api/suporte/implementacoes/acao', suporteAuth, (req, res) => {
+    const { id, status } = req.body || {};
+    if (!id || !status) return res.json({ ok: false, erro: 'ID e Status são obrigatórios' });
+    
+    // Status suportados: solicitada, em_implementacao, implementada, recusada
+    masterDb.run(
+      `UPDATE solicitacoes_features SET status = ?, responsavel_id = ?, responsavel_nome = ?, responsavel_tipo = 'suporte', resolvido_em = datetime('now','localtime') WHERE id = ?`,
+      [status, req.suporteId, req.suporteData.nome, id],
+      function (err) {
+        if (err) return res.json({ ok: false, erro: err.message });
+        
+        let acaoAudit = 'IMPLEMENTACAO_ATUALIZADA';
+        if (status === 'em_implementacao') { acaoAudit = 'IMPLEMENTACAO_INICIADA'; }
+        if (status === 'implementada') { 
+          acaoAudit = 'IMPLEMENTACAO_CONCLUIDA';
+          gerarXP(req.suporteId, 30, 'IMPLEMENTACAO', 'Implementou módulo/feature solicitada', null);
+        }
+        
+        registrarAuditLog(req.suporteId, req.suporteData.nome, acaoAudit, `Status da implementação ID ${id} alterado para ${status}`, req);
+        res.json({ ok: true, mensagem: 'Status atualizado com sucesso' });
+      }
+    );
+  });
+
 };
 

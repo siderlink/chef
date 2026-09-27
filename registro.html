@@ -507,14 +507,40 @@
       <i class="ph ph-cooking-pot"></i>
     </div>
     <h1>Chef Cozinha SaaS</h1>
-    <p class="subtitle">Crie sua conta agora e ganhe 7 dias de trial gratuito!</p>
+    <p class="subtitle" id="regSubtitle">Crie sua conta agora e ganhe 14 dias de trial gratuito sem cartão!</p>
+
+    <div id="nichoDestaqueBanner" style="display:none; background: rgba(252, 75, 21, 0.1); border: 1px solid rgba(252, 75, 21, 0.3); border-radius: 12px; padding: 12px 14px; margin-bottom: 20px; font-size: 13px; line-height: 1.45; text-align: left; animation: fadeIn 0.3s ease;">
+      <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--primary); margin-bottom:4px;" id="nichoDestaqueTitulo">
+        <i class="ph-fill ph-sparkle"></i> Configuração Sob Medida
+      </div>
+      <div id="nichoDestaqueTexto" style="color:var(--text-muted); font-size:12.5px;">
+        Módulos e recursos calibrados especificamente para a operação do seu segmento.
+      </div>
+    </div>
 
     <form id="registroForm">
+      <div class="form-group">
+        <label for="segmento"><i class="ph ph-squares-four"></i> Segmento do Estabelecimento *</label>
+        <div class="input-wrapper">
+          <i class="ph ph-fork-knife"></i>
+          <select id="segmento" required>
+            <option value="pizzaria">🍕 Pizzaria & Forneria (1/2 Sabores, Bordas e KDS Forno)</option>
+            <option value="hamburgueria">🍔 Hamburgueria & Fast-Food (Totem Fast-Pass e KDS Multi-Praça)</option>
+            <option value="bar">🍺 Bar, Pub & Choperia (Comandas Individuais e Chopeiras)</option>
+            <option value="buffet">🥗 Buffet & Self-Service (Balança Serial RS-232 e Leitor de Saída)</option>
+            <option value="sushi">🍣 Sushi & Japonês (Rodízio Digital e KDS Sushiman)</option>
+            <option value="cafeteria">☕ Cafeteria & Doceria (PDV Balcão Ágil e Fidelidade WhatsApp)</option>
+            <option value="alacarte">🍷 À La Carte & Alta Gastronomia (Cardápio Multilíngue e BCG)</option>
+            <option value="a_la_carte">🍴 Outro Modelo Gastronômico</option>
+          </select>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="restauranteNome">Nome do Restaurante *</label>
         <div class="input-wrapper">
           <i class="ph ph-storefront"></i>
-          <input type="text" id="restauranteNome" placeholder="Ex: Pizzaria Bella Italia" required
+          <input type="text" id="restauranteNome" placeholder="Ex: Bella Cucina" required
             autocomplete="organization">
         </div>
       </div>
@@ -819,6 +845,84 @@
         }, 500);
       });
 
+      // ── Mapeamento & Detecção de Nichos Especializados ──
+      const NICHOS_INFO = {
+        pizzaria: {
+          icon: 'ph-fill ph-pizza',
+          titulo: 'Pizzaria & Forneria Selecionada',
+          desc: 'Otimização ativada: KDS para Forno com tempo de preparo, meio a meio configurável e roteirizador TSP para seus motoboys.'
+        },
+        hamburgueria: {
+          icon: 'ph-fill ph-hamburger',
+          titulo: 'Hamburgueria & Fast-Food Selecionada',
+          desc: 'Otimização ativada: Totem de Autoatendimento Fast-Pass (14s no CPF) e KDS multi-praça para chapa e montagem.'
+        },
+        bar: {
+          icon: 'ph-fill ph-beer-bottle',
+          titulo: 'Bar, Pub & Choperia Selecionado',
+          desc: 'Otimização ativada: Comandas individuais por assento, controle de desperdício em barris de chopp e split de conta.'
+        },
+        buffet: {
+          icon: 'ph-fill ph-scales',
+          titulo: 'Buffet & Self-Service Selecionado',
+          desc: 'Otimização ativada: Integração direta com Balança Serial RS-232, tara automática de prato e leitor de comandas na saída.'
+        },
+        sushi: {
+          icon: 'ph-fill ph-fish',
+          titulo: 'Sushi & Japonês Selecionado',
+          desc: 'Otimização ativada: Rodízio Digital inteligente com travas anti-desperdício e KDS Sushiman com contagem de peças.'
+        },
+        cafeteria: {
+          icon: 'ph-fill ph-coffee',
+          titulo: 'Cafeteria & Doceria Selecionada',
+          desc: 'Otimização ativada: PDV Balcão relâmpago, controle de receitas/gramaturas e Clube Fidelidade automático no WhatsApp.'
+        },
+        alacarte: {
+          icon: 'ph-fill ph-wine',
+          titulo: 'À La Carte & Alta Gastronomia Selecionada',
+          desc: 'Otimização ativada: Cardápio Multilíngue por IA (5 idiomas com alérgenos), gestão de reservas e Engenharia BCG.'
+        }
+      };
+
+      function aplicarNicho(nichoKey) {
+        const select = document.getElementById('segmento');
+        if (select && nichoKey) {
+          let n = nichoKey.toLowerCase();
+          if (n === 'burgers' || n === 'burger') n = 'hamburgueria';
+          if (n === 'bares' || n === 'pub' || n === 'choperia') n = 'bar';
+          if (n === 'buffets' || n === 'self-service') n = 'buffet';
+          if (n === 'japones' || n === 'rodizio-japones') n = 'sushi';
+          if (n === 'cafeterias' || n === 'doceria' || n === 'docerias') n = 'cafeteria';
+          if (n === 'restaurante' || n === 'restaurantes' || n === 'alta-gastronomia') n = 'alacarte';
+          if (select.querySelector(`option[value="${n}"]`)) {
+            select.value = n;
+          }
+        }
+
+        const selVal = select ? select.value : nichoKey;
+        const banner = document.getElementById('nichoDestaqueBanner');
+        const info = NICHOS_INFO[selVal];
+        if (banner && info) {
+          document.getElementById('nichoDestaqueTitulo').innerHTML = `<i class="${info.icon}"></i> ${info.titulo}`;
+          document.getElementById('nichoDestaqueTexto').textContent = info.desc;
+          banner.style.display = 'block';
+        } else if (banner) {
+          banner.style.display = 'none';
+        }
+      }
+
+      const selectSegmento = document.getElementById('segmento');
+      if (selectSegmento) {
+        selectSegmento.addEventListener('change', () => aplicarNicho(selectSegmento.value));
+      }
+
+      // Detecção automática via query params
+      const urlParams = new URLSearchParams(window.location.search);
+      const nichoDetectado = urlParams.get('nicho') || urlParams.get('segmento');
+      if (nichoDetectado) {
+        aplicarNicho(nichoDetectado);
+      }
+
       // ── Passo 1: Criar conta ──
       // Dias de pico: seleção múltipla
       document.querySelectorAll('#picoDias .pico-dia-btn').forEach(btn => {
@@ -828,6 +932,7 @@
       document.getElementById('registroForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const restauranteNome = document.getElementById('restauranteNome').value.trim();
+        const segmento = (document.getElementById('segmento') || {}).value || 'a_la_carte';
         const nome = document.getElementById('nome').value.trim();
         const telefone = document.getElementById('telefone').value.trim();
         const email = document.getElementById('email').value.trim();
@@ -846,7 +951,7 @@
           const res = await fetch('/api/auth/registro', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ restauranteNome, nome, email, telefone, senha, pico_dias, pico_hora_inicio, pico_hora_fim, monitor_sessao: window.__chefMonitorSessao || null, chaveAtivacao: (document.getElementById('chaveAtivacao') || {}).value || '' })
+            body: JSON.stringify({ restauranteNome, segmento, nome, email, telefone, senha, pico_dias, pico_hora_inicio, pico_hora_fim, monitor_sessao: window.__chefMonitorSessao || null, chaveAtivacao: (document.getElementById('chaveAtivacao') || {}).value || '' })
           });
           const data = await res.json();
           if (data.success) {
@@ -1216,6 +1321,7 @@
       function coletarCampos() {
         const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
         const campos = {
+          segmento: g('segmento'),
           restaurante_nome: g('restauranteNome'),
           dono_nome: g('nome'),
           telefone: g('telefone'),

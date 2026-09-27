@@ -150,7 +150,9 @@ export default defineConfig({
         'pagina-de-vendas-2': resolve(__dirname, 'pagina-de-vendas-2.html'),
         'pagina-vendas-2': resolve(__dirname, 'pagina-vendas-2.html'),
         'pagina-vendas-3': resolve(__dirname, 'pagina-vendas-3.html'),
-        'pagina-vendas-3d': resolve(__dirname, 'pagina-vendas-3d.html')
+        'pagina-vendas-3d': resolve(__dirname, 'pagina-vendas-3d.html'),
+        'site-vendas-nichos': resolve(__dirname, 'site-vendas-nichos.html'),
+        'vendas-nichos': resolve(__dirname, 'vendas-nichos.html')
       }
     }
   }

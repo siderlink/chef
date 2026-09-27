@@ -1381,11 +1381,19 @@ window.switchBillTab = (tab) => {
     t.classList.remove('active');
     t.style.background = 'transparent'; t.style.color = '#666';
   });
-  document.getElementById(`tab-bill-${tab}`).classList.add('active');
-  document.getElementById(`tab-bill-${tab}`).style.color = '#fc4b15';
+  const tabEl = document.getElementById(`tab-bill-${tab}`);
+  if (tabEl) {
+    tabEl.classList.add('active');
+    tabEl.style.color = '#fc4b15';
+  }
   
   document.querySelectorAll('.bill-content').forEach(c => c.style.display = 'none');
-  document.getElementById(`bill-content-${tab}`).style.display = 'block';
+  const contentEl = document.getElementById(`bill-content-${tab}`);
+  if (contentEl) contentEl.style.display = 'block';
+  
+  if (tab === 'assentos' && typeof window.carregarAssentosMesaGarcom === 'function') {
+    window.carregarAssentosMesaGarcom();
+  }
   
   renderBillView();
 };
