@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Chef Cozinha • Montador de Pizza Artesanal</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+
+  <style>
+    :root {
+      --bg: #090d14;
+      --card-bg: #121824;
+      --card-border: #1e293b;
+      --accent-orange: #fc4b15;
+      --accent-gold: #f59e0b;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-blue: #3b82f6;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      background: rgba(18, 24, 36, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 1rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      font-size: 2rem;
+      line-height: 1;
+      filter: drop-shadow(0 0 12px rgba(252, 75, 21, 0.5));
+    }
+
+    .brand-title h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .brand-title p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .prep-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent-green);
+    }
+
+    /* Layout Principal */
+    .builder-container {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 24px;
+      max-width: 1400px;
+      margin: 1.5rem auto;
+      padding: 0 1.5rem;
+      width: 100%;
+      flex: 1;
+    }
+
+    @media (max-width: 1024px) {
+      .builder-container {
+        grid-template-columns: 1fr;
+        padding-bottom: 120px;
+      }
+    }
+
+    /* Painel Central de Etapas */
+    .steps-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .step-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 12px;
+    }
+
+    .step-header h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-orange), #ea580c);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 900;
+    }
+
+    /* Seletor de Opções em Grade */
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .option-card {
+      background: #090d14;
+      border: 1.5px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .option-card:hover {
+      border-color: #475569;
+      transform: translateY(-2px);
+    }
+
+    .option-card.selected {
+      border-color: var(--accent-orange);
+      background: rgba(252, 75, 21, 0.08);
+      box-shadow: 0 0 15px rgba(252, 75, 21, 0.2);
+    }
+
+    .option-icon {
+      font-size: 1.8rem;
+    }
+
+    .option-title {
+      font-weight: 800;
+      font-size: 0.92rem;
+      color: #fff;
+    }
+
+    .option-sub {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      line-height: 1.3;
+    }
+
+    .option-price {
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--accent-gold);
+      margin-top: 4px;
+    }
+
+    /* Visual Pizza Wheel Graphic */
+    .pizza-wheel-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 0;
+    }
+
+    .pizza-wheel {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: #d97706;
+      border: 10px solid #b45309;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.4);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.4s ease;
+    }
+
+    .pizza-wheel:hover {
+      transform: rotate(5deg) scale(1.02);
+    }
+
+    .wheel-half-left, .wheel-half-right {
+      position: absolute;
+      width: 50%;
+      height: 100%;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .wheel-half-left {
+      left: 0;
+      background: radial-gradient(circle, #f59e0b 20%, #d97706 80%);
+      border-right: 2px dashed rgba(255,255,255,0.4);
+    }
+
+    .wheel-half-right {
+      right: 0;
+      background: radial-gradient(circle, #ea580c 20%, #c2410c 80%);
+    }
+
+    .wheel-sabor-label {
+      font-size: 0.72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      max-width: 80px;
+      word-break: break-word;
+    }
+
+    /* Cards de Sabores */
+    .flavor-card {
+      background: #090d14;
+      border: 1.5px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+
+    .flavor-card.active-sabor {
+      border-color: var(--accent-orange);
+      background: rgba(252, 75, 21, 0.06);
+    }
+
+    .flavor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .flavor-title {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flavor-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .flavor-btn-select {
+      background: linear-gradient(135deg, var(--accent-orange), #ea580c);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.15s;
+    }
+
+    .flavor-btn-select:hover {
+      transform: scale(1.03);
+    }
+
+    /* Personalização Fina: Retirar & Adicionar */
+    .custom-tags-container {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 8px;
+    }
+
+    .custom-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag-chip {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: var(--text-muted);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .tag-chip.retirado {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+      text-decoration: line-through;
+    }
+
+    .tag-chip.adicionado {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    /* Painel Lateral do Carrinho */
+    .cart-summary-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 22px;
+      position: sticky;
+      top: 90px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: fit-content;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .cart-title {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .summary-item strong {
+      color: #fff;
+    }
+
+    .total-box {
+      background: rgba(252, 75, 21, 0.08);
+      border: 1px solid rgba(252, 75, 21, 0.3);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    .total-val {
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--accent-orange);
+    }
+
+    .btn-checkout {
+      background: linear-gradient(135deg, var(--accent-green), #059669);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-checkout:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(16, 185, 129, 0.45);
+    }
+
+    /* Modal Checkout */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 500px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .form-control {
+      background: #090d14;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent-orange);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header>
+    <div class="brand-box">
+      <span class="brand-icon">🍕</span>
+      <div class="brand-title">
+        <h1>Chef Pizzaria Artesanal</h1>
+        <p>Monte sua Pizza em Tempo Real • Delivery & Retirada</p>
+      </div>
+    </div>
+    <div class="prep-badge" style="display:flex; align-items:center; gap:12px;">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--accent-green); animation: pulse 1.5s infinite;"></span>
+        <span id="txt-previsao-tempo">⏱️ Forno a todo vapor: 25 a 35 min</span>
+      </div>
+      <a href="/kds-cozinha-pizza.html" target="_blank" style="background:#f59e0b; color:#fff; text-decoration:none; padding:6px 12px; border-radius:8px; font-weight:800; font-size:0.8rem; display:flex; align-items:center; gap:4px;">
+        🔥 KDS Cozinha
+      </a>
+      <a href="/painel-dono.html" style="background:#1e293b; color:#cbd5e1; text-decoration:none; padding:6px 12px; border-radius:8px; font-weight:700; font-size:0.8rem;">
+        👑 Painel
+      </a>
+    </div>
+  </header>
+
+  <!-- Container -->
+  <div class="builder-container">
+
+    <!-- Fluxo de Montagem da Pizza -->
+    <div class="steps-flow">
+
+      <!-- Visual Pizza Wheel -->
+      <div class="step-card" style="text-align: center; background: radial-gradient(circle at center, rgba(30,41,59,0.7), var(--card-bg));">
+        <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 4px;">Sua Pizza Customizada</h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted);">Veja como a sua pizza está ficando montada</p>
+        
+        <div class="pizza-wheel-wrapper">
+          <div class="pizza-wheel" id="pizza-wheel-preview">
+            <div class="wheel-half-left">
+              <span style="font-size: 1.5rem;">🍕</span>
+              <span class="wheel-sabor-label" id="preview-sabor-1">Calabresa</span>
+            </div>
+            <div class="wheel-half-right">
+              <span style="font-size: 1.5rem;">🧀</span>
+              <span class="wheel-sabor-label" id="preview-sabor-2">Catupiry</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+          <button class="option-card selected" id="btn-fracao-1" style="padding: 8px 16px; min-width: 110px;" onclick="definirFracao(1)">
+            <span class="option-title">1 Sabor</span>
+          </button>
+          <button class="option-card" id="btn-fracao-2" style="padding: 8px 16px; min-width: 110px;" onclick="definirFracao(2)">
+            <span class="option-title">1/2 a 1/2</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ETAPA 1: TAMANHO -->
+      <div class="step-card">
+        <div class="step-header">
+          <h3><span class="step-num">1</span> Escolha o Tamanho</h3>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Fatias & Diâmetro</span>
+        </div>
+        <div class="options-grid" id="grid-tamanhos">
+          <div class="option-card" onclick="selecionarTamanho('Broto', 4, 38)">
+            <span class="option-icon">🍕</span>
+            <span class="option-title">Broto (25cm)</span>
+            <span class="option-sub">4 fatias • 1 pessoa</span>
+            <span class="option-price">a partir R$ 35,00</span>
+          </div>
+          <div class="option-card" onclick="selecionarTamanho('Média', 6, 48)">
+            <span class="option-icon">🍕</span>
+            <span class="option-title">Média (30cm)</span>
+            <span class="option-sub">6 fatias • 2 pessoas</span>
+            <span class="option-price">a partir R$ 48,00</span>
+          </div>
+          <div class="option-card selected" onclick="selecionarTamanho('Grande', 8, 56)">
+            <span class="option-icon">🍕</span>
+            <span class="option-title">Grande (35cm)</span>
+            <span class="option-sub">8 fatias • 3 a 4 pessoas</span>
+            <span class="option-price">a partir R$ 56,00</span>
+          </div>
+          <div class="option-card" onclick="selecionarTamanho('Família', 12, 68)">
+            <span class="option-icon">🍕</span>
+            <span class="option-title">Família (40cm)</span>
+            <span class="option-sub">12 fatias • 5+ pessoas</span>
+            <span class="option-price">a partir R$ 68,00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ETAPA 2: MASSA & BORDA -->
+      <div class="step-card">
+        <div class="step-header">
+          <h3><span class="step-num">2</span> Tipo de Massa & Borda Recheada</h3>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Estilo da Massa:</h4>
+          <div class="options-grid" id="grid-massas">
+            <!-- Populado via API -->
+          </div>
+        </div>
+
+        <div>
+          <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Borda Recheada:</h4>
+          <div class="options-grid" id="grid-bordas">
+            <!-- Populado via API -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ETAPA 3: SABORES & PERSONALIZAÇÃO -->
+      <div class="step-card">
+        <div class="step-header">
+          <h3><span class="step-num">3</span> Escolha os Sabores (<span id="txt-sabor-slot">1º Sabor</span>)</h3>
+          <span style="font-size: 0.82rem; color: var(--accent-gold);" id="txt-regra-preco">Regra: Maior valor</span>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 6px;">
+          <button class="tag-chip adicionado" onclick="filtrarCategoria('Todas', this)">Todas</button>
+          <button class="tag-chip" onclick="filtrarCategoria('Tradicional', this)">Tradicionais</button>
+          <button class="tag-chip" onclick="filtrarCategoria('Especial', this)">Especiais</button>
+          <button class="tag-chip" onclick="filtrarCategoria('Premium', this)">Premium</button>
+          <button class="tag-chip" onclick="filtrarCategoria('Doce', this)">Doces 🍫</button>
+        </div>
+
+        <div id="lista-sabores" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Populado via API -->
+        </div>
+      </div>
+
+      <!-- ETAPA 4: BEBIDAS & ACOMPANHAMENTOS -->
+      <div class="step-card">
+        <div class="step-header">
+          <h3><span class="step-num">4</span> Adicione Bebidas & Combos</h3>
+        </div>
+        <div class="options-grid" id="grid-bebidas">
+          <!-- Populado via API -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Carrinho Lateral Fixo -->
+    <div>
+      <div class="cart-summary-card">
+        <div class="cart-title">
+          <span>Resumo do Pedido</span>
+          <span style="font-size: 1.2rem;">🛒</span>
+        </div>
+
+        <div class="summary-item">
+          <span>Tamanho:</span>
+          <strong id="sum-tamanho">Grande (8 fatias)</strong>
+        </div>
+
+        <div class="summary-item">
+          <span>Massa:</span>
+          <strong id="sum-massa">Tradicional Crocante</strong>
+        </div>
+
+        <div class="summary-item">
+          <span>Borda:</span>
+          <strong id="sum-borda">Sem Borda</strong>
+        </div>
+
+        <div style="border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 10px;">
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 6px;">Sabores Selecionados:</div>
+          <div id="sum-sabores-list" style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 8px;">
+              <strong style="color: #fff;" id="sum-sabor-1">1/2 Calabresa Especial</strong>
+              <div id="sum-mod-1" style="font-size: 0.75rem; color: var(--text-muted);">Padrão</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 8px;" id="box-sum-sabor-2">
+              <strong style="color: #fff;" id="sum-sabor-2">1/2 Frango com Catupiry</strong>
+              <div id="sum-mod-2" style="font-size: 0.75rem; color: var(--text-muted);">Padrão</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="box-sum-bebidas" style="display: none; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 10px;">
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">Bebidas Extras:</div>
+          <div id="sum-bebidas-list" style="font-size: 0.85rem; color: #cbd5e1;"></div>
+        </div>
+
+        <div class="total-box">
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total a Pagar</div>
+            <div class="total-val" id="sum-total-val">R$ 62,00</div>
+          </div>
+          <div style="text-align: right; font-size: 0.75rem; color: var(--accent-green);">
+            ✔ Preço transparente<br>sem surpresas
+          </div>
+        </div>
+
+        <button class="btn-checkout" onclick="abrirModalCheckout()">
+          <span>Finalizar Pedido Agora</span>
+          <i class="ph-bold ph-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal Checkout -->
+  <div class="modal-overlay" id="modal-checkout">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 12px;">
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff;">🛵 Finalizar & Despachar para Cozinha</h3>
+        <button onclick="fecharModalCheckout()" style="background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label>Seu Nome Completo:</label>
+        <input type="text" id="chk-nome" class="form-control" placeholder="Ex: Lucas Silva">
+      </div>
+
+      <div class="form-group">
+        <label>WhatsApp (para acompanhar preparo e entrega):</label>
+        <input type="tel" id="chk-whatsapp" class="form-control" placeholder="(11) 99999-8888">
+      </div>
+
+      <div class="form-group">
+        <label>Modalidade:</label>
+        <select id="chk-tipo-consumo" class="form-control" onchange="toggleEndereco(this.value)">
+          <option value="delivery">🛵 Entrega Delivery no Endereço</option>
+          <option value="retirada">🏪 Retirada no Balcão (Economize frete e tempo)</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="group-endereco">
+        <label>Endereço de Entrega Completo (Rua e Número):</label>
+        <input type="text" id="chk-endereco" class="form-control" placeholder="Rua das Flores, 123 - Apto 42">
+      </div>
+
+      <div class="form-group" id="group-bairro">
+        <label>Bairro (Essencial para Rota Expressa de Entrega):</label>
+        <input type="text" id="chk-bairro" class="form-control" placeholder="Ex: Centro, Batel, Moema, etc.">
+      </div>
+
+      <div class="form-group">
+        <label>Forma de Pagamento:</label>
+        <select id="chk-pagamento" class="form-control">
+          <option value="pix">⚡ Pix Dinâmico (Aprovação Imediata)</option>
+          <option value="cartao_entrega">💳 Cartão no ato da entrega (Maquininha do Motoboy)</option>
+          <option value="dinheiro">💵 Dinheiro (Troco na entrega)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Observações para o Pizzaiolo (Opcional):</label>
+        <input type="text" id="chk-obs" class="form-control" placeholder="Ex: Cortar à francesa, bem passada, etc.">
+      </div>
+
+      <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.9rem; color: #fff;">Valor Total:</span>
+        <strong id="modal-total-display" style="font-size: 1.25rem; font-family: var(--font-mono); color: var(--accent-green);">R$ 62,00</strong>
+      </div>
+
+      <button class="btn-checkout" id="btn-enviar-pedido" onclick="confirmarPedidoPizzaria()">
+        <span>Confirmar & Enviar Pedido</span>
+        <i class="ph-bold ph-check"></i>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Estado do Montador
+    let catalogo = { sabores: [], massas: [], bordas: [], adicionais: [], bebidas: [] };
+    let pedidoAtual = {
+      tamanho: 'Grande',
+      fatias: 8,
+      fracoes_qtd: 2,
+      massa: { nome: 'Tradicional Crocante', preco: 0 },
+      borda: { nome: 'Sem Borda Recheada', preco: 0 },
+      sabor_slot_ativo: 1, // 1 ou 2
+      sabores_selecionados: [
+        { id: 1, nome: 'Calabresa Especial', preco_base: 56, retirar: [], adicionar: [] },
+        { id: 2, nome: 'Frango com Catupiry Original', preco_base: 62, retirar: [], adicionar: [] }
+      ],
+      bebidas_selecionadas: []
+    };
+
+    async function carregarCatalogo() {
+      try {
+        const res = await fetch('/api/pizzaria/catalogo');
+        const data = await res.json();
+        if (data.ok) {
+          catalogo = data;
+          renderizarMassas();
+          renderizarBordas();
+          renderizarSabores('Todas');
+          renderizarBebidas();
+          recalcularTotal();
+        }
+      } catch (err) {
+        console.error('Erro ao carregar cardápio:', err);
+      }
+    }
+
+    async function carregarPrevisaoTempo() {
+      try {
+        const res = await fetch('/api/pizzaria/previsao-tempo');
+        const data = await res.json();
+        if (data.ok && data.tempo_estimado_min) {
+          document.getElementById('txt-previsao-tempo').innerText = `⏱️ Forno a todo vapor: ${data.tempo_estimado_min - 5} a ${data.tempo_estimado_min + 5} min`;
+        }
+      } catch (err) {}
+    }
+
+    function definirFracao(qtd) {
+      pedidoAtual.fracoes_qtd = qtd;
+      document.getElementById('btn-fracao-1').classList.toggle('selected', qtd === 1);
+      document.getElementById('btn-fracao-2').classList.toggle('selected', qtd === 2);
+
+      const rightHalf = document.querySelector('.wheel-half-right');
+      const boxSabor2 = document.getElementById('box-sum-sabor-2');
+
+      if (qtd === 1) {
+        if (rightHalf) rightHalf.style.display = 'none';
+        document.querySelector('.wheel-half-left').style.width = '100%';
+        if (boxSabor2) boxSabor2.style.display = 'none';
+        pedidoAtual.sabor_slot_ativo = 1;
+        document.getElementById('txt-sabor-slot').innerText = 'Sabor Único';
+      } else {
+        if (rightHalf) rightHalf.style.display = 'flex';
+        document.querySelector('.wheel-half-left').style.width = '50%';
+        if (boxSabor2) boxSabor2.style.display = 'block';
+        document.getElementById('txt-sabor-slot').innerText = `Slot ${pedidoAtual.sabor_slot_ativo}º Sabor`;
+      }
+      atualizarPreviewVisual();
+      recalcularTotal();
+    }
+
+    function selecionarTamanho(nome, fatias, precoBase) {
+      pedidoAtual.tamanho = nome;
+      pedidoAtual.fatias = fatias;
+
+      document.querySelectorAll('#grid-tamanhos .option-card').forEach(card => {
+        card.classList.toggle('selected', card.innerText.includes(nome));
+      });
+
+      document.getElementById('sum-tamanho').innerText = `${nome} (${fatias} fatias)`;
+      recalcularTotal();
+    }
+
+    function renderizarMassas() {
+      const container = document.getElementById('grid-massas');
+      container.innerHTML = catalogo.massas.map((m, idx) => `
+        <div class="option-card ${idx === 0 ? 'selected' : ''}" onclick="selecionarMassa('${m.nome}', ${m.preco_adicional}, this)">
+          <span class="option-title">${m.nome}</span>
+          <span class="option-sub">${m.descricao || ''}</span>
+          <span class="option-price">${m.preco_adicional > 0 ? '+ R$ ' + m.preco_adicional.toFixed(2) : 'Grátis'}</span>
+        </div>
+      `).join('');
+    }
+
+    function selecionarMassa(nome, preco, el) {
+      pedidoAtual.massa = { nome, preco };
+      document.querySelectorAll('#grid-massas .option-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('sum-massa').innerText = nome;
+      recalcularTotal();
+    }
+
+    function renderizarBordas() {
+      const container = document.getElementById('grid-bordas');
+      container.innerHTML = catalogo.bordas.map((b, idx) => `
+        <div class="option-card ${idx === 0 ? 'selected' : ''}" onclick="selecionarBorda('${b.nome}', ${b.preco_adicional}, this)">
+          <span class="option-title">${b.nome}</span>
+          <span class="option-price">${b.preco_adicional > 0 ? '+ R$ ' + b.preco_adicional.toFixed(2) : 'Inclusa'}</span>
+        </div>
+      `).join('');
+    }
+
+    function selecionarBorda(nome, preco, el) {
+      pedidoAtual.borda = { nome, preco };
+      document.querySelectorAll('#grid-bordas .option-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('sum-borda').innerText = nome;
+      recalcularTotal();
+    }
+
+    function filtrarCategoria(cat, btn) {
+      document.querySelectorAll('.tags-row button, .step-card button.tag-chip').forEach(b => b.classList.remove('adicionado'));
+      if (btn) btn.classList.add('adicionado');
+      renderizarSabores(cat);
+    }
+
+    function renderizarSabores(filtro) {
+      const container = document.getElementById('lista-sabores');
+      const lista = filtro === 'Todas' ? catalogo.sabores : catalogo.sabores.filter(s => s.categoria === filtro);
+
+      container.innerHTML = lista.map(s => {
+        const precoChave = pedidoAtual.tamanho === 'Broto' ? s.preco_broto :
+                           pedidoAtual.tamanho === 'Média' ? s.preco_media :
+                           pedidoAtual.tamanho === 'Família' ? s.preco_familia : s.preco_grande;
+
+        return `
+          <div class="flavor-card" id="card-sabor-${s.id}">
+            <div class="flavor-header">
+              <div>
+                <div class="flavor-title">
+                  <span>${s.emoji || '🍕'}</span>
+                  <span>${s.nome}</span>
+                  <span style="font-size:0.75rem; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:6px; color:var(--text-muted); font-weight:700;">${s.categoria}</span>
+                </div>
+                <p class="flavor-desc">${s.descricao}</p>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-family:var(--font-mono); font-weight:800; font-size:1.1rem; color:var(--accent-gold); margin-bottom:6px;">
+                  R$ ${(precoChave || 56).toFixed(2)}
+                </div>
+                <button class="flavor-btn-select" onclick="escolherSabor(${s.id}, '${s.nome}', ${precoChave})">
+                  <span>Escolher</span>
+                  <i class="ph-bold ph-plus"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Ingredientes Padrão (Opção de Retirar) -->
+            <div class="custom-tags-container">
+              <div class="custom-title">Ingredientes (Clique para Retirar):</div>
+              <div class="tags-row">
+                ${(s.ingredientes || []).map(ing => `
+                  <span class="tag-chip" onclick="toggleRetirarIngrediente(${s.id}, '${ing}', this)">
+                    <i class="ph-bold ph-check"></i> ${ing}
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Adicionais Extras Sugeridos -->
+            <div class="custom-tags-container" style="margin-top:6px;">
+              <div class="custom-title">Adicionais Extras:</div>
+              <div class="tags-row">
+                ${catalogo.adicionais.slice(0, 4).map(ad => `
+                  <span class="tag-chip" onclick="toggleAdicional(${s.id}, '${ad.nome}', ${ad.preco}, this)">
+                    <i class="ph-bold ph-plus"></i> ${ad.nome} (+R$ ${ad.preco.toFixed(2)})
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escolherSabor(id, nome, preco) {
+      const slotIndex = pedidoAtual.sabor_slot_ativo - 1;
+      pedidoAtual.sabores_selecionados[slotIndex] = {
+        id,
+        nome,
+        preco_base: preco,
+        retirar: [],
+        adicionar: []
+      };
+
+      if (pedidoAtual.fracoes_qtd === 2 && pedidoAtual.sabor_slot_ativo === 1) {
+        pedidoAtual.sabor_slot_ativo = 2;
+        document.getElementById('txt-sabor-slot').innerText = 'Agora escolha o 2º Sabor';
+      }
+
+      atualizarPreviewVisual();
+      recalcularTotal();
+    }
+
+    function toggleRetirarIngrediente(saborId, ing, el) {
+      el.classList.toggle('retirado');
+      const isRetirado = el.classList.contains('retirado');
+
+      const s = pedidoAtual.sabores_selecionados.find(x => x && x.id === saborId);
+      if (s) {
+        if (isRetirado) {
+          if (!s.retirar.includes(ing)) s.retirar.push(ing);
+        } else {
+          s.retirar = s.retirar.filter(x => x !== ing);
+        }
+      }
+      atualizarResumoModificacoes();
+    }
+
+    function toggleAdicional(saborId, nome, preco, el) {
+      el.classList.toggle('adicionado');
+      const isAdicionado = el.classList.contains('adicionado');
+
+      const s = pedidoAtual.sabores_selecionados.find(x => x && x.id === saborId);
+      if (s) {
+        if (isAdicionado) {
+          s.adicionar.push({ nome, preco });
+        } else {
+          s.adicionar = s.adicionar.filter(x => x.nome !== nome);
+        }
+      }
+      recalcularTotal();
+      atualizarResumoModificacoes();
+    }
+
+    function atualizarPreviewVisual() {
+      const s1 = pedidoAtual.sabores_selecionados[0] || { nome: 'Selecione' };
+      const s2 = pedidoAtual.sabores_selecionados[1] || { nome: 'Selecione' };
+
+      document.getElementById('preview-sabor-1').innerText = s1.nome.split(' ')[0];
+      document.getElementById('sum-sabor-1').innerText = (pedidoAtual.fracoes_qtd === 2 ? '1/2 ' : 'Inteira ') + s1.nome;
+
+      if (pedidoAtual.fracoes_qtd === 2) {
+        document.getElementById('preview-sabor-2').innerText = s2.nome.split(' ')[0];
+        document.getElementById('sum-sabor-2').innerText = '1/2 ' + s2.nome;
+      }
+    }
+
+    function atualizarResumoModificacoes() {
+      const s1 = pedidoAtual.sabores_selecionados[0];
+      const s2 = pedidoAtual.sabores_selecionados[1];
+
+      const formatMod = (s) => {
+        if (!s) return 'Padrão';
+        const mods = [];
+        if (s.retirar && s.retirar.length) mods.push(`🚫 Sem: ${s.retirar.join(', ')}`);
+        if (s.adicionar && s.adicionar.length) mods.push(`✨ Adic: ${s.adicionar.map(a => a.nome).join(', ')}`);
+        return mods.length ? mods.join(' | ') : 'Receita original padrão';
+      };
+
+      if (document.getElementById('sum-mod-1')) document.getElementById('sum-mod-1').innerText = formatMod(s1);
+      if (document.getElementById('sum-mod-2')) document.getElementById('sum-mod-2').innerText = formatMod(s2);
+    }
+
+    function renderizarBebidas() {
+      const container = document.getElementById('grid-bebidas');
+      container.innerHTML = catalogo.bebidas.map(b => `
+        <div class="option-card" id="card-bebida-${b.id}" onclick="toggleBebida('${b.id}', '${b.nome}', ${b.preco}, this)">
+          <span class="option-icon">${b.emoji}</span>
+          <span class="option-title">${b.nome}</span>
+          <span class="option-price">+ R$ ${b.preco.toFixed(2)}</span>
+        </div>
+      `).join('');
+    }
+
+    function toggleBebida(id, nome, preco, el) {
+      el.classList.toggle('selected');
+      const idx = pedidoAtual.bebidas_selecionadas.findIndex(b => b.id === id);
+      if (idx > -1) {
+        pedidoAtual.bebidas_selecionadas.splice(idx, 1);
+      } else {
+        pedidoAtual.bebidas_selecionadas.push({ id, nome, preco, qtd: 1 });
+      }
+
+      const boxBebidas = document.getElementById('box-sum-bebidas');
+      const listBebidas = document.getElementById('sum-bebidas-list');
+      if (pedidoAtual.bebidas_selecionadas.length) {
+        boxBebidas.style.display = 'block';
+        listBebidas.innerHTML = pedidoAtual.bebidas_selecionadas.map(b => `• ${b.nome} (R$ ${b.preco.toFixed(2)})`).join('<br>');
+      } else {
+        boxBebidas.style.display = 'none';
+      }
+
+      recalcularTotal();
+    }
+
+    function recalcularTotal() {
+      // Regra da Pizzaria: Preço base da pizza é o MAIOR valor entre as metades escolhidas
+      let precoPizzaBase = 0;
+      if (pedidoAtual.fracoes_qtd === 1) {
+        precoPizzaBase = pedidoAtual.sabores_selecionados[0]?.preco_base || 56;
+      } else {
+        const p1 = pedidoAtual.sabores_selecionados[0]?.preco_base || 56;
+        const p2 = pedidoAtual.sabores_selecionados[1]?.preco_base || 56;
+        precoPizzaBase = Math.max(p1, p2);
+      }
+
+      // Adicionais de borda e massa
+      const precoBorda = pedidoAtual.borda?.preco || 0;
+      const precoMassa = pedidoAtual.massa?.preco || 0;
+
+      // Adicionais finos das fatias
+      let totalExtras = 0;
+      pedidoAtual.sabores_selecionados.forEach(s => {
+        if (s && s.adicionar) {
+          s.adicionar.forEach(a => totalExtras += a.preco);
+        }
+      });
+
+      // Bebidas extras
+      let totalBebidas = 0;
+      pedidoAtual.bebidas_selecionadas.forEach(b => totalBebidas += b.preco);
+
+      const totalFinal = precoPizzaBase + precoBorda + precoMassa + totalExtras + totalBebidas;
+      pedidoAtual.valor_total = totalFinal;
+
+      document.getElementById('sum-total-val').innerText = 'R$ ' + totalFinal.toFixed(2);
+      document.getElementById('modal-total-display').innerText = 'R$ ' + totalFinal.toFixed(2);
+    }
+
+    function abrirModalCheckout() {
+      document.getElementById('modal-checkout').style.display = 'flex';
+    }
+
+    function fecharModalCheckout() {
+      document.getElementById('modal-checkout').style.display = 'none';
+    }
+
+    function toggleEndereco(tipo) {
+      const isRetirada = tipo === 'retirada';
+      document.getElementById('group-endereco').style.display = isRetirada ? 'none' : 'flex';
+      const elBairro = document.getElementById('group-bairro');
+      if (elBairro) elBairro.style.display = isRetirada ? 'none' : 'flex';
+    }
+
+    async function confirmarPedidoPizzaria() {
+      const nome = document.getElementById('chk-nome').value.trim();
+      const whatsapp = document.getElementById('chk-whatsapp').value.trim();
+      const tipo = document.getElementById('chk-tipo-consumo').value;
+      const endereco = document.getElementById('chk-endereco').value.trim();
+      const bairro = (document.getElementById('chk-bairro')?.value || '').trim();
+      const pagamento = document.getElementById('chk-pagamento').value;
+      const obs = document.getElementById('chk-obs').value.trim();
+
+      if (!nome) {
+        alert('Por favor, informe seu nome.');
+        return;
+      }
+
+      if (tipo === 'delivery' && !endereco) {
+        alert('Por favor, informe o endereço de entrega completo.');
+        return;
+      }
+
+      const btn = document.getElementById('btn-enviar-pedido');
+      btn.innerText = 'Enviando para o Forno...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/pizzaria/pedido-customizado', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cliente_nome: nome,
+            cliente_whatsapp: whatsapp,
+            tipo_consumo: tipo,
+            endereco_entrega: endereco,
+            bairro: bairro,
+            tamanho: pedidoAtual.tamanho,
+            massa: pedidoAtual.massa.nome,
+            borda: pedidoAtual.borda.nome,
+            fracoes: pedidoAtual.sabores_selecionados.slice(0, pedidoAtual.fracoes_qtd),
+            bebidas: pedidoAtual.bebidas_selecionadas,
+            valor_total: pedidoAtual.valor_total,
+            forma_pagamento: pagamento,
+            observacoes: obs
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          alert(`🍕 Pedido #${data.pedido_id} recebido com sucesso!\nPrevisão: ${data.tempo_estimado_min} minutos.\nA cozinha já começou a abrir e rechear sua massa!`);
+          fecharModalCheckout();
+        } else {
+          alert('Erro ao processar: ' + data.erro);
+        }
+      } catch (err) {
+        alert('Erro ao enviar pedido: ' + err.message);
+      } finally {
+        btn.innerText = 'Confirmar & Enviar Pedido';
+        btn.disabled = false;
+      }
+    }
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', () => {
+      carregarCatalogo();
+      carregarPrevisaoTempo();
+      setInterval(carregarPrevisaoTempo, 30000);
+    });
+  </script>
+</body>
+</html>

@@ -13339,6 +13339,21 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
     } catch (eTurbo) {
       console.error('Erro ao carregar o Controller Add-ons Monetização Turbo Prod:', eTurbo);
     }
+
+    try {
+      require('./controllers/pizzaria-inteligente')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('🍕 Controller Pizzaria Inteligente carregado com sucesso no Prod.');
+    } catch (ePizza) {
+      console.error('Erro ao carregar o Controller Pizzaria Inteligente Prod:', ePizza);
+    }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);
   }

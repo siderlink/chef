@@ -13118,6 +13118,21 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
     } catch (eTurbo) {
       console.error('Erro ao carregar o Controller Add-ons Monetizacao Turbo:', eTurbo);
     }
+
+    try {
+      require('./controllers/pizzaria-inteligente')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('🍕 Controller Pizzaria Inteligente (Montador Customizado & KDS de Forno) carregado com sucesso.');
+    } catch (ePizza) {
+      console.error('Erro ao carregar o Controller Pizzaria Inteligente:', ePizza);
+    }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);
   }

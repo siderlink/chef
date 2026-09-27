@@ -592,6 +592,9 @@ namespace ChefCozinha.Sync
             trayMenu.Items.Add("📡 Radar de Concorrência (Raio Km)", null, (s, e) => OpenRadarInBrowser());
             trayMenu.Items.Add("💳 Auditor de Taxas de Cartão", null, (s, e) => OpenAuditorInBrowser());
             trayMenu.Items.Add("🧾 Entrada DANFE XML (Estoque)", null, (s, e) => OpenDanfeInBrowser());
+            trayMenu.Items.Add("🍕 Montador de Pizza Visual", null, (s, e) => OpenPizzaBuilderInBrowser());
+            trayMenu.Items.Add("🔥 KDS Cozinha (Linha Pizzas)", null, (s, e) => OpenKdsPizzaInBrowser());
+            trayMenu.Items.Add("🛵 Despacho & Motoboys (TSP)", null, (s, e) => OpenMotoboyDispatchInBrowser());
             trayMenu.Items.Add("-");
             trayMenu.Items.Add("Sair do Sync Agent", null, (s, e) => {
                 isExiting = true;
@@ -875,6 +878,48 @@ namespace ChefCozinha.Sync
                 string url = string.Format("http://localhost:{0}/sync-hub.html#tab-danfe", config.local_port);
                 Process.Start(url);
                 AppendLog("Abrindo Entrada DANFE XML no Sync Hub: " + url, Color.FromArgb(16, 185, 129));
+            }
+            catch (Exception ex)
+            {
+                AppendLog("Erro ao abrir navegador: " + ex.Message, Color.FromArgb(239, 68, 68));
+            }
+        }
+
+        private void OpenPizzaBuilderInBrowser()
+        {
+            try
+            {
+                string url = string.Format("http://localhost:{0}/montador-pizza.html", config.local_port);
+                Process.Start(url);
+                AppendLog("Abrindo Montador de Pizza Visual: " + url, Color.FromArgb(252, 75, 21));
+            }
+            catch (Exception ex)
+            {
+                AppendLog("Erro ao abrir navegador: " + ex.Message, Color.FromArgb(239, 68, 68));
+            }
+        }
+
+        private void OpenKdsPizzaInBrowser()
+        {
+            try
+            {
+                string url = string.Format("http://localhost:{0}/kds-cozinha-pizza.html", config.local_port);
+                Process.Start(url);
+                AppendLog("Abrindo KDS Cozinha de Pizzas: " + url, Color.FromArgb(245, 158, 11));
+            }
+            catch (Exception ex)
+            {
+                AppendLog("Erro ao abrir navegador: " + ex.Message, Color.FromArgb(239, 68, 68));
+            }
+        }
+
+        private void OpenMotoboyDispatchInBrowser()
+        {
+            try
+            {
+                string url = string.Format("http://localhost:{0}/painel-entregas.html", config.local_port);
+                Process.Start(url);
+                AppendLog("Abrindo Central de Despacho & Motoboys: " + url, Color.FromArgb(59, 130, 246));
             }
             catch (Exception ex)
             {

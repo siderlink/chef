@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Chef Cozinha • KDS Linha de Produção de Pizzaria</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+
+  <style>
+    :root {
+      --bg: #06090e;
+      --col-bg: #0f141f;
+      --card-bg: #161d2d;
+      --card-border: #232d42;
+      --accent-orange: #fc4b15;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-cyan: #06b6d4;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Header KDS */
+    header {
+      background: #0b0f19;
+      border-bottom: 2px solid var(--card-border);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .kds-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .kds-brand h1 {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .kds-stats-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .stat-chip {
+      background: #161d2d;
+      border: 1px solid var(--card-border);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-val {
+      font-family: var(--font-mono);
+      font-weight: 800;
+      color: var(--accent-orange);
+    }
+
+    /* Linha de Produção Kanban */
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      padding: 1.2rem;
+      flex: 1;
+      height: calc(100vh - 70px);
+      overflow-y: hidden;
+    }
+
+    @media (max-width: 1200px) {
+      .kanban-board {
+        grid-template-columns: repeat(2, 1fr);
+        height: auto;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .kanban-board {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kanban-column {
+      background: var(--col-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .column-header {
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 2px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .column-header h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .count-pill {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+    }
+
+    .column-body {
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    /* Card de Produção */
+    .kds-card {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      position: relative;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .kds-card.atrasado {
+      border-color: var(--accent-red);
+      animation: pulseAlert 2s infinite;
+    }
+
+    @keyframes pulseAlert {
+      0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+      50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); }
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding-bottom: 8px;
+    }
+
+    .pedido-badge {
+      font-family: var(--font-mono);
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: #fff;
+    }
+
+    .timer-badge {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-green);
+    }
+
+    .timer-badge.alerta {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--accent-amber);
+    }
+
+    .timer-badge.perigo {
+      background: rgba(239, 68, 68, 0.25);
+      color: var(--accent-red);
+    }
+
+    /* Especificações da Pizza */
+    .pizza-meta {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .meta-tag {
+      background: #090d14;
+      border: 1px solid #334155;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: #cbd5e1;
+    }
+
+    /* Sabores e Modificações Críticas */
+    .fracao-box {
+      background: rgba(0, 0, 0, 0.25);
+      border-left: 3px solid var(--accent-orange);
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sabor-nome {
+      font-size: 0.95rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .tag-retirada {
+      color: #ef4444;
+      font-weight: 800;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tag-adicional {
+      color: #10b981;
+      font-weight: 800;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Botão de Ação Rápida Touch */
+    .btn-avancar {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 900;
+      font-size: 0.92rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #fff;
+      transition: all 0.15s;
+    }
+
+    .btn-avancar.step-abertura { background: #3b82f6; }
+    .btn-avancar.step-montagem { background: #f59e0b; }
+    .btn-avancar.step-forno { background: #fc4b15; }
+    .btn-avancar.step-pronto { background: #10b981; }
+
+    .btn-avancar:hover {
+      filter: brightness(1.15);
+      transform: scale(1.02);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="kds-brand">
+      <span style="font-size: 1.8rem;">🔥</span>
+      <div>
+        <h1>KDS Linha de Produção • Pizzaria</h1>
+        <p style="font-size: 0.78rem; color: var(--text-muted);">Estações: Abertura ➔ Recheio ➔ Forno ➔ Expedição</p>
+      </div>
+    </div>
+
+    <div class="kds-stats-bar">
+      <div class="stat-chip">
+        <span>No Forno:</span>
+        <span class="stat-val" id="stat-no-forno">0</span>
+      </div>
+      <div class="stat-chip">
+        <span>Aguardando:</span>
+        <span class="stat-val" id="stat-aguardando">0</span>
+      </div>
+      <a href="/painel-entregas.html" target="_blank" style="background:#2563eb; color:#fff; text-decoration:none; padding:8px 14px; border-radius:8px; font-weight:800; font-size:0.85rem; display:flex; align-items:center; gap:6px;">
+        <i class="ph-bold ph-moped"></i> Despacho &amp; Motoboys
+      </a>
+      <a href="/montador-pizza.html" target="_blank" style="background:#fc4b15; color:#fff; text-decoration:none; padding:8px 14px; border-radius:8px; font-weight:800; font-size:0.85rem; display:flex; align-items:center; gap:6px;">
+        🍕 Abrir Montador
+      </a>
+      <a href="/painel-dono.html" style="background:#1e293b; color:#cbd5e1; text-decoration:none; padding:8px 14px; border-radius:8px; font-weight:700; font-size:0.85rem;">
+        👑 Painel Dono
+      </a>
+    </div>
+  </header>
+
+  <!-- Kanban de Produção -->
+  <main class="kanban-board">
+
+    <!-- COLUNA 1: ABERTURA DE MASSA -->
+    <div class="kanban-column" id="col-abertura">
+      <div class="column-header" style="border-top: 4px solid var(--accent-blue);">
+        <h3><span>🥖</span> 1. Abertura de Massa</h3>
+        <span class="count-pill" id="count-abertura">0</span>
+      </div>
+      <div class="column-body" id="body-abertura">
+        <!-- Inserido dinamicamente -->
+      </div>
+    </div>
+
+    <!-- COLUNA 2: RECHEIO & MONTAGEM -->
+    <div class="kanban-column" id="col-montagem">
+      <div class="column-header" style="border-top: 4px solid var(--accent-amber);">
+        <h3><span>🧀</span> 2. Montagem / Recheio</h3>
+        <span class="count-pill" id="count-montagem">0</span>
+      </div>
+      <div class="column-body" id="body-montagem">
+        <!-- Inserido dinamicamente -->
+      </div>
+    </div>
+
+    <!-- COLUNA 3: FORNO & ASSAMENTO -->
+    <div class="kanban-column" id="col-forno">
+      <div class="column-header" style="border-top: 4px solid var(--accent-orange);">
+        <h3><span>🔥</span> 3. Forno de Lastro / Esteira</h3>
+        <span class="count-pill" id="count-forno">0</span>
+      </div>
+      <div class="column-body" id="body-forno">
+        <!-- Inserido dinamicamente -->
+      </div>
+    </div>
+
+    <!-- COLUNA 4: PRONTO / EXPEDIÇÃO -->
+    <div class="kanban-column" id="col-pronto">
+      <div class="column-header" style="border-top: 4px solid var(--accent-green);">
+        <h3><span>🛵</span> 4. Pronto / Expedição</h3>
+        <span class="count-pill" id="count-pronto">0</span>
+      </div>
+      <div class="column-body" id="body-pronto">
+        <!-- Inserido dinamicamente -->
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    async function carregarFilaKds() {
+      try {
+        const res = await fetch('/api/pizzaria/kds/fila');
+        const data = await res.json();
+        if (data.ok) {
+          renderizarKanban(data.pedidos || []);
+        }
+      } catch (err) {
+        console.error('Erro ao atualizar KDS:', err);
+      }
+    }
+
+    function renderizarKanban(pedidos) {
+      const colunas = {
+        abertura: document.getElementById('body-abertura'),
+        montagem: document.getElementById('body-montagem'),
+        forno: document.getElementById('body-forno'),
+        pronto: document.getElementById('body-pronto')
+      };
+
+      const contadores = {
+        abertura: 0,
+        montagem: 0,
+        forno: 0,
+        pronto: 0
+      };
+
+      Object.values(colunas).forEach(c => c.innerHTML = '');
+
+      pedidos.forEach(p => {
+        const status = p.status || 'abertura';
+        if (colunas[status]) {
+          contadores[status]++;
+          colunas[status].appendChild(criarCardKds(p));
+        }
+      });
+
+      document.getElementById('count-abertura').innerText = contadores.abertura;
+      document.getElementById('count-montagem').innerText = contadores.montagem;
+      document.getElementById('count-forno').innerText = contadores.forno;
+      document.getElementById('count-pronto').innerText = contadores.pronto;
+
+      document.getElementById('stat-no-forno').innerText = contadores.forno;
+      document.getElementById('stat-aguardando').innerText = contadores.abertura + contadores.montagem;
+    }
+
+    function criarCardKds(p) {
+      const card = document.createElement('div');
+      const min = p.minutos_em_espera || 0;
+      const isAtrasado = min >= 20;
+
+      card.className = `kds-card ${isAtrasado ? 'atrasado' : ''}`;
+
+      const timerClass = min < 10 ? '' : min < 20 ? 'alerta' : 'perigo';
+
+      // Próxima etapa
+      const proximoStatus = p.status === 'abertura' ? 'montagem' :
+                            p.status === 'montagem' ? 'forno' :
+                            p.status === 'forno' ? 'pronto' : 'entregue';
+
+      const textoBtn = p.status === 'abertura' ? '➔ Enviar para Montagem' :
+                       p.status === 'montagem' ? '🔥 Colocar no Forno' :
+                       p.status === 'forno' ? '✔ Retirar do Forno' : '📦 Despachar Pedido';
+
+      const btnClass = `step-${p.status}`;
+
+      card.innerHTML = `
+        <div class="card-top">
+          <div>
+            <span class="pedido-badge">#${p.id}</span>
+            <span style="font-size:0.85rem; color:#cbd5e1; margin-left:6px;">${p.cliente_nome}</span>
+          </div>
+          <span class="timer-badge ${timerClass}">⏱️ ${min} min</span>
+        </div>
+
+        <div class="pizza-meta">
+          <span class="meta-tag">🍕 ${p.tamanho}</span>
+          <span class="meta-tag">🥖 ${p.massa}</span>
+          <span class="meta-tag" style="color:var(--accent-gold);">🥯 ${p.borda}</span>
+          <span class="meta-tag" style="background:#2563eb; color:#fff;">${p.tipo_consumo === 'delivery' ? '🛵 Delivery' : '🏪 Balcão'}</span>
+        </div>
+
+        <!-- Sabores e Alertas Críticos -->
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          ${(p.fracoes || []).map((f, idx) => `
+            <div class="fracao-box">
+              <div class="sabor-nome">${p.fracoes.length > 1 ? `1/${p.fracoes.length} ` : ''}${f.nome}</div>
+              ${f.retirar && f.retirar.length ? `
+                <div class="tag-retirada">🚫 RETIRAR: ${f.retirar.join(', ')}</div>
+              ` : ''}
+              ${f.adicionar && f.adicionar.length ? `
+                <div class="tag-adicional">✨ EXTRA: ${f.adicionar.map(a => a.nome).join(', ')}</div>
+              ` : ''}
+            </div>
+          `).join('')}
+        </div>
+
+        ${p.tipo_consumo === 'delivery' && p.endereco_entrega ? `
+          <div style="background:rgba(37,99,235,0.12); border:1px solid rgba(37,99,235,0.3); border-radius:8px; padding:6px 10px; font-size:0.8rem; display:flex; flex-direction:column; gap:2px;">
+            <div style="font-weight:800; color:#60a5fa; display:flex; align-items:center; gap:4px;">
+              <i class="ph-bold ph-map-pin"></i> <span>${p.bairro ? p.bairro.toUpperCase() : 'DELIVERY'}</span>
+            </div>
+            <div style="color:#cbd5e1; font-size:0.75rem;">${p.endereco_entrega}</div>
+            ${p.cliente_whatsapp ? `<div style="color:#94a3b8; font-size:0.72rem;">📞 ${p.cliente_whatsapp}</div>` : ''}
+          </div>
+        ` : ''}
+
+        ${p.observacoes ? `
+          <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); border-radius:6px; padding:6px 10px; font-size:0.8rem; color:#fbbf24;">
+            <strong>Obs:</strong> ${p.observacoes}
+          </div>
+        ` : ''}
+
+        <button class="btn-avancar ${btnClass}" onclick="avancarEtapaKds(${p.id}, '${proximoStatus}')">
+          <span>${textoBtn}</span>
+          <i class="ph-bold ph-arrow-right"></i>
+        </button>
+
+        ${p.status === 'pronto' && p.tipo_consumo === 'delivery' ? `
+          <a href="/painel-entregas.html" target="_blank" style="background:rgba(37,99,235,0.18); border:1px solid #3b82f6; color:#93c5fd; padding:8px; border-radius:8px; text-decoration:none; font-weight:800; font-size:0.78rem; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:2px;">
+            <i class="ph-bold ph-moped"></i> Abrir Despacho de Motoboy
+          </a>
+        ` : ''}
+      `;
+
+      return card;
+    }
+
+    async function avancarEtapaKds(id, novoStatus) {
+      try {
+        const res = await fetch('/api/pizzaria/kds/avancar-etapa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, novo_status: novoStatus })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          carregarFilaKds();
+        }
+      } catch (err) {
+        console.error('Erro ao avançar etapa:', err);
+      }
+    }
+
+    // Inicialização e Polling em tempo real
+    document.addEventListener('DOMContentLoaded', () => {
+      carregarFilaKds();
+      setInterval(carregarFilaKds, 3000); // 3 segundos
+    });
+  </script>
+</body>
+</html>
