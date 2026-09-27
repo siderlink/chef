@@ -242,7 +242,7 @@ module.exports = function (app, masterDb, sqlite3, options) {
             dono_telefone: r.dono_telefone || r.telefone || '',
             dono_email: r.dono_email || '',
             status: r.ativo ? (r.licenca || 'ativo') : 'bloqueado',
-            plano: r.licenca === 'premium' ? 'Premium' : (r.licenca === 'trial' ? 'Trial' : (r.licenca || 'Ativo')),
+            plano: r.licenca === 'premium' ? 'Premium' : (r.licenca === 'trial' ? 'Trial' : (r.licenca === 'lite' ? 'Lite' : (r.licenca || 'Ativo'))),
             login_mode: r.login_mode || 'multi',
             chave: r.chave_ativacao || ('CHEF-LOCAL-' + String(r.id).padStart(4, '0')),
             validade: r.validade_licenca || null,
@@ -891,7 +891,7 @@ module.exports = function (app, masterDb, sqlite3, options) {
     const { restaurante_nome, dias, plano, max_dispositivos, obs } = req.body || {};
     const nome = trimStr(restaurante_nome, 120) || 'Restaurante';
     const qtdDias = safeInt(dias, 30, 3650) || 365;
-    const planoVal = ['premium', 'pro', 'plus'].includes(plano) ? plano : 'premium';
+    const planoVal = ['premium', 'pro', 'plus', 'lite'].includes(plano) ? plano : 'premium';
     const maxDisp = safeInt(max_dispositivos, 0, 1000) || 0;
     const validade = new Date(Date.now() + qtdDias * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 

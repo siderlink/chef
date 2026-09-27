@@ -49,6 +49,7 @@ const FEATURES = [
   { chave: 'encomendas_eventos', nome: 'Gestão de Encomendas, Buffets & Ceias', desc: 'Controle de vendas com data futura, adiantamento de 50% de sinal via Pix, orçamentos personalizados e calendário de produção da cozinha.', categoria: 'Vendas', preco: 'R$ 69/mês', roi: 'Organiza pedidos com data futura e garante sinal de 50% antecipado' },
   { chave: 'redes_franquias', nome: 'Gestão Multi-Lojas, Redes e Franquias (Master Chain)', desc: 'Dashboard executivo consolidado multi-CNPJ, transferência de insumos entre matriz e filiais, e replicação de cardápio com 1 clique.', categoria: 'Gestão', preco: 'R$ 149/mês por filial', roi: 'DRE consolidado, transferências entre lojas e replicação de cardápio' },
   { chave: 'gift_card_wallet', nome: 'Gift Cards Corporativos & Saldo Pré-Pago VIP', desc: 'Venda de vouchers para presentes ou empresas e carteira pré-paga para clientes fiéis (consumo antecipado com bônus).', categoria: 'Vendas', preco: 'R$ 49/mês + 1% recarga', roi: 'Injeção imediata de capital de giro e fidelização de clientes' },
+  { chave: 'radar_concorrencia_geo', nome: 'Radar de Concorrência & Geomarketing por Raio (Km)', desc: 'Mapeamento de restaurantes vizinhos em raio de 1 a 15 km, benchmarking de preços de cardápio, taxa de entrega média, notas do Google e detecção de gaps de horários.', categoria: 'Inteligência', preco: 'R$ 89/mês', roi: 'Identifica brechas de mercado, compara preços dos vizinhos e atrai clientes da concorrência' },
 
   // ══════════════════════════════════════════════════════════════════
   // NOVOS MÓDULOS — TIER S (Dinheiro Imediato)
@@ -88,7 +89,16 @@ const FEATURES = [
   { chave: 'pesquisa_satisfacao_inloco', nome: 'Pesquisa de Satisfação In-Loco (Tablet na Mesa)', desc: 'Pesquisa rápida de 3 perguntas antes da conta com NPS automático e alerta instantâneo para notas baixas.', categoria: 'Operação', preco: 'R$ 39/mês', roi: 'Resolve problemas ANTES da avaliação negativa pública' },
   { chave: 'valet_estacionamento', nome: 'Valet & Controle de Estacionamento', desc: 'Registro digital de veículo, ticket no WhatsApp, botão "Solicitar carro" pelo celular e cobrança integrada na conta.', categoria: 'Operação', preco: 'R$ 49/mês', roi: 'Profissionaliza valet + nova fonte de receita' },
   { chave: 'playlist_ambientacao', nome: 'Gestão de Ambientação Sonora & Playlist Inteligente', desc: 'Playlists por momento (Almoço, Happy Hour, Jantar) com troca automática por horário e controle de volume por zona.', categoria: 'Operação', preco: 'R$ 29/mês', roi: 'Experiência consistente + permanência 15% maior' },
-  { chave: 'portal_cliente_final', nome: 'Portal do Cliente (Histórico, Favoritos & Recompensas)', desc: 'Área logada com histórico de pedidos, re-pedido em 1 toque, saldo de cashback/pontos, cupons e login por WhatsApp OTP.', categoria: 'Vendas', preco: 'R$ 59/mês', roi: '+35% de recompra e dados proprietários de comportamento' }
+  { chave: 'portal_cliente_final', nome: 'Portal do Cliente (Histórico, Favoritos & Recompensas)', desc: 'Área logada com histórico de pedidos, re-pedido em 1 toque, saldo de cashback/pontos, cupons e login por WhatsApp OTP.', categoria: 'Vendas', preco: 'R$ 59/mês', roi: '+35% de recompra e dados proprietários de comportamento' },
+
+  // ══════════════════════════════════════════════════════════════════
+  // MÓDULOS DE ALTA RENTABILIDADE & FINTECH (Receita Exponencial)
+  // ══════════════════════════════════════════════════════════════════
+  { chave: 'tributos_monofasicos', nome: 'Recuperador de Tributos Monofásicos (PIS/COFINS de Bebidas)', desc: 'Audita vendas de bebidas frias, identifica bitributação e gera laudo de segregação para abater de R$ 800 a R$ 3.000/mês no Simples Nacional.', categoria: 'Fiscal', preco: 'R$ 99/mês + 15% sucesso', roi: 'Economiza de R$ 800 a R$ 3.000 por mês em impostos pagos indevidamente' },
+  { chave: 'sentinela_anti_fraude', nome: 'Sentinela Anti-Fraude & Cancelamentos Suspeitos', desc: 'Auditoria algorítmica de cancelamentos pós-produção, descontos manuais abusivos e reaberturas de comanda com alertas no WhatsApp do dono.', categoria: 'Operação', preco: 'R$ 79/mês', roi: 'Elimina desvios de caixa que representam 3% a 8% do faturamento' },
+  { chave: 'banco_freelancers_plantao', nome: 'Banco de Freelancers de Pico & Plantão Urgente (Uberização)', desc: 'Chame garçons, chapeiros e barmans avaliados para turnos de pico em 1 clique com confirmação e pagamento via Pix.', categoria: 'Gestão', preco: 'R$ 49/mês + R$ 20/diária', roi: 'Salva noites de pico sem faturamento perdido por falta de equipe' },
+  { chave: 'gatilho_clima_delivery', nome: 'Gatilho Meteorológico & Vendas Preditivas (Choveu, Vendeu)', desc: 'Monitora tempo e chuva na cidade, disparando campanhas automáticas de delivery e ativando combos quentes antes que o cliente peça no iFood.', categoria: 'Marketing', preco: 'R$ 49/mês', roi: '+35% de pedidos diretos em dias chuvosos sem comissão' },
+  { chave: 'compras_coletivas_b2b', nome: 'Clube de Compras Coletivas B2B (Poder de Barganha)', desc: 'Une o volume de compra de restaurantes vizinhos para negociar queijo, carne e embalagens com preço de grande rede direto da indústria.', categoria: 'Financeiro', preco: 'R$ 89/mês + comissão B2B', roi: 'Reduz o custo de matéria-prima (CMV) em até 18%' }
 ];
 
 // Features padrão por plano
@@ -155,6 +165,123 @@ const FEATURE_PLANS = {
     cheff_ai: true,
     estoque_avancado: true,
     kds_avancado: true
+  },
+  lite: {
+    tempo_real: false,        // Desligado: sem WebSockets pesados/broadcasts constantes (poupa RAM/CPU)
+    ifood: false,             // Desligado: sem pollers contínuos a cada 30s
+    cardapio: true,           // Ligado: cardápio QR básico
+    bi: false,                // Desligado: sem DRE analítico ou relatórios pesados
+    delivery: false,          // Desligado: apenas balcão e salão enxuto
+    fidelidade: false,        // Desligado
+    nfce: false,              // Desligado (sem emissão fiscal em lote)
+    telemetria: false,        // Desligado: sem sync contínuo de telemetria
+    totem: false,             // Desligado
+    jogos: false,             // Desligado
+    hub_delivery: false,      // Desligado
+    reservas: false,          // Desligado
+    fila_espera: false,       // Desligado
+    pesagem_selfservice: false,
+    whatsapp_bot: false,      // Desligado
+    rh: false,                // Desligado
+    cheff_ai: false,          // Desligado: zero chamadas a APIs pagas de IA
+    estoque_avancado: false,  // Desligado: sem ficha técnica complexa
+    kds_avancado: false       // Desligado: sem KDS multi-telas
+  }
+};
+
+// Limites severos de recursos e cotas por plano (garantem margem máxima e protegem o servidor)
+const PLAN_LIMITS = {
+  lite: {
+    chave: 'lite',
+    nome: 'Plano Lite (Econômico / Ultra Margem)',
+    preco_mensal: 39.90,
+    preco_anual: 358.80,       // R$ 29,90/mês no anual
+    custo_servidor_estimado: 0.15, // Custo médio de infraestrutura por tenant/mês
+    margem_lucro_pct: 99.6,    // Margem de lucro astronômica
+    max_produtos: 30,          // Limite rígido de produtos ativos no cardápio
+    max_pedidos_mes: 150,       // Limite mensal de pedidos (~5 pedidos/dia)
+    max_mesas: 8,               // Máximo de 8 mesas no salão
+    max_usuarios_simultaneos: 1,// Apenas 1 operador/caixa conectado por vez
+    max_fotos_produtos: 5,      // Máximo de 5 fotos no cardápio
+    max_upload_kb: 100,         // Uploads restritos a 100KB (economia de disco e banda)
+    tempo_real_socket: false,   // Sem WebSockets de alta frequência
+    historico_dias: 30,         // Retenção máxima de 30 dias (banco SQLite < 2MB)
+    permite_ia: false,          // Zero chamadas para APIs de IA
+    permite_marketplaces: false,// Sem pollers rodando a cada 30 segundos
+    permite_kds: false,         // Sem KDS multi-praças
+    permite_nfce: false,        // Sem emissão fiscal automática
+    rate_limit_rpm: 60,         // Limite de 60 requisições/minuto
+    badge: 'Lite Econômico',
+    descricao: 'Para pequenos balcões, MEIs e carrinhos de lanche. Custo de servidor quase nulo e altíssima margem de lucro.'
+  },
+  pro: {
+    chave: 'pro',
+    nome: 'Plano Pro (Profissional)',
+    preco_mensal: 149.00,
+    preco_anual: 1428.00,
+    custo_servidor_estimado: 4.50,
+    margem_lucro_pct: 97.0,
+    max_produtos: 300,
+    max_pedidos_mes: 3000,
+    max_mesas: 50,
+    max_usuarios_simultaneos: 5,
+    max_fotos_produtos: 100,
+    max_upload_kb: 500,
+    tempo_real_socket: true,
+    historico_dias: 365,
+    permite_ia: false,
+    permite_marketplaces: true,
+    permite_kds: true,
+    permite_nfce: true,
+    rate_limit_rpm: 300,
+    badge: 'Mais Popular',
+    descricao: 'Operação completa para restaurantes em crescimento com delivery, salão e KDS.'
+  },
+  premium: {
+    chave: 'premium',
+    nome: 'Plano Premium (Ilimitado & IA)',
+    preco_mensal: 249.00,
+    preco_anual: 2388.00,
+    custo_servidor_estimado: 12.00,
+    margem_lucro_pct: 95.2,
+    max_produtos: Infinity,
+    max_pedidos_mes: Infinity,
+    max_mesas: Infinity,
+    max_usuarios_simultaneos: Infinity,
+    max_fotos_produtos: Infinity,
+    max_upload_kb: 5000,
+    tempo_real_socket: true,
+    historico_dias: Infinity,
+    permite_ia: true,
+    permite_marketplaces: true,
+    permite_kds: true,
+    permite_nfce: true,
+    rate_limit_rpm: 1000,
+    badge: 'Ilimitado',
+    descricao: 'Poder total sem limites, inteligência artificial integrada e múltiplos terminais.'
+  },
+  trial: {
+    chave: 'trial',
+    nome: 'Trial (Período de Demonstração)',
+    preco_mensal: 0.00,
+    preco_anual: 0.00,
+    custo_servidor_estimado: 0.05,
+    margem_lucro_pct: 0,
+    max_produtos: 15,
+    max_pedidos_mes: 30,
+    max_mesas: 5,
+    max_usuarios_simultaneos: 1,
+    max_fotos_produtos: 3,
+    max_upload_kb: 100,
+    tempo_real_socket: false,
+    historico_dias: 7,
+    permite_ia: false,
+    permite_marketplaces: false,
+    permite_kds: false,
+    permite_nfce: false,
+    rate_limit_rpm: 60,
+    badge: 'Demonstração',
+    descricao: 'Ambiente controlado de teste gratuito por 14 dias.'
   }
 };
 
@@ -162,6 +289,7 @@ const FEATURE_PLANS = {
 function planoParaChave(licenca) {
   const l = String(licenca || '').toLowerCase();
   if (l === 'trial') return 'trial';
+  if (l === 'lite' || l === 'basico' || l === 'starter' || l === 'economico') return 'lite';
   if (l === 'pro') return 'pro';
   // plus, premium, ativo (e qualquer outro) caem no plano mais completo
   return 'premium';
@@ -170,6 +298,11 @@ function planoParaChave(licenca) {
 function getPlanDefaults(licenca) {
   const chave = planoParaChave(licenca);
   return Object.assign({}, FEATURE_PLANS[chave] || FEATURE_PLANS.premium);
+}
+
+function getPlanLimits(licenca) {
+  const chave = planoParaChave(licenca);
+  return Object.assign({}, PLAN_LIMITS[chave] || PLAN_LIMITS.lite);
 }
 
 // Junta os padrões do plano com os overrides específicos do tenant
@@ -188,7 +321,9 @@ function resolveFeatures(licenca, overrides) {
 module.exports = {
   FEATURES,
   FEATURE_PLANS,
+  PLAN_LIMITS,
   planoParaChave,
   getPlanDefaults,
+  getPlanLimits,
   resolveFeatures
 };

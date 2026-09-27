@@ -721,6 +721,8 @@
                 <select class="select-filter" id="rest-f-plano">
                   <option value="">Todo plano</option>
                   <option value="premium">Premium</option>
+                  <option value="pro">Pro</option>
+                  <option value="lite">Lite (Econômico)</option>
                   <option value="trial">Trial</option>
                   <option value="free">Free</option>
                 </select>
@@ -1739,6 +1741,7 @@
                   <option value="premium">Premium</option>
                   <option value="pro">Pro</option>
                   <option value="plus">Plus</option>
+                  <option value="lite">Lite (Econômico R$ 39,90)</option>
                 </select>
               </div>
             </div>
@@ -6921,7 +6924,15 @@
           </div>
           <div class="form-group">
             <label>Plano</label>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem;">
+              <label style="cursor:pointer;">
+                <input type="radio" name="new-rest-plano" value="lite" style="display:none;">
+                <div class="plano-card" data-plano="lite"
+                  style="padding:0.8rem;border:2px solid var(--border-color);border-radius:10px;text-align:center;transition:all 0.2s;">
+                  <div style="font-weight:700;color:#10b981;font-size:0.95rem;">Lite</div>
+                  <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.2rem;">Econômico R$ 39</div>
+                </div>
+              </label>
               <label style="cursor:pointer;">
                 <input type="radio" name="new-rest-plano" value="trial" style="display:none;">
                 <div class="plano-card" data-plano="trial"
@@ -7143,9 +7154,9 @@
           <div class="form-group">
             <label>Plano</label>
             <select id="edit-plano">
-              <option value="starter">Starter</option>
+              <option value="lite">Lite (Econômico R$ 39)</option>
               <option value="pro">Pro</option>
-              <option value="enterprise">Enterprise</option>
+              <option value="premium">Premium (Completo)</option>
               <option value="trial">Trial</option>
             </select>
           </div>

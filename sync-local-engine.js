@@ -29,7 +29,9 @@ let modulosAtivos = {
   edge_bi: true,
   backup_vault: true,
   roteirizador_tsp: true,
-  ifood_poller: true
+  ifood_poller: true,
+  radar_concorrencia: true,
+  auditor_cartoes: true
 };
 
 // ══════════════════════════════════════════════════════════════════
@@ -393,6 +395,97 @@ function otimizarRotaTspLocal(pedidos) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// 7. MÓDULO: RADAR DE CONCORRÊNCIA E GEOMARKETING LOCAL (EDGE)
+// ══════════════════════════════════════════════════════════════════
+function calcularDistanciaKmLocal(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return parseFloat((R * c).toFixed(2));
+}
+
+async function escanearRadarConcorrenciaLocal(lat, lng, raioKm = 3.0, categoria = null) {
+  const db = ctx.db;
+  if (!db) return { ok: false, erro: 'Sem conexão com banco local' };
+
+  return new Promise((resolve) => {
+    const cLat = parseFloat(lat) || -23.5616;
+    const cLng = parseFloat(lng) || -46.6560;
+    const rKm = parseFloat(raioKm) || 3.0;
+
+    let sql = 'SELECT * FROM radar_estabelecimentos';
+    const params = [];
+    if (categoria && categoria !== 'Todas') {
+      sql += ' WHERE categoria = ?';
+      params.push(categoria);
+    }
+
+    db.all(sql, params, (err, rows) => {
+      if (err) return resolve({ ok: false, erro: err.message });
+
+      const dentroDoRaio = (rows || []).map(item => {
+        const dist = calcularDistanciaKmLocal(cLat, cLng, item.lat, item.lng);
+        return { ...item, distancia_km: dist };
+      }).filter(item => item.distancia_km <= rKm);
+
+      const total = dentroDoRaio.length;
+      const notaMedia = total > 0 ? parseFloat((dentroDoRaio.reduce((a, b) => a + (b.nota_google || 0), 0) / total).toFixed(1)) : 0;
+      const freteMedio = total > 0 ? parseFloat((dentroDoRaio.reduce((a, b) => a + (b.taxa_entrega || 0), 0) / total).toFixed(2)) : 0;
+      const tempoMedio = total > 0 ? Math.round(dentroDoRaio.reduce((a, b) => a + (b.tempo_medio_min || 0), 0) / total) : 0;
+
+      resolve({
+        ok: true,
+        raio_km: rKm,
+        total_concorrentes: total,
+        metricas: {
+          nota_media: notaMedia,
+          frete_medio: freteMedio,
+          tempo_medio_min: tempoMedio,
+          abertos_agora: dentroDoRaio.filter(d => d.aberto_agora === 1).length
+        },
+        estabelecimentos: dentroDoRaio,
+        processador: 'CPU Local do Restaurante (Edge Geomarketing)',
+        carga_servidor_nuvem: '0%'
+      });
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 8. MÓDULO: AUDITOR DE TAXAS DE CARTÃO E CONCILIAÇÃO LOCAL (EDGE)
+// ══════════════════════════════════════════════════════════════════
+async function auditarTaxasCartaoLocal() {
+  const db = ctx.db;
+  if (!db) return { ok: false, erro: 'Sem conexão com banco local' };
+
+  return new Promise((resolve) => {
+    db.all(`
+      SELECT * FROM auditor_transacoes_conciliadas 
+      WHERE valor_divergencia > 0 
+      ORDER BY id DESC LIMIT 50
+    `, [], (err, rows) => {
+      if (err) return resolve({ ok: false, erro: err.message });
+
+      const divergencias = rows || [];
+      const totalRecuperar = divergencias.reduce((acc, d) => acc + (d.valor_divergencia || 0), 0);
+
+      resolve({
+        ok: true,
+        total_divergencias_encontradas: divergencias.length,
+        valor_total_a_recuperar: parseFloat(totalRecuperar.toFixed(2)),
+        divergencias,
+        processador: 'CPU Local do Restaurante (Edge Financial Auditor)',
+        economia_nuvem: 'Extrato processado na máquina local. 0% de uso de CPU do servidor central.'
+      });
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
 // REGISTRO DE ROTAS LOCAIS DO SYNC NO RESTAURANTE
 // ══════════════════════════════════════════════════════════════════
 function registrarRotasLocais(app) {
@@ -470,7 +563,20 @@ function registrarRotasLocais(app) {
     res.status(400).json({ ok: false, erro: 'Módulo inválido' });
   });
 
-  // 10. Status e Telemetria dos Módulos Locais
+  // 11. Varredura e Análise de Concorrência por Raio na CPU Local
+  app.post('/api/local/radar/escanear', async (req, res) => {
+    const { lat, lng, raio_km, categoria } = req.body || {};
+    const resultado = await escanearRadarConcorrenciaLocal(lat, lng, raio_km, categoria);
+    res.json(resultado);
+  });
+
+  // 12. Auditoria e Conciliação de Cartões na CPU Local
+  app.post('/api/local/auditor/processar', async (req, res) => {
+    const resultado = await auditarTaxasCartaoLocal();
+    res.json(resultado);
+  });
+
+  // 13. Status e Telemetria dos Módulos Locais
   app.get('/api/local/status-modulos', (req, res) => {
     res.json({
       ok: true,
@@ -482,6 +588,8 @@ function registrarRotasLocais(app) {
       vault_backup_online: true,
       roteirizador_tsp_online: true,
       ifood_poller_online: true,
+      radar_concorrencia_online: true,
+      auditor_cartoes_online: true,
       economia_recursos_nuvem: '100% dos cálculos pesados, I/O e portas seriais operando no hardware do restaurante.'
     });
   });
@@ -507,5 +615,7 @@ module.exports = {
   processarBiLocal,
   executarBackupLocal,
   otimizarRotaTspLocal,
+  escanearRadarConcorrenciaLocal,
+  auditarTaxasCartaoLocal,
   modulosAtivos
 };

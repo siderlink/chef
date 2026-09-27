@@ -13280,6 +13280,36 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
     } catch (eExp) {
       console.error('Erro ao carregar o Controller Expansão de Lucro Prod:', eExp);
     }
+
+    try {
+      require('./controllers/radar-concorrencia')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('📡 Controller Radar de Concorrência & Geomarketing por Raio carregado com sucesso no Prod.');
+    } catch (eRadar) {
+      console.error('Erro ao carregar o Controller Radar de Concorrência Prod:', eRadar);
+    }
+
+    try {
+      require('./controllers/auditor-cartoes')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('💳 Controller Auditor de Taxas de Cartão & Conciliador carregado com sucesso no Prod.');
+    } catch (eAud) {
+      console.error('Erro ao carregar o Controller Auditor de Taxas de Cartão Prod:', eAud);
+    }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);
   }

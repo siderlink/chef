@@ -589,6 +589,8 @@ namespace ChefCozinha.Sync
             trayMenu.Items.Add("Sincronizar Agora", null, (s, e) => TriggerManualSync());
             trayMenu.Items.Add("Abrir PDV no Navegador", null, (s, e) => OpenPdvInBrowser());
             trayMenu.Items.Add("🚀 Módulos Locais (Sync Hub)", null, (s, e) => OpenSyncHubInBrowser());
+            trayMenu.Items.Add("📡 Radar de Concorrência (Raio Km)", null, (s, e) => OpenRadarInBrowser());
+            trayMenu.Items.Add("💳 Auditor de Taxas de Cartão", null, (s, e) => OpenAuditorInBrowser());
             trayMenu.Items.Add("-");
             trayMenu.Items.Add("Sair do Sync Agent", null, (s, e) => {
                 isExiting = true;
@@ -830,6 +832,34 @@ namespace ChefCozinha.Sync
                 string url = string.Format("http://localhost:{0}/sync-hub.html", config.local_port);
                 Process.Start(url);
                 AppendLog("Abrindo Sync Hub (Módulos Locais) no navegador: " + url, Color.FromArgb(16, 185, 129));
+            }
+            catch (Exception ex)
+            {
+                AppendLog("Erro ao abrir navegador: " + ex.Message, Color.FromArgb(239, 68, 68));
+            }
+        }
+
+        private void OpenRadarInBrowser()
+        {
+            try
+            {
+                string url = string.Format("http://localhost:{0}/radar-concorrencia.html", config.local_port);
+                Process.Start(url);
+                AppendLog("Abrindo Radar de Concorrência no navegador: " + url, Color.FromArgb(6, 182, 212));
+            }
+            catch (Exception ex)
+            {
+                AppendLog("Erro ao abrir navegador: " + ex.Message, Color.FromArgb(239, 68, 68));
+            }
+        }
+
+        private void OpenAuditorInBrowser()
+        {
+            try
+            {
+                string url = string.Format("http://localhost:{0}/auditor-cartoes.html", config.local_port);
+                Process.Start(url);
+                AppendLog("Abrindo Auditor de Taxas de Cartão no navegador: " + url, Color.FromArgb(244, 63, 94));
             }
             catch (Exception ex)
             {

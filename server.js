@@ -11247,11 +11247,14 @@ app.post('/api/auth/registro', async (req, res) => {
         }
       }
 
-      // 2. E-mail novo: Criar restaurante trial
+      // 2. E-mail novo: Criar restaurante com plano solicitado ou trial padrão
       const hash = await bcrypt.hash(senha, 10);
+      const planoReq = String(req.body.plano || req.body.licenca || '').toLowerCase();
+      const licencaInicial = (planoReq === 'lite' || planoReq === 'basico') ? 'lite' : 'trial';
+
       masterDb.run(
-        `INSERT INTO restaurantes (nome, licenca, ativo, telefone, dono_nome, dono_telefone, dono_email, modalidade) VALUES (?, 'trial', 1, ?, ?, ?, ?, ?)`,
-        [restauranteNome, telFormatado, nome, telFormatado, emailClean, modalidadeClean],
+        `INSERT INTO restaurantes (nome, licenca, ativo, telefone, dono_nome, dono_telefone, dono_email, modalidade) VALUES (?, ?, 1, ?, ?, ?, ?, ?)`,
+        [restauranteNome, licencaInicial, telFormatado, nome, telFormatado, emailClean, modalidadeClean],
         function (errRest) {
           if (errRest) return res.status(500).json({ success: false, error: 'Erro ao criar restaurante.' });
 
@@ -12983,6 +12986,36 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
     }
 
     try {
+      require('./controllers/radar-concorrencia')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('📡 Controller Radar de Concorrência & Geomarketing por Raio carregado com sucesso.');
+    } catch (eRadar) {
+      console.error('Erro ao carregar o Controller Radar de Concorrência:', eRadar);
+    }
+
+    try {
+      require('./controllers/auditor-cartoes')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('💳 Controller Auditor de Taxas de Cartão & Conciliador carregado com sucesso.');
+    } catch (eAud) {
+      console.error('Erro ao carregar o Controller Auditor de Taxas de Cartão:', eAud);
+    }
+
+    try {
       require('./controllers/addons-tier-s')(app, {
         db,
         masterDb,
@@ -13025,6 +13058,35 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       console.log('✨ Controller Tier BC (Rede/Franquias, Manutenção, Academia, IoT, Bot Social, Benchmark, App Func, Roleta, Pesquisa, Valet, Playlist, Portal) carregado com sucesso.');
     } catch (eTierBC) {
       console.error('Erro ao carregar o Controller Tier BC:', eTierBC);
+    }
+
+    try {
+      require('./controllers/plano-lite-enforcement')(app, masterDb, sqlite3, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        getTenantDbPath,
+        superAdminAuth
+      });
+    } catch (eLite) {
+      console.error('Erro ao carregar o Controller Plano Lite Enforcement:', eLite);
+    }
+
+    try {
+      require('./controllers/addons-alta-rentabilidade')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+    } catch (eAltaRent) {
+      console.error('Erro ao carregar o Controller Add-ons Alta Rentabilidade:', eAltaRent);
     }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);
