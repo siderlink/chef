@@ -2864,55 +2864,73 @@ socket.on('caixinha_relatorio_result', (data) => {
      </div>`;
 });
 
-socket.on('mesa_finalizada', ({ mesaName }) => {
-  // Remove items that were closed
-  ordersData = ordersData.filter(o => o.localName !== mesaName && o.mesa_grupo !== mesaName);
-  window.ordersData = ordersData;
-  renderOrders();
+socket.on('mesa_finalizada', ({ mesaName, targetNames }) => {
+  const namesToClear = new Set([mesaName]);
+  if (Array.isArray(targetNames)) targetNames.forEach(n => namesToClear.add(n));
+  const norm = (s) => String(s || '').trim().toLowerCase().replace(/^mesa\s*/i, '');
+  const mNorm = norm(mesaName);
 
-  // Close the new checkout modal if it's currently open for this table
-  if (window.mesaAtual && (window.mesaAtual.nome || window.mesaAtual.mesaName) === mesaName) {
-    window.fecharCheckoutModal();
-    window.mesaAtual = null;
-    document.body.classList.remove('mesa-selecionada');
-    const acoesSummary = document.getElementById('mobile-acoes-summary');
-    if (acoesSummary) acoesSummary.style.display = 'none';
+  // 1. Atualiza imediatamente o status da mesa no cache local window.allMesas
+  if (Array.isArray(window.allMesas)) {
+    window.allMesas.forEach(m => {
+      const mn = norm(m.nome || m.mesaName);
+      if (namesToClear.has(m.nome) || namesToClear.has(m.mesaName) || mn === mNorm) {
+        m.status = 'Disponível';
+        m.observacao = '';
+        m.taxa_manual = null;
+      }
+    });
   }
 
-  // Sucesso Interativo e Dinâmico
+  // 2. Remove os itens finalizados de ordersData
+  ordersData = ordersData.filter(o => {
+    const loc = String(o.localName || '').trim();
+    const grp = String(o.mesa_grupo || '').trim();
+    const cmd = String(o.mesa_comanda || '').trim();
+    return !namesToClear.has(loc) && !namesToClear.has(grp) && !namesToClear.has(cmd) &&
+           norm(loc) !== mNorm && norm(grp) !== mNorm;
+  });
+  window.ordersData = ordersData;
+
+  // 3. Captura estado do modal e botões antes de re-renderizar
+  const checkoutOverlay = document.getElementById('checkout-modal-overlay');
   const btnFinalizarModal = document.getElementById('btn-finalizar-venda');
   const newBtnSubmit = document.getElementById('checkout-modal-submit-btn');
+  const modalAberto = checkoutOverlay && (checkoutOverlay.style.display !== 'none' || window.getComputedStyle(checkoutOverlay).display !== 'none');
   const isProcessing = (btnFinalizarModal && btnFinalizarModal.innerHTML.includes('Processando')) ||
-    (newBtnSubmit && newBtnSubmit.innerHTML.includes('Processando'));
+                       (newBtnSubmit && newBtnSubmit.innerHTML.includes('Processando'));
 
-  if (isProcessing) {
+  const mesaAtualNome = window.mesaAtual ? (window.mesaAtual.nome || window.mesaAtual.mesaName) : '';
+  const eraMesaAtual = mesaAtualNome && (namesToClear.has(mesaAtualNome) || norm(mesaAtualNome) === mNorm);
+
+  if (isProcessing || (modalAberto && eraMesaAtual)) {
     // Efeito de Confete
     if (typeof confetti === 'function') {
-      confetti({
-        particleCount: 150,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#3ab55b', '#ffffff', '#2D9CDB']
-      });
+      try {
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#3ab55b', '#ffffff', '#2D9CDB']
+        });
+      } catch (eConf) { }
     }
 
     // Tocar som de sucesso (Cha-Ching)
     try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (AudioContext) {
-        const ctx = new AudioContext();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
-        osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
-        osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.3); // C6
-
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+        osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.3);
         gain.gain.setValueAtTime(0, ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
-
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start();
@@ -2923,33 +2941,48 @@ socket.on('mesa_finalizada', ({ mesaName }) => {
     // Atualiza visual do botão para sucesso
     if (btnFinalizarModal) {
       btnFinalizarModal.style.background = '#27ae60';
-      btnFinalizarModal.innerHTML = '<i class="ph ph-check-circle" style="font-size: 32px;"></i> VENDA CONCLUÍDA!';
+      btnFinalizarModal.innerHTML = '<i class="ph ph-check-circle" style="font-size: 28px;"></i> VENDA CONCLUÍDA!';
     }
-
     if (newBtnSubmit) {
       newBtnSubmit.style.background = '#27ae60';
       newBtnSubmit.innerHTML = '<i class="ph ph-check-circle" style="font-size: 24px;"></i> CONTA FECHADA COM SUCESSO!';
     }
 
-    // Fecha o modal automaticamente após 2.5 segundos
+    // Fecha o modal de checkout após confirmação visual de sucesso (1.4s)
     setTimeout(() => {
+      if (typeof window.fecharCheckoutModal === 'function') {
+        window.fecharCheckoutModal();
+      } else if (checkoutOverlay) {
+        checkoutOverlay.style.display = 'none';
+      }
       const modalPagamento = document.getElementById('pagamento-overlay');
       if (modalPagamento) modalPagamento.style.display = 'none';
 
-      // Reseta os botões para a próxima venda
-      if (btnFinalizarModal) {
-        btnFinalizarModal.innerHTML = '<i class="ph ph-check-circle" style="font-size: 28px;"></i> FINALIZAR VENDA';
-        btnFinalizarModal.style.background = '#3ab55b';
-      }
-      if (newBtnSubmit) {
-        newBtnSubmit.innerHTML = '<i class="ph ph-check-circle" style="font-size: 24px;"></i> CONCLUIR E FECHAR MESA';
-        newBtnSubmit.style.background = '#3ab55b';
-      }
-    }, 2500);
+      window.mesaAtual = null;
+      document.body.classList.remove('mesa-selecionada');
+      const acoesSummary = document.getElementById('mobile-acoes-summary');
+      if (acoesSummary) acoesSummary.style.display = 'none';
+
+      renderOrders();
+    }, 1400);
+  } else {
+    // Se o modal estava aberto ou pertencia a esta mesa fechada por outro terminal
+    if (modalAberto && eraMesaAtual) {
+      if (typeof window.fecharCheckoutModal === 'function') window.fecharCheckoutModal();
+      else if (checkoutOverlay) checkoutOverlay.style.display = 'none';
+    }
+    if (eraMesaAtual) {
+      window.mesaAtual = null;
+      document.body.classList.remove('mesa-selecionada');
+      const acoesSummary = document.getElementById('mobile-acoes-summary');
+      if (acoesSummary) acoesSummary.style.display = 'none';
+    }
   }
 
+  renderOrders();
+
   const rightPanel = document.querySelector('.right-panel');
-  if (rightPanel) {
+  if (rightPanel && eraMesaAtual) {
     const itemsContainer = document.getElementById('panel-items');
     if (itemsContainer) itemsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">Mesa Paga / Finalizada</div>';
 
@@ -6608,6 +6641,22 @@ window.abrirCheckoutModal = () => {
 window.fecharCheckoutModal = () => {
   const overlay = document.getElementById('checkout-modal-overlay');
   if (overlay) overlay.style.display = 'none';
+  const submodal = document.getElementById('submodal-checkout-fracionamento');
+  if (submodal) submodal.style.display = 'none';
+
+  // Reseta estado e estilos dos botões
+  const btnSubmit = document.getElementById('checkout-modal-submit-btn');
+  if (btnSubmit) {
+    btnSubmit.innerHTML = '<i class="ph ph-check-circle" style="font-size: 24px;"></i> CONCLUIR E FECHAR MESA';
+    btnSubmit.style.background = '#3ab55b';
+    btnSubmit.style.opacity = '0.5';
+    btnSubmit.style.pointerEvents = 'none';
+  }
+  const btnFinalizarModal = document.getElementById('btn-finalizar-venda');
+  if (btnFinalizarModal) {
+    btnFinalizarModal.innerHTML = '<i class="ph ph-check-circle" style="font-size: 28px;"></i> FINALIZAR VENDA';
+    btnFinalizarModal.style.background = '#3ab55b';
+  }
 };
 
 // ═════════════════════════════════════════════════════════════════════

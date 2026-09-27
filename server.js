@@ -5051,13 +5051,28 @@ io.on('connection', (socket) => {
   require('./controllers/socket-fila')(socket, io, db, {});
 
   // --- ADMIN & SETUP ROUTES ---
-  socket.on('get_mesas', () => db.all(`SELECT * FROM mesas`, (err, rows) => {
-    socket.emit('mesas_atualizadas', rows || []);
-    socket.emit('sync_mesas_fechando', Array.from(mesasFechando));
-    db.all(`SELECT * FROM mesa_clientes`, (e2, cliRows) => {
-      if (!e2) socket.emit('mesa_clientes_atualizados', cliRows || []);
+  socket.on('get_mesas', () => {
+    const reconcileSql = `
+      UPDATE mesas SET status = 'Disponível', observacao = '', taxa_manual = NULL
+      WHERE status = 'Ocupada'
+        AND nome NOT IN (
+          SELECT DISTINCT localName FROM pedidos WHERE status NOT IN ('Finalizado', 'Cancelado') AND localName IS NOT NULL
+          UNION
+          SELECT DISTINCT mesa_grupo FROM pedidos WHERE status NOT IN ('Finalizado', 'Cancelado') AND mesa_grupo IS NOT NULL
+          UNION
+          SELECT DISTINCT mesa_comanda FROM pedidos WHERE status NOT IN ('Finalizado', 'Cancelado') AND mesa_comanda IS NOT NULL
+        )
+    `;
+    db.run(reconcileSql, () => {
+      db.all(`SELECT * FROM mesas`, (err, rows) => {
+        socket.emit('mesas_atualizadas', rows || []);
+        socket.emit('sync_mesas_fechando', Array.from(mesasFechando));
+        db.all(`SELECT * FROM mesa_clientes`, (e2, cliRows) => {
+          if (!e2) socket.emit('mesa_clientes_atualizados', cliRows || []);
+        });
+      });
     });
-  }));
+  });
   socket.on('get_qr_pedidos_pendentes', () => {
     db.all(`SELECT * FROM qr_pedidos_pendentes WHERE status = 'Pendente' ORDER BY createdAt DESC`, [], (err, rows) => {
       if (!err) {

@@ -776,9 +776,52 @@ socket.on('pagamento_parcial_valor', ({ mesaName, valor, metodo, userName, comTa
         }
         const primaryMethod = (payments && payments.length > 1) ? 'Múltiplo' : (payments && payments[0] ? payments[0].metodo : 'Dinheiro');
 
+        // Mapeamento e normalização de todas as variações de nomes associados a esta mesa/comanda
+        const candidateNamesSet = new Set();
+        const addCandidate = (val) => {
+          if (!val) return;
+          const s = String(val).trim();
+          if (!s) return;
+          candidateNamesSet.add(s);
+          if (s.includes('+')) {
+            s.split(/\s*\+\s*/).forEach(p => addCandidate(p));
+          }
+          const numMatch = s.match(/\d+/);
+          if (numMatch) {
+            const n = parseInt(numMatch[0], 10);
+            candidateNamesSet.add(String(n));
+            candidateNamesSet.add(`0${n}`);
+            candidateNamesSet.add(`Mesa ${n}`);
+            candidateNamesSet.add(`Mesa 0${n}`);
+            candidateNamesSet.add(`Comanda ${n}`);
+            candidateNamesSet.add(`Comanda - ${n}`);
+            candidateNamesSet.add(`Comanda 0${n}`);
+            candidateNamesSet.add(`Comanda - 0${n}`);
+          }
+          if (s.toLowerCase().startsWith('comanda - ')) {
+            candidateNamesSet.add(s.slice(10).trim());
+          } else if (s.toLowerCase().startsWith('comanda ')) {
+            candidateNamesSet.add(s.slice(8).trim());
+          } else {
+            candidateNamesSet.add(`Comanda - ${s}`);
+          }
+        };
+
+        addCandidate(mesaName);
+        rows.forEach(r => {
+          if (r.localName) addCandidate(r.localName);
+          if (r.mesa_grupo) addCandidate(r.mesa_grupo);
+          if (r.mesa_comanda) addCandidate(r.mesa_comanda);
+        });
+
+        const targetNames = Array.from(candidateNamesSet);
+        const namePh = targetNames.map(() => '?').join(',');
+
         db.run(
-          `UPDATE pedidos SET status = ?, paymentMethod = ?, turno_id = ? WHERE (localName = ? OR mesa_grupo = ?) AND status != 'Finalizado'`,
-          ['Finalizado', primaryMethod, turno.id, mesaName, mesaName],
+          `UPDATE pedidos SET status = ?, paymentMethod = ?, turno_id = ? 
+           WHERE (localName IN (${namePh}) OR mesa_grupo IN (${namePh}) OR mesa_comanda IN (${namePh})) 
+             AND status != 'Finalizado'`,
+          ['Finalizado', primaryMethod, turno.id, ...targetNames, ...targetNames, ...targetNames],
           function (err) {
             if (err) console.error(err);
             activePaymentLocks.delete(closingLockKey);
@@ -818,39 +861,46 @@ socket.on('pagamento_parcial_valor', ({ mesaName, valor, metodo, userName, comTa
             
             setTimeout(() => io.emit('atualizacao_caixa'), 300);
 
-            io.emit('mesa_finalizada', { mesaName });
             const liberarMesas = () => {
+              targetNames.forEach(n => mesasFechando.delete(n));
               mesasFechando.delete(mesaName);
               io.emit('sync_mesas_fechando', Array.from(mesasFechando));
-              db.all(`SELECT * FROM mesas`, (e, r) => io.emit('mesas_atualizadas', r || []));
-              if (mesaName && mesaName.includes(' + ')) {
-                const nomes = mesaName.split(/\s*\+\s*/).map(s => s.trim()).filter(Boolean);
-                if (nomes.length > 0) {
-                  const ph = nomes.map(() => '?').join(',');
-                  db.run(`DELETE FROM mesa_clientes WHERE mesa IN (${ph})`, nomes, () => broadcastMesaClientes());
-                }
-              } else if (mesaName) {
-                db.run(`DELETE FROM mesa_clientes WHERE mesa = ?`, [mesaName], () => broadcastMesaClientes());
+
+              if (typeof broadcastMesaClientes === 'function') {
+                const ph = targetNames.map(() => '?').join(',');
+                db.run(`DELETE FROM mesa_clientes WHERE mesa IN (${ph})`, targetNames, () => broadcastMesaClientes());
               }
+
+              // Reconciliação completa automática: qualquer mesa que não possua mais pedidos abertos é liberada
+              const reconcileSql = `
+                UPDATE mesas SET status = 'Disponível', observacao = '', taxa_manual = NULL
+                WHERE status = 'Ocupada'
+                  AND nome NOT IN (
+                    SELECT DISTINCT localName FROM pedidos WHERE status NOT IN ('Finalizado', 'Cancelado') AND localName IS NOT NULL
+                    UNION
+                    SELECT DISTINCT mesa_grupo FROM pedidos WHERE status NOT IN ('Finalizado', 'Cancelado') AND mesa_grupo IS NOT NULL
+                    UNION
+                    SELECT DISTINCT mesa_comanda FROM pedidos WHERE status NOT IN ('Finalizado', 'Cancelado') AND mesa_comanda IS NOT NULL
+                  )
+              `;
+              db.run(reconcileSql, () => {
+                db.all(`SELECT * FROM mesas`, (e, r) => io.emit('mesas_atualizadas', r || []));
+                if (typeof broadcastPedidos === 'function') broadcastPedidos();
+                io.emit('mesa_finalizada', { mesaName, targetNames });
+              });
             };
-            if (mesaName && mesaName.includes(' + ')) {
-              const nomes = mesaName.split(/\s*\+\s*/).map(s => s.trim()).filter(Boolean);
-              if (nomes.length > 0) {
-                const placeholders = nomes.map(() => '?').join(',');
-                db.run(`UPDATE mesas SET status = 'Disponível', observacao = '', taxa_manual = NULL WHERE nome IN (${placeholders})`, nomes, liberarMesas);
-              } else {
-                liberarMesas();
-              }
-            } else {
-              db.run(`UPDATE mesas SET status = 'Disponível', observacao = '', taxa_manual = NULL WHERE nome = ?`, [mesaName], liberarMesas);
-            }
+
+            const updateSql = `UPDATE mesas SET status = 'Disponível', observacao = '', taxa_manual = NULL WHERE nome IN (${namePh}) OR TRIM(LOWER(nome)) IN (${targetNames.map(() => 'LOWER(?)').join(',')})`;
+            db.run(updateSql, [...targetNames, ...targetNames], () => {
+              liberarMesas();
+            });
 
             // Cliente identificado no fechamento (busca por CPF) vira titular dos pontos
             const clienteIdFechamento = parseInt(cliente_id, 10);
             if (Number.isFinite(clienteIdFechamento) && clienteIdFechamento > 0) {
               db.run(
-                `UPDATE pedidos SET cliente_id = ? WHERE (localName = ? OR mesa_grupo = ?) AND turno_id = ? AND (cliente_id IS NULL OR cliente_id != ?)`,
-                [clienteIdFechamento, mesaName, mesaName, turno.id, clienteIdFechamento],
+                `UPDATE pedidos SET cliente_id = ? WHERE (localName IN (${namePh}) OR mesa_grupo IN (${namePh})) AND turno_id = ? AND (cliente_id IS NULL OR cliente_id != ?)`,
+                [clienteIdFechamento, ...targetNames, ...targetNames, turno.id, clienteIdFechamento],
                 () => { }
               );
             }

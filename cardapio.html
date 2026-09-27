@@ -20,7 +20,13 @@
   <!-- QR Code local (funciona sem internet) -->
   <script src="/vendor/qrcode/qrcode-generator.js"></script>
   <script src="/vendor/qrcode/qr-helper.js"></script>
+  <!-- 3D Ultra Engine (Three.js 6GB+ Experience) -->
+  <script src="/cardapio-3d-engine.js" defer></script>
   <style>
+    @keyframes pulse3d {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(1.25); }
+    }
     :root, [data-theme="light"], body.theme-light {
       --primary: #fc4b15;
       --primary-hover: #e03e09;
@@ -806,11 +812,16 @@
       color: var(--text-muted);
       margin-top: 4px;
       line-height: 1.4;
-      display: none;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .menu-card-descricao.visible,
     .tour-mode .menu-card-descricao {
+      -webkit-line-clamp: unset;
       display: block !important;
     }
 
@@ -1552,6 +1563,7 @@
           <span id="modal-price" style="font-weight: 800; color: var(--primary); font-size: 16px;">R$ 0,00</span>
         </div>
       </div>
+      <p id="modal-item-description" style="font-size: 13px; color: var(--text-muted, #64748b); margin: 10px 0 4px 0; line-height: 1.45; display: none;"></p>
       <div class="form-group" style="margin-top: 8px;">
         <label class="form-label">Quantidade:</label>
         <div class="qty-control">
@@ -2154,18 +2166,75 @@
       currentStep: 0
     };
 
+    const CULINARY_DESCRIPTIONS = {
+      'Porção 4 Pastéis Camarão': 'Quatro pastéis artesanais crocantes recheados com camarões frescos refogados no azeite, alho e ervas finas. Massa sequinha e dourada.',
+      'Porção 4 Pastéis - Camarão': 'Quatro pastéis artesanais crocantes recheados com camarões frescos refogados no azeite, alho e ervas finas. Massa sequinha e dourada.',
+      'Porção 4 Pastéis Berbigão': 'Quatro pastéis crocantes com berbigão fresco selecionado, temperado à moda tradicional do litoral com cheiro-verde e especiarias.',
+      'Porção 4 Pastéis - Berbigão': 'Quatro pastéis crocantes com berbigão fresco selecionado, temperado à moda tradicional do litoral com cheiro-verde e especiarias.',
+      'Porção 4 Pastéis Queijo': 'Quatro pastéis artesanais fritos na hora, com recheio cremoso e generoso de queijo derretido. Massa crocante e dourada.',
+      'Porção 4 Pastéis - Queijo': 'Quatro pastéis artesanais fritos na hora, com recheio cremoso e generoso de queijo derretido. Massa crocante e dourada.',
+      'Passaporte Rodízio Livre': 'Acesso livre e completo ao tradicional rodízio de frutos do mar da casa: peixes frescos, camarões variados, mariscos, ostras, pastéis e guarnições à vontade.',
+      'Livre': 'Acesso individual completo ao nosso bufê livre e rodízio de frutos do mar, com variedade de peixes frescos, camarões, acompanhamentos e guarnições da casa.',
+      'Porção de Peixe': 'Filés de peixe fresco selecionados, empanados e fritos na hora com casquinha crocante e interior macio e suculento. Acompanha fatias de limão e molho tártaro especial.',
+      'Porção de Pirão': 'Pirão de peixe tradicional da costa catarinense, cozido lentamente com caldo encorpado de peixes nobres e farinha de mandioca artesanal fina.',
+      'Sopa de Siri': 'Sopa aveludada e aromática preparada com pura carne de siri catado na hora, azeite virgem, leite de coco suave, cheiro-verde fresco e tempero especial.',
+      'Combinado Especial': 'O grande prato de celebração da casa: combinação nobre de camarões grelhados no alho e óleo, iscas de peixe à dorê, anéis de lula empanados e ostras gratinadas.',
+      'Refrigerante': 'Refrigerante estupidamente gelado servido com copo com pedras de gelo cristalino e fatia de limão taiti.',
+      'Refrigerante Lata': 'Refrigerante lata 350ml trincando de gelado, servido com copo com pedras de gelo e rodela de limão.',
+      'Porção Extra - Arroz/Pirão/Salada': 'Guarnição extra completa: arroz branco soltinho, pirão de peixe cremoso e salada de folhas frescas com tomates selecionados.',
+      'Pudim': 'Clássico pudim de leite condensado artesanal da casa, com textura aveludada sem furinhos, coberto com farta calda dourada de caramelo artesanal.',
+      'Filé com Fritas': 'Suculento bife de filé grelhado na chapa no ponto desejado, temperado com sal grosso e ervas, acompanhado de batatas fritas crocantes e sequinhas.',
+      'Suco Natural': 'Suco 100% natural da fruta preparado no momento do pedido, sem conservantes, servido bem gelado para refrescar seu paladar.'
+    };
+
+    function isDescricaoGenerica(d) {
+      if (!d || typeof d !== 'string') return true;
+      const s = d.trim().toLowerCase();
+      if (!s || s === 'valor por pessoa') return true;
+      if (s.includes('excelente qualidade') || s.includes('preparado com todo cuidado')) return true;
+      if (s.includes('delicioso item da categoria') || s.includes('delicioso item do nosso cardápio')) return true;
+      if (s.includes('prepare-se para saborear')) return true;
+      return false;
+    }
+
     function gerarDescricao(p) {
-      if (p.descricao && p.descricao.trim()) return p.descricao;
+      if (p.descricao && !isDescricaoGenerica(p.descricao)) return p.descricao.trim();
+      const nome = (p.nome || '').trim();
+      if (CULINARY_DESCRIPTIONS[nome]) return CULINARY_DESCRIPTIONS[nome];
+      const normNome = nome.replace(' - ', ' ');
+      if (CULINARY_DESCRIPTIONS[normNome]) return CULINARY_DESCRIPTIONS[normNome];
+
+      const nl = nome.toLowerCase();
+      if (nl.includes('camarão') || nl.includes('camarao')) return 'Camarões frescos selecionados, preparados com temperos especiais da casa e azeite nobre.';
+      if (nl.includes('peixe') || nl.includes('isca') || nl.includes('anchova') || nl.includes('pescada') || nl.includes('salmão')) return 'Peixe fresco selecionado, preparado no ponto ideal para preservar suculência e sabor autêntico.';
+      if (nl.includes('ostra')) return 'Ostras frescas de cultivo selecionado, abertas ao bafo ou gratinadas com queijo dourado.';
+      if (nl.includes('marisco')) return 'Mariscos frescos limpos e preparados no bafo com azeite, ervas aromáticas e toque de limão.';
+      if (nl.includes('siri')) return 'Carne pura de siri fresco temperada com cheiro-verde, azeite e temperos tradicionais.';
+      if (nl.includes('lula')) return 'Anéis macios de lula empanados e dourados até ficarem crocantes e sequinhos.';
+      if (nl.includes('batata') || nl.includes('fritas')) return 'Batatas crocantes e sequinhas por fora, macias por dentro, salgadas na medida perfeita.';
+      if (nl.includes('frango') || nl.includes('passarinho')) return 'Pedaços nobres de frango temperados com alho e especiarias, fritos até dourarem.';
+      if (nl.includes('pastel')) return 'Pastel artesanal frito na hora com recheio farto e massa crocante que derrete na boca.';
+      if (nl.includes('cerveja') || nl.includes('chopp') || nl.includes('heineken') || nl.includes('stella') || nl.includes('spaten') || nl.includes('budweiser') || nl.includes('amstel') || nl.includes('eisenbahn') || nl.includes('original') || nl.includes('brahma')) return 'Cerveja puro malte estupidamente gelada, servida na temperatura perfeita.';
+      if (nl.includes('caipirinha') || nl.includes('caipiroska') || nl.includes('saquerinha')) return 'Preparada na hora com frutas frescas maceradas, destilado selecionado e gelo triturado.';
+      if (nl.includes('suco')) return 'Suco natural da fruta, refrescante e preparado na hora para acompanhar sua refeição.';
+      if (nl.includes('água') || nl.includes('agua') || nl.includes('tônica') || nl.includes('h2o') || nl.includes('refrigerante') || nl.includes('coca')) return 'Bebida servida bem gelada com pedras de gelo e limão fresco para saciar sua sede.';
+      if (nl.includes('pudim') || nl.includes('doce') || nl.includes('sobremesa')) return 'Sobremesa artesanal com ingredientes nobres e calda doce na medida perfeita.';
+      if (nl.includes('rodízio') || nl.includes('rodizio') || nl.includes('livre')) return 'Acesso livre a toda a variedade gastronômica servida à vontade em nossa mesa.';
+
       const descs = {
-        'Bebidas': 'Refrescante e saboroso, perfeito para acompanhar seu momento.',
-        'Petiscos': 'Preparado na hora com ingredientes selecionados. Ideal para compartilhar.',
-        'Porções': 'Porção generosa preparada com todo carinho pela nossa cozinha.',
-        'Lanches': 'Montado no momento do pedido com pão fresco e ingredientes de primeira linha.',
-        'Pratos': 'Prato completo preparado sob medida para você saborear.',
-        'Sobremesas': 'Doce tentação preparada pela nossa confeitaria artesanal.',
-        'Mais Pedidos': 'O favorito dos nossos clientes! Não é à toa que está entre os mais pedidos.'
+        'Bebidas': 'Bebida selecionada, servida trincando de gelada com gelo e limão.',
+        'Cervejas': 'Cerveja puro malte geladíssima servida na temperatura ideal.',
+        'Petiscos': 'Petisco artesanal preparado na hora com ingredientes frescos, perfeito para compartilhar.',
+        'Porções': 'Porção farta e saborosa, preparada na hora pela nossa cozinha com ingredientes nobres.',
+        'Porções (500g)': 'Porção de 500g preparada na hora, crocante e bem temperada para 1 a 2 pessoas.',
+        'Porções (800g)': 'Porção generosa de 800g com ingredientes frescos selecionados, ideal para compartilhar.',
+        'A La Carte': 'Prato principal preparado sob medida com guarnições completas e tempero do chef.',
+        'Lanches': 'Montado na hora com pão artesanal fresquinho e ingredientes de primeira qualidade.',
+        'Pratos': 'Prato completo e generoso, elaborado artesanalmente com carinho e sabor autêntico.',
+        'Sobremesas': 'Doce artesanal preparado com dedicação para fechar sua refeição com perfeição.',
+        'Mais Pedidos': 'O prato campeão de pedidos da casa, consagrado pela preferência dos nossos clientes.'
       };
-      return descs[p.categoria] || 'Delicioso item do nosso cardápio. Peça e surpreenda-se!';
+      return descs[p.categoria] || 'Prato especial preparado com ingredientes frescos selecionados e o tempero exclusivo da nossa cozinha.';
     }
 
     // Load configs from API
@@ -2362,6 +2431,9 @@
 
     window.selectCategory = (cat) => {
       activeCategory = cat;
+      if (window.ChefCardapio3D && window.ChefCardapio3D.ambient) {
+        window.ChefCardapio3D.ambient.updateCategoryColor(cat);
+      }
       renderTabs();
       renderMenu();
       const container = document.getElementById('categories-tabs');
@@ -2565,6 +2637,12 @@
 
       document.getElementById('modal-title').innerText = item.nome;
       document.getElementById('modal-price').innerText = `R$ ${parseFloat(item.preco).toFixed(2).replace('.', ',')}`;
+      const modalDescEl = document.getElementById('modal-item-description');
+      if (modalDescEl) {
+        const d = gerarDescricao(item);
+        modalDescEl.innerText = d || '';
+        modalDescEl.style.display = d ? 'block' : 'none';
+      }
       document.getElementById('modal-emoji').innerText = item.emoji || '🍽️';
       document.getElementById('modal-qty').innerText = '1';
       document.getElementById('modal-obs').value = '';
@@ -2600,11 +2678,17 @@
       }
 
       document.getElementById('modal-item-details').style.display = 'flex';
+      if (window.ChefCardapio3D && window.ChefCardapio3D.isEnabled) {
+        window.ChefCardapio3D.showDish3D(item);
+      }
     };
 
     window.fecharItemDetails = () => {
       document.getElementById('modal-item-details').style.display = 'none';
       selectedItem = null;
+      if (window.ChefCardapio3D) {
+        window.ChefCardapio3D.hideDish3D();
+      }
     };
 
     window.changeItemDetailsQty = (dir) => {
@@ -2723,6 +2807,10 @@
         });
       }
 
+      if (window.ChefCardapio3D && window.ChefCardapio3D.isEnabled) {
+        const btn = document.querySelector('#modal-item-details .btn-submit');
+        window.ChefCardapio3D.triggerAddToCartFly(btn);
+      }
       atualizarCartBadge();
       window.fecharItemDetails();
     };
