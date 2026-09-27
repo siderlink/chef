@@ -574,6 +574,7 @@
         <span id="txt-sync-status">Localhost :8080 Conectado</span>
       </div>
       <a href="/radar-concorrencia.html" class="btn-action" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">📡 Radar Concorrência</a>
+      <a href="/auditor-cartoes.html" class="btn-action" style="background: linear-gradient(135deg, var(--accent-emerald), #059669);">💳 Auditor Cartões</a>
       <a href="/" class="btn-action btn-secondary">🌐 Abrir PDV</a>
       <a href="/painel-dono.html" class="btn-action">👑 Painel Dono</a>
     </div>
@@ -588,7 +589,7 @@
         <h2>🚀 Arquitetura Distribuída: Máximo Desempenho com Custo Zero de Nuvem</h2>
         <p>
           Este hub executa processos de hardware e análises pesadas diretamente no computador do restaurante através do <strong>Sync Agent</strong>.
-          Impressões térmicas, balanças seriais, compactação Gzip com SHA-256 e algoritmo Caixeiro Viajante rodam localmente, consumindo <strong>0% de CPU e RAM do seu servidor central</strong>.
+          Impressões térmicas, balanças seriais, compactação Gzip com SHA-256, parsing local de DANFE e algoritmo Caixeiro Viajante rodam localmente, consumindo <strong>0% de CPU e RAM do seu servidor central</strong>.
         </p>
       </div>
       <div class="banner-metrics">
@@ -627,8 +628,17 @@
       <button class="tab-btn" onclick="switchTab('tab-ifood')">
         <span class="icon">🛵</span> Poller iFood Local
       </button>
+      <button class="tab-btn" onclick="switchTab('tab-danfe')">
+        <span class="icon">🧾</span> Parser DANFE XML
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-lan-mesh')">
+        <span class="icon">📶</span> LAN Mesh & Offline
+      </button>
       <button class="tab-btn" onclick="window.location.href='/radar-concorrencia.html'" style="border-color: rgba(6, 182, 212, 0.4); color: var(--accent-cyan);">
-        <span class="icon">📡</span> Radar Concorrência (Raio Km)
+        <span class="icon">📡</span> Radar Concorrência
+      </button>
+      <button class="tab-btn" onclick="window.location.href='/auditor-cartoes.html'" style="border-color: rgba(16, 185, 129, 0.4); color: var(--accent-emerald);">
+        <span class="icon">💳</span> Auditor de Taxas (MDR)
       </button>
     </div>
 
@@ -1087,11 +1097,203 @@ Total de Itens: 4
         <div class="card">
           <div class="card-header">
             <h3>📡 Monitor do Poller Local</h3>
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- TAB 7: ENTRADA DE NOTA FISCAL (DANFE XML) LOCAL -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div id="tab-danfe" class="tab-pane">
+      <div class="module-grid">
+        
+        <div class="card">
+          <div class="card-header">
+            <h3>🧾 Entrada de Estoque por DANFE / NFe (XML)</h3>
+            <span class="tag-status tag-online">100% Local • Zero Cloud</span>
           </div>
-          <div class="terminal-box" id="term-ifood">
-            <div><span class="log-time">[00:00:05]</span> <span class="log-info">[IFOOD]</span> Poller local em execução no IP residencial/comercial.</div>
-            <div><span class="log-time">[00:00:20]</span> <span class="log-success">[IFOOD]</span> GET /v1.0/events:polling -&gt; 0 eventos pendentes (OK 200).</div>
-            <div><span class="log-time">[00:00:35]</span> <span class="log-success">[IFOOD]</span> GET /v1.0/events:polling -&gt; 0 eventos pendentes (OK 200).</div>
+
+          <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 1rem;">
+            O processamento e parsing de arquivos XML de notas fiscais (com dezenas de itens, tributações e regras de NCM) roda <strong>diretamente na CPU do computador do restaurante</strong>, sem upload de arquivos pesados para a sua VPS.
+          </p>
+
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label>Selecione ou Cole o Conteúdo do XML da DANFE (NFe 55 / NFCe 65):</label>
+            <textarea id="txt-danfe-xml" class="form-control" style="height: 140px; font-family: var(--mono-font); font-size: 0.8rem;" placeholder="Cole o código XML da nota fiscal aqui ou clique em 'Carregar Exemplo de Fornecedor'...">
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">
+  <NFe>
+    <infNFe Id="NFe35230912345678000199550010000456121987654321">
+      <ide><nNF>45612</nNF><serie>1</serie><dhEmi>2026-09-27T10:00:00-03:00</dhEmi></ide>
+      <emit><CNPJ>12345678000199</CNPJ><xNome>DISTRIBUIDORA DE ALIMENTOS BELLA VISTA LTDA</xNome></emit>
+      <total><ICMSTot><vNF>1450.80</vNF></ICMSTot></total>
+      <det nItem="1">
+        <prod><cProd>INS-001</cProd><xProd>QUEIJO MUSSARELA BLOCO 4KG</xProd><NCM>04061010</NCM><qCom>15.0000</qCom><uCom>KG</uCom><vUnCom>34.5000</vUnCom><vProd>517.50</vProd></prod>
+      </det>
+      <det nItem="2">
+        <prod><cProd>INS-002</cProd><xProd>FARINHA DE TRIGO ESPECIAL 00 25KG</xProd><NCM>11010010</NCM><qCom>8.0000</qCom><uCom>SC</uCom><vUnCom>88.0000</vUnCom><vProd>704.00</vProd></prod>
+      </det>
+      <det nItem="3">
+        <prod><cProd>INS-003</cProd><xProd>MOLHO DE TOMATE PELADO ITALIANO 2.5KG</xProd><NCM>20029090</NCM><qCom>12.0000</qCom><uCom>LT</uCom><vUnCom>19.1000</vUnCom><vProd>229.20</vProd></prod>
+      </det>
+    </infNFe>
+  </NFe>
+</nfeProc></textarea>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <button class="btn-action" style="flex: 1;" onclick="processarDanfeLocalAgora()">
+              ⚡ Processar XML na Máquina Local
+            </button>
+            <button class="btn-action btn-secondary" onclick="carregarHistoricoDanfe()">
+              🔄 Atualizar Histórico
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>📦 Resumo da Importação & Insumos Atualizados</h3>
+          </div>
+
+          <div id="danfe-resultado-box" style="background: #090d14; border: 1px solid var(--card-border); border-radius: 10px; padding: 14px; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span style="color: var(--text-muted); font-size: 0.85rem;">Emitente:</span>
+              <strong id="danfe-res-emitente" style="color: #fff;">DISTRIBUIDORA BELLA VISTA</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span style="color: var(--text-muted); font-size: 0.85rem;">Número NFe:</span>
+              <strong id="danfe-res-numero" style="color: var(--accent-orange);">#45612</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span style="color: var(--text-muted); font-size: 0.85rem;">Valor Total da Nota:</span>
+              <strong id="danfe-res-valor" style="color: var(--accent-emerald);">R$ 1.450,80</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted); font-size: 0.85rem;">Consumo na Nuvem:</span>
+              <strong style="color: var(--accent-emerald);">0 bytes / 0% CPU</strong>
+            </div>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Insumo / Produto</th>
+                  <th>Qtd</th>
+                  <th>Custo Unit.</th>
+                  <th>Subtotal</th>
+                  <th>Estoque Local</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-danfe-itens">
+                <tr>
+                  <td>Queijo Mussarela Bloco 4kg</td>
+                  <td>15 KG</td>
+                  <td>R$ 34,50</td>
+                  <td>R$ 517,50</td>
+                  <td><span class="tag-status tag-online">+15 un</span></td>
+                </tr>
+                <tr>
+                  <td>Farinha de Trigo Especial 00 25kg</td>
+                  <td>8 SC</td>
+                  <td>R$ 88,00</td>
+                  <td>R$ 704,00</td>
+                  <td><span class="tag-status tag-online">+8 un</span></td>
+                </tr>
+                <tr>
+                  <td>Molho de Tomate Pelado Italiano 2.5kg</td>
+                  <td>12 LT</td>
+                  <td>R$ 19,10</td>
+                  <td>R$ 229,20</td>
+                  <td><span class="tag-status tag-online">+12 un</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- TAB 8: REDE LAN MESH & CONTINGÊNCIA OFFLINE -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div id="tab-lan-mesh" class="tab-pane">
+      <div class="module-grid">
+        
+        <div class="card">
+          <div class="card-header">
+            <h3>📶 Rede LAN Mesh & Operação 100% Offline</h3>
+            <span class="tag-status tag-online">Mesh Ativo</span>
+          </div>
+
+          <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 1rem;">
+            Os dispositivos do salão (aplicativo dos garçons, KDS da cozinha e tablets das mesas) comunicam-se via <strong>Wi-Fi local direta com a máquina do caixa</strong>.
+            Se o provedor de internet do restaurante cair, a operação não para por 1 único segundo.
+          </p>
+
+          <div style="background: #090d14; border: 1px solid var(--card-border); padding: 14px; border-radius: 10px; margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span style="color: var(--text-muted); font-size: 0.85rem;">Ponto de Acesso Local:</span>
+              <strong style="color: var(--accent-cyan); font-family: var(--mono-font);" id="lbl-mesh-ip">http://192.168.1.100:8080</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span style="color: var(--text-muted); font-size: 0.85rem;">Latência Média na LAN:</span>
+              <strong style="color: var(--accent-emerald);">&lt; 2 ms (Tempo Real)</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted); font-size: 0.85rem;">Modo de Sobrevivência:</span>
+              <strong style="color: var(--accent-emerald);">Armazenamento Local com Sincronização em Lote</strong>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <button class="btn-action" style="flex: 1;" onclick="simularHeartbeatGarcom()">
+              📡 Simular Garçom Conectando na LAN
+            </button>
+            <button class="btn-action btn-secondary" onclick="carregarStatusMeshLocal()">
+              🔄 Atualizar Nós da Rede
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>📱 Dispositivos Conectados na Rede Interna</h3>
+            <span class="tag-status tag-online" id="lbl-mesh-online-count">3 Online</span>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Dispositivo</th>
+                  <th>Tipo</th>
+                  <th>IP Local</th>
+                  <th>Último Sinal</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-mesh-dispositivos">
+                <tr>
+                  <td><strong>Tablet Garçom Salão 01</strong></td>
+                  <td>GARCOM</td>
+                  <td style="font-family: var(--mono-font);">192.168.1.105</td>
+                  <td>Agora mesmo</td>
+                  <td><span class="tag-status tag-online">Ativo</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Tela KDS Cozinha Quente</strong></td>
+                  <td>KDS</td>
+                  <td style="font-family: var(--mono-font);">192.168.1.110</td>
+                  <td>Há 12s</td>
+                  <td><span class="tag-status tag-online">Ativo</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Totem Autoatendimento Entrada</strong></td>
+                  <td>TOTEM</td>
+                  <td style="font-family: var(--mono-font);">192.168.1.115</td>
+                  <td>Há 35s</td>
+                  <td><span class="tag-status tag-online">Ativo</span></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -1344,6 +1546,107 @@ Total de Itens: 4
       }
     }
 
+    // 6. Importação Local de DANFE XML (Edge Computing)
+    async function processarDanfeLocalAgora() {
+      const xml = document.getElementById('txt-danfe-xml').value;
+      if (!xml || !xml.trim()) {
+        showToast('Cole o conteúdo XML da DANFE para processar.', true);
+        return;
+      }
+      try {
+        showToast('Processando XML da DANFE na CPU do Restaurante...');
+        const res = await fetch('/api/local/estoque/danfe-xml', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ xml })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(`✅ DANFE #${data.numero || ''} processada com sucesso! ${data.total_itens || 0} insumos atualizados.`);
+          if (document.getElementById('danfe-res-emitente')) document.getElementById('danfe-res-emitente').innerText = data.emitente || 'FORNECEDOR';
+          if (document.getElementById('danfe-res-numero')) document.getElementById('danfe-res-numero').innerText = '#' + (data.numero || 'S/N');
+          if (document.getElementById('danfe-res-valor')) document.getElementById('danfe-res-valor').innerText = 'R$ ' + (data.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+          if (Array.isArray(data.itens) && data.itens.length > 0) {
+            const tbody = document.getElementById('tbl-danfe-itens');
+            tbody.innerHTML = data.itens.map(it => `
+              <tr>
+                <td><strong>${it.nome}</strong><br><small style="color:var(--text-muted);">NCM: ${it.ncm || '-'} | Cód: ${it.codigo_fornecedor || '-'}</small></td>
+                <td>${it.quantidade} ${it.unidade}</td>
+                <td>R$ ${it.custo_unitario.toFixed(2)}</td>
+                <td><strong>R$ ${it.valor_total.toFixed(2)}</strong></td>
+                <td><span class="tag-status tag-online">+${it.quantidade} est.</span></td>
+              </tr>
+            `).join('');
+          }
+        } else {
+          showToast('Erro ao processar DANFE: ' + (data.erro || 'Falha no XML'), true);
+        }
+      } catch (e) {
+        showToast('Erro de comunicação com o Sync Local: ' + e.message, true);
+      }
+    }
+
+    async function carregarHistoricoDanfe() {
+      try {
+        const res = await fetch('/api/local/estoque/danfe-historico');
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.notas) && data.notas.length > 0) {
+          showToast(`Encontradas ${data.notas.length} notas no histórico local.`);
+        }
+      } catch (e) {}
+    }
+
+    // 7. LAN Mesh & Autonomia Offline
+    async function carregarStatusMeshLocal() {
+      try {
+        const res = await fetch('/api/local/lan-mesh/status');
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.dispositivos)) {
+          const onlineCount = data.dispositivos_online || data.dispositivos.length;
+          const lblCount = document.getElementById('lbl-mesh-online-count');
+          if (lblCount) lblCount.innerText = `${onlineCount} Online`;
+
+          const tbody = document.getElementById('tbl-mesh-dispositivos');
+          if (tbody && data.dispositivos.length > 0) {
+            tbody.innerHTML = data.dispositivos.map(d => `
+              <tr>
+                <td><strong>${d.nome || d.device_id}</strong></td>
+                <td><span class="tag-status tag-online">${d.tipo || 'GARCOM'}</span></td>
+                <td style="font-family: var(--mono-font);">${d.ip_local || '192.168.1.xxx'}</td>
+                <td>${d.online ? 'Agora mesmo' : (d.segundos_atras ? `${d.segundos_atras}s atrás` : 'Offline')}</td>
+                <td><span class="tag-status ${d.online ? 'tag-online' : 'tag-offline'}">${d.online ? 'Ativo' : 'Inativo'}</span></td>
+              </tr>
+            `).join('');
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function simularHeartbeatGarcom() {
+      try {
+        const randomId = 'garcom-' + Math.floor(Math.random() * 10 + 1);
+        const res = await fetch('/api/local/lan-mesh/heartbeat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            device_id: randomId,
+            tipo: 'GARCOM',
+            nome: 'Garçom Mobile #' + randomId.split('-')[1],
+            ip_local: '192.168.1.' + (100 + Math.floor(Math.random() * 50)),
+            versao_app: '2.4.0-edge'
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(`Dispositivo LAN [${randomId}] sincronizado localmente.`);
+          carregarStatusMeshLocal();
+        }
+      } catch (e) {
+        showToast('Erro ao simular nó local: ' + e.message, true);
+      }
+    }
+
     function addLog(elementId, msg, cssClass = '') {
       const box = document.getElementById(elementId);
       const time = new Date().toLocaleTimeString();
@@ -1358,6 +1661,7 @@ Total de Itens: 4
       carregarHistoricoSpool();
       carregarHistoricoBi();
       carregarListaBackups();
+      carregarStatusMeshLocal();
     });
   </script>
 </body>

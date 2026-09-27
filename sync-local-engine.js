@@ -31,7 +31,9 @@ let modulosAtivos = {
   roteirizador_tsp: true,
   ifood_poller: true,
   radar_concorrencia: true,
-  auditor_cartoes: true
+  auditor_cartoes: true,
+  danfe_parser: true,
+  lan_mesh: true
 };
 
 // ══════════════════════════════════════════════════════════════════
@@ -101,6 +103,34 @@ async function initialize(deps) {
         sha256_hash TEXT NOT NULL,
         status TEXT DEFAULT 'valido',
         criado_em DATETIME DEFAULT (datetime('now', 'localtime'))
+      )
+    `, () => {});
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS sync_local_danfe_importadas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        chave_acesso TEXT UNIQUE NOT NULL,
+        numero_nfe TEXT,
+        serie TEXT,
+        data_emissao TEXT,
+        emitente_nome TEXT,
+        emitente_cnpj TEXT,
+        valor_total REAL DEFAULT 0,
+        qtd_itens INTEGER DEFAULT 0,
+        itens_json TEXT NOT NULL,
+        importado_em DATETIME DEFAULT (datetime('now', 'localtime'))
+      )
+    `, () => {});
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS sync_local_lan_dispositivos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        device_id TEXT UNIQUE NOT NULL,
+        tipo TEXT DEFAULT 'GARCOM', -- 'GARCOM' | 'KDS' | 'TABLET_MESA' | 'TOTEM'
+        nome TEXT,
+        ip_local TEXT,
+        versao_app TEXT,
+        ultimo_heartbeat DATETIME DEFAULT (datetime('now', 'localtime'))
       )
     `, () => {});
   });
@@ -486,6 +516,164 @@ async function auditarTaxasCartaoLocal() {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// 9. MÓDULO: PARSER DE XML DE NOTA FISCAL (DANFE / NFe) LOCAL
+// ══════════════════════════════════════════════════════════════════
+async function importarDanfeXmlLocal(xmlContent) {
+  const db = ctx.db;
+  if (!xmlContent) return { ok: false, erro: 'Conteúdo XML vazio' };
+
+  try {
+    const xml = typeof xmlContent === 'string' ? xmlContent : xmlContent.toString('utf-8');
+
+    // Extração regex rápida e resiliente de tags de NFe modelo 55 / NFCe 65
+    const getTag = (str, tag) => {
+      const match = str.match(new RegExp(`<${tag}[^>]*>([^<]+)<\/${tag}>`, 'i'));
+      return match ? match[1].trim() : '';
+    };
+
+    const chaveMatch = xml.match(/Id="NFe([0-9]{44})"/i) || xml.match(/<chNFe>([0-9]{44})<\/chNFe>/i);
+    const chave = chaveMatch ? chaveMatch[1] : ('DANFE-' + Date.now());
+    const nNf = getTag(xml, 'nNF') || '0';
+    const serie = getTag(xml, 'serie') || '1';
+    const dhEmi = getTag(xml, 'dhEmi') || new Date().toISOString();
+    const emitCnpj = getTag(xml, 'CNPJ');
+    const emitNome = getTag(xml, 'xNome') || 'FORNECEDOR';
+    const vNf = parseFloat(getTag(xml, 'vNF') || '0');
+
+    // Parse de itens (<det nItem="...">...</det>)
+    const itens = [];
+    const detRegex = /<det[^>]*>([\s\S]*?)<\/det>/gi;
+    let detMatch;
+    while ((detMatch = detRegex.exec(xml)) !== null) {
+      const detXml = detMatch[1];
+      const prodXml = (detXml.match(/<prod[^>]*>([\s\S]*?)<\/prod>/i) || [])[1] || detXml;
+
+      const cProd = getTag(prodXml, 'cProd');
+      const xProd = getTag(prodXml, 'xProd');
+      const ncm = getTag(prodXml, 'NCM');
+      const qCom = parseFloat(getTag(prodXml, 'qCom') || '1');
+      const uCom = getTag(prodXml, 'uCom') || 'UN';
+      const vUnCom = parseFloat(getTag(prodXml, 'vUnCom') || '0');
+      const vProd = parseFloat(getTag(prodXml, 'vProd') || (qCom * vUnCom).toFixed(2));
+
+      if (xProd) {
+        itens.push({
+          codigo_fornecedor: cProd,
+          nome: xProd,
+          ncm,
+          quantidade: qCom,
+          unidade: uCom,
+          custo_unitario: vUnCom,
+          valor_total: vProd
+        });
+      }
+    }
+
+    if (!db) {
+      return {
+        ok: true,
+        chave,
+        numero: nNf,
+        emitente: emitNome,
+        valor_total: vNf,
+        total_itens: itens.length,
+        itens,
+        processador: 'CPU Local do Restaurante (Edge DANFE Parser)',
+        economia_nuvem: '100% dos dados estruturados localmente sem envio de arquivos pesados para a nuvem.'
+      };
+    }
+
+    return new Promise((resolve) => {
+      db.run(`
+        INSERT INTO sync_local_danfe_importadas 
+        (chave_acesso, numero_nfe, serie, data_emissao, emitente_nome, emitente_cnpj, valor_total, qtd_itens, itens_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(chave_acesso) DO UPDATE SET
+          valor_total = excluded.valor_total,
+          itens_json = excluded.itens_json,
+          importado_em = datetime('now', 'localtime')
+      `, [chave, nNf, serie, dhEmi, emitNome, emitCnpj, vNf, itens.length, JSON.stringify(itens)], function(err) {
+        if (err) return resolve({ ok: false, erro: err.message });
+
+        // Tenta atualizar estoque/custo na tabela produtos se existir
+        itens.forEach(item => {
+          db.run(`
+            UPDATE produtos 
+            SET preco_custo = ?, estoque = COALESCE(estoque, 0) + ? 
+            WHERE LOWER(nome) = LOWER(?) OR LOWER(codigo_barras) = LOWER(?)
+          `, [item.custo_unitario, item.quantidade, item.nome, item.codigo_fornecedor], () => {});
+        });
+
+        resolve({
+          ok: true,
+          chave,
+          numero: nNf,
+          emitente: emitNome,
+          valor_total: vNf,
+          total_itens: itens.length,
+          itens,
+          processador: 'CPU Local do Restaurante (Edge DANFE Parser)',
+          economia_nuvem: '100% dos dados estruturados localmente sem envio de arquivos pesados para a nuvem.'
+        });
+      });
+    });
+  } catch (err) {
+    return { ok: false, erro: `Falha ao processar DANFE: ${err.message}` };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 10. MÓDULO: CONTINGÊNCIA & DESCOBERTA LAN MESH LOCAL
+// ══════════════════════════════════════════════════════════════════
+async function registrarHeartbeatDispositivoLocal(deviceId, tipo, nome, ipLocal, versaoApp) {
+  const db = ctx.db;
+  if (!db) return { ok: true };
+
+  return new Promise((resolve) => {
+    db.run(`
+      INSERT INTO sync_local_lan_dispositivos (device_id, tipo, nome, ip_local, versao_app, ultimo_heartbeat)
+      VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'))
+      ON CONFLICT(device_id) DO UPDATE SET
+        tipo = excluded.tipo,
+        nome = excluded.nome,
+        ip_local = excluded.ip_local,
+        versao_app = excluded.versao_app,
+        ultimo_heartbeat = datetime('now', 'localtime')
+    `, [deviceId, tipo || 'GARCOM', nome || 'Terminal Garçom', ipLocal || '127.0.0.1', versaoApp || '1.0'], (err) => {
+      resolve({ ok: !err });
+    });
+  });
+}
+
+async function obterStatusMeshLocal() {
+  const db = ctx.db;
+  if (!db) return { ok: true, total_cadastrados: 0, dispositivos_online: 0, dispositivos: [] };
+
+  return new Promise((resolve) => {
+    db.all(`
+      SELECT *, 
+        (strftime('%s', 'now', 'localtime') - strftime('%s', ultimo_heartbeat)) as segundos_atras
+      FROM sync_local_lan_dispositivos 
+      ORDER BY ultimo_heartbeat DESC
+    `, [], (err, rows) => {
+      if (err) return resolve({ ok: false, erro: err.message });
+      const dispositivos = (rows || []).map(r => ({
+        ...r,
+        online: (r.segundos_atras <= 120) // ativo nos últimos 2 minutos
+      }));
+      resolve({
+        ok: true,
+        total_cadastrados: dispositivos.length,
+        dispositivos_online: dispositivos.filter(d => d.online).length,
+        dispositivos,
+        rede_local: 'Operação LAN 100% Autônoma (Zero dependência de WAN externa)',
+        economia_nuvem: 'Tráfego de salão roteado em rede interna local sem consumir banda da VPS.'
+      });
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
 // REGISTRO DE ROTAS LOCAIS DO SYNC NO RESTAURANTE
 // ══════════════════════════════════════════════════════════════════
 function registrarRotasLocais(app) {
@@ -576,7 +764,33 @@ function registrarRotasLocais(app) {
     res.json(resultado);
   });
 
-  // 13. Status e Telemetria dos Módulos Locais
+  // 14. Importação e Parsing de DANFE XML na CPU Local
+  app.post('/api/local/estoque/danfe-xml', async (req, res) => {
+    const { xml } = req.body || {};
+    const resultado = await importarDanfeXmlLocal(xml);
+    res.json(resultado);
+  });
+
+  app.get('/api/local/estoque/danfe-historico', (req, res) => {
+    if (!ctx.db) return res.json({ ok: true, notas: [] });
+    ctx.db.all('SELECT * FROM sync_local_danfe_importadas ORDER BY id DESC LIMIT 25', [], (err, rows) => {
+      res.json({ ok: true, notas: rows || [] });
+    });
+  });
+
+  // 15. Descoberta e Heartbeat de Dispositivos LAN Mesh Local
+  app.post('/api/local/lan-mesh/heartbeat', async (req, res) => {
+    const { device_id, tipo, nome, ip_local, versao_app } = req.body || {};
+    const resultado = await registrarHeartbeatDispositivoLocal(device_id, tipo, nome, ip_local, versao_app);
+    res.json(resultado);
+  });
+
+  app.get('/api/local/lan-mesh/status', async (req, res) => {
+    const resultado = await obterStatusMeshLocal();
+    res.json(resultado);
+  });
+
+  // 16. Status e Telemetria dos Módulos Locais
   app.get('/api/local/status-modulos', (req, res) => {
     res.json({
       ok: true,
@@ -590,7 +804,9 @@ function registrarRotasLocais(app) {
       ifood_poller_online: true,
       radar_concorrencia_online: true,
       auditor_cartoes_online: true,
-      economia_recursos_nuvem: '100% dos cálculos pesados, I/O e portas seriais operando no hardware do restaurante.'
+      danfe_parser_online: true,
+      lan_mesh_online: true,
+      economia_recursos_nuvem: '100% dos cálculos pesados, I/O, parsing de XML e portas seriais operando no hardware do restaurante.'
     });
   });
 }
@@ -617,5 +833,8 @@ module.exports = {
   otimizarRotaTspLocal,
   escanearRadarConcorrenciaLocal,
   auditarTaxasCartaoLocal,
+  importarDanfeXmlLocal,
+  registrarHeartbeatDispositivoLocal,
+  obterStatusMeshLocal,
   modulosAtivos
 };
