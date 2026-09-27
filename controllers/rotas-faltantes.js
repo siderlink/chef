@@ -545,6 +545,14 @@ module.exports = function(app, { db, masterDb, io, sqlite3, verificarToken, getT
     });
   });
 
+  app.delete('/api/super/usuario/:id', superAdminAuth, (req, res) => {
+    const id = parseInt(req.params.id);
+    masterDb.run(`UPDATE usuarios SET ativo = 0 WHERE id = ?`, [id], function(err) {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true, mensagem: 'Usuário desativado com sucesso.' });
+    });
+  });
+
   // ─── 17. GET/POST /api/super/anuncios ────────────────────────
   app.get('/api/super/anuncios/audiencia-export', superAdminAuth, (req, res) => {
     masterDb.all(`SELECT r.id, r.nome, r.email, r.telefone, r.cidade, r.estado, r.plano FROM restaurantes r WHERE r.ativo = 1 OR r.status = 'ativo' ORDER BY r.nome`, [], (err, rows) => {
@@ -1174,6 +1182,317 @@ module.exports = function(app, { db, masterDb, io, sqlite3, verificarToken, getT
     });
   });
 
+  // ─── 30. GESTÃO DE AFILIADOS & PARCEIROS (CRUD COMPLETO) ──────
+  app.get('/api/super/afiliados', superAdminAuth, (_req, res) => {
+    masterDb.all(`
+      SELECT e.*, 
+        COALESCE(e.comissao_padrao, 10) as comissao_percentual,
+        (SELECT COUNT(*) FROM suporte_vendas WHERE suporte_id = e.id) as total_vendas,
+        (SELECT COALESCE(SUM(comissao_valor), 0) FROM suporte_vendas WHERE suporte_id = e.id) as total_comissoes
+      FROM equipe_suporte e
+      WHERE e.cargo = 'Afiliado' OR e.codigo_ref IS NOT NULL
+      ORDER BY e.id DESC
+    `, [], (err, rows) => {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true, afiliados: rows || [] });
+    });
+  });
+
+  app.post('/api/super/afiliados', superAdminAuth, async (req, res) => {
+    try {
+      const { nome, email, telefone, codigo_ref, comissao_percentual, comissao_padrao, meta_vendas_mes, pix_chave, cpf_cnpj, senha } = req.body || {};
+      if (!nome || !email) return res.status(400).json({ ok: false, erro: 'Nome e email são obrigatórios.' });
+
+      const hash = senha ? await bcrypt.hash(senha, 10) : await bcrypt.hash('123456', 10);
+      const codRef = codigo_ref || ('AF-' + Math.random().toString(36).substring(2, 7).toUpperCase());
+      const comissao = parseFloat(comissao_percentual !== undefined ? comissao_percentual : comissao_padrao) || 10;
+
+      masterDb.run(`
+        INSERT INTO equipe_suporte (
+          nome, email, telefone, cargo, codigo_ref, comissao_padrao, meta_vendas_mes, pix_chave, cpf_cnpj, password_hash, status_aprovacao
+        ) VALUES (?, ?, ?, 'Afiliado', ?, ?, ?, ?, ?, ?, 'aprovado')
+      `, [
+        nome, email, telefone || '', codRef,
+        comissao,
+        parseInt(meta_vendas_mes, 10) || 10,
+        pix_chave || '', cpf_cnpj || '', hash
+      ], function(err) {
+        if (err) return res.status(500).json({ ok: false, erro: err.message });
+        res.json({ ok: true, id: this.lastID, mensagem: 'Afiliado cadastrado com sucesso.' });
+      });
+    } catch (e) {
+      res.status(500).json({ ok: false, erro: e.message });
+    }
+  });
+
+  app.put('/api/super/afiliados/:id', superAdminAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const { nome, email, telefone, codigo_ref, comissao_percentual, comissao_padrao, meta_vendas_mes, pix_chave, cpf_cnpj, senha, status_aprovacao } = req.body || {};
+      
+      const sets = [];
+      const params = [];
+      if (nome) { sets.push('nome = ?'); params.push(nome); }
+      if (email) { sets.push('email = ?'); params.push(email); }
+      if (telefone !== undefined) { sets.push('telefone = ?'); params.push(telefone); }
+      if (codigo_ref) { sets.push('codigo_ref = ?'); params.push(codigo_ref); }
+      if (comissao_percentual !== undefined || comissao_padrao !== undefined) {
+        sets.push('comissao_padrao = ?');
+        params.push(parseFloat(comissao_percentual !== undefined ? comissao_percentual : comissao_padrao) || 0);
+      }
+      if (meta_vendas_mes !== undefined) { sets.push('meta_vendas_mes = ?'); params.push(parseInt(meta_vendas_mes, 10) || 0); }
+      if (pix_chave !== undefined) { sets.push('pix_chave = ?'); params.push(pix_chave); }
+      if (cpf_cnpj !== undefined) { sets.push('cpf_cnpj = ?'); params.push(cpf_cnpj); }
+      if (status_aprovacao) { sets.push('status_aprovacao = ?'); params.push(status_aprovacao); }
+      if (senha) {
+        const hash = await bcrypt.hash(senha, 10);
+        sets.push('password_hash = ?');
+        params.push(hash);
+      }
+
+      if (sets.length === 0) return res.json({ ok: true, mensagem: 'Nenhum campo para atualizar.' });
+      params.push(id);
+
+      masterDb.run(`UPDATE equipe_suporte SET ${sets.join(', ')} WHERE id = ?`, params, function(err) {
+        if (err) return res.status(500).json({ ok: false, erro: err.message });
+        res.json({ ok: true, mensagem: 'Afiliado atualizado com sucesso.' });
+      });
+    } catch (e) {
+      res.status(500).json({ ok: false, erro: e.message });
+    }
+  });
+
+  app.delete('/api/super/afiliados/:id', superAdminAuth, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    masterDb.run(`DELETE FROM equipe_suporte WHERE id = ?`, [id], function(err) {
+      if (err) return res.status(500).json({ ok: false, erro: err.message });
+      res.json({ ok: true, mensagem: 'Afiliado removido com sucesso.' });
+    });
+  });
+
+  app.get('/api/super/afiliados/:id/metricas', superAdminAuth, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    masterDb.get(`SELECT * FROM equipe_suporte WHERE id = ?`, [id], (err, afiliado) => {
+      if (err || !afiliado) return res.status(404).json({ ok: false, erro: 'Afiliado não encontrado.' });
+      masterDb.all(`SELECT * FROM suporte_vendas WHERE suporte_id = ? ORDER BY id DESC LIMIT 50`, [id], (_errV, vendas) => {
+        res.json({
+          ok: true,
+          afiliado,
+          vendas: vendas || []
+        });
+      });
+    });
+  });
+
+  // ─── 31. CONSOLIDAÇÃO MRR & RECEITA DE ADD-ONS ────────────────
+  app.get('/api/super/financeiro/saas/mrr-addons', superAdminAuth, (_req, res) => {
+    masterDb.all(`
+      SELECT tm.modulo_id as chave_modulo, 
+        COALESCE(ms.nome, tm.modulo_id) as nome_modulo,
+        ms.tipo,
+        COUNT(DISTINCT tm.restaurante_id) as assinantes_por_modulo,
+        SUM(CASE WHEN tm.trial_ate IS NOT NULL AND datetime(tm.trial_ate) > datetime('now', 'localtime') THEN 0 ELSE 49.00 END) as receita_total,
+        SUM(CASE WHEN tm.trial_ate IS NOT NULL AND datetime(tm.trial_ate) > datetime('now', 'localtime') THEN 1 ELSE 0 END) as em_trial
+      FROM tenant_modulos tm
+      LEFT JOIN modulo_sistemas ms ON tm.modulo_id = ms.modulo_id
+      WHERE tm.ativo = 1 AND ms.tipo != 'system'
+      GROUP BY tm.modulo_id, ms.nome, ms.tipo
+      ORDER BY receita_total DESC
+    `, [], (errAddons, rowsAddons) => {
+      masterDb.all(`
+        SELECT SUM(valor_mensal) as mrr_base, COUNT(*) as total_assinantes
+        FROM super_admin_assinaturas
+        WHERE status != 'cancelado'
+      `, [], (errAssin, rowsAssin) => {
+        const mrrBase = (rowsAssin && rowsAssin[0] && rowsAssin[0].mrr_base) || 0;
+        const totalAssinantes = (rowsAssin && rowsAssin[0] && rowsAssin[0].total_assinantes) || 0;
+        
+        let mrrAddons = 0;
+        let qtdAddons = 0;
+        const ranking = (rowsAddons || []).map(r => {
+          mrrAddons += (r.receita_total || 0);
+          qtdAddons += (r.assinantes_por_modulo || 0);
+          return {
+            chave_modulo: r.chave_modulo,
+            nome_modulo: r.nome_modulo,
+            tipo: r.tipo,
+            assinantes_por_modulo: r.assinantes_por_modulo,
+            receita_total: r.receita_total,
+            em_trial: r.em_trial
+          };
+        });
+
+        const mrrTotal = mrrBase + mrrAddons;
+
+        res.json({
+          ok: true,
+          mrr_total_consolidado: mrrTotal,
+          mrr_base_planos: mrrBase,
+          mrr_addons: mrrAddons,
+          qtd_addons: qtdAddons,
+          total_assinantes: totalAssinantes,
+          ranking_addons: ranking,
+          addons_detalhados: ranking
+        });
+      });
+    });
+  });
+
+  // ─── 32. SOLICITAÇÕES DE FEATURES OPERACIONAIS ────────────────
+  app.post('/api/super/solicitacoes-features/delegar', superAdminAuth, (req, res) => {
+    const { id, suporte_id } = req.body || {};
+    if (!id || !suporte_id) return res.status(400).json({ ok: false, erro: 'ID da solicitação e do suporte obrigatórios.' });
+
+    masterDb.run(`
+      UPDATE solicitacoes_features 
+      SET responsavel_id = ?, 
+          responsavel_nome = (SELECT nome FROM equipe_suporte WHERE id = ?),
+          responsavel_tipo = 'suporte',
+          status = 'delegado'
+      WHERE id = ?
+    `, [suporte_id, suporte_id, id], function(err) {
+      if (err) return res.status(500).json({ ok: false, erro: err.message });
+      res.json({ ok: true, mensagem: 'Solicitação delegada com sucesso ao membro do suporte.' });
+    });
+  });
+
+  app.post('/api/super/solicitacoes-features/implementar', superAdminAuth, (req, res) => {
+    const { id } = req.body || {};
+    if (!id) return res.status(400).json({ ok: false, erro: 'ID da solicitação obrigatório.' });
+
+    masterDb.run(`
+      UPDATE solicitacoes_features 
+      SET status = 'implementado', resolvido_em = datetime('now', 'localtime')
+      WHERE id = ?
+    `, [id], function(err) {
+      if (err) return res.status(500).json({ ok: false, erro: err.message });
+      res.json({ ok: true, mensagem: 'Solicitação marcada como implementada!' });
+    });
+  });
+
+  app.post('/api/super/solicitacoes-features/:acao', superAdminAuth, (req, res) => {
+    const { id, observacao } = req.body || {};
+    const acao = req.params.acao;
+    if (!id) return res.status(400).json({ ok: false, erro: 'ID da solicitação obrigatório.' });
+
+    const statusMap = {
+      aprovar: 'aprovado',
+      recusar: 'recusado',
+      rejeitar: 'recusado',
+      arquivar: 'arquivado',
+      concluir: 'implementado',
+      cancelar: 'cancelado'
+    };
+    const novoStatus = statusMap[acao] || acao;
+
+    masterDb.run(`
+      UPDATE solicitacoes_features 
+      SET status = ?, 
+          resolvido_em = datetime('now', 'localtime'),
+          observacao = COALESCE(?, observacao)
+      WHERE id = ?
+    `, [novoStatus, observacao || null, id], function(err) {
+      if (err) return res.status(500).json({ ok: false, erro: err.message });
+      res.json({ ok: true, mensagem: `Solicitação atualizada para status: ${novoStatus}.` });
+    });
+  });
+
+  // ─── 33. SUPER NOTIFICAÇÕES & TAREFAS ────────────────────────
+  app.post('/api/super/notificacoes/marcar-lida/:id', superAdminAuth, (req, res) => {
+    const id = req.params.id;
+    if (id === 'todas') {
+      masterDb.run(`UPDATE super_notificacoes SET lida = 1`, function(err) {
+        if (err) return res.status(500).json({ ok: false, erro: err.message });
+        res.json({ ok: true, mensagem: 'Todas as notificações marcadas como lidas.' });
+      });
+    } else {
+      masterDb.run(`UPDATE super_notificacoes SET lida = 1 WHERE id = ?`, [id], function(err) {
+        if (err) return res.status(500).json({ ok: false, erro: err.message });
+        res.json({ ok: true, mensagem: 'Notificação marcada como lida.' });
+      });
+    }
+  });
+
+  app.patch('/api/super/tarefas/:id', superAdminAuth, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const { status, atribuido_a, resposta } = req.body || {};
+
+    const sets = [];
+    const params = [];
+    if (status) {
+      sets.push('status = ?');
+      params.push(status);
+      if (status === 'concluida') {
+        sets.push("concluido_em = datetime('now', 'localtime')");
+      }
+    }
+    if (atribuido_a !== undefined) { sets.push('atribuido_a = ?'); params.push(atribuido_a); }
+    if (resposta !== undefined) { sets.push('resposta = ?'); params.push(resposta); }
+    sets.push("atualizado_em = datetime('now', 'localtime')");
+
+    params.push(id);
+
+    masterDb.run(`UPDATE super_tarefas SET ${sets.join(', ')} WHERE id = ?`, params, function(err) {
+      if (err) return res.status(500).json({ ok: false, erro: err.message });
+      res.json({ ok: true, mensagem: 'Tarefa atualizada com sucesso.' });
+    });
+  });
+
+  // ─── 34. CADASTROS MONITOR & PLUGINS ALIAS ───────────────────
+  // GET /api/super/cadastros-monitor - telemetria recente de instalações e cadastros ao vivo
+  app.get('/api/super/cadastros-monitor', superAdminAuth, (req, res) => {
+    const horas = Math.max(1, parseInt(req.query.horas, 10) || 48);
+    masterDb.all(`SELECT install_id, nome_restaurante, versao, ip, plataforma, online,
+      created_at, updated_at, ultima_atividade, admin_login, chave_ativacao
+      FROM telemetria
+      WHERE created_at >= datetime('now','localtime', ?)
+      ORDER BY created_at DESC LIMIT 100`, ['-' + horas + ' hours'], (err, rows) => {
+      if (err) return res.json({ ok: true, cadastros: [] });
+      const cadastros = (rows || []).map(r => {
+        const campos = { restaurante_nome: r.nome_restaurante || '', versao: r.versao || '', instalacao: r.created_at || '' };
+        if (r.admin_login) campos.admin = r.admin_login;
+        if (r.chave_ativacao) campos.chave = r.chave_ativacao;
+        return {
+          sessao_id: r.install_id,
+          etapa: r.online ? 'ativo' : 'parado',
+          campos_json: JSON.stringify(campos),
+          localizacao: null,
+          dispositivo: r.plataforma || '',
+          bateria: null,
+          rede: null,
+          ip: r.ip || '',
+          status: r.online ? 'concluido' : 'em_andamento',
+          atualizado_em: r.updated_at || r.ultima_atividade || r.created_at
+        };
+      });
+      res.json({ ok: true, cadastros });
+    });
+  });
+
+  // GET /api/super/plugins - alias unificado para listar módulos do sistema
+  app.get('/api/super/plugins', superAdminAuth, (req, res) => {
+    masterDb.all(`SELECT id, modulo_id, nome, categoria, preco_mensal, status, descricao, icone FROM modulo_sistemas ORDER BY categoria, nome`, [], (err, rows) => {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true, plugins: rows || [] });
+    });
+  });
+
+  // POST /api/super/plugins - ativar/desativar módulo
+  app.post('/api/super/plugins', superAdminAuth, (req, res) => {
+    const { plugin_id, modulo_id, ativo } = req.body || {};
+    const modId = modulo_id || plugin_id;
+    if (!modId) return res.json({ ok: false, erro: 'modulo_id ou plugin_id é obrigatório.' });
+    masterDb.run(`UPDATE modulo_sistemas SET status = ?, atualizado_em = datetime('now','localtime') WHERE modulo_id = ? OR id = ?`,
+      [ativo ? 'ativo' : 'inativo', modId, modId], function(err) {
+        if (err) return res.json({ ok: false, erro: err.message });
+        if (io) {
+          io.emit('plugin_atualizado', { plugin_id: modId, ativo: !!ativo });
+        }
+        res.json({ ok: true, mensagem: `Módulo/Plugin ${modId} ${ativo ? 'ativado' : 'desativado'}.` });
+      });
+  });
+
   console.log('✅ [rotas-faltantes] Todas as rotas ausentes do Super Admin restauradas com sucesso.');
 };
+
 

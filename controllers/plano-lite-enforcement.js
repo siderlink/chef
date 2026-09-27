@@ -438,5 +438,147 @@ module.exports = function(app, masterDb, sqlite3, options) {
     }
   });
 
+  // ══════════════════════════════════════════════════════════════════
+  // GESTÃO DE UPGRADES E GOVERNANÇA NO SUPER ADMIN
+  // ══════════════════════════════════════════════════════════════════
+
+  const adminAuth = typeof superAdminAuth === 'function' ? superAdminAuth : (req, res, next) => next();
+
+  /**
+   * GET /api/super/planos/upgrades
+   * Lista todos os pedidos de upgrade de plano recebidos
+   */
+  app.get('/api/super/planos/upgrades', adminAuth, (_req, res) => {
+    masterDb.all(`
+      SELECT p.*, r.dono_nome, r.dono_telefone, r.dono_email, r.cidade
+      FROM plano_upgrade_pedidos p
+      LEFT JOIN restaurantes r ON p.restaurante_id = r.id
+      ORDER BY p.id DESC
+      LIMIT 100
+    `, [], (err, rows) => {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true, pedidos: rows || [] });
+    });
+  });
+
+  /**
+   * POST /api/super/planos/upgrades/:id/aprovar
+   * Aprova a solicitação e migra o restaurante para o novo plano
+   */
+  app.post('/api/super/planos/upgrades/:id/aprovar', adminAuth, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    masterDb.get('SELECT * FROM plano_upgrade_pedidos WHERE id = ?', [id], (err, pedido) => {
+      if (err || !pedido) return res.status(404).json({ ok: false, erro: 'Pedido de upgrade não encontrado.' });
+
+      const novoPlano = pedido.plano_desejado || 'pro';
+      const valorMensal = pedido.valor_mensal || (novoPlano === 'pro' ? 149.00 : 249.00);
+
+      masterDb.serialize(() => {
+        // 1. Atualiza licenca do restaurante
+        masterDb.run('UPDATE restaurantes SET licenca = ? WHERE id = ?', [novoPlano, pedido.restaurante_id]);
+
+        // 2. Atualiza ou insere na tabela de assinaturas
+        masterDb.run(`
+          INSERT INTO super_admin_assinaturas (restaurante_id, restaurante, plano, valor_mensal, status, atualizado_em)
+          VALUES (?, ?, ?, ?, 'em_dia', datetime('now', 'localtime'))
+          ON CONFLICT(restaurante_id) DO UPDATE SET
+            plano = excluded.plano,
+            valor_mensal = excluded.valor_mensal,
+            status = 'em_dia',
+            atualizado_em = datetime('now', 'localtime')
+        `, [pedido.restaurante_id, pedido.restaurante_nome || ('Restaurante #' + pedido.restaurante_id), novoPlano, valorMensal]);
+
+        // 3. Marca pedido como aprovado
+        masterDb.run(`
+          UPDATE plano_upgrade_pedidos 
+          SET status = 'aprovado', atendido_em = datetime('now', 'localtime')
+          WHERE id = ?
+        `, [id], function(updateErr) {
+          if (updateErr) return res.status(500).json({ ok: false, erro: updateErr.message });
+
+          if (io) {
+            io.emit('superadmin:notificacao', {
+              tipo: 'upgrade_aprovado',
+              restaurante_id: pedido.restaurante_id,
+              novo_plano: novoPlano
+            });
+          }
+
+          res.json({
+            ok: true,
+            mensagem: `Upgrade do Restaurante #${pedido.restaurante_id} para o Plano ${novoPlano.toUpperCase()} aprovado com sucesso!`,
+            novo_plano: novoPlano,
+            valor_mensal: valorMensal
+          });
+        });
+      });
+    });
+  });
+
+  /**
+   * POST /api/super/planos/upgrades/:id/cancelar
+   */
+  app.post('/api/super/planos/upgrades/:id/cancelar', adminAuth, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    masterDb.run(`
+      UPDATE plano_upgrade_pedidos 
+      SET status = 'cancelado', atendido_em = datetime('now', 'localtime')
+      WHERE id = ?
+    `, [id], function(err) {
+      if (err) return res.status(500).json({ ok: false, erro: err.message });
+      res.json({ ok: true, mensagem: 'Pedido de upgrade cancelado.' });
+    });
+  });
+
+  /**
+   * GET /api/super/planos/bloqueios
+   * Retorna os últimos bloqueios por estouro de cota
+   */
+  app.get('/api/super/planos/bloqueios', adminAuth, (_req, res) => {
+    masterDb.all(`
+      SELECT b.*, r.nome as restaurante_nome, r.dono_telefone, r.dono_nome
+      FROM plano_bloqueios_log b
+      LEFT JOIN restaurantes r ON b.restaurante_id = r.id
+      ORDER BY b.id DESC
+      LIMIT 100
+    `, [], (err, rows) => {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true, bloqueios: rows || [] });
+    });
+  });
+
+  /**
+   * GET /api/super/planos/metricas
+   * Visão geral de governança e distribuição de planos
+   */
+  app.get('/api/super/planos/metricas', adminAuth, (_req, res) => {
+    masterDb.all(`
+      SELECT 
+        LOWER(COALESCE(licenca, 'lite')) as plano,
+        COUNT(*) as total_restaurantes
+      FROM restaurantes
+      GROUP BY LOWER(COALESCE(licenca, 'lite'))
+    `, [], (errPlanos, rowsPlanos) => {
+      masterDb.get(`
+        SELECT COUNT(*) as total_bloqueios_mes
+        FROM plano_bloqueios_log
+        WHERE criado_em >= datetime('now', 'start of month')
+      `, [], (errBloq, rowBloq) => {
+        masterDb.get(`
+          SELECT COUNT(*) as upgrades_pendentes
+          FROM plano_upgrade_pedidos
+          WHERE status = 'pendente'
+        `, [], (errUp, rowUp) => {
+          res.json({
+            ok: true,
+            distribuicao_planos: rowsPlanos || [],
+            bloqueios_mes: (rowBloq && rowBloq.total_bloqueios_mes) || 0,
+            upgrades_pendentes: (rowUp && rowUp.upgrades_pendentes) || 0
+          });
+        });
+      });
+    });
+  });
+
   console.log('🛡️ Controller Plano Lite Enforcement carregado com sucesso (Governança de Cotas & Ultra Margem).');
 };

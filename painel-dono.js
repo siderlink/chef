@@ -6154,7 +6154,21 @@ const CAT_ADDONS_DONO = [
   { id: 'antifurto_inventario_cego', cat: 'fiscal', nome: 'Sentinela de Inventário Cego (Carnes & Whisky)', preco: 'R$ 79/mês', roi: 'Elimina R$ 3k-8k/mês de furtos internos', desc: 'Contagem cega de 3 min dos 10 itens mais caros com alerta imediato ao dono.', icone: 'ph-eye', cor: '#ef4444' },
   { id: 'fidelidade_tiers_vip', cat: 'vendas', nome: 'Fidelidade por Níveis VIP (Bronze a Diamante)', preco: 'R$ 69/mês', roi: 'Aumenta ticket e frequência de visita', desc: 'Níveis de prestígio com benefícios exclusivos, drink de boas-vindas e cashback.', icone: 'ph-medal', cor: '#eab308' },
   { id: 'menuboard_tv_balcao', cat: 'gestao', nome: 'Menu Board Digital para TVs de Balcão', preco: 'R$ 49/mês por tela', roi: '+20% em vendas de combos estilo fast-food', desc: 'Transforme Smart TVs suspensas em painéis dinâmicos com troca por horário.', icone: 'ph-monitor', cor: '#3b82f6' },
-  { id: 'satisfacao_ia_emocional', cat: 'gestao', nome: 'Totem de Satisfação IA Emocional', preco: 'R$ 39/mês', roi: 'Alerta de crise no WhatsApp em 5s', desc: 'Totem de 4 emojis com gravação de áudio e análise de sentimento instantânea.', icone: 'ph-smiley', cor: '#10b981' }
+  { id: 'satisfacao_ia_emocional', cat: 'gestao', nome: 'Totem de Satisfação IA Emocional', preco: 'R$ 39/mês', roi: 'Alerta de crise no WhatsApp em 5s', desc: 'Totem de 4 emojis com gravação de áudio e análise de sentimento instantânea.', icone: 'ph-smiley', cor: '#10b981' },
+  { id: 'sped_fiscal_automatico', cat: 'fiscal', nome: 'SPED Fiscal & Exportação Contábil Automática', preco: 'R$ 99/mês', roi: 'Elimina 100% do estresse e tempo com fechamento fiscal', desc: 'Gera e envia mensalmente arquivos SPED EFD, XMLs de NFC-e e relatórios fiscais diretamente ao contador.', icone: 'ph-file-archive', cor: '#10b981' },
+  { id: 'preco_dinamico_happyhour', cat: 'vendas', nome: 'Precificação Dinâmica & Happy Hour Automático', preco: 'R$ 59/mês', roi: '+15% de receita aproveitando horários de maior procura', desc: 'Ajuste inteligente de preços por horário de pico, dia da semana ou lotação do salão.', icone: 'ph-chart-line-up', cor: '#f59e0b' },
+  { id: 'nutricional_calorias', cat: 'gestao', nome: 'Controle Nutricional & Tabela de Calorias', preco: 'R$ 49/mês', roi: 'Atrai o público fitness e atende exigências de rotulagem', desc: 'Cálculo de calorias (kcal), macronutrientes, alérgenos e selos funcionais (vegano, sem glúten) para o cardápio.', icone: 'ph-heartbeat', cor: '#ec4899' },
+  { id: 'desperdicio_pesagem_lixo', cat: 'gestao', nome: 'Controle de Desperdício com Balança de Descarte', preco: 'R$ 69/mês', roi: 'Economiza até R$ 3.500/mês eliminando vazamentos', desc: 'Pesagem e registro fotográfico de sobras de buffet, pré-preparo e devoluções com metas anti-desperdício.', icone: 'ph-trash', cor: '#ef4444' },
+  { id: 'checklist_abertura_fechamento', cat: 'gestao', nome: 'Checklist de Abertura & Fechamento com Fotos', preco: 'R$ 49/mês', roi: 'Garante padrão de excelência e higiene em todos os turnos', desc: 'Listas de verificação operacionais obrigatórias para a equipe antes de abrir e fechar a casa com fotos.', icone: 'ph-check-square-offset', cor: '#8b5cf6' },
+  { id: 'manutencao_preventiva', cat: 'gestao', nome: 'Manutenção Preventiva de Equipamentos', preco: 'R$ 59/mês', roi: 'Evita paradas repentinas no meio do almoço de domingo', desc: 'Ordens de serviço, cronograma de preventiva de freezers, fogões e coifas, e histórico de custos por máquina.', icone: 'ph-wrench', cor: '#0ea5e9' },
+  { id: 'academia_restaurante', cat: 'gestao', nome: 'Academia do Restaurante & Treinamento Onboarding', preco: 'R$ 69/mês', roi: 'Reduz o tempo de adaptação de novos contratados em 70%', desc: 'Plataforma interna com cursos, vídeos de atendimento e quizzes para capacitar novos garçons em 48h.', icone: 'ph-graduation-cap', cor: '#6366f1' },
+  { id: 'iot_temperatura_haccp', cat: 'gestao', nome: 'Monitoramento de Temperatura IoT (HACCP)', preco: 'R$ 79/mês', roi: 'Evita perda de milhares de reais em carnes e laticínios', desc: 'Sensores inteligentes de temperatura para câmaras frias e freezers com alerta sonoro e no WhatsApp se esquentar.', icone: 'ph-thermometer', cor: '#14b8a6' },
+  { id: 'atendente_social_ia', cat: 'vendas', nome: 'Atendente Virtual para Instagram & Facebook', preco: 'R$ 79/mês', roi: 'Zero perda de clientes que perguntam pelo Instagram à noite', desc: 'Robô com inteligência artificial para responder direct no Instagram, tirar dúvidas do cardápio e fechar pedidos.', icone: 'ph-chat-circle-dots', cor: '#ec4899' },
+  { id: 'benchmark_anonimo_setor', cat: 'fiscal', nome: 'Benchmark Anônimo do Setor Gastronômico', preco: 'R$ 49/mês', roi: 'Descubra se está pagando caro em insumos ou cobrando pouco', desc: 'Comparativo do CMV, ticket médio e giro do seu restaurante contra a média do mercado da sua cidade e nicho.', icone: 'ph-scales', cor: '#3b82f6' },
+  { id: 'app_funcionario_ponto', cat: 'gestao', nome: 'App do Funcionário (Ponto, Holerite & Escalas)', preco: 'R$ 49/mês', roi: 'Transparência total e comunicação sem ruídos com a equipe', desc: 'Portal exclusivo para colaboradores visualizarem seus pontos, escalas de folga, gorjetas e comunicados do chefe.', icone: 'ph-user-list', cor: '#10b981' },
+  { id: 'valet_estacionamento', cat: 'gestao', nome: 'Valet & Controle de Estacionamento', preco: 'R$ 49/mês', roi: 'Segurança jurídica contra falsas avarias e agilidade na saída', desc: 'Registro de entrada e saída de veículos de clientes com foto de avarias, solicitação de carro e cobrança.', icone: 'ph-car-profile', cor: '#f97316' },
+  { id: 'gestao_playlist_ambiente', cat: 'vendas', nome: 'Ambientação Sonora & Playlist por Horário', preco: 'R$ 39/mês', roi: 'Aumenta o tempo de permanência e consumo em 18%', desc: 'Controle de trilha sonora integrada para almoço executivo, happy hour animado ou jantar romântico.', icone: 'ph-music-notes', cor: '#a855f7' },
+  { id: 'portal_cliente_vip', cat: 'vendas', nome: 'Portal do Cliente & Re-Pedir em 1 Clique', preco: 'R$ 49/mês', roi: 'Aumenta a recompra espontânea de clientes habituais', desc: 'Área exclusiva onde o cliente vê seu histórico de pedidos, salva pratos favoritos e repete pedidos em segundos.', icone: 'ph-user-circle', cor: '#06b6d4' }
 ];
 
 window.abrirLojaAddonsDono = function() {
@@ -6346,3 +6360,762 @@ setTimeout(() => {
     window.carregarStatusPlanoDono();
   }
 }, 1500);
+
+/* =========================================================================
+   WORKFLOWS OPERACIONAIS ESPECIALIZADOS POR NICHO GASTRONÔMICO
+   Módulos: Pizzaria, Hamburgueria, Churrascaria, Sushi Bar, Bar & Balada,
+            Buffet por Quilo, Cafeteria & Padaria, À La Carte
+   ========================================================================= */
+
+window.trocarNichoOperacao = function(nicho) {
+  if (!nicho) nicho = 'pizzaria';
+  localStorage.setItem('chef_nicho_ativo', nicho);
+
+  const sel = document.getElementById('select-nicho-operacao');
+  if (sel && sel.value !== nicho) sel.value = nicho;
+
+  const tabs = document.querySelectorAll('#tabs-nichos-container .tab-btn-terminal');
+  tabs.forEach(t => {
+    if (t.getAttribute('data-nicho') === nicho) {
+      t.classList.add('active');
+    } else {
+      t.classList.remove('active');
+    }
+  });
+
+  const views = document.querySelectorAll('.painel-nicho-view');
+  views.forEach(v => {
+    v.style.display = 'none';
+  });
+
+  const targetView = document.getElementById(`painel-nicho-${nicho}`);
+  if (targetView) targetView.style.display = 'block';
+
+  // Carregar dados iniciais do nicho selecionado
+  if (nicho === 'pizzaria') window.atualizarFornoLastroDono();
+  else if (nicho === 'hamburgueria') window.verEstacaoHamburgueriaDono('chapa');
+  else if (nicho === 'churrascaria') window.atualizarRadarChurrascariaDono();
+  else if (nicho === 'sushi') window.atualizarLotesSushiDono();
+  else if (nicho === 'bar') window.atualizarGarrafasBarDono();
+  else if (nicho === 'buffet') window.atualizarCubasBuffetDono();
+};
+
+// 1. NICHO PIZZARIA
+window.calcularFracaoPizzaDono = async function() {
+  const box = document.getElementById('resultado-fracao-pizza');
+  if (!box) return;
+  box.innerHTML = 'Calculando melhor regra de cobrança...';
+
+  const regra = document.getElementById('pizza-regra-cobranca')?.value || 'maior_valor';
+  const sab1Raw = document.getElementById('pizza-sabor-1')?.value || 'Calabresa Especial|54';
+  const sab2Raw = document.getElementById('pizza-sabor-2')?.value || 'Quatro Queijos Nobre|68';
+  const bordaRaw = document.getElementById('pizza-borda')?.value || 'Catupiry Original Vulcão|14';
+
+  const [nome1, p1] = sab1Raw.split('|');
+  const [nome2, p2] = sab2Raw.split('|');
+  const [bordaNome, bordaPreco] = bordaRaw.split('|');
+
+  try {
+    const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+    const res = await fetch('/api/nichos/pizzaria/fracionar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        sabores: [
+          { nome: nome1, preco_inteira: parseFloat(p1) || 54 },
+          { nome: nome2, preco_inteira: parseFloat(p2) || 68 }
+        ],
+        borda: { nome: bordaNome, preco: parseFloat(bordaPreco) || 0 },
+        regra_cobranca: regra
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:4px; width:100%;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:var(--primary); font-size:13px;">${d.fracoes} • R$ ${d.valor_total_calculado.toFixed(2)}</strong>
+            <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">Regra: ${d.regra_aplicada}</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-sub);">Base Sabores: R$ ${d.preco_sabores.toFixed(2)} | Borda: ${d.borda_adicionada} (+R$ ${d.preco_borda.toFixed(2)})</div>
+          <div style="font-size:11px; color:var(--text);">${d.detalhe_producao.join(' + ')}</div>
+        </div>
+      `;
+    } else {
+      box.innerHTML = `<span style="color:#ef4444;">${(d && d.erro) || 'Erro no cálculo de frações.'}</span>`;
+    }
+  } catch(e) {
+    box.innerHTML = `<span style="color:#ef4444;">Erro de conexão com o servidor.</span>`;
+  }
+};
+
+window.lancarPizzaFornoDono = async function() {
+  const nome = document.getElementById('forno-pizza-nome')?.value || 'Grande Meio Calabresa / Meio 4 Queijos';
+  const tempo = parseInt(document.getElementById('forno-pizza-tempo')?.value) || 8;
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/pizzaria/forno/lancar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        pedido_id: Math.floor(100 + Math.random() * 900),
+        pizza_nome: nome,
+        sabores: ['Calabresa Especial', 'Quatro Queijos Nobre'],
+        tempo_coccao_min: tempo
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      if (typeof showToast === 'function') showToast(`🍕 ${nome} entrou no forno! Timer de ${tempo}m iniciado.`, 'ph-fire', 'success');
+      window.atualizarFornoLastroDono();
+    }
+  } catch(e) {
+    alert('Erro ao lançar pizza no forno.');
+  }
+};
+
+window.atualizarFornoLastroDono = async function() {
+  const container = document.getElementById('lista-forno-pizzas');
+  if (!container) return;
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/pizzaria/forno/painel', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const d = await res.json();
+    if (d && d.ok && d.pizzas_no_forno && d.pizzas_no_forno.length > 0) {
+      container.innerHTML = d.pizzas_no_forno.map(p => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div>
+            <strong>${p.pizza_nome}</strong>
+            <div style="font-size:10.5px; color:var(--text-sub);">Pedido #${p.pedido_id} • ${p.tipo_massa || 'tradicional'}</div>
+          </div>
+          <span style="background:rgba(239,68,68,0.15); color:#ef4444; font-weight:800; padding:2px 8px; border-radius:6px; font-size:10px;">
+            <i class="ph-bold ph-timer"></i> ${p.tempo_coccao_min} min
+          </span>
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Forno livre no momento. Nenhuma pizza assando.</div>';
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Não foi possível carregar o forno.</div>';
+  }
+};
+
+// 2. NICHO HAMBURGUERIA
+window.rotearBurgerKDSDono = async function() {
+  const box = document.getElementById('resultado-roteamento-burger');
+  if (!box) return;
+  box.innerHTML = 'Roteando comanda entre as praças...';
+
+  const nome = document.getElementById('burger-lanche-nome')?.value || 'Double Smash';
+  const ponto = document.getElementById('burger-ponto-carne')?.value || 'ao_ponto';
+  const acomp = document.getElementById('burger-acompanhamento')?.value || 'Batata Rústica';
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/hamburgueria/dividir-estacoes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        pedido_id: Math.floor(200 + Math.random() * 800),
+        lanche_nome: nome,
+        ponto_carne: ponto,
+        blend_peso_g: 200,
+        acompanhamentos: [acomp]
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="font-weight:800; color:#f59e0b; font-size:12.5px;">✅ Pedido #${d.pedido_id} Distribuído nas 3 Praças:</div>
+          <div style="font-size:11px; color:var(--text-sub);">🔥 <strong>Chapa:</strong> ${d.distribuicao.chapa}</div>
+          <div style="font-size:11px; color:var(--text-sub);">🍟 <strong>Fritura:</strong> ${d.distribuicao.fritadeira}</div>
+          <div style="font-size:11px; color:var(--text-sub);">🍔 <strong>Montagem:</strong> ${d.distribuicao.montagem}</div>
+        </div>
+      `;
+      window.verEstacaoHamburgueriaDono('chapa');
+    }
+  } catch(e) {
+    box.innerHTML = '<span style="color:#ef4444;">Erro ao rotear pedido para KDS.</span>';
+  }
+};
+
+window.verEstacaoHamburgueriaDono = async function(estacao, btn) {
+  const container = document.getElementById('lista-estacao-burger');
+  if (!container) return;
+
+  const btnChapa = document.getElementById('btn-estacao-chapa');
+  const btnFrit = document.getElementById('btn-estacao-fritadeira');
+  if (btnChapa && btnFrit) {
+    if (estacao === 'chapa') {
+      btnChapa.classList.add('active');
+      btnFrit.classList.remove('active');
+    } else {
+      btnFrit.classList.add('active');
+      btnChapa.classList.remove('active');
+    }
+  }
+
+  container.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Consultando estação...</div>';
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch(`/api/nichos/hamburgueria/estacao/${estacao}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const d = await res.json();
+    if (d && d.ok && d.itens_pendentes && d.itens_pendentes.length > 0) {
+      container.innerHTML = d.itens_pendentes.map(item => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div>
+            <strong>${item.lanche_nome}</strong>
+            <div style="font-size:10.5px; color:var(--text-sub);">Pedido #${item.pedido_id} ${item.ponto_carne ? '• ' + item.ponto_carne.replace('_', ' ') : ''}</div>
+          </div>
+          <span style="background:rgba(245,158,11,0.15); color:#f59e0b; font-weight:800; padding:2px 8px; border-radius:6px; font-size:10px;">
+            ${item.status}
+          </span>
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = `<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Estação ${estacao.toUpperCase()} sem pedidos pendentes.</div>`;
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Erro ao carregar estação.</div>';
+  }
+};
+
+// 3. NICHO CHURRASCARIA & RODÍZIO
+window.sinalizarMesaChurrascariaDono = async function() {
+  const box = document.getElementById('resultado-sinal-churrasco');
+  if (!box) return;
+  const mesa = document.getElementById('churrasco-mesa-num')?.value || 'Mesa 18';
+  const sinal = document.getElementById('churrasco-sinal-mesa')?.value || 'quero_carne';
+  const cortes = (document.getElementById('churrasco-cortes')?.value || '').split(',').map(c => c.trim());
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/churrascaria/sinalizar-mesa', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        mesa_num: mesa,
+        estado_sinal: sinal,
+        cortes_preferidos: cortes
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      box.innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:12px; height:12px; border-radius:50%; background:${sinal === 'quero_carne' ? '#10b981' : (sinal === 'pausa' ? '#ef4444' : '#8b5cf6')};"></div>
+          <div><strong>${d.mesa}:</strong> ${d.mensagem}</div>
+        </div>
+      `;
+      window.atualizarRadarChurrascariaDono();
+    }
+  } catch(e) {
+    box.innerHTML = '<span style="color:#ef4444;">Erro ao atualizar sinal da mesa.</span>';
+  }
+};
+
+window.atualizarRadarChurrascariaDono = async function() {
+  const container = document.getElementById('lista-radar-churrasco');
+  if (!container) return;
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/churrascaria/radar-passadores', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const d = await res.json();
+    if (d && d.ok && d.mesas && d.mesas.length > 0) {
+      container.innerHTML = d.mesas.map(m => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div>
+            <strong>${m.mesa_num}</strong>
+            <div style="font-size:10.5px; color:var(--text-sub);">${m.cortes_solicitados_json || 'Sem restrições'}</div>
+          </div>
+          <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; padding:2px 8px; border-radius:6px; font-size:10px;">
+            🟢 Sinal Verde
+          </span>
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Nenhuma mesa com sinal verde no momento.</div>';
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Erro ao consultar radar.</div>';
+  }
+};
+
+// 4. NICHO SUSHI BAR
+window.registrarLoteSushiDono = async function() {
+  const box = document.getElementById('resultado-lote-sushi');
+  if (!box) return;
+  const tipo = document.getElementById('sushi-peixe-tipo')?.value || 'Salmão Chileno';
+  const bruto = parseFloat(document.getElementById('sushi-peso-bruto')?.value) || 5.2;
+  const limpo = parseFloat(document.getElementById('sushi-peso-limpo')?.value) || 3.65;
+  const forn = document.getElementById('sushi-fornecedor')?.value || 'Pescados Oceano Sul';
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/sushi/registrar-lote', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        peixe_tipo: tipo,
+        peso_inicial_kg: bruto,
+        peso_limpo_kg: limpo,
+        fornecedor: forn
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <div style="display:flex; justify-content:space-between;">
+            <strong style="color:#ec4899;">${d.peixe}</strong>
+            <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">${d.status_qualidade}</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-sub);">Rendimento: <strong>${d.rendimento_calculado}</strong> | Perda em Aparas: ${d.perda_aparas}</div>
+          <div style="font-size:10.5px; color:#10b981;">✓ Lote registrado com conformidade Anvisa e rastreabilidade térmica.</div>
+        </div>
+      `;
+      window.atualizarLotesSushiDono();
+    }
+  } catch(e) {
+    box.innerHTML = '<span style="color:#ef4444;">Erro ao registrar lote de peixe.</span>';
+  }
+};
+
+window.atualizarLotesSushiDono = async function() {
+  const container = document.getElementById('lista-lotes-sushi');
+  if (!container) return;
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/sushi/lotes-ativos', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const d = await res.json();
+    if (d && d.ok && d.lotes_peixe && d.lotes_peixe.length > 0) {
+      container.innerHTML = d.lotes_peixe.map(l => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div>
+            <strong>${l.peixe_tipo}</strong>
+            <div style="font-size:10.5px; color:var(--text-sub);">${l.peso_limpo_kg}kg limpos • ${l.fornecedor || 'Fornecedor padrão'}</div>
+          </div>
+          <span style="background:rgba(236,72,153,0.15); color:#ec4899; font-weight:800; padding:2px 8px; border-radius:6px; font-size:10px;">
+            ${l.rendimento_pct}% rendimento
+          </span>
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Nenhum lote registrado hoje.</div>';
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Erro ao consultar lotes.</div>';
+  }
+};
+
+// 5. NICHO BAR & BALADA
+window.lancarDoseBarDono = async function() {
+  const box = document.getElementById('resultado-dose-bar');
+  if (!box) return;
+  const bebida = document.getElementById('bar-bebida-nome')?.value || 'Gin Tanqueray London Dry';
+  const qtd = parseInt(document.getElementById('bar-doses-qtd')?.value) || 2;
+  const val = parseFloat(document.getElementById('bar-dose-valor')?.value) || 34.00;
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/bar/dose/lancar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        bebida_nome: bebida,
+        doses_vendidas: qtd,
+        valor_dose: val
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <div style="display:flex; justify-content:space-between;">
+            <strong style="color:#8b5cf6;">${d.doses_lancadas}x ${d.bebida} = R$ ${d.valor_total.toFixed(2)}</strong>
+            <span style="background:${d.alerta_troca_garrafa ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; color:${d.alerta_troca_garrafa ? '#ef4444' : '#10b981'}; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">
+              ${d.doses_restantes_na_garrafa} doses restantes
+            </span>
+          </div>
+          <div style="font-size:11px; color:var(--text-sub);">${d.mensagem}</div>
+        </div>
+      `;
+      window.atualizarGarrafasBarDono();
+    }
+  } catch(e) {
+    box.innerHTML = '<span style="color:#ef4444;">Erro ao registrar dose.</span>';
+  }
+};
+
+window.atualizarGarrafasBarDono = async function() {
+  const container = document.getElementById('lista-garrafas-bar');
+  if (!container) return;
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/bar/garrafas-abertas', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const d = await res.json();
+    if (d && d.ok && d.garrafas_abertas && d.garrafas_abertas.length > 0) {
+      container.innerHTML = d.garrafas_abertas.map(g => {
+        const pct = Math.max(0, Math.min(100, Math.round(((g.doses_totais - g.doses_vendidas) / g.doses_totais) * 100)));
+        return `
+          <div style="padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <strong>${g.bebida_nome}</strong>
+              <span style="font-size:10.5px; color:${pct < 20 ? '#ef4444' : '#8b5cf6'}; font-weight:800;">${g.doses_totais - g.doses_vendidas}/${g.doses_totais} doses (${pct}%)</span>
+            </div>
+            <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:6px; overflow:hidden;">
+              <div style="height:100%; width:${pct}%; background:${pct < 20 ? '#ef4444' : '#8b5cf6'};"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      container.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Nenhuma garrafa em auditoria no momento.</div>';
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Erro ao listar garrafas.</div>';
+  }
+};
+
+// 6. NICHO BUFFET POR QUILO
+window.pesarBalancaBuffetDono = async function() {
+  const box = document.getElementById('resultado-pesagem-buffet');
+  if (!box) return;
+  const comanda = document.getElementById('buffet-comanda-num')?.value || 'COM-088';
+  const pkg = parseFloat(document.getElementById('buffet-preco-kg')?.value) || 89.90;
+  const tara = parseFloat(document.getElementById('buffet-tara-g')?.value) || 420;
+  const bruto = parseFloat(document.getElementById('buffet-peso-bruto-g')?.value) || 1050;
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/buffet/balanca/pesar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        comanda_num: comanda,
+        tara_prato_g: tara,
+        peso_bruto_g: bruto,
+        preco_kg: pkg
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#06b6d4; font-size:13px;">${d.comanda}: R$ ${d.valor_total.toFixed(2)}</strong>
+            <span style="background:rgba(6,182,212,0.15); color:#06b6d4; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">Peso Líquido: ${d.peso_liquido}</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-sub);">Bruto: ${d.peso_bruto} | Tara Descontada: -${d.tara_descontada} | Preço/kg: R$ ${d.preco_quilo.toFixed(2)}</div>
+        </div>
+      `;
+    }
+  } catch(e) {
+    box.innerHTML = '<span style="color:#ef4444;">Erro na leitura da balança.</span>';
+  }
+};
+
+window.atualizarCubasBuffetDono = async function() {
+  const container = document.getElementById('lista-cubas-buffet');
+  if (!container) return;
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/buffet/cubas/monitor', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const d = await res.json();
+    if (d && d.ok && d.cubas && d.cubas.length > 0) {
+      container.innerHTML = d.cubas.map(c => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div>
+            <strong>${c.cuba_nome}</strong>
+            <div style="font-size:10.5px; color:var(--text-sub);">${c.capacidade_pct}% restante</div>
+          </div>
+          <span style="background:${c.capacidade_pct < 25 ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; color:${c.capacidade_pct < 25 ? '#ef4444' : '#10b981'}; font-weight:800; padding:2px 8px; border-radius:6px; font-size:10px;">
+            ${c.capacidade_pct < 25 ? '⚠️ REPOR URGENTE' : 'OK'}
+          </span>
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Cubas da pista operando normalmente.</div>';
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px 0;">Erro ao consultar cubas.</div>';
+  }
+};
+
+// 7. NICHO CAFETERIA & PADARIA
+window.dispararFornadaPadariaDono = async function() {
+  const box = document.getElementById('resultado-fornada-padaria');
+  if (!box) return;
+  const item = document.getElementById('padaria-fornada-item')?.value || 'Pão Francês';
+  const qtd = parseInt(document.getElementById('padaria-fornada-qtd')?.value) || 80;
+  const temp = parseInt(document.getElementById('padaria-fornada-temp')?.value) || 200;
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/padaria/fornada/anunciar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        item_nome: item,
+        quantidade_unidades: qtd,
+        temperatura_graus: temp
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <div style="font-weight:800; color:#f59e0b; font-size:12.5px;">📢 ${d.mensagem}</div>
+          <div style="font-size:11px; color:var(--text-sub); background:rgba(0,0,0,0.15); padding:6px; border-radius:6px;">${d.alerta_whatsapp}</div>
+        </div>
+      `;
+      if (typeof showToast === 'function') showToast(`🥖 Fornada de ${item} anunciada!`, 'ph-bell-ringing', 'success');
+    }
+  } catch(e) {
+    box.innerHTML = '<span style="color:#ef4444;">Erro ao disparar fornada.</span>';
+  }
+};
+
+window.criarEncomendaPadariaDono = async function() {
+  const box = document.getElementById('resultado-encomenda-padaria');
+  if (!box) return;
+  const cli = document.getElementById('padaria-encomenda-cliente')?.value || 'Cliente';
+  const tel = document.getElementById('padaria-encomenda-tel')?.value || '11999999999';
+  const item = document.getElementById('padaria-encomenda-item')?.value || 'Bolo Red Velvet';
+  const tot = parseFloat(document.getElementById('padaria-encomenda-total')?.value) || 240.00;
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/padaria/encomendas/criar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        cliente_nome: cli,
+        cliente_telefone: tel,
+        tipo_encomenda: item,
+        valor_total: tot
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <div style="display:flex; justify-content:space-between;">
+            <strong style="color:#10b981;">${d.cliente}: ${d.item}</strong>
+            <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">50% Sinal Garantido</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-sub);">Valor Total: R$ ${d.valor_total.toFixed(2)} | <strong>Caução Pix: R$ ${d.caucao_garantido_50pct.toFixed(2)}</strong> | Saldo: R$ ${d.saldo_a_receber_retirada.toFixed(2)}</div>
+        </div>
+      `;
+    }
+  } catch(e) {
+    box.innerHTML = '<span style="color:#ef4444;">Erro ao criar encomenda.</span>';
+  }
+};
+
+// 8. NICHO À LA CARTE
+window.marcharPratoAlacarteDono = async function() {
+  const box = document.getElementById('resultado-marcha-alacarte');
+  if (!box) return;
+  const mesa = document.getElementById('alacarte-mesa-num')?.value || 'Mesa 07';
+  const etapa = document.getElementById('alacarte-etapa')?.value || 'prato_principal';
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch('/api/nichos/alacarte/marchar-etapa', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        pedido_id: Math.floor(500 + Math.random() * 500),
+        mesa_num: mesa,
+        etapa_a_marchar: etapa
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <strong style="color:#6366f1;">🔔 Marcha Autorizada: ${d.mesa} (${d.etapa_marchada})</strong>
+          <div style="font-size:11px; color:var(--text-sub);">${d.alerta_kds_chef}</div>
+        </div>
+      `;
+      if (typeof showToast === 'function') showToast(`🔔 Marcha de ${d.etapa_marchada} despachada para o chef!`, 'ph-bell', 'info');
+    }
+  } catch(e) {
+    box.innerHTML = '<span style="color:#ef4444;">Erro ao marchar prato.</span>';
+  }
+};
+
+window.consultarSommelierDono = async function() {
+  const box = document.getElementById('resultado-sommelier-alacarte');
+  if (!box) return;
+  const pratoId = document.getElementById('alacarte-prato-id')?.value || '1';
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+
+  try {
+    const res = await fetch(`/api/nichos/alacarte/harmonizar/${pratoId}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#ec4899; font-size:12.5px;">🍷 ${d.sommelier_ia.rotulo_recomendado} (${d.sommelier_ia.safra})</strong>
+            <span style="background:rgba(236,72,153,0.15); color:#ec4899; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">R$ ${d.sommelier_ia.preco_garrafa.toFixed(2)}</span>
+          </div>
+          <div style="font-size:11px; color:var(--text); line-height:1.4;">${d.sommelier_ia.justificativa_harmonizacao}</div>
+          <div style="font-size:10.5px; color:#10b981; margin-top:2px;">💡 <em>Dica de Venda: ${d.upsell_garcom}</em></div>
+        </div>
+      `;
+    }
+  } catch(e) {
+    box.innerHTML = '<span style="color:#ef4444;">Erro ao consultar Sommelier IA.</span>';
+  }
+};
+
+window.salvarRegraCobrancaPizzaDono = async function() {
+  const regra = document.getElementById('pizza-regra-cobranca')?.value || 'maior_valor';
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+  try {
+    const res = await fetch('/api/nichos/pizzaria/config-regra', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ cobranca_tipo: regra })
+    });
+    const d = await res.json();
+    if (d && d.ok && typeof showToast === 'function') {
+      showToast(`🍕 Regra comercial salva: ${d.cobranca_tipo === 'maior_valor' ? 'Maior Valor' : 'Média Ponderada'}!`, 'ph-check-circle', 'success');
+    }
+  } catch(e) {}
+};
+
+window.consultarGiroChurrascariaDono = async function() {
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+  try {
+    const res = await fetch('/api/nichos/churrascaria/estatisticas-giro', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const d = await res.json();
+    const box = document.getElementById('resultado-sinal-churrasco');
+    if (box && d && d.ok) {
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; justify-content:space-between;">
+            <strong style="color:#10b981;">🟢 ${d.mesas_verdes} Verdes | 🔴 ${d.mesas_vermelhas} Pausa</strong>
+            <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">${d.taxa_consumo_ativo_pct}% Consumo Ativo</span>
+          </div>
+          <div style="font-size:11px; color:var(--text);">${d.recomendacao_churrasqueiro}</div>
+          <div style="font-size:10.5px; color:var(--text-sub);">Previsão de consumo: <strong>${d.previsao_cortes_kg_proxima_hora} kg de carne</strong> na próxima hora.</div>
+        </div>
+      `;
+    }
+  } catch(e) {}
+};
+
+window.validarCombinadoSushiDono = async function(nome, totalPecas, sashimis) {
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+  try {
+    const res = await fetch('/api/nichos/sushi/trava-combinado', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        nome_combinado: nome || 'Combinado 20 Peças',
+        total_pecas_solicitadas: totalPecas || 20,
+        sashimis: sashimis || 6,
+        niguiris: 6,
+        uramakis: 4,
+        hossomakis: 4
+      })
+    });
+    return await res.json();
+  } catch(e) { return { ok: false }; }
+};
+
+window.ativarPulseiraCashlessDono = async function(codigo, nome, valorRecarga) {
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+  try {
+    const res = await fetch('/api/nichos/bar/cashless/ativar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        codigo_cartao: codigo,
+        cliente_nome: nome,
+        valor_recarga: valorRecarga
+      })
+    });
+    return await res.json();
+  } catch(e) { return { ok: false }; }
+};
+
+window.testarEtiquetaBalancaDono = async function(codigoEan) {
+  const token = typeof obterTokenDono === 'function' ? obterTokenDono() : (localStorage.getItem('chef_token') || '');
+  try {
+    const res = await fetch('/api/nichos/buffet/etiqueta-balanca/decodificar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ codigo_barras: codigoEan, modo: 'valor' })
+    });
+    return await res.json();
+  } catch(e) { return { ok: false }; }
+};
+
+// Auto-inicializar nicho ativo no painel
+setTimeout(() => {
+  const nichoSalvo = localStorage.getItem('chef_nicho_ativo') || 'pizzaria';
+  if (typeof window.trocarNichoOperacao === 'function') {
+    window.trocarNichoOperacao(nichoSalvo);
+  }
+}, 1800);
+

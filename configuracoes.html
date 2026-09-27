@@ -2981,6 +2981,10 @@
               <i class="ph ph-puzzle-piece" style="color:#8b5cf6;"></i>
               <span>Módulos &amp; Extensões</span>
             </button>
+            <button class="admin-tab-btn" data-tab="compatibilidade">
+              <i class="ph ph-clock-counter-clockwise" style="color:#0284c7;"></i>
+              <span>Versões &amp; Modo Clássico</span>
+            </button>
             <button class="admin-tab-btn" data-tab="dispositivos">
               <i class="ph ph-devices" style="color:#0284c7;"></i>
               <span>Dispositivos &amp; Terminais</span>
@@ -6491,6 +6495,257 @@ ChefModules.registerNavbarAction({ id: 'btn_acao', label: 'Meu Botão', onClick:
         </div>
       </div>
 
+      <!-- ════ ABA CENTRAL DE COMPATIBILIDADE, MODOS CLÁSSICOS & REVERSÃO RÁPIDA ════ -->
+      <div class="admin-tab-content" id="admin-tab-compatibilidade" style="display:none; flex-direction:column; gap:20px; overflow-y:auto; padding:16px;">
+        
+        <!-- Header Hero com Banner de Compatibilidade -->
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-radius: 20px; padding: 24px; color: white; box-shadow: 0 10px 30px rgba(2, 132, 199, 0.25); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 18px;">
+          <div style="max-width: 650px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+              <span style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="ph-bold ph-shield-check"></i> 100% Reversível
+              </span>
+              <span style="font-size: 13px; opacity: 0.95;">Sem risco para o funcionamento do restaurante</span>
+            </div>
+            <h2 style="margin: 0; font-size: 24px; font-weight: 900; display: flex; align-items: center; gap: 10px;">
+              <i class="ph-bold ph-clock-counter-clockwise"></i> Central de Compatibilidade &amp; Modos Clássicos
+            </h2>
+            <p style="margin: 8px 0 0 0; opacity: 0.92; font-size: 14px; line-height: 1.5;">
+              Algum colaborador não se acostumou com as novidades ou prefere a tela antiga simples? Reverta qualquer setor para a versão clássica/essencial individualmente ou com 1 clique abaixo.
+            </p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px; min-width: 220px;">
+            <button onclick="window.restaurarTodosModosClassicos()" style="padding: 12px 18px; border-radius: 12px; background: rgba(239, 68, 68, 0.9); border: 1.5px solid rgba(255,255,255,0.3); color: white; font-weight: 800; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(239,68,68,0.3); transition: all 0.2s;" title="Reverter todas as telas para a versão simples e clássica">
+              <i class="ph-bold ph-arrow-u-down-left"></i> Restaurar Modo Clássico Geral
+            </button>
+            <button onclick="window.ativarTodosModosModernos()" style="padding: 12px 18px; border-radius: 12px; background: rgba(255, 255, 255, 0.2); border: 1.5px solid rgba(255,255,255,0.4); color: white; font-weight: 800; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; backdrop-filter: blur(6px); transition: all 0.2s;" title="Ativar todos os recursos Pro e modernos">
+              <i class="ph-bold ph-sparkle"></i> Ativar Modo Pro Completo
+            </button>
+          </div>
+        </div>
+
+        <!-- Alerta Informativo -->
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; gap: 14px; color: #166534; font-size: 13.5px;">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: #dcfce7; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; color: #15803d;">
+            <i class="ph-bold ph-info"></i>
+          </div>
+          <div style="flex: 1;">
+            <strong>Transição Suave para sua Equipe:</strong> As alterações de modo são salvas na nuvem e aplicadas instantaneamente em todos os tablets, celulares e computadores do salão e da cozinha sem necessidade de reiniciar o servidor.
+          </div>
+          <button onclick="window.carregarModosCompatibilidade()" style="background: white; border: 1px solid #86efac; color: #15803d; border-radius: 8px; padding: 6px 12px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <i class="ph-bold ph-arrows-clockwise"></i> Recarregar
+          </button>
+        </div>
+
+        <!-- Grade de Módulos com Reversão Setorial -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px;" id="grid-modos-compatibilidade">
+
+          <!-- 1. KDS Cozinha & Expedição -->
+          <div style="background: var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(252,75,21,0.12); color: #fc4b15; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                    <i class="ph-bold ph-cooking-pot"></i>
+                  </div>
+                  <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--cfg-text);">KDS da Cozinha (Fila de Pedidos)</h3>
+                    <span id="badge-status-kds" style="display: inline-block; margin-top: 3px; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 12px; background: #dbeafe; color: #1d4ed8;">Moderna v2</span>
+                  </div>
+                </div>
+                <!-- Switch iOS -->
+                <label style="position:relative; display:inline-block; width:48px; height:26px; flex-shrink:0; cursor:pointer;" title="Alternar entre Moderno v2 e Clássico v1">
+                  <input type="checkbox" id="chk-modo-kds" style="opacity:0; width:0; height:0;" onchange="window.salvarModoCompatibilidade('fila_modo', this.checked ? 'nova' : 'classica')">
+                  <span class="compat-slider-track" style="position:absolute; inset:0; background-color:#22c55e; border-radius:26px; transition:.3s;"></span>
+                  <span class="compat-slider-thumb" style="position:absolute; height:20px; width:20px; left:25px; bottom:3px; background-color:white; border-radius:50%; transition:.3s; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                </label>
+              </div>
+              <p style="margin: 0; font-size: 12.5px; color: var(--cfg-text-muted); line-height: 1.45;">
+                <strong>Moderna v2:</strong> Multi-estação, sincronização simultânea de pratos (Smart-Sync), timers visuais e suporte a nichos operacionais.<br>
+                <strong>Clássica v1:</strong> Fila tradicional simples com cartões retos e impressão visual básica sem distrações.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px; border-top: 1px dashed var(--cfg-border); pt-3; padding-top: 12px;">
+              <a href="/fila-pedidos.html?v=2" target="_blank" style="flex: 1; text-align: center; padding: 7px 10px; background: rgba(252,75,21,0.08); color: #fc4b15; border: 1px solid rgba(252,75,21,0.2); border-radius: 8px; font-size: 12px; font-weight: 700; text-decoration: none;">
+                <i class="ph-bold ph-sparkle"></i> Abrir v2
+              </a>
+              <a href="/fila-pedidos-classica.html?v=1" target="_blank" style="flex: 1; text-align: center; padding: 7px 10px; background: var(--cfg-subtle-bg, #f1f5f9); color: var(--cfg-text); border: 1px solid var(--cfg-border); border-radius: 8px; font-size: 12px; font-weight: 700; text-decoration: none;">
+                <i class="ph-bold ph-clock-counter-clockwise"></i> Abrir Clássica
+              </a>
+            </div>
+          </div>
+
+          <!-- 2. App do Garçom / Salão -->
+          <div style="background: var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16,185,129,0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                    <i class="ph-bold ph-tray"></i>
+                  </div>
+                  <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--cfg-text);">App do Garçom / Salão</h3>
+                    <span id="badge-status-garcom" style="display: inline-block; margin-top: 3px; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 12px; background: #dcfce7; color: #15803d;">Modo Pro</span>
+                  </div>
+                </div>
+                <!-- Switch iOS -->
+                <label style="position:relative; display:inline-block; width:48px; height:26px; flex-shrink:0; cursor:pointer;" title="Alternar entre Modo Pro e Essencial Clássico">
+                  <input type="checkbox" id="chk-modo-garcom" style="opacity:0; width:0; height:0;" onchange="window.salvarModoCompatibilidade('garcom_modo', this.checked ? 'pro' : 'classico')">
+                  <span class="compat-slider-track" style="position:absolute; inset:0; background-color:#22c55e; border-radius:26px; transition:.3s;"></span>
+                  <span class="compat-slider-thumb" style="position:absolute; height:20px; width:20px; left:25px; bottom:3px; background-color:white; border-radius:50%; transition:.3s; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                </label>
+              </div>
+              <p style="margin: 0; font-size: 12.5px; color: var(--cfg-text-muted); line-height: 1.45;">
+                <strong>Modo Pro:</strong> Grade de atalhos rápidos de nicho, modais avançados, sommelier IA e ordem de marcha.<br>
+                <strong>Modo Clássico:</strong> Interface focada apenas nas mesas e comanda rápida tradicional para garçons que preferem simplicidade total.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px; border-top: 1px dashed var(--cfg-border); padding-top: 12px;">
+              <a href="/garcom.html" target="_blank" style="flex: 1; text-align: center; padding: 7px 10px; background: rgba(16,185,129,0.08); color: #10b981; border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; font-size: 12px; font-weight: 700; text-decoration: none;">
+                <i class="ph-bold ph-arrow-square-out"></i> Abrir App Garçom
+              </a>
+            </div>
+          </div>
+
+          <!-- 3. Comanda & Autoatendimento na Mesa -->
+          <div style="background: var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(139,92,246,0.12); color: #8b5cf6; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                    <i class="ph-bold ph-device-mobile"></i>
+                  </div>
+                  <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--cfg-text);">Comanda na Mesa do Cliente</h3>
+                    <span id="badge-status-mesa" style="display: inline-block; margin-top: 3px; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 12px; background: #ede9fe; color: #6d28d9;">Interativo</span>
+                  </div>
+                </div>
+                <!-- Switch iOS -->
+                <label style="position:relative; display:inline-block; width:48px; height:26px; flex-shrink:0; cursor:pointer;" title="Alternar entre Modo Interativo e Extrato Tradicional">
+                  <input type="checkbox" id="chk-modo-mesa" style="opacity:0; width:0; height:0;" onchange="window.salvarModoCompatibilidade('mesa_cliente_modo', this.checked ? 'interativo' : 'simples')">
+                  <span class="compat-slider-track" style="position:absolute; inset:0; background-color:#22c55e; border-radius:26px; transition:.3s;"></span>
+                  <span class="compat-slider-thumb" style="position:absolute; height:20px; width:20px; left:25px; bottom:3px; background-color:white; border-radius:50%; transition:.3s; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                </label>
+              </div>
+              <p style="margin: 0; font-size: 12.5px; color: var(--cfg-text-muted); line-height: 1.45;">
+                <strong>Modo Interativo:</strong> Semáforo de rodízio ("Passar Carnes / Pausa"), botão de marcha autônoma e jogos.<br>
+                <strong>Modo Tradicional:</strong> Apenas extrato limpo do consumo da mesa e QR Code Pix, sem widgets interativos na tela.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px; border-top: 1px dashed var(--cfg-border); padding-top: 12px;">
+              <a href="/conta-cliente.html?mesa=1" target="_blank" style="flex: 1; text-align: center; padding: 7px 10px; background: rgba(139,92,246,0.08); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.2); border-radius: 8px; font-size: 12px; font-weight: 700; text-decoration: none;">
+                <i class="ph-bold ph-arrow-square-out"></i> Ver Tela da Mesa
+              </a>
+            </div>
+          </div>
+
+          <!-- 4. Pizzaria & Fracionamento -->
+          <div style="background: var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(234,179,8,0.12); color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                    <i class="ph-bold ph-pizza"></i>
+                  </div>
+                  <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--cfg-text);">Pizzaria (Cálculo de Sabores)</h3>
+                    <span id="badge-status-pizzaria" style="display: inline-block; margin-top: 3px; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 12px; background: #fef08a; color: #854d0e;">Cálculo Automático</span>
+                  </div>
+                </div>
+                <!-- Switch iOS -->
+                <label style="position:relative; display:inline-block; width:48px; height:26px; flex-shrink:0; cursor:pointer;" title="Alternar entre Cálculo Automático e Digitação Manual Livre">
+                  <input type="checkbox" id="chk-modo-pizzaria" style="opacity:0; width:0; height:0;" onchange="window.salvarModoCompatibilidade('pizzaria_modo', this.checked ? 'auto' : 'manual')">
+                  <span class="compat-slider-track" style="position:absolute; inset:0; background-color:#22c55e; border-radius:26px; transition:.3s;"></span>
+                  <span class="compat-slider-thumb" style="position:absolute; height:20px; width:20px; left:25px; bottom:3px; background-color:white; border-radius:50%; transition:.3s; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                </label>
+              </div>
+              <p style="margin: 0; font-size: 12.5px; color: var(--cfg-text-muted); line-height: 1.45;">
+                <strong>Cálculo Automático:</strong> O sistema aplica automaticamente regra de maior valor ou média ponderada das fatias.<br>
+                <strong>Modo Manual Clássico:</strong> O operador digita ou seleciona o preço final livremente, sem recálculos automáticos.
+              </p>
+            </div>
+            <div style="font-size: 11.5px; color: var(--cfg-text-muted); border-top: 1px dashed var(--cfg-border); padding-top: 10px;">
+              Ideal para restaurantes tradicionais com tabelas próprias de preços.
+            </div>
+          </div>
+
+          <!-- 5. Buffet por Quilo & Balança -->
+          <div style="background: var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(59,130,246,0.12); color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                    <i class="ph-bold ph-scales"></i>
+                  </div>
+                  <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--cfg-text);">Buffet &amp; Balança de Quilo</h3>
+                    <span id="badge-status-buffet" style="display: inline-block; margin-top: 3px; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 12px; background: #bfdbfe; color: #1e40af;">Leitor Automático</span>
+                  </div>
+                </div>
+                <!-- Switch iOS -->
+                <label style="position:relative; display:inline-block; width:48px; height:26px; flex-shrink:0; cursor:pointer;" title="Alternar entre Leitor EAN-13 Toledo e Digitação Manual de Peso">
+                  <input type="checkbox" id="chk-modo-buffet" style="opacity:0; width:0; height:0;" onchange="window.salvarModoCompatibilidade('buffet_modo', this.checked ? 'balanca_auto' : 'manual')">
+                  <span class="compat-slider-track" style="position:absolute; inset:0; background-color:#22c55e; border-radius:26px; transition:.3s;"></span>
+                  <span class="compat-slider-thumb" style="position:absolute; height:20px; width:20px; left:25px; bottom:3px; background-color:white; border-radius:50%; transition:.3s; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                </label>
+              </div>
+              <p style="margin: 0; font-size: 12.5px; color: var(--cfg-text-muted); line-height: 1.45;">
+                <strong>Leitor Automático:</strong> Decodifica código de barras EAN-13 Toledo Prix e Filizola com tara automática.<br>
+                <strong>Digitação Manual Clássica:</strong> O operador digita o peso em kg ou o valor diretamente no teclado numérico do caixa.
+              </p>
+            </div>
+            <div style="font-size: 11.5px; color: var(--cfg-text-muted); border-top: 1px dashed var(--cfg-border); padding-top: 10px;">
+              Permite operar normalmente mesmo se o leitor óptico estiver desconectado.
+            </div>
+          </div>
+
+          <!-- 6. Bar & Balada (Consumo de Balcão) -->
+          <div style="background: var(--cfg-card-bg); border: 1.5px solid var(--cfg-border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(236,72,153,0.12); color: #ec4899; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                    <i class="ph-bold ph-brandy"></i>
+                  </div>
+                  <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--cfg-text);">Bar &amp; Balcão (Cobrança)</h3>
+                    <span id="badge-status-bar" style="display: inline-block; margin-top: 3px; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 12px; background: #fce7f3; color: #9d174d;">Cashless Digital</span>
+                  </div>
+                </div>
+                <!-- Switch iOS -->
+                <label style="position:relative; display:inline-block; width:48px; height:26px; flex-shrink:0; cursor:pointer;" title="Alternar entre Cashless Pré-Pago e Comanda Padrão">
+                  <input type="checkbox" id="chk-modo-bar" style="opacity:0; width:0; height:0;" onchange="window.salvarModoCompatibilidade('bar_modo', this.checked ? 'cashless' : 'comanda_padrao')">
+                  <span class="compat-slider-track" style="position:absolute; inset:0; background-color:#22c55e; border-radius:26px; transition:.3s;"></span>
+                  <span class="compat-slider-thumb" style="position:absolute; height:20px; width:20px; left:25px; bottom:3px; background-color:white; border-radius:50%; transition:.3s; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                </label>
+              </div>
+              <p style="margin: 0; font-size: 12.5px; color: var(--cfg-text-muted); line-height: 1.45;">
+                <strong>Cashless Digital:</strong> Cartão/pulseira pré-paga recarregável com caução de comodato.<br>
+                <strong>Comanda Padrão Clássica:</strong> Lançamento tradicional por número de comanda e pagamento ao final.
+              </p>
+            </div>
+            <div style="font-size: 11.5px; color: var(--cfg-text-muted); border-top: 1px dashed var(--cfg-border); padding-top: 10px;">
+              Ideal para noites de eventos especiais ou operações normais do dia a dia.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Box de Segurança e Boas Práticas -->
+        <div style="background: var(--cfg-card-bg); border: 1px solid var(--cfg-border); border-radius: 16px; padding: 20px; display: flex; align-items: flex-start; gap: 16px;">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+            <i class="ph-bold ph-hand-heart"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 800; color: var(--cfg-heading);">Filosofia de Facilidade &amp; Respeito ao Colaborador</h4>
+            <p style="margin: 0; font-size: 13px; color: var(--cfg-text-muted); line-height: 1.5;">
+              Sabemos que a rotina em cozinhas e salões de restaurantes é intensa e que mudanças bruscas de software podem desacelerar a operação em horários de pico. Com esta central, você tem total autonomia para treinar sua equipe com calma, ativando as novidades setor por setor conforme a maturidade de cada colaborador.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
       <!-- ABA MÉTRICAS DOS GARÇONS -->
 
 <div id="admin-tab-metricas" class="admin-tab-content">
@@ -7787,6 +8042,7 @@ ChefModules.registerNavbarAction({ id: 'btn_acao', label: 'Meu Botão', onClick:
     <script src="/fuzzy-search.js"></script>
     <script src="/vendor/sortablejs/Sortable.min.js"></script>
     <script src="/chef-tz.js"></script>
+    <script type="module" src="/shortcuts.js"></script>
     <script type="module" src="configuracoes.js"></script>
     <script src="/fullscreen.js"></script>
     <script>

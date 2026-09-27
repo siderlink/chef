@@ -148,7 +148,31 @@ const FEATURES = [
   { chave: 'antifurto_inventario_cego', nome: 'Sentinela de Inventário Cego (Carnes e Destilados)', desc: 'Contagem cega de 3 minutos por turno dos 10 itens mais caros com alerta imediato de desvio no WhatsApp.', categoria: 'Operação', preco: 'R$ 79/mês', roi: 'Elimina desvios de carnes nobres e garrafas que custam R$ 3k-8k/mês' },
   { chave: 'fidelidade_tiers_vip', nome: 'Fidelidade por Níveis VIP (Bronze a Diamante)', desc: 'Categorização de clientes com benefícios exclusivos e cashback progressivo para estimular consumo.', categoria: 'Marketing', preco: 'R$ 69/mês', roi: 'Eleva a frequência de visitas e o ticket médio dos clientes mais fiéis' },
   { chave: 'menuboard_tv_balcao', nome: 'Menu Board Digital Interativo para TVs de Balcão', desc: 'Exibição de cardápio digital em Smart TVs com troca automática por momento do dia (almoço, café, happy hour).', categoria: 'Hardware', preco: 'R$ 49/mês por tela', roi: 'Visual de grandes redes (fast-food) e +20% em combos e sobremesas' },
-  { chave: 'satisfacao_ia_emocional', nome: 'Totem de Satisfação com IA Emocional & Áudio', desc: 'Totem tátil de 4 emojis com transcrição e análise de sentimento em áudio com alerta crítico no WhatsApp.', categoria: 'Operação', preco: 'R$ 39/mês', roi: 'Alerta em tempo real no WhatsApp para gerentes reverterem atritos na saída' }
+  { chave: 'satisfacao_ia_emocional', nome: 'Totem de Satisfação com IA Emocional & Áudio', desc: 'Totem tátil de 4 emojis com transcrição e análise de sentimento em áudio com alerta crítico no WhatsApp.', categoria: 'Operação', preco: 'R$ 39/mês', roi: 'Alerta em tempo real no WhatsApp para gerentes reverterem atritos na saída' },
+
+  // ══════════════════════════════════════════════════════════════════
+  // MÓDULOS DE ALTA RENTABILIDADE: FINTECH, IA & RECORRÊNCIA
+  // ══════════════════════════════════════════════════════════════════
+  { chave: 'cheff_capital_giro', nome: 'Cheff Capital & Crédito Fumaça (Retenção Diária)', desc: 'Adiantamento de capital de giro de R$ 5.000 a R$ 60.000 pré-aprovado com amortização automática em 8% das vendas diárias.', categoria: 'Fintech', preco: 'R$ 99/mês + 2.8% a.m.', roi: 'Crédito imediato sem burocracia de bancão tradicional para reformas ou 13º' },
+  { chave: 'clube_assinatura_gastronomica', nome: 'Clube de Assinaturas Recorrentes (O Netflix da Casa)', desc: 'Motor de recorrência para planos mensais de clientes (café à vontade, chopp duplo, almoço executivo) com split para o SaaS.', categoria: 'Vendas', preco: 'R$ 99/mês + 1.9% split', roi: 'Faturamento recorrente garantido no caixa todo dia 1º do mês' },
+  { chave: 'garcom_voice_ia', nome: 'Garçom Voice IA (Atendente por Voz no Telefone/Drive-Thru)', desc: 'IA com voz humana ultrarrealista que atende telefonemas e drive-thru, anota pedidos complexos e faz upsell automático.', categoria: 'Inteligência', preco: 'R$ 199/mês + R$ 0,20/min', roi: 'Atende 10 ligações simultâneas sem ocupar equipe e economiza R$ 2.400/mês' },
+  { chave: 'procurement_cotacao_atacado', nome: 'Robô de Cotação de Atacado & B2B Procurement', desc: 'Disparo de cotação simultânea para os maiores atacadistas locais comparando preços por quilo com rebate para o SaaS.', categoria: 'Financeiro', preco: 'R$ 149/mês + 1.5% rebate', roi: 'Economia de 8% a 18% no CMV de carnes, queijos e embalagens' },
+  { chave: 'gestor_trafego_ia_meta', nome: 'Gestor de Tráfego IA (Meta & Google Ads 1-Click)', desc: 'Cria anúncios patrocinados no Instagram no raio de 3 a 7km nos horários de pico sem precisar de agência de marketing.', categoria: 'Marketing', preco: 'R$ 129/mês + 5% taxa gestão', roi: 'ROAS médio de 7x atraindo clientes em noites chuvosas e dias fracos' },
+  { chave: 'gift_cards_virtuais_whatsapp', nome: 'Cartão Presente Virtual (Gift Cards WhatsApp)', desc: 'Venda de vouchers de presentes com envio temático no WhatsApp do aniversariante com taxa de emissão retida.', categoria: 'Vendas', preco: 'R$ 49/mês + R$ 1,50/cartão', roi: 'Caixa antecipado e 15% de breakage (saldo nunca resgatado que vira lucro puro)' },
+  { chave: 'wifi_marketing_hotspot_lgpd', nome: 'Wi-Fi Marketing Inteligente & Hotspot Captive LGPD', desc: 'Captive portal que coleta nome, WhatsApp e data de aniversário para liberar internet e alimenta o CRM com leads quentes.', categoria: 'Marketing', preco: 'R$ 69/mês', roi: 'Coleta de 400 a 1.200 contatos qualificados todo mês no próprio salão' },
+  { chave: 'dark_kitchen_marcas_virtuais', nome: 'Gestor de Dark Kitchens & Marcas Virtuais no Mesmo Estoque', desc: 'Opere até 6 marcas virtuais no iFood compartilhando o mesmo fogão, operadores e estoque com relatórios separados.', categoria: 'Gestão', preco: 'R$ 79/mês por marca virtual', roi: 'Multiplica o faturamento da cozinha em horários ociosos sem custo de aluguel' },
+
+  // ══════════════════════════════════════════════════════════════════
+  // MÓDULOS OPERACIONAIS ESPECIALIZADOS POR NICHO GASTRONÔMICO
+  // ══════════════════════════════════════════════════════════════════
+  { chave: 'pizzaria_fracionada_forno', nome: 'Pizzaria Fracionada Meio a Meio & Forno de Lastro', desc: 'Montador de pizzas de 2 a 4 frações com cobrança automática pelo maior valor ou média ponderada e KDS com timer de forno.', categoria: 'Operação', preco: 'R$ 79/mês', roi: 'Elimina 100% dos erros de lançamento de sabores e bordas vulcão' },
+  { chave: 'hamburgueria_kds_estacoes', nome: 'Hamburgueria KDS Multi-Estação & Ponto da Carne', desc: 'Divisão inteligente do pedido entre Chapa (ponto da carne), Fritadeira e Montagem de pão sem atrasos.', categoria: 'Operação', preco: 'R$ 79/mês', roi: 'Agiliza a linha de produção e reduz tempo de entrega de 35 min para 18 min' },
+  { chave: 'churrascaria_radar_passadores', nome: 'Churrascaria Rodízio & Radar de Passadores', desc: 'Sinalizador de mesa virtual (Verde Quero Carne / Vermelho Pausa) com tablet de cortes solicitados para passadores.', categoria: 'Operação', preco: 'R$ 89/mês', roi: 'Giro de salão perfeito e zero clientes insatisfeitos esperando picanha' },
+  { chave: 'sushi_peixe_fresco_combinados', nome: 'Sushi Bar Rendimento de Peixe Fresco & Combinados', desc: 'Rastreabilidade de salmão e atum com cálculo de aproveitamento de aparas e montador de combinados de X peças.', categoria: 'Operação', preco: 'R$ 89/mês', roi: 'Controla o insumo mais caro da casa e corta até R$ 3.000/mês em desperdício' },
+  { chave: 'bar_balcao_auditor_doses', nome: 'Bar & Balada Comanda Rápida & Auditor de Doses', desc: 'Comanda individual por CPF ou pulseira com baixa em mililitros por dose de Gin/Whisky e alerta de garrafa vazia.', categoria: 'Operação', preco: 'R$ 69/mês', roi: 'Fim das doses de graça e fechamento de conta em 5 segundos no balcão' },
+  { chave: 'buffet_balanca_serial_cubas', nome: 'Buffet por Quilo Balança Serial & Alerta de Cubas', desc: 'Leitura instantânea da balança com tara automática do prato e tablet do repositor alertando cubas acabando.', categoria: 'Operação', preco: 'R$ 69/mês', roi: 'Pesagem em menos de 1 segundo sem travar fila do almoço executivo' },
+  { chave: 'padaria_fornadas_encomendas', nome: 'Padaria Fornada Quente & Encomendas com Caução', desc: 'Aviso de pão quentinho saindo do forno nos telões e WhatsApp e agenda de bolos de festa com caução de 50%.', categoria: 'Vendas', preco: 'R$ 59/mês', roi: 'Aumenta compras por impulso e garante recebimento de encomendas sem calote' },
+  { chave: 'alacarte_marcha_sommelier', nome: 'À La Carte Marcha de Pratos & Sommelier IA', desc: 'Controle de tempos de prato (Entrada -> Principal -> Sobremesa) no KDS e recomendações de vinhos para harmonização.', categoria: 'Operação', preco: 'R$ 79/mês', roi: 'Experiência de alta gastronomia sem pratos esfriando e +30% na venda de vinhos' }
 ];
 
 // Features padrão por plano
@@ -359,10 +383,12 @@ function getPlanLimits(licenca) {
 function resolveFeatures(licenca, overrides) {
   const base = getPlanDefaults(licenca);
   const result = {};
-  Object.keys(base).forEach((k) => { result[k] = base[k]; });
+  FEATURES.forEach((f) => {
+    result[f.chave] = base[f.chave] !== undefined ? !!base[f.chave] : false;
+  });
   if (overrides && typeof overrides === 'object') {
     Object.keys(overrides).forEach((k) => {
-      if (k in base) result[k] = !!overrides[k];
+      result[k] = !!overrides[k];
     });
   }
   return result;

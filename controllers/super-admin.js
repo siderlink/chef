@@ -1275,7 +1275,7 @@ module.exports = function (app, masterDb, sqlite3, options) {
       } else if (body.feature) {
         const conhecida = featurePlans.FEATURES.some(f => f.chave === body.feature);
         if (!conhecida) return res.json({ ok: false, erro: 'Feature desconhecida.' });
-        const enabled = !!body.enabled;
+        const enabled = body.enabled !== undefined ? !!body.enabled : (body.valor !== undefined ? !!body.valor : true);
 
         const existing = await new Promise((resolve) => {
           masterDb.get(`SELECT overrides_json FROM tenant_features WHERE restaurante_id = ?`, [rid], (e, row) => resolve(e ? null : row));

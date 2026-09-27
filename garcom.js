@@ -458,11 +458,55 @@ async function fetchConfigs() {
     const res = await fetch('/api/config?restaurante_id=' + encodeURIComponent(localStorage.getItem('restaurante_id') || '1'));
     CONFIGS = await res.json();
     if (MENU.length > 0) reorderTabs();
+    aplicarModoOperacaoGarcom();
   } catch (e) {
     console.error(e);
   }
 }
 fetchConfigs();
+
+function aplicarModoOperacaoGarcom() {
+  const localModo = localStorage.getItem('garcom_modo');
+  const modo = (localModo || (CONFIGS && CONFIGS.garcom_modo) || 'pro').toLowerCase();
+  const isClassico = (modo === 'classico' || modo === 'essencial');
+
+  const navAtalhos = document.getElementById('nav-atalhos');
+  if (navAtalhos) {
+    navAtalhos.style.display = isClassico ? 'none' : '';
+  }
+
+  const atalhosGrid = document.getElementById('atalhos-grid-container');
+  if (atalhosGrid) {
+    atalhosGrid.style.display = isClassico ? 'none' : 'grid';
+  }
+
+  if (isClassico && typeof currentViewId !== 'undefined' && currentViewId === 'view-atalhos') {
+    if (typeof showView === 'function') showView('tables', 'Mesas');
+  }
+
+  let badgeEl = document.getElementById('garcom-modo-badge');
+  if (!badgeEl) {
+    const topBar = document.querySelector('.top-nav') || document.querySelector('.header') || document.querySelector('.logo');
+    if (topBar) {
+      badgeEl = document.createElement('span');
+      badgeEl.id = 'garcom-modo-badge';
+      badgeEl.style.cssText = 'font-size:10px; font-weight:800; padding:3px 8px; border-radius:12px; margin-left:8px; cursor:pointer; vertical-align:middle; display:inline-flex; align-items:center; gap:4px;';
+      topBar.appendChild(badgeEl);
+      badgeEl.onclick = function() {
+        const novo = (localStorage.getItem('garcom_modo') === 'classico') ? 'pro' : 'classico';
+        localStorage.setItem('garcom_modo', novo);
+        aplicarModoOperacaoGarcom();
+        showToast(novo === 'classico' ? 'Modo Essencial (Clássico) ativado' : 'Modo Pro ativado');
+      };
+    }
+  }
+  if (badgeEl) {
+    badgeEl.innerHTML = isClassico ? '<i class="ph-bold ph-clock-counter-clockwise"></i> Clássico' : '<i class="ph-bold ph-sparkle"></i> Pro';
+    badgeEl.style.background = isClassico ? '#f1f5f9' : '#dcfce7';
+    badgeEl.style.color = isClassico ? '#475569' : '#15803d';
+    badgeEl.title = 'Alternar entre Modo Clássico (Simples) e Modo Pro';
+  }
+}
 
 function reorderTabs() {
   let rawTabs = [...new Set(MENU.map(m => m.category))];
@@ -3806,3 +3850,206 @@ window.selecionarEtapaPrato = function(btn, etapa) {
     check.checked = (etapa === 'Principal' || etapa === 'Sobremesa');
   }
 };
+
+/* =========================================================================
+   MÓDULOS OPERACIONAIS POR NICHO NO SALÃO (GARÇOM MOBILE)
+   ========================================================================= */
+
+// 1. Pizza Meio a Meio no Salão
+window.abrirModalPizzaGarcom = function() {
+  const m = document.getElementById('modal-garcom-pizza');
+  if (!m) return;
+  m.style.display = 'flex';
+  const inpMesa = document.getElementById('garcom-pizza-mesa');
+  if (inpMesa && window.currentTableNumber) {
+    inpMesa.value = 'Mesa ' + window.currentTableNumber;
+  }
+};
+
+window.confirmarPizzaGarcom = async function() {
+  const mesa = document.getElementById('garcom-pizza-mesa')?.value || 'Mesa Balcão';
+  const sab1Raw = document.getElementById('garcom-pizza-sabor1')?.value || 'Calabresa Especial|54';
+  const sab2Raw = document.getElementById('garcom-pizza-sabor2')?.value || 'Quatro Queijos Nobre|68';
+  const bordaRaw = document.getElementById('garcom-pizza-borda')?.value || 'Sem borda|0';
+  const obs = document.getElementById('garcom-pizza-obs')?.value || '';
+
+  const [nome1, p1] = sab1Raw.split('|');
+  const [nome2, p2] = sab2Raw.split('|');
+  const [bordaNome, bordaPreco] = bordaRaw.split('|');
+
+  try {
+    const res = await fetch('/api/nichos/pizzaria/fracionar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sabores: [
+          { nome: nome1, preco_inteira: parseFloat(p1) || 54 },
+          { nome: nome2, preco_inteira: parseFloat(p2) || 68 }
+        ],
+        borda: { nome: bordaNome, preco: parseFloat(bordaPreco) || 0 },
+        regra_cobranca: 'maior_valor'
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      // Lança também no Forno KDS
+      await fetch('/api/nichos/pizzaria/forno/lancar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pedido_id: Math.floor(100 + Math.random() * 900),
+          pizza_nome: `Pizza Meio ${nome1} / Meio ${nome2}`,
+          sabores: [nome1, nome2],
+          borda: bordaNome,
+          tempo_coccao_min: 8
+        })
+      });
+
+      document.getElementById('modal-garcom-pizza').style.display = 'none';
+      if (typeof showToast === 'function') {
+        showToast(`🍕 Pizza Meio a Meio (R$ ${d.valor_total_calculado.toFixed(2)}) lançada para ${mesa}!`, 'ph-pizza', 'success');
+      } else {
+        alert(`Pizza Meio a Meio lançada com sucesso!\nValor: R$ ${d.valor_total_calculado.toFixed(2)}\nKDS Forneiro notificado.`);
+      }
+    }
+  } catch(e) {
+    alert('Erro ao lançar pizza meio a meio.');
+  }
+};
+
+// 2. Rodízio & Passadores
+window._sinalRodizioSelecionado = 'quero_carne';
+
+window.abrirModalRodizioGarcom = function() {
+  const m = document.getElementById('modal-garcom-rodizio');
+  if (!m) return;
+  m.style.display = 'flex';
+  const inpMesa = document.getElementById('garcom-rodizio-mesa');
+  if (inpMesa && window.currentTableNumber) {
+    inpMesa.value = 'Mesa ' + window.currentTableNumber;
+  }
+};
+
+window.setSinalRodizioGarcom = function(sinal) {
+  window._sinalRodizioSelecionado = sinal;
+  const btnVerde = document.getElementById('btn-sinal-verde');
+  const btnVermelho = document.getElementById('btn-sinal-vermelho');
+  if (btnVerde && btnVermelho) {
+    if (sinal === 'quero_carne') {
+      btnVerde.style.border = '2px solid #10b981';
+      btnVerde.style.background = '#f0fdf4';
+      btnVerde.style.color = '#15803d';
+      btnVermelho.style.border = '1.5px solid #cbd5e1';
+      btnVermelho.style.background = '#ffffff';
+      btnVermelho.style.color = '#64748b';
+    } else {
+      btnVermelho.style.border = '2px solid #ef4444';
+      btnVermelho.style.background = '#fef2f2';
+      btnVermelho.style.color = '#b91c1c';
+      btnVerde.style.border = '1.5px solid #cbd5e1';
+      btnVerde.style.background = '#ffffff';
+      btnVerde.style.color = '#64748b';
+    }
+  }
+};
+
+window.confirmarRodizioGarcom = async function() {
+  const mesa = document.getElementById('garcom-rodizio-mesa')?.value || 'Mesa 12';
+  const cortes = (document.getElementById('garcom-rodizio-cortes')?.value || '').split(',').map(c => c.trim());
+  const sinal = window._sinalRodizioSelecionado || 'quero_carne';
+
+  try {
+    const res = await fetch('/api/nichos/churrascaria/sinalizar-mesa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mesa_num: mesa,
+        estado_sinal: sinal,
+        cortes_preferidos: cortes
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      document.getElementById('modal-garcom-rodizio').style.display = 'none';
+      if (typeof showToast === 'function') {
+        showToast(`🥩 ${mesa}: ${d.mensagem}`, 'ph-broadcast', 'success');
+      } else {
+        alert(d.mensagem);
+      }
+    }
+  } catch(e) {
+    alert('Erro ao atualizar sinal do rodízio.');
+  }
+};
+
+// 3. Marchar Pratos (À La Carte)
+window.abrirModalMarcharGarcom = function() {
+  const m = document.getElementById('modal-garcom-marchar');
+  if (!m) return;
+  m.style.display = 'flex';
+  const inpMesa = document.getElementById('garcom-marchar-mesa');
+  if (inpMesa && window.currentTableNumber) {
+    inpMesa.value = 'Mesa ' + window.currentTableNumber;
+  }
+};
+
+window.confirmarMarchaGarcom = async function() {
+  const mesa = document.getElementById('garcom-marchar-mesa')?.value || 'Mesa 07';
+  const etapa = document.getElementById('garcom-marchar-etapa')?.value || 'prato_principal';
+
+  try {
+    const res = await fetch('/api/nichos/alacarte/marchar-etapa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pedido_id: Math.floor(500 + Math.random() * 500),
+        mesa_num: mesa,
+        etapa_a_marchar: etapa
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      document.getElementById('modal-garcom-marchar').style.display = 'none';
+      if (typeof showToast === 'function') {
+        showToast(`🔔 Marcha autorizada: ${d.mesa} (${d.etapa_marchada})!`, 'ph-bell', 'info');
+      } else {
+        alert(`Comando de marcha enviado para a cozinha!\n${d.alerta_kds_chef}`);
+      }
+    }
+  } catch(e) {
+    alert('Erro ao enviar marcha de prato.');
+  }
+};
+
+// 4. Sommelier IA
+window.abrirModalSommelierGarcom = function() {
+  const m = document.getElementById('modal-garcom-sommelier');
+  if (!m) return;
+  m.style.display = 'flex';
+};
+
+window.consultarSommelierGarcom = async function() {
+  const box = document.getElementById('garcom-sommelier-resultado');
+  const pratoId = document.getElementById('garcom-sommelier-prato')?.value || '1';
+  if (box) box.innerHTML = 'Consultando Sommelier IA...';
+
+  try {
+    const res = await fetch(`/api/nichos/alacarte/harmonizar/${pratoId}`);
+    const d = await res.json();
+    if (d && d.ok && box) {
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#9d174d; font-size:13px;">🍷 ${d.sommelier_ia.rotulo_recomendado} (${d.sommelier_ia.safra})</strong>
+            <span style="background:#fbcfe8; color:#9d174d; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">R$ ${d.sommelier_ia.preco_garrafa.toFixed(2)}</span>
+          </div>
+          <div style="font-size:11.5px; color:#475569; line-height:1.4;">${d.sommelier_ia.justificativa_harmonizacao}</div>
+          <div style="font-size:11px; color:#059669; font-weight:700; margin-top:2px;">💡 ${d.upsell_garcom}</div>
+        </div>
+      `;
+    }
+  } catch(e) {
+    if (box) box.innerHTML = '<span style="color:#ef4444;">Erro ao consultar Sommelier IA.</span>';
+  }
+};
+

@@ -37,6 +37,8 @@ const MODALIDADE_MODULOS = {
   japones:      ['comandas', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
   cafeteria:    ['totem', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
   doceria:      ['totem', 'fidelidade', 'cardapio_foto', 'formas_pagamento'],
+  churrascaria: ['comandas', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
+  rodizio:      ['comandas', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
   quiosque:     ['totem', 'fila_senhas', 'cardapio_foto', 'formas_pagamento'],
   eventos:      ['reservas', 'fidelidade', 'comandas', 'cardapio_foto', 'producao', 'formas_pagamento'],
 };

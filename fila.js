@@ -2991,6 +2991,25 @@ window.KDS_PRESETS_DATA = {
       { label: 'Tempo Médio', val: '< 5 minutos' },
       { label: 'Smart-Sync', val: 'OFF' }
     ]
+  },
+  churrascaria: {
+    id: 'churrascaria',
+    category: 'churrascaria',
+    name: 'Churrascaria, Rodízio & Parrilla',
+    subtitle: 'Radar de Passadores & Cortes Nobres',
+    icon: 'ph-fire',
+    color: '#b91c1c',
+    tag: 'Rodízio & Carnes',
+    desc: 'Visão em Grade Ampla com destaque para cortes nobres (Picanha, Costela, Ancho, Cordeiro) e sincronia com o Radar dos Passadores. Permite à cozinha e churrasqueira monitorar a demanda por tipo de carne e o status de mesas ativas (Verde/Vermelho).',
+    layout: 'grid',
+    sizes: { gridCols: '3', cardSize: 'g', height: 84, gap: 14, fontSize: 16, qty: 60, header: 280, action: 240, cardMin: 340, caixaAlta: true },
+    smartSync: true,
+    specs: [
+      { label: 'Disposição', val: 'Grade 3 Colunas (G)' },
+      { label: 'Radar de Carnes', val: 'Cortes & Pontos' },
+      { label: 'Sinal de Mesa', val: 'Verde / Vermelho' },
+      { label: 'Tipografia', val: '16px CAIXA ALTA' }
+    ]
   }
 };
 

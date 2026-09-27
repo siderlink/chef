@@ -6221,9 +6221,12 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   window.abrirModalMensagem = function(instanceId, instanceNome) {
-    document.getElementById('msg-id-instancia').value = instanceId;
-    document.getElementById('msg-titulo').value = '';
-    document.getElementById('msg-corpo').value = '';
+    var idEl = document.getElementById('msg-id-instancia');
+    if (idEl) idEl.value = instanceId;
+    var titEl = document.getElementById('modal-msg-instancia-titulo') || document.getElementById('msg-titulo');
+    if (titEl) titEl.value = '';
+    var corpoEl = document.getElementById('modal-msg-instancia-corpo') || document.getElementById('msg-corpo');
+    if (corpoEl) corpoEl.value = '';
     var modal = document.getElementById('modal-mensagem-instancia');
     if (modal) modal.style.display = 'flex';
   };
@@ -6234,10 +6237,13 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   window.transmitirMensagemConfirmada = function() {
-    var instanceId = document.getElementById('msg-id-instancia').value;
-    var tipo = document.getElementById('msg-tipo').value;
-    var titulo = (document.getElementById('msg-titulo').value || '').trim();
-    var corpo = (document.getElementById('msg-corpo').value || '').trim();
+    var instanceId = (document.getElementById('msg-id-instancia') || {}).value;
+    var tipoEl = document.getElementById('modal-msg-instancia-tipo') || document.getElementById('msg-tipo');
+    var titEl = document.getElementById('modal-msg-instancia-titulo') || document.getElementById('msg-titulo');
+    var corpoEl = document.getElementById('modal-msg-instancia-corpo') || document.getElementById('msg-corpo');
+    var tipo = tipoEl ? tipoEl.value : 'info';
+    var titulo = (titEl ? titEl.value : '').trim();
+    var corpo = (corpoEl ? corpoEl.value : '').trim();
 
     if (!titulo || !corpo) return alert('Preencha título e mensagem.');
 
@@ -13245,6 +13251,9 @@ window.carregarFinAssinaturas = function() {
 
     // Carrega consolidado de Add-ons e Planos
     carregarFinMrrAddons();
+    if (typeof window.carregarUpgradesPendentes === 'function') {
+      window.carregarUpgradesPendentes();
+    }
 
     if (rows.length === 0) {
       tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">Nenhuma assinatura localizada com os filtros selecionados.</td></tr>';
@@ -13283,6 +13292,84 @@ window.carregarFinAssinaturas = function() {
         + '</tr>';
     });
     tbody.innerHTML = html;
+  });
+  if (typeof window.carregarUpgradesPendentes === 'function') {
+    window.carregarUpgradesPendentes();
+  }
+};
+
+/* ═══ OTIMIZAR BANCOS LITE & UPGRADES PENDENTES ═══ */
+window.otimizarBancosLite = function() {
+  if (!confirm('Deseja iniciar a otimização de bancos SQLite para tenants no Plano Lite? (Limpa pedidos/logs >30d e executa PRAGMA optimize)')) return;
+  if (typeof showToast === 'function') showToast('Iniciando otimização dos bancos Lite...', 'info');
+  apiPost('/api/plano/otimizar-recursos', {}, function(err, data) {
+    if (err || !data || !data.ok) {
+      return alert('Erro ao otimizar bancos Lite: ' + (data ? (data.mensagem || data.erro) : err));
+    }
+    var msg = data.mensagem || ((data.processados || '0') + ' bancos otimizados com sucesso!');
+    if (typeof showToast === 'function') showToast('⚡ ' + msg, 'success');
+    else alert(msg);
+  });
+};
+
+window.carregarUpgradesPendentes = function() {
+  var container = document.getElementById('fin-upgrades-pendentes-container');
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center; padding:12px; color:var(--text-muted); font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando solicitações...</div>';
+
+  apiGet('/api/super/planos/upgrades', function(err, data) {
+    if (err || !data || !data.ok) {
+      container.innerHTML = '<div style="text-align:center; padding:12px; color:#ef4444; font-size:12px;">Erro ao carregar solicitações.</div>';
+      return;
+    }
+    var pedidos = (data.pedidos || []).filter(function(p) { return p.status === 'pendente'; });
+    if (!pedidos.length) {
+      container.innerHTML = '<div style="text-align:center; padding:12px; color:var(--text-muted); font-size:12px;">Nenhuma solicitação de upgrade pendente.</div>';
+      return;
+    }
+    var html = '';
+    pedidos.forEach(function(p) {
+      var planoBadge = (p.plano_desejado || 'pro').toUpperCase();
+      var valor = p.valor_mensal ? ('R$ ' + Number(p.valor_mensal).toFixed(2).replace('.', ',')) : '';
+      var nomeRest = p.restaurante_nome || ('Restaurante #' + p.restaurante_id);
+      var dono = p.dono_nome ? (p.dono_nome + ' • ') : '';
+      var tel = p.dono_telefone || '';
+      html += '<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(245,158,11,0.25); border-radius:8px; gap:10px; margin-bottom:6px;">'
+        + '<div>'
+        + '<div style="font-weight:700; font-size:13px; color:var(--text-primary); display:flex; align-items:center; gap:6px;">'
+        + esc(nomeRest)
+        + ' <span style="font-size:10px; background:#f59e0b; color:#000; font-weight:800; padding:2px 6px; border-radius:4px;">' + esc(planoBadge) + '</span>'
+        + '</div>'
+        + '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">'
+        + esc(dono + tel) + (valor ? ' • ' + valor + '/mês' : '')
+        + '</div>'
+        + '</div>'
+        + '<div style="display:flex; gap:6px;">'
+        + '<button class="btn btn-sm" style="background:#10b981; color:#fff; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:700;" onclick="window.aprovarUpgrade(' + p.id + ')"><i class="fa-solid fa-check"></i> Aprovar</button>'
+        + '<button class="btn btn-sm" style="background:rgba(239,68,68,0.2); color:#ef4444; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;" onclick="window.cancelarUpgrade(' + p.id + ')"><i class="fa-solid fa-xmark"></i></button>'
+        + '</div>'
+        + '</div>';
+    });
+    container.innerHTML = html;
+  });
+};
+
+window.aprovarUpgrade = function(id) {
+  if (!confirm('Deseja aprovar este upgrade e migrar o restaurante imediatamente?')) return;
+  apiPost('/api/super/planos/upgrades/' + id + '/aprovar', {}, function(err, data) {
+    if (err || !data || !data.ok) return alert('Erro ao aprovar upgrade: ' + (data ? data.erro : err));
+    if (typeof showToast === 'function') showToast(data.mensagem || 'Upgrade aprovado com sucesso!', 'success');
+    window.carregarUpgradesPendentes();
+    if (typeof window.carregarFinAssinaturas === 'function') window.carregarFinAssinaturas();
+  });
+};
+
+window.cancelarUpgrade = function(id) {
+  if (!confirm('Deseja recusar/cancelar esta solicitação de upgrade?')) return;
+  apiPost('/api/super/planos/upgrades/' + id + '/cancelar', {}, function(err, data) {
+    if (err || !data || !data.ok) return alert('Erro ao cancelar: ' + (data ? data.erro : err));
+    if (typeof showToast === 'function') showToast('Solicitação cancelada.', 'info');
+    window.carregarUpgradesPendentes();
   });
 };
 

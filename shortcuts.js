@@ -786,6 +786,19 @@ if (typeof window !== 'undefined') {
   window.selecionarMesaTargetJuntar = selecionarMesaTargetJuntar;
   window.filtrarMesasJuntar = filtrarMesasJuntar;
   window.confirmarJuncaoMesasModal = confirmarJuncaoMesasModal;
+
+  if (typeof document !== 'undefined') {
+    var checkAutoRender = function() {
+      if (document.getElementById('container-shortcuts-editor-page') || document.getElementById('container-shortcuts-editor')) {
+        renderGuiaAtalhosUI();
+      }
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', checkAutoRender);
+    } else {
+      checkAutoRender();
+    }
+  }
 }
 
 export { getCustomShortcuts, saveCustomShortcuts, restaurarAtalhosPadrao, abrirModalPersonalizarAtalhos, iniciarGravacaoAtalho, renderGuiaAtalhosUI, abrirGuiaAtalhos, setMesasSectionCollapsed, abrirModalJuntarMesas, selecionarMesaTargetJuntar, filtrarMesasJuntar, confirmarJuncaoMesasModal };

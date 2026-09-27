@@ -294,7 +294,7 @@
         <div class="kds-control-section" style="margin-top: 10px; border-top: 1px solid var(--kds-card-border); padding-top: 10px;">
           <span class="kds-control-title">Versão do Sistema KDS</span>
           <div style="display: flex; gap: 8px;">
-            <button type="button" class="kds-pill-btn active" style="flex:1;">
+            <button type="button" class="kds-pill-btn active" style="flex:1; cursor:default; pointer-events:none;">
               <i class="ph-bold ph-sparkle"></i> <span>Moderna (v2 Ativa)</span>
             </button>
             <button type="button" class="kds-pill-btn" onclick="window.trocarVersaoFila('classica')" style="flex:1; border-color: #6366f1; color: #6366f1;">
@@ -534,7 +534,7 @@
         <div class="fila-settings-group">
           <span class="fila-settings-label">Versão da Cozinha (V1 / V2)</span>
           <div class="fila-settings-grid" style="grid-template-columns: 1fr 1fr;">
-            <button type="button" class="fila-settings-btn active" style="border-color: #fc4b15; background: rgba(252,75,21,0.1); color: #fc4b15;" title="Design Moderno v2 Ativo">
+            <button type="button" class="fila-settings-btn active" style="border-color: #fc4b15; background: rgba(252,75,21,0.1); color: #fc4b15; cursor:default; pointer-events:none;" title="Design Moderno v2 Ativo">
               <i class="ph-fill ph-sparkle" style="color: #fc4b15;"></i><span>Moderna (v2)</span>
             </button>
             <button type="button" class="fila-settings-btn" onclick="window.trocarVersaoFila('classica')" style="cursor:pointer;" title="Usar visual clássico da versão 1.0">
@@ -617,13 +617,16 @@
       <!-- Filtros de Nicho -->
       <div class="kds-store-filters" id="kds-store-filter-bar">
         <button type="button" class="kds-store-filter-chip active" data-cat="todos" onclick="window.filtrarLojaPresets('todos')">
-          <i class="ph-bold ph-squares-four"></i> <span>Todos os Nichos (8)</span>
+          <i class="ph-bold ph-squares-four"></i> <span>Todos os Nichos (9)</span>
         </button>
         <button type="button" class="kds-store-filter-chip" data-cat="buffet" onclick="window.filtrarLojaPresets('buffet')">
           <i class="ph-bold ph-cooking-pot"></i> <span>Buffet & A Quilo</span>
         </button>
         <button type="button" class="kds-store-filter-chip" data-cat="pizzaria" onclick="window.filtrarLojaPresets('pizzaria')">
           <i class="ph-bold ph-pizza"></i> <span>Pizzarias</span>
+        </button>
+        <button type="button" class="kds-store-filter-chip" data-cat="churrascaria" onclick="window.filtrarLojaPresets('churrascaria')">
+          <i class="ph-bold ph-fire"></i> <span>Churrascaria & Rodízio</span>
         </button>
         <button type="button" class="kds-store-filter-chip" data-cat="sushi" onclick="window.filtrarLojaPresets('sushi')">
           <i class="ph-bold ph-fish"></i> <span>Sushis & Rodízio</span>

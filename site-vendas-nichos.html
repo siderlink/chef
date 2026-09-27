@@ -1008,10 +1008,13 @@
           <i class="ph-fill ph-pizza"></i> Pizzarias & Delivery
         </button>
         <button class="niche-pill" onclick="selecionarNicho('hamburgueria')">
-          <i class="ph-fill ph-hamburger"></i> Hamburguerias & Fast-Food
+          <i class="ph-fill ph-hamburger"></i> Hamburguerias &amp; Fast-Food
+        </button>
+        <button class="niche-pill" onclick="selecionarNicho('churrascaria')">
+          <i class="ph-fill ph-fire"></i> Churrascarias &amp; Rodízios
         </button>
         <button class="niche-pill" onclick="selecionarNicho('bar')">
-          <i class="ph-fill ph-beer-bottle"></i> Bares, Choperias & Pubs
+          <i class="ph-fill ph-beer-bottle"></i> Bares, Choperias &amp; Pubs
         </button>
         <button class="niche-pill" onclick="selecionarNicho('buffet')">
           <i class="ph-fill ph-scales"></i> Buffets & Self-Service (Balança)
@@ -1405,6 +1408,68 @@
           { q: 'O Totem funciona em qualquer tela touch?', a: 'Sim! Funciona em qualquer tablet Android, iPad ou monitor touch de PC com bloqueio kiosk de tela cheia.' },
           { q: 'A cozinha consegue saber se o cliente pediu ponto da carne ou sem picles?', a: 'Com certeza! O KDS destaca modificações com tarjas coloridas bem visíveis para que o chapeiro nunca erre o pedido.' },
           { q: 'Posso usar impressora térmica junto com o KDS?', a: 'Sim, você pode usar apenas o KDS digital, apenas impressoras ou ambos trabalhando em perfeita sintonia.' }
+        ]
+      },
+
+      churrascaria: {
+        badgeIcon: 'ph-fill ph-fire',
+        badgeText: 'Especialista em Churrascarias & Rodízios de Carnes',
+        title: 'Zere o Desperdício de Cortes Nobres e Mesas Esquecidas sem Carne.',
+        subtitle: 'Semáforo virtual de mesa (Quero Carne / Pausa), tablet radar para passadores de espeto notificando mesas prioritárias e controle de perdas de peças nobres (Picanha, Costela, Ancho).',
+        whatsappMsg: 'Olá! Tenho uma Churrascaria/Rodízio e quero ver o radar de passadores e semáforo de mesas do Chef Cozinha.',
+        sim: {
+          title: 'Simulador de Economia para Churrascarias',
+          r1Label: 'Clientes no rodízio por mês:',
+          r1Min: 500, r1Max: 8000, r1Step: 100, r1Val: 2200, r1Unit: 'clientes',
+          r2Label: 'Valor médio do rodízio:',
+          r2Min: 60, r2Max: 240, r2Step: 5, r2Val: 119, r2Prefix: 'R$ ',
+          calc: (q, t) => {
+            const faturamento = q * t;
+            const economiaSobras = faturamento * 0.045;
+            const economiaEficiencia = q * 2.20;
+            return economiaSobras + economiaEficiencia;
+          },
+          desc: 'Economia real evitando queimar carne nobre na grelha sem demanda e sincronizando a rota dos passadores.'
+        },
+        pillars: [
+          {
+            icon: 'ph-fill ph-traffic-signal',
+            title: 'Semáforo Virtual de Mesa',
+            desc: 'O cliente sinaliza Verde ("Quero Carne") ou Vermelho ("Pausa") no totem ou celular, evitando interrupções desagradáveis.'
+          },
+          {
+            icon: 'ph-fill ph-radar',
+            title: 'Radar de Passadores em Tablet',
+            desc: 'Os garçons de espeto enxergam no tablet quais mesas estão com sinal verde aguardando Picanha, Costela ou Cordeiro.'
+          },
+          {
+            icon: 'ph-fill ph-knife',
+            title: 'Auditoria de Desossa & Perdas',
+            desc: 'Controle de rendimento por peça de carne nobre crua vs assada, detectando quebras anormais na cozinha e churrasqueira.'
+          },
+          {
+            icon: 'ph-fill ph-users-three',
+            title: 'Split de Rodízio por Pessoa',
+            desc: 'Fechamento individual por cliente com desconto automático de crianças, sem travar o caixa na saída das grandes mesas de família.'
+          }
+        ],
+        comparison: [
+          { feature: 'Semáforo de mesa conectado ao radar de passadores', cheff: true, outros: 'Não possui' },
+          { feature: 'Tablet para passadores com alerta de cortes prioritários', cheff: true, outros: 'Não possui' },
+          { feature: 'Controle de rendimento de peças nobres e quebra de grelha', cheff: true, outros: 'Apenas estoque básico' },
+          { feature: 'Fechamento de conta de rodízio dividido por assento em 1 toque', cheff: true, outros: 'Cálculo manual demorado' },
+          { feature: 'Funcionamento 100% offline se o sinal de internet oscilar', cheff: true, outros: 'Sistema para e gera caos' }
+        ],
+        testimonial: {
+          avatar: '🥩',
+          quote: '"O radar de passadores no tablet transformou o salão da nossa churrascaria. Zeramos as queixas de clientes dizendo que a picanha demorava para passar, e o semáforo verde/vermelho evitou queimar quilos de carne no final do turno."',
+          author: 'Valdecir Fontana',
+          business: 'Churrascaria Brasa & Tradição • Porto Alegre, RS'
+        },
+        faqs: [
+          { q: 'Como os passadores de espeto recebem os alertas das mesas?', a: 'Os passadores podem carregar um tablet leve ou consultar o monitor do salão, onde as mesas com sinal verde e cortes solicitados aparecem destacadas em tempo real.' },
+          { q: 'É possível cobrar valores diferentes para rodízio de crianças e adultos?', a: 'Sim! Com 1 toque o garçom seleciona Rodízio Adulto, Infantil ou Bariátrico com o desconto cadastrado automaticamente.' },
+          { q: 'O sistema controla o estoque de bebidas alcoólicas e sobremesas do rodízio?', a: 'Sim, qualquer chopp, vinho, caipirinha ou sobremesa cobrada à parte é lançada imediatamente na comanda individual da pessoa ou da mesa.' }
         ]
       },
 
@@ -1861,6 +1926,60 @@
                 <span class="mock-badge mock-badge-warning">01:10</span>
               </div>
               <div class="mock-item-sub">Cesto 2 • Pedido #68</div>
+            </div>
+          </div>
+        `
+      },
+
+      churrascaria: {
+        v1Title: 'Radar dos Passadores (Espetos)',
+        v1Icon: 'ph-bold ph-radar',
+        v1Html: `
+          <div class="mock-grid-2">
+            <div class="mock-card">
+              <div class="mock-header">
+                <strong>Mesa 08 (Salão Nobre) • 6 Pessoas</strong>
+                <span class="mock-badge mock-badge-green"><i class="ph-bold ph-check"></i> 🟢 Sinal Verde</span>
+              </div>
+              <div class="mock-item-row" style="margin-top:8px;">
+                <span><strong>Cortes Solicitados:</strong></span>
+                <span class="mock-badge mock-badge-primary">Prioridade Alta</span>
+              </div>
+              <div class="mock-item-sub">• Picanha Nobre no Alho</div>
+              <div class="mock-item-sub">• Costela Premium no Bafo</div>
+              <div class="mock-item-sub">• Queijo Coalho com Melaço</div>
+              <div class="mock-btn-action mock-btn-forno" style="background:#10b981; margin-top:12px;"><i class="ph-bold ph-check-circle"></i> Confirmar Passagem de Espeto</div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-header">
+                <strong>Mesa 15 • 2 Pessoas</strong>
+                <span class="mock-badge" style="background:rgba(239,68,68,0.15); color:#ef4444;"><i class="ph-bold ph-pause"></i> 🔴 Em Pausa</span>
+              </div>
+              <div style="font-size:0.85rem; color:var(--text-muted); margin:12px 0;">Cliente solicitou intervalo de 10 min antes da sobremesa.</div>
+              <div class="mock-btn-action" style="background:rgba(255,255,255,0.06); color:var(--text-muted);"><i class="ph-bold ph-clock"></i> Aguardando Cliente</div>
+            </div>
+          </div>
+        `,
+        v2Title: 'Semáforo & Totem de Mesa',
+        v2Icon: 'ph-bold ph-traffic-signal',
+        v2Html: `
+          <div class="mock-card" style="max-width:500px; margin:0 auto; text-align:center;">
+            <div style="font-size:1.1rem; font-weight:800; margin-bottom:8px;">Mesa 08 • Controle do Rodízio</div>
+            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">Toque para alternar o sinal do seu espeto em tempo real</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+              <div style="background:rgba(16,185,129,0.15); border:2px solid #10b981; border-radius:14px; padding:16px; cursor:pointer;">
+                <div style="font-size:2rem;">🟢</div>
+                <div style="font-weight:800; color:#10b981; margin-top:6px;">Quero Carne</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">Passadores vêm à mesa</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:16px; cursor:pointer;">
+                <div style="font-size:2rem;">🔴</div>
+                <div style="font-weight:800; color:var(--text-muted); margin-top:6px;">Pausa</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">Passadores aguardam</div>
+              </div>
+            </div>
+            <div style="background:var(--bg-surface); padding:10px; border-radius:10px; font-size:0.8rem; color:var(--accent-gold);">
+              <i class="ph-bold ph-sparkle"></i> 6x Rodízios Adultos ativos • 12 bebidas consumidas
             </div>
           </div>
         `
@@ -2426,6 +2545,7 @@
       if (!nichoUrl) {
         if (pathname.includes('pizzaria')) nichoUrl = 'pizzaria';
         else if (pathname.includes('hamburgueria')) nichoUrl = 'hamburgueria';
+        else if (pathname.includes('churrascaria') || pathname.includes('rodizio')) nichoUrl = 'churrascaria';
         else if (pathname.includes('bar')) nichoUrl = 'bar';
         else if (pathname.includes('buffet')) nichoUrl = 'buffet';
         else if (pathname.includes('sushi')) nichoUrl = 'sushi';

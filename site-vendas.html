@@ -1322,7 +1322,15 @@
         { icone: 'ph-user-check', cor: '#0ea5e9', titulo: 'Recrutador Flash RH para Restaurantes', desc: 'Banco de candidatos para garçom, cozinheiro e caixa com testes técnicos e contratação express.', preco: 'R$ 49/mês', roi: 'Contratação em menos de 24 horas', badge: 'RH & Vagas' },
         { icone: 'ph-buildings', cor: '#8b5cf6', titulo: 'Polo Gastronômico Delivery Compartilhado', desc: 'Crie um marketplace unificado para shoppings, praças de alimentação ou galerias gourmet.', preco: 'R$ 129/mês', roi: 'Divisão de frete e atração conjunta', badge: 'Dark Mall & Polos' },
         { icone: 'ph-medal', cor: '#f59e0b', titulo: 'Fidelidade VIP Níveis Bronze a Diamante', desc: 'Retenção por tiers automáticos com cashback progressivo e mimos exclusivos aos mais fiéis.', preco: 'R$ 59/mês', roi: '+32% na frequência de consumo', badge: 'VIP Retention' },
-        { icone: 'ph-smiley', cor: '#06b6d4', titulo: 'Totem de Satisfação IA Emocional', desc: 'Termômetro com smiles na saída que dispara alerta instantâneo ao gerente se o cliente avaliar mal.', preco: 'R$ 49/mês', roi: 'Resolução de atritos antes do Reclame Aqui', badge: 'NPS em Tempo Real' }
+        { icone: 'ph-smiley', cor: '#06b6d4', titulo: 'Totem de Satisfação IA Emocional', desc: 'Termômetro com smiles na saída que dispara alerta instantâneo ao gerente se o cliente avaliar mal.', preco: 'R$ 49/mês', roi: 'Resolução de atritos antes do Reclame Aqui', badge: 'NPS em Tempo Real' },
+        { icone: 'ph-bank', cor: '#10b981', titulo: 'Cheff Capital & Crédito Fumaça', desc: 'Capital de giro pré-aprovado de R$ 5k a R$ 60k com amortização suave em 8% das vendas diárias.', preco: 'R$ 99/mês', roi: 'Crédito imediato sem garantias físicas', badge: 'Fintech Capital' },
+        { icone: 'ph-arrows-clockwise', cor: '#8b5cf6', titulo: 'Clube de Assinaturas Recorrentes', desc: 'O Netflix do seu restaurante: planos de café livre, chopp duplo e almoço mensal recorrente no cartão.', preco: 'R$ 99/mês', roi: 'Caixa garantido todo dia 1º do mês', badge: 'Receita Recorrente' },
+        { icone: 'ph-microphone', cor: '#06b6d4', titulo: 'Garçom Voice IA (Telefone & Drive-Thru)', desc: 'IA de voz humana ultrarrealista que atende ligações e drive-thru sem ocupar equipe com upsell inteligente.', preco: 'R$ 199/mês', roi: 'Atende 10 clientes simultâneos e economiza R$ 2.400/mês', badge: 'Voz Humanizada IA' },
+        { icone: 'ph-truck', cor: '#f59e0b', titulo: 'Robô de Cotação de Atacado B2B', desc: 'Dispara lista de insumos aos maiores atacadistas locais e fecha com a oferta mais barata com rebate.', preco: 'R$ 149/mês', roi: 'Redução de até 18% no CMV de carnes e queijos', badge: 'Compras B2B' },
+        { icone: 'ph-target', cor: '#ec4899', titulo: 'Gestor de Tráfego IA Meta Ads 1-Click', desc: 'Cria anúncios geolocalizados no Instagram no raio de 5km para encher o restaurante em noites de chuva.', preco: 'R$ 129/mês', roi: 'ROAS médio de 7x sem pagar agência', badge: 'Tráfego Pago IA' },
+        { icone: 'ph-gift', cor: '#eab308', titulo: 'Cartão Presente Virtual (Gift Cards WhatsApp)', desc: 'Venda vales de presente de R$ 50 a R$ 300 via Pix com envio temático para WhatsApp com breakage.', preco: 'R$ 49/mês', roi: 'Caixa antecipado e atração de novos clientes', badge: 'Gift Cards' },
+        { icone: 'ph-wifi-high', cor: '#3b82f6', titulo: 'Wi-Fi Marketing Captive Portal LGPD', desc: 'Libera internet rápida mediante nome, WhatsApp e aniversário, gerando centenas de leads no salão.', preco: 'R$ 69/mês', roi: '+800 contatos capturados/mês para o CRM', badge: 'Wi-Fi Leads' },
+        { icone: 'ph-fire', cor: '#ef4444', titulo: 'Dark Kitchens & Marcas Virtuais no Mesmo Fogão', desc: 'Opere até 6 marcas virtuais no iFood compartilhando o mesmo fogão, equipe e estoque físico central.', preco: 'R$ 79/mês', roi: 'Multiplica o faturamento sem pagar outro aluguel', badge: 'Dark Kitchen' }
       ];
 
       var html = '';
@@ -1453,6 +1461,14 @@ function renderPlanosDefault() {
       { id: 'antichurn_preditivo_whats', nome: 'Robô Anti-Churn WhatsApp', preco: 59, badge: 'Retenção' },
       { id: 'totem_kiosk_touchscreen', nome: 'Totem Kiosk Autoatendimento', preco: 69, badge: 'Hardware' },
       { id: 'gorjeta_legal_13419', nome: 'Split Gorjeta Lei 13.419', preco: 69, badge: 'Fiscal' },
+      { id: 'cheff_capital_giro', nome: 'Cheff Capital & Crédito Giro', preco: 99, badge: 'Fintech' },
+      { id: 'clube_assinatura_gastronomica', nome: 'Clube Assinaturas Recorrentes', preco: 99, badge: 'Receita' },
+      { id: 'garcom_voice_ia', nome: 'Garçom Voice IA Atendente', preco: 199, badge: 'Voz IA' },
+      { id: 'procurement_cotacao_atacado', nome: 'Cotação Atacado B2B (CMV)', preco: 149, badge: 'Compras' },
+      { id: 'gestor_trafego_ia_meta', nome: 'Gestor de Tráfego IA Meta Ads', preco: 129, badge: 'Marketing' },
+      { id: 'gift_cards_virtuais_whatsapp', nome: 'Gift Cards Virtuais WhatsApp', preco: 49, badge: 'Vendas' },
+      { id: 'wifi_marketing_hotspot_lgpd', nome: 'Wi-Fi Marketing Captive LGPD', preco: 69, badge: 'Leads' },
+      { id: 'dark_kitchen_marcas_virtuais', nome: 'Dark Kitchen Multi-Marcas', preco: 79, badge: 'Escala' },
       { id: 'rfid_pulseira_cashless', nome: 'Comanda RFID / Cashless', preco: 99, badge: 'Salão' },
       { id: 'auditor_glosas_ifood', nome: 'Auditor de Glosas do iFood', preco: 89, badge: 'Auditoria' },
       { id: 'link_pagamento_virtual', nome: 'Maquininha Virtual WhatsApp', preco: 59, badge: 'Fintech' },
@@ -2218,7 +2234,11 @@ function renderPlanosDefault() {
         { icon: '🍲', nome: 'Dona Maria Comida Caseira (Goiânia/GO)', acao: 'Ativou <strong>Gatilho Meteorológico (Choveu, Vendeu)</strong>', tempo: 'há 27 minutos' },
         { icon: '🍱', nome: 'Restaurante & Buffet Tropical (Recife/PE)', acao: 'Configurou <strong>Assinatura de Marmitas B2B</strong>', tempo: 'há 32 minutos' },
         { icon: '🍕', nome: 'Forno Nobre Pizzaria (Salvador/BA)', acao: 'Iniciou o <strong>Teste Grátis de 14 Dias</strong>', tempo: 'há 35 minutos' },
-        { icon: '🍦', nome: 'Gelateria & Açaí Concept (Brasília/DF)', acao: 'Economizou <strong>R$ 840/mês</strong> em conciliação VR/VA', tempo: 'há 41 minutos' }
+        { icon: '🍦', nome: 'Gelateria & Açaí Concept (Brasília/DF)', acao: 'Economizou <strong>R$ 840/mês</strong> em conciliação VR/VA', tempo: 'há 41 minutos' },
+        { icon: '🏦', nome: 'Trattoria Bella Roma (Santos/SP)', acao: 'Liberou <strong>R$ 25.000</strong> de Capital de Giro via Cheff Capital', tempo: 'há 1 minuto' },
+        { icon: '🎙️', nome: 'Drive Burger Express (Campinas/SP)', acao: 'Ativou o <strong>Garçom Voice IA</strong> no Drive-Thru', tempo: 'há 5 minutos' },
+        { icon: '📦', nome: 'Churrascaria Boi Preto (Goiânia/GO)', acao: 'Economizou <strong>R$ 2.450</strong> em cotação de atacado com B2B Procurement', tempo: 'há 9 minutos' },
+        { icon: '🎟️', nome: 'Café & Confeitaria Paris (Curitiba/PR)', acao: 'Conquistou 42 membros no <strong>Clube de Assinatura</strong> de café', tempo: 'há 14 minutos' }
       ];
 
       var toast = document.getElementById('social-proof-toast');

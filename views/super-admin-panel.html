@@ -3449,7 +3449,7 @@
               <input type="hidden" id="msg-id-instancia">
               <div class="form-group" style="margin-bottom:1rem;">
                 <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Tipo de Notificação</label>
-                <select id="msg-tipo" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
+                <select id="modal-msg-instancia-tipo" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
                   <option value="info">Informativa (Azul)</option>
                   <option value="warning">Aviso / Importante (Amarelo)</option>
                   <option value="danger">Urgente / Crítica (Vermelho)</option>
@@ -3458,11 +3458,11 @@
               </div>
               <div class="form-group" style="margin-bottom:1rem;">
                 <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Título *</label>
-                <input type="text" id="msg-titulo" placeholder="Ex: Atualização do Cardápio Concluída" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
+                <input type="text" id="modal-msg-instancia-titulo" placeholder="Ex: Atualização do Cardápio Concluída" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;">
               </div>
               <div class="form-group" style="margin-bottom:1rem;">
                 <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Mensagem Detalhada *</label>
-                <textarea id="msg-corpo" rows="3" placeholder="Digite a mensagem para a equipe do restaurante..." style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;"></textarea>
+                <textarea id="modal-msg-instancia-corpo" rows="3" placeholder="Digite a mensagem para a equipe do restaurante..." style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border-color);background:rgba(0,0,0,0.25);color:inherit;font-size:13px;"></textarea>
               </div>
               <div style="display:flex;gap:10px;justify-content:flex-end;">
                 <button class="btn-action" onclick="fecharModalMensagem()">Cancelar</button>
@@ -4616,6 +4616,9 @@
                 <button class="btn-action" style="background:rgba(255,255,255,0.08); color:var(--text);" onclick="carregarFinAssinaturas()">
                   <i class="fa-solid fa-rotate"></i> Atualizar
                 </button>
+                <button class="btn-action" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; border:none; box-shadow:0 4px 12px rgba(16,185,129,0.3);" onclick="otimizarBancosLite()" title="Compacta SQLite e limpa dados antigos (>30d) dos tenants Lite para economizar disco e CPU">
+                  <i class="fa-solid fa-broom"></i> Otimizar Tenants Lite
+                </button>
               </div>
             </div>
 
@@ -4730,6 +4733,21 @@
                 </div>
                 <div id="fin-planos-distribuicao-container" style="display:flex; flex-direction:column; gap:10px;">
                   <div style="text-align:center; padding:15px; color:var(--text-muted);">Carregando distribuição de planos...</div>
+                </div>
+              </div>
+
+              <!-- Solicitações de Upgrade Pendentes -->
+              <div class="card" style="margin-top:20px; border:1px solid rgba(245,158,11,0.25); background:rgba(245,158,11,0.02);">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <h3 class="card-title" style="display:flex; align-items:center; gap:8px; font-size:14px; color:#f59e0b; margin:0;">
+                    <i class="fa-solid fa-bell-concierge"></i> Solicitações de Upgrade Pendentes
+                  </h3>
+                  <button class="btn btn-sm" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;" onclick="carregarUpgradesPendentes()" title="Atualizar Solicitações">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                  </button>
+                </div>
+                <div id="fin-upgrades-pendentes-container" style="display:flex; flex-direction:column; gap:8px;">
+                  <div style="text-align:center; padding:12px; color:var(--text-muted); font-size:12px;">Nenhuma solicitação pendente.</div>
                 </div>
               </div>
             </div>

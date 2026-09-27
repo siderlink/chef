@@ -1584,6 +1584,7 @@
       /* Seções que ocupam a largura total no Tablet */
       #sec-periodo, [data-secao="periodo"],
       #sec-ia-briefing, [data-secao="ia-briefing"],
+      #sec-nicho-operacao, [data-secao="nicho-operacao"],
       #sec-kpis, [data-secao="kpis"],
       #sec-bi-dre-abc, [data-secao="bi-dre-abc"],
       #sec-features, [data-secao="funcionalidades"],
@@ -2157,6 +2158,539 @@
         <p id="ia-insight-text" style="font-size: 13.5px; color: var(--text); line-height: 1.6; margin: 0; background: rgba(0,0,0,0.18); padding: 12px 14px; border-radius: 10px; border-left: 3px solid var(--primary);">
           Analisando histórico de vendas, fluxo de caixa e comportamento dos pedidos...
         </p>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- OPERAÇÃO ESPECIALIZADA POR NICHO GASTRONÔMICO                      -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div id="sec-nicho-operacao" class="dono-section dono-sec-full" data-secao="nicho-operacao" title="Operação Especializada por Nicho">
+      <div class="sec-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #fc4b15, #f59e0b); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 4px 12px rgba(252,75,21,0.25);">
+            <i class="ph-bold ph-cooking-pot"></i>
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 16px; font-weight: 800;">Operação do Meu Nicho</span>
+              <span style="background: rgba(252,75,21,0.15); color: var(--primary); font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid rgba(252,75,21,0.3);">Workflows Nativos</span>
+            </div>
+            <span style="font-size: 12px; color: var(--text-sub);">Ferramentas de alta precisão configuradas para o ritmo e gargalos do seu segmento</span>
+          </div>
+        </div>
+
+        <!-- Seletor Rápido de Nicho -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 12px; color: var(--text-sub); font-weight: 700;">Nicho Ativo:</span>
+          <select id="select-nicho-operacao" onchange="window.trocarNichoOperacao(this.value)" style="background: var(--card2); border: 1.5px solid var(--border); color: var(--text); border-radius: 10px; padding: 6px 12px; font-size: 13px; font-weight: 700; cursor: pointer; outline: none;">
+            <option value="pizzaria">🍕 Pizzaria &amp; Delivery</option>
+            <option value="hamburgueria">🍔 Hamburgueria &amp; Smash</option>
+            <option value="churrascaria">🥩 Churrascaria &amp; Rodízio</option>
+            <option value="sushi">🍣 Sushi Bar &amp; Japonês</option>
+            <option value="bar">🍸 Bar, Pub &amp; Balada</option>
+            <option value="buffet">⚖️ Buffet &amp; Self-Service</option>
+            <option value="padaria">🥖 Cafeteria &amp; Padaria</option>
+            <option value="alacarte">🍷 À La Carte &amp; Bistrô</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Abas de Nicho (Tabs) -->
+      <div style="display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 14px 0; margin-bottom: 8px; border-bottom: 1px solid var(--border);" id="tabs-nichos-container">
+        <button type="button" class="tab-btn-terminal active" data-nicho="pizzaria" onclick="window.trocarNichoOperacao('pizzaria')" style="padding: 7px 14px; font-size: 12px; white-space: nowrap;">🍕 Pizzaria</button>
+        <button type="button" class="tab-btn-terminal" data-nicho="hamburgueria" onclick="window.trocarNichoOperacao('hamburgueria')" style="padding: 7px 14px; font-size: 12px; white-space: nowrap;">🍔 Hamburgueria</button>
+        <button type="button" class="tab-btn-terminal" data-nicho="churrascaria" onclick="window.trocarNichoOperacao('churrascaria')" style="padding: 7px 14px; font-size: 12px; white-space: nowrap;">🥩 Churrascaria</button>
+        <button type="button" class="tab-btn-terminal" data-nicho="sushi" onclick="window.trocarNichoOperacao('sushi')" style="padding: 7px 14px; font-size: 12px; white-space: nowrap;">🍣 Sushi Bar</button>
+        <button type="button" class="tab-btn-terminal" data-nicho="bar" onclick="window.trocarNichoOperacao('bar')" style="padding: 7px 14px; font-size: 12px; white-space: nowrap;">🍸 Bar &amp; Balada</button>
+        <button type="button" class="tab-btn-terminal" data-nicho="buffet" onclick="window.trocarNichoOperacao('buffet')" style="padding: 7px 14px; font-size: 12px; white-space: nowrap;">⚖️ Buffet / Balança</button>
+        <button type="button" class="tab-btn-terminal" data-nicho="padaria" onclick="window.trocarNichoOperacao('padaria')" style="padding: 7px 14px; font-size: 12px; white-space: nowrap;">🥖 Cafeteria &amp; Pão</button>
+        <button type="button" class="tab-btn-terminal" data-nicho="alacarte" onclick="window.trocarNichoOperacao('alacarte')" style="padding: 7px 14px; font-size: 12px; white-space: nowrap;">🍷 À La Carte</button>
+      </div>
+
+      <!-- PAINEL 1: PIZZARIA -->
+      <div id="painel-nicho-pizzaria" class="painel-nicho-view" style="display: block;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+          <!-- Card Fracionamento -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-pizza" style="color: var(--primary);"></i> Calculadora de Frações Meio a Meio</span>
+              <span style="background: rgba(16,185,129,0.15); color: #10b981; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">Zero Prejuízo</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+              <div>
+                <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Regra de Cobrança:</label>
+                <select id="pizza-regra-cobranca" class="form-input" style="padding: 6px 10px; font-size: 12.5px;">
+                  <option value="maior_valor">Maior Valor entre os Sabores (Padrão de Mercado)</option>
+                  <option value="media_ponderada">Média Simples Ponderada</option>
+                </select>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Sabor 1:</label>
+                  <select id="pizza-sabor-1" class="form-input" style="padding: 6px 10px; font-size: 12px;">
+                    <option value="Calabresa Especial|54">Calabresa (R$ 54)</option>
+                    <option value="Quatro Queijos Nobre|68">4 Queijos (R$ 68)</option>
+                    <option value="Frango Catupiry|58">Frango c/ Catupiry (R$ 58)</option>
+                    <option value="Camarão Especial|84">Camarão Nobre (R$ 84)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Sabor 2:</label>
+                  <select id="pizza-sabor-2" class="form-input" style="padding: 6px 10px; font-size: 12px;">
+                    <option value="Quatro Queijos Nobre|68">4 Queijos (R$ 68)</option>
+                    <option value="Calabresa Especial|54">Calabresa (R$ 54)</option>
+                    <option value="Portuguesa Tradicional|62">Portuguesa (R$ 62)</option>
+                    <option value="Camarão Especial|84">Camarão Nobre (R$ 84)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Borda Recheada:</label>
+                <select id="pizza-borda" class="form-input" style="padding: 6px 10px; font-size: 12.5px;">
+                  <option value="Catupiry Original Vulcão|14">Borda Vulcão Catupiry (+R$ 14,00)</option>
+                  <option value="Cheddar Cremoso|12">Borda Cheddar Cremoso (+R$ 12,00)</option>
+                  <option value="Sem borda|0">Sem Borda Adicional (R$ 0,00)</option>
+                </select>
+              </div>
+              <button type="button" onclick="window.calcularFracaoPizzaDono()" style="margin-top: 4px; padding: 9px; background: linear-gradient(135deg, var(--primary), #ff8c42); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="ph-bold ph-calculator"></i> Simular Preço e Regra
+              </button>
+              <div id="resultado-fracao-pizza" style="background: rgba(0,0,0,0.2); border-left: 3px solid var(--primary); padding: 10px; border-radius: 8px; font-size: 12px; color: var(--text); min-height: 48px; display: flex; align-items: center;">
+                Selecione os sabores e clique em Simular para testar a precificação sem furos.
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Forno Lastro KDS -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-fire" style="color: #ef4444;"></i> Forno de Lastro &amp; KDS Forneiro</span>
+              <button type="button" onclick="window.atualizarFornoLastroDono()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-sub); border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer;">
+                <i class="ph-bold ph-arrows-clockwise"></i> Atualizar
+              </button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+              <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Pizza / Pedido:</label>
+                  <input type="text" id="forno-pizza-nome" class="form-input" value="Grande Meio Calabresa / Meio 4 Queijos" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Tempo Cocção:</label>
+                  <input type="number" id="forno-pizza-tempo" class="form-input" value="8" min="2" max="25" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+              </div>
+              <button type="button" onclick="window.lancarPizzaFornoDono()" style="padding: 9px; background: rgba(239,68,68,0.15); color: #ef4444; border: 1.5px solid rgba(239,68,68,0.3); border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="ph-bold ph-arrow-down-left"></i> Posicionar no Lastro do Forno
+              </button>
+              <div id="lista-forno-pizzas" style="max-height: 140px; overflow-y: auto; background: rgba(0,0,0,0.18); border-radius: 8px; padding: 8px; font-size: 11.5px; border: 1px solid var(--border);">
+                <div style="color: var(--text-sub); text-align: center; padding: 12px 0;">Carregando status do forno...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAINEL 2: HAMBURGUERIA -->
+      <div id="painel-nicho-hamburgueria" class="painel-nicho-view" style="display: none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+          <!-- Card Despacho Tri-Estação -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-hamburger" style="color: #f59e0b;"></i> Roteamento KDS Tri-Estação</span>
+              <span style="background: rgba(245,158,11,0.15); color: #f59e0b; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">Chapa + Fritura + Montagem</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+              <div>
+                <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Lanche Smash / Artesanal:</label>
+                <input type="text" id="burger-lanche-nome" class="form-input" value="Double Bacon Smash Burger (2x 100g)" style="padding: 6px 10px; font-size: 12px;">
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Ponto da Carne:</label>
+                  <select id="burger-ponto-carne" class="form-input" style="padding: 6px 10px; font-size: 12px;">
+                    <option value="ao_ponto">Ao Ponto (Suculento)</option>
+                    <option value="mal_passado">Mal Passado (Vermelho)</option>
+                    <option value="bem_passado">Bem Passado</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Acompanhamento:</label>
+                  <select id="burger-acompanhamento" class="form-input" style="padding: 6px 10px; font-size: 12px;">
+                    <option value="Batata Rústica c/ Alecrim">Batata Rústica c/ Alecrim</option>
+                    <option value="Onion Rings Crocantes">Onion Rings Crocantes</option>
+                    <option value="Batata Crinkle c/ Cheddar">Batata Crinkle c/ Cheddar</option>
+                  </select>
+                </div>
+              </div>
+              <button type="button" onclick="window.rotearBurgerKDSDono()" style="margin-top: 4px; padding: 9px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="ph-bold ph-git-fork"></i> Despachar Simultâneo para as 3 Praças
+              </button>
+              <div id="resultado-roteamento-burger" style="background: rgba(0,0,0,0.2); border-left: 3px solid #f59e0b; padding: 10px; border-radius: 8px; font-size: 12px; color: var(--text);">
+                Clique para enviar para Chapa, Fritadeira e Montagem simultaneamente.
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Monitor Estação -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-desktop" style="color: #3b82f6;"></i> Monitor de Estação da Hamburgueria</span>
+              <div style="display: flex; gap: 4px;">
+                <button type="button" id="btn-estacao-chapa" class="btn-periodo active" style="padding: 3px 8px; font-size: 11px;" onclick="window.verEstacaoHamburgueriaDono('chapa', this)">Chapa</button>
+                <button type="button" id="btn-estacao-fritadeira" class="btn-periodo" style="padding: 3px 8px; font-size: 11px;" onclick="window.verEstacaoHamburgueriaDono('fritadeira', this)">Fritadeira</button>
+              </div>
+            </div>
+            <div id="lista-estacao-burger" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.18); border-radius: 8px; padding: 10px; font-size: 12px; border: 1px solid var(--border);">
+              <div style="color: var(--text-sub); text-align: center; padding: 14px 0;">Consultando pedidos da estação...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAINEL 3: CHURRASCARIA -->
+      <div id="painel-nicho-churrascaria" class="painel-nicho-view" style="display: none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+          <!-- Card Semáforo Mesa -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-traffic-signal" style="color: #10b981;"></i> Semáforo da Mesa &amp; Cortes Solicitados</span>
+              <span style="background: rgba(16,185,129,0.15); color: #10b981; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">Rodízio Eficiente</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Mesa:</label>
+                  <input type="text" id="churrasco-mesa-num" class="form-input" value="Mesa 18" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Sinal Ativo:</label>
+                  <select id="churrasco-sinal-mesa" class="form-input" style="padding: 6px 10px; font-size: 12px;">
+                    <option value="quero_carne">🟢 Quero Carne (Verde)</option>
+                    <option value="pausa">🔴 Pausa / Satisfeito (Vermelho)</option>
+                    <option value="sobremesa">🟣 Sobremesa (Roxo)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Cortes Mais Solicitados:</label>
+                <input type="text" id="churrasco-cortes" class="form-input" value="Picanha Nobre, Costela Premium no Bafo" style="padding: 6px 10px; font-size: 12px;">
+              </div>
+              <button type="button" onclick="window.sinalizarMesaChurrascariaDono()" style="padding: 9px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="ph-bold ph-broadcast"></i> Atualizar Sinal no Tablet dos Passadores
+              </button>
+              <div id="resultado-sinal-churrasco" style="background: rgba(0,0,0,0.2); border-left: 3px solid #10b981; padding: 10px; border-radius: 8px; font-size: 12px; color: var(--text);">
+                Atualize o sinal para orientar os garçons e passadores de espeto.
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Radar Passadores -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-radar" style="color: #10b981;"></i> Radar dos Passadores (Mesas Chamando)</span>
+              <button type="button" onclick="window.atualizarRadarChurrascariaDono()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-sub); border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer;">
+                <i class="ph-bold ph-arrows-clockwise"></i> Atualizar
+              </button>
+            </div>
+            <div id="lista-radar-churrasco" style="max-height: 190px; overflow-y: auto; background: rgba(0,0,0,0.18); border-radius: 8px; padding: 10px; font-size: 12px; border: 1px solid var(--border);">
+              <div style="color: var(--text-sub); text-align: center; padding: 14px 0;">Consultando mesas com sinal verde...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAINEL 4: SUSHI BAR -->
+      <div id="painel-nicho-sushi" class="painel-nicho-view" style="display: none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+          <!-- Card Rendimento Peixe -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-fish" style="color: #ec4899;"></i> Rendimento de Peixe Fresco &amp; Descarte</span>
+              <span style="background: rgba(236,72,153,0.15); color: #ec4899; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">Auditoria de Lote</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+              <div>
+                <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Espécie / Peixe:</label>
+                <input type="text" id="sushi-peixe-tipo" class="form-input" value="Salmão Chileno Premium (Eviscerado)" style="padding: 6px 10px; font-size: 12px;">
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Peso Inicial (kg):</label>
+                  <input type="number" id="sushi-peso-bruto" class="form-input" value="5.200" step="0.05" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Peso Limpo Filé (kg):</label>
+                  <input type="number" id="sushi-peso-limpo" class="form-input" value="3.650" step="0.05" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+              </div>
+              <div>
+                <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Fornecedor Homologado:</label>
+                <input type="text" id="sushi-fornecedor" class="form-input" value="Pescados Oceano Sul Ltda" style="padding: 6px 10px; font-size: 12px;">
+              </div>
+              <button type="button" onclick="window.registrarLoteSushiDono()" style="padding: 9px; background: linear-gradient(135deg, #ec4899, #be185d); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="ph-bold ph-shield-check"></i> Calcular Rendimento &amp; Salvar Lote Anvisa
+              </button>
+              <div id="resultado-lote-sushi" style="background: rgba(0,0,0,0.2); border-left: 3px solid #ec4899; padding: 10px; border-radius: 8px; font-size: 12px; color: var(--text);">
+                Registre o peso limpo para auditar desperdício de aparas do sushiman.
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Lotes Ativos -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-seal-check" style="color: #10b981;"></i> Rastreabilidade de Pescados Ativos</span>
+              <button type="button" onclick="window.atualizarLotesSushiDono()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-sub); border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer;">
+                <i class="ph-bold ph-arrows-clockwise"></i> Atualizar
+              </button>
+            </div>
+            <div id="lista-lotes-sushi" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.18); border-radius: 8px; padding: 10px; font-size: 12px; border: 1px solid var(--border);">
+              <div style="color: var(--text-sub); text-align: center; padding: 14px 0;">Consultando lotes ativos de pescados...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAINEL 5: BAR & BALADA -->
+      <div id="painel-nicho-bar" class="painel-nicho-view" style="display: none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+          <!-- Card Auditor de Doses -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-brandy" style="color: #8b5cf6;"></i> Auditoria de Doses &amp; Desfalque</span>
+              <span style="background: rgba(139,92,246,0.15); color: #8b5cf6; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">Precisão por ml</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+              <div>
+                <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Garrafa / Rótulo:</label>
+                <select id="bar-bebida-nome" class="form-input" style="padding: 6px 10px; font-size: 12px;">
+                  <option value="Gin Tanqueray London Dry">Gin Tanqueray London Dry (750ml)</option>
+                  <option value="Whisky Johnnie Walker Black Label">Whisky Black Label 12 Anos (1000ml)</option>
+                  <option value="Vodka Absolut Regular">Vodka Absolut Regular (1000ml)</option>
+                  <option value="Tequila José Cuervo Ouro">Tequila José Cuervo Ouro (750ml)</option>
+                </select>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Doses Vendidas:</label>
+                  <input type="number" id="bar-doses-qtd" class="form-input" value="2" min="1" max="10" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Preço por Dose (R$):</label>
+                  <input type="number" id="bar-dose-valor" class="form-input" value="34.00" step="1" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+              </div>
+              <button type="button" onclick="window.lancarDoseBarDono()" style="padding: 9px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="ph-bold ph-drop"></i> Lançar Dose no Balcão Express
+              </button>
+              <div id="resultado-dose-bar" style="background: rgba(0,0,0,0.2); border-left: 3px solid #8b5cf6; padding: 10px; border-radius: 8px; font-size: 12px; color: var(--text);">
+                Lançamento com baixa automática por dosador e alerta de garrafa vazia.
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Garrafas Abertas -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-wine" style="color: #8b5cf6;"></i> Garrafas em Uso no Balcão</span>
+              <button type="button" onclick="window.atualizarGarrafasBarDono()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-sub); border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer;">
+                <i class="ph-bold ph-arrows-clockwise"></i> Atualizar
+              </button>
+            </div>
+            <div id="lista-garrafas-bar" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.18); border-radius: 8px; padding: 10px; font-size: 12px; border: 1px solid var(--border);">
+              <div style="color: var(--text-sub); text-align: center; padding: 14px 0;">Consultando status das garrafas...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAINEL 6: BUFFET POR QUILO -->
+      <div id="painel-nicho-buffet" class="painel-nicho-view" style="display: none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+          <!-- Card Balança Serial -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-scales" style="color: #06b6d4;"></i> Leitura da Balança Serial Toledo/Filizola</span>
+              <span style="background: rgba(6,182,212,0.15); color: #06b6d4; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">0.4s por Prato</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Comanda RFID/Código:</label>
+                  <input type="text" id="buffet-comanda-num" class="form-input" value="COM-088" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Preço do Quilo (R$):</label>
+                  <input type="number" id="buffet-preco-kg" class="form-input" value="89.90" step="0.5" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Tara Prato (g):</label>
+                  <input type="number" id="buffet-tara-g" class="form-input" value="420" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Peso Lido Balança (g):</label>
+                  <input type="number" id="buffet-peso-bruto-g" class="form-input" value="1050" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+              </div>
+              <button type="button" onclick="window.pesarBalancaBuffetDono()" style="padding: 9px; background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="ph-bold ph-check"></i> Capturar Peso &amp; Lançar Comanda Instantâneo
+              </button>
+              <div id="resultado-pesagem-buffet" style="background: rgba(0,0,0,0.2); border-left: 3px solid #06b6d4; padding: 10px; border-radius: 8px; font-size: 12px; color: var(--text);">
+                Subtrai a tara do prato automaticamente sem risco de cobrança indevida.
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Cubas Monitor -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-warning-circle" style="color: #ef4444;"></i> Monitor de Cubas da Pista Térmica</span>
+              <button type="button" onclick="window.atualizarCubasBuffetDono()" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-sub); border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer;">
+                <i class="ph-bold ph-arrows-clockwise"></i> Atualizar
+              </button>
+            </div>
+            <div id="lista-cubas-buffet" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.18); border-radius: 8px; padding: 10px; font-size: 12px; border: 1px solid var(--border);">
+              <div style="color: var(--text-sub); text-align: center; padding: 14px 0;">Consultando nível das cubas...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAINEL 7: PADARIA & CAFETERIA -->
+      <div id="painel-nicho-padaria" class="painel-nicho-view" style="display: none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+          <!-- Card Fornada Quentinha -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-bell-ringing" style="color: #f59e0b;"></i> Anunciador de Fornada Quente</span>
+              <span style="background: rgba(245,158,11,0.15); color: #f59e0b; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">Telões &amp; WhatsApp</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+              <div>
+                <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Produto que acabou de sair:</label>
+                <select id="padaria-fornada-item" class="form-input" style="padding: 6px 10px; font-size: 12px;">
+                  <option value="Pão Francês Tradicional & Pão de Queijo Mineiro">Pão Francês Tradicional &amp; Pão de Queijo Mineiro</option>
+                  <option value="Croissant de Chocolate Belga">Croissant de Chocolate Belga</option>
+                  <option value="Baguete Rústica Fermentação Natural">Baguete Rústica Fermentação Natural</option>
+                </select>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Quantidade (un):</label>
+                  <input type="number" id="padaria-fornada-qtd" class="form-input" value="80" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Temp Forno (°C):</label>
+                  <input type="number" id="padaria-fornada-temp" class="form-input" value="200" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+              </div>
+              <button type="button" onclick="window.dispararFornadaPadariaDono()" style="padding: 9px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="ph-bold ph-megaphone"></i> Disparar Fornada no Painel &amp; Notificar Bairro
+              </button>
+              <div id="resultado-fornada-padaria" style="background: rgba(0,0,0,0.2); border-left: 3px solid #f59e0b; padding: 10px; border-radius: 8px; font-size: 12px; color: var(--text);">
+                Atrai clientes para o balcão no minuto em que o pão sai do forno.
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Encomendas de Bolo -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-cake" style="color: #ec4899;"></i> Encomendas de Festas com Caução Pix</span>
+              <span style="background: rgba(16,185,129,0.15); color: #10b981; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">50% Antecipado</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Cliente:</label>
+                  <input type="text" id="padaria-encomenda-cliente" class="form-input" value="Renata Albuquerque" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Telefone:</label>
+                  <input type="text" id="padaria-encomenda-tel" class="form-input" value="11988883333" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Item da Festa:</label>
+                  <input type="text" id="padaria-encomenda-item" class="form-input" value="Bolo Red Velvet Frutas Vermelhas" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Valor Total:</label>
+                  <input type="number" id="padaria-encomenda-total" class="form-input" value="240.00" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+              </div>
+              <button type="button" onclick="window.criarEncomendaPadariaDono()" style="padding: 9px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="ph-bold ph-calendar-plus"></i> Agendar &amp; Bloquear com 50% Pix Caução
+              </button>
+              <div id="resultado-encomenda-padaria" style="background: rgba(0,0,0,0.2); border-left: 3px solid #10b981; padding: 10px; border-radius: 8px; font-size: 12px; color: var(--text);">
+                Zera o calote em bolos e encomendas personalizadas.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAINEL 8: À LA CARTE -->
+      <div id="painel-nicho-alacarte" class="painel-nicho-view" style="display: none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+          <!-- Card Marcha de Pratos -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-footprints" style="color: #6366f1;"></i> Comando de Marcha de Pratos</span>
+              <span style="background: rgba(99,102,241,0.15); color: #6366f1; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">Alta Gastronomia</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Mesa:</label>
+                  <input type="text" id="alacarte-mesa-num" class="form-input" value="Mesa 07 Nobre" style="padding: 6px 10px; font-size: 12px;">
+                </div>
+                <div>
+                  <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Etapa a Marchar:</label>
+                  <select id="alacarte-etapa" class="form-input" style="padding: 6px 10px; font-size: 12px;">
+                    <option value="prato_principal">Prato Principal (Iniciar Cocção)</option>
+                    <option value="sobremesa">Sobremesa &amp; Cafés</option>
+                    <option value="entrada">Couvert / Entradas</option>
+                  </select>
+                </div>
+              </div>
+              <button type="button" onclick="window.marcharPratoAlacarteDono()" style="padding: 9px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="ph-bold ph-bell"></i> Marchar Etapa para o Chef de Praça
+              </button>
+              <div id="resultado-marcha-alacarte" style="background: rgba(0,0,0,0.2); border-left: 3px solid #6366f1; padding: 10px; border-radius: 8px; font-size: 12px; color: var(--text);">
+                Sincroniza os pratos quentes sem deixar o cliente esperando entre tempos.
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Sommelier IA -->
+          <div style="background: var(--card2); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-weight: 800; font-size: 14px; color: var(--text);"><i class="ph-bold ph-wine" style="color: #ec4899;"></i> Sommelier IA &amp; Upsell de Vinhos</span>
+              <span style="background: rgba(236,72,153,0.15); color: #ec4899; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">Aumento de Ticket</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px;">
+              <div>
+                <label style="display: block; color: var(--text-sub); margin-bottom: 4px; font-weight: 600;">Prato Escolhido pelo Cliente:</label>
+                <select id="alacarte-prato-id" class="form-input" style="padding: 6px 10px; font-size: 12px;">
+                  <option value="1">Risoto de Cordeiro com Cogumelos Trufados</option>
+                  <option value="2">Robalo Grelhado em Crosta de Ervas Finas</option>
+                  <option value="default">Prime Rib Angus com Mousseline de Baroa</option>
+                </select>
+              </div>
+              <button type="button" onclick="window.consultarSommelierDono()" style="padding: 9px; background: linear-gradient(135deg, #ec4899, #be185d); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="ph-bold ph-sparkle"></i> Gerar Harmonização &amp; Argumento de Venda
+              </button>
+              <div id="resultado-sommelier-alacarte" style="background: rgba(0,0,0,0.2); border-left: 3px solid #ec4899; padding: 10px; border-radius: 8px; font-size: 12px; color: var(--text);">
+                Consulte o Sommelier IA para guiar o garçom no aumento do ticket médio.
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -4183,154 +4717,6 @@
     </div>
   </div>
 
-  <!-- Modal: Central de Liberação Remota de Terminais (Zero Senha) -->
-  <div id="modal-liberar-terminal-dono" class="modal-overlay hidden">
-    <div class="modal-sheet" style="max-width: 560px; max-height: 85vh; overflow-y: auto;">
-      <div class="modal-drag"></div>
-      <div class="modal-title-row">
-        <span class="modal-title" style="display:flex; align-items:center; gap:8px;">
-          <i class="ph-bold ph-broadcast" style="color:#2563eb;"></i> Liberar Acesso de Aparelho / Terminal
-        </span>
-        <button class="modal-close" onclick="fecharModal('modal-liberar-terminal-dono')"><i class="ph-bold ph-x"></i></button>
-      </div>
-      <p class="caixa-modal-desc">
-        Ative terminais (PCs, tablets, smartphones) sem nunca compartilhar o e-mail ou a senha master do seu restaurante.
-      </p>
-
-      <!-- Abas do Modal -->
-      <div style="display: flex; background: var(--bg); padding: 4px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border); gap: 4px;">
-        <button type="button" id="tab-modal-terminal-codigo" class="btn-periodo active" onclick="alternarTabModalTerminal('codigo')" style="flex:1; padding:8px 6px; font-size:12px; border-radius:8px; justify-content:center;">
-          <i class="ph-bold ph-key"></i> Código 6 Dígitos
-        </button>
-        <button type="button" id="tab-modal-terminal-pendentes" class="btn-periodo" onclick="alternarTabModalTerminal('pendentes')" style="flex:1; padding:8px 6px; font-size:12px; border-radius:8px; justify-content:center; position:relative;">
-          <i class="ph-bold ph-radar"></i> Pendentes (<span id="modal-tab-badge-pendentes">0</span>)
-        </button>
-        <button type="button" id="tab-modal-terminal-whatsapp" class="btn-periodo" onclick="alternarTabModalTerminal('whatsapp')" style="flex:1; padding:8px 6px; font-size:12px; border-radius:8px; justify-content:center;">
-          <i class="ph-bold ph-whatsapp-logo"></i> Link WhatsApp
-        </button>
-        <button type="button" id="tab-modal-terminal-autorizados" class="btn-periodo" onclick="alternarTabModalTerminal('autorizados')" style="flex:1; padding:8px 6px; font-size:12px; border-radius:8px; justify-content:center;">
-          <i class="ph-bold ph-devices"></i> Ativos
-        </button>
-      </div>
-
-      <!-- PAINEL 1: DIGITAR CÓDIGO DE 6 DÍGITOS -->
-      <div id="painel-modal-terminal-codigo">
-        <div style="background: rgba(37,99,235,0.06); border: 1px solid rgba(37,99,235,0.25); border-radius: 14px; padding: 14px; margin-bottom: 14px; text-align: center;">
-          <span style="font-size: 12px; color: var(--text-sub);">O colaborador abre a tela de login no aparelho e te informa o código de 6 dígitos:</span>
-          <div style="margin: 10px auto; max-width: 240px;">
-            <input type="text" id="modal-input-terminal-codigo" placeholder="000 000" maxlength="7" style="width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #2563eb; border-radius: 14px; font-size: 26px; font-weight: 900; letter-spacing: 6px; text-align: center; color: #2563eb; background: var(--card); font-family: monospace;">
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label class="form-label">Estação de Trabalho / Setor</label>
-          <select id="modal-select-terminal-estacao" class="form-input" style="font-weight: 700;">
-            <option value="garcom" selected>🍽️ Salão de Mesas &amp; Garçom (Comandas de Mesa)</option>
-            <option value="caixa">🖥️ Terminal de Caixa PDV Principal</option>
-            <option value="caixa_mobile">📱 Caixa Mobile Touch (Smartphone)</option>
-            <option value="cozinha">🍳 KDS Cozinha &amp; Bar</option>
-            <option value="totem">🤖 Totem de Autoatendimento</option>
-          </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label class="form-label">Apelido do Aparelho (Identificação no restaurante)</label>
-          <input type="text" id="modal-input-terminal-apelido" class="form-input" placeholder="Ex: Tablet Garçom Salão 01, PC Caixa Frente">
-        </div>
-
-        <div class="form-group" style="margin-bottom: 18px;">
-          <label class="form-label">Tempo de Autorização deste Aparelho</label>
-          <select id="modal-select-terminal-validade" class="form-input">
-            <option value="90" selected>90 dias (Padrão para equipamentos da casa)</option>
-            <option value="30">30 dias</option>
-            <option value="7">7 dias (Temporário / Evento)</option>
-            <option value="1">1 dia (Plantão / Freelancer Diarista)</option>
-          </select>
-        </div>
-
-        <button type="button" class="btn-confirm" onclick="autorizarTerminalPorCodigoDonoModal()" style="width: 100%; justify-content: center; padding: 14px; font-size: 15px; font-weight: 800; background: linear-gradient(135deg, #2563eb, #1d4ed8);">
-          <i class="ph-bold ph-rocket-launch"></i> Liberar Acesso Agora
-        </button>
-      </div>
-
-      <!-- PAINEL 2: TERMINAIS AGUARDANDO LIBERAÇÃO (AO VIVO) -->
-      <div id="painel-modal-terminal-pendentes" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <span style="font-size: 13px; font-weight: 700; color: var(--text);">Aparelhos com tela aberta aguardando aprovação:</span>
-          <button type="button" class="btn-refresh" onclick="carregarTerminaisPendentesDono()" style="font-size: 11px; padding: 4px 8px;">
-            <i class="ph ph-arrows-clockwise"></i> Atualizar
-          </button>
-        </div>
-        <div id="modal-lista-terminais-pendentes" style="display: flex; flex-direction: column; gap: 10px;">
-          <div style="text-align: center; color: var(--text-sub); font-size: 13px; padding: 24px;">
-            Nenhum aparelho aguardando no momento.
-          </div>
-        </div>
-      </div>
-
-      <!-- PAINEL 3: GERAR LINK MÁGICO PARA WHATSAPP -->
-      <div id="painel-modal-terminal-whatsapp" style="display: none;">
-        <p style="font-size: 12.5px; color: var(--text-sub); margin-bottom: 14px; line-height: 1.5;">
-          Gere um link assinado pelo seu restaurante. O garçom ou colaborador clica no link pelo WhatsApp e entra direto no sistema sem precisar de senha!
-        </p>
-
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label class="form-label">Setor / Tela Autorizada</label>
-          <select id="whatsapp-link-estacao" class="form-input">
-            <option value="garcom" selected>🍽️ Salão de Mesas &amp; Garçom</option>
-            <option value="caixa">🖥️ Caixa PDV</option>
-            <option value="cozinha">🍳 Cozinha KDS</option>
-            <option value="caixa_mobile">📱 Caixa Mobile</option>
-          </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label class="form-label">Nome do Colaborador / Terminal</label>
-          <input type="text" id="whatsapp-link-nome" class="form-input" placeholder="Ex: Garçom Carlos, Tablet Salão 02">
-        </div>
-
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label class="form-label">Validade do Link</label>
-          <select id="whatsapp-link-dias" class="form-input">
-            <option value="30" selected>30 dias</option>
-            <option value="90">90 dias</option>
-            <option value="7">7 dias (Turno semanal)</option>
-            <option value="1">1 dia (Diarista / Extra)</option>
-          </select>
-        </div>
-
-        <button type="button" class="btn-primary" onclick="gerarLinkWhatsAppEquipeDono()" style="width: 100%; justify-content: center; padding: 12px; font-weight: 800; background: #25D366; border-color: #25D366; margin-bottom: 14px;">
-          <i class="ph-bold ph-magic-wand"></i> Gerar Link de Acesso Rápido
-        </button>
-
-        <div id="whatsapp-link-resultado" style="display: none; background: rgba(37,211,102,0.08); border: 1.5px solid rgba(37,211,102,0.3); border-radius: 12px; padding: 14px;">
-          <label style="display: block; font-size: 11.5px; font-weight: 800; color: #166534; text-transform: uppercase; margin-bottom: 6px;">Link Gerado com Sucesso</label>
-          <input type="text" id="whatsapp-link-url" class="form-input" readonly style="font-size: 11.5px; background: var(--bg); margin-bottom: 10px;">
-          <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn-secondary" onclick="copiarLinkWhatsAppDono()" style="flex: 1; justify-content: center;">
-              <i class="ph-bold ph-copy"></i> Copiar Link
-            </button>
-            <a id="btn-abrir-whatsapp-link" href="#" target="_blank" class="btn-primary" style="flex: 1.5; justify-content: center; background: #25D366; border-color: #25D366; text-decoration: none;">
-              <i class="ph-bold ph-whatsapp-logo"></i> Abrir no WhatsApp
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <!-- PAINEL 4: APARELHOS ATIVOS E REVOGAÇÃO (KILL SWITCH) -->
-      <div id="painel-modal-terminal-autorizados" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <span style="font-size: 13px; font-weight: 700; color: var(--text);">Aparelhos autorizados que têm acesso:</span>
-          <button type="button" class="btn-refresh" onclick="carregarTerminaisAutorizadosDono()" style="font-size: 11px; padding: 4px 8px;">
-            <i class="ph ph-arrows-clockwise"></i> Atualizar
-          </button>
-        </div>
-        <div id="modal-lista-terminais-autorizados" style="display: flex; flex-direction: column; gap: 10px;">
-          <div style="text-align: center; color: var(--text-sub); font-size: 13px; padding: 24px;">Carregando aparelhos...</div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Modal: Configuração de Gamificação e Prêmio -->
   <div id="modal-gamificacao-config" class="modal-overlay hidden">

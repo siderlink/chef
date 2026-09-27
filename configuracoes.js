@@ -1127,6 +1127,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'funcionalidades': { title: 'Funcionalidades Ativas',        subtitle: 'Habilitar ou desabilitar módulos e recursos operacionais do estabelecimento',                       icon: 'ph-toggle-left',          color: '#10b981' },
     'funcoes':         { title: 'Funções do Sistema',            subtitle: 'Controle detalhado de permissões de cargos por tela e por ação',                                   icon: 'ph-sliders',              color: '#22d3ee' },
     'modulos':         { title: 'Módulos & Extensões',           subtitle: 'Pacotes opcionais contratados, add-ons e integrações com terceiros',                               icon: 'ph-puzzle-piece',         color: '#8b5cf6' },
+    'compatibilidade': { title: 'Versões & Modo Clássico',       subtitle: 'Reverta novidades para versões clássicas/essenciais caso algum colaborador não se adapte',          icon: 'ph-clock-counter-clockwise', color: '#0284c7' },
     'dispositivos':    { title: 'Dispositivos & Terminais',      subtitle: 'Gerenciamento de impressoras térmicas, tablets de comandas e KDS de cozinha',                      icon: 'ph-devices',              color: '#0284c7' },
     'backup':          { title: 'Backup & Restauração',          subtitle: 'Cópias de segurança locais e em nuvem, exportação de dados e restaurações',                         icon: 'ph-hard-drives',          color: '#fc4b15' },
     'auditoria':       { title: 'Auditoria & Anti-Fraude',       subtitle: 'Histórico de eventos sensíveis, cancelamentos de itens e alterações de preços',                    icon: 'ph-shield-warning',       color: '#e11d48' },
@@ -1217,6 +1218,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabId === 'funcionarios' && socket && typeof socket.emit === 'function') socket.emit('get_funcionarios');
       if (tabId === 'clientes' && socket && typeof socket.emit === 'function') socket.emit('get_clientes');
       if (tabId === 'dispositivos' && typeof window.carregarGerenciadorDispositivos === 'function') window.carregarGerenciadorDispositivos();
+      if (tabId === 'compatibilidade' && typeof window.carregarModosCompatibilidade === 'function') window.carregarModosCompatibilidade();
       if (tabId === 'salao') {
         const t = document.getElementById('admin-tab-salao');
         if (t) t.dataset.carregada = 'true';
@@ -10365,4 +10367,246 @@ window.salvarMarcaSuporteUI = function() {
   document.addEventListener('DOMContentLoaded', () => {
     window.renderizarConfiguracaoModulosHome();
     window.carregarPoliticasAcessoCfg();
+    if (typeof window.carregarModosCompatibilidade === 'function') {
+      window.carregarModosCompatibilidade();
+    }
   });
+
+  // ══════════════════════════════════════════════════════════════════
+  // CENTRAL DE COMPATIBILIDADE & MODOS CLÁSSICOS (REVERSÃO RÁPIDA)
+  // ══════════════════════════════════════════════════════════════════
+
+  window.atualizarVisualSwitchCompat = function(chk, isAtivo) {
+    if (!chk) return;
+    chk.checked = !!isAtivo;
+    const track = chk.nextElementSibling;
+    const thumb = track ? track.nextElementSibling : null;
+    if (track && thumb) {
+      track.style.backgroundColor = isAtivo ? '#22c55e' : '#cbd5e1';
+      thumb.style.left = isAtivo ? '25px' : '3px';
+    }
+  };
+
+  window.carregarModosCompatibilidade = async function() {
+    try {
+      let cfgs = window.configs || {};
+      try {
+        const res = await fetch('/api/config');
+        if (res.ok) {
+          const fetched = await res.json();
+          cfgs = Object.assign({}, cfgs, fetched);
+          window.configs = cfgs;
+        }
+      } catch(e) {}
+
+      // 1. KDS Cozinha (fila_modo: 'nova' [true] | 'classica' [false])
+      const kdsModo = (localStorage.getItem('fila_modo') || localStorage.getItem('chef_fila_modo') || cfgs.fila_modo || 'nova').toLowerCase();
+      const isKdsNovo = (kdsModo !== 'classica' && kdsModo !== 'v1');
+      const chkKds = document.getElementById('chk-modo-kds');
+      window.atualizarVisualSwitchCompat(chkKds, isKdsNovo);
+      const badgeKds = document.getElementById('badge-status-kds');
+      if (badgeKds) {
+        badgeKds.textContent = isKdsNovo ? 'Moderna v2' : 'Clássica v1';
+        badgeKds.style.background = isKdsNovo ? '#dbeafe' : '#f1f5f9';
+        badgeKds.style.color = isKdsNovo ? '#1d4ed8' : '#475569';
+      }
+
+      // 2. App Garçom (garcom_modo: 'pro' [true] | 'classico' [false])
+      const garcomModo = (localStorage.getItem('garcom_modo') || cfgs.garcom_modo || 'pro').toLowerCase();
+      const isGarcomPro = (garcomModo !== 'classico' && garcomModo !== 'essencial');
+      const chkGarcom = document.getElementById('chk-modo-garcom');
+      window.atualizarVisualSwitchCompat(chkGarcom, isGarcomPro);
+      const badgeGarcom = document.getElementById('badge-status-garcom');
+      if (badgeGarcom) {
+        badgeGarcom.textContent = isGarcomPro ? 'Modo Pro' : 'Modo Clássico';
+        badgeGarcom.style.background = isGarcomPro ? '#dcfce7' : '#f1f5f9';
+        badgeGarcom.style.color = isGarcomPro ? '#15803d' : '#475569';
+      }
+
+      // 3. Mesa do Cliente (mesa_cliente_modo: 'interativo' [true] | 'simples' [false])
+      const mesaModo = (localStorage.getItem('mesa_cliente_modo') || cfgs.mesa_cliente_modo || 'interativo').toLowerCase();
+      const isMesaInterativa = (mesaModo !== 'simples' && mesaModo !== 'classico');
+      const chkMesa = document.getElementById('chk-modo-mesa');
+      window.atualizarVisualSwitchCompat(chkMesa, isMesaInterativa);
+      const badgeMesa = document.getElementById('badge-status-mesa');
+      if (badgeMesa) {
+        badgeMesa.textContent = isMesaInterativa ? 'Modo Interativo' : 'Modo Extrato Tradicional';
+        badgeMesa.style.background = isMesaInterativa ? '#ede9fe' : '#f1f5f9';
+        badgeMesa.style.color = isMesaInterativa ? '#6d28d9' : '#475569';
+      }
+
+      // 4. Pizzaria (pizzaria_modo: 'auto' [true] | 'manual' [false])
+      const pizzaModo = (localStorage.getItem('pizzaria_modo') || cfgs.pizzaria_modo || 'auto').toLowerCase();
+      const isPizzaAuto = (pizzaModo !== 'manual');
+      const chkPizza = document.getElementById('chk-modo-pizzaria');
+      window.atualizarVisualSwitchCompat(chkPizza, isPizzaAuto);
+      const badgePizza = document.getElementById('badge-status-pizzaria');
+      if (badgePizza) {
+        badgePizza.textContent = isPizzaAuto ? 'Cálculo Automático' : 'Modo Manual';
+        badgePizza.style.background = isPizzaAuto ? '#fef08a' : '#f1f5f9';
+        badgePizza.style.color = isPizzaAuto ? '#854d0e' : '#475569';
+      }
+
+      // 5. Buffet (buffet_modo: 'balanca_auto' [true] | 'manual' [false])
+      const buffetModo = (localStorage.getItem('buffet_modo') || cfgs.buffet_modo || 'balanca_auto').toLowerCase();
+      const isBuffetAuto = (buffetModo !== 'manual');
+      const chkBuffet = document.getElementById('chk-modo-buffet');
+      window.atualizarVisualSwitchCompat(chkBuffet, isBuffetAuto);
+      const badgeBuffet = document.getElementById('badge-status-buffet');
+      if (badgeBuffet) {
+        badgeBuffet.textContent = isBuffetAuto ? 'Leitor Balança EAN-13' : 'Digitação Manual';
+        badgeBuffet.style.background = isBuffetAuto ? '#bfdbfe' : '#f1f5f9';
+        badgeBuffet.style.color = isBuffetAuto ? '#1e40af' : '#475569';
+      }
+
+      // 6. Bar (bar_modo: 'cashless' [true] | 'comanda_padrao' [false])
+      const barModo = (localStorage.getItem('bar_modo') || cfgs.bar_modo || 'cashless').toLowerCase();
+      const isBarCashless = (barModo !== 'comanda_padrao' && barModo !== 'tradicional');
+      const chkBar = document.getElementById('chk-modo-bar');
+      window.atualizarVisualSwitchCompat(chkBar, isBarCashless);
+      const badgeBar = document.getElementById('badge-status-bar');
+      if (badgeBar) {
+        badgeBar.textContent = isBarCashless ? 'Cashless Pré-Pago' : 'Comanda Tradicional';
+        badgeBar.style.background = isBarCashless ? '#fce7f3' : '#f1f5f9';
+        badgeBar.style.color = isBarCashless ? '#9d174d' : '#475569';
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar modos de compatibilidade:', err);
+    }
+  };
+
+  window.salvarModoCompatibilidade = async function(chave, valor) {
+    try {
+      if (!window.configs) window.configs = {};
+      window.configs[chave] = valor;
+      localStorage.setItem(chave, valor);
+      if (chave === 'fila_modo') localStorage.setItem('chef_fila_modo', valor);
+
+      const payload = {};
+      payload[chave] = valor;
+
+      fetch('/api/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (typeof obterTokenAtual === 'function' ? obterTokenAtual() : localStorage.getItem('chef_token') || '')
+        },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+
+      await window.carregarModosCompatibilidade();
+
+      const nomesSetores = {
+        fila_modo: 'KDS da Cozinha',
+        garcom_modo: 'App do Garçom',
+        mesa_cliente_modo: 'Comanda da Mesa',
+        pizzaria_modo: 'Pizzaria',
+        buffet_modo: 'Buffet por Quilo',
+        bar_modo: 'Bar & Balcão'
+      };
+      const setor = nomesSetores[chave] || 'Setor';
+      const isClassico = (valor === 'classica' || valor === 'classico' || valor === 'simples' || valor === 'manual' || valor === 'comanda_padrao');
+      const statusMsg = isClassico ? 'Modo Clássico (Simples) ativado com sucesso!' : 'Modo Moderno (Pro) ativado com sucesso!';
+
+      if (typeof showToast === 'function') {
+        showToast(`${setor}: ${statusMsg}`, 'success');
+      } else {
+        console.log(`${setor}: ${statusMsg}`);
+      }
+    } catch(e) {
+      console.error('Falha ao salvar modo de compatibilidade:', e);
+    }
+  };
+
+  window.restaurarTodosModosClassicos = async function() {
+    const confirmou = confirm('Atenção: Deseja reverter TODOS os setores para a Versão Clássica / Tradicional?\n\n' +
+      '• KDS da Cozinha: Volta para a Fila v1 clássica e simples\n' +
+      '• App do Garçom: Volta para o Modo Essencial (somente mesas e comanda rápida)\n' +
+      '• Comanda na Mesa: Volta para o extrato tradicional sem semáforos\n' +
+      '• Pizzaria: Modo de valor manual livre\n' +
+      '• Buffet: Digitação manual de peso\n' +
+      '• Bar: Comanda convencional pós-paga\n\n' +
+      'Essa ação é recomendada caso sua equipe precise de uma transição mais suave.');
+    
+    if (!confirmou) return;
+
+    const payload = {
+      fila_modo: 'classica',
+      garcom_modo: 'classico',
+      mesa_cliente_modo: 'simples',
+      pizzaria_modo: 'manual',
+      buffet_modo: 'manual',
+      bar_modo: 'comanda_padrao'
+    };
+
+    Object.entries(payload).forEach(([k, v]) => {
+      localStorage.setItem(k, v);
+      if (k === 'fila_modo') localStorage.setItem('chef_fila_modo', v);
+      if (window.configs) window.configs[k] = v;
+    });
+
+    try {
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (typeof obterTokenAtual === 'function' ? obterTokenAtual() : localStorage.getItem('chef_token') || '')
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch(e) {}
+
+    await window.carregarModosCompatibilidade();
+
+    if (typeof showToast === 'function') {
+      showToast('Todos os setores foram revertidos para o Modo Clássico com sucesso!', 'success');
+    } else {
+      alert('Todos os setores foram revertidos para o Modo Clássico com sucesso!');
+    }
+  };
+
+  window.ativarTodosModosModernos = async function() {
+    const confirmou = confirm('Deseja ativar os Recursos Modernos & Modo Pro em TODOS os setores do restaurante?\n\n' +
+      '• KDS Cozinha: v2 Inteligente com Saída Simultânea e Presets de Nicho\n' +
+      '• App do Garçom: Modo Pro com Grade de Atalhos e Sommelier\n' +
+      '• Comanda na Mesa: Semáforo virtual de carnes e marcha autônoma\n' +
+      '• Pizzaria: Cálculo automático por fatia (maior valor / ponderada)\n' +
+      '• Buffet: Decodificador de Balança EAN-13 Toledo/Filizola\n' +
+      '• Bar: Cashless pré-pago recarregável');
+    
+    if (!confirmou) return;
+
+    const payload = {
+      fila_modo: 'nova',
+      garcom_modo: 'pro',
+      mesa_cliente_modo: 'interativo',
+      pizzaria_modo: 'auto',
+      buffet_modo: 'balanca_auto',
+      bar_modo: 'cashless'
+    };
+
+    Object.entries(payload).forEach(([k, v]) => {
+      localStorage.setItem(k, v);
+      if (k === 'fila_modo') localStorage.setItem('chef_fila_modo', v);
+      if (window.configs) window.configs[k] = v;
+    });
+
+    try {
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (typeof obterTokenAtual === 'function' ? obterTokenAtual() : localStorage.getItem('chef_token') || '')
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch(e) {}
+
+    await window.carregarModosCompatibilidade();
+
+    if (typeof showToast === 'function') {
+      showToast('Recursos Modernos Pro ativados em todos os setores!', 'success');
+    } else {
+      alert('Recursos Modernos Pro ativados em todos os setores!');
+    }
+  };

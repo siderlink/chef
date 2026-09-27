@@ -797,6 +797,7 @@ app.get([
   '/nichos', '/vendas-nichos', '/site-vendas-nichos', '/vendas-nicho',
   '/pizzarias', '/pizzaria',
   '/hamburguerias', '/hamburgueria', '/burgers',
+  '/churrascarias', '/churrascaria', '/rodizios', '/rodizio',
   '/bares', '/bar', '/choperias', '/pub',
   '/buffets', '/buffet', '/self-service',
   '/sushi', '/japones', '/rodizio-japones',
@@ -11388,7 +11389,9 @@ app.post('/api/auth/registro', async (req, res) => {
                   sushi:        ['comandas', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
                   japones:      ['comandas', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
                   cafeteria:    ['totem', 'fidelidade', 'comandas', 'cardapio_foto', 'formas_pagamento'],
-                  doceria:      ['totem', 'fidelidade', 'cardapio_foto', 'formas_pagamento']
+                  doceria:      ['totem', 'fidelidade', 'cardapio_foto', 'formas_pagamento'],
+                  churrascaria: ['comandas', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento'],
+                  rodizio:      ['comandas', 'reservas', 'fidelidade', 'cardapio_foto', 'producao', 'formas_pagamento']
                 };
                 const modulosAtivar = modulosNicho[modalidadeClean] || modulosNicho['a_la_carte'];
                 modulosAtivar.forEach(modId => {
@@ -12010,7 +12013,24 @@ const FUNCOES_MODULOS = [
   { chave: 'antifurto_inventario_cego', nome: 'Sentinela de Inventário Cego (Carnes & Whisky)', desc: 'Contagem cega de 3 minutos por turno dos 10 itens mais caros com alerta imediato de desvio no WhatsApp.', icone: 'ph-eye', categorias: ['Operação', 'Segurança'], preco: 'R$ 79/mês', roi: 'Elimina R$ 3k-8k/mês em desvios internos', badge: 'Antifurto Cego' },
   { chave: 'fidelidade_tiers_vip', nome: 'Fidelidade por Níveis VIP (Bronze a Diamante)', desc: 'Níveis de prestígio com benefícios exclusivos, drink cortesia e cashback progressivo.', icone: 'ph-medal', categorias: ['Marketing'], preco: 'R$ 69/mês', roi: 'Eleva ticket médio e frequência de clientes fiéis', badge: 'Tiers VIP' },
   { chave: 'menuboard_tv_balcao', nome: 'Menu Board Digital para TVs de Balcão', desc: 'Exibição de cardápio digital em Smart TVs com troca automática por momento do dia.', icone: 'ph-monitor', categorias: ['Hardware', 'Vendas'], preco: 'R$ 49/mês por tela', roi: '+20% em combos e visual profissional de fast-food', badge: 'Menu Board TV' },
-  { chave: 'satisfacao_ia_emocional', nome: 'Totem de Satisfação IA Emocional & Áudio', desc: 'Totem tátil de 4 emojis com transcrição e análise de sentimento em áudio com alerta crítico no WhatsApp.', icone: 'ph-smiley', categorias: ['Operação'], preco: 'R$ 39/mês', roi: 'Alerta em 5s no WhatsApp antes do cliente postar no Google', badge: 'Satisfação IA' }
+  { chave: 'satisfacao_ia_emocional', nome: 'Totem de Satisfação IA Emocional & Áudio', desc: 'Totem tátil de 4 emojis com transcrição e análise de sentimento em áudio com alerta crítico no WhatsApp.', icone: 'ph-smiley', categorias: ['Operação'], preco: 'R$ 39/mês', roi: 'Alerta em 5s no WhatsApp antes do cliente postar no Google', badge: 'Satisfação IA' },
+
+  // NOVOS MÓDULOS DE ALTA RENTABILIDADE TIERS S, A, B & C
+  { chave: 'hub_multi_marketplace', nome: 'Hub Multi-Marketplace (Rappi + Uber Eats + 99Food)', desc: 'Unificação de todos os pedidos de delivery externos em uma única tela, dispensando múltiplos tablets no balcão.', icone: 'ph-arrows-merge', categorias: ['Delivery', 'Operação'], preco: 'R$ 129/mês', roi: 'Zera atrasos e multas de cancelamento em marketplaces', badge: 'Tier S' },
+  { chave: 'sped_fiscal_automatico', nome: 'SPED Fiscal & Exportação Contábil Automática', desc: 'Geração e envio automático mensal de arquivos SPED EFD, XMLs de NFC-e e relatórios fiscais diretamente ao contador.', icone: 'ph-file-archive', categorias: ['Fiscal', 'Financeiro'], preco: 'R$ 99/mês', roi: 'Elimina 100% do estresse e tempo gasto com fechamento contábil', badge: 'Tier S' },
+  { chave: 'preco_dinamico_happyhour', nome: 'Precificação Dinâmica & Happy Hour Automático', desc: 'Ajuste inteligente de preços por horário de pico, dia da semana ou lotação do salão, maximizando faturamento.', icone: 'ph-chart-line-up', categorias: ['Financeiro', 'Vendas'], preco: 'R$ 59/mês', roi: '+15% de receita aproveitando horários de maior procura', badge: 'Tier A' },
+  { chave: 'nutricional_calorias', nome: 'Controle Nutricional & Tabela de Calorias', desc: 'Cálculo de calorias (kcal), macronutrientes, alérgenos e selos funcionais (vegano, sem glúten) para o cardápio.', icone: 'ph-heartbeat', categorias: ['Vendas', 'Operação'], preco: 'R$ 49/mês', roi: 'Atrai o público fitness e atende exigências de rotulagem', badge: 'Tier A' },
+  { chave: 'desperdicio_pesagem_lixo', nome: 'Controle de Desperdício com Balança de Descarte', desc: 'Pesagem e registro fotográfico de sobras de buffet, pré-preparo e devoluções com metas diárias anti-desperdício.', icone: 'ph-trash', categorias: ['Operação', 'Financeiro'], preco: 'R$ 69/mês', roi: 'Economiza até R$ 3.500/mês eliminando vazamentos de insumos', badge: 'Tier A' },
+  { chave: 'checklist_abertura_fechamento', nome: 'Checklist de Abertura & Fechamento com Fotos', desc: 'Listas de verificação operacionais obrigatórias para a equipe antes de abrir e fechar a casa com evidências.', icone: 'ph-check-square-offset', categorias: ['Operação', 'Gestão'], preco: 'R$ 49/mês', roi: 'Garante padrão de excelência e higiene em todos os turnos', badge: 'Tier A' },
+  { chave: 'manutencao_preventiva', nome: 'Manutenção Preventiva de Equipamentos', desc: 'Ordens de serviço, cronograma de preventiva de freezers, fogões e coifas, e histórico de custos por máquina.', icone: 'ph-wrench', categorias: ['Operação', 'Gestão'], preco: 'R$ 59/mês', roi: 'Evita paradas repentinas no meio do almoço de domingo', badge: 'Tier B' },
+  { chave: 'academia_restaurante', nome: 'Academia do Restaurante & Treinamento Onboarding', desc: 'Plataforma interna com cursos, vídeos de atendimento e quizzes para capacitar novos garçons e ajudantes em 48h.', icone: 'ph-graduation-cap', categorias: ['Equipe', 'Gestão'], preco: 'R$ 69/mês', roi: 'Reduz o tempo de adaptação de novos contratados em 70%', badge: 'Tier B' },
+  { chave: 'iot_temperatura_haccp', nome: 'Monitoramento de Temperatura IoT (HACCP)', desc: 'Sensores inteligentes de temperatura para câmaras frias e freezers com alerta sonoro e no WhatsApp se esquentar.', icone: 'ph-thermometer', categorias: ['Hardware', 'Segurança'], preco: 'R$ 79/mês', roi: 'Evita perda de milhares de reais em carnes e laticínios', badge: 'Tier B' },
+  { chave: 'atendente_social_ia', nome: 'Atendente Virtual para Instagram & Facebook', desc: 'Robô com inteligência artificial para responder direct no Instagram, tirar dúvidas do cardápio e fechar pedidos.', icone: 'ph-chat-circle-dots', categorias: ['Marketing', 'Vendas'], preco: 'R$ 79/mês', roi: 'Zero perda de clientes que perguntam pelo Instagram à noite', badge: 'Tier B' },
+  { chave: 'benchmark_anonimo_setor', nome: 'Benchmark Anônimo do Setor Gastronômico', desc: 'Comparativo do CMV, ticket médio e giro do seu restaurante contra a média do mercado da sua cidade e nicho.', icone: 'ph-scales', categorias: ['Inteligência', 'Financeiro'], preco: 'R$ 49/mês', roi: 'Descubra se está pagando caro em insumos ou cobrando pouco', badge: 'Tier C' },
+  { chave: 'app_funcionario_ponto', nome: 'App do Funcionário (Ponto, Holerite & Escalas)', desc: 'Portal exclusivo para colaboradores visualizarem seus pontos, escalas de folga, gorjetas e comunicados do chefe.', icone: 'ph-user-list', categorias: ['Equipe', 'Gestão'], preco: 'R$ 49/mês', roi: 'Transparência total e comunicação sem ruídos com a equipe', badge: 'Tier C' },
+  { chave: 'valet_estacionamento', nome: 'Valet & Controle de Estacionamento', desc: 'Registro de entrada e saída de veículos de clientes com foto de avarias, solicitação de carro e cobrança.', icone: 'ph-car-profile', categorias: ['Operação'], preco: 'R$ 49/mês', roi: 'Segurança jurídica contra falsas avarias e agilidade na saída', badge: 'Tier C' },
+  { chave: 'gestao_playlist_ambiente', nome: 'Ambientação Sonora & Playlist por Horário', desc: 'Controle de trilha sonora integrada para almoço executivo, happy hour animado ou jantar romântico.', icone: 'ph-music-notes', categorias: ['Operação', 'Entretenimento'], preco: 'R$ 39/mês', roi: 'Aumenta o tempo de permanência e consumo em 18%', badge: 'Tier C' },
+  { chave: 'portal_cliente_vip', nome: 'Portal do Cliente & Re-Pedir em 1 Clique', desc: 'Área exclusiva onde o cliente vê seu histórico de pedidos, salva pratos favoritos e repete pedidos em segundos.', icone: 'ph-user-circle', categorias: ['Vendas', 'Marketing'], preco: 'R$ 49/mês', roi: 'Aumenta a recompra espontânea de clientes habituais', badge: 'Tier C' }
 ];
 
 // Config de ativação de cada módulo (restaurante liga/desliga; padrão ligado quando disponível)
@@ -13290,6 +13310,36 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       console.log('👑 Controller Add-ons Monetizacao Suprema (Franquias Royalties, Polo Compartilhado, Inventario Cego, Tiers VIP, Menu Board TV, Totem Feedback IA) carregado com sucesso.');
     } catch (eSuprema) {
       console.error('Erro ao carregar o Controller Add-ons Monetizacao Suprema:', eSuprema);
+    }
+
+    try {
+      require('./controllers/addons-fintech-ia')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('🚀 Controller Add-ons Fintech & IA (Cheff Capital, Clube Assinatura, Garcom Voice IA, Procurement B2B, Trafego IA, Gift Cards, Wi-Fi Marketing, Dark Kitchen) carregado com sucesso.');
+    } catch (eFintechIA) {
+      console.error('Erro ao carregar o Controller Add-ons Fintech & IA:', eFintechIA);
+    }
+
+    try {
+      require('./controllers/addons-nichos-operacionais')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('🍕 Controller Add-ons Nichos Operacionais (Pizzaria, Burger KDS, Churrascaria Radar, Sushi Lotes, Bar Balcao, Buffet Balanca, Padaria Fornadas, Alacarte Marcha) carregado com sucesso.');
+    } catch (eNichos) {
+      console.error('Erro ao carregar o Controller Add-ons Nichos Operacionais:', eNichos);
     }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);

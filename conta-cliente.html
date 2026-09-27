@@ -609,6 +609,107 @@
       transform: scale(1.05);
       border-color: var(--primary);
     }
+
+    /* SEMÁFORO / COASTER DIGITAL DE RODÍZIO */
+    .rodizio-coaster-card {
+      margin-bottom: 16px;
+      padding: 16px;
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-sm);
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .coaster-title {
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .coaster-toggle-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .coaster-btn {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 2px solid transparent;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+    .coaster-btn.btn-verde {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #047857;
+    }
+    .coaster-btn.btn-verde.active {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border-color: #059669;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+      transform: scale(1.02);
+    }
+    .coaster-btn.btn-vermelho {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #b91c1c;
+    }
+    .coaster-btn.btn-vermelho.active {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      border-color: #dc2626;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+      transform: scale(1.02);
+    }
+    .coaster-feedback {
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      font-weight: 600;
+    }
+    /* MARCHA DE PRATO À LA CARTE */
+    .alacarte-marcha-widget {
+      margin-bottom: 16px;
+      padding: 14px;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+      border: 1.5px solid rgba(139, 92, 246, 0.25);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .btn-marchar-cliente {
+      padding: 8px 14px;
+      background: #8b5cf6;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-marchar-cliente:hover {
+      background: #7c3aed;
+      transform: translateY(-1px);
+    }
   </style>
   <script src="/locales.js"></script>
   <script src="/i18n.js"></script>
@@ -637,6 +738,45 @@
     <div class="status-badge" id="status-badge">
       <i class="ph ph-circle"></i> Carregando...
     </div>
+  </div>
+
+  <!-- SEMÁFORO VIRTUAL DE RODÍZIO / CHURRASCARIA -->
+  <div id="rodizio-coaster-widget" class="rodizio-coaster-card" style="display:none;">
+    <div class="coaster-title">
+      <i class="ph-bold ph-fire" style="color: #b91c1c;"></i>
+      <span>Rodízio de Carnes • Sinal da Mesa</span>
+    </div>
+    <div class="coaster-toggle-group">
+      <button type="button" id="coaster-btn-verde" class="coaster-btn btn-verde active" onclick="alternarSinalCoaster('verde')">
+        <i class="ph-bold ph-check-circle" style="font-size: 20px;"></i>
+        <span>SIM, QUERO CARNE</span>
+        <small style="font-size:10px;opacity:0.9;">Passar cortes nobres</small>
+      </button>
+      <button type="button" id="coaster-btn-vermelho" class="coaster-btn btn-vermelho" onclick="alternarSinalCoaster('vermelho')">
+        <i class="ph-bold ph-pause-circle" style="font-size: 20px;"></i>
+        <span>PAUSA / SATISFEITO</span>
+        <small style="font-size:10px;opacity:0.9;">Não passar carne</small>
+      </button>
+    </div>
+    <div class="coaster-feedback" id="coaster-feedback-text">
+      🟢 Sinal Verde ativo: Os passadores estão direcionando cortes à sua mesa.
+    </div>
+  </div>
+
+  <!-- MARCHA DE PRATOS À LA CARTE -->
+  <div id="alacarte-marcha-widget" class="alacarte-marcha-widget" style="display:none;">
+    <div>
+      <strong style="font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:6px;">
+        <i class="ph-bold ph-fork-knife" style="color:#8b5cf6;"></i> Finalizou as entradas?
+      </strong>
+      <span style="font-size:11.5px;color:var(--text-secondary);display:block;margin-top:2px;">
+        Avise o chef para marchar o prato principal.
+      </span>
+    </div>
+    <button type="button" class="btn-marchar-cliente" id="btn-marchar-cliente" onclick="marcharPratoCliente()">
+      <i class="ph-bold ph-bell-ringing"></i>
+      <span>Marchar Prato</span>
+    </button>
   </div>
 
   <div class="bill-card">
@@ -759,7 +899,82 @@ const mesaQuery = urlParams.get('mesa');
     const tel = (document.getElementById('conta-cb-tel').value || '').trim();
     if (!tel) return alert('Informe o número de WhatsApp.');
     const el = document.getElementById('conta-cb-valor-disp');
-    const valor = el ? parseFloat(el.innerText.replace('R
+    const valor = el ? parseFloat(el.innerText.replace('R$', '').replace(',', '.').trim()) : 0;
+    if (valor <= 0) return alert('Nenhum saldo disponível para resgate.');
+    try {
+      const resp = await fetch('/api/cashback/resgatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          telefone: tel,
+          mesa: mesaQuery || '1',
+          valor: valor
+        })
+      });
+      const data = await resp.json();
+      if (data && data.sucesso) {
+        alert('🎉 Desconto de R$ ' + valor.toFixed(2) + ' aplicado com sucesso!');
+        location.reload();
+      } else {
+        alert(data.mensagem || 'Não foi possível resgatar o saldo.');
+      }
+    } catch(err) {
+      alert('Erro ao resgatar cashback.');
+    }
+  }
+
+  // ── Gestão de Nicho: Sinal de Rodízio & Marcha de Prato ──
+  let sinalRodizioAtual = 'verde';
+  async function alternarSinalCoaster(novoSinal) {
+    sinalRodizioAtual = novoSinal;
+    const btnV = document.getElementById('coaster-btn-verde');
+    const btnR = document.getElementById('coaster-btn-vermelho');
+    const feedback = document.getElementById('coaster-feedback-text');
+    if (btnV && btnR) {
+      btnV.classList.toggle('active', novoSinal === 'verde');
+      btnR.classList.toggle('active', novoSinal === 'vermelho');
+    }
+    if (feedback) {
+      feedback.innerHTML = novoSinal === 'verde'
+        ? '🟢 <strong>Sinal Verde:</strong> Passadores informados para trazer cortes nobres!'
+        : '🔴 <strong>Pausa:</strong> Passadores informados que a mesa está em pausa.';
+    }
+    const mesaNome = mesaQuery || (document.getElementById('titulo-mesa') ? document.getElementById('titulo-mesa').innerText : '1');
+    try {
+      await fetch('/api/nichos/churrascaria/sinalizar-mesa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mesa: mesaNome, status: novoSinal })
+      });
+      if (typeof socket !== 'undefined' && socket.emit) {
+        socket.emit('rodizio_sinal_alterado', { mesa: mesaNome, status: novoSinal });
+      }
+    } catch(e) {
+      console.warn('Erro ao sinalizar rodizio:', e);
+    }
+  }
+
+  async function marcharPratoCliente() {
+    const btn = document.getElementById('btn-marchar-cliente');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph-bold ph-check"></i> <span>Marchado!</span>';
+      btn.style.background = '#10b981';
+    }
+    const mesaNome = mesaQuery || (document.getElementById('titulo-mesa') ? document.getElementById('titulo-mesa').innerText : '1');
+    try {
+      await fetch('/api/nichos/alacarte/marchar-etapa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mesa: mesaNome, etapa: 'principal' })
+      });
+      if (typeof socket !== 'undefined' && socket.emit) {
+        socket.emit('pedido_marchar_etapa', { mesa: mesaNome, etapa: 'principal' });
+      }
+    } catch(e) {
+      console.warn('Erro ao marchar etapa:', e);
+    }
+  }
 
   // ── Pré-definição do restaurante: esta tela usa a paleta escolhida nas Configurações ──
   window.socket = (typeof socket !== 'undefined' && window.socket === undefined) ? socket : window.socket;
@@ -1098,6 +1313,23 @@ const mesaQuery = urlParams.get('mesa');
     if(total < 0) total = 0;
 
     document.getElementById('total-pagar').innerHTML = '<span class="currency">R$</span> ' + formatDinheiroDisplay(total);
+
+    // Ativação contextual de widgets de nicho (Rodízio & À La Carte)
+    const coasterEl = document.getElementById('rodizio-coaster-widget');
+    const marchaEl = document.getElementById('alacarte-marcha-widget');
+    const mesaModo = (localStorage.getItem('mesa_cliente_modo') || (typeof CONFIGS !== 'undefined' && CONFIGS.mesa_cliente_modo) || 'interativo').toLowerCase();
+    const isSimples = (mesaModo === 'simples' || mesaModo === 'classico');
+
+    const isRodizio = !isSimples && ((urlParams.get('nicho') === 'churrascaria' || urlParams.get('nicho') === 'rodizio') ||
+                      items.some(p => /rod[íi]zio|carne|picanha|costela|cupim|alcatra/i.test(p.productName || p.nome || '')));
+    if (coasterEl) {
+      coasterEl.style.display = isRodizio ? 'block' : 'none';
+    }
+    const isAlacarte = !isSimples && ((urlParams.get('nicho') === 'alacarte') ||
+                       items.some(p => /couvert|entrada|salada|carpaccio|bruschetta/i.test(p.productName || p.nome || '')));
+    if (marchaEl) {
+      marchaEl.style.display = isAlacarte ? 'flex' : 'none';
+    }
   }
 
   socket.on('initial_data', (data) => {

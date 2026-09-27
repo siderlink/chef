@@ -1034,6 +1034,15 @@
       document.getElementById('modal-config').style.display = 'none';
     }
 
+    function abrirConfigSerial() {
+      abrirModalConfig();
+      // Rola para a seção de balança física após o modal abrir
+      setTimeout(function() {
+        var sel = document.getElementById('cfg-protocolo');
+        if (sel) sel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 200);
+    }
+
     function salvarAjustesConfig() {
       const novos = {
         precoKg: parseFloat(document.getElementById('cfg-preco-kg').value) || config.precoKg,
