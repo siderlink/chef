@@ -3414,9 +3414,61 @@
           .catch(() => {});
       }
 
+      const prepTimeEl = document.getElementById('modal-prep-time');
+      if (prepTimeEl) prepTimeEl.innerText = calcularTempoPreparoItem(item);
+
       document.getElementById('modal-item-details').style.display = 'flex';
       if (window.ChefCardapio3D && window.ChefCardapio3D.isEnabled) {
         window.ChefCardapio3D.showDish3D(item);
+      }
+    };
+
+    window.adicionarComboCompletoSommelier = function () {
+      if (!selectedItem || !_sommelierBebidaAtual) return;
+      const mainItem = selectedItem;
+      const mainQty = selectedQty || 1;
+      const obs = document.getElementById('modal-obs').value.trim();
+      const comps = (window._compsAtuais || []).slice();
+      let extraPreco = 0;
+      comps.forEach(c => extraPreco += (parseFloat(c.preco_adicional) || 0));
+      const precoUnit = parseFloat(mainItem.preco) + extraPreco;
+
+      CART.push({
+        id: mainItem.id,
+        nome: mainItem.nome,
+        preco: precoUnit,
+        quantidade: mainQty,
+        emoji: mainItem.emoji || '🍽️',
+        observacao: obs,
+        composicoes: comps
+      });
+
+      CART.push({
+        id: _sommelierBebidaAtual.id,
+        nome: _sommelierBebidaAtual.nome,
+        preco: parseFloat(_sommelierBebidaAtual.preco),
+        quantidade: 1,
+        emoji: _sommelierBebidaAtual.emoji || '🍷',
+        observacao: `[Combo com ${mainItem.nome}]`,
+        composicoes: []
+      });
+
+      atualizarCartBadge();
+
+      if (window.ChefGastronomicAudio) {
+        window.ChefGastronomicAudio.playFizz();
+        setTimeout(() => window.ChefGastronomicAudio.playAddToCart(), 100);
+      }
+      if (window.ChefHaptics) window.ChefHaptics.pop();
+
+      if (window.ChefCardapio3D && window.ChefCardapio3D.isEnabled) {
+        const btnCombo = document.getElementById('btn-combo-sommelier-cardapio');
+        if (btnCombo) window.ChefCardapio3D.triggerAddToCartFly(btnCombo);
+      }
+
+      window.fecharItemDetails();
+      if (typeof showToast === 'function') {
+        showToast(`🔥 Combo Completo adicionado! (${mainItem.nome} + ${_sommelierBebidaAtual.nome})`, 'success');
       }
     };
 
@@ -3939,18 +3991,62 @@
     };
 
     window.chamarGarcom = () => {
+      const modalMotivo = document.getElementById('modal-motivo-garcom');
+      if (modalMotivo) {
+        modalMotivo.style.display = 'flex';
+      } else {
+        window.confirmarChamadaGarcom('Garçom chamado via QR');
+      }
+    };
+
+    window.fecharModalMotivoGarcom = () => {
+      const m = document.getElementById('modal-motivo-garcom');
+      if (m) m.style.display = 'none';
+    };
+
+    window.enviarOutroMotivoGarcom = () => {
+      const inp = document.getElementById('input-outro-motivo-garcom');
+      const val = (inp && inp.value.trim()) ? inp.value.trim() : '🙋‍♂️ Atendimento na Mesa';
+      window.confirmarChamadaGarcom(val);
+      if (inp) inp.value = '';
+    };
+
+    window.confirmarChamadaGarcom = (motivo) => {
       const perfil = perfilClienteAtual();
       const clienteNome = (perfil && perfil.nome) ? perfil.nome : '';
-      socket.emit('chamar_garcom', { localName: mesaNome, userName: 'Chamada', clienteNome: clienteNome, mensagem: 'Garçom chamado via QR' });
+      const motivoTexto = motivo || 'Garçom chamado via QR';
+
+      socket.emit('chamar_garcom', {
+        localName: mesaNome,
+        userName: 'Chamada',
+        clienteNome: clienteNome,
+        motivo: motivoTexto,
+        productName: motivoTexto,
+        mensagem: motivoTexto
+      });
+
+      if (window.ChefHaptics) window.ChefHaptics.pop();
       const btn = document.getElementById('fab-garcom');
-      btn.innerHTML = '<i class="ph ph-check"></i>';
-      btn.style.background = 'linear-gradient(135deg, #059669, #047857)';
-      setTimeout(() => { btn.innerHTML = '<i class="ph ph-hand-waving"></i>'; btn.style.background = ''; }, 3000);
-      document.getElementById('modal-chamar-garcom').style.display = 'flex';
-      document.getElementById('chamar-garcom-icon').innerHTML = '<i class="ph ph-hand-waving"></i>';
-      document.getElementById('chamar-garcom-title').innerText = 'Chamando garçom...';
-      document.getElementById('chamar-garcom-desc').innerText = 'Aguarde, em breve você receberá atendimento.';
-      document.getElementById('btn-chamar-garcom-fechar').style.display = 'none';
+      if (btn) {
+        btn.innerHTML = '<i class="ph ph-check"></i>';
+        btn.style.background = 'linear-gradient(135deg, #059669, #047857)';
+        setTimeout(() => { btn.innerHTML = '<i class="ph ph-hand-waving"></i>'; btn.style.background = ''; }, 3500);
+      }
+
+      window.fecharModalMotivoGarcom();
+
+      const modalStatus = document.getElementById('modal-chamar-garcom');
+      if (modalStatus) {
+        modalStatus.style.display = 'flex';
+        document.getElementById('chamar-garcom-icon').innerHTML = '<i class="ph ph-hand-waving"></i>';
+        document.getElementById('chamar-garcom-title').innerText = 'Chamando garçom...';
+        document.getElementById('chamar-garcom-desc').innerHTML = `Solicitação: <strong>${motivoTexto}</strong>.<br>Aguarde, em breve um garçom atenderá sua mesa.`;
+        document.getElementById('btn-chamar-garcom-fechar').style.display = 'none';
+      }
+
+      if (typeof showToast === 'function') {
+        showToast(`🔔 Garçom chamado: ${motivoTexto}`, 'success');
+      }
     };
 
     window.fecharModalChamarGarcom = () => {
@@ -3965,6 +4061,321 @@
       document.getElementById('modal-chamar-garcom').style.display = 'flex';
       showToast(`Garçom ${garcomNome} está indo até você`);
     });
+
+    // ══════ RACHA-CONTA COLABORATIVO NA MESA ══════
+    let _mesaItensComanda = [];
+    let _rachaAbaAtual = 'amigos';
+    let _rachaNumPessoas = 2;
+    let _rachaMeusItensSelecionados = new Set();
+    let _rachaValorTotalCalculado = 0;
+
+    socket.on('itens_mesa_recebidos', (data) => {
+      if (data && data.items) {
+        _mesaItensComanda = data.items.filter(i => {
+          const n = (i.productName || '').toLowerCase();
+          return !n.includes('pgto') && !n.includes('pagamento');
+        });
+        window._atualizarUIRachaConta();
+        atualizarBannerRepetirRodada();
+      }
+    });
+
+    window.abrirModalRachaConta = () => {
+      const modal = document.getElementById('modal-racha-conta');
+      if (!modal) return;
+      document.getElementById('racha-mesa-sub').innerText = `${mesaNome} &middot; Racha de Mesa`;
+      socket.emit('get_itens_mesa', mesaNome);
+      modal.style.display = 'flex';
+      window.selecionarAbaRacha('amigos');
+      window._atualizarUIRachaConta();
+    };
+
+    window.fecharModalRachaConta = () => {
+      const modal = document.getElementById('modal-racha-conta');
+      if (modal) modal.style.display = 'none';
+    };
+
+    window.selecionarAbaRacha = (aba) => {
+      _rachaAbaAtual = aba;
+      const tabAmigos = document.getElementById('tab-racha-amigos');
+      const tabItens = document.getElementById('tab-racha-itens');
+      const viewAmigos = document.getElementById('racha-view-amigos');
+      const viewItens = document.getElementById('racha-view-itens');
+      const viewPix = document.getElementById('racha-view-pix');
+
+      if (viewPix) viewPix.style.display = 'none';
+
+      if (aba === 'amigos') {
+        if (tabAmigos) {
+          tabAmigos.style.background = 'white';
+          tabAmigos.style.color = 'var(--primary)';
+          tabAmigos.style.fontWeight = '800';
+        }
+        if (tabItens) {
+          tabItens.style.background = 'transparent';
+          tabItens.style.color = '#64748b';
+          tabItens.style.fontWeight = '700';
+        }
+        if (viewAmigos) viewAmigos.style.display = 'block';
+        if (viewItens) viewItens.style.display = 'none';
+      } else {
+        if (tabItens) {
+          tabItens.style.background = 'white';
+          tabItens.style.color = 'var(--primary)';
+          tabItens.style.fontWeight = '800';
+        }
+        if (tabAmigos) {
+          tabAmigos.style.background = 'transparent';
+          tabAmigos.style.color = '#64748b';
+          tabAmigos.style.fontWeight = '700';
+        }
+        if (viewAmigos) viewAmigos.style.display = 'none';
+        if (viewItens) viewItens.style.display = 'block';
+      }
+      window._atualizarUIRachaConta();
+    };
+
+    window.mudarQtdPessoasRacha = (delta) => {
+      let novaQtd = _rachaNumPessoas + delta;
+      if (novaQtd < 2) novaQtd = 2;
+      if (novaQtd > 20) novaQtd = 20;
+      window.definirQtdPessoasRacha(novaQtd);
+    };
+
+    window.definirQtdPessoasRacha = (n) => {
+      _rachaNumPessoas = parseInt(n) || 2;
+      const elNum = document.getElementById('racha-num-pessoas');
+      if (elNum) elNum.innerText = _rachaNumPessoas;
+
+      document.querySelectorAll('.racha-chip').forEach(chip => {
+        if (parseInt(chip.innerText) === _rachaNumPessoas) {
+          chip.classList.add('active');
+        } else {
+          chip.classList.remove('active');
+        }
+      });
+      window._atualizarUIRachaConta();
+    };
+
+    window._atualizarUIRachaConta = () => {
+      let listaItens = (_mesaItensComanda && _mesaItensComanda.length > 0)
+        ? _mesaItensComanda
+        : (trackingOrders && trackingOrders.length > 0)
+          ? trackingOrders.map(t => ({ productName: t.productName, productEmoji: t.productEmoji, quantity: t.quantity || 1, total: (parseFloat(t.preco || 0) * (t.quantity || 1)) }))
+          : CART.map(c => ({ productName: c.nome, productEmoji: c.emoji, quantity: c.quantidade || 1, total: c.total || (c.preco * c.quantidade) }));
+
+      let totalMesa = 0;
+      listaItens.forEach(i => {
+        totalMesa += parseFloat(i.total || i.valor || 0);
+      });
+
+      if (totalMesa <= 0 && listaItens.length > 0) {
+        listaItens.forEach(i => {
+          const match = (MENU || []).find(m => (m.nome || '').toLowerCase() === (i.productName || '').toLowerCase());
+          if (match) totalMesa += parseFloat(match.preco) * (i.quantity || 1);
+        });
+      }
+
+      if (totalMesa <= 0) totalMesa = 120.00;
+
+      const elTotalMesa = document.getElementById('racha-total-mesa');
+      if (elTotalMesa) elTotalMesa.innerText = `R$ ${totalMesa.toFixed(2).replace('.', ',')}`;
+
+      const elTotalItens = document.getElementById('racha-total-itens');
+      if (elTotalItens) elTotalItens.innerText = `${listaItens.length} itens pedidos`;
+
+      // 1. Aba Amigos
+      const valorPorPessoa = totalMesa / _rachaNumPessoas;
+      const elMinhaParte = document.getElementById('racha-valor-minha-parte');
+      if (elMinhaParte) elMinhaParte.innerText = `R$ ${valorPorPessoa.toFixed(2).replace('.', ',')}`;
+
+      const elExplicacao = document.getElementById('racha-explicacao-divisao');
+      if (elExplicacao) elExplicacao.innerText = `(Total de R$ ${totalMesa.toFixed(2).replace('.', ',')} dividido por ${_rachaNumPessoas} amigos)`;
+
+      // 2. Aba Itens
+      const containerItens = document.getElementById('racha-lista-itens-mesa');
+      if (containerItens) {
+        if (listaItens.length === 0) {
+          containerItens.innerHTML = '<div style="padding:16px; text-align:center; color:#94a3b8; font-size:12px;">Nenhum item registrado ainda na mesa.</div>';
+        } else {
+          containerItens.innerHTML = listaItens.map((it, idx) => {
+            const itTotal = parseFloat(it.total || 0) || (function(){
+              const m = (MENU || []).find(x => (x.nome || '').toLowerCase() === (it.productName || '').toLowerCase());
+              return m ? parseFloat(m.preco) * (it.quantity || 1) : 25;
+            })();
+            const isChecked = _rachaMeusItensSelecionados.has(idx);
+            return `
+              <div class="racha-item-row" onclick="window._toggleItemRacha(${idx})">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <input type="checkbox" ${isChecked ? 'checked' : ''} style="width:16px; height:16px; cursor:pointer;" onclick="event.stopPropagation(); window._toggleItemRacha(${idx});">
+                  <span style="font-size:16px;">${it.productEmoji || '🍽️'}</span>
+                  <div>
+                    <div style="font-weight:700; color:#1e293b;">${it.productName || it.nome}</div>
+                    <div style="font-size:11px; color:#94a3b8;">Qtd: ${it.quantity || 1}</div>
+                  </div>
+                </div>
+                <span style="font-weight:800; color:#0f172a;">R$ ${itTotal.toFixed(2).replace('.', ',')}</span>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // Soma itens selecionados
+      let totalMeusItens = 0;
+      listaItens.forEach((it, idx) => {
+        if (_rachaMeusItensSelecionados.has(idx)) {
+          const itTotal = parseFloat(it.total || 0) || (function(){
+            const m = (MENU || []).find(x => (x.nome || '').toLowerCase() === (it.productName || '').toLowerCase());
+            return m ? parseFloat(m.preco) * (it.quantity || 1) : 25;
+          })();
+          totalMeusItens += itTotal;
+        }
+      });
+
+      const elMeusItens = document.getElementById('racha-valor-meus-itens');
+      if (elMeusItens) elMeusItens.innerText = `R$ ${totalMeusItens.toFixed(2).replace('.', ',')}`;
+    };
+
+    window._toggleItemRacha = (idx) => {
+      if (_rachaMeusItensSelecionados.has(idx)) {
+        _rachaMeusItensSelecionados.delete(idx);
+      } else {
+        _rachaMeusItensSelecionados.add(idx);
+      }
+      window._atualizarUIRachaConta();
+    };
+
+    window.avancarParaPixRacha = () => {
+      const elMinhaParte = document.getElementById('racha-valor-minha-parte');
+      let valStr = elMinhaParte ? elMinhaParte.innerText.replace('R$', '').replace('.', '').replace(',', '.').trim() : '0';
+      const valor = parseFloat(valStr) || 0;
+      window._renderizarTelaPixRacha(valor, `Divisão em ${_rachaNumPessoas} pessoas`);
+    };
+
+    window.avancarParaPixRachaItens = () => {
+      const elMeusItens = document.getElementById('racha-valor-meus-itens');
+      let valStr = elMeusItens ? elMeusItens.innerText.replace('R$', '').replace('.', '').replace(',', '.').trim() : '0';
+      const valor = parseFloat(valStr) || 0;
+      if (valor <= 0) {
+        if (typeof showToast === 'function') showToast('Selecione pelo menos 1 item consumido por você', 'warning');
+        return;
+      }
+      window._renderizarTelaPixRacha(valor, `${_rachaMeusItensSelecionados.size} itens selecionados`);
+    };
+
+    window._renderizarTelaPixRacha = (valor, descricao) => {
+      _rachaValorTotalCalculado = valor;
+      document.getElementById('racha-view-amigos').style.display = 'none';
+      document.getElementById('racha-view-itens').style.display = 'none';
+      const viewPix = document.getElementById('racha-view-pix');
+      viewPix.style.display = 'block';
+
+      document.getElementById('racha-pix-valor-display').innerText = `R$ ${valor.toFixed(2).replace('.', ',')}`;
+      document.getElementById('racha-pix-descricao').innerText = `Racha-Conta ${mesaNome} &middot; ${descricao}`;
+
+      const pixKey = CONFIGS.qr_pix_key || 'chefcozinha@pix.com.br';
+      const pixCopyString = `00020101021226840014BR.GOV.BCB.PIX0114${pixKey}5204000053039865405${valor.toFixed(2)}5802BR5915CHEFCOZINHABENE6008BRASILIA62070503***6304`;
+      document.getElementById('racha-pix-copia-string').innerText = pixCopyString;
+
+      const imgQr = document.getElementById('racha-pix-qr-img');
+      if (typeof window.qrImg === 'function') {
+        window.qrImg(imgQr, pixCopyString, 140);
+      } else {
+        imgQr.src = (window.location.origin || '') + '/api/qr?size=140&data=' + encodeURIComponent(pixCopyString);
+      }
+    };
+
+    window.voltarDoPixRacha = () => {
+      window.selecionarAbaRacha(_rachaAbaAtual);
+    };
+
+    window.copiarPixRacha = () => {
+      const txt = document.getElementById('racha-pix-copia-string').innerText;
+      navigator.clipboard.writeText(txt).then(() => {
+        if (typeof showToast === 'function') showToast('Código PIX Copia e Cola copiado com sucesso!', 'success');
+        else alert('Código Pix Copia e Cola copiado com sucesso!');
+      }).catch(() => {});
+    };
+
+    window.confirmarPagamentoPixRacha = () => {
+      const perfil = perfilClienteAtual();
+      const clienteNome = (perfil && perfil.nome) ? perfil.nome : '';
+      const valor = _rachaValorTotalCalculado || 0;
+
+      socket.emit('chamar_garcom', {
+        localName: mesaNome,
+        userName: 'Pagamento PIX',
+        clienteNome: clienteNome,
+        motivo: `💳 Racha-Conta PIX Pago: R$ ${valor.toFixed(2)}`,
+        productName: `💳 Racha-Conta PIX: R$ ${valor.toFixed(2)}`,
+        mensagem: `💳 Racha-Conta PIX Pago: R$ ${valor.toFixed(2)}`
+      });
+
+      if (window.ChefGastronomicAudio) window.ChefGastronomicAudio.playAddToCart();
+      if (window.ChefHaptics) window.ChefHaptics.pop();
+
+      window.fecharModalRachaConta();
+      if (typeof showToast === 'function') {
+        showToast(`🎉 Pagamento PIX de R$ ${valor.toFixed(2)} registrado! Avisamos o caixa e garçom.`, 'success');
+      }
+    };
+
+    // ══════ REPETIR RODADA RÁPIDA ══════
+    function atualizarBannerRepetirRodada() {
+      const wrap = document.getElementById('repetir-rodada-wrap');
+      if (!wrap) return;
+      const todos = [...(trackingOrders || []), ...(_mesaItensComanda || [])];
+      const bebidaOuPorcao = todos.find(o => {
+        const n = (o.productName || o.nome || '').toLowerCase();
+        return n.match(/(chopp|cerveja|caipirinha|refrigerante|coca|suco|batata|porção|pastel|fritas)/i);
+      });
+
+      if (!bebidaOuPorcao) {
+        wrap.innerHTML = '';
+        return;
+      }
+
+      const itemNome = bebidaOuPorcao.productName || bebidaOuPorcao.nome;
+      wrap.innerHTML = `
+        <div style="margin:6px 0 10px; padding:10px 12px; background:linear-gradient(135deg, rgba(245,158,11,0.12), rgba(252,75,21,0.12)); border:1.5px solid rgba(245,158,11,0.35); border-radius:12px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+            <span style="font-size:22px; flex-shrink:0;">🍺</span>
+            <div style="min-width:0;">
+              <div style="font-size:10.5px; font-weight:800; color:#b45309; text-transform:uppercase;">Repetir Rodada</div>
+              <div style="font-size:12.5px; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${itemNome}</div>
+            </div>
+          </div>
+          <button type="button" onclick="window.repetirRodadaRapida('${itemNome.replace(/'/g, "\\'")}')" style="flex-shrink:0; background:linear-gradient(135deg, #f59e0b, #d97706); color:white; border:none; padding:7px 12px; border-radius:8px; font-weight:800; font-size:11.5px; cursor:pointer; display:flex; align-items:center; gap:4px; box-shadow:0 3px 10px rgba(245,158,11,0.3);">
+            <i class="ph-bold ph-arrows-clockwise"></i> Pedir +1
+          </button>
+        </div>
+      `;
+    }
+
+    window.repetirRodadaRapida = (nomeItem) => {
+      const prod = MENU.find(p => (p.nome || '').toLowerCase().trim() === (nomeItem || '').toLowerCase().trim()) ||
+                   MENU.find(p => (p.nome || '').toLowerCase().includes((nomeItem || '').toLowerCase()));
+      if (!prod) {
+        if (typeof showToast === 'function') showToast(`Item ${nomeItem} não disponível no momento`, 'warning');
+        return;
+      }
+      CART.push({
+        id: prod.id,
+        nome: prod.nome,
+        preco: parseFloat(prod.preco),
+        quantidade: 1,
+        emoji: prod.emoji || '🍺',
+        observacao: 'Repetir Rodada Rápida',
+        composicoes: []
+      });
+      atualizarCartBadge();
+      if (window.ChefGastronomicAudio) window.ChefGastronomicAudio.playFizz();
+      if (window.ChefHaptics) window.ChefHaptics.pop();
+      if (typeof showToast === 'function') {
+        showToast(`🍺 Mais uma rodada de ${prod.nome} adicionada ao carrinho!`, 'success');
+      }
+    };
 
     const PREP_TIME = { 'Cozinha 1': 20, 'Pizzaria / Forno': 25, 'Forno': 15, 'Bar': 5, 'Caixa': 1, 'Chamada': 0 };
     let trackingOrders = [];
@@ -3984,6 +4395,7 @@
     }
 
     function renderTracking() {
+      atualizarBannerRepetirRodada();
       const container = document.getElementById('tracking-items');
       if (!trackingOrders.length) { container.innerHTML = ''; return; }
       container.innerHTML = trackingOrders.map(o => {
