@@ -10331,7 +10331,7 @@ function runIAVerificacao() {
       const criado = p.createdAt ? new Date(p.createdAt).getTime() : 0;
       if (!criado) return;
       const minsEspera = (agora - criado) / 60000;
-      if (minsEspera > 720) return; // Ignorar pedidos com mais de 12 horas
+      if (minsEspera > 180) return; // Ignorar pedidos com mais de 3 horas (evita alertas zumbis de ontem/turnos passados)
       const chaveAlerta = `pedido_${p.id}`;
 
       if (minsEspera >= IA_CONFIG.minutosCriticoEspera && p.status !== 'Pronto') {
@@ -10405,6 +10405,7 @@ function runIAVerificacao() {
       const criado = maisAntigo.createdAt ? new Date(maisAntigo.createdAt).getTime() : 0;
       if (!criado) return;
       const minsEspera = (agora - criado) / 60000;
+      if (minsEspera > 180) return; // Ignorar pedidos com mais de 3 horas (evita alertas zumbis de ontem/turnos passados)
       const chaveManobra = `manobra_${maisAntigo.id}`;
 
       if (minsEspera >= IA_CONFIG.minutosManobra && maisAntigo.status !== 'Pronto') {
@@ -10442,6 +10443,7 @@ function runIAVerificacao() {
       const criado = p.createdAt ? new Date(p.createdAt).getTime() : 0;
       if (!criado) return;
       const minsEspera = (agora - criado) / 60000;
+      if (minsEspera > 180) return; // Ignorar pedidos com mais de 3 horas
       const chaveAtencao = `atencao_${p.id}`;
 
       if (minsEspera >= IA_CONFIG.minutosAtencao && p.status !== 'Pronto' && p.status !== 'Finalizado' && p.status !== 'Cancelado') {

@@ -415,6 +415,7 @@
       <span class="restaurant-name" id="restaurant-name"
         style="margin-left:auto; font-size:13px; color:#aaa; padding-right:8px;"></span>
 
+
       <!-- SELETOR DE VERSÃO DO CAIXA: v1 (Clássico) vs v1.1.1 (Moderno) -->
       <div class="dropdown-wrapper" id="caixa-version-switcher-wrapper" style="position:relative;">
         <span class="menu-trigger caixa-version-badge" id="btn-toggle-caixa-version" onclick="var m = document.getElementById('drop-caixa-version'); if(m) m.classList.toggle('show'); event.stopPropagation();" title="Alternar versão da tela do Caixa" style="display:inline-flex; align-items:center; gap:5px; background:rgba(37,99,235,0.12); border:1px solid rgba(37,99,235,0.3); color:#2563eb; padding:3px 8px; border-radius:6px; font-size:11.5px; font-weight:700; cursor:pointer;">
@@ -978,6 +979,13 @@
           style="display: flex; gap: 6px; align-items: center; background: #fff3dc; border: 1px solid #fde047; padding: 4px 10px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; color: #854d0e; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">
           <i class="ph ph-users-three" style="font-size: 14px; color: #d97706;"></i> Fila: <span id="info-fila-espera-count" style="color: #d97706;">0</span>
         </button>
+        <button id="btn-qr-pedidos-pendentes" onclick="window.abrirModalQrPendentes && window.abrirModalQrPendentes()"
+          title="Ver Pedidos QR Pendentes" class="btn-status-qr"
+          style="display: none; align-items: center; gap: 5px; background: linear-gradient(135deg, #ea580c, #c2410c); border: 1px solid #f97316; padding: 3px 10px; border-radius: 20px; cursor: pointer; font-size: 11.5px; font-weight: bold; color: #fff; box-shadow: 0 2px 6px rgba(234,88,12,0.3); transition: transform 0.2s; white-space: nowrap;"
+          onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">
+          <i class="ph-bold ph-bell-ringing" style="font-size: 13px;"></i> Pedidos QR: <span
+            id="qr-pedidos-pendentes-count">0</span>
+        </button>
         <!-- Maintain the total count element invisibly so main.js doesn't crash -->
         <span id="status-mesas-count" style="display: none;">0</span>
       </span>
@@ -1284,12 +1292,6 @@
       </div>
     </div>
   </div>
-
-    <!-- Botão Flutuante de Pedidos QR Pendentes -->
-    <div id="btn-qr-pedidos-pendentes" onclick="window.abrirModalQrPendentes && window.abrirModalQrPendentes()" style="display: none; position: fixed; bottom: 20px; right: 20px; background: linear-gradient(135deg, #fc4b15, #ea580c); color: white; padding: 14px 20px; border-radius: 50px; font-weight: bold; box-shadow: 0 10px 25px rgba(252,75,21,0.4); cursor: pointer; z-index: 10000; align-items: center; gap: 8px; font-size: 14px; animation: pulseBounce 1.5s infinite;">
-      <i class="ph ph-bell-ringing" style="font-size: 20px;"></i>
-      <span id="qr-pedidos-pendentes-count">0</span> Pedidos QR Pendentes
-    </div>
 
   <!-- MODAL PEDIDOS QR PENDENTES -->
   <div class="modal-overlay" id="modal-qr-pedidos-pendentes" style="display: none; z-index: 100000; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center;">

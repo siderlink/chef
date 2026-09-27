@@ -2195,12 +2195,27 @@ function renderizarCardIndividual(item) {
   const hiddenFields = window.obterCardHidden();
   const corpoCard = obterCardOrder().map(k => hiddenFields.has(k) ? '' : (camposMontados[k] || '')).join('');
 
+  // KDS SLA: borda dinâmica por tempo (não afeta itens já prontos)
+  let slaBorderColor = localColor;
+  let slaAnimation = '';
+  if (!['Pronto', 'Prontos', 'Finalizado', 'Entregue', 'Pago', 'Cancelado'].includes(status)) {
+    if (diffMins < 12) {
+      slaBorderColor = '#22c55e';  // Verde  — dentro do SLA
+    } else if (diffMins < 20) {
+      slaBorderColor = '#f59e0b';  // Amarelo — atenção
+    } else {
+      slaBorderColor = '#ef4444';  // Vermelho — SLA estourado
+      slaAnimation = 'animation: slaPulseBorder 1.8s ease-in-out infinite;';
+    }
+  }
+
   return `
-    <div class="queue-item${isNewClass}" data-id="${id}" data-status="${statusEsc}" style="border-left: 5px solid ${localColor}; ${estiloEspecial}">
+    <div class="queue-item${isNewClass}" data-id="${id}" data-status="${statusEsc}" style="border-left: 5px solid ${slaBorderColor}; ${estiloEspecial} ${slaAnimation}">
       ${corpoCard}
     </div>
   `;
 }
+
 
   const modoAtual = localStorage.getItem('chef_kds_layout_mode') || 'grid';
 

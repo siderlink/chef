@@ -5528,8 +5528,14 @@ document.addEventListener('DOMContentLoaded', () => {
       `).join('');
 
       const subtotal = window.mesaAtual.total;
-      const taxaVal = window.servicoAdicional + (document.getElementById('taxa-servico')?.checked ? Math.max(0, subtotal - window.descontoAdicional) * 0.1 : 0);
+      const taxaPct = parseFloat(qrConfig?.rest_taxa_servico !== undefined ? qrConfig.rest_taxa_servico : '10') / 100;
+      const taxaVal = window.servicoAdicional + (document.getElementById('taxa-servico')?.checked ? Math.max(0, subtotal - window.descontoAdicional) * taxaPct : 0);
       const totalFinal = subtotal - window.descontoAdicional + taxaVal;
+
+      const restNomePrint = (qrConfig?.rest_nome || 'CHEF COZINHA').toUpperCase();
+      const cupomRodape = qrConfig?.rest_cupom_rodape || 'Obrigado pela preferência!';
+      const cupomWifi = qrConfig?.rest_cupom_wifi || '';
+      const cupomReview = qrConfig?.rest_cupom_google_review || '';
 
       printWindow.document.write(`
         <html><head><style>
@@ -5538,18 +5544,20 @@ document.addEventListener('DOMContentLoaded', () => {
           .bold { font-weight: bold; }
           .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
         </style></head><body>
-          <div class="center bold" style="font-size:16px;">CHEF COZINHA</div>
-          <div class="center" style="margin-bottom:10px;">CONFERÊNCIA DE MESA</div>
+          <div class="center bold" style="font-size:16px;">${restNomePrint}</div>
+          <div class="center" style="margin-bottom:10px; font-size:12px;">CONFERÊNCIA DE MESA</div>
           <div>Mesa: <span class="bold">${window.mesaAtual.isGroup ? window.mesaAtual.mesaName : window.mesaAtual.nome}</span></div>
           <div class="divider"></div>
           ${itemsHtml}
           <div class="divider"></div>
           <div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>R$ ${Math.max(0, subtotal).toFixed(2).replace('.', ',')}</span></div>
           ${window.descontoAdicional > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Desconto:</span><span>- R$ ${window.descontoAdicional.toFixed(2).replace('.', ',')}</span></div>` : ''}
-          ${taxaVal > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Serviços/Taxas:</span><span>R$ ${taxaVal.toFixed(2).replace('.', ',')}</span></div>` : ''}
+          ${taxaVal > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Serviço (${(taxaPct*100).toFixed(0)}%):</span><span>R$ ${taxaVal.toFixed(2).replace('.', ',')}</span></div>` : ''}
           <div class="divider"></div>
           <div class="bold" style="display:flex; justify-content:space-between; font-size:14px;"><span>TOTAL:</span><span>R$ ${Math.max(0, totalFinal).toFixed(2).replace('.', ',')}</span></div>
-          <div class="center" style="margin-top:20px; font-size:10px;">Obrigado pela preferência!</div>
+          ${cupomWifi ? `<div class="center" style="margin-top:12px; font-size:10px; border-top:1px dotted #ccc; padding-top:6px;">📶 ${cupomWifi}</div>` : ''}
+          <div class="center" style="margin-top:14px; font-size:10px; font-weight:bold;">${cupomRodape}</div>
+          ${cupomReview ? `<div class="center" style="margin-top:6px; font-size:9px;">⭐ Avalie no Google: ${cupomReview}</div>` : ''}
         </body></html>
       `);
       printWindow.document.close();
@@ -7267,6 +7275,107 @@ window.checkoutModalCalcularDivisao = () => {
   if (statusTxt) statusTxt.textContent = `Dividido em ${parts}x de R$ ${share.toFixed(2).replace('.', ',')}`;
 };
 
+// ── 🖨️ IMPRESSÃO SILENCIOSA ESC/POS (sem dialog) ──────────────────────────
+window.imprimirCupomSilencioso = async function ({ mesa, items, total, subtotal, conteudo, impressora } = {}) {
+  try {
+    const token = localStorage.getItem('authToken') || window.authToken || '';
+    const payload = { mesa, items, total, subtotal, conteudo, impressora };
+    const resp = await fetch('/api/imprimir/cupom-raw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+    const r = await resp.json();
+    if (r && r.ok === false) {
+      console.warn('[Impressão Silenciosa] Erro:', r.erro || r);
+    }
+    return r;
+  } catch (e) {
+    console.warn('[Impressão Silenciosa] Falha na requisição:', e);
+    return { ok: false, erro: String(e) };
+  }
+};
+
+// ── 💰 QUICK CASH (Rush Mode) ──────────────────────────────────────────
+// 'exato' = preenche exatamente o saldo restante (sem troco)
+// número = preenche o valor da cédula; se for maior que o saldo, o troco
+//          é calculado e exibido no campo "Restante"
+window.checkoutModalSetQuickCash = function (val) {
+  const falta = window.mesaFaltaPagar || 0;
+  let valor;
+  if (val === 'exato') {
+    valor = falta > 0 ? falta : (window.mesaTotalComTaxa || 0);
+    window._checkoutAutoFilled = true;
+  } else {
+    valor = parseFloat(val) || 0;
+    window._checkoutAutoFilled = false;
+  }
+
+  window.checkoutModalCents = Math.round(valor * 100);
+
+  const inputValor = document.getElementById('checkout-modal-valor');
+  if (inputValor) {
+    inputValor.value = 'R$ ' + valor.toFixed(2).replace('.', ',');
+    // Efeito visual de confirmação
+    inputValor.style.borderColor = '#3ab55b';
+    inputValor.style.background = '#f0fff4';
+    setTimeout(() => {
+      inputValor.style.borderColor = '';
+      inputValor.style.background = '';
+    }, 600);
+  }
+
+  if (typeof window.checkoutModalUpdateTouchVisor === 'function') {
+    window.checkoutModalUpdateTouchVisor();
+  }
+  if (typeof window.calcRestante === 'function') window.calcRestante();
+};
+
+// ── ✂️ DIVISÃO EXPRESSA (um clique = N partes iguais) ────────────────
+window.checkoutModalCalcularDivisaoExpressa = function (n) {
+  const falta = window.mesaFaltaPagar;
+  if (!falta || falta <= 0) return;
+
+  const share = falta / n;
+
+  const inputValor = document.getElementById('checkout-modal-valor');
+  if (inputValor) {
+    inputValor.value = 'R$ ' + share.toFixed(2).replace('.', ',');
+    inputValor.style.borderColor = '#3b82f6';
+    inputValor.style.background = '#eff6ff';
+    setTimeout(() => {
+      inputValor.style.borderColor = '';
+      inputValor.style.background = '';
+    }, 600);
+  }
+
+  window.checkoutModalCents = Math.round(share * 100);
+  if (typeof window.checkoutModalUpdateTouchVisor === 'function') {
+    window.checkoutModalUpdateTouchVisor();
+  }
+
+  // Atualiza o hidden input de partes (para manter compat com checkoutModalCalcularDivisao)
+  const inputParts = document.getElementById('checkout-modal-split-parts');
+  if (inputParts) inputParts.value = String(n);
+
+  // Mostra o status de divisão
+  const statusBox = document.getElementById('checkout-modal-split-status');
+  const statusTxt = document.getElementById('checkout-modal-split-status-txt');
+  if (statusBox) statusBox.style.display = 'flex';
+  if (statusTxt) statusTxt.textContent = `Dividido em ${n}x de R$ ${share.toFixed(2).replace('.', ',')}`;
+
+  // Destaca o chip ativo
+  document.querySelectorAll('[onclick^="window.checkoutModalCalcularDivisaoExpressa"]').forEach(btn => {
+    const match = btn.getAttribute('onclick').match(/\((\d+)\)/);
+    const isActive = match && parseInt(match[1]) === n;
+    btn.style.background = isActive ? '#1d4ed8' : 'white';
+    btn.style.color = isActive ? 'white' : '#1d4ed8';
+    btn.style.borderColor = isActive ? '#1d4ed8' : '#93c5fd';
+  });
+
+  if (typeof window.calcRestante === 'function') window.calcRestante();
+};
+
 window.checkoutModalCancelarDivisao = () => {
   const inputParts = document.getElementById('checkout-modal-split-parts');
   if (inputParts) inputParts.value = '2';
@@ -7274,19 +7383,28 @@ window.checkoutModalCancelarDivisao = () => {
   const statusBox = document.getElementById('checkout-modal-split-status');
   if (statusBox) statusBox.style.display = 'none';
 
+  // Reset chip styles
+  document.querySelectorAll('[onclick^="window.checkoutModalCalcularDivisaoExpressa"]').forEach(btn => {
+    btn.style.background = 'white';
+    btn.style.color = '#1d4ed8';
+    btn.style.borderColor = '#93c5fd';
+  });
+
   const falta = window.mesaFaltaPagar || 0;
   const inputValor = document.getElementById('checkout-modal-valor');
   if (inputValor) {
-    inputValor.value = "R$ " + falta.toFixed(2).replace('.', ',');
+    inputValor.value = 'R$ ' + falta.toFixed(2).replace('.', ',');
   }
-
   window.checkoutModalCents = Math.round(falta * 100);
   if (typeof window.checkoutModalUpdateTouchVisor === 'function') {
     window.checkoutModalUpdateTouchVisor();
   }
+  if (typeof window.calcRestante === 'function') window.calcRestante();
 };
 
 window.customNfceConfig = null;
+
+
 
 window.abrirModalCustomNfce = () => {
   const modal = document.getElementById('modal-custom-nfce');
@@ -7991,20 +8109,20 @@ window.checkoutEscolherCliente = (cliente) => {
 
 // --- SISTEMA DE PERSONALIZAÇÃO DE ATALHOS DO TECLADO (TECLAGEM OPERACIONAL) ---
 window.DEFAULT_SHORTCUTS = {
-  "adicionar_produtos": "F1",
-  "pagamento_parcial": "F2",
-  "fechar_mesa": "F3",
+  "adicionar_produtos": "F2",
+  "pagamento_parcial": "F7",
+  "fechar_mesa": "F12",
   "buscar_mesa": "F4",
   "atualizar_mesas": "F5",
   "desconto": "F6",
-  "taxa_servico": "F7",
+  "taxa_servico": "F10",
   "ver_comissao": "F8",
   "imprimir_conta": "F9",
-  "alterar_mesa": "F10",
-  "juntar_mesa": "F11",
-  "fila_cozinha": "F12",
+  "alterar_mesa": "F11",
+  "juntar_mesa": "Ctrl+J",
+  "fila_cozinha": "F3",
   "venda_balcao": "F2",
-  "venda_delivery": "F3"
+  "venda_delivery": "Ctrl+D"
 };
 
 window.SHORTCUT_LABELS = {
@@ -9244,11 +9362,12 @@ function removerAlertaIA(btnOuEl) {
 if (typeof socket !== 'undefined' && socket.on) {
   socket.on('ia_alerta_caixa', (data) => {
     const { nivel, mesa, produto, minutos, mensagem, sugestoes, pedidoId } = data;
+    if (minutos > 180) return; // Ignora alertas de pedidos antigos/turnos anteriores
     const bgColor = nivel === 'critico' ? '#ef4444' : '#f59e0b';
     const icon = nivel === 'critico' ? '<i class="ph ph-warning-circle"></i>' : '<i class="ph ph-warning"></i>';
 
-    // Toast notification
-    showToastIA(`${icon} ${mensagem}`, bgColor);
+    // Toast notification desativado no caixa para nao obstruir operacao
+    // showToastIA(`${icon} ${mensagem}`, bgColor);
 
     // Notificação do navegador
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -9303,9 +9422,11 @@ if (typeof socket !== 'undefined' && socket.on) {
   // --- MANOBRA: Alerta de risco de desistência ---
   socket.on('ia_manobra_sugerida', (data) => {
     const { pedidoId, mesa, produto, minutos, itensProntos, itensPendentes, temParcial, mensagem, setor } = data;
+    if (minutos > 180) return; // Ignora alertas zumbis de pedidos antigos/turnos passados
     const bgColor = '#ff6b35';
 
-    const msgFormatadaToast = String(mensagem || '').replace(/há\s+(\d+)min/gi, (m, p) => 'há ' + formatarTempoFila(parseInt(p, 10))); showToastIA(`Manobra: ${msgFormatadaToast}`, bgColor);
+    const msgFormatadaToast = String(mensagem || '').replace(/há\s+(\d+)min/gi, (m, p) => 'há ' + formatarTempoFila(parseInt(p, 10)));
+    // showToastIA(`Manobra: ${msgFormatadaToast}`, bgColor); // Desativado no caixa para nao obstruir operacao
 
     if ('Notification' in window && Notification.permission === 'granted') {
       if (!window._lastIaNotifTime || Date.now() - window._lastIaNotifTime > 5000) {
@@ -9389,6 +9510,9 @@ function criarPainelAlertasIA() {
         <span id="ia-alertas-header-badge" class="ia-count-badge">0</span>
       </div>
       <div class="ia-header-actions">
+        <button id="ia-btn-clear-all" class="ia-tool-btn" title="Dispensar todos os alertas">
+          <i class="ph ph-checks"></i>
+        </button>
         <button id="ia-btn-font-down" class="ia-tool-btn" title="Diminuir letras e botões (a-)">
           <i class="ph ph-text-aa"></i><span style="font-size:9px;margin-left:-2px;font-weight:900;">-</span>
         </button>
@@ -9435,6 +9559,17 @@ function criarPainelAlertasIA() {
   if (btnDown) btnDown.onclick = (e) => { e.stopPropagation(); aplicarEscala(iaScale - 0.1); };
   if (btnUp) btnUp.onclick = (e) => { e.stopPropagation(); aplicarEscala(iaScale + 0.1); };
 
+  /* ── Botão Limpar / Dispensar Todos ── */
+  const btnClear = panel.querySelector('#ia-btn-clear-all');
+  if (btnClear) {
+    btnClear.onclick = (e) => {
+      e.stopPropagation();
+      const cards = panel.querySelectorAll('[data-pedido-id]');
+      cards.forEach(c => c.remove());
+      minimizarPainel();
+    };
+  }
+
   /* ── Alça de redimensionamento ── */
   const handle = document.createElement('div');
   handle.title = 'Arraste para ajustar o tamanho';
@@ -9471,14 +9606,14 @@ function criarPainelAlertasIA() {
   document.addEventListener('mouseup', pararResize);
   document.addEventListener('touchend', pararResize);
 
-  /* ── Ícone Flutuante / Botão de Acesso Rápido ── */
+  /* ── Ícone Flutuante Desativado (nunca obstrui botoes de venda do caixa) ── */
   let icone = document.getElementById('ia-alertas-icon');
   if (!icone) {
     icone = document.createElement('button');
     icone.id = 'ia-alertas-icon';
     icone.title = 'Alertas Inteligentes';
-    icone.style.cssText = 'display:none;position:fixed;bottom:80px;right:16px;width:46px;height:46px;border-radius:50%;border:none;background:#1e293b;color:#fbbf24;font-size:22px;cursor:pointer;z-index:9000;box-shadow:0 4px 16px rgba(0,0,0,0.35);align-items:center;justify-content:center;';
-    icone.innerHTML = '<i class="ph ph-robot"></i><span id="ia-alertas-badge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;line-height:18px;text-align:center;">0</span>';
+    icone.style.cssText = 'display:none !important;position:fixed;bottom:-9999px;right:-9999px;width:0;height:0;pointer-events:none !important;visibility:hidden !important;opacity:0 !important;';
+    icone.innerHTML = '<i class="ph ph-robot"></i><span id="ia-alertas-badge" style="display:none;">0</span>';
     document.body.appendChild(icone);
   }
 
@@ -9491,7 +9626,7 @@ function criarPainelAlertasIA() {
 
   function minimizarPainel() {
     panel.style.display = 'none';
-    icone.style.display = 'flex';
+    icone.style.display = 'none';
     try { localStorage.setItem('ia_alerta_minimized', 'true'); } catch (e) {}
     atualizarEstado();
   }
@@ -9524,30 +9659,24 @@ function criarPainelAlertasIA() {
     const iconBadge = document.getElementById('ia-alertas-badge');
     if (iconBadge) {
       iconBadge.textContent = count;
-      iconBadge.style.display = count > 0 ? 'block' : 'none';
+      iconBadge.style.display = 'none';
     }
 
     if (emptyState) {
       emptyState.style.display = count === 0 ? 'flex' : 'none';
     }
 
-    // Se chegar um novo alerta enquanto minimizado, restaura o painel automaticamente
-    if (count > 0 && panel.style.display === 'none') {
-      abrirPainel();
-    }
-
-    // Ociosidade: sem alertas ativos o painel e o ícone flutuante desaparecem
-    // por completo (nada de "Tudo sob controle!" ocupando a tela).
+    // NUNCA auto-abre o painel na cara do operador de caixa nem exibe botao flutuante sobre Finalizar Venda
+    icone.style.display = 'none';
     if (count === 0) {
       panel.style.display = 'none';
-      icone.style.display = 'none';
     }
   }
 
   window.atualizarEstadoPainelIA = atualizarEstado;
   atualizarEstado();
 
-  // Se o colaborador havia minimizado previamente e não tem alertas ativos, respeita
+  // Se o colaborador havia minimizado previamente, respeita
   try {
     const wasMin = localStorage.getItem('ia_alerta_minimized') === 'true';
     if (wasMin) {
@@ -9566,35 +9695,152 @@ if (document.readyState === 'loading') {
   try { criarPainelAlertasIA(); } catch (e) {}
 }
 
-// --- IA Toast Queue (prevents stacking) ---
+// --- Central Silenciosa de Notificações (Bell no status bar) ---
+window._sinoNotificacoes = [];
+
+window.abrirCentralNotificacoes = function () {
+  const drawer = document.getElementById('drawer-central-notificacoes');
+  if (drawer) {
+    drawer.style.display = drawer.style.display === 'flex' ? 'none' : 'flex';
+    if (drawer.style.display === 'flex') {
+      // Marca como lido ao abrir
+      const badge = document.getElementById('sino-badge');
+      if (badge) badge.style.display = 'none';
+      // Renderiza lista
+      const lista = document.getElementById('sino-lista');
+      if (lista) {
+        if (window._sinoNotificacoes.length === 0) {
+          lista.innerHTML = '<div style="color:#64748b;font-size:13px;text-align:center;padding:20px;">Sem notificações pendentes</div>';
+        } else {
+          lista.innerHTML = window._sinoNotificacoes.slice().reverse().map((n, i) => `
+            <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border-color,#e2e8f0);font-size:12.5px;">
+              <span style="width:10px;height:10px;border-radius:50%;background:${n.bg||'#1e293b'};flex-shrink:0;margin-top:3px;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="color:var(--text-primary,#1e293b);font-weight:600;word-break:break-word;">${n.msg}</div>
+                <div style="color:#94a3b8;font-size:10.5px;margin-top:2px;">${n.hora}</div>
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+    }
+  } else {
+    // Cria o drawer na primeira chamada
+    _criarDrawerNotificacoes();
+    window.abrirCentralNotificacoes();
+  }
+};
+
+function _criarDrawerNotificacoes() {
+  if (document.getElementById('drawer-central-notificacoes')) return;
+  const d = document.createElement('div');
+  d.id = 'drawer-central-notificacoes';
+  d.style.cssText = 'display:none;position:fixed;bottom:36px;right:12px;width:300px;max-height:340px;background:var(--bg-card,#fff);border:1px solid var(--border-color,#e2e8f0);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.18);flex-direction:column;z-index:99990;overflow:hidden;';
+  d.innerHTML = `
+    <div style="padding:10px 14px;background:var(--bg-secondary,#f8fafc);border-bottom:1px solid var(--border-color,#e2e8f0);display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:5px;"><i class="ph ph-bell"></i> Notificações</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="window._sinoNotificacoes=[];document.getElementById('sino-lista').innerHTML='<div style=&quot;color:#64748b;font-size:13px;text-align:center;padding:20px;&quot;>Sem notificações</div>';" style="background:none;border:none;font-size:11px;color:#94a3b8;cursor:pointer;font-weight:600;">Limpar</button>
+        <button onclick="document.getElementById('drawer-central-notificacoes').style.display='none'" style="background:none;border:none;font-size:18px;color:#64748b;cursor:pointer;line-height:1;">&times;</button>
+      </div>
+    </div>
+    <div id="sino-lista" style="overflow-y:auto;flex:1;"><div style="color:#64748b;font-size:13px;text-align:center;padding:20px;">Sem notificações pendentes</div></div>
+  `;
+  document.body.appendChild(d);
+  // Fecha ao clicar fora
+  document.addEventListener('click', function(e) {
+    if (!d.contains(e.target) && e.target.id !== 'btn-sino-notificacoes' && !e.target.closest('#btn-sino-notificacoes')) {
+      d.style.display = 'none';
+    }
+  }, true);
+}
+
+function _pushNotificacaoSilenciosa(msg, bg) {
+  const agora = new Date();
+  const hora = agora.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+  window._sinoNotificacoes.push({ msg, bg: bg || '#1e293b', hora });
+  if (window._sinoNotificacoes.length > 50) window._sinoNotificacoes.shift();
+
+  // Atualiza badge
+  const badge = document.getElementById('sino-badge');
+  const drawer = document.getElementById('drawer-central-notificacoes');
+  const drawerOpen = drawer && drawer.style.display === 'flex';
+  if (badge && !drawerOpen) {
+    const count = (window._sinoNotificacoes || []).length;
+    badge.textContent = count > 99 ? '99+' : String(count);
+    badge.style.display = 'inline-block';
+    // Pisca o ícone do sino
+    const sino = document.getElementById('btn-sino-notificacoes');
+    if (sino) {
+      sino.style.transform = 'scale(1.15)';
+      setTimeout(() => { sino.style.transform = ''; }, 250);
+    }
+  }
+}
+
+// --- IA Toast Queue (prevents stacking & centered at top) ---
 window._iaToastQueue = [];
 window._iaToastActive = false;
 
+function _isModalCobrancaAberto() {
+  const checkout = document.getElementById('checkout-modal-overlay');
+  const pdv = document.getElementById('pdv-overlay');
+  const comanda = document.getElementById('comanda-checkout-overlay');
+  return (checkout && checkout.style.display !== 'none' && checkout.style.display !== '') ||
+         (pdv && pdv.style.display !== 'none' && pdv.style.display !== '') ||
+         (comanda && comanda.style.display !== 'none' && comanda.style.display !== '');
+}
+
 function showToastIA(msg, bg) {
+  // Se modal de cobrança estiver aberto: vai para sino silencioso, NÃO bloqueia a tela
+  if (_isModalCobrancaAberto()) {
+    _pushNotificacaoSilenciosa(msg, bg);
+    return;
+  }
   window._iaToastQueue.push({ msg: msg, bg: bg });
   processIaToastQueue();
 }
+
 
 function processIaToastQueue() {
   if (window._iaToastActive || window._iaToastQueue.length === 0) return;
   window._iaToastActive = true;
   var item = window._iaToastQueue.shift();
   var el = document.createElement('div');
-  el.style.cssText = 'position:fixed;top:60px;right:16px;background:' + (item.bg || '#1e293b') + ';color:white;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;max-width:350px;box-shadow:0 4px 16px rgba(0,0,0,0.2);animation:slideToast 0.2s ease-out;transition:opacity 0.3s;';
-  // (Segurança) Usar textContent para evitar XSS. Emojis e texto são preservados.
-  // Se item.html === true for explicitamente passado, permite HTML apenas de strings internas.
-  if (item.html === true) {
-    el.innerHTML = item.msg; // somente para mensagens internas do sistema (não do servidor)
+  el.className = 'ia-toast-banner';
+  el.style.cssText = 'position:fixed;bottom:42px;left:50%;transform:translateX(-50%);background:' + (item.bg || '#1e293b') + ';color:white;padding:10px 18px;border-radius:30px;font-size:13px;font-weight:600;z-index:99999;max-width:90vw;box-shadow:0 8px 24px rgba(0,0,0,0.25);animation:slideToastTop 0.25s cubic-bezier(0.16, 1, 0.3, 1);transition:all 0.3s;display:flex;align-items:center;gap:10px;pointer-events:auto;cursor:pointer;';
+
+  var textSpan = document.createElement('span');
+  if (item.html === true || (typeof item.msg === 'string' && /<[a-z][\s\S]*>/i.test(item.msg))) {
+    textSpan.innerHTML = item.msg;
   } else {
-    el.textContent = item.msg;
+    textSpan.textContent = item.msg;
   }
+  el.appendChild(textSpan);
+
+  var closeBtn = document.createElement('button');
+  closeBtn.innerHTML = '&times;';
+  closeBtn.style.cssText = 'background:rgba(255,255,255,0.25);border:none;color:white;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;line-height:1;margin-left:6px;';
+  closeBtn.title = 'Fechar';
+  el.appendChild(closeBtn);
+
+  var dismiss = function() {
+    if (el._dismissed) return;
+    el._dismissed = true;
+    el.style.opacity = '0';
+    el.style.transform = 'translate(-50%, -10px)';
+    setTimeout(function() {
+      el.remove();
+      window._iaToastActive = false;
+      processIaToastQueue();
+    }, 250);
+  };
+
+  closeBtn.onclick = function(e) { e.stopPropagation(); dismiss(); };
+  el.onclick = dismiss;
+
   document.body.appendChild(el);
-  setTimeout(function () { el.style.opacity = '0'; }, 4000);
-  setTimeout(function () {
-    el.remove();
-    window._iaToastActive = false;
-    processIaToastQueue();
-  }, 4500);
+  setTimeout(dismiss, 4000);
 }
 
 // --- RESIZABLE COLUMNS FOR PRODUCTS TABLE ---

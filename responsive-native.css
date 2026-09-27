@@ -137,11 +137,13 @@ body.chef-ui-wide .chef-app {
   }
 }
 
-/* ── 7. Botão flutuante de Pedidos QR Pendentes: sempre acima das barras ──
-   (#btn-qr-pedidos-pendentes = /html/body/div[10]). Fica sobre qualquer
-   barra, botão ou FAB quando visível, mas abaixo dos modais full-screen. */
+/* ── 7. Botão de Pedidos QR Pendentes: integrado na barra inferior de status ── */
 #btn-qr-pedidos-pendentes {
-  z-index: 15000 !important;
+  position: static !important;
+  bottom: auto !important;
+  right: auto !important;
+  z-index: 10 !important;
+  white-space: nowrap !important;
 }
 
 /* ── 8. Menu mobile (hamburger) acima de tudo quando visível ──
@@ -172,8 +174,10 @@ body.chef-ui-wide .chef-app {
   }
 
   .top-menubar {
-    flex-wrap: wrap;
-    height: auto !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 34px !important;
     min-height: 34px;
   }
 

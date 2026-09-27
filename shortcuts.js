@@ -1,19 +1,19 @@
 // Definições canônicas de atalhos operacionais (evita dependência de ordem de carregamento com main.js)
 const DEFAULT_SHORTCUTS = {
-  "adicionar_produtos": "F1",
-  "pagamento_parcial": "F2",
-  "fechar_mesa": "F3",
+  "adicionar_produtos": "F2",
+  "pagamento_parcial": "F7",
+  "fechar_mesa": "F12",
   "buscar_mesa": "F4",
   "atualizar_mesas": "F5",
   "desconto": "F6",
-  "taxa_servico": "F7",
+  "taxa_servico": "F10",
   "ver_comissao": "F8",
   "imprimir_conta": "F9",
-  "alterar_mesa": "F10",
-  "juntar_mesa": "F11",
-  "fila_cozinha": "F12",
+  "alterar_mesa": "F11",
+  "juntar_mesa": "Ctrl+J",
+  "fila_cozinha": "F3",
   "venda_balcao": "F2",
-  "venda_delivery": "F3"
+  "venda_delivery": "Ctrl+D"
 };
 
 const SHORTCUT_LABELS = {
@@ -209,17 +209,46 @@ document.addEventListener('keydown', (e) => {
   const isCheckoutOpen = checkoutModal && checkoutModal.style.display !== 'none' && checkoutModal.style.display !== '';
 
   if (isCheckoutOpen) {
+    // F12 no Checkout: Fecha instantaneamente em menos de 3s sem mouse!
+    if (e.key === 'F12') {
+      e.preventDefault();
+      const falta = window.mesaFaltaPagar || 0;
+      if (falta > 0.01) {
+        if (typeof window.checkoutModalSetRemainingTouchValue === 'function') {
+          window.checkoutModalSetRemainingTouchValue();
+        }
+        if (typeof window.checkoutModalAddPagamento === 'function') {
+          window.checkoutModalAddPagamento();
+        }
+      }
+      setTimeout(() => {
+        if (typeof window.checkoutModalConfirmarFechamento === 'function') {
+          window.checkoutModalConfirmarFechamento();
+        }
+      }, 60);
+      return;
+    }
+
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
       if (window.checkoutModalConfirmarFechamento) window.checkoutModalConfirmarFechamento();
       return;
     }
+
+    // Se já estiver quitado e apertar Enter: finaliza na hora!
+    if (e.key === 'Enter' && (!window.mesaFaltaPagar || window.mesaFaltaPagar <= 0.01)) {
+      e.preventDefault();
+      if (window.checkoutModalConfirmarFechamento) window.checkoutModalConfirmarFechamento();
+      return;
+    }
+
     // ENTER no campo de valor registra o pagamento direto (teclado numérico)
     if (e.key === 'Enter' && activeEl && activeEl.id === 'checkout-modal-valor') {
       e.preventDefault();
       if (window.checkoutModalAddPagamento) window.checkoutModalAddPagamento();
       return;
     }
+
     if (!isInputActive) {
       const keyUpper = e.key.toUpperCase();
       let selectMethod = null;
@@ -234,8 +263,11 @@ document.addEventListener('keydown', (e) => {
         const sel = document.getElementById('checkout-modal-metodo');
         if (sel) {
           sel.value = selectMethod;
-          if (window.checkoutModalAddPagamento) window.checkoutModalAddPagamento();
         }
+        if (typeof window.checkoutModalSelectTouchMethod === 'function') {
+          window.checkoutModalSelectTouchMethod(selectMethod);
+        }
+        if (window.checkoutModalAddPagamento) window.checkoutModalAddPagamento();
       }
     }
   }

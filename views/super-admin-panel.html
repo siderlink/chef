@@ -254,7 +254,7 @@
             <small>Suporte Técnico</small>
           </div>
         </div>
-        <button class="btn-logout" id="btn-sair">
+        <button class="btn-logout" id="btn-sair" onclick="logout()">
           <i class="fa-solid fa-arrow-right-from-bracket"></i>
           <span>Desconectar</span>
         </button>
@@ -267,7 +267,7 @@
       <!-- Cabeçalho -->
       <div class="content-header">
         <div style="display:flex;align-items:center;gap:0.8rem;">
-          <button id="btn-hamburger"><i class="fa-solid fa-bars"></i></button>
+          <button id="btn-hamburger" onclick="toggleMobileSidebar()"><i class="fa-solid fa-bars"></i></button>
           <div class="header-title">
             <h1 id="panel-title">Dashboard</h1>
             <p id="panel-subtitle">Visão geral do ecossistema de licenças Chef Cozinha</p>
@@ -283,11 +283,11 @@
             <i class="fa-solid fa-sun" id="theme-toggle-icon-super"></i>
             <span id="theme-toggle-text-super">Modo Claro</span>
           </button>
-          <button class="btn-action" id="btn-refresh-data">
+          <button class="btn-action" id="btn-refresh-data" onclick="switchTab('sec-dash')">
             <i class="fa-solid fa-rotate"></i>
             <span>Sincronizar</span>
           </button>
-          <button class="btn-action btn-primary-action" id="btn-header-new-key">
+          <button class="btn-action btn-primary-action" id="btn-header-new-key" onclick="switchTab('sec-licencas')">
             <i class="fa-solid fa-plus"></i>
             <span>Nova Licença</span>
           </button>
@@ -566,7 +566,7 @@
                   <option value="90">Últimos 90 dias</option>
                   <option value="365">Último ano</option>
                 </select>
-                <button class="btn-action btn-primary-action" id="btn-bi-atualizar">
+                <button class="btn-action btn-primary-action" id="btn-bi-atualizar" onclick="carregarBiFranquias()">
                   <i class="fa-solid fa-rotate"></i><span>Atualizar</span>
                 </button>
               </div>
@@ -751,7 +751,7 @@
                   <option value="trial">Trial</option>
                   <option value="bloqueado">Bloqueados</option>
                 </select>
-                <button class="btn-action btn-primary-action" id="btn-novo-restaurante">
+                <button class="btn-action btn-primary-action" id="btn-novo-restaurante" onclick="abrirModalNovoRestaurante()">
                   <i class="fa-solid fa-plus"></i><span>Novo Restaurante</span>
                 </button>
               </div>
@@ -784,7 +784,7 @@
                 <select class="select-filter" id="rest-f-dispositivo">
                   <option value="">Todo dispositivo</option>
                 </select>
-                <button class="btn-row-action edit-action" id="btn-rest-limpar-filtros"
+                <button class="btn-row-action edit-action" id="btn-rest-limpar-filtros" onclick="limparFiltrosRestaurantes()"
                   title="Limpar filtros" style="padding:6px 12px;"><i class="fa-solid fa-eraser"></i></button>
               </div>
             </details>
@@ -829,7 +829,7 @@
                   <option value="garcom">Garçom</option>
                   <option value="cozinha">Cozinha</option>
                 </select>
-                <button class="btn-action btn-primary-action" id="btn-novo-usuario">
+                <button class="btn-action btn-primary-action" id="btn-novo-usuario" onclick="abrirModalNovoUsuario()">
                   <i class="fa-solid fa-user-plus"></i><span>Novo Usuário</span>
                 </button>
               </div>
@@ -887,10 +887,10 @@
             </div>
           </div>
           <div style="margin-top:1.5rem;display:flex;gap:1rem;flex-wrap:wrap;">
-            <button class="btn-action btn-primary-action" id="btn-refresh-server">
+            <button class="btn-action btn-primary-action" id="btn-refresh-server" onclick="carregarServidor()">
               <i class="fa-solid fa-rotate"></i><span>Atualizar Status</span>
             </button>
-            <button class="btn-action" id="btn-backup"
+            <button class="btn-action" id="btn-backup" onclick="criarBackup()"
               style="background:rgba(16,185,129,0.15);color:#34d399;border-color:rgba(16,185,129,0.3);">
               <i class="fa-solid fa-download"></i><span>Criar Backup</span>
             </button>
@@ -965,7 +965,7 @@
                   style="width:100%;padding:0.65rem 0.9rem;background:var(--bg-dark);border:1px solid var(--border-color);border-radius:8px;color:white;font-size:0.9rem;outline:none;">
               </div>
               <div style="flex:0 0 auto;">
-                <button class="btn-action btn-primary-action" id="btn-save-base-domain" style="white-space:nowrap;">
+                <button class="btn-action btn-primary-action" id="btn-save-base-domain" onclick="salvarBaseDomain()" style="white-space:nowrap;">
                   <i class="fa-solid fa-floppy-disk"></i><span> Salvar</span>
                 </button>
               </div>
@@ -1124,7 +1124,7 @@
               </table>
             </div>
             <div style="margin-top:1rem;">
-              <button class="btn-action btn-primary-action" id="btn-refresh-cap">
+              <button class="btn-action btn-primary-action" id="btn-refresh-cap" onclick="renderCapacidade()">
                 <i class="fa-solid fa-rotate"></i><span>Atualizar</span>
               </button>
             </div>
@@ -1225,7 +1225,7 @@
             </div>
 
             <div style="margin-top:1rem;">
-              <button class="btn-action btn-primary-action" id="btn-refresh-mapa">
+              <button class="btn-action btn-primary-action" id="btn-refresh-mapa" onclick="renderMapa()">
                 <i class="fa-solid fa-rotate"></i><span>Atualizar</span>
               </button>
             </div>
@@ -1349,10 +1349,10 @@
               </div>
             </div>
             <div style="margin-top:1rem;display:flex;gap:0.6rem;flex-wrap:wrap;">
-              <button class="btn-action btn-primary-action" id="btn-lc-save">
+              <button class="btn-action btn-primary-action" id="btn-lc-save" onclick="salvarConfigLoadControl()">
                 <i class="fa-solid fa-floppy-disk"></i><span>Salvar Configuração</span>
               </button>
-              <button class="btn-action" id="btn-lc-refresh"
+              <button class="btn-action" id="btn-lc-refresh" onclick="renderLoadControl(true)"
                 style="background:rgba(255,255,255,0.08);border:1px solid var(--border-color);color:white;">
                 <i class="fa-solid fa-rotate"></i><span>Atualizar Métricas</span>
               </button>
@@ -1438,7 +1438,7 @@
                 <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">Cooldown da celebração (min)</label>
                 <input type="number" id="lc-spike-cooldown" min="0" style="width: 110px;" />
               </div>
-              <button class="btn btn-sm btn-primary" id="btn-lc-spike-save"><i class="fa-solid fa-check"></i> Salvar limiar</button>
+              <button class="btn btn-sm btn-primary" id="btn-lc-spike-save" onclick="salvarSpikeLoadControl()"><i class="fa-solid fa-check"></i> Salvar limiar</button>
               <small style="color: var(--text-muted);">Ao cruzar esse ritmo, o dono recebe o aviso "Uau, seu negócio está bombando!" e pode declarar um evento.</small>
             </div>
           </div>
@@ -1481,9 +1481,9 @@
                 style="width: 100%; padding: 0.7rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 0.9rem; resize: vertical; box-sizing: border-box;"></textarea>
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 0.8rem;">
-              <button class="btn-action btn-secondary-action" id="btn-limpar-msg"><i class="fa-solid fa-eraser"></i>
+              <button class="btn-action btn-secondary-action" id="btn-limpar-msg" onclick="limparMsg()"><i class="fa-solid fa-eraser"></i>
                 Limpar</button>
-              <button class="btn-action btn-primary-action" id="btn-enviar-msg"><i class="fa-solid fa-paper-plane"></i>
+              <button class="btn-action btn-primary-action" id="btn-enviar-msg" onclick="enviarMensagem()"><i class="fa-solid fa-paper-plane"></i>
                 Enviar para Todos</button>
             </div>
           </div>
@@ -1492,7 +1492,7 @@
           <div class="table-container">
             <div class="table-controls">
               <h4 style="margin: 0;"><i class="fa-solid fa-clock-rotate-left"></i> Histórico de Mensagens</h4>
-              <button class="btn-action btn-primary-action" id="btn-refresh-mensagens"><i
+              <button class="btn-action btn-primary-action" id="btn-refresh-mensagens" onclick="carregarMensagens()"><i
                   class="fa-solid fa-rotate"></i> Atualizar</button>
             </div>
             <div style="overflow-x: auto; max-height: 500px;">
@@ -1741,7 +1741,7 @@
                   <option value="api" selected>Logs de API (Requisições)</option>
                   <option value="auditoria">Registros de Auditoria</option>
                 </select>
-                <button class="btn-action btn-primary-action" id="btn-refresh-logs">
+                <button class="btn-action btn-primary-action" id="btn-refresh-logs" onclick="carregarLogs(0)">
                   <i class="fa-solid fa-rotate"></i>
                   <span>Atualizar Logs</span>
                 </button>
@@ -1769,9 +1769,9 @@
               <span id="logs-pagination-info" style="font-size: 0.85rem; color: var(--text-muted);">Mostrando 0-0 de
                 0</span>
               <div style="display: flex; gap: 0.5rem;">
-                <button class="btn-row-action" id="btn-logs-prev" title="Página Anterior"><i
+                <button class="btn-row-action" id="btn-logs-prev" onclick="carregarLogsPrev()" title="Página Anterior"><i
                     class="fa-solid fa-chevron-left"></i></button>
-                <button class="btn-row-action" id="btn-logs-next" title="Próxima Página"><i
+                <button class="btn-row-action" id="btn-logs-next" onclick="carregarLogsNext()" title="Próxima Página"><i
                     class="fa-solid fa-chevron-right"></i></button>
               </div>
             </div>
@@ -2137,7 +2137,7 @@
                 <input type="email" id="cfg-email-suporte" placeholder="suporte@chefcozinha.com.br">
               </div>
             </div>
-            <button class="btn-login form-submit" id="btn-save-config">
+            <button class="btn-login form-submit" id="btn-save-config" onclick="salvarConfig()">
               <i class="fa-solid fa-floppy-disk"></i><span>Salvar Configurações</span>
             </button>
             <div style="margin-top:1.5rem; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.25); border-radius:12px; padding:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
@@ -2203,7 +2203,7 @@
             </div>
 
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1.2rem; align-items: center;">
-              <button class="btn-login form-submit" id="btn-save-ia-global" type="button" style="margin: 0;">
+              <button class="btn-login form-submit" id="btn-save-ia-global" type="button" onclick="salvarIaGlobal()" style="margin: 0;">
                 <i class="fa-solid fa-floppy-disk"></i><span>Salvar Configuração Global de IA</span>
               </button>
               <button class="btn-action" id="btn-test-ia-global" type="button" onclick="window.testarSuperIaGlobal()" style="margin: 0; padding: 10px 18px;">
@@ -2253,7 +2253,7 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="func-search" placeholder="Buscar restaurante...">
               </div>
-              <button class="btn-action btn-primary-action" id="btn-refresh-func">
+              <button class="btn-action btn-primary-action" id="btn-refresh-func" onclick="renderFuncoes()">
                 <i class="fa-solid fa-rotate"></i><span>Atualizar</span>
               </button>
             </div>
@@ -2312,7 +2312,7 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="rest-feat-search" placeholder="Buscar restaurante...">
               </div>
-              <button class="btn-action btn-primary-action" id="btn-refresh-rest-feat">
+              <button class="btn-action btn-primary-action" id="btn-refresh-rest-feat" onclick="renderFeaturesRestaurante()">
                 <i class="fa-solid fa-rotate"></i><span>Atualizar</span>
               </button>
             </div>
@@ -2375,7 +2375,7 @@
                 <input type="text" id="dom-custom" placeholder="www.exemplo.com.br"
                   style="width:100%;padding:0.6rem 0.8rem;background:rgba(0,0,0,0.25);border:1px solid var(--border-color);border-radius:8px;color:white;font-size:0.9rem;">
               </div>
-              <button class="btn-action btn-primary-action" id="btn-salvar-dom" style="white-space:nowrap;height:38px;">
+              <button class="btn-action btn-primary-action" id="btn-salvar-dom" onclick="salvarDominioTenant()" style="white-space:nowrap;height:38px;">
                 <i class="fa-solid fa-floppy-disk"></i><span>Salvar</span>
               </button>
             </div>
@@ -2394,7 +2394,7 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="dom-search" placeholder="Buscar restaurante, slug ou domínio...">
               </div>
-              <button class="btn-action btn-primary-action" id="btn-refresh-dom">
+              <button class="btn-action btn-primary-action" id="btn-refresh-dom" onclick="renderDominios()">
                 <i class="fa-solid fa-rotate"></i><span>Atualizar</span>
               </button>
             </div>
@@ -2447,7 +2447,7 @@
                   <h3>Usuários Administradores</h3>
                   <p>Todos os usuários com acesso ao sistema local</p>
                 </div>
-                <button class="btn-action" id="btn-refresh-usuarios" title="Atualizar lista">
+                <button class="btn-action" id="btn-refresh-usuarios" onclick="carregarUsuariosRecovery()" title="Atualizar lista">
                   <i class="fa-solid fa-rotate"></i>
                 </button>
               </div>
@@ -2504,7 +2504,7 @@
                 <div class="admin-auth-input-wrap">
                   <input type="password" id="recovery-admin-senha" placeholder="Senha do admin local"
                     autocomplete="current-password">
-                  <button class="btn-load-users" id="btn-load-users">
+                  <button class="btn-load-users" id="btn-load-users" onclick="carregarUsuariosRecovery()">
                     <i class="fa-solid fa-lock-open"></i>
                     Carregar Usuários
                   </button>
@@ -2549,7 +2549,7 @@
                     <div style="position: relative;">
                       <input type="password" id="reset-nova-senha" placeholder="Mínimo 4 caracteres"
                         autocomplete="new-password" style="padding-right: 2.8rem;">
-                      <button type="button" class="toggle-senha-btn" id="toggle-nova-senha"
+                      <button type="button" class="toggle-senha-btn" id="toggle-nova-senha" onclick="toggleVisibilidadeNovaSenha()"
                         title="Mostrar/ocultar senha">
                         <i class="fa-solid fa-eye"></i>
                       </button>
@@ -2563,7 +2563,7 @@
                   <span class="strength-label" id="strength-label">Fraca</span>
                 </div>
 
-                <button class="btn-reset" id="btn-reset-credenciais" disabled>
+                <button class="btn-reset" id="btn-reset-credenciais" onclick="resetarCredenciais()" disabled>
                   <i class="fa-solid fa-rotate-left"></i>
                   <span>Aplicar Redefinição</span>
                 </button>
@@ -2596,7 +2596,7 @@
                   <input type="number" id="novo-user-restaurante-id" placeholder="Ex: 1" value="1" min="1">
                 </div>
               </div>
-              <button class="btn-login form-submit" id="btn-criar-usuario">
+              <button class="btn-login form-submit" id="btn-criar-usuario" onclick="criarUsuarioRecovery()">
                 <i class="fa-solid fa-user-plus"></i>
                 <span>Criar Usuário</span>
               </button>
@@ -2631,7 +2631,7 @@
                 <select class="select-filter" id="clientes-filter-rest">
                   <option value="">Todos os Restaurantes</option>
                 </select>
-                <button class="btn-action btn-primary-action" id="btn-refresh-clientes">
+                <button class="btn-action btn-primary-action" id="btn-refresh-clientes" onclick="carregarClientes()">
                   <i class="fa-solid fa-rotate"></i><span>Atualizar</span>
                 </button>
               </div>
@@ -2661,7 +2661,7 @@
                 <select class="select-filter" id="cli-f-dispositivo">
                   <option value="">Todo dispositivo</option>
                 </select>
-                <button class="btn-row-action edit-action" id="btn-cli-limpar-filtros" title="Limpar filtros"
+                <button class="btn-row-action edit-action" id="btn-cli-limpar-filtros" onclick="limparFiltrosClientes()" title="Limpar filtros"
                   style="padding:6px 12px;"><i class="fa-solid fa-eraser"></i></button>
               </div>
             </details>
@@ -2712,7 +2712,7 @@
               <input type="password" id="senha-confirma-input" autocomplete="new-password"
                 style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text);margin-bottom:18px;">
 
-              <button id="btn-alterar-senha" class="btn-primary" style="width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#ff5722,#e64a19);color:#fff;font-weight:800;cursor:pointer;">
+              <button id="btn-alterar-senha" onclick="executarAlterarSenha()" class="btn-primary" style="width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#ff5722,#e64a19);color:#fff;font-weight:800;cursor:pointer;">
                 <i class="fa-solid fa-key"></i> Salvar Nova Senha
               </button>
             </div>
@@ -2737,7 +2737,7 @@
                     <option value="">Todas as instalações (local)</option>
                   </select>
                 </div>
-                <button class="btn-action" id="btn-refresh-targets" style="margin-bottom:2px;"
+                <button class="btn-action" id="btn-refresh-targets" onclick="popularAlvosTerminal()" style="margin-bottom:2px;"
                   title="Recarregar lista de instalações">
                   <i class="fa-solid fa-rotate"></i>
                 </button>
@@ -2748,7 +2748,7 @@
                 <div style="display:flex;gap:0.5rem;">
                   <input type="text" id="exec-input" placeholder="Ex: node -e console.log('ok')"
                     style="flex:1;padding:0.8rem 1rem;background:#0d0f17;border:1px solid rgba(255,87,34,0.3);border-radius:8px;color:#a8ff60;font-family:'Consolas','Courier New',monospace;font-size:0.9rem;">
-                  <button class="btn-action btn-primary-action" id="btn-exec" style="white-space:nowrap;">
+                  <button class="btn-action btn-primary-action" id="btn-exec" onclick="executarComando()" style="white-space:nowrap;">
                     <i class="fa-solid fa-play"></i> Executar
                   </button>
                 </div>
@@ -2795,7 +2795,7 @@
               <div
                 style="padding:0.8rem 1.2rem;background:rgba(255,87,34,0.08);border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
                 <span style="font-weight:600;font-size:0.9rem;"><i class="fa-solid fa-display"></i> Output</span>
-                <button class="btn-row-action" id="btn-clear-output" title="Limpar output">
+                <button class="btn-row-action" id="btn-clear-output" onclick="limparOutput()" title="Limpar output">
                   <i class="fa-solid fa-eraser"></i>
                 </button>
               </div>
@@ -2823,7 +2823,7 @@
                 <button class="btn-action" onclick="abrirModalGerarChave()" style="background:#16a34a;color:#fff;font-weight:600;padding:0.6rem 1.15rem;border-radius:8px;box-shadow:0 4px 14px rgba(22,163,74,0.3);display:flex;align-items:center;gap:8px;">
                   <i class="fa-solid fa-key"></i> + Nova Chave de Ativação
                 </button>
-                <button class="btn-action" id="btn-refresh-instances" title="Atualizar instâncias e telemetria" style="padding:0.6rem 1rem;display:flex;align-items:center;gap:6px;">
+                <button class="btn-action" id="btn-refresh-instances" onclick="carregarInstancias()" title="Atualizar instâncias e telemetria" style="padding:0.6rem 1rem;display:flex;align-items:center;gap:6px;">
                   <i class="fa-solid fa-rotate"></i> Atualizar Tudo
                 </button>
               </div>
@@ -3623,10 +3623,10 @@
               </div>
             </div>
             <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
-              <button class="btn-action btn-primary-action" id="btn-r2-save">
+              <button class="btn-action btn-primary-action" id="btn-r2-save" onclick="salvarR2Config()">
                 <i class="fa-solid fa-floppy-disk"></i><span> Salvar &amp; Testar Conexão</span>
               </button>
-              <button class="btn-action" id="btn-r2-backup-now"
+              <button class="btn-action" id="btn-r2-backup-now" onclick="executarR2BackupAgora()"
                 style="background:rgba(246,130,31,0.15);color:#f6821f;border-color:rgba(246,130,31,0.3);">
                 <i class="fa-solid fa-cloud-arrow-up"></i><span> Backup Agora p/ R2</span>
               </button>
@@ -3661,7 +3661,7 @@
               </div>
             </div>
             <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;">
-              <button class="btn-action btn-primary-action" id="btn-redis-save">
+              <button class="btn-action btn-primary-action" id="btn-redis-save" onclick="salvarRedisConfig()">
                 <i class="fa-solid fa-floppy-disk"></i><span> Salvar &amp; Testar</span>
               </button>
               <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;color:var(--text-primary);cursor:pointer;">
@@ -3704,7 +3704,7 @@
               </div>
             </div>
             <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
-              <button class="btn-action btn-primary-action" id="btn-backup-schedule-save">
+              <button class="btn-action btn-primary-action" id="btn-backup-schedule-save" onclick="salvarBackupSchedule()">
                 <i class="fa-solid fa-floppy-disk"></i><span> Salvar Agendamento</span>
               </button>
               <span id="backup-schedule-feedback" style="font-size:0.85rem;"></span>
@@ -3732,10 +3732,10 @@
               </div>
             </div>
             <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;">
-              <button class="btn-action btn-primary-action" id="btn-crash-alert-save">
+              <button class="btn-action btn-primary-action" id="btn-crash-alert-save" onclick="salvarCrashAlertConfig()">
                 <i class="fa-solid fa-floppy-disk"></i><span> Salvar Configuração</span>
               </button>
-              <button class="btn-action" id="btn-crash-alert-test"
+              <button class="btn-action" id="btn-crash-alert-test" onclick="testarCrashAlert()"
                 style="background:rgba(245,158,11,0.15);color:#f59e0b;border-color:rgba(245,158,11,0.3);">
                 <i class="fa-solid fa-paper-plane"></i><span> Enviar Alerta Teste</span>
               </button>
@@ -3818,7 +3818,7 @@
               </div>
             </div>
             <div style="margin-top:1rem;display:flex;gap:0.75rem;align-items:center;">
-              <button class="btn-action btn-primary-action" id="btn-tunel-global-save">
+              <button class="btn-action btn-primary-action" id="btn-tunel-global-save" onclick="salvarTunelGlobalConfig()">
                 <i class="fa-solid fa-floppy-disk"></i><span> Salvar Configuração</span>
               </button>
               <span id="tunel-global-feedback" style="font-size:0.85rem;"></span>
@@ -6841,9 +6841,9 @@
               <div id="supabase-test-resultado" style="display:none;padding:0.85rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:0.88rem;"></div>
               
               <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:1.25rem;">
-                <button class="btn-action btn-primary-action" id="btn-supabase-testar"><i class="fa-solid fa-vial"></i> Testar Conexão</button>
-                <button class="btn-action" id="btn-supabase-salvar"><i class="fa-solid fa-floppy-disk"></i> Salvar Configurações</button>
-                <button class="btn-action" id="btn-supabase-sync-now" style="background:#10b981;color:#ffffff;border:none;font-weight:700;box-shadow:0 4px 14px rgba(16,185,129,0.3);">
+                <button class="btn-action btn-primary-action" id="btn-supabase-testar" onclick="testarSupabase()"><i class="fa-solid fa-vial"></i> Testar Conexão</button>
+                <button class="btn-action" id="btn-supabase-salvar" onclick="salvarSupabase()"><i class="fa-solid fa-floppy-disk"></i> Salvar Configurações</button>
+                <button class="btn-action" id="btn-supabase-sync-now" onclick="sincronizarSupabaseAgora()" style="background:#10b981;color:#ffffff;border:none;font-weight:700;box-shadow:0 4px 14px rgba(16,185,129,0.3);">
                   <i class="fa-solid fa-cloud-arrow-up"></i> Sincronizar Agora
                 </button>
                 <label style="display:flex;align-items:center;gap:8px;color:var(--text-main);font-size:0.88rem;cursor:pointer;margin-left:auto;">
@@ -6860,7 +6860,7 @@
                   </div>
                   <div style="display:flex;align-items:center;gap:12px;">
                     <span id="supabase-sync-last-time" style="font-size:0.8rem;color:var(--text-muted);">Última sincronização: Nunca</span>
-                    <button class="btn-action" id="btn-supabase-refresh-status" style="padding:4px 10px;font-size:0.75rem;" title="Recarregar status">
+                    <button class="btn-action" id="btn-supabase-refresh-status" onclick="carregarStatusSyncSupabase()" style="padding:4px 10px;font-size:0.75rem;" title="Recarregar status">
                       <i class="fa-solid fa-rotate"></i>
                     </button>
                   </div>
@@ -6939,7 +6939,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-action modal-close">Cancelar</button>
-        <button class="btn-action btn-primary-action" id="btn-salvar-suporte">
+        <button class="btn-action btn-primary-action" id="btn-salvar-suporte" onclick="salvarSuporte()">
           <i class="fa-solid fa-floppy-disk"></i> Salvar
         </button>
       </div>
@@ -6967,7 +6967,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-action modal-close">Fechar</button>
-        <button class="btn-action btn-primary-action" id="btn-salvar-atribuicoes">
+        <button class="btn-action btn-primary-action" id="btn-salvar-atribuicoes" onclick="salvarAtribuicoes()">
           <i class="fa-solid fa-check"></i> Salvar Atribuições
         </button>
       </div>
@@ -7195,7 +7195,7 @@
                   class="fa-solid fa-xmark"></i></button>
             </div>
           </div>
-          <button class="btn-action" id="btn-add-team-row"
+          <button class="btn-action" id="btn-add-team-row" onclick="adicionarLinhaEquipeInicial()"
             style="font-size:0.8rem;padding:0.4rem 0.8rem;margin-top:0.3rem;">
             <i class="fa-solid fa-plus"></i> Adicionar Funcionário
           </button>
@@ -7203,14 +7203,14 @@
       </div>
       <div class="modal-footer" style="justify-content:space-between;">
         <div>
-          <button class="btn-action" id="btn-wizard-prev" style="display:none;"><i class="fa-solid fa-chevron-left"></i>
+          <button class="btn-action" id="btn-wizard-prev" onclick="passoAnteriorWizard()" style="display:none;"><i class="fa-solid fa-chevron-left"></i>
             Voltar</button>
         </div>
         <div style="display:flex;gap:0.5rem;">
           <button class="btn-action modal-close">Cancelar</button>
-          <button class="btn-action btn-primary-action" id="btn-wizard-next">Próximo <i
+          <button class="btn-action btn-primary-action" id="btn-wizard-next" onclick="proximoPassoWizard()">Próximo <i
               class="fa-solid fa-chevron-right"></i></button>
-          <button class="btn-action btn-primary-action" id="btn-criar-restaurante-completo"
+          <button class="btn-action btn-primary-action" id="btn-criar-restaurante-completo" onclick="criarRestauranteCompleto()"
             style="display:none;background:linear-gradient(135deg,var(--success),#059669);box-shadow:0 4px 12px var(--success-glow);">
             <i class="fa-solid fa-rocket"></i> Criar Restaurante
           </button>
@@ -7253,7 +7253,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-action modal-close">Cancelar</button>
-        <button class="btn-action btn-primary-action" id="btn-criar-usuario-novo">
+        <button class="btn-action btn-primary-action" id="btn-criar-usuario-novo" onclick="criarUsuarioNovo()">
           <i class="fa-solid fa-user-plus"></i> Criar Usuário
         </button>
       </div>
@@ -7334,7 +7334,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-action modal-close">Cancelar</button>
-        <button class="btn-action btn-primary-action" id="btn-save-edit">Salvar Alterações</button>
+        <button class="btn-action btn-primary-action" id="btn-save-edit" onclick="salvarEdicaoRestaurante()">Salvar Alterações</button>
       </div>
     </div>
   </div>
@@ -8154,7 +8154,7 @@
         <i class="fa-solid fa-globe"></i>
         <span>Túneis</span>
       </button>
-      <button class="mob-nav-item" id="btn-mobile-more" title="Menu completo">
+      <button class="mob-nav-item" id="btn-mobile-more" onclick="toggleMobileSidebar()" title="Menu completo">
         <i class="fa-solid fa-bars"></i>
         <span>Menu</span>
       </button>

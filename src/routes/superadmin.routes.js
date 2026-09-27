@@ -16,6 +16,14 @@ module.exports = function(db, masterDb, superAdminAuth, upload, getIo, getTenant
   const SUPORTE_JWT_SECRET = (options && options.SUPORTE_JWT_SECRET) || process.env.SUPORTE_JWT_SECRET || JWT_SECRET;
 
   const loginAttempts = (options && options.loginAttempts) || new Map();
+  const CERTS_DIR = (options && options.CERTS_DIR) || path.join(__dirname, '..', '..', 'certs');
+  const ensureCertsDir = (options && options.ensureCertsDir) || function() {
+    if (!fs.existsSync(CERTS_DIR)) fs.mkdirSync(CERTS_DIR, { recursive: true });
+  };
+  const CERT_PASSPHRASE = (options && options.CERT_PASSPHRASE) || process.env.CERT_PASSPHRASE || '1234';
+  const getActiveCertInfo = () => (typeof options.getActiveCertInfo === 'function' ? options.getActiveCertInfo() : null);
+  const getIsHttps = () => (typeof options.isHttps === 'function' ? options.isHttps() : false);
+  const aplicarCert = (options && options.aplicarCert) || function() { return { ok: false, erro: 'Função aplicarCert não configurada.' }; };
   const loginBloqueado = (options && options.loginBloqueado) || function(ip) {
     const rec = loginAttempts.get(ip);
     if (!rec) return false;
@@ -134,8 +142,10 @@ router.get('/api/super/certs', superAdminAuth, (req, res) => {
     } catch (e) { }
     return c;
   });
-  const ativo = activeCertInfo ? activeCertInfo.file : (isHttps ? 'cert.pfx (legado)' : null);
-  res.json({ ok: true, certs, ativo, isHttps, reiniciarNecessario: activeCertInfo && activeCertInfo.applied === false });
+  const currentActive = getActiveCertInfo();
+  const currentHttps = getIsHttps();
+  const ativo = currentActive ? currentActive.file : (currentHttps ? 'cert.pfx (legado)' : null);
+  res.json({ ok: true, certs, ativo, isHttps: currentHttps, reiniciarNecessario: currentActive && currentActive.applied === false });
 });
 
 router.post('/api/super/certs/upload', superAdminAuth, upload.single('cert'), (req, res) => {
@@ -170,7 +180,8 @@ router.post('/api/super/certs/ativar', superAdminAuth, (req, res) => {
 router.delete('/api/super/certs/:file', superAdminAuth, (req, res) => {
   const file = String(req.params.file || '').replace(/^.*[\\/]/, '').trim();
   if (!file || file.includes('..') || file.includes('/') || file.includes('\\')) return res.json({ ok: false, erro: 'Nome inválido.' });
-  if (activeCertInfo && activeCertInfo.file === file) return res.json({ ok: false, erro: 'Não é possível remover o certificado em uso. Ative outro primeiro.' });
+  const currentActive = getActiveCertInfo();
+  if (currentActive && currentActive.file === file) return res.json({ ok: false, erro: 'Não é possível remover o certificado em uso. Ative outro primeiro.' });
   const p = path.join(CERTS_DIR, file);
   if (!fs.existsSync(p)) return res.json({ ok: false, erro: 'Arquivo não encontrado.' });
   try {

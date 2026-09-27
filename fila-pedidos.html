@@ -92,7 +92,26 @@
       70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
       100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
     }
+    @keyframes slaPulseBorder {
+      0%   { border-left-color: #ef4444; box-shadow: -2px 0 10px rgba(239,68,68,0.4); }
+      50%  { border-left-color: #fca5a5; box-shadow: -2px 0 0px rgba(239,68,68,0); }
+      100% { border-left-color: #ef4444; box-shadow: -2px 0 10px rgba(239,68,68,0.4); }
+    }
+    @keyframes pulseManobra {
+      0%   { box-shadow: 0 0 0 0 rgba(252,75,21,0.5); }
+      70%  { box-shadow: 0 0 0 8px rgba(252,75,21,0); }
+      100% { box-shadow: 0 0 0 0 rgba(252,75,21,0); }
+    }
+    @keyframes pulseBadge {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.05); }
+    }
+    /* KDS SLA legend no topo */
+    .kds-sla-legend { display: flex; gap: 12px; align-items: center; font-size: 11px; font-weight: 700; padding: 0 8px; }
+    .kds-sla-legend span { display: flex; align-items: center; gap: 4px; }
+    .kds-sla-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   </style>
+
   <script src="fila.js?v=20260921"></script>
 </head>
 
@@ -135,6 +154,15 @@
           <span>Prontos</span>
           <span class="kds-badge-count badge-pronto" id="kds-badge-pronto">0</span>
         </button>
+      </div>
+
+      <div class="kds-nav-separator"></div>
+
+      <!-- SLA Legend -->
+      <div class="kds-sla-legend" title="SLA de Tempo por Pedido">
+        <span><span class="kds-sla-dot" style="background:#22c55e;"></span>&lt;12m</span>
+        <span><span class="kds-sla-dot" style="background:#f59e0b;"></span>12-20m</span>
+        <span><span class="kds-sla-dot" style="background:#ef4444;"></span>&gt;20m</span>
       </div>
 
       <div class="kds-nav-separator"></div>

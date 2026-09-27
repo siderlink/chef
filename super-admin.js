@@ -747,8 +747,21 @@ function switchTab(targetId) {
     'sec-fin-gateways': ['Gateways de Pagamento & Custódia', 'Configuração de Asaas, Mercado Pago, ambiente e parâmetros da plataforma']
   };
 
+  // Interceptar sec-suporte-remoto para não sumir com o painel (subaba dentro de sec-instancias)
+  var isSuporteRemoto = targetId === 'sec-suporte-remoto';
+  if (isSuporteRemoto) {
+    targetId = 'sec-instancias';
+    setTimeout(function() {
+      if (typeof window.alternarSubabaInstancias === 'function') window.alternarSubabaInstancias('remoto');
+      else if (typeof alternarSubabaInstancias === 'function') alternarSubabaInstancias('remoto');
+      if (typeof window.carregarSessoesSuporte === 'function') window.carregarSessoesSuporte();
+      else if (typeof carregarSessoesSuporte === 'function') carregarSessoesSuporte();
+    }, 60);
+  }
+
   for (var i = 0; i < items.length; i++) {
-    var alvo = items[i].getAttribute('data-target') === targetId;
+    var dt = items[i].getAttribute('data-target');
+    var alvo = dt === targetId || (isSuporteRemoto && dt === 'sec-suporte-remoto');
     items[i].classList.toggle('active', alvo);
   }
   for (var j = 0; j < sections.length; j++) {
@@ -776,7 +789,7 @@ function switchTab(targetId) {
   /* Atualizar item ativo no bottom nav mobile */
   var mobNavItems = document.querySelectorAll('.mob-nav-item');
   mobNavItems.forEach(function(btn) {
-    var isTarget = btn.getAttribute('data-target') === targetId;
+    var isTarget = btn.getAttribute('data-target') === targetId || (isSuporteRemoto && btn.getAttribute('data-target') === 'sec-instancias');
     btn.classList.toggle('active', isTarget);
   });
 
@@ -813,7 +826,7 @@ function switchTab(targetId) {
   else if (targetId === 'sec-hub-marketing') {
     var iframe = document.getElementById('hub-marketing-iframe');
     if (iframe && (!iframe.src || iframe.src === '' || iframe.src === 'about:blank' || !iframe.src.includes('hub-marketing'))) {
-      var tkn = localStorage.getItem('superAdminToken') || localStorage.getItem('token') || '';
+      var tkn = getSuperAdminToken() || localStorage.getItem('superAdminToken') || localStorage.getItem('token') || '';
       iframe.src = '/hub-marketing.html' + (tkn ? '?token=' + encodeURIComponent(tkn) : '');
     }
   }
@@ -829,9 +842,15 @@ function switchTab(targetId) {
   else if (targetId === 'sec-load-control') { if (typeof window.renderLoadControl === 'function') window.renderLoadControl(); }
   else if (targetId === 'sec-terminal') { resetInactivityTimer(); popularAlvosTerminal(); }
   else if (targetId === 'sec-instancias') { if (typeof window.carregarInstancias === 'function') window.carregarInstancias(); }
-  else if (targetId === 'sec-suporte-remoto') { if (typeof abrirSecaoSuporteRemoto === 'function') abrirSecaoSuporteRemoto(); }
+  else if (targetId === 'sec-suporte-remoto') {
+    if (typeof window.abrirSecaoSuporteRemoto === 'function') window.abrirSecaoSuporteRemoto();
+    else if (typeof abrirSecaoSuporteRemoto === 'function') abrirSecaoSuporteRemoto();
+  }
   else if (targetId === 'sec-recuperar-acesso') carregarUsuariosRecovery();
-  else if (targetId === 'sec-tarefas') { if (typeof carregarTarefas === 'function') carregarTarefas(); }
+  else if (targetId === 'sec-tarefas') {
+    if (typeof window.carregarTarefas === 'function') window.carregarTarefas();
+    else if (typeof carregarTarefas === 'function') carregarTarefas();
+  }
   else if (targetId === 'sec-site-vendas') carregarSiteVendas();
   else if (targetId === 'sec-afiliados') carregarPainelAfiliadosCompleto();
   else if (targetId === 'sec-seguranca-waf') carregarConfigSeguranca();
@@ -3134,6 +3153,319 @@ function salvarAtribuicoes() {
   });
 }
 
+/* ═══ MÉTODOS GLOBAIS DE SUPORTE ÀS AÇÕES DO PAINEL ═══ */
+window.salvarR2Config = function() {
+  var payload = {
+    account_id: (document.getElementById('r2-account-id').value || '').trim(),
+    bucket: (document.getElementById('r2-bucket').value || '').trim(),
+    access_key: (document.getElementById('r2-access-key').value || '').trim(),
+    secret_key: (document.getElementById('r2-secret-key').value || '').trim()
+  };
+  if (!payload.account_id || !payload.bucket || !payload.access_key || !payload.secret_key) {
+    showToast('Preencha todos os campos do R2.', 'error'); return;
+  }
+  apiPost('/api/super/infra-cloud/r2', payload, function(err, data) {
+    if (err || !data || !data.ok) { showToast(data ? data.erro : 'Erro ao salvar.', 'error'); return; }
+    showToast('Config R2 salva! Testando conexão...', 'success');
+    apiPost('/api/super/infra-cloud/r2/test', {}, function(e2, d2) {
+      var fb = document.getElementById('r2-feedback');
+      if (d2 && d2.ok) {
+        if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + d2.mensagem; }
+        var st = document.getElementById('r2-status');
+        if (st) st.textContent = 'Conectado';
+        var badge = document.getElementById('infra-cloud-badge');
+        if (badge) { badge.style.display = ''; badge.textContent = 'R2 ✓'; }
+      } else {
+        if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (d2 ? d2.erro : 'Erro'); }
+      }
+    });
+  });
+};
+
+window.executarR2BackupAgora = function() {
+  var fb = document.getElementById('r2-feedback');
+  if (fb) { fb.style.color = '#94a3b8'; fb.textContent = 'Enviando backups para R2...'; }
+  apiPost('/api/super/infra-cloud/r2/backup', {}, function(err, data) {
+    if (err || !data || !data.ok) {
+      if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
+    } else {
+      if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + (data.mensagem || 'Backup R2 concluído!'); }
+      if (typeof carregarR2Backups === 'function') carregarR2Backups();
+    }
+  });
+};
+
+window.salvarRedisConfig = function() {
+  var payload = {
+    host: (document.getElementById('redis-host').value || '').trim(),
+    port: parseInt(document.getElementById('redis-port').value, 10),
+    password: document.getElementById('redis-password').value,
+    prefix: (document.getElementById('redis-prefix').value || '').trim(),
+    enabled: document.getElementById('redis-enabled').checked
+  };
+  apiPost('/api/super/infra-cloud/redis', payload, function(err, data) {
+    if (err || !data || !data.ok) { showToast(data ? data.erro : 'Erro ao salvar.', 'error'); return; }
+    showToast('Config Redis salva! Testando...', 'success');
+    apiPost('/api/super/infra-cloud/redis/test', {}, function(e2, d2) {
+      var fb = document.getElementById('redis-feedback');
+      if (d2 && d2.ok) {
+        if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + d2.mensagem; }
+        document.getElementById('redis-status').textContent = 'Ativado';
+        var ri = document.getElementById('redis-info');
+        if (ri) ri.style.display = 'none';
+      } else {
+        if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (d2 ? d2.erro : 'Erro'); }
+        document.getElementById('redis-enabled').checked = false;
+        var ri2 = document.getElementById('redis-info');
+        if (ri2) {
+          ri2.style.display = 'block';
+          ri2.textContent = (d2 ? d2.erro : 'Redis indisponível') + '. Cache desativado.';
+        }
+      }
+    });
+  });
+};
+
+window.salvarBackupSchedule = function() {
+  var payload = {
+    frequency: document.getElementById('backup-freq').value,
+    retention_days: parseInt(document.getElementById('backup-retention').value, 10),
+    destination: document.getElementById('backup-dest').value
+  };
+  apiPost('/api/super/infra-cloud/backup-schedule', payload, function(err, data) {
+    var fb = document.getElementById('backup-schedule-feedback');
+    if (err || !data || !data.ok) {
+      if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
+    } else {
+      if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + data.mensagem; }
+      document.getElementById('backup-schedule-status').textContent = payload.frequency !== 'manual' ? payload.frequency : 'Manual';
+    }
+  });
+};
+
+window.salvarCrashAlertConfig = function() {
+  var payload = {
+    channel: document.getElementById('crash-channel').value,
+    webhook_url: (document.getElementById('crash-webhook-url').value || '').trim()
+  };
+  apiPost('/api/super/infra-cloud/crash-alerts', payload, function(err, data) {
+    var fb = document.getElementById('crash-alert-feedback');
+    if (err || !data || !data.ok) {
+      if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
+    } else {
+      if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + data.mensagem; }
+      document.getElementById('crash-alert-status').textContent = payload.channel !== 'none' ? 'Ativados' : 'Inativos';
+    }
+  });
+};
+
+window.testarCrashAlert = function() {
+  var fb = document.getElementById('crash-alert-feedback');
+  if (fb) { fb.style.color = '#94a3b8'; fb.textContent = 'Enviando alerta de teste...'; }
+  apiPost('/api/super/infra-cloud/crash-alerts/test', {}, function(err, data) {
+    if (err || !data || !data.ok) {
+      if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
+    } else {
+      if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + (data.mensagem || 'Alerta enviado!'); }
+    }
+  });
+};
+
+window.salvarTunelGlobalConfig = function() {
+  var payload = {
+    port: parseInt(document.getElementById('tunel-global-port').value, 10),
+    mode: document.getElementById('tunel-global-mode').value,
+    priority: document.getElementById('tunel-global-priority').value
+  };
+  apiPost('/api/super/tuneis/config-global', payload, function(err, data) {
+    var fb = document.getElementById('tunel-global-feedback');
+    if (err || !data || !data.ok) {
+      if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
+    } else {
+      if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + data.mensagem; }
+      var pEl = document.getElementById('tuneis-porta');
+      if (pEl) pEl.textContent = payload.port;
+      var aEl = document.getElementById('tuneis-autostart');
+      if (aEl) aEl.textContent = payload.mode === 'auto' ? 'Ligado' : 'Desligado';
+    }
+  });
+};
+
+window.salvarDominioTenant = function() {
+  var select = document.getElementById('dom-tenant-select');
+  var slugInput = document.getElementById('dom-slug');
+  var customInput = document.getElementById('dom-custom');
+  var tenantId = select ? parseInt(select.value, 10) : 0;
+  if (!tenantId) {
+    showToast('Selecione um restaurante.', 'warning');
+    return;
+  }
+  var payload = {
+    restaurante_id: tenantId,
+    slug: slugInput ? slugInput.value : '',
+    custom_domain: customInput ? customInput.value : ''
+  };
+  apiPost('/api/super/dominios', payload, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao salvar domínio: ' + (err ? err.message : (data ? data.erro : 'Falha')), 'danger');
+      return;
+    }
+    showToast('Domínio salvo com sucesso!', 'success');
+    if (typeof window.renderDominios === 'function') window.renderDominios();
+  });
+};
+
+window.limparFiltrosClientes = function() {
+  var cSearch = document.getElementById('clientes-search'); if (cSearch) cSearch.value = '';
+  var cFilterRest = document.getElementById('clientes-filter-rest'); if (cFilterRest) cFilterRest.value = '';
+  var cEnd = document.getElementById('cli-f-endereco'); if (cEnd) cEnd.value = '';
+  var cBairro = document.getElementById('cli-f-bairro'); if (cBairro) cBairro.value = '';
+  var cCidade = document.getElementById('cli-f-cidade'); if (cCidade) cCidade.value = '';
+  var cVal = document.getElementById('cli-f-valor'); if (cVal) cVal.value = '';
+  var cData = document.getElementById('cli-f-data'); if (cData) cData.value = '';
+  var cNivel = document.getElementById('cli-f-nivel'); if (cNivel) cNivel.value = '';
+  var cDisp = document.getElementById('cli-f-dispositivo'); if (cDisp) cDisp.value = '';
+  if (typeof renderClientes === 'function') renderClientes();
+};
+
+window.adicionarLinhaEquipeInicial = function() {
+  var container = document.getElementById('initial-team-list');
+  if (!container) return;
+  var row = document.createElement('div');
+  row.className = 'initial-team-row';
+  row.style.cssText = 'display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:end;';
+  row.innerHTML = '<div style="flex:2;"><input type="text" class="team-nome" placeholder="Nome" style="width:100%;padding:0.5rem 0.7rem;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:0.85rem;"></div>' +
+    '<div style="flex:1;"><input type="text" class="team-cargo" placeholder="Cargo" value="Garçom" style="width:100%;padding:0.5rem 0.7rem;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:0.85rem;"></div>' +
+    '<div style="flex:1;"><input type="number" class="team-valor" placeholder="Valor hora" value="0" step="0.50" style="width:100%;padding:0.5rem 0.7rem;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:0.85rem;"></div>' +
+    '<button class="btn-row-action remove-team-row" style="flex-shrink:0;" title="Remover"><i class="fa-solid fa-xmark"></i></button>';
+  container.appendChild(row);
+};
+
+window.salvarEdicaoRestaurante = function() {
+  var id = document.getElementById('edit-id').value;
+  var fields = {
+    restaurante: document.getElementById('edit-restaurante').value.trim(),
+    status: document.getElementById('edit-status').value,
+    plano: document.getElementById('edit-plano').value,
+    login_mode: document.getElementById('edit-loginmode').value
+  };
+  if (!fields.restaurante) { showToast('Nome obrigatório!', 'warning'); return; }
+  apiPost('/api/super/atualizar-restaurante', { id: parseInt(id), fields: fields }, function(err, data) {
+    if (err || !data || !data.ok) { showToast('Erro ao salvar', 'danger'); return; }
+    showToast('Restaurante atualizado!', 'success');
+    var m = document.getElementById('modal-edit-client');
+    if (m) m.classList.remove('active');
+    if (typeof carregarRestaurantes === 'function') carregarRestaurantes();
+  });
+};
+
+window.toggleMobileSidebar = function() {
+  var sb = document.querySelector('.sidebar');
+  var ov = document.getElementById('sidebar-overlay');
+  if (sb) sb.classList.toggle('open');
+  if (ov) ov.classList.toggle('open');
+};
+
+window.abrirModalNovoRestaurante = function() {
+  var m = document.getElementById('modal-novo-rest');
+  if (m) m.classList.add('active');
+  if (typeof mostrarPassoWizard === 'function') mostrarPassoWizard(1);
+};
+
+window.abrirModalNovoUsuario = function() {
+  var m = document.getElementById('modal-novo-user');
+  if (m) m.classList.add('active');
+};
+
+window.limparFiltrosRestaurantes = function() {
+  var rSearch = document.getElementById('rest-search'); if (rSearch) rSearch.value = '';
+  var rStatus = document.getElementById('rest-filter-status'); if (rStatus) rStatus.value = '';
+  var rDe = document.getElementById('rest-f-de'); if (rDe) rDe.value = '';
+  var rAte = document.getElementById('rest-f-ate'); if (rAte) rAte.value = '';
+  var rEnd = document.getElementById('rest-f-endereco'); if (rEnd) rEnd.value = '';
+  var rBairro = document.getElementById('rest-f-bairro'); if (rBairro) rBairro.value = '';
+  var rCidade = document.getElementById('rest-f-cidade'); if (rCidade) rCidade.value = '';
+  var rVal = document.getElementById('rest-f-valor'); if (rVal) rVal.value = '';
+  var rPlano = document.getElementById('rest-f-plano'); if (rPlano) rPlano.value = '';
+  var rDisp = document.getElementById('rest-f-dispositivo'); if (rDisp) rDisp.value = '';
+  if (typeof renderRestaurantes === 'function') renderRestaurantes();
+};
+
+window.salvarBaseDomain = function() {
+  var val = (document.getElementById('super-base-domain').value || '').trim();
+  var statusEl = document.getElementById('base-domain-status');
+  apiPost('/api/super/config', { base_domain: val }, function(err, data) {
+    if (!statusEl) return;
+    statusEl.style.display = 'block';
+    if (err || !data || !data.ok) {
+      statusEl.style.background = 'rgba(239,68,68,0.15)';
+      statusEl.style.color = '#ef4444';
+      statusEl.textContent = 'Erro ao salvar.';
+    } else {
+      statusEl.style.background = 'rgba(16,185,129,0.15)';
+      statusEl.style.color = '#34d399';
+      statusEl.textContent = 'Domínio base salvo com sucesso!';
+    }
+    setTimeout(function() { statusEl.style.display = 'none'; }, 4000);
+  });
+};
+
+window.carregarLogsPrev = function() {
+  var p = (typeof logsPage !== 'undefined' ? logsPage : (window.logsPage || 0));
+  if (p > 0 && typeof carregarLogs === 'function') carregarLogs(p - 1);
+};
+
+window.carregarLogsNext = function() {
+  var p = (typeof logsPage !== 'undefined' ? logsPage : (window.logsPage || 0));
+  if (typeof carregarLogs === 'function') carregarLogs(p + 1);
+};
+
+window.limparMsg = function() {
+  var t = document.getElementById('msg-titulo'); if (t) t.value = '';
+  var c = document.getElementById('msg-corpo'); if (c) c.value = '';
+  var tp = document.getElementById('msg-tipo'); if (tp) tp.value = 'aviso';
+};
+
+window.toggleVisibilidadeNovaSenha = function() {
+  var input = document.getElementById('reset-nova-senha');
+  var toggleSenha = document.getElementById('toggle-nova-senha');
+  if (!input) return;
+  var isText = input.type === 'text';
+  input.type = isText ? 'password' : 'text';
+  if (toggleSenha) {
+    var icon = toggleSenha.querySelector('i');
+    if (icon) icon.className = isText ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+  }
+};
+
+window.carregarBiFranquias = function() { if (typeof carregarBiFranquias === 'function') carregarBiFranquias(); };
+window.salvarSuporte = function() { if (typeof salvarSuporte === 'function') salvarSuporte(); };
+window.salvarAtribuicoes = function() { if (typeof salvarAtribuicoes === 'function') salvarAtribuicoes(); };
+window.criarRestauranteCompleto = function() { if (typeof criarRestauranteCompleto === 'function') criarRestauranteCompleto(); };
+window.proximoPassoWizard = function() { if (typeof proximoPassoWizard === 'function') proximoPassoWizard(); };
+window.passoAnteriorWizard = function() { if (typeof passoAnteriorWizard === 'function') passoAnteriorWizard(); };
+window.criarUsuarioRecovery = function() {
+  var email = (document.getElementById('novo-user-email').value || '').trim();
+  var senha = (document.getElementById('novo-user-senha').value || '');
+  var restId = (document.getElementById('novo-user-restaurante-id').value || '1');
+  if (!email || !senha) { showToast('Preencha email e senha!', 'warning'); return; }
+  apiPost('/api/super/criar-usuario', { email: email, senha: senha, restauranteId: parseInt(restId) || 1 }, function(err, data) {
+    if (err || !data || !data.ok) { showToast('Erro: ' + (data ? data.erro : 'desconhecido'), 'danger'); return; }
+    showToast('Usuário criado com sucesso!', 'success');
+    document.getElementById('novo-user-email').value = '';
+    document.getElementById('novo-user-senha').value = '';
+    if (typeof carregarUsuariosRecovery === 'function') carregarUsuariosRecovery();
+  });
+};
+
+window.criarBackup = function() { if (typeof criarBackup === 'function') criarBackup(); };
+window.carregarServidor = function() { if (typeof carregarServidor === 'function') carregarServidor(); };
+window.carregarLogs = function(p) { if (typeof carregarLogs === 'function') carregarLogs(p); };
+window.enviarMensagem = function() { if (typeof enviarMensagem === 'function') enviarMensagem(); };
+window.carregarMensagens = function() { if (typeof carregarMensagens === 'function') carregarMensagens(); };
+window.salvarConfig = function() { if (typeof salvarConfig === 'function') salvarConfig(); };
+window.logout = function() { if (typeof logout === 'function') logout(); };
+
 /* ═══ INICIALIZAÇÃO & UI DINÂMICA ═══ */
 function initAdminPanelUI() {
   /* Logout */
@@ -3348,26 +3680,63 @@ function initAdminPanelUI() {
     }
   });
 
-  /* Modal close handlers & Backdrop click */
-  document.addEventListener('click', function(e) {
-    // Clicar fora do modal (no backdrop)
-    if (e.target.classList && e.target.classList.contains('modal-overlay')) {
-      e.target.classList.remove('active');
-      if (e.target.style.display && e.target.style.display !== 'none') {
+  /* Modal close handlers & Backdrop click & Global Action Delegation */
+  if (!window._modalGlobalDelegationBound) {
+    window._modalGlobalDelegationBound = true;
+    document.addEventListener('click', function(e) {
+      // 1. Clicar fora do modal (no backdrop)
+      if (e.target.classList && (e.target.classList.contains('modal-overlay') || e.target.classList.contains('modal'))) {
+        e.target.classList.remove('active');
         e.target.style.display = 'none';
       }
-    }
-    // Botão de fechar (X) ou botões de Cancelar/Fechar
-    if (e.target.closest('.modal-close') || e.target.closest('.btn-cancelar') || (e.target.tagName === 'BUTTON' && (e.target.textContent.trim().toLowerCase() === 'cancelar' || e.target.textContent.trim().toLowerCase() === 'fechar') && e.target.closest('.modal-overlay, .modal'))) {
-      var modal = e.target.closest('.modal-overlay, .modal');
-      if (modal) {
-        modal.classList.remove('active');
-        if (modal.style.display && modal.style.display !== 'none') {
+      // 2. Botão de fechar (X), .modal-close, .btn-cancelar, [data-modal-close], ou botões com texto Cancelar/Fechar
+      var closeBtn = e.target.closest ? e.target.closest('.modal-close, .btn-cancelar, [data-modal-close]') : null;
+      if (!closeBtn && e.target.tagName === 'BUTTON') {
+        var txt = (e.target.textContent || '').trim().toLowerCase();
+        if (txt === 'cancelar' || txt === 'fechar' || txt === '×' || txt === '&times;') {
+          closeBtn = e.target;
+        }
+      }
+      if (closeBtn) {
+        var modal = closeBtn.closest('.modal-overlay, .modal, [id^="modal-"]');
+        if (modal) {
+          modal.classList.remove('active');
           modal.style.display = 'none';
         }
       }
-    }
-  });
+
+      // 3. Quick command terminal delegation
+      var quickBtn = e.target.closest ? e.target.closest('.quick-cmd[data-cmd]') : null;
+      if (quickBtn) {
+        var cmd = quickBtn.getAttribute('data-cmd');
+        var input = document.getElementById('exec-input');
+        if (input && cmd) {
+          input.value = cmd;
+          if (e.altKey && typeof executarComando === 'function') {
+            executarComando();
+          } else {
+            input.focus();
+          }
+        }
+      }
+
+      // 4. Load control mode button delegation
+      var lcBtn = e.target.closest ? e.target.closest('.lc-modo-btn[data-modo]') : null;
+      if (lcBtn) {
+        var modo = lcBtn.getAttribute('data-modo');
+        if (modo && typeof window.girarChaveLoadControl === 'function') {
+          window.girarChaveLoadControl(modo);
+        }
+      }
+
+      // 5. Team row removal delegation
+      var rmBtn = e.target.closest ? e.target.closest('.remove-team-row') : null;
+      if (rmBtn) {
+        var row = rmBtn.closest('.initial-team-row, tr');
+        if (row) row.remove();
+      }
+    });
+  }
 
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
@@ -3682,6 +4051,255 @@ function initAdminPanelUI() {
 
   if (typeof window.carregarCentralNotificacoesStats === 'function') {
     window.carregarCentralNotificacoesStats();
+  }
+
+  /* ═══ LOAD CONTROL ═══ */
+  if (typeof window.setupLoadControlEvents === 'function') {
+    window.setupLoadControlEvents();
+  }
+
+  /* ═══ MAPA DE RESTAURANTES ═══ */
+  var btnRefreshMapa = document.getElementById('btn-refresh-mapa');
+  if (btnRefreshMapa && !btnRefreshMapa._bound) {
+    btnRefreshMapa._bound = true;
+    btnRefreshMapa.addEventListener('click', function() {
+      if (typeof window.renderMapa === 'function') window.renderMapa();
+    });
+  }
+
+  /* ═══ CAPACIDADE & PICO ═══ */
+  var btnRefreshCap = document.getElementById('btn-refresh-cap');
+  if (btnRefreshCap && !btnRefreshCap._bound) {
+    btnRefreshCap._bound = true;
+    btnRefreshCap.addEventListener('click', function() {
+      if (typeof window.renderCapacidade === 'function') window.renderCapacidade();
+    });
+  }
+
+  /* ═══ FUNÇÕES MASTER ═══ */
+  var btnRefreshFunc = document.getElementById('btn-refresh-func');
+  if (btnRefreshFunc && !btnRefreshFunc._bound) {
+    btnRefreshFunc._bound = true;
+    btnRefreshFunc.addEventListener('click', function() {
+      if (typeof window.renderFuncoes === 'function') window.renderFuncoes();
+    });
+  }
+
+  /* ═══ DOMÍNIOS ═══ */
+  if (typeof window.setupDominiosEvents === 'function') {
+    window.setupDominiosEvents();
+  } else {
+    var btnSalvarDom = document.getElementById('btn-salvar-dom');
+    if (btnSalvarDom && !btnSalvarDom._bound) {
+      btnSalvarDom._bound = true;
+      btnSalvarDom.addEventListener('click', function() {
+        var select = document.getElementById('dom-tenant-select');
+        var slugInput = document.getElementById('dom-slug');
+        var customInput = document.getElementById('dom-custom');
+        var tenantId = select ? parseInt(select.value, 10) : 0;
+        if (!tenantId) {
+          showToast('Selecione um restaurante.', 'warning');
+          return;
+        }
+        var payload = {
+          restaurante_id: tenantId,
+          slug: slugInput ? slugInput.value : '',
+          custom_domain: customInput ? customInput.value : ''
+        };
+        apiPost('/api/super/dominios', payload, function(err, data) {
+          if (err || !data || !data.ok) {
+            showToast('Erro ao salvar domínio: ' + (err ? err.message : (data ? data.erro : 'Falha')), 'danger');
+            return;
+          }
+          showToast('Domínio salvo com sucesso!', 'success');
+          if (typeof window.renderDominios === 'function') window.renderDominios();
+        });
+      });
+    }
+    var btnRefreshDom = document.getElementById('btn-refresh-dom');
+    if (btnRefreshDom && !btnRefreshDom._bound) {
+      btnRefreshDom._bound = true;
+      btnRefreshDom.addEventListener('click', function() {
+        if (typeof window.renderDominios === 'function') window.renderDominios();
+      });
+    }
+    var domSearch = document.getElementById('dom-search');
+    if (domSearch && !domSearch._bound) {
+      domSearch._bound = true;
+      domSearch.addEventListener('input', function() {
+        if (typeof window.renderDominios === 'function') window.renderDominios();
+      });
+    }
+  }
+
+  /* ═══ INSTÂNCIAS ON-PREMISE & SUPABASE ═══ */
+  var btnRefreshInstances = document.getElementById('btn-refresh-instances');
+  if (btnRefreshInstances && !btnRefreshInstances._bound) {
+    btnRefreshInstances._bound = true;
+    btnRefreshInstances.addEventListener('click', function() {
+      if (typeof window.carregarInstancias === 'function') window.carregarInstancias();
+    });
+  }
+  var btnSbTest = document.getElementById('btn-supabase-testar');
+  if (btnSbTest && !btnSbTest._bound) {
+    btnSbTest._bound = true;
+    btnSbTest.addEventListener('click', function() { if (typeof window.testarSupabase === 'function') window.testarSupabase(); });
+  }
+  var btnSbSave = document.getElementById('btn-supabase-salvar');
+  if (btnSbSave && !btnSbSave._bound) {
+    btnSbSave._bound = true;
+    btnSbSave.addEventListener('click', function() { if (typeof window.salvarSupabase === 'function') window.salvarSupabase(); });
+  }
+  var btnSbSync = document.getElementById('btn-supabase-sync-now');
+  if (btnSbSync && !btnSbSync._bound) {
+    btnSbSync._bound = true;
+    btnSbSync.addEventListener('click', function() { if (typeof window.sincronizarSupabaseAgora === 'function') window.sincronizarSupabaseAgora(); });
+  }
+  var btnSbRefresh = document.getElementById('btn-supabase-refresh-status');
+  if (btnSbRefresh && !btnSbRefresh._bound) {
+    btnSbRefresh._bound = true;
+    btnSbRefresh.addEventListener('click', function() { if (typeof window.carregarStatusSyncSupabase === 'function') window.carregarStatusSyncSupabase(); });
+  }
+
+  /* ═══ INFRA CLOUD (R2, REDIS, BACKUP SCHEDULE, CRASH ALERTS) ═══ */
+  var btnR2Backup = document.getElementById('btn-r2-backup-now');
+  if (btnR2Backup && !btnR2Backup._bound) {
+    btnR2Backup._bound = true;
+    btnR2Backup.addEventListener('click', function() {
+      var fb = document.getElementById('r2-feedback');
+      if (fb) { fb.style.color = '#94a3b8'; fb.textContent = 'Enviando backups para R2...'; }
+      apiPost('/api/super/infra-cloud/r2/backup', {}, function(err, data) {
+        if (err || !data || !data.ok) {
+          if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
+        } else {
+          if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + (data.mensagem || 'Backup R2 concluído!'); }
+          if (typeof carregarR2Backups === 'function') carregarR2Backups();
+        }
+      });
+    });
+  }
+
+  var btnSaveRedis = document.getElementById('btn-redis-save');
+  if (btnSaveRedis && !btnSaveRedis._bound) {
+    btnSaveRedis._bound = true;
+    btnSaveRedis.addEventListener('click', function() {
+      var payload = {
+        host: (document.getElementById('redis-host').value || '').trim(),
+        port: parseInt(document.getElementById('redis-port').value, 10),
+        password: document.getElementById('redis-password').value,
+        prefix: (document.getElementById('redis-prefix').value || '').trim(),
+        enabled: document.getElementById('redis-enabled').checked
+      };
+      apiPost('/api/super/infra-cloud/redis', payload, function(err, data) {
+        if (err || !data || !data.ok) { showToast(data ? data.erro : 'Erro ao salvar.', 'error'); return; }
+        showToast('Config Redis salva! Testando...', 'success');
+        apiPost('/api/super/infra-cloud/redis/test', {}, function(e2, d2) {
+          var fb = document.getElementById('redis-feedback');
+          if (d2 && d2.ok) {
+            if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + d2.mensagem; }
+            document.getElementById('redis-status').textContent = 'Ativado';
+            var ri = document.getElementById('redis-info');
+            if (ri) ri.style.display = 'none';
+          } else {
+            if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (d2 ? d2.erro : 'Erro'); }
+            document.getElementById('redis-enabled').checked = false;
+            var ri2 = document.getElementById('redis-info');
+            if (ri2) {
+              ri2.style.display = 'block';
+              ri2.textContent = (d2 ? d2.erro : 'Redis indisponível') + '. Cache desativado.';
+            }
+          }
+        });
+      });
+    });
+  }
+
+  var btnSaveBackupSched = document.getElementById('btn-backup-schedule-save');
+  if (btnSaveBackupSched && !btnSaveBackupSched._bound) {
+    btnSaveBackupSched._bound = true;
+    btnSaveBackupSched.addEventListener('click', function() {
+      var payload = {
+        frequency: document.getElementById('backup-freq').value,
+        retention_days: parseInt(document.getElementById('backup-retention').value, 10),
+        destination: document.getElementById('backup-dest').value
+      };
+      apiPost('/api/super/infra-cloud/backup-schedule', payload, function(err, data) {
+        var fb = document.getElementById('backup-schedule-feedback');
+        if (err || !data || !data.ok) {
+          if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
+        } else {
+          if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + data.mensagem; }
+          document.getElementById('backup-schedule-status').textContent = payload.frequency !== 'manual' ? payload.frequency : 'Manual';
+        }
+      });
+    });
+  }
+
+  var btnSaveCrash = document.getElementById('btn-crash-alert-save');
+  if (btnSaveCrash && !btnSaveCrash._bound) {
+    btnSaveCrash._bound = true;
+    btnSaveCrash.addEventListener('click', function() {
+      var payload = {
+        channel: document.getElementById('crash-channel').value,
+        webhook_url: (document.getElementById('crash-webhook-url').value || '').trim()
+      };
+      apiPost('/api/super/infra-cloud/crash-alerts', payload, function(err, data) {
+        var fb = document.getElementById('crash-alert-feedback');
+        if (err || !data || !data.ok) {
+          if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
+        } else {
+          if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + data.mensagem; }
+          document.getElementById('crash-alert-status').textContent = payload.channel !== 'none' ? 'Ativados' : 'Inativos';
+        }
+      });
+    });
+  }
+
+  var btnTestCrash = document.getElementById('btn-crash-alert-test');
+  if (btnTestCrash && !btnTestCrash._bound) {
+    btnTestCrash._bound = true;
+    btnTestCrash.addEventListener('click', function() {
+      var fb = document.getElementById('crash-alert-feedback');
+      if (fb) { fb.style.color = '#94a3b8'; fb.textContent = 'Enviando alerta de teste...'; }
+      apiPost('/api/super/infra-cloud/crash-alerts/test', {}, function(err, data) {
+        if (err || !data || !data.ok) {
+          if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
+        } else {
+          if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + (data.mensagem || 'Alerta enviado!'); }
+        }
+      });
+    });
+  }
+
+  /* ═══ TÚNEIS (TOGGLES DINÂMICOS) ═══ */
+  document.querySelectorAll('.tunnel-toggle').forEach(function(toggle) {
+    if (!toggle._bound) {
+      toggle._bound = true;
+      toggle.addEventListener('change', function() {
+        var name = this.getAttribute('data-tunnel');
+        if (this.checked) {
+          if (typeof testarTunnel === 'function') testarTunnel(name);
+        } else {
+          if (typeof pararTunnel === 'function') pararTunnel(name);
+        }
+      });
+    }
+  });
+
+  /* ═══ FEATURES RESTAURANTE ═══ */
+  var sInpFeat = document.getElementById('rest-feat-search');
+  if (sInpFeat && !sInpFeat._bound) {
+    sInpFeat._bound = true;
+    sInpFeat.addEventListener('input', function() {
+      if (typeof window.filtrarFeaturesRestaurantes === 'function') window.filtrarFeaturesRestaurantes();
+    });
+  }
+  var btnRefFeat = document.getElementById('btn-refresh-rest-feat');
+  if (btnRefFeat && !btnRefFeat._bound) {
+    btnRefFeat._bound = true;
+    btnRefFeat.addEventListener('click', function() {
+      if (typeof window.renderFeaturesRestaurante === 'function') window.renderFeaturesRestaurante();
+    });
   }
 }
 
@@ -4965,50 +5583,69 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
 
-  (function setupLoadControlEvents() {
+  window.setupLoadControlEvents = function() {
     var grid = document.getElementById('lc-modos-grid');
-    if (grid) {
+    if (grid && !grid._bound) {
+      grid._bound = true;
       grid.addEventListener('click', function(ev) {
         var btn = ev.target.closest ? ev.target.closest('.lc-modo-btn') : null;
         if (btn && typeof window.girarChaveLoadControl === 'function') window.girarChaveLoadControl(btn.getAttribute('data-modo'));
       });
     }
     var btnSave = document.getElementById('btn-lc-save');
-    if (btnSave) btnSave.addEventListener('click', function() { if (typeof window.salvarConfigLoadControl === 'function') window.salvarConfigLoadControl(); });
+    if (btnSave && !btnSave._bound) {
+      btnSave._bound = true;
+      btnSave.addEventListener('click', function() { if (typeof window.salvarConfigLoadControl === 'function') window.salvarConfigLoadControl(); });
+    }
     var btnRef = document.getElementById('btn-lc-refresh');
-    if (btnRef) btnRef.addEventListener('click', function() { if (typeof window.renderLoadControl === 'function') window.renderLoadControl(true); });
+    if (btnRef && !btnRef._bound) {
+      btnRef._bound = true;
+      btnRef.addEventListener('click', function() { if (typeof window.renderLoadControl === 'function') window.renderLoadControl(true); });
+    }
     var tbTenants = document.getElementById('lc-tenants-tbody');
-    if (tbTenants) {
+    if (tbTenants && !tbTenants._bound) {
+      tbTenants._bound = true;
       tbTenants.addEventListener('change', function(ev) {
         var sel = ev.target.closest ? ev.target.closest('.lc-tenant-override') : null;
         if (sel && typeof window.salvarOverrideTenantLC === 'function') window.salvarOverrideTenantLC(sel.getAttribute('data-rid'), sel.value || null);
       });
     }
     var btnSpike = document.getElementById('btn-lc-spike-save');
-    if (btnSpike) btnSpike.addEventListener('click', function() { if (typeof window.salvarSpikeLoadControl === 'function') window.salvarSpikeLoadControl(); });
+    if (btnSpike && !btnSpike._bound) {
+      btnSpike._bound = true;
+      btnSpike.addEventListener('click', function() { if (typeof window.salvarSpikeLoadControl === 'function') window.salvarSpikeLoadControl(); });
+    }
     ['lc-spike-threshold', 'lc-spike-cooldown'].forEach(function(id) {
       var el = document.getElementById(id);
-      if (el) el.addEventListener('input', function() { el.dataset.touched = '1'; });
+      if (el && !el._bound) {
+        el._bound = true;
+        el.addEventListener('input', function() { el.dataset.touched = '1'; });
+      }
     });
     ['lc-auto-enabled', 'lc-lag-threshold', 'lc-sustained', 'lc-recovery-lag', 'lc-recovery-sustained', 'lc-max-rss'].forEach(function(id) {
       var el = document.getElementById(id);
-      if (el) el.addEventListener('input', function() { el.dataset.touched = '1'; });
+      if (el && !el._bound) {
+        el._bound = true;
+        el.addEventListener('input', function() { el.dataset.touched = '1'; });
+      }
     });
     var chkAR = document.getElementById('lc-autorefresh');
-    if (chkAR) {
+    if (chkAR && !chkAR._bound) {
+      chkAR._bound = true;
       chkAR.addEventListener('change', function() {
         if (_lcAutoTimer) { clearInterval(_lcAutoTimer); _lcAutoTimer = null; }
         if (chkAR.checked) startLcAuto();
       });
     }
     function startLcAuto() {
+      if (_lcAutoTimer) clearInterval(_lcAutoTimer);
       _lcAutoTimer = setInterval(function() {
         var sec = document.getElementById('sec-load-control');
         if (sec && sec.classList && sec.classList.contains('active') && typeof window.renderLoadControl === 'function') window.renderLoadControl(true);
       }, 5000);
     }
     startLcAuto();
-  })();
+  };
 
 
   /* ═══ RENDER DOMÍNIOS ═══ */
@@ -5118,57 +5755,62 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
 
-  var btnSalvarDom = document.getElementById('btn-salvar-dom');
-  if (btnSalvarDom) {
-    btnSalvarDom.addEventListener('click', function() {
-      var select = document.getElementById('dom-tenant-select');
-      var slugInput = document.getElementById('dom-slug');
-      var customInput = document.getElementById('dom-custom');
-      var tenantId = select ? parseInt(select.value, 10) : 0;
-      if (!tenantId) {
-        showToast('Selecione um restaurante.', 'warning');
-        return;
-      }
-      var payload = {
-        restaurante_id: tenantId,
-        slug: slugInput ? slugInput.value : '',
-        custom_domain: customInput ? customInput.value : ''
-      };
-      apiPost('/api/super/dominios', payload, function(err, data) {
-        if (err || !data || !data.ok) {
-          showToast('Erro ao salvar domínio: ' + (err ? err.message : (data ? data.erro : 'Falha')), 'danger');
+  window.setupDominiosEvents = function() {
+    var btnSalvarDom = document.getElementById('btn-salvar-dom');
+    if (btnSalvarDom && !btnSalvarDom._bound) {
+      btnSalvarDom._bound = true;
+      btnSalvarDom.addEventListener('click', function() {
+        var select = document.getElementById('dom-tenant-select');
+        var slugInput = document.getElementById('dom-slug');
+        var customInput = document.getElementById('dom-custom');
+        var tenantId = select ? parseInt(select.value, 10) : 0;
+        if (!tenantId) {
+          showToast('Selecione um restaurante.', 'warning');
           return;
         }
-        showToast('Domínio salvo com sucesso!', 'success');
-        renderDominios();
+        var payload = {
+          restaurante_id: tenantId,
+          slug: slugInput ? slugInput.value : '',
+          custom_domain: customInput ? customInput.value : ''
+        };
+        apiPost('/api/super/dominios', payload, function(err, data) {
+          if (err || !data || !data.ok) {
+            showToast('Erro ao salvar domínio: ' + (err ? err.message : (data ? data.erro : 'Falha')), 'danger');
+            return;
+          }
+          showToast('Domínio salvo com sucesso!', 'success');
+          renderDominios();
+        });
       });
-    });
-  }
-  var btnRefreshDom = document.getElementById('btn-refresh-dom');
-  if (btnRefreshDom) {
-    btnRefreshDom.addEventListener('click', function() { renderDominios(); });
-  }
-  var domSearch = document.getElementById('dom-search');
-  if (domSearch) {
-    domSearch.addEventListener('input', function() { renderDominios(); });
-  }
-  var domTenantSelect = document.getElementById('dom-tenant-select');
-  if (domTenantSelect) {
-    domTenantSelect.addEventListener('change', function() {
-      var tenants = [];
-      // Find tenant data from the table to prefill
-      apiGet('/api/super/dominios', function(err, data) {
-        if (err || !data || !data.ok) return;
-        var found = (data.tenants || []).find(function(t) { return t.id === parseInt(domTenantSelect.value, 10); });
-        if (found) {
-          var slugInput = document.getElementById('dom-slug');
-          var customInput = document.getElementById('dom-custom');
-          if (slugInput) slugInput.value = found.slug || '';
-          if (customInput) customInput.value = found.custom_domain || '';
-        }
+    }
+    var btnRefreshDom = document.getElementById('btn-refresh-dom');
+    if (btnRefreshDom && !btnRefreshDom._bound) {
+      btnRefreshDom._bound = true;
+      btnRefreshDom.addEventListener('click', function() { renderDominios(); });
+    }
+    var domSearch = document.getElementById('dom-search');
+    if (domSearch && !domSearch._bound) {
+      domSearch._bound = true;
+      domSearch.addEventListener('input', function() { renderDominios(); });
+    }
+    var domTenantSelect = document.getElementById('dom-tenant-select');
+    if (domTenantSelect && !domTenantSelect._bound) {
+      domTenantSelect._bound = true;
+      domTenantSelect.addEventListener('change', function() {
+        // Find tenant data from the table to prefill
+        apiGet('/api/super/dominios', function(err, data) {
+          if (err || !data || !data.ok) return;
+          var found = (data.tenants || []).find(function(t) { return t.id === parseInt(domTenantSelect.value, 10); });
+          if (found) {
+            var slugInput = document.getElementById('dom-slug');
+            var customInput = document.getElementById('dom-custom');
+            if (slugInput) slugInput.value = found.slug || '';
+            if (customInput) customInput.value = found.custom_domain || '';
+          }
+        });
       });
-    });
-  }
+    }
+  };
 
   /* ═══ REDE DISTRIBUÍDA & INSTÂNCIAS (SYNC HUB) ═══ */
   var instancesCache = [];
@@ -5650,9 +6292,11 @@ document.addEventListener('DOMContentLoaded', function() {
   var sessaoGeradaRecente = null;
 
   window.abrirSecaoSuporteRemoto = function() {
-    var item = document.querySelector('.menu-item[data-target="sec-instancias"]');
-    if (item) item.click();
-    alternarSubabaInstancias('remoto');
+    if (typeof switchTab === 'function') switchTab('sec-instancias');
+    setTimeout(function() {
+      if (typeof alternarSubabaInstancias === 'function') alternarSubabaInstancias('remoto');
+      if (typeof carregarSessoesSuporte === 'function') carregarSessoesSuporte();
+    }, 60);
   };
 
   window.carregarSessoesSuporte = function() {
@@ -6447,20 +7091,24 @@ document.addEventListener('DOMContentLoaded', function() {
     setupSuperAdminSocket();
   } catch (e) {}
 
-  var btnRefreshInstances = document.getElementById('btn-refresh-instances');
-  if (btnRefreshInstances) {
-    btnRefreshInstances.addEventListener('click', function() { carregarInstancias(); });
-  }
+  window.setupInstanciasSupabaseEvents = function() {
+    var btnRefreshInstances = document.getElementById('btn-refresh-instances');
+    if (btnRefreshInstances && !btnRefreshInstances._bound) {
+      btnRefreshInstances._bound = true;
+      btnRefreshInstances.addEventListener('click', function() { carregarInstancias(); });
+    }
 
-  /* Supabase wizard & sync */
-  var btnSbTest = document.getElementById('btn-supabase-testar');
-  var btnSbSave = document.getElementById('btn-supabase-salvar');
-  var btnSbSync = document.getElementById('btn-supabase-sync-now');
-  var btnSbRefresh = document.getElementById('btn-supabase-refresh-status');
-  if (btnSbTest) btnSbTest.addEventListener('click', function() { window.testarSupabase(); });
-  if (btnSbSave) btnSbSave.addEventListener('click', function() { window.salvarSupabase(); });
-  if (btnSbSync) btnSbSync.addEventListener('click', function() { window.sincronizarSupabaseAgora(); });
-  if (btnSbRefresh) btnSbRefresh.addEventListener('click', function() { window.carregarStatusSyncSupabase(); });
+    /* Supabase wizard & sync */
+    var btnSbTest = document.getElementById('btn-supabase-testar');
+    var btnSbSave = document.getElementById('btn-supabase-salvar');
+    var btnSbSync = document.getElementById('btn-supabase-sync-now');
+    var btnSbRefresh = document.getElementById('btn-supabase-refresh-status');
+    if (btnSbTest && !btnSbTest._bound) { btnSbTest._bound = true; btnSbTest.addEventListener('click', function() { window.testarSupabase(); }); }
+    if (btnSbSave && !btnSbSave._bound) { btnSbSave._bound = true; btnSbSave.addEventListener('click', function() { window.salvarSupabase(); }); }
+    if (btnSbSync && !btnSbSync._bound) { btnSbSync._bound = true; btnSbSync.addEventListener('click', function() { window.sincronizarSupabaseAgora(); }); }
+    if (btnSbRefresh && !btnSbRefresh._bound) { btnSbRefresh._bound = true; btnSbRefresh.addEventListener('click', function() { window.carregarStatusSyncSupabase(); }); }
+  };
+  window.setupInstanciasSupabaseEvents();
 
   if (window.socket && typeof window.socket.on === 'function') {
     window.socket.on('supabase_sync_completed', function() {
@@ -8870,55 +9518,68 @@ window.carregarTemaCustomGlobal = function() {
 };
 
 // ─── ALTERAR SENHA SUPER ADMIN ───
+window.executarAlterarSenha = function() {
+  var atual = (document.getElementById('senha-atual-input') || {}).value || '';
+  var nova = (document.getElementById('senha-nova-input') || {}).value || '';
+  var conf = (document.getElementById('senha-confirma-input') || {}).value || '';
+  if (!atual || !nova) { showToast('Preencha a senha atual e a nova senha.', 'warning'); return; }
+  if (nova.length < 8) { showToast('A nova senha deve ter pelo menos 8 caracteres.', 'warning'); return; }
+  if (nova !== conf) { showToast('As senhas não coincidem.', 'danger'); return; }
+
+  var btn = document.getElementById('btn-alterar-senha');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+  }
+  apiPost('/api/super/alterar-senha', { senha_atual: atual, nova_senha: nova }, function(err, r) {
+    if (!err && r && r.ok) {
+      showToast(r.mensagem || 'Senha alterada com sucesso!', 'success');
+      if (document.getElementById('senha-atual-input')) document.getElementById('senha-atual-input').value = '';
+      if (document.getElementById('senha-nova-input')) document.getElementById('senha-nova-input').value = '';
+      if (document.getElementById('senha-confirma-input')) document.getElementById('senha-confirma-input').value = '';
+      var fill = document.getElementById('forca-senha-fill');
+      if (fill) fill.style.width = '0%';
+      var txt = document.getElementById('forca-senha-txt');
+      if (txt) txt.textContent = 'Use letras maiúsculas, minúsculas, números e símbolos.';
+    } else {
+      showToast((r && r.erro) || 'Erro ao alterar senha.', 'danger');
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-key"></i> Salvar Nova Senha';
+    }
+  });
+};
+
 function initAlterarSenha() {
   var inputNova = document.getElementById('senha-nova-input');
   var fill = document.getElementById('forca-senha-fill');
   var txt = document.getElementById('forca-senha-txt');
-  if (!inputNova || !fill) return;
-
-  inputNova.addEventListener('input', function() {
-    var v = inputNova.value;
-    var pontos = 0;
-    if (v.length >= 8) pontos++;
-    if (v.length >= 12) pontos++;
-    if (/[a-z]/.test(v) && /[A-Z]/.test(v)) pontos++;
-    if (/[0-9]/.test(v)) pontos++;
-    if (/[^a-zA-Z0-9]/.test(v)) pontos++;
-    var pct = Math.min(100, pontos * 20);
-    fill.style.width = pct + '%';
-    if (pontos <= 2) { fill.style.background = '#ef4444'; txt.textContent = v ? 'Senha fraca — adicione maiúsculas, números ou símbolos.' : 'Use letras maiúsculas, minúsculas, números e símbolos.'; }
-    else if (pontos === 3) { fill.style.background = '#f59e0b'; txt.textContent = 'Senha média.'; }
-    else { fill.style.background = '#22c55e'; txt.textContent = 'Senha forte.'; }
-  });
+  if (inputNova && fill && !inputNova._strengthBound) {
+    inputNova._strengthBound = true;
+    inputNova.addEventListener('input', function() {
+      var v = inputNova.value;
+      var pontos = 0;
+      if (v.length >= 8) pontos++;
+      if (v.length >= 12) pontos++;
+      if (/[a-z]/.test(v) && /[A-Z]/.test(v)) pontos++;
+      if (/[0-9]/.test(v)) pontos++;
+      if (/[^a-zA-Z0-9]/.test(v)) pontos++;
+      var pct = Math.min(100, pontos * 20);
+      fill.style.width = pct + '%';
+      if (pontos <= 2) { fill.style.background = '#ef4444'; txt.textContent = v ? 'Senha fraca — adicione maiúsculas, números ou símbolos.' : 'Use letras maiúsculas, minúsculas, números e símbolos.'; }
+      else if (pontos === 3) { fill.style.background = '#f59e0b'; txt.textContent = 'Senha média.'; }
+      else { fill.style.background = '#22c55e'; txt.textContent = 'Senha forte.'; }
+    });
+  }
 
   var btn = document.getElementById('btn-alterar-senha');
-  if (!btn) return;
-  btn.addEventListener('click', async function() {
-    var atual = document.getElementById('senha-atual-input').value;
-    var nova = document.getElementById('senha-nova-input').value;
-    var conf = document.getElementById('senha-confirma-input').value;
-    if (!atual || !nova) { showToast('Preencha a senha atual e a nova senha.', 'warning'); return; }
-    if (nova.length < 8) { showToast('A nova senha deve ter pelo menos 8 caracteres.', 'warning'); return; }
-    if (nova !== conf) { showToast('As senhas não coincidem.', 'danger'); return; }
-
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
-    apiPost('/api/super/alterar-senha', { senha_atual: atual, nova_senha: nova }, function(err, r) {
-      if (!err && r && r.ok) {
-        showToast(r.mensagem || 'Senha alterada com sucesso!', 'success');
-        document.getElementById('senha-atual-input').value = '';
-        document.getElementById('senha-nova-input').value = '';
-        document.getElementById('senha-confirma-input').value = '';
-        fill.style.width = '0%';
-        txt.textContent = 'Use letras maiúsculas, minúsculas, números e símbolos.';
-      } else {
-        showToast((r && r.erro) || 'Erro ao alterar senha.', 'danger');
-      }
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-key"></i> Salvar Nova Senha';
-    });
-  });
+  if (btn && !btn._bound) {
+    btn._bound = true;
+    btn.addEventListener('click', window.executarAlterarSenha);
+  }
 }
+window.initAlterarSenha = initAlterarSenha;
 document.addEventListener('DOMContentLoaded', initAlterarSenha);
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -9592,16 +10253,17 @@ function carregarCrashHistory() {
   });
 }
 
-// Event listeners — R2
-(function() {
-  document.addEventListener('DOMContentLoaded', function() {
-    var btnSaveR2 = document.getElementById('btn-r2-save');
-    if (btnSaveR2) btnSaveR2.addEventListener('click', function() {
+// Event listeners — Infra Cloud & R2
+window.setupInfraCloudEvents = function() {
+  var btnSaveR2 = document.getElementById('btn-r2-save');
+  if (btnSaveR2 && !btnSaveR2._bound) {
+    btnSaveR2._bound = true;
+    btnSaveR2.addEventListener('click', function() {
       var payload = {
-        account_id: document.getElementById('r2-account-id').value.trim(),
-        bucket: document.getElementById('r2-bucket').value.trim(),
-        access_key: document.getElementById('r2-access-key').value.trim(),
-        secret_key: document.getElementById('r2-secret-key').value.trim()
+        account_id: (document.getElementById('r2-account-id').value || '').trim(),
+        bucket: (document.getElementById('r2-bucket').value || '').trim(),
+        access_key: (document.getElementById('r2-access-key').value || '').trim(),
+        secret_key: (document.getElementById('r2-secret-key').value || '').trim()
       };
       if (!payload.account_id || !payload.bucket || !payload.access_key || !payload.secret_key) {
         showToast('Preencha todos os campos do R2.', 'error'); return;
@@ -9613,7 +10275,8 @@ function carregarCrashHistory() {
           var fb = document.getElementById('r2-feedback');
           if (d2 && d2.ok) {
             if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + d2.mensagem; }
-            document.getElementById('r2-status').textContent = 'Conectado';
+            var st = document.getElementById('r2-status');
+            if (st) st.textContent = 'Conectado';
             var badge = document.getElementById('infra-cloud-badge');
             if (badge) { badge.style.display = ''; badge.textContent = 'R2 ✓'; }
           } else {
@@ -9622,9 +10285,12 @@ function carregarCrashHistory() {
         });
       });
     });
+  }
 
-    var btnR2Backup = document.getElementById('btn-r2-backup-now');
-    if (btnR2Backup) btnR2Backup.addEventListener('click', function() {
+  var btnR2Backup = document.getElementById('btn-r2-backup-now');
+  if (btnR2Backup && !btnR2Backup._bound) {
+    btnR2Backup._bound = true;
+    btnR2Backup.addEventListener('click', function() {
       var fb = document.getElementById('r2-feedback');
       if (fb) { fb.style.color = '#94a3b8'; fb.textContent = 'Enviando backups para R2...'; }
       apiPost('/api/super/infra-cloud/r2/backup', {}, function(err, data) {
@@ -9636,15 +10302,18 @@ function carregarCrashHistory() {
         }
       });
     });
+  }
 
-    // Redis
-    var btnSaveRedis = document.getElementById('btn-redis-save');
-    if (btnSaveRedis) btnSaveRedis.addEventListener('click', function() {
+  // Redis
+  var btnSaveRedis = document.getElementById('btn-redis-save');
+  if (btnSaveRedis && !btnSaveRedis._bound) {
+    btnSaveRedis._bound = true;
+    btnSaveRedis.addEventListener('click', function() {
       var payload = {
-        host: document.getElementById('redis-host').value.trim(),
+        host: (document.getElementById('redis-host').value || '').trim(),
         port: parseInt(document.getElementById('redis-port').value, 10),
         password: document.getElementById('redis-password').value,
-        prefix: document.getElementById('redis-prefix').value.trim(),
+        prefix: (document.getElementById('redis-prefix').value || '').trim(),
         enabled: document.getElementById('redis-enabled').checked
       };
       apiPost('/api/super/infra-cloud/redis', payload, function(err, data) {
@@ -9654,7 +10323,8 @@ function carregarCrashHistory() {
           var fb = document.getElementById('redis-feedback');
           if (d2 && d2.ok) {
             if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + d2.mensagem; }
-            document.getElementById('redis-status').textContent = 'Ativado';
+            var st = document.getElementById('redis-status');
+            if (st) st.textContent = 'Ativado';
             var ri = document.getElementById('redis-info');
             if (ri) { ri.style.display = 'none'; }
           } else {
@@ -9669,10 +10339,13 @@ function carregarCrashHistory() {
         });
       });
     });
+  }
 
-    // Backup schedule
-    var btnSaveBackup = document.getElementById('btn-backup-schedule-save');
-    if (btnSaveBackup) btnSaveBackup.addEventListener('click', function() {
+  // Backup schedule
+  var btnSaveBackup = document.getElementById('btn-backup-schedule-save');
+  if (btnSaveBackup && !btnSaveBackup._bound) {
+    btnSaveBackup._bound = true;
+    btnSaveBackup.addEventListener('click', function() {
       var payload = {
         frequency: document.getElementById('backup-freq').value,
         retention_days: parseInt(document.getElementById('backup-retention').value, 10),
@@ -9684,17 +10357,21 @@ function carregarCrashHistory() {
           if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
         } else {
           if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + data.mensagem; }
-          document.getElementById('backup-schedule-status').textContent = payload.frequency !== 'manual' ? payload.frequency : 'Manual';
+          var bsStatus = document.getElementById('backup-schedule-status');
+          if (bsStatus) bsStatus.textContent = payload.frequency !== 'manual' ? payload.frequency : 'Manual';
         }
       });
     });
+  }
 
-    // Crash alerts
-    var btnSaveCrash = document.getElementById('btn-crash-alert-save');
-    if (btnSaveCrash) btnSaveCrash.addEventListener('click', function() {
+  // Crash alerts
+  var btnSaveCrash = document.getElementById('btn-crash-alert-save');
+  if (btnSaveCrash && !btnSaveCrash._bound) {
+    btnSaveCrash._bound = true;
+    btnSaveCrash.addEventListener('click', function() {
       var payload = {
         channel: document.getElementById('crash-channel').value,
-        webhook_url: document.getElementById('crash-webhook-url').value.trim()
+        webhook_url: (document.getElementById('crash-webhook-url').value || '').trim()
       };
       apiPost('/api/super/infra-cloud/crash-alerts', payload, function(err, data) {
         var fb = document.getElementById('crash-alert-feedback');
@@ -9702,13 +10379,17 @@ function carregarCrashHistory() {
           if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
         } else {
           if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + data.mensagem; }
-          document.getElementById('crash-alert-status').textContent = payload.channel !== 'none' ? 'Ativados' : 'Inativos';
+          var caStatus = document.getElementById('crash-alert-status');
+          if (caStatus) caStatus.textContent = payload.channel !== 'none' ? 'Ativados' : 'Inativos';
         }
       });
     });
+  }
 
-    var btnTestCrash = document.getElementById('btn-crash-alert-test');
-    if (btnTestCrash) btnTestCrash.addEventListener('click', function() {
+  var btnTestCrash = document.getElementById('btn-crash-alert-test');
+  if (btnTestCrash && !btnTestCrash._bound) {
+    btnTestCrash._bound = true;
+    btnTestCrash.addEventListener('click', function() {
       apiPost('/api/super/infra-cloud/crash-alerts/test', {}, function(err, data) {
         var fb = document.getElementById('crash-alert-feedback');
         if (err || !data || !data.ok) {
@@ -9719,8 +10400,9 @@ function carregarCrashHistory() {
         }
       });
     });
-  });
-})();
+  }
+};
+window.setupInfraCloudEvents();
 
 function downloadR2Backup(filename) {
   var token = getSuperAdminToken();
@@ -9936,10 +10618,11 @@ function pararTunnel(name) {
 }
 
 // Event listeners — Tuneis
-(function() {
-  document.addEventListener('DOMContentLoaded', function() {
-    var btnSaveGlobal = document.getElementById('btn-tunel-global-save');
-    if (btnSaveGlobal) btnSaveGlobal.addEventListener('click', function() {
+window.setupTuneisEvents = function() {
+  var btnSaveGlobal = document.getElementById('btn-tunel-global-save');
+  if (btnSaveGlobal && !btnSaveGlobal._bound) {
+    btnSaveGlobal._bound = true;
+    btnSaveGlobal.addEventListener('click', function() {
       var payload = {
         port: parseInt(document.getElementById('tunel-global-port').value, 10),
         mode: document.getElementById('tunel-global-mode').value,
@@ -9951,14 +10634,19 @@ function pararTunnel(name) {
           if (fb) { fb.style.color = '#fca5a5'; fb.textContent = '✗ ' + (data ? data.erro : 'Erro'); }
         } else {
           if (fb) { fb.style.color = '#86efac'; fb.textContent = '✓ ' + data.mensagem; }
-          document.getElementById('tuneis-porta').textContent = payload.port;
-          document.getElementById('tuneis-autostart').textContent = payload.mode === 'auto' ? 'Ligado' : 'Desligado';
+          var pEl = document.getElementById('tuneis-porta');
+          if (pEl) pEl.textContent = payload.port;
+          var aEl = document.getElementById('tuneis-autostart');
+          if (aEl) aEl.textContent = payload.mode === 'auto' ? 'Ligado' : 'Desligado';
         }
       });
     });
+  }
 
-    // Toggle handlers
-    document.querySelectorAll('.tunnel-toggle').forEach(function(toggle) {
+  // Toggle handlers
+  document.querySelectorAll('.tunnel-toggle').forEach(function(toggle) {
+    if (!toggle._bound) {
+      toggle._bound = true;
       toggle.addEventListener('change', function() {
         var name = this.getAttribute('data-tunnel');
         if (this.checked) {
@@ -9967,9 +10655,10 @@ function pararTunnel(name) {
           pararTunnel(name);
         }
       });
-    });
+    }
   });
-})();
+};
+window.setupTuneisEvents();
 
 /* ═══════════════════════════════════════════════════════════════
    PROVEDORES DE IMAGEM — Pool com round-robin
@@ -11189,13 +11878,17 @@ function escapeHtmlSupport(str) {
 }
 
 window.abrirSecaoSuporteRemoto = function() {
-  if (typeof mostrarSecao === 'function') {
-    mostrarSecao('sec-instancias');
+  if (typeof switchTab === 'function') {
+    switchTab('sec-instancias');
   }
-  if (typeof alternarSubabaInstancias === 'function') {
-    alternarSubabaInstancias('remoto');
-  }
-  carregarSessoesSuporte();
+  setTimeout(function() {
+    if (typeof alternarSubabaInstancias === 'function') {
+      alternarSubabaInstancias('remoto');
+    }
+    if (typeof carregarSessoesSuporte === 'function') {
+      carregarSessoesSuporte();
+    }
+  }, 60);
 };
 
 window.carregarSessoesSuporte = function() {
@@ -13610,20 +14303,23 @@ window.toggleTenantFeatureDirect = function(rid, featureKey, enabled) {
   });
 };
 
-document.addEventListener('DOMContentLoaded', function() {
+window.setupFeaturesRestauranteEvents = function() {
   var sInp = document.getElementById('rest-feat-search');
-  if (sInp) {
+  if (sInp && !sInp._bound) {
+    sInp._bound = true;
     sInp.addEventListener('input', function() {
       if (typeof window.filtrarFeaturesRestaurantes === 'function') window.filtrarFeaturesRestaurantes();
     });
   }
   var btnRef = document.getElementById('btn-refresh-rest-feat');
-  if (btnRef) {
+  if (btnRef && !btnRef._bound) {
+    btnRef._bound = true;
     btnRef.addEventListener('click', function() {
       if (typeof window.renderFeaturesRestaurante === 'function') window.renderFeaturesRestaurante();
     });
   }
-});
+};
+window.setupFeaturesRestauranteEvents();
 
 /* ══════════════════════════════════════════════════════════════════
    ACESSO GLOBAL REMOTO & MOBILE S23 ULTRA COMMAND CENTER

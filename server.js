@@ -8952,7 +8952,13 @@ app.use('/', superAdminRoutes(db, masterDb, superAdminAuth, upload, () => io, ge
   verificarSenhaAdmin,
   loginBloqueado,
   registrarFalhaLogin,
-  loginAttempts
+  loginAttempts,
+  CERTS_DIR,
+  ensureCertsDir,
+  getActiveCertInfo: () => activeCertInfo,
+  isHttps: () => isHttps,
+  CERT_PASSPHRASE,
+  aplicarCert
 }));
 app.post('/api/nfce/emitir', async (req, res) => {
   withTenant(req, () => {
@@ -9357,7 +9363,81 @@ const CONFIG_SECRET_KEYS = [
   'ia_api_key'
 ];
 
+// ── 🖨️ IMPRESSÃO TÉRMICA SILENCIOSA (ESC/POS RAW — sem dialog do SO) ──────────
+// POST /api/imprimir/cupom-raw
+// Corpo: { tipo: 'raw'|'cupom', conteudo: '...', mesa?: '...', items?: [], total?: 0, impressora?: {...} }
+app.post('/api/imprimir/cupom-raw', verificarToken, (req, res) => {
+  withTenant(req, () => {
+    const { tipo = 'raw', conteudo, mesa, items, total, subtotal, impressora } = req.body || {};
+
+    let textoEscPos = conteudo || '';
+
+    // Se não veio conteúdo raw, monta o cupom a partir dos dados estruturados
+    if (!textoEscPos && (items || mesa)) {
+      const ESC = '\x1B';
+      const linha = (txt = '') => txt + '\n';
+      const divisor = '--------------------------------\n';
+      const centrar = (txt) => {
+        const pad = Math.max(0, Math.floor((32 - txt.length) / 2));
+        return ' '.repeat(pad) + txt + '\n';
+      };
+
+      let txt = '';
+      txt += `${ESC}!0`; // inicializa fonte normal
+      txt += centrar('CONFERÊNCIA DE MESA');
+      if (mesa) txt += centrar(`Mesa: ${mesa}`);
+      txt += divisor;
+      if (Array.isArray(items)) {
+        items.forEach(it => {
+          const nome = (it.productName || it.nome || 'Produto').substring(0, 20);
+          const qtd = String(it.quantity || it.quantidade || 1);
+          const val = parseFloat(String(it.total || 0).replace(',', '.')).toFixed(2);
+          const espaco = 32 - qtd.length - 1 - nome.length - val.length - 1;
+          txt += `${qtd}x ${nome}${' '.repeat(Math.max(1, espaco))}${val}\n`;
+        });
+      }
+      txt += divisor;
+      if (subtotal != null) txt += linha(`Subtotal:         R$ ${parseFloat(subtotal).toFixed(2)}`);
+      if (total != null) txt += linha(`TOTAL:            R$ ${parseFloat(total).toFixed(2)}`);
+      txt += '\n\n\n';
+      textoEscPos = txt;
+    }
+
+    if (!textoEscPos) {
+      return res.json({ ok: false, erro: 'Nenhum conteúdo para imprimir.' });
+    }
+
+    // Tenta usar sync-local-engine (TCP direto)
+    let syncEngine = null;
+    try { syncEngine = require('./sync-local-engine'); } catch (e) {}
+
+    if (syncEngine && typeof syncEngine.despacharImpressaoLocal === 'function') {
+      const cfgImpressora = impressora || { tipo: 'TCP', ip: '127.0.0.1', porta: 9100, setor: 'CAIXA' };
+      // Lê config da DB se disponível
+      db.get(`SELECT valor FROM configuracoes WHERE chave = 'impressora_caixa_ip'`, (err, row) => {
+        if (!err && row && row.valor && !impressora) cfgImpressora.ip = row.valor;
+        db.get(`SELECT valor FROM configuracoes WHERE chave = 'impressora_caixa_porta'`, (errP, rowP) => {
+          if (!errP && rowP && rowP.valor && !impressora) cfgImpressora.porta = parseInt(rowP.valor) || 9100;
+          syncEngine.despacharImpressaoLocal(cfgImpressora, textoEscPos)
+            .then(result => res.json(result))
+            .catch(err2 => res.json({ ok: false, erro: String(err2) }));
+        });
+      });
+    } else {
+      // Fallback: grava em spool local
+      const fs = require('fs');
+      const path = require('path');
+      const spoolDir = path.join(__dirname, 'spool_impressao');
+      if (!fs.existsSync(spoolDir)) fs.mkdirSync(spoolDir, { recursive: true });
+      const spoolFile = path.join(spoolDir, `print_caixa_${Date.now()}.txt`);
+      fs.writeFileSync(spoolFile, textoEscPos, 'utf-8');
+      res.json({ ok: true, tipo: 'SPOOL', arquivo: spoolFile, mensagem: 'Arquivo gravado no spooler. Instale o Sync Agent para impressão direta TCP.' });
+    }
+  });
+});
+
 app.get('/api/config', (req, res) => {
+
   withTenant(req, () => {
     db.all(`SELECT * FROM configuracoes`, (err, rows) => {
       if (err) return res.status(500).send(err);
@@ -10936,7 +11016,7 @@ function runIAVerificacao() {
       const criado = p.createdAt ? new Date(p.createdAt).getTime() : 0;
       if (!criado) return;
       const minsEspera = (agora - criado) / 60000;
-      if (minsEspera > 720) return; // Ignorar pedidos com mais de 12 horas
+      if (minsEspera > 180) return; // Ignorar pedidos com mais de 3 horas (evita alertas zumbis de ontem/turnos passados)
       const chaveAlerta = `pedido_${p.id}`;
 
       if (minsEspera >= IA_CONFIG.minutosCriticoEspera && p.status !== 'Pronto') {
@@ -11010,6 +11090,7 @@ function runIAVerificacao() {
       const criado = maisAntigo.createdAt ? new Date(maisAntigo.createdAt).getTime() : 0;
       if (!criado) return;
       const minsEspera = (agora - criado) / 60000;
+      if (minsEspera > 180) return; // Ignorar pedidos com mais de 3 horas (evita alertas zumbis de ontem/turnos passados)
       const chaveManobra = `manobra_${maisAntigo.id}`;
 
       if (minsEspera >= IA_CONFIG.minutosManobra && maisAntigo.status !== 'Pronto') {
@@ -11047,6 +11128,7 @@ function runIAVerificacao() {
       const criado = p.createdAt ? new Date(p.createdAt).getTime() : 0;
       if (!criado) return;
       const minsEspera = (agora - criado) / 60000;
+      if (minsEspera > 180) return; // Ignorar pedidos com mais de 3 horas
       const chaveAtencao = `atencao_${p.id}`;
 
       if (minsEspera >= IA_CONFIG.minutosAtencao && p.status !== 'Pronto' && p.status !== 'Finalizado' && p.status !== 'Cancelado') {

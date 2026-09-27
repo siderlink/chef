@@ -1276,6 +1276,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   padding: 8px 12px;
   background: var(--bg-card);
   border: 1px solid #ffe2d1;
@@ -1284,6 +1285,25 @@ body {
   transition: all 0.2s ease;
   margin-bottom: 6px;
   user-select: none;
+}
+
+.comanda-racha-row > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.comanda-racha-row > span:last-child {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .comanda-racha-row:hover {
@@ -4689,14 +4709,14 @@ body {
    ════════════════════════════════════════════════════════════════ */
 #ia-alertas-panel {
   position: fixed;
-  bottom: 80px;
-  right: 16px;
-  width: 360px;
+  bottom: 45px;
+  right: 330px;
+  width: 350px;
   max-width: calc(100vw - 32px);
   max-height: 440px;
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.06);
-  z-index: 9000;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  z-index: 8500;
   display: flex;
   flex-direction: column;
   background: var(--bg-card, #ffffff);
@@ -4704,6 +4724,44 @@ body {
   border: 1px solid var(--border-color, #e2e8f0);
   overflow: hidden;
   box-sizing: border-box;
+  transition: right 0.25s ease, bottom 0.25s ease;
+}
+
+@media (max-width: 960px) {
+  #ia-alertas-panel {
+    right: 16px !important;
+    bottom: 45px !important;
+    width: min(340px, calc(100vw - 32px)) !important;
+  }
+}
+
+body.right-panel-hidden #ia-alertas-panel,
+body:has(#right-panel.sidebar-hidden) #ia-alertas-panel,
+body:has(#right-panel.mode-hidden) #ia-alertas-panel {
+  right: 16px !important;
+}
+
+#ia-alertas-icon {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: fixed !important;
+  bottom: -9999px !important;
+  right: -9999px !important;
+}
+
+@keyframes slideToastTop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -24px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 [data-theme="dark"] #ia-alertas-panel {
