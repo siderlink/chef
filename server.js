@@ -319,6 +319,40 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const os = require('os');
 const sqlite3 = require('./sqlite3-wrapper').verbose();
+
+// Monkey-patch global para capturar INSERT INTO pedidos e efetuar a baixa de estoque automático
+const originalRun = sqlite3.Database.prototype.run;
+sqlite3.Database.prototype.run = function (sql, params, callback) {
+  if (typeof params === 'function') {
+    callback = params;
+    params = [];
+  }
+  let interceptedCallback = callback;
+  if (sql && typeof sql === 'string' && sql.trim().toUpperCase().startsWith('INSERT INTO PEDIDOS')) {
+    const origCb = callback;
+    interceptedCallback = function (err, ...rest) {
+      if (!err && this.lastID && typeof global.darBaixaEstoqueInsumos === 'function') {
+        const sqlMatch = sql.match(/INSERT INTO pedidos\s*\((.*?)\)/i);
+        if (sqlMatch) {
+          const columns = sqlMatch[1].split(',').map(c => c.trim().toLowerCase());
+          const prodIndex = columns.indexOf('productname');
+          const qtyIndex = columns.indexOf('quantity');
+          if (prodIndex !== -1 && Array.isArray(params) && params.length > prodIndex) {
+            const productName = params[prodIndex];
+            const quantity = qtyIndex !== -1 && params[qtyIndex] !== undefined ? params[qtyIndex] : 1;
+            try {
+              global.darBaixaEstoqueInsumos(this, productName, quantity, this.lastID);
+            } catch(e) {
+              console.error('[Estoque] Erro ao engatilhar baixa automática de insumo:', e);
+            }
+          }
+        }
+      }
+      if (origCb) return origCb.apply(this, [err, ...rest]);
+    };
+  }
+  return originalRun.call(this, sql, params, interceptedCallback);
+};
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');

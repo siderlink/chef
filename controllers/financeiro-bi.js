@@ -1356,6 +1356,7 @@ module.exports = function(app, options) {
   // Anexa ao app.locals para que outros controllers (ex: socket-financeiro) acessem diretamente
   if (app && app.locals) {
     app.locals.darBaixaEstoqueInsumos = darBaixaEstoqueInsumos;
+    global.darBaixaEstoqueInsumos = darBaixaEstoqueInsumos;
   }
 
   // Rota HTTP para disparar baixa de estoque de uma lista de itens vendidos
