@@ -13088,6 +13088,36 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
     } catch (eAltaRent) {
       console.error('Erro ao carregar o Controller Add-ons Alta Rentabilidade:', eAltaRent);
     }
+
+    try {
+      require('./controllers/addons-expansao-futura')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('✨ Controller Add-ons Expansao Futura (Multi-Frota, Reservas VIP, Wallet/Cashback, Escudo Google, Split Pix, Dark Kitchen) carregado com sucesso.');
+    } catch (eExpFut) {
+      console.error('Erro ao carregar o Controller Add-ons Expansao Futura:', eExpFut);
+    }
+
+    try {
+      require('./controllers/addons-monetizacao-turbo')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('⚡ Controller Add-ons Monetizacao Turbo (Antecipação, Totem Touch, Tráfego 1-Clique, Auditor iFood, Clube VIP, TV Senhas) carregado com sucesso.');
+    } catch (eTurbo) {
+      console.error('Erro ao carregar o Controller Add-ons Monetizacao Turbo:', eTurbo);
+    }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);
   }

@@ -302,69 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { }
 
     carregarEstadoTemaCaixa();
-
-    function salvarLayoutCaixa(novo) {
-      try { localStorage.setItem('chef_caixa_tema', novo); } catch (err) { }
-      try { socket.emit('save_restaurante_config', { caixa_tema: novo }); } catch (err) { }
-      fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(typeof authHeaders === 'function' ? authHeaders() : {}) },
-        body: JSON.stringify({ caixa_tema: novo })
-      }).catch(() => { });
-    }
-
-    async function limparTemaLoja() {
-      try {
-        await fetch('/api/modulo/temas/aplicar', { method: 'DELETE', headers: { 'Authorization': tokenTemas() } });
-      } catch (e) { }
-    }
-
-    temaSelect.addEventListener('change', async (e) => {
-      const val = e.target.value || 'pro_ux';
-
-      if (val.startsWith('store:')) {
-        const id = val.slice(6);
-        const t = _lojaTemas.find(x => x.id === id);
-        try {
-          const res = await fetch('/api/modulo/temas/aplicar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': tokenTemas() },
-            body: JSON.stringify({ tema_id: id, tema_json: t || { id: id, nome: _storeAtivoNome } })
-          });
-          const data = await res.json().catch(() => ({}));
-          if (data && data.ok === false) throw new Error(data.erro || 'erro');
-          window.showToast(`🎨 Tema "${t ? t.nome : id}" aplicado em todas as telas!`, 'success');
-        } catch (err) {
-          window.showToast('Erro ao aplicar o tema da loja.', 'error');
-        }
-        carregarEstadoTemaCaixa();
-        return;
-      }
-
-      const novo = (val === 'v11') ? 'v11' : (val === 'classico' ? 'classico' : 'pro_ux');
-      salvarLayoutCaixa(novo);
-      await limparTemaLoja();
-      window.showToast(
-        novo === 'v11'
-          ? 'Tema v1.1 ativado! A tela do caixa abrirá o painel modular.'
-          : novo === 'classico'
-            ? 'Tema clássico restaurado para a tela do caixa.'
-            : 'Caixa Moderno UX Pro ativado!',
-        'success');
-      carregarEstadoTemaCaixa();
-    });
-
-    try {
-      if (window.socket && window.socket.on) {
-        window.socket.on('tema_aplicado', () => carregarEstadoTemaCaixa());
-        window.socket.on('tema_global_atualizado', () => carregarEstadoTemaCaixa());
-      } else if (socket && socket.on) {
-        socket.on('tema_aplicado', () => carregarEstadoTemaCaixa());
-        socket.on('tema_global_atualizado', () => carregarEstadoTemaCaixa());
-      }
-    } catch (e) { }
-
-    carregarEstadoTemaCaixa();
   }
 });
 

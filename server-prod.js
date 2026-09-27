@@ -13310,6 +13310,35 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
     } catch (eAud) {
       console.error('Erro ao carregar o Controller Auditor de Taxas de Cartão Prod:', eAud);
     }
+
+    try {
+      require('./controllers/addons-expansao-futura')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('✨ Controller Add-ons Expansão Futura carregado com sucesso no Prod.');
+    } catch (eExpFut) {
+      console.error('Erro ao carregar o Controller Add-ons Expansão Futura Prod:', eExpFut);
+    }
+    try {
+      require('./controllers/addons-monetizacao-turbo')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('⚡ Controller Add-ons Monetização Turbo carregado com sucesso no Prod.');
+    } catch (eTurbo) {
+      console.error('Erro ao carregar o Controller Add-ons Monetização Turbo Prod:', eTurbo);
+    }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);
   }

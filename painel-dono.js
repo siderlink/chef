@@ -6031,3 +6031,174 @@ if (typeof socket !== 'undefined' && socket && typeof socket.on === 'function') 
   });
 }
 
+
+
+// ══════════════════════════════════════════════════════════════════
+// LOJA DE ADD-ONS & GOVERNANÇA DE PLANO NO PAINEL DO DONO
+// ══════════════════════════════════════════════════════════════════
+const CAT_ADDONS_DONO = [
+  { id: 'antecipacao_recebiveis_giro', cat: 'fiscal', nome: 'Antecipação de Recebíveis & Crédito Giro', preco: '3.2% spread', roi: 'Capital de giro na mesma hora via Pix', desc: 'Antecipe vendas de cartão e repasses do iFood na hora direto no Pix sem banco.', icone: 'ph-currency-dollar', cor: '#10b981' },
+  { id: 'totem_kiosk_touchscreen', cat: 'gestao', nome: 'Totem Kiosk de Autoatendimento Touch', preco: 'R$ 69/mês', roi: 'Economia de R$ 2.500/mês por atendente', desc: 'Transforme tablets Android em totens de pedido com pagamento touch e senha.', icone: 'ph-device-tablet-speaker', cor: '#0ea5e9' },
+  { id: 'trafego_hiperlocal_1clique', cat: 'vendas', nome: 'Piloto de Tráfego Pago Hiperlocal 1-Clique', preco: 'R$ 49/mês', roi: '+25 a +40 clientes nas noites fracas', desc: 'Suba anúncios automáticos no Instagram num raio de 3km para lotar a casa.', icone: 'ph-megaphone-simple', cor: '#f59e0b' },
+  { id: 'auditor_glosas_ifood', cat: 'fiscal', nome: 'Auditor de Repasses & Glosas do iFood', preco: 'R$ 89/mês', roi: 'Recupera em média R$ 1.400/mês', desc: 'Audita extratos do iFood e aponta retenções indevidas para contestação imediata.', icone: 'ph-magnifying-glass-plus', cor: '#ef4444' },
+  { id: 'clube_assinaturas_prime', cat: 'vendas', nome: 'Motor de Clube de Assinaturas Prime', preco: 'R$ 79/mês', roi: 'Receita recorrente garantida no dia 1º', desc: 'Crie seu clube VIP com entrega grátis e cobre mensalidades no cartão dos clientes.', icone: 'ph-crown', cor: '#8b5cf6' },
+  { id: 'tv_senhas_chamada_voz', cat: 'gestao', nome: 'TV Chamador de Senhas com Áudio', preco: 'R$ 39/mês', roi: 'Zero aglomeração e fila organizada', desc: 'Transforme qualquer Smart TV em painel de senhas com voz sintetizada em português.', icone: 'ph-television', cor: '#ec4899' },
+  { id: 'despacho_multi_frota', cat: 'vendas', nome: 'Central de Despacho Multi-Frota (Uber/Lalamove)', preco: 'R$ 79/mês', roi: 'Reduz 30% dos custos de motoboy fixo', desc: 'Acione motoboys terceirizados com 1 clique e rastreio ao vivo para o cliente.', icone: 'ph-moped', cor: '#0ea5e9' },
+  { id: 'reservas_vip_caucao', cat: 'vendas', nome: 'Reservas VIP com Caução Pix (Anti No-Show)', preco: 'R$ 69/mês', roi: 'Zera mesas vazias em noites nobres', desc: 'Garante o comparecimento cobrando caução Pix antecipada abatida da conta.', icone: 'ph-calendar-star', cor: '#ec4899' },
+  { id: 'wallet_digital_prepaga', cat: 'fiscal', nome: 'Carteira Digital Pré-Paga & Cashback VIP', preco: 'R$ 89/mês', roi: 'Caixa antecipado e clientes fiéis', desc: 'Clientes compram R$ 200 em créditos adiantados e ganham bônus de consumo.', icone: 'ph-wallet', cor: '#10b981' },
+  { id: 'escudo_reputacao_google', cat: 'vendas', nome: 'Escudo de Reputação Google Maps 5★', preco: 'R$ 59/mês', roi: '+35% de novos clientes via Maps', desc: 'Filtra elogios para o Google e retém críticas na ouvidoria interna do dono.', icone: 'ph-star', cor: '#eab308' },
+  { id: 'split_mesa_pix', cat: 'fiscal', nome: 'Split de Conta na Mesa com Pix Autônomo', preco: 'R$ 49/mês', roi: 'Giro de mesa 20 min mais rápido', desc: 'Clientes dividem e pagam frações da conta via QR Code sem chamar o garçom.', icone: 'ph-arrows-split', cor: '#8b5cf6' },
+  { id: 'dark_kitchen_marcas', cat: 'gestao', nome: 'Dark Kitchen Multi-Marcas (Hub Virtual)', preco: 'R$ 79/mês', roi: '+100% de receita na mesma cozinha', desc: 'Opere hamburgueria, marmitas e sobremesas no mesmo espaço com KDS separado.', icone: 'ph-cooking-pot', cor: '#f97316' },
+  { id: 'tributos_monofasicos', cat: 'fiscal', nome: 'Recuperador Tributário (PIS/COFINS)', preco: 'R$ 99/mês', roi: 'Economiza R$ 800 a R$ 3.000/mês', desc: 'Abate PIS/COFINS de bebidas frias no Simples Nacional com laudo para o contador.', icone: 'ph-shield-check', cor: '#10b981' },
+  { id: 'sentinela_anti_fraude', cat: 'fiscal', nome: 'Sentinela Anti-Fraude & Cancelamentos', preco: 'R$ 79/mês', roi: 'Elimina 3% a 8% de perdas', desc: 'Audita cancelamentos pós-produção na cozinha e descontos manuais suspeitos.', icone: 'ph-detective', cor: '#ef4444' },
+  { id: 'banco_freelancers_plantao', cat: 'gestao', nome: 'Banco de Freelancers & Plantão Urgente', preco: 'R$ 49/mês', roi: 'Garçom de pico em 15 min', desc: 'Chame garçons, chapeiros e barmans avaliados para turnos de sexta e sábado.', icone: 'ph-users-three', cor: '#f59e0b' },
+  { id: 'gatilho_clima_delivery', cat: 'vendas', nome: 'Gatilho Meteorológico (Choveu, Vendeu)', preco: 'R$ 49/mês', roi: '+45% de vendas na chuva', desc: 'Dispara automações com combos quentes quando a chuva começa na cidade.', icone: 'ph-cloud-rain', cor: '#3b82f6' },
+  { id: 'compras_coletivas_b2b', cat: 'compras', nome: 'Clube de Compras Coletivas B2B', preco: 'R$ 89/mês', roi: '-18% no CMV de insumos', desc: 'Compre queijo, carne e embalagens com poder de grande rede direto da indústria.', icone: 'ph-shopping-cart', cor: '#8b5cf6' },
+  { id: 'hub_multi_marketplace', cat: 'vendas', nome: 'Hub Multi-Marketplace (Rappi+Uber+99)', preco: 'R$ 129/mês', roi: '-40% em atrasos e multas', desc: 'Centralize todos os marketplaces num único painel sem tablets espalhados.', icone: 'ph-device-mobile-camera', cor: '#06b6d4' },
+  { id: 'ficha_tecnica_visual', cat: 'gestao', nome: 'Ficha Técnica Visual com Foto do Prato', preco: 'R$ 49/mês', roi: 'Padrão 100% fiel na montagem', desc: 'Foto do prato montado, modo de preparo e checklist no KDS da cozinha.', icone: 'ph-fork-knife', cor: '#ec4899' },
+  { id: 'link_pagamento_virtual', cat: 'fiscal', nome: 'Maquininha Virtual & Link WhatsApp', preco: 'R$ 59/mês', roi: '+15% de ticket no delivery', desc: 'Envie links de pagamento parcelado via WhatsApp com baixa automática no caixa.', icone: 'ph-credit-card', cor: '#14b8a6' },
+  { id: 'foto_ia_cardapio', cat: 'vendas', nome: 'Cardápio com Foto IA Instantânea', preco: 'R$ 49/mês', roi: '+30% de conversão no QR', desc: 'Gere fotos profissionais realistas dos pratos usando IA sem contratar fotógrafo.', icone: 'ph-camera', cor: '#6366f1' },
+  { id: 'escala_inteligente_ia', cat: 'gestao', nome: 'Agenda de Escalas CLT com IA', preco: 'R$ 69/mês', roi: '-30% em horas extras', desc: 'Gera escalas automáticas respeitando folgas CLT, preferências e picos de venda.', icone: 'ph-calendar-check', cor: '#84cc16' }
+];
+
+window.abrirLojaAddonsDono = function() {
+  window.carregarStatusPlanoDono();
+  window.renderizarAddonsLoja('todos');
+  if (typeof abrirModal === 'function') abrirModal('modal-loja-addons-dono');
+  else {
+    const el = document.getElementById('modal-loja-addons-dono');
+    if (el) el.classList.remove('hidden');
+  }
+};
+
+window.carregarStatusPlanoDono = async function() {
+  try {
+    const tId = localStorage.getItem('restaurante_id') || 1;
+    const res = await fetch('/api/plano/quotas?restaurante_id=' + tId, {
+      headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('chef_token') || '') }
+    });
+    const d = await res.json();
+    if (!d || !d.ok) return;
+
+    const rest = d.restaurante || {};
+    const limits = d.limites || {};
+    const uso = d.uso_atual || {};
+    const pcts = d.percentuais || {};
+
+    const nomePlanoEl = document.getElementById('txt-nome-plano-atual');
+    const descPlanoEl = document.getElementById('txt-desc-plano-atual');
+    const bannerLiteEl = document.getElementById('banner-cota-lite');
+
+    if (nomePlanoEl) nomePlanoEl.textContent = limits.nome || 'Plano ' + rest.plano;
+    if (descPlanoEl) descPlanoEl.textContent = limits.descricao || '';
+
+    // Preenche barras
+    const barPedFill = document.getElementById('bar-pedidos-fill');
+    const barPedTxt = document.getElementById('bar-pedidos-txt');
+    if (barPedFill) barPedFill.style.width = (pcts.pedidos || 0) + '%';
+    if (barPedTxt) barPedTxt.textContent = uso.pedidos_mes + '/' + (limits.max_pedidos_mes === Infinity ? '∞' : limits.max_pedidos_mes);
+
+    const barProdFill = document.getElementById('bar-produtos-fill');
+    const barProdTxt = document.getElementById('bar-produtos-txt');
+    if (barProdFill) barProdFill.style.width = (pcts.produtos || 0) + '%';
+    if (barProdTxt) barProdTxt.textContent = uso.produtos + '/' + (limits.max_produtos === Infinity ? '∞' : limits.max_produtos);
+
+    const barMesasFill = document.getElementById('bar-mesas-fill');
+    const barMesasTxt = document.getElementById('bar-mesas-txt');
+    if (barMesasFill) barMesasFill.style.width = (pcts.mesas || 0) + '%';
+    if (barMesasTxt) barMesasTxt.textContent = uso.mesas + '/' + (limits.max_mesas === Infinity ? '∞' : limits.max_mesas);
+
+    // Se for Plano Lite, exibe banner de aviso de cota no dashboard
+    if (bannerLiteEl) {
+      if (rest.plano === 'lite') {
+        bannerLiteEl.style.display = 'flex';
+        const txtPed = document.getElementById('txt-cota-pedidos');
+        const txtProd = document.getElementById('txt-cota-produtos');
+        const msgAlerta = document.getElementById('msg-cota-alerta');
+        if (txtPed) txtPed.textContent = uso.pedidos_mes + '/150 pedidos';
+        if (txtProd) txtProd.textContent = uso.produtos + '/30 produtos';
+        if (msgAlerta && d.alerta) msgAlerta.textContent = d.alerta.mensagem;
+      } else {
+        bannerLiteEl.style.display = 'none';
+      }
+    }
+  } catch(e) {
+    console.error('[Plano Dono Load Error]', e);
+  }
+};
+
+window.renderizarAddonsLoja = function(filtro) {
+  const container = document.getElementById('grid-loja-addons-dono');
+  if (!container) return;
+
+  const itens = filtro === 'todos' ? CAT_ADDONS_DONO : CAT_ADDONS_DONO.filter(a => a.cat === filtro);
+
+  let html = '';
+  itens.forEach(a => {
+    html += `
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; display:flex; flex-direction:column; justify-content:space-between; transition:transform 0.2s;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+            <div style="width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,0.06); color:${a.cor}; display:flex; align-items:center; justify-content:center; font-size:20px;">
+              <i class="ph-bold ${a.icone}"></i>
+            </div>
+            <span style="font-size:14px; font-weight:900; color:var(--text);">${a.preco}</span>
+          </div>
+          <h4 style="font-size:14px; font-weight:800; color:var(--text); margin-bottom:6px;">${a.nome}</h4>
+          <p style="font-size:12px; color:var(--text-sub); line-height:1.4; margin-bottom:12px;">${a.desc}</p>
+        </div>
+        <div>
+          <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); border-radius:8px; padding:6px 10px; font-size:11px; font-weight:700; color:#10b981; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+            <i class="ph-bold ph-trend-up"></i> ${a.roi}
+          </div>
+          <button onclick="window.abrirCheckoutModal('${a.nome}', '${a.preco}', '${a.id}')" style="width:100%; padding:9px; background:linear-gradient(135deg, var(--primary), #ff8c42); color:white; border:none; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer;">
+            Ativar via PIX
+          </button>
+        </div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+};
+
+window.filtrarAddonsLoja = function(cat, btn) {
+  document.querySelectorAll('#modal-loja-addons-dono .tab-btn-terminal').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  window.renderizarAddonsLoja(cat);
+};
+
+window.abrirCheckoutModal = function(nome, valor, id) {
+  const modal = document.getElementById('modal-checkout-addon');
+  if (!modal) return;
+  const tit = document.getElementById('checkout-addon-titulo');
+  const prec = document.getElementById('checkout-addon-preco');
+  const pix = document.getElementById('checkout-pix-copia');
+  const qr = document.getElementById('checkout-qr-img');
+
+  const precoNum = typeof valor === 'number' ? valor : parseFloat(String(valor).replace(/[^0-9,]/g, '').replace(',', '.')) || 99;
+
+  if (tit) tit.textContent = 'Ativar ' + nome;
+  if (prec) prec.textContent = 'R$ ' + precoNum.toFixed(2) + ' / mês';
+  const chavePix = '00020126580014br.gov.bcb.pix0136' + id + '-' + (localStorage.getItem('restaurante_id') || 1) + '-chefcozinha520400005303986540' + precoNum.toFixed(2) + '5802BR5920CHEF COZINHA SAAS6009SAO PAULO62070503***6304ABCD';
+  if (pix) pix.value = chavePix;
+  if (qr) qr.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(chavePix);
+
+  if (typeof abrirModal === 'function') abrirModal('modal-checkout-addon');
+  else modal.classList.remove('hidden');
+};
+
+window.copiarPixCheckout = function() {
+  const pix = document.getElementById('checkout-pix-copia');
+  if (pix) {
+    pix.select();
+    navigator.clipboard.writeText(pix.value);
+    if (typeof showToast === 'function') showToast('📋 Código Pix Copia e Cola copiado!', 'ph-copy', 'info');
+  }
+};
+
+// Carregar status do plano ao iniciar painel
+setTimeout(() => {
+  if (typeof window.carregarStatusPlanoDono === 'function') {
+    window.carregarStatusPlanoDono();
+  }
+}, 1500);

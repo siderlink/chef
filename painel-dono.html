@@ -2050,6 +2050,28 @@
 
   <main>
 
+    <!-- Banner de Cota do Plano Lite (Visível se for Plano Lite) -->
+    <div id="banner-cota-lite" style="display:none; background: linear-gradient(135deg, rgba(252,75,21,0.08), rgba(245,158,11,0.08)); border: 1.5px solid rgba(252,75,21,0.3); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 280px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(252,75,21,0.15); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 22px; flex-shrink: 0;">
+          <i class="ph-bold ph-gauge"></i>
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 800; font-size: 14px; color: var(--text);">Cotas do Plano Lite:</span>
+            <span id="txt-cota-pedidos" style="font-size: 13px; font-weight: 700; color: var(--primary);">0/150 pedidos</span>
+            <span style="font-size: 12px; color: var(--text-sub);">|</span>
+            <span id="txt-cota-produtos" style="font-size: 13px; font-weight: 700; color: #10b981;">0/30 produtos</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-sub); margin-top: 2px;" id="msg-cota-alerta">Você está usando o Plano Lite de custo econômico.</div>
+        </div>
+      </div>
+      <button onclick="window.abrirLojaAddonsDono()" style="padding: 10px 18px; background: linear-gradient(135deg, var(--primary), #ff8c42); color: white; border: none; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(252,75,21,0.3);">
+        <i class="ph-bold ph-rocket-launch"></i> Fazer Upgrade Pro
+      </button>
+    </div>
+
+
     <!-- Filtros de Período -->
     <div id="sec-periodo" class="dono-section dono-sec-full" data-secao="periodo" title="Período">
       <div class="sec-title">
@@ -4417,6 +4439,11 @@
       <p class="caixa-modal-desc">Acesso rápido a todos os recursos e configurações do seu restaurante.</p>
 
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:14px;">
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.abrirLojaAddonsDono();" style="padding:14px 10px; background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.15)); border:1px solid rgba(16,185,129,0.4);">
+          <i class="ph-bold ph-storefront" style="font-size:24px; color:#10b981;"></i>
+          <span style="font-weight:800; font-size:12px; color:#fff;">Loja de Add-ons</span>
+        </button>
+
         <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-ia-briefing');" style="padding:14px 10px;">
           <i class="ph-bold ph-sparkle" style="font-size:24px; color:#c084fc;"></i>
           <span style="font-weight:800; font-size:12px;">Copiloto IA</span>
@@ -5279,5 +5306,109 @@
   <script src="/vendor/qrcode/qr-helper.js"></script>
   <script src="/chef-tz.js"></script>
   <script src="/painel-dono.js?v=2.9.0"></script>
+
+  <!-- Modal: Loja de Add-ons & Gestão de Plano -->
+  <div id="modal-loja-addons-dono" class="modal-overlay hidden" style="align-items: center; justify-content: center; z-index: 1060;">
+    <div class="modal-sheet" style="max-width: 960px; width: 95%; max-height: 90vh; border-radius: 20px; overflow-y: auto;">
+      <div class="modal-title-row" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">
+            <i class="ph-bold ph-storefront"></i>
+          </div>
+          <div>
+            <span class="modal-title" style="font-size: 18px; font-weight: 800;">Loja de Add-ons &amp; Gestão de Plano</span>
+            <div style="font-size: 12px; color: var(--text-sub);">Ative novos superpoderes e maximize seu faturamento com 1 clique.</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="fecharModal('modal-loja-addons-dono')" style="background: transparent; border: none; font-size: 22px; cursor: pointer; color: var(--text-sub);">&times;</button>
+      </div>
+
+      <!-- Card do Plano Atual do Restaurante -->
+      <div id="card-plano-atual-dono" style="background: var(--card2); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; margin: 18px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-sub); letter-spacing: 0.5px;">Seu Plano Vigente</span>
+            <h3 id="txt-nome-plano-atual" style="font-size: 20px; font-weight: 900; color: var(--primary); margin: 2px 0;">Plano Lite</h3>
+            <p id="txt-desc-plano-atual" style="font-size: 13px; color: var(--text-sub);">Ideal para operações enxutas de balcão e pequenas lanchonetes.</p>
+          </div>
+          <button id="btn-upgrade-plano-topo" onclick="window.abrirCheckoutModal('Plano Pro (Profissional)', 149, 'pro')" style="padding: 10px 20px; background: linear-gradient(135deg, var(--primary), #ff8c42); color: white; border: none; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <i class="ph-bold ph-rocket-launch"></i> Mudar para Plano Pro (R$ 149/mês)
+          </button>
+        </div>
+
+        <div id="box-barras-progresso-plano" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);">
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 6px;">
+              <span>Pedidos no Mês</span>
+              <span id="bar-pedidos-txt">0/150</span>
+            </div>
+            <div style="height: 8px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden;">
+              <div id="bar-pedidos-fill" style="height: 100%; width: 0%; background: var(--primary); border-radius: 10px; transition: width 0.5s;"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 6px;">
+              <span>Produtos Ativos</span>
+              <span id="bar-produtos-txt">0/30</span>
+            </div>
+            <div style="height: 8px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden;">
+              <div id="bar-produtos-fill" style="height: 100%; width: 0%; background: #10b981; border-radius: 10px; transition: width 0.5s;"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 6px;">
+              <span>Mesas Registradas</span>
+              <span id="bar-mesas-txt">0/8</span>
+            </div>
+            <div style="height: 8px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden;">
+              <div id="bar-mesas-fill" style="height: 100%; width: 0%; background: #3b82f6; border-radius: 10px; transition: width 0.5s;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtro de Categorias de Add-ons -->
+      <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px;">
+        <button class="tab-btn-terminal active" onclick="window.filtrarAddonsLoja('todos', this)" style="padding: 6px 14px; font-size: 12px;">Todos (30)</button>
+        <button class="tab-btn-terminal" onclick="window.filtrarAddonsLoja('fiscal', this)" style="padding: 6px 14px; font-size: 12px;">🛡️ Fiscal &amp; Caixa</button>
+        <button class="tab-btn-terminal" onclick="window.filtrarAddonsLoja('vendas', this)" style="padding: 6px 14px; font-size: 12px;">🚀 Vendas &amp; Delivery</button>
+        <button class="tab-btn-terminal" onclick="window.filtrarAddonsLoja('gestao', this)" style="padding: 6px 14px; font-size: 12px;">👥 RH &amp; Operação</button>
+        <button class="tab-btn-terminal" onclick="window.filtrarAddonsLoja('compras', this)" style="padding: 6px 14px; font-size: 12px;">🛒 Compras B2B</button>
+      </div>
+
+      <!-- Grid de Módulos & Add-ons -->
+      <div id="grid-loja-addons-dono" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+        <!-- Inserido dinamicamente via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Checkout Rápido PIX para Add-on / Upgrade -->
+  <div id="modal-checkout-addon" class="modal-overlay hidden" style="align-items: center; justify-content: center; z-index: 1070;">
+    <div class="modal-sheet" style="max-width: 440px; width: 90%; border-radius: 20px; text-align: center;">
+      <div style="width: 52px; height: 52px; border-radius: 16px; background: rgba(16,185,129,0.12); color: #10b981; font-size: 28px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+        <i class="ph-bold ph-qr-code"></i>
+      </div>
+      <h3 id="checkout-addon-titulo" style="font-size: 18px; font-weight: 800; color: var(--text);">Ativar Add-on</h3>
+      <div id="checkout-addon-preco" style="font-size: 24px; font-weight: 900; color: var(--primary); margin: 6px 0;">R$ 99,00 / mês</div>
+      <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 16px;">Pagamento instantâneo via Pix com liberação automática em menos de 10 segundos.</p>
+
+      <div style="background: white; padding: 12px; border-radius: 12px; display: inline-block; margin-bottom: 14px;">
+        <img id="checkout-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=00020126580014br.gov.bcb.pix0136chefcozinha-saas-upgrade" style="width: 160px; height: 160px; display: block;" alt="PIX QR Code">
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <input type="text" id="checkout-pix-copia" value="00020126580014br.gov.bcb.pix0136chefcozinha-saas-upgrade" readonly style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card2); color: var(--text); font-size: 11px; text-align: center;">
+        <button onclick="window.copiarPixCheckout()" style="margin-top: 6px; width: 100%; padding: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 700; color: var(--text); cursor: pointer;">
+          <i class="ph-bold ph-copy"></i> Copiar Código Pix
+        </button>
+      </div>
+
+      <button onclick="fecharModal('modal-checkout-addon'); if(typeof showToast==='function') showToast('✅ Solicitação recebida! Ativação em andamento.', 'ph-check-circle', 'success');" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer;">
+        Já realizei o Pix! Confirmar
+      </button>
+    </div>
+  </div>
+
 </body>
 </html>
