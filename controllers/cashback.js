@@ -93,16 +93,14 @@ module.exports = function(app, options) {
     const db = resolveDb(req);
     migrarSchema(db);
     db.get(`SELECT * FROM cashback_config WHERE id = 1`, (err, cfg) => {
-      if (err || !cfg) {
-        return res.json({
-          ativo: 1,
-          percentual: 5.0,
-          validade_dias: 30,
-          resgate_minimo: 5.0,
-          percentual_max_conta: 50.0
-        });
-      }
-      res.json(cfg);
+      const configVal = cfg || {
+        ativo: 1,
+        percentual: 5.0,
+        validade_dias: 30,
+        resgate_minimo: 5.0,
+        percentual_max_conta: 50.0
+      };
+      res.json(Object.assign({ ok: true, config: configVal }, configVal));
     });
   });
 

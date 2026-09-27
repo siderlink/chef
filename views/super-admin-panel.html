@@ -43,6 +43,11 @@
                 <i class="fa-solid fa-users"></i>
                 <span>Clientes</span>
               </div>
+              <div class="menu-item" data-target="sec-hub-marketing" id="menu-item-hub-marketing">
+                <i class="fa-solid fa-bullhorn" style="color:#6366f1;"></i>
+                <span>Hub Marketing</span>
+                <span class="menu-badge" id="hub-mkt-badge" style="display:none;background:#6366f1;color:#fff;font-size:0.6rem;padding:2px 7px;border-radius:99px;font-weight:700;">0</span>
+              </div>
               <div class="menu-item" data-target="sec-features-restaurante">
                 <i class="fa-solid fa-sliders"></i>
                 <span>Features Restaurante</span>
@@ -424,6 +429,56 @@
         </div>
 
         <div class="content-section active" id="sec-dash">
+          <!-- 🌐 CARD CENTRAL: ACESSO GLOBAL REMOTO & MOBILE S23 ULTRA -->
+          <div id="card-acesso-global-s23" style="background:linear-gradient(135deg, rgba(252,75,21,0.08) 0%, rgba(22,27,44,0.96) 100%); border:1.5px solid rgba(252,75,21,0.35); border-radius:16px; padding:1.2rem 1.4rem; margin-bottom:1.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.25); display:flex; flex-direction:column; gap:12px; position:relative; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg, #fc4b15 0%, #ff8a00 100%); display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.3rem; box-shadow:0 4px 14px rgba(252,75,21,0.4); flex-shrink:0;">
+                  <i class="fa-solid fa-satellite-dish"></i>
+                </div>
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <h3 style="margin:0; font-size:1.05rem; font-weight:700; color:var(--text-main);">Acesso Global Remoto &amp; Mobile S23</h3>
+                    <span id="badge-tunnel-global-status" style="font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:99px; background:rgba(239,68,68,0.15); color:var(--danger,#ef4444); border:1px solid rgba(239,68,68,0.3);">
+                      <i class="fa-solid fa-circle" style="font-size:6px; vertical-align:middle; margin-right:4px;"></i> Local Apenas
+                    </span>
+                  </div>
+                  <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-muted);">
+                    Controle seus servidores de qualquer lugar do mundo pelo seu celular Samsung Galaxy S23 Ultra ou qualquer dispositivo.
+                  </p>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <button type="button" class="btn-action" id="btn-toggle-quick-tunnel" onclick="alternarTunelGlobalRapido()" style="background:var(--primary,#fc4b15); color:#fff; border:none; padding:7px 14px; border-radius:8px; font-weight:700; display:flex; align-items:center; gap:6px; cursor:pointer;">
+                  <i class="fa-solid fa-bolt"></i> <span id="btn-toggle-quick-tunnel-text">Conectar ao Mundo</span>
+                </button>
+                <button type="button" class="btn-action" onclick="abrirModalQrCodeAcessoGlobal()" style="background:rgba(255,255,255,0.08); border:1px solid var(--border-color); color:var(--text-main); padding:7px 12px; border-radius:8px; font-weight:600; display:flex; align-items:center; gap:6px; cursor:pointer;" title="QR Code para conectar celular">
+                  <i class="fa-solid fa-qrcode"></i> <span>QR Code S23</span>
+                </button>
+                <button type="button" class="btn-action" onclick="abrirCentroComandoMobile()" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); color:var(--success,#10b981); padding:7px 12px; border-radius:8px; font-weight:700; display:flex; align-items:center; gap:6px; cursor:pointer;">
+                  <i class="fa-solid fa-shield-halved"></i> <span>Ações SOS</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Linha da URL ativa -->
+            <div id="container-tunnel-url-ativa" style="display:none; background:rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:10px; padding:8px 12px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:80%;">
+                <i class="fa-solid fa-link" style="color:var(--primary); font-size:0.9rem;"></i>
+                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">URL Global:</span>
+                <a id="link-tunnel-url-ativa" href="#" target="_blank" style="font-size:0.85rem; font-weight:700; color:#38bdf8; text-decoration:none; overflow:hidden; text-overflow:ellipsis;">https://...</a>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button type="button" class="btn btn-sm" onclick="copiarUrlGlobalAtiva()" style="background:rgba(255,255,255,0.1); border:1px solid var(--border-color); color:var(--text-main); font-size:0.75rem; padding:4px 10px; border-radius:6px; cursor:pointer; font-weight:600;">
+                  <i class="fa-solid fa-copy"></i> Copiar
+                </button>
+                <a id="btn-abrir-url-global" href="#" target="_blank" class="btn btn-sm" style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; font-size:0.75rem; padding:4px 10px; border-radius:6px; cursor:pointer; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir
+                </a>
+              </div>
+            </div>
+          </div>
+
           <div class="stats-grid">
             <div class="stat-card active-card">
               <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
@@ -2550,6 +2605,19 @@
           </div>
         </div>
         <!-- ════ FIM SEÇÃO 5 ════ -->
+
+        <!-- ════ SEÇÃO: HUB MARKETING ════ -->
+        <div class="content-section" id="sec-hub-marketing">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <button class="btn-action btn-primary-action" onclick="window.open('/hub-marketing.html','_blank')" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;font-weight:600;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i><span>Abrir Hub Marketing em Tela Cheia</span>
+            </button>
+            <span style="color:var(--text-muted,#888);font-size:0.85rem;">Plataforma completa de CRM, segmentação, campanhas e analytics</span>
+          </div>
+          <div style="border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);height:calc(100vh - 200px);">
+            <iframe id="hub-marketing-iframe" src="" style="width:100%;height:100%;border:none;background:#0a0a0a;" title="Hub Marketing"></iframe>
+          </div>
+        </div>
 
         <!-- ════ SEÇÃO 9: CLIENTES ════ -->
         <div class="content-section" id="sec-clientes">
@@ -7698,7 +7766,369 @@
         </div>
       </div>
 
-    <!-- ═══ Mobile Bottom Navigation Bar ═══ -->
+    <!-- ═══ MODAL QR CODE DE ACESSO GLOBAL REMOTO (S23 ULTRA) ═══ -->
+    <div class="modal" id="modal-qrcode-acesso-global" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:999999;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+      <div style="background:var(--bg-card,#161a2b);border:1.5px solid var(--border-color,#2a2d3e);border-radius:20px;max-width:440px;width:92%;padding:1.5rem;box-shadow:0 15px 45px rgba(0,0,0,0.6);text-align:center;position:relative;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h3 style="margin:0;font-size:1.15rem;color:var(--text-main);display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-mobile-screen-button" style="color:var(--primary);"></i> Pareamento Celular S23 Ultra
+          </h3>
+          <button onclick="fecharModalQrCodeAcessoGlobal()" style="background:transparent;border:none;color:#aaa;font-size:1.3rem;cursor:pointer;">✕</button>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 1.2rem 0;line-height:1.4;">
+          Aponte a câmera do seu celular para o QR Code abaixo para abrir o Super Admin com conexão criptografada de qualquer lugar do mundo.
+        </p>
+        
+        <div id="qrcode-s23-container" style="background:#ffffff;padding:16px;border-radius:14px;display:inline-block;margin-bottom:1rem;box-shadow:0 8px 24px rgba(0,0,0,0.3);min-width:180px;min-height:180px;">
+          <!-- QR Code injetado aqui -->
+        </div>
+
+        <div style="background:rgba(0,0,0,0.25);border:1px solid var(--border-color);border-radius:10px;padding:8px 12px;margin-bottom:1.2rem;word-break:break-all;">
+          <small style="color:var(--text-muted);display:block;font-size:0.7rem;margin-bottom:2px;">URL HTTPS DO SEU SERVIDOR:</small>
+          <span id="texto-qrcode-url-s23" style="font-size:0.82rem;font-weight:700;color:#38bdf8;">Carregando URL...</span>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <button onclick="copiarUrlGlobalAtiva()" class="btn btn-action" style="background:var(--primary);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <i class="fa-solid fa-copy"></i> Copiar Link
+          </button>
+          <button onclick="fecharModalQrCodeAcessoGlobal()" class="btn btn-action" style="background:transparent;border:1px solid var(--border-color);color:var(--text-main);padding:8px 16px;border-radius:8px;cursor:pointer;">
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MODAL CENTRO DE COMANDO RÁPIDO & RESOLUÇÃO DE EMERGÊNCIAS (MOBILE S23) ═══ -->
+    <div class="modal" id="modal-comando-rapido-s23" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:999999;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);">
+      <div style="background:var(--bg-card,#161a2b);border:1.5px solid var(--border-color,#2a2d3e);border-radius:24px 24px 0 0;max-width:540px;width:100%;max-height:88vh;padding:1.4rem;box-shadow:0 -10px 40px rgba(0,0,0,0.6);overflow-y:auto;display:flex;flex-direction:column;gap:12px;">
+        <!-- Header Modal -->
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;">
+              <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div>
+              <h3 style="margin:0;font-size:1.1rem;font-weight:700;color:var(--text-main);">Centro de Comando S23</h3>
+              <small style="color:var(--text-muted);font-size:0.75rem;">Controle Total &amp; Resolução Remota pelo Celular</small>
+            </div>
+          </div>
+          <button onclick="fecharCentroComandoMobile()" style="background:transparent;border:none;color:#aaa;font-size:1.4rem;cursor:pointer;padding:4px 8px;">✕</button>
+        </div>
+
+        <!-- Banner de Instalação PWA para Galaxy S23 Ultra -->
+        <div id="banner-pwa-s23" style="display:none; background:linear-gradient(135deg, rgba(252,75,21,0.18) 0%, rgba(245,158,11,0.15) 100%); border:1px solid rgba(252,75,21,0.4); border-radius:14px; padding:10px 14px; align-items:center; justify-content:space-between; gap:10px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:36px; height:36px; border-radius:10px; background:var(--primary); display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.1rem; flex-shrink:0;">
+              <i class="fa-solid fa-mobile-screen"></i>
+            </div>
+            <div>
+              <div style="font-weight:700; font-size:0.82rem; color:var(--text-main);">Instalar no Galaxy S23 Ultra</div>
+              <div style="font-size:0.72rem; color:var(--text-muted);">App nativo em tela cheia com acesso rápido</div>
+            </div>
+          </div>
+          <button onclick="instalarAppS23()" style="background:var(--primary); color:#fff; border:none; padding:7px 12px; border-radius:8px; font-weight:700; font-size:0.75rem; cursor:pointer; display:flex; align-items:center; gap:5px; white-space:nowrap;">
+            <i class="fa-solid fa-download"></i> Instalar
+          </button>
+        </div>
+
+        <!-- Segmented Tab Bar (Navegação Superior no Bottom Sheet) -->
+        <div style="display:flex; background:rgba(0,0,0,0.35); border-radius:12px; padding:3px; gap:4px; border:1px solid var(--border-color);">
+          <button id="s23-tab-btn-acoes" onclick="alternarTabModalS23('acoes')" style="flex:1; border:none; background:var(--primary); color:#fff; border-radius:9px; padding:8px 6px; font-weight:700; font-size:0.78rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s;">
+            <i class="fa-solid fa-bolt"></i> SOS Ações
+          </button>
+          <button id="s23-tab-btn-sql" onclick="alternarTabModalS23('sql')" style="flex:1; border:none; background:transparent; color:var(--text-muted); border-radius:9px; padding:8px 6px; font-weight:600; font-size:0.78rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s;">
+            <i class="fa-solid fa-terminal"></i> Console SQL
+          </button>
+          <button id="s23-tab-btn-servidores" onclick="alternarTabModalS23('servidores')" style="flex:1; border:none; background:transparent; color:var(--text-muted); border-radius:9px; padding:8px 6px; font-weight:600; font-size:0.78rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s;">
+            <i class="fa-solid fa-server"></i> Servidores
+          </button>
+        </div>
+
+        <!-- ═══ SUB-VIEW 1: SOS AÇÕES RÁPIDAS ═══ -->
+        <div id="s23-subview-acoes" style="display:flex; flex-direction:column; gap:12px;">
+          <!-- Status Rápido do Link Global -->
+          <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.25); border-radius:12px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.78rem; font-weight:600; color:var(--text-main); display:flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-globe" style="color:#10b981;"></i> Link HTTPS:
+              <span id="badge-tunel-s23-pill" style="font-size:0.68rem; background:rgba(16,185,129,0.15); color:#10b981; padding:1px 6px; border-radius:10px;">Ativo</span>
+            </span>
+            <div style="display:flex; gap:6px;">
+              <button onclick="copiarUrlGlobalAtiva()" title="Copiar URL" style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; border-radius:6px; padding:3px 8px; font-size:0.72rem; cursor:pointer;">
+                <i class="fa-solid fa-copy"></i> Copiar
+              </button>
+              <button onclick="abrirModalQrCodeAcessoGlobal()" title="QR Code" style="background:rgba(255,255,255,0.08); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; padding:3px 8px; font-size:0.72rem; cursor:pointer;">
+                <i class="fa-solid fa-qrcode"></i> QR
+              </button>
+            </div>
+          </div>
+
+          <!-- Seleção Rápida de Restaurante com Filtro Dinâmico -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted);">Restaurante / Cliente Selecionado:</label>
+              <span id="badge-total-lojas-s23" style="font-size:0.7rem; color:var(--primary); font-weight:700;">0 lojas</span>
+            </div>
+            <div style="position:relative; margin-bottom:6px;">
+              <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:0.8rem;"></i>
+              <input type="text" id="filtro-restaurante-s23" oninput="filtrarRestaurantesEmergencia(this.value)" placeholder="Filtrar por nome ou ID..." style="width:100%; background:rgba(0,0,0,0.3); border:1.5px solid var(--border-color); color:var(--text-main); padding:8px 12px 8px 32px; border-radius:10px; font-size:0.85rem; box-sizing:border-box;">
+            </div>
+            <select id="select-emergencia-restaurante" style="width:100%; background:rgba(0,0,0,0.3); border:1.5px solid var(--border-color); color:var(--text-main); padding:10px 12px; border-radius:10px; font-size:0.9rem; font-weight:600;">
+              <option value="">Carregando restaurantes...</option>
+            </select>
+          </div>
+
+          <!-- Grid de Ações Rápidas em 1 Toque (10 Ações Essenciais) -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <!-- Ação 1: Liberar Caixa / Terminais -->
+            <button onclick="executarAcaoEmergenciaMobile('liberar_terminais')" style="background:rgba(16,185,129,0.12); border:1.5px solid rgba(16,185,129,0.35); border-radius:12px; padding:12px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:all 0.2s;">
+              <div style="color:var(--success,#10b981); font-size:1.3rem;"><i class="fa-solid fa-unlock-keyhole"></i></div>
+              <strong style="color:var(--text-main); font-size:0.85rem;">Liberar Caixa/Terminal</strong>
+              <small style="color:var(--text-muted); font-size:0.7rem; line-height:1.2;">Destrava e autoriza sessões</small>
+            </button>
+
+            <!-- Ação 2: Destravar Caixa & Mesas -->
+            <button onclick="executarAcaoEmergenciaMobile('limpar_trava_caixa')" style="background:rgba(245,158,11,0.12); border:1.5px solid rgba(245,158,11,0.35); border-radius:12px; padding:12px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:all 0.2s;">
+              <div style="color:var(--warning,#f59e0b); font-size:1.3rem;"><i class="fa-solid fa-cash-register"></i></div>
+              <strong style="color:var(--text-main); font-size:0.85rem;">Destravar Caixa &amp; Mesas</strong>
+              <small style="color:var(--text-muted); font-size:0.7rem; line-height:1.2;">Limpa comandas 'fechando'</small>
+            </button>
+
+            <!-- Ação 3: Destravar Impressoras / Spool -->
+            <button onclick="executarAcaoEmergenciaMobile('limpar_fila_impressao')" style="background:rgba(168,85,247,0.12); border:1.5px solid rgba(168,85,247,0.35); border-radius:12px; padding:12px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:all 0.2s;">
+              <div style="color:#c084fc; font-size:1.3rem;"><i class="fa-solid fa-print"></i></div>
+              <strong style="color:var(--text-main); font-size:0.85rem;">Destravar Impressão</strong>
+              <small style="color:var(--text-muted); font-size:0.7rem; line-height:1.2;">Limpa fila de spool travada</small>
+            </button>
+
+            <!-- Ação 4: Reabrir Caixa Fechado -->
+            <button onclick="executarAcaoEmergenciaMobile('reabrir_caixa')" style="background:rgba(234,88,12,0.12); border:1.5px solid rgba(234,88,12,0.35); border-radius:12px; padding:12px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:all 0.2s;">
+              <div style="color:#fb923c; font-size:1.3rem;"><i class="fa-solid fa-box-open"></i></div>
+              <strong style="color:var(--text-main); font-size:0.85rem;">Reabrir Caixa Fechado</strong>
+              <small style="color:var(--text-muted); font-size:0.7rem; line-height:1.2;">Reverte fechamento indevido</small>
+            </button>
+
+            <!-- Ação 5: Renovar Licença +30D -->
+            <button onclick="executarAcaoEmergenciaMobile('renovar_licenca')" style="background:rgba(59,130,246,0.12); border:1.5px solid rgba(59,130,246,0.35); border-radius:12px; padding:12px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:all 0.2s;">
+              <div style="color:var(--info,#3b82f6); font-size:1.3rem;"><i class="fa-solid fa-calendar-plus"></i></div>
+              <strong style="color:var(--text-main); font-size:0.85rem;">Renovar Licença +30D</strong>
+              <small style="color:var(--text-muted); font-size:0.7rem; line-height:1.2;">Estende prazo sem bloquear</small>
+            </button>
+
+            <!-- Ação 6: Redefinir Senha Admin/Dono -->
+            <button onclick="executarAcaoEmergenciaMobile('reset_senha_dono')" style="background:rgba(236,72,153,0.12); border:1.5px solid rgba(236,72,153,0.35); border-radius:12px; padding:12px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:all 0.2s;">
+              <div style="color:#ec4899; font-size:1.3rem;"><i class="fa-solid fa-key"></i></div>
+              <strong style="color:var(--text-main); font-size:0.85rem;">Resetar Senha Dono</strong>
+              <small style="color:var(--text-muted); font-size:0.7rem; line-height:1.2;">Gera senha provisória</small>
+            </button>
+
+            <!-- Ação 7: Diagnóstico em Tempo Real -->
+            <button onclick="executarAcaoEmergenciaMobile('diagnostico_restaurante')" style="background:rgba(14,165,233,0.12); border:1.5px solid rgba(14,165,233,0.35); border-radius:12px; padding:12px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:all 0.2s;">
+              <div style="color:#0ea5e9; font-size:1.3rem;"><i class="fa-solid fa-heart-pulse"></i></div>
+              <strong style="color:var(--text-main); font-size:0.85rem;">Diagnóstico da Loja</strong>
+              <small style="color:var(--text-muted); font-size:0.7rem; line-height:1.2;">Vendas hoje, mesas e pedidos</small>
+            </button>
+
+            <!-- Ação 8: Backup Imediato .sqlite -->
+            <button onclick="executarAcaoEmergenciaMobile('backup_restaurante')" style="background:rgba(34,197,94,0.12); border:1.5px solid rgba(34,197,94,0.35); border-radius:12px; padding:12px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:all 0.2s;">
+              <div style="color:#22c55e; font-size:1.3rem;"><i class="fa-solid fa-floppy-disk"></i></div>
+              <strong style="color:var(--text-main); font-size:0.85rem;">Backup Rápido</strong>
+              <small style="color:var(--text-muted); font-size:0.7rem; line-height:1.2;">Copia segura do banco (.sqlite)</small>
+            </button>
+
+            <!-- Ação 9: Impersonate (Acessar Restaurante) -->
+            <button onclick="executarAcaoEmergenciaMobile('impersonate')" style="background:rgba(252,75,21,0.12); border:1.5px solid rgba(252,75,21,0.35); border-radius:12px; padding:12px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:all 0.2s;">
+              <div style="color:var(--primary,#fc4b15); font-size:1.3rem;"><i class="fa-solid fa-user-secret"></i></div>
+              <strong style="color:var(--text-main); font-size:0.85rem;">Acessar Painel Loja</strong>
+              <small style="color:var(--text-muted); font-size:0.7rem; line-height:1.2;">Entra no sistema como dono</small>
+            </button>
+
+            <!-- Ação 10: Otimizar SQLite -->
+            <button onclick="executarAcaoEmergenciaMobile('otimizar_bancos')" style="background:rgba(100,116,139,0.12); border:1.5px solid rgba(100,116,139,0.35); border-radius:12px; padding:12px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:all 0.2s;">
+              <div style="color:#94a3b8; font-size:1.3rem;"><i class="fa-solid fa-broom"></i></div>
+              <strong style="color:var(--text-main); font-size:0.85rem;">Otimizar SQLite</strong>
+              <small style="color:var(--text-muted); font-size:0.7rem; line-height:1.2;">VACUUM e checkpoint em todos</small>
+            </button>
+          </div>
+
+          <!-- Card de Exibição de Diagnóstico (quando acionado) -->
+          <div id="card-diagnostico-s23" style="display:none; background:rgba(14,165,233,0.08); border:1.5px solid rgba(14,165,233,0.3); border-radius:12px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <strong id="diag-nome-loja" style="color:#38bdf8; font-size:0.9rem;">Relatório da Loja</strong>
+              <span id="diag-status-loja" style="font-size:0.75rem; font-weight:700;">Online</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.78rem;">
+              <div><span style="color:var(--text-muted);">Faturamento Hoje:</span> <strong id="diag-faturamento" style="color:var(--success);">R$ 0,00</strong></div>
+              <div><span style="color:var(--text-muted);">Pedidos Hoje:</span> <strong id="diag-pedidos-hoje">0</strong></div>
+              <div><span style="color:var(--text-muted);">Pedidos Abertos:</span> <strong id="diag-pedidos-abertos" style="color:var(--warning);">0</strong></div>
+              <div><span style="color:var(--text-muted);">Mesas Ocupadas:</span> <strong id="diag-mesas-ocupadas">0</strong></div>
+            </div>
+          </div>
+
+          <!-- Área de Compartilhamento WhatsApp (aparece quando relevante) -->
+          <div id="container-whatsapp-s23" style="display:none; background:rgba(37,211,102,0.1); border:1.5px solid rgba(37,211,102,0.35); border-radius:12px; padding:10px; flex-direction:column; gap:6px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <i class="fa-brands fa-whatsapp" style="color:#25d366; font-size:1.2rem;"></i>
+              <span style="font-size:0.8rem; font-weight:700; color:var(--text-main);">Notificar Cliente no WhatsApp</span>
+            </div>
+            <div id="texto-whatsapp-s23" style="font-size:0.75rem; color:var(--text-muted); background:rgba(0,0,0,0.2); padding:6px 10px; border-radius:8px; word-break:break-word;"></div>
+            <button id="btn-abrir-whatsapp-s23" onclick="abrirWhatsappMensagem()" style="background:#25d366; color:#fff; border:none; padding:8px 12px; border-radius:8px; font-weight:700; font-size:0.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <i class="fa-brands fa-whatsapp"></i> Abrir WhatsApp com a Mensagem
+            </button>
+          </div>
+
+          <!-- Ações Rápidas de Servidor -->
+          <div style="display:flex; gap:10px; margin-top:4px;">
+            <button onclick="executarAcaoEmergenciaMobile('reiniciar_servidor')" style="flex:1; background:rgba(239,68,68,0.12); border:1.5px solid rgba(239,68,68,0.35); color:var(--danger,#ef4444); border-radius:10px; padding:10px; font-weight:700; font-size:0.82rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <i class="fa-solid fa-power-off"></i> Reiniciar Servidor
+            </button>
+            <button onclick="switchTab('sec-logs'); fecharCentroComandoMobile();" style="flex:1; background:rgba(255,255,255,0.06); border:1px solid var(--border-color); color:var(--text-main); border-radius:10px; padding:10px; font-weight:600; font-size:0.82rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <i class="fa-solid fa-terminal"></i> Ver Logs ao Vivo
+            </button>
+          </div>
+
+          <div id="feedback-comando-rapido-s23" style="display:none; font-size:0.82rem; padding:8px 12px; border-radius:8px; text-align:center;"></div>
+        </div>
+
+        <!-- ═══ SUB-VIEW 2: CONSOLE SQL REMOTO (S23 ULTRA) ═══ -->
+        <div id="s23-subview-sql" style="display:none; flex-direction:column; gap:10px;">
+          <div>
+            <label style="font-size:0.78rem; font-weight:700; color:var(--text-muted); display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+              <i class="fa-solid fa-database" style="color:#38bdf8;"></i> Banco de Dados Alvo:
+            </label>
+            <select id="s23-sql-db-select" style="width:100%; background:rgba(0,0,0,0.35); border:1.5px solid var(--border-color); color:var(--text-main); padding:9px 12px; border-radius:10px; font-size:0.85rem; font-weight:600; outline:none;">
+              <option value="master">🌐 master.sqlite (Global &amp; Lojas)</option>
+            </select>
+          </div>
+
+          <!-- Presets Rápidos com Scroll Horizontal -->
+          <div>
+            <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:4px; font-weight:600;">Atalhos &amp; Presets de Consulta:</div>
+            <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch;">
+              <button onclick="aplicarPresetSqlS23('pedidos_recentes')" style="background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); color:#38bdf8; border-radius:8px; padding:4px 8px; font-size:0.72rem; white-space:nowrap; cursor:pointer;">
+                📋 10 Últimos Pedidos
+              </button>
+              <button onclick="aplicarPresetSqlS23('mesas_ocupadas')" style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:#fbbf24; border-radius:8px; padding:4px 8px; font-size:0.72rem; white-space:nowrap; cursor:pointer;">
+                🍽️ Mesas Ocupadas
+              </button>
+              <button onclick="aplicarPresetSqlS23('fila_spool')" style="background:rgba(168,85,247,0.15); border:1px solid rgba(168,85,247,0.3); color:#c084fc; border-radius:8px; padding:4px 8px; font-size:0.72rem; white-space:nowrap; cursor:pointer;">
+                🖨️ Fila Spool
+              </button>
+              <button onclick="aplicarPresetSqlS23('turnos_caixa')" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#34d399; border-radius:8px; padding:4px 8px; font-size:0.72rem; white-space:nowrap; cursor:pointer;">
+                💰 Turnos Caixa
+              </button>
+              <button onclick="aplicarPresetSqlS23('usuarios_login')" style="background:rgba(236,72,153,0.15); border:1px solid rgba(236,72,153,0.3); color:#f472b6; border-radius:8px; padding:4px 8px; font-size:0.72rem; white-space:nowrap; cursor:pointer;">
+                👤 Usuários (Master)
+              </button>
+              <button onclick="aplicarPresetSqlS23('lojas_master')" style="background:rgba(252,75,21,0.15); border:1px solid rgba(252,75,21,0.3); color:#ff7a45; border-radius:8px; padding:4px 8px; font-size:0.72rem; white-space:nowrap; cursor:pointer;">
+                🏢 Lojas (Master)
+              </button>
+              <button onclick="aplicarPresetSqlS23('contagem_geral')" style="background:rgba(100,116,139,0.15); border:1px solid rgba(100,116,139,0.3); color:#94a3b8; border-radius:8px; padding:4px 8px; font-size:0.72rem; white-space:nowrap; cursor:pointer;">
+                📊 Totalizadores
+              </button>
+            </div>
+          </div>
+
+          <!-- Editor SQL -->
+          <div>
+            <textarea id="s23-sql-input" rows="4" placeholder="SELECT * FROM pedidos ORDER BY id DESC LIMIT 10;" style="width:100%; background:#090d16; border:1.5px solid var(--border-color); color:#38bdf8; font-family:'Fira Code', Consolas, Monaco, monospace; font-size:0.82rem; padding:10px; border-radius:10px; box-sizing:border-box; outline:none; line-height:1.4; resize:vertical;"></textarea>
+          </div>
+
+          <!-- Barra de Ações do Console SQL -->
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <div style="display:flex; gap:8px;">
+              <button onclick="executarSqlS23()" id="btn-executar-sql-s23" style="background:var(--success,#10b981); color:#fff; border:none; border-radius:8px; padding:8px 14px; font-size:0.82rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-play"></i> Executar Query
+              </button>
+              <button onclick="limparSqlS23()" style="background:rgba(255,255,255,0.06); border:1px solid var(--border-color); color:var(--text-muted); border-radius:8px; padding:8px 12px; font-size:0.82rem; font-weight:600; cursor:pointer;">
+                <i class="fa-solid fa-eraser"></i> Limpar
+              </button>
+            </div>
+            <span id="s23-sql-status-badge" style="font-size:0.72rem; color:var(--text-muted); font-family:monospace;">Pronto</span>
+          </div>
+
+          <!-- Tabela de Resultados do SQL -->
+          <div id="s23-sql-resultado-container" style="max-height:260px; overflow:auto; background:rgba(0,0,0,0.4); border:1.5px solid var(--border-color); border-radius:10px; padding:6px; font-size:0.75rem; -webkit-overflow-scrolling:touch;">
+            <div style="color:var(--text-muted); text-align:center; padding:24px 10px;">
+              <i class="fa-solid fa-code" style="font-size:1.4rem; opacity:0.3; margin-bottom:6px; display:block;"></i>
+              Selecione um preset ou digite um comando SQL e toque em <strong>Executar Query</strong>.
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SUB-VIEW 3: SERVIDORES & ACESSO GLOBAL ═══ -->
+        <div id="s23-subview-servidores" style="display:none; flex-direction:column; gap:12px;">
+          <!-- Card Completo do Túnel Cloudflare -->
+          <div style="background:linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(15,23,42,0.6) 100%); border:1px solid rgba(16,185,129,0.25); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.85rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-globe" style="color:#10b981;"></i> Cloudflare Quick Tunnel
+                <span id="badge-tunel-s23" style="font-size:0.68rem; background:rgba(239,68,68,0.15); color:#ef4444; padding:2px 8px; border-radius:10px;">Desconectado</span>
+              </span>
+              <button onclick="alternarTunelGlobalRapido()" id="btn-toggle-tunel-s23" style="background:#10b981; border:none; color:#fff; border-radius:8px; padding:6px 12px; font-size:0.75rem; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:5px;">
+                <i class="fa-solid fa-bolt"></i> Conectar
+              </button>
+            </div>
+
+            <div id="box-link-global-s23" style="display:none; align-items:center; gap:6px; background:rgba(0,0,0,0.3); border-radius:8px; padding:8px 10px;">
+              <input type="text" id="input-url-global-s23" readonly style="flex:1; background:transparent; border:none; color:#38bdf8; font-family:monospace; font-size:0.75rem; outline:none;" placeholder="https://...">
+              <button onclick="copiarUrlGlobalAtiva()" title="Copiar Link" style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; border-radius:6px; padding:5px 10px; font-size:0.75rem; cursor:pointer;">
+                <i class="fa-solid fa-copy"></i>
+              </button>
+              <button onclick="abrirModalQrCodeAcessoGlobal()" title="Ver QR Code" style="background:rgba(255,255,255,0.08); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; padding:5px 10px; font-size:0.75rem; cursor:pointer;">
+                <i class="fa-solid fa-qrcode"></i>
+              </button>
+            </div>
+
+            <label style="font-size:0.74rem; color:var(--text-muted); display:flex; align-items:center; gap:8px; cursor:pointer; margin:0;">
+              <input type="checkbox" id="chk-auto-start-s23" onchange="toggleAutoStartBoot(this.checked)">
+              <span>Iniciar túnel automaticamente no boot do computador (Auto-Start)</span>
+            </label>
+          </div>
+
+          <!-- Monitor de Nós & Servidores em Cluster -->
+          <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.85rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-server" style="color:#38bdf8;"></i> Cluster &amp; Servidores Remotos
+                <span id="badge-servidores-s23" style="font-size:0.68rem; background:rgba(34,197,94,0.15); color:#22c55e; padding:2px 8px; border-radius:10px;">1/1 Online</span>
+              </span>
+              <button onclick="pingarTodosServidoresS23()" style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; border-radius:6px; padding:4px 10px; font-size:0.72rem; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:4px;">
+                <i class="fa-solid fa-rotate"></i> Ping Todos
+              </button>
+            </div>
+
+            <!-- Card Host Local -->
+            <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:700; font-size:0.82rem; color:var(--text-main); display:flex; align-items:center; gap:6px;">
+                  <span style="width:8px; height:8px; border-radius:50%; background:#22c55e;"></span>
+                  Servidor Local (Master Host)
+                </span>
+                <span id="txt-ram-local-s23" style="font-size:0.72rem; color:#38bdf8; font-family:monospace;">RAM: --</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:0.72rem; color:var(--text-muted);">
+                <div>Uptime: <strong id="txt-uptime-s23" style="color:var(--text-main);">--</strong></div>
+                <div>Node.js: <strong id="txt-node-ver-s23" style="color:var(--text-main);">--</strong></div>
+                <div>Porta: <strong style="color:var(--text-main);">8080 (0.0.0.0)</strong></div>
+                <div>Status: <strong style="color:#22c55e;">Online / Pronto</strong></div>
+              </div>
+            </div>
+
+            <!-- Lista de Nós Externos Cadastrados -->
+            <div id="lista-nos-s23-completa" style="display:flex; flex-direction:column; gap:6px;">
+              <!-- Preenchido via pingarTodosServidoresS23() -->
+            </div>
+
+            <button onclick="switchTab('sec-tuneis'); fecharCentroComandoMobile();" style="background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-main); border-radius:8px; padding:8px; font-size:0.78rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <i class="fa-solid fa-network-wired"></i> Abrir Gerenciador de Túneis Completo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Mobile Bottom Navigation Bar (Dock S23 Ultra) ═══ -->
     <nav id="mobile-bottom-nav" class="mobile-bottom-nav">
       <button class="mob-nav-item active" data-target="sec-dash" title="Dashboard">
         <i class="fa-solid fa-chart-line"></i>
@@ -7708,13 +8138,21 @@
         <i class="fa-solid fa-store"></i>
         <span>Lojas</span>
       </button>
-      <button class="mob-nav-item" data-target="sec-licencas" title="Licenças">
-        <i class="fa-solid fa-key"></i>
-        <span>Licenças</span>
+      <button class="mob-nav-item" id="btn-mob-quick-actions" onclick="abrirCentroComandoMobile()" title="Ações Rápidas S23" style="position:relative;">
+        <div style="background:var(--primary,#fc4b15); color:#fff; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(252,75,21,0.5); transform:translateY(-8px); font-size:1.15rem;">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <span style="color:var(--primary,#fc4b15); font-weight:700; margin-top:-6px;">SOS S23</span>
+        <span id="mob-sos-badge" style="display:none;position:absolute;top:0;right:18px;background:#ef4444;color:#fff;font-size:0.6rem;padding:1px 5px;border-radius:99px;font-weight:700;">!</span>
       </button>
-      <button class="mob-nav-item" data-target="sec-site-vendas" title="Site Vendas">
+      <button class="mob-nav-item" data-target="sec-notificacoes" title="Notificações &amp; Alertas" style="position:relative;">
+        <i class="fa-solid fa-bell"></i>
+        <span>Alertas</span>
+        <span id="mob-notif-badge" style="display:none;position:absolute;top:4px;right:14px;background:#ef4444;color:#fff;font-size:0.6rem;padding:1px 5px;border-radius:99px;font-weight:700;">0</span>
+      </button>
+      <button class="mob-nav-item" data-target="sec-tuneis" title="Túneis &amp; Acesso Remoto">
         <i class="fa-solid fa-globe"></i>
-        <span>Site</span>
+        <span>Túneis</span>
       </button>
       <button class="mob-nav-item" id="btn-mobile-more" title="Menu completo">
         <i class="fa-solid fa-bars"></i>

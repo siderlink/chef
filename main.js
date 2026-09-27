@@ -5646,6 +5646,7 @@ window.aplicarDesconto = function() {
     showToast('Desconto aplicado com sucesso.', 'success');
   }
 };
+window.confirmarAplicarDesconto = window.aplicarDesconto;
 
 window.removerDescontoAplicado = function() {
   window.descontoAdicional = 0;

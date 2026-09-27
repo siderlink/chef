@@ -1,0 +1,552 @@
+{
+  "timestamp": "2026-09-27T18:00:51.806Z",
+  "ambiente": {
+    "plataforma": "win32",
+    "versaoNode": "v24.19.0",
+    "diretorioBase": "C:\\Users\\computer\\Desktop\\chef cozinha",
+    "diretorioEstabelecimentos": "C:\\Users\\computer\\Desktop\\chef cozinha\\estabelecimentos",
+    "masterDbExiste": true
+  },
+  "bancoDados": {
+    "master": {
+      "tamanhoBytes": 2215936,
+      "tamanhoMB": "2.11",
+      "integridade": "ok",
+      "journalMode": "wal",
+      "cacheSize": -64000,
+      "foreignKeysAtivo": true,
+      "totalTabelas": 130,
+      "tabelas": [
+        "produtos",
+        "mesas",
+        "pedidos",
+        "configuracoes",
+        "formas_pagamento",
+        "clientes",
+        "promocoes",
+        "qr_pedidos_pendentes",
+        "turnos_caixa",
+        "movimentacoes",
+        "nfce_notas",
+        "pontos",
+        "vales",
+        "funcionarios_pagamentos",
+        "historico_logins",
+        "cupons",
+        "auditoria",
+        "beneficios",
+        "resgates",
+        "funcionarios",
+        "api_logs",
+        "restaurantes",
+        "usuarios",
+        "configuracoes_global",
+        "mensagens",
+        "tarefas_suporte",
+        "equipe_suporte",
+        "suporte_restaurantes",
+        "conquistas_suporte",
+        "licencas",
+        "telemetria",
+        "sync_fila",
+        "ifood_app_config",
+        "tenant_features",
+        "metrica_picos",
+        "instance_registry",
+        "sync_queue",
+        "remote_commands",
+        "sync_conflicts",
+        "super_config",
+        "suporte_vendas",
+        "suporte_adiantamentos",
+        "suporte_logs_audit",
+        "missoes_promocoes",
+        "super_plugins",
+        "eventos_pico",
+        "cadastros_monitor",
+        "solicitacoes_features",
+        "temas_global",
+        "chaves_ativacao",
+        "metricas_sockets",
+        "modulo_sistemas",
+        "tenant_modulos",
+        "tenant_temas",
+        "afiliados",
+        "afiliado_vendas",
+        "dispositivos",
+        "synccheff_nodes",
+        "synccheff_master_scripts",
+        "synccheff_audit_logs",
+        "super_notificacoes",
+        "sessoes_demo_rastreio",
+        "telemetria_clicks",
+        "super_tarefas",
+        "temas_catalogo",
+        "temas_avaliacoes",
+        "temas_aplicados",
+        "temas_solicitacoes",
+        "site_vendas_modulos",
+        "equipe_suporte_restaurantes",
+        "equipe_avisos",
+        "suporte_missoes",
+        "site_versoes_historico",
+        "afiliados_metas",
+        "afiliados_bonificacoes",
+        "seguranca_violacoes",
+        "contador_assinaturas",
+        "contador_demandas",
+        "contador_bonificacoes",
+        "contador_combos_sugeridos",
+        "contador_pareceres",
+        "banco_talentos",
+        "vagas_contratacao",
+        "candidaturas_vagas",
+        "escala_freelancers",
+        "super_admin_custodia_repasses",
+        "super_admin_assinaturas",
+        "super_admin_financeiro_logs",
+        "fintech_transacoes_split",
+        "saas_assinaturas_modulos",
+        "delivery_metricas_faturamento",
+        "marketplace_contratacoes",
+        "dispositivos_autorizados",
+        "api_chaves",
+        "leads_nichos",
+        "compras_nfe_notas",
+        "compras_nfe_itens",
+        "resumo_noturno_envios",
+        "crm_campanhas_reativacao",
+        "crm_avaliacoes_nps",
+        "clube_planos",
+        "clube_assinantes",
+        "clube_resgates_historico",
+        "adquirentes_taxas_contratadas",
+        "auditoria_divergencias_cartao",
+        "gorjetas_config",
+        "gorjetas_rateios_fechamentos",
+        "gamificacao_missoes",
+        "entregas_rotas_lotes",
+        "entregas_rastreio_tokens",
+        "comandas_assentos_itens",
+        "comandas_assentos_pagamentos",
+        "bar_barris_chopp",
+        "bar_movimentacoes_chopp",
+        "cardapio_traducoes_i18n",
+        "cardapio_i18n_logs",
+        "totem_clientes_fastpass",
+        "backup_nuvem_logs",
+        "backup_nuvem_config",
+        "menu_engenharia_historico",
+        "plano_upgrade_pedidos",
+        "plano_bloqueios_log",
+        "hub_mkt_perfis",
+        "hub_mkt_interacoes",
+        "hub_mkt_segmentos",
+        "hub_mkt_campanhas",
+        "hub_mkt_produtos",
+        "hub_mkt_vendas",
+        "hub_mkt_automacoes",
+        "hub_mkt_plataformas"
+      ],
+      "totalIndices": 41,
+      "indices": [
+        "idx_pedidos_status (pedidos)",
+        "idx_pedidos_local (pedidos)",
+        "idx_pedidos_payment (pedidos)",
+        "idx_pedidos_created (pedidos)",
+        "idx_formas_pagamento_ativo (formas_pagamento)",
+        "idx_clientes_telefone (clientes)",
+        "idx_produtos_categoria (produtos)",
+        "idx_mesas_nome (mesas)",
+        "idx_pedidos_localName (pedidos)",
+        "idx_pedidos_turno_id (pedidos)",
+        "idx_pedidos_mesa_grupo (pedidos)",
+        "idx_movimentacoes_turno_id (movimentacoes)",
+        "idx_api_logs_data (api_logs)",
+        "idx_api_logs_endpoint (api_logs)",
+        "idx_telemetria_install (telemetria)",
+        "idx_restaurantes_slug (restaurantes)",
+        "idx_restaurantes_custom_domain (restaurantes)",
+        "idx_solic_rest_feat (solicitacoes_features)",
+        "idx_notif_restaurante (super_notificacoes)",
+        "idx_notif_categoria (super_notificacoes)",
+        "idx_notif_prioridade (super_notificacoes)",
+        "idx_notif_lida (super_notificacoes)",
+        "idx_notif_created (super_notificacoes)",
+        "idx_telemetria_rest (telemetria_clicks)",
+        "idx_telemetria_func (telemetria_clicks)",
+        "idx_telemetria_created (telemetria_clicks)",
+        "idx_cont_dem_rest (contador_demandas)",
+        "idx_cont_dem_cont (contador_demandas)",
+        "idx_cont_bon_cont (contador_bonificacoes)",
+        "idx_cont_combos_rest (contador_combos_sugeridos)",
+        "idx_cont_pareceres_rest (contador_pareceres)",
+        "idx_hub_perfis_tel (hub_mkt_perfis)",
+        "idx_hub_perfis_gasto (hub_mkt_perfis)",
+        "idx_hub_perfis_acesso (hub_mkt_perfis)",
+        "idx_hub_perfis_freq (hub_mkt_perfis)",
+        "idx_hub_perfis_score (hub_mkt_perfis)",
+        "idx_hub_interacoes_perfil (hub_mkt_interacoes)",
+        "idx_hub_interacoes_rest (hub_mkt_interacoes)",
+        "idx_hub_campanhas_status (hub_mkt_campanhas)",
+        "idx_hub_vendas_data (hub_mkt_vendas)",
+        "idx_hub_automacoes_ativo (hub_mkt_automacoes)"
+      ],
+      "contagemRegistros": {
+        "produtos": 95,
+        "mesas": 21,
+        "pedidos": 57,
+        "configuracoes": 25,
+        "formas_pagamento": 9,
+        "clientes": 1,
+        "promocoes": 5,
+        "qr_pedidos_pendentes": 0,
+        "turnos_caixa": 2,
+        "movimentacoes": 31,
+        "nfce_notas": 2,
+        "pontos": 1,
+        "vales": 2,
+        "funcionarios_pagamentos": 0,
+        "historico_logins": 45,
+        "cupons": 1,
+        "auditoria": 198,
+        "beneficios": 1,
+        "resgates": 0,
+        "funcionarios": 3,
+        "api_logs": 5274,
+        "restaurantes": 14,
+        "usuarios": 17,
+        "configuracoes_global": 37,
+        "mensagens": 1,
+        "tarefas_suporte": 15,
+        "equipe_suporte": 1,
+        "suporte_restaurantes": 12,
+        "conquistas_suporte": 0,
+        "licencas": 6,
+        "telemetria": 10,
+        "sync_fila": 0,
+        "ifood_app_config": 2,
+        "tenant_features": 3,
+        "metrica_picos": 570,
+        "instance_registry": 0,
+        "sync_queue": 0,
+        "remote_commands": 0,
+        "sync_conflicts": 0,
+        "super_config": 1,
+        "suporte_vendas": 0,
+        "suporte_adiantamentos": 0,
+        "suporte_logs_audit": 52,
+        "missoes_promocoes": 0,
+        "super_plugins": 5,
+        "eventos_pico": 0,
+        "cadastros_monitor": 2,
+        "solicitacoes_features": 2,
+        "temas_global": 2,
+        "chaves_ativacao": 0,
+        "metricas_sockets": 142,
+        "modulo_sistemas": 51,
+        "tenant_modulos": 1,
+        "tenant_temas": 1,
+        "afiliados": 0,
+        "afiliado_vendas": 0,
+        "dispositivos": 0,
+        "synccheff_nodes": 2,
+        "synccheff_master_scripts": 1,
+        "synccheff_audit_logs": 0,
+        "super_notificacoes": 3,
+        "sessoes_demo_rastreio": 0,
+        "telemetria_clicks": 300,
+        "super_tarefas": 1,
+        "temas_catalogo": 14,
+        "temas_avaliacoes": 0,
+        "temas_aplicados": 1,
+        "temas_solicitacoes": 0,
+        "site_vendas_modulos": 4,
+        "equipe_suporte_restaurantes": 0,
+        "equipe_avisos": 0,
+        "suporte_missoes": 0,
+        "site_versoes_historico": 0,
+        "afiliados_metas": 0,
+        "afiliados_bonificacoes": 0,
+        "seguranca_violacoes": 0,
+        "contador_assinaturas": 1,
+        "contador_demandas": 10,
+        "contador_bonificacoes": 1,
+        "contador_combos_sugeridos": 0,
+        "contador_pareceres": 0,
+        "banco_talentos": 12,
+        "vagas_contratacao": 4,
+        "candidaturas_vagas": 0,
+        "escala_freelancers": 4,
+        "super_admin_custodia_repasses": 4,
+        "super_admin_assinaturas": 14,
+        "super_admin_financeiro_logs": 8,
+        "fintech_transacoes_split": 3,
+        "saas_assinaturas_modulos": 3,
+        "delivery_metricas_faturamento": 3,
+        "marketplace_contratacoes": 1,
+        "dispositivos_autorizados": 0,
+        "api_chaves": 0,
+        "leads_nichos": 1,
+        "compras_nfe_notas": 0,
+        "compras_nfe_itens": 0,
+        "resumo_noturno_envios": 0,
+        "crm_campanhas_reativacao": 0,
+        "crm_avaliacoes_nps": 0,
+        "clube_planos": 0,
+        "clube_assinantes": 0,
+        "clube_resgates_historico": 0,
+        "adquirentes_taxas_contratadas": 5,
+        "auditoria_divergencias_cartao": 0,
+        "gorjetas_config": 1,
+        "gorjetas_rateios_fechamentos": 0,
+        "gamificacao_missoes": 0,
+        "entregas_rotas_lotes": 0,
+        "entregas_rastreio_tokens": 0,
+        "comandas_assentos_itens": 0,
+        "comandas_assentos_pagamentos": 0,
+        "bar_barris_chopp": 2,
+        "bar_movimentacoes_chopp": 0,
+        "cardapio_traducoes_i18n": 0,
+        "cardapio_i18n_logs": 0,
+        "totem_clientes_fastpass": 0,
+        "backup_nuvem_logs": 0,
+        "backup_nuvem_config": 1,
+        "menu_engenharia_historico": 0,
+        "plano_upgrade_pedidos": 0,
+        "plano_bloqueios_log": 4,
+        "hub_mkt_perfis": 2,
+        "hub_mkt_interacoes": 3,
+        "hub_mkt_segmentos": 8,
+        "hub_mkt_campanhas": 6,
+        "hub_mkt_produtos": 4,
+        "hub_mkt_vendas": 3,
+        "hub_mkt_automacoes": 5,
+        "hub_mkt_plataformas": 6
+      }
+    },
+    "tenantsEncontrados": 16,
+    "listaTenants": [
+      "1",
+      "12",
+      "13",
+      "14",
+      "18",
+      "19",
+      "2",
+      "20",
+      "3",
+      "4",
+      "5",
+      "6",
+      "8",
+      "9",
+      "9999",
+      "default"
+    ]
+  },
+  "codigo": {
+    "estatisticasArquivos": {},
+    "totalLinhasPorTipo": {
+      "javascript": 170640,
+      "html": 90388,
+      "css": 22123,
+      "totalGeralAproximado": 283151
+    },
+    "controllers": [
+      {
+        "nome": "addons-alta-rentabilidade.js",
+        "linhas": 685
+      },
+      {
+        "nome": "addons-expansao-extrema.js",
+        "linhas": 509
+      },
+      {
+        "nome": "addons-expansao-futura.js",
+        "linhas": 647
+      },
+      {
+        "nome": "addons-expansao-lucro.js",
+        "linhas": 1082
+      },
+      {
+        "nome": "addons-fintech-ia.js",
+        "linhas": 1005
+      },
+      {
+        "nome": "addons-monetizacao-suprema.js",
+        "linhas": 545
+      },
+      {
+        "nome": "addons-monetizacao-turbo.js",
+        "linhas": 606
+      },
+      {
+        "nome": "addons-nichos-operacionais.js",
+        "linhas": 1073
+      },
+      {
+        "nome": "addons-receita-maxima.js",
+        "linhas": 669
+      },
+      {
+        "nome": "addons-restaurante.js",
+        "linhas": 2223
+      },
+      {
+        "nome": "addons-tier-a.js",
+        "linhas": 768
+      },
+      {
+        "nome": "addons-tier-bc.js",
+        "linhas": 1174
+      },
+      {
+        "nome": "addons-tier-s.js",
+        "linhas": 560
+      },
+      {
+        "nome": "auditor-cartoes.js",
+        "linhas": 489
+      },
+      {
+        "nome": "cashback.js",
+        "linhas": 366
+      },
+      {
+        "nome": "clima-demanda.js",
+        "linhas": 310
+      },
+      {
+        "nome": "contador-cheff.js",
+        "linhas": 1758
+      },
+      {
+        "nome": "crm-marketing-turbo.js",
+        "linhas": 523
+      },
+      {
+        "nome": "dev-hub.js",
+        "linhas": 1238
+      },
+      {
+        "nome": "engenharia-cardapio.js",
+        "linhas": 311
+      },
+      {
+        "nome": "financeiro-bi.js",
+        "linhas": 1483
+      },
+      {
+        "nome": "hub-marketing.js",
+        "linhas": 2172
+      },
+      {
+        "nome": "pizzaria-inteligente.js",
+        "linhas": 507
+      },
+      {
+        "nome": "plano-lite-enforcement.js",
+        "linhas": 585
+      },
+      {
+        "nome": "radar-concorrencia.js",
+        "linhas": 642
+      },
+      {
+        "nome": "rede-local-controller.js",
+        "linhas": 129
+      },
+      {
+        "nome": "remote-support.js",
+        "linhas": 476
+      },
+      {
+        "nome": "reservas.js",
+        "linhas": 267
+      },
+      {
+        "nome": "rh-talentos-contratacao.js",
+        "linhas": 905
+      },
+      {
+        "nome": "rotas-faltantes.js",
+        "linhas": 1499
+      },
+      {
+        "nome": "saas-monetizacao.js",
+        "linhas": 557
+      },
+      {
+        "nome": "sistema-extra.js",
+        "linhas": 410
+      },
+      {
+        "nome": "socket-fila.js",
+        "linhas": 253
+      },
+      {
+        "nome": "socket-financeiro.js",
+        "linhas": 1262
+      },
+      {
+        "nome": "sommelier-ia.js",
+        "linhas": 210
+      },
+      {
+        "nome": "split-conta.js",
+        "linhas": 649
+      },
+      {
+        "nome": "super-admin-financeiro.js",
+        "linhas": 998
+      },
+      {
+        "nome": "super-admin-infra.js",
+        "linhas": 1321
+      },
+      {
+        "nome": "super-admin.js",
+        "linhas": 2983
+      },
+      {
+        "nome": "suporte-vendas.js",
+        "linhas": 1351
+      },
+      {
+        "nome": "sync-server.js",
+        "linhas": 780
+      }
+    ],
+    "plugins": [
+      "balanca",
+      "caixa",
+      "cheff-ai",
+      "cheff-entregas",
+      "cozinha",
+      "dispositivos",
+      "equipe",
+      "fidelidade",
+      "fila-espera",
+      "formas-pagamento",
+      "garcom",
+      "image-providers",
+      "logs",
+      "montaveis",
+      "nfce",
+      "pesagem-selfservice",
+      "pix",
+      "reserves",
+      "retro",
+      "rh",
+      "tarefas",
+      "tema-v2",
+      "temas",
+      "theme-curator"
+    ]
+  },
+  "seguranca": {
+    "padroesSuspeitos": []
+  }
+}

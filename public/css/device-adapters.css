@@ -1,0 +1,1259 @@
+/* ═════════════════════════════════════════════════════════════════════════
+   CHEF COZINHA — ADAPTADOR UNIVERSAL MULTI-DISPOSITIVOS
+   Suporte Completo e Otimizado para:
+   1. Samsung Galaxy Z Fold 8 / 7 / 6 / 5 (Capa Estreita & Tela Dobrável Aberta)
+   2. Apple iPad Mini (8.3", ~744x1133 pt, Portrait & Landscape)
+   3. Apple iPad Pro (11" e 12.9" Retina, 834x1194 / 1024x1366 pt)
+   4. Samsung Galaxy Tab S9 / S9+ / Ultra (11" AMOLED, 16:10, ~800x1280 pt)
+   5. Microsoft Surface Pro (13", 3:2, ~912x1368 pt, Híbrido Touch + Teclado)
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. VARIÁVEIS GLOBAIS DE SAFE AREA & FLUIDEZ ── */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --touch-target-min: 44px;
+  --touch-target-comfort: 48px;
+  --fluid-pad-xs: clamp(6px, 1.5vw, 10px);
+  --fluid-pad-sm: clamp(8px, 2vw, 14px);
+  --fluid-pad-md: clamp(12px, 2.5vw, 20px);
+  --fluid-gap: clamp(6px, 1.2vw, 14px);
+}
+
+/* ── 2. TOQUE OTIMIZADO & ANTI-ZOOM DUPLO CLIQUE ── */
+button,
+a,
+input,
+select,
+textarea,
+.btn,
+.tab-btn,
+.mesa-tile,
+.queue-item,
+.chip,
+.kds-field-btn,
+.ultra-chip,
+.ultra-numpad-btn,
+.ultra-banknote-btn,
+.ultra-btn-action {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── 3. REGRAS PARA TOQUE (pointer: coarse) ──
+   Garante touch targets mínimos de 44x44px em tablets e celulares */
+@media (pointer: coarse) {
+  button:not(.btn-icon-tiny),
+  .btn-touch-target,
+  .kds-field-btn,
+  .ultra-btn-action,
+  .toolbar-btn {
+    min-height: var(--touch-target-min);
+  }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="password"],
+  select {
+    min-height: var(--touch-target-min);
+    font-size: 16px !important; /* Evita zoom automático involuntário no Safari iOS */
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   PERFIL 1: SAMSUNG GALAXY Z FOLD — TELA DE CAPA (COVER SCREEN)
+   Largura: <= 400px (típico 340px a 384px) | Proporção alta (21:9 a 23:9)
+   ═════════════════════════════════════════════════════════════════════════ */
+@media screen and (max-width: 400px),
+       screen and (max-width: 420px) and (min-aspect-ratio: 1/2) {
+  
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* Padding lateral compacto */
+  .view,
+  .main-workspace,
+  .container,
+  .v11-wrap,
+  .ultra-main-content {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  /* Garçom: grade de mesas em 2 colunas compactas */
+  #tables-grid,
+  .mesas-grid-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .mesa-card,
+  .mesa-tile {
+    padding: 10px 8px !important;
+    min-height: 80px !important;
+  }
+
+  /* Barra de controle e filtros do Garçom */
+  #garcom-tables-control-bar,
+  .garcom-toolbar-wrap {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+  }
+
+  /* Header do Garçom e KDS */
+  header,
+  .ultra-header,
+  .v11-header {
+    padding: 0 10px !important;
+    height: 54px !important;
+  }
+
+  header h1,
+  .ultra-brand-title {
+    font-size: 15px !important;
+  }
+
+  /* KDS na tela de capa: 1 coluna vertical contínua */
+  #queue-list:not(.modo-kanban),
+  .queue-list:not(.modo-kanban) {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    padding: 8px 6px !important;
+  }
+
+  .queue-item {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Modais ocupam tela cheia com margem mínima */
+  .modal-overlay > div,
+  .chef-modal-overlay > div,
+  .modal-sheet,
+  #modal-garcom-comanda > div,
+  #modal-garcom-fechamento > div,
+  #modal-garcom-marchar > div,
+  #modal-garcom-sommelier > div {
+    width: calc(100vw - 12px) !important;
+    max-width: 100vw !important;
+    margin: 6px auto !important;
+    padding: 14px 12px !important;
+    border-radius: 18px !important;
+  }
+
+  /* Autoatendimento Conta Cliente */
+  .container {
+    max-width: 100vw !important;
+    padding: 0 8px !important;
+  }
+
+  .total-row.grand-total .total-value {
+    font-size: clamp(26px, 8vw, 34px) !important;
+  }
+
+  .pix-qr-wrapper img {
+    max-width: 160px !important;
+    max-height: 160px !important;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   PERFIL 2: SAMSUNG GALAXY Z FOLD — TELA INTERNA ABERTA (UNFOLDED SCREEN)
+   Largura: 700px a 940px | Proporção Quase Quadrada (0.85 a 1.25)
+   ═════════════════════════════════════════════════════════════════════════ */
+@media screen and (min-width: 680px) and (max-width: 940px) and (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3),
+       (spanning: single-fold-vertical),
+       (spanning: single-fold-horizontal) {
+  /* Garçom: 3 a 4 colunas equilibradas */
+  #tables-grid,
+  .mesas-grid-layout {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  /* KDS Cozinha: 2 colunas amplas perfeitamente balanceadas */
+  #queue-list:not(.modo-lista):not(.modo-kanban),
+  .queue-list:not(.modo-lista):not(.modo-kanban) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  /* Caixa Ultra: Layout de 2 colunas com drawer ou alternância */
+  .ultra-main-content {
+    grid-template-columns: 1fr 360px !important;
+    gap: 12px !important;
+    padding: 10px 14px !important;
+  }
+
+  /* Painel do Dono: 2 colunas de KPIs */
+  .kpi-grid,
+  main {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+body.device-fold-inner #tables-grid,
+body.device-fold-inner .mesas-grid-layout {
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+  gap: 12px !important;
+}
+
+body.device-fold-inner #queue-list:not(.modo-lista):not(.modo-kanban),
+body.device-fold-inner .queue-list:not(.modo-lista):not(.modo-kanban) {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+body.device-fold-inner .ultra-main-content {
+  grid-template-columns: 1fr 360px !important;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   PERFIL 3: APPLE IPAD MINI (8.3", ~744x1133 pt)
+   Portrait: 744x1133 pt | Landscape: 1133x744 pt
+   Tablet compacto de alta densidade Retina
+   ═════════════════════════════════════════════════════════════════════════ */
+@media screen and (min-width: 720px) and (max-width: 779px) and (orientation: portrait) {
+  /* Assegura que o iPad Mini Portrait seja tratado como Tablet, não como Celular */
+  #tables-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  /* KDS no iPad Mini Portrait: 2 colunas com altura de ticket confortável */
+  #queue-list:not(.modo-lista):not(.modo-kanban) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  /* Modais com tamanho proporcional de tablet */
+  .modal-overlay > div,
+  .chef-modal-overlay > div,
+  .modal-sheet {
+    max-width: 640px !important;
+    width: 90vw !important;
+  }
+
+  /* Caixa Ultra: 2 colunas ou barra de navegação adaptativa */
+  .ultra-main-content {
+    grid-template-columns: 1fr 340px !important;
+  }
+}
+
+body.device-ipad-mini-portrait #tables-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+body.device-ipad-mini-portrait #queue-list:not(.modo-lista):not(.modo-kanban) {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+@media screen and (min-width: 1080px) and (max-width: 1180px) and (orientation: landscape) and (max-height: 780px) {
+  /* iPad Mini Landscape: altura reduzida (744px) exige barras compactas */
+  header,
+  .ultra-header,
+  .v11-header,
+  .config-header {
+    height: 48px !important;
+    padding: 0 12px !important;
+  }
+
+  /* Garçom em landscape no iPad Mini */
+  #tables-grid {
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  /* KDS em landscape no iPad Mini: 3 colunas */
+  #queue-list:not(.modo-lista):not(.modo-kanban) {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+}
+
+body.device-ipad-mini-landscape header,
+body.device-ipad-mini-landscape .ultra-header,
+body.device-ipad-mini-landscape .v11-header,
+body.device-ipad-mini-landscape .config-header {
+  height: 48px !important;
+  padding: 0 12px !important;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   PERFIL 4: SAMSUNG GALAXY TAB S9 (11", ~800x1280 pt, 16:10 AMOLED)
+   Portrait: 800x1280 pt | Landscape: 1280x800 pt
+   ═════════════════════════════════════════════════════════════════════════ */
+@media screen and (min-width: 780px) and (max-width: 860px) and (orientation: portrait) {
+  /* Portrait 16:10: tela longa verticalmente */
+  #tables-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  /* KDS no Tab S9 Portrait: 2 colunas longas */
+  #queue-list:not(.modo-lista):not(.modo-kanban) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  /* Barra de navegação inferior respeita a barra de gestos do Android */
+  .kds-mobile-bottom-nav,
+  .mobile-bottom-nav,
+  #mobile-workspace-tabs {
+    padding-bottom: calc(10px + var(--safe-bottom)) !important;
+  }
+}
+
+body.device-tab-s9-portrait #tables-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+body.device-tab-s9-portrait #queue-list:not(.modo-lista):not(.modo-kanban) {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+@media screen and (min-width: 1240px) and (max-width: 1320px) and (orientation: landscape) and (max-height: 840px) {
+  /* Landscape 16:10 Widescreen: 1280x800 */
+  /* KDS aproveita a largura para 4 colunas */
+  #queue-list:not(.modo-lista):not(.modo-kanban) {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  /* Caixa Ultra: 3 colunas confortáveis */
+  .ultra-main-content {
+    grid-template-columns: 1fr 380px 340px !important;
+    gap: 12px !important;
+  }
+
+  .ultra-checkout-column {
+    display: flex !important;
+  }
+}
+
+body.device-tab-s9-landscape #queue-list:not(.modo-lista):not(.modo-kanban) {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   PERFIL 5: MICROSOFT SURFACE PRO (13", ~912x1368 pt, Proporção 3:2)
+   Híbrido Windows Touch + Teclado/Mouse | Alta Densidade
+   ═════════════════════════════════════════════════════════════════════════ */
+@media screen and (min-width: 880px) and (max-width: 960px) and (orientation: portrait) {
+  /* Portrait 3:2: largura 912px generosa */
+  #tables-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  /* KDS: 3 colunas de pedidos */
+  #queue-list:not(.modo-lista):not(.modo-kanban) {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  /* Garante touch targets de 46px mesmo em ambiente Windows touch */
+  .ultra-numpad-btn,
+  .btn-action,
+  .kds-field-btn {
+    min-height: 46px !important;
+  }
+}
+
+body.device-surface-portrait #tables-grid {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+  gap: 14px !important;
+}
+
+body.device-surface-portrait #queue-list:not(.modo-lista):not(.modo-kanban) {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+@media screen and (min-width: 1330px) and (max-width: 1440px) and (orientation: landscape) and (min-aspect-ratio: 1.4) and (max-aspect-ratio: 1.6) {
+  /* Surface Pro Landscape (3:2) */
+  .ultra-main-content {
+    grid-template-columns: 1fr 420px 380px !important;
+    gap: 14px !important;
+  }
+
+  #queue-list:not(.modo-lista):not(.modo-kanban) {
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+body.device-surface-landscape .ultra-main-content {
+  grid-template-columns: 1fr 420px 380px !important;
+  gap: 14px !important;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   PERFIL 6: APPLE IPAD PRO (11" e 12.9" / 13", 834x1194 / 1024x1366 pt)
+   Display Liquid Retina 4:3, Gestos iPadOS, Safe Areas
+   ═════════════════════════════════════════════════════════════════════════ */
+@media screen and (min-width: 820px) and (max-width: 860px) and (orientation: portrait),
+       screen and (min-width: 1000px) and (max-width: 1040px) and (orientation: portrait) {
+  /* iPad Pro Portrait (834px ou 1024px) */
+  #tables-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  #queue-list:not(.modo-lista):not(.modo-kanban) {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  /* Modais centralizados e espaçosos */
+  .modal-overlay > div,
+  .chef-modal-overlay > div {
+    max-width: 780px !important;
+    border-radius: 24px !important;
+  }
+
+  /* Safe Area no rodapé do iPad Pro (Home Bar) */
+  #app,
+  .view,
+  .ultra-app-shell {
+    padding-bottom: max(var(--safe-bottom), 16px) !important;
+  }
+}
+
+body.device-ipad-pro-portrait #tables-grid {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+  gap: 16px !important;
+}
+
+body.device-ipad-pro-portrait #queue-list:not(.modo-lista):not(.modo-kanban) {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+@media screen and (min-width: 1180px) and (max-width: 1400px) and (orientation: landscape) and (max-aspect-ratio: 1.5) {
+  /* iPad Pro Landscape: 1194x834 ou 1366x1024 */
+  #tables-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  #queue-list:not(.modo-lista):not(.modo-kanban) {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  .ultra-main-content {
+    grid-template-columns: 1fr 420px 380px !important;
+  }
+}
+
+body.device-ipad-pro-landscape #tables-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+  gap: 16px !important;
+}
+
+body.device-ipad-pro-landscape #queue-list:not(.modo-lista):not(.modo-kanban) {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   MELHORIAS DE TELAS ESPECÍFICAS
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── CAIXA ULTRA: NAVEGAÇÃO ADAPTATIVA DE ABAS PARA TABLETS (<= 1080px) ── */
+.ultra-tablet-tabbar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--ultra-border, rgba(255, 255, 255, 0.1));
+  padding: 6px 10px;
+  gap: 8px;
+}
+
+@media (max-width: 1080px) {
+  .ultra-tablet-tabbar {
+    display: flex !important;
+  }
+
+  .ultra-tablet-tab-btn {
+    flex: 1;
+    min-height: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: var(--ultra-text-secondary, #94a3b8);
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .ultra-tablet-tab-btn.active {
+    background: linear-gradient(135deg, var(--ultra-coral, #fc4b15), #ff7a3d);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(252, 75, 21, 0.3);
+  }
+
+  /* Modo Abas no Tablet: exibe apenas a coluna selecionada ou divisão inteligente */
+  body.ultra-tablet-view-mesas .ultra-salon-column { display: flex !important; flex: 1 1 100% !important; }
+  body.ultra-tablet-view-mesas .ultra-order-column { display: none !important; }
+  body.ultra-tablet-view-mesas .ultra-checkout-column { display: none !important; }
+
+  body.ultra-tablet-view-pedido .ultra-salon-column { display: none !important; }
+  body.ultra-tablet-view-pedido .ultra-order-column { display: flex !important; flex: 1 1 100% !important; }
+  body.ultra-tablet-view-pedido .ultra-checkout-column { display: none !important; }
+
+  body.ultra-tablet-view-checkout .ultra-salon-column { display: none !important; }
+  body.ultra-tablet-view-checkout .ultra-order-column { display: none !important; }
+  body.ultra-tablet-view-checkout .ultra-checkout-column { display: flex !important; flex: 1 1 100% !important; }
+
+  /* Se nenhuma classe ativa específica, default responsivo de 2 colunas */
+  body:not(.ultra-tablet-view-mesas):not(.ultra-tablet-view-pedido):not(.ultra-tablet-view-checkout) .ultra-main-content {
+    grid-template-columns: 1fr 360px !important;
+  }
+}
+
+/* ── AUTOATENDIMENTO CONTA CLIENTE (TABLET DESKTOP MODE) ── */
+@media screen and (min-width: 680px) {
+  body.conta-cliente-page .container,
+  .conta-cliente-tablet-mode {
+    max-width: 760px !important;
+    padding: 20px !important;
+  }
+}
+
+/* ── KDS: BOTÕES DE AÇÃO DE ALTA PRECISÃO TÁTIL ── */
+.queue-item .item-pronto,
+.queue-item .btn-hold,
+.queue-item .btn-fogo,
+.kds-action-btn {
+  min-height: 44px !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  border-radius: 10px !important;
+}
+
+/* ── GARÇOM: FILTROS E ABAS COM SCROLL SUAVE SEM BARRA FEIA ── */
+#garcom-categorias-bar,
+.garcom-cat-chips {
+  display: flex !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none !important;
+}
+#garcom-categorias-bar::-webkit-scrollbar,
+.garcom-cat-chips::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* ── SAFE AREA INSETS PARA FABs E BARRAS FIXAS ── */
+.chef-drawer-fab,
+#btn-qr-pedidos-pendentes,
+.mobile-bottom-nav,
+#kds-mobile-bottom-nav {
+  bottom: calc(16px + var(--safe-bottom)) !important;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   ESTILOS DE RECURSOS AVANÇADOS: PRESSURE TOUCH, GESTOS, PINÇA & LONG-PRESS
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. PRESSURE TOUCH & FORCE TOUCH FEEDBACK ── */
+.chef-pressure-active {
+  transform: scale(calc(1 - var(--touch-pressure, 0.1) * 0.05)) !important;
+  filter: brightness(1.12) !important;
+  box-shadow: 0 0 16px rgba(252, 75, 21, calc(var(--touch-pressure, 0.2) * 0.6)) !important;
+  transition: transform 0.06s ease, filter 0.06s ease, box-shadow 0.06s ease !important;
+}
+
+/* ── 2. LONG-PRESS RADIAL PROGRESS HALO ── */
+.chef-longpress-halo {
+  position: fixed;
+  width: 64px;
+  height: 64px;
+  margin-top: -32px;
+  margin-left: -32px;
+  border-radius: 50%;
+  border: 3px solid rgba(252, 75, 21, 0.9);
+  background: radial-gradient(circle, rgba(252, 75, 21, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 999999;
+  transform: scale(0.3);
+  opacity: 0.9;
+  animation: chefHaloExpand 0.42s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes chefHaloExpand {
+  0% { transform: scale(0.2); opacity: 0.4; }
+  70% { transform: scale(1.15); opacity: 1; border-color: #ff7a3d; }
+  100% { transform: scale(1.3); opacity: 0; border-color: #10b981; }
+}
+
+/* ── 3. PINCH-TO-SCALE FLOATING ZOOM HUD ── */
+.chef-zoom-hud {
+  position: fixed;
+  top: calc(20px + var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  z-index: 100000;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 30px;
+  padding: 8px 20px;
+  color: #f8fafc;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chef-zoom-hud.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.chef-zoom-hud i {
+  color: #fc4b15;
+  font-size: 17px;
+}
+
+/* ── 4. SWIPE ACTIONS NOS TICKETS DO KDS ── */
+.queue-item.chef-swiping {
+  transition: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  cursor: grabbing !important;
+}
+
+.queue-item.chef-swipe-spring {
+  transition: transform 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.chef-swipe-indicator-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 1;
+}
+
+.chef-swipe-indicator-layer.right {
+  justify-content: flex-start;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.8));
+  box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.5);
+}
+
+.chef-swipe-indicator-layer.left {
+  justify-content: flex-end;
+  background: linear-gradient(270deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.8));
+  box-shadow: inset 0 0 20px rgba(245, 158, 11, 0.5);
+}
+
+/* ── 5. SHEET DE AÇÕES DE LONG-PRESS (MENU CONTEXTUAL TÁTIL) ── */
+.chef-action-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 15, 25, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.chef-action-sheet-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chef-action-sheet-modal {
+  background: #ffffff;
+  border-radius: 28px 28px 0 0;
+  padding: 16px 20px calc(24px + var(--safe-bottom)) 20px;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.3);
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .chef-action-sheet-modal,
+body.dark-mode .chef-action-sheet-modal {
+  background: #131b2e;
+  border-top: 1.5px solid rgba(255, 255, 255, 0.12);
+}
+
+.chef-action-sheet-overlay.active .chef-action-sheet-modal {
+  transform: translateY(0);
+}
+
+.chef-sheet-drag-handle {
+  width: 44px;
+  height: 5px;
+  background: #cbd5e1;
+  border-radius: 4px;
+  margin: 0 auto 14px auto;
+}
+
+[data-theme="dark"] .chef-sheet-drag-handle,
+body.dark-mode .chef-sheet-drag-handle {
+  background: #334155;
+}
+
+.chef-sheet-title-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.chef-sheet-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+[data-theme="dark"] .chef-sheet-title,
+body.dark-mode .chef-sheet-title {
+  color: #f8fafc;
+}
+
+.chef-sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.chef-sheet-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 10px;
+  border-radius: 16px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  color: #1e293b;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.18s ease;
+  text-align: center;
+}
+
+[data-theme="dark"] .chef-sheet-btn,
+body.dark-mode .chef-sheet-btn {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+.chef-sheet-btn:active {
+  transform: scale(0.94);
+  background: rgba(252, 75, 21, 0.12);
+  border-color: #fc4b15;
+}
+
+.chef-sheet-btn i {
+  font-size: 24px;
+  color: #fc4b15;
+}
+
+/* ── 6. PEEK & POP CARD (PRESSURE TOUCH PREVIEW) ── */
+.chef-peek-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.chef-peek-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chef-peek-box {
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 20px;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  border: 1.5px solid rgba(252, 75, 21, 0.35);
+  transform: scale(0.92);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .chef-peek-box,
+body.dark-mode .chef-peek-box {
+  background: #131b2e;
+  border-color: rgba(252, 75, 21, 0.45);
+  color: #f8fafc;
+}
+
+.chef-peek-overlay.active .chef-peek-box {
+  transform: scale(1);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   7. MODAIS UNIVERSAIS: SWIPE-TO-DISMISS & DRAG HANDLES
+   Aplica a todos os modais em tablets e celulares
+   ═════════════════════════════════════════════════════════════════════════ */
+.chef-sheet-drag-handle {
+  width: 44px;
+  height: 5px;
+  background: #cbd5e1;
+  border-radius: 4px;
+  margin: 0 auto 12px auto;
+  cursor: grab;
+  position: relative;
+  touch-action: none;
+}
+
+/* Hitbox invisível de 30px de altura para facilitar o toque na alça */
+.chef-sheet-drag-handle::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+  left: -20px;
+  right: -20px;
+}
+
+[data-theme="dark"] .chef-sheet-drag-handle,
+body.dark-mode .chef-sheet-drag-handle {
+  background: #475569;
+}
+
+/* Estado durante o arraste manual do modal para baixo */
+.chef-modal-swiping {
+  transition: none !important;
+  will-change: transform;
+}
+
+/* Transição suave ao soltar ou fechar o modal */
+.chef-modal-spring {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease !important;
+}
+
+.chef-modal-dismissing {
+  transform: translateY(110%) !important;
+  opacity: 0 !important;
+  transition: transform 0.25s ease-in, opacity 0.2s ease-in !important;
+}
+
+/* Modais como Bottom Sheets em telas <= 768px e dispositivos touch */
+@media screen and (max-width: 768px) {
+  .modal-overlay:not(.chef-modal-desktop-only),
+  .chef-modal-overlay,
+  .ultra-modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .modal-overlay:not(.chef-modal-desktop-only) > .modal-content,
+  .chef-modal-overlay > .modal-content,
+  .ultra-modal-overlay > .ultra-modal-card {
+    border-radius: 24px 24px 0 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 88vh !important;
+    padding-bottom: calc(20px + var(--safe-bottom)) !important;
+    margin-bottom: 0 !important;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   8. MENUS E SUBMENUS: OTIMIZAÇÃO TÁTIL & AUTO-AJUSTE
+   ═════════════════════════════════════════════════════════════════════════ */
+.dropdown-menu,
+.submenu,
+.sub-menu,
+.nav-dropdown,
+.menu-popup,
+.context-menu,
+.config-subtabs {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (pointer: coarse), screen and (max-width: 1080px) {
+  .dropdown-menu,
+  .submenu,
+  .sub-menu,
+  .nav-dropdown,
+  .menu-popup {
+    border-radius: 16px !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22) !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+
+  .dropdown-menu a,
+  .dropdown-menu button,
+  .submenu a,
+  .submenu button,
+  .nav-dropdown a,
+  .nav-dropdown button {
+    min-height: var(--touch-target-min) !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 10px 16px !important;
+    font-size: 14px !important;
+  }
+
+  /* Alinhamento inteligente para não vazar da borda direita da tela */
+  .chef-dropdown-align-right {
+    left: auto !important;
+    right: 0 !important;
+  }
+}
+
+/* Backdrop touch invisível para fechar dropdowns e submenus ao tocar fora */
+.chef-touch-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 999;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   9. MELHORIAS NA ÁREA DO COLABORADOR (painel-funcionario.html)
+   ═════════════════════════════════════════════════════════════════════════ */
+.colab-nav,
+.tabs-colaborador,
+.colab-tabs-bar {
+  display: flex !important;
+  overflow-x: auto !important;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none !important;
+  padding: 6px 4px !important;
+  gap: 8px !important;
+}
+
+.colab-nav::-webkit-scrollbar,
+.tabs-colaborador::-webkit-scrollbar,
+.colab-tabs-bar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.colab-tab-btn,
+.tab-colab {
+  scroll-snap-align: start;
+  white-space: nowrap !important;
+  min-height: 42px !important;
+  padding: 8px 16px !important;
+  border-radius: 20px !important;
+  font-weight: 700 !important;
+  touch-action: manipulation;
+}
+
+/* Botão de Bater Ponto Extra Tátil */
+.btn-bater-ponto,
+.btn-ponto-touch {
+  min-height: 56px !important;
+  border-radius: 16px !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  box-shadow: 0 6px 20px rgba(252, 75, 21, 0.35) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.btn-bater-ponto:active,
+.btn-ponto-touch:active {
+  transform: scale(0.96) !important;
+}
+
+/* Cards de Solicitações e Vales com Toques Confortáveis */
+.colab-card-item {
+  border-radius: 16px !important;
+  padding: 14px !important;
+  margin-bottom: 12px !important;
+  touch-action: pan-y;
+}
+
+.colab-card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.colab-card-actions button {
+  min-height: 44px;
+  flex: 1;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   10. MELHORIAS NO GARÇOM MOBILE (garcom.html & pdv-mobile.html)
+   ═════════════════════════════════════════════════════════════════════════ */
+.garcom-cat-bar,
+.categories-bar {
+  display: flex !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none !important;
+  padding: 6px 8px !important;
+  gap: 8px !important;
+  touch-action: pan-x;
+}
+
+.garcom-cat-bar::-webkit-scrollbar,
+.categories-bar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.cat-pill {
+  white-space: nowrap !important;
+  min-height: 40px !important;
+  padding: 8px 16px !important;
+  border-radius: 20px !important;
+}
+
+/* Controles de Quantidade no Carrinho com Toque Preciso */
+.cart-item-qty-ctrl,
+.item-quantidade-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cart-item-qty-ctrl button,
+.item-quantidade-box button {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  border-radius: 12px !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   11. MELHORIAS NA FILA DE PEDIDOS / KDS (fila-pedidos.html)
+   ═════════════════════════════════════════════════════════════════════════ */
+.kds-filtros-bar {
+  display: flex !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none !important;
+  gap: 8px !important;
+  padding: 8px 12px !important;
+}
+
+.kds-filtros-bar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.kds-filtro-pill {
+  min-height: 42px !important;
+  padding: 8px 16px !important;
+  border-radius: 20px !important;
+  white-space: nowrap !important;
+  font-weight: 700 !important;
+}
+
+/* Tickets com suporte a pinça */
+.queue-list.card-tam-g .queue-item {
+  min-height: 280px !important;
+  font-size: 15px !important;
+}
+
+.queue-list.card-tam-p .queue-item {
+  min-height: 180px !important;
+  font-size: 12px !important;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   12. MELHORIAS NA ÁREA DO CLIENTE (area-cliente.html & cardapio.html)
+   ═════════════════════════════════════════════════════════════════════════ */
+.fidelidade-card,
+.vip-card {
+  border-radius: 24px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28) !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
+  touch-action: manipulation;
+}
+
+.fidelidade-card:active,
+.vip-card:active {
+  transform: scale(0.97) rotateX(3deg) !important;
+}
+
+.cliente-nav-bar {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.cliente-nav-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.recompensa-card {
+  min-height: 110px;
+  border-radius: 18px !important;
+  touch-action: manipulation;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   13. MELHORIAS NO PAINEL DO DONO (painel-dono.html)
+   ═════════════════════════════════════════════════════════════════════════ */
+.dono-kpi-grid {
+  display: grid;
+  gap: 14px;
+}
+
+@media screen and (max-width: 480px) {
+  .dono-kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media screen and (min-width: 481px) and (max-width: 860px) {
+  .dono-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media screen and (min-width: 861px) and (max-width: 1200px) {
+  .dono-kpi-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media screen and (min-width: 1201px) {
+  .dono-kpi-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+/* Acordeão de Submenus do Painel Dono */
+.dono-submenu-header {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.dono-submenu-body {
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   14. MELHORIAS NA TELA DE CONFIGURAÇÕES (configuracoes.html)
+   ═════════════════════════════════════════════════════════════════════════ */
+.config-tabs-nav {
+  display: flex !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none !important;
+  gap: 8px !important;
+  padding: 8px 4px !important;
+}
+
+.config-tabs-nav::-webkit-scrollbar {
+  display: none !important;
+}
+
+.config-tab-btn {
+  white-space: nowrap !important;
+  min-height: 44px !important;
+  padding: 8px 18px !important;
+  border-radius: 14px !important;
+  font-weight: 700 !important;
+}
+
+/* Switch / Toggle Confortável para Dedo */
+.config-toggle-switch {
+  min-width: 52px;
+  min-height: 32px;
+  border-radius: 16px;
+  position: relative;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.config-save-dock {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg, #f8f9fa);
+  padding: 12px 16px calc(14px + var(--safe-bottom)) 16px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  z-index: 100;
+}
+
+

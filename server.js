@@ -657,13 +657,15 @@ app.use((req, res, next) => {
     return res.status(403).send('Acesso negado.');
   }
 
-  // 5. Extensões restritas
-  if (PROD_BLOCKED_STATIC_EXTS.some(b => lower.endsWith(b))) {
-    return res.status(403).send('Acesso negado.');
+  // 5. Extensões restritas (permite instaladores oficiais sob /api/sync/installers/)
+  if (!lower.startsWith('/api/sync/installers/')) {
+    if (PROD_BLOCKED_STATIC_EXTS.some(b => lower.endsWith(b))) {
+      return res.status(403).send('Acesso negado.');
+    }
   }
 
   // 6. Arquivos .json que não sejam manifest.json ou plugins autorizados
-  if (lower.endsWith('.json') && filename !== 'manifest.json' && !lower.startsWith('/plugins/')) {
+  if (lower.endsWith('.json') && filename !== 'manifest.json' && filename !== 'super-admin-manifest.json' && !lower.startsWith('/plugins/')) {
     return res.status(403).send('Acesso negado.');
   }
 
@@ -4778,6 +4780,16 @@ io.on('connection', (socket) => {
               proceedWithOrder(err2 ? null : this.lastID);
             });
           }
+          if (typeof global.alimentarPerfilHubMarketing === 'function' && clientPhone) {
+            global.alimentarPerfilHubMarketing({
+              telefone: clientPhone,
+              nome: clientName || '',
+              tipo: 'pedido',
+              valor: parseFloat(pedido.total) || 0,
+              itens: [pedido.productName].filter(Boolean),
+              detalhes: `Pedido realizado: ${pedido.quantity || 1}x ${pedido.productName || 'Item'} (${pedido.localName || 'Salão'})`
+            });
+          }
         });
       } else {
         db.get(`SELECT id FROM clientes WHERE nome = ? ORDER BY id DESC LIMIT 1`, [clientName], (err, row) => {
@@ -5493,6 +5505,30 @@ io.on('connection', (socket) => {
 
       if (existing) {
         db.run(`UPDATE clientes SET nome = ?, data_nascimento = ? WHERE id = ?`, [nome, data_nascimento, existing.id], (errUpdate) => {
+          if (typeof global.alimentarPerfilHubMarketing === 'function' && telefone) {
+            global.alimentarPerfilHubMarketing({
+              telefone,
+              nome: nome || existing.nome || '',
+              restaurante_id: socket.restaurante_id || 1,
+              restaurante_nome: 'Restaurante Principal',
+              tipo: 'visita',
+              detalhes: `Check-in Mesa ${dados.mesa || 'Salão'}`
+            });
+          }
+
+          // Se for cliente de alto valor (Whale/VIP), emitir alerta em tempo real para garçons e dono
+          const gastoAcumulado = parseFloat(existing.total_gasto) || 0;
+          if (gastoAcumulado >= 250 || (existing.pontos && existing.pontos >= 80)) {
+            io.emit('alerta_vip_chegou', {
+              mesa: dados.mesa || 'Mesa',
+              nome: nome || existing.nome,
+              telefone: telefone,
+              total_gasto: gastoAcumulado,
+              pontos: existing.pontos || 0,
+              observacao: existing.observacao || 'Cliente VIP Recorrente'
+            });
+          }
+
           callback({
             success: true,
             cliente: {
@@ -5515,6 +5551,16 @@ io.on('connection', (socket) => {
             }
 
             const newId = this.lastID;
+            if (typeof global.alimentarPerfilHubMarketing === 'function' && telefone) {
+              global.alimentarPerfilHubMarketing({
+                telefone,
+                nome: nome || '',
+                restaurante_id: socket.restaurante_id || 1,
+                restaurante_nome: 'Restaurante Principal',
+                tipo: 'visita',
+                detalhes: `Primeira visita Mesa ${dados.mesa || 'Salão'}`
+              });
+            }
             callback({
               success: true,
               cliente: {
@@ -9340,23 +9386,31 @@ app.post('/api/config', verificarToken, (req, res) => {
       configs.totem_enabled = configs.mod_totem;
     }
 
-    db.serialize(() => {
-      db.run("BEGIN TRANSACTION;");
-      Object.keys(configs).forEach(chave => {
-        const valor = typeof configs[chave] === 'object' ? JSON.stringify(configs[chave]) : String(configs[chave]);
-        // (Segurança) Placeholder "***" enviado pelo painel preserva o valor original do segredo.
-        if (CONFIG_SECRET_KEYS.includes(chave) && valor === '***') return;
-        db.run(`INSERT INTO configuracoes (chave, valor) VALUES (?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor`, [chave, valor]);
+    try {
+      db.serialize(() => {
+        db.run("BEGIN TRANSACTION;");
+        Object.keys(configs).forEach(chave => {
+          const valor = typeof configs[chave] === 'object' ? JSON.stringify(configs[chave]) : String(configs[chave]);
+          // (Segurança) Placeholder "***" enviado pelo painel preserva o valor original do segredo.
+          if (CONFIG_SECRET_KEYS.includes(chave) && valor === '***') return;
+          db.run(`INSERT INTO configuracoes (chave, valor) VALUES (?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor`, [chave, valor]);
+        });
+        db.run("COMMIT;");
       });
-      db.run("COMMIT;");
-    });
 
-    // Emite para todo mundo que as configurações mudaram (para recarregar menus)
-    setTimeout(() => {
-      io.emit('configuracoes_atualizadas');
-      broadcastProdutos(); // Força envio atualizado com Destaques
-      res.json({ success: true });
-    }, 500);
+      // Emite para todo mundo que as configurações mudaram (para recarregar menus)
+      setTimeout(() => {
+        try {
+          io.emit('configuracoes_atualizadas');
+          broadcastProdutos(); // Força envio atualizado com Destaques
+        } catch (e) {}
+        if (!res.headersSent) res.json({ success: true });
+      }, 500);
+    } catch (err) {
+      console.error('[POST /api/config] Erro ao salvar configurações:', err);
+      try { db.run("ROLLBACK;"); } catch (_) {}
+      if (!res.headersSent) res.status(500).json({ ok: false, erro: 'Falha ao salvar configurações.' });
+    }
   });
 });
 
@@ -12823,18 +12877,27 @@ app.get('/healthz', (req, res) => {
 // Middleware Global de Fallback Express (Anti-Crash para rotas e APIs)
 app.use(globalErrorMiddleware);
 
-// Graceful shutdown: encerra conexões socket e o HTTP server em até 5s
+// Graceful shutdown: encerra conexões socket e o HTTP server liberando conexões ativas
 let shuttingDown = false;
 function shutdown(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log(`\n[${signal}] Encerrando servidor com graça...`);
   const force = setTimeout(() => {
-    console.error('Forçando saída após timeout.');
-    process.exit(1);
+    console.warn('Encerramento forçado após timeout.');
+    process.exit(0);
   }, 5000);
   force.unref();
   try { io.close(); } catch (e) { }
+  if (server && typeof server.closeAllConnections === 'function') {
+    try { server.closeAllConnections(); } catch (e) { }
+  }
+  if (server && typeof server.closeIdleConnections === 'function') {
+    try { server.closeIdleConnections(); } catch (e) { }
+  }
+  if (serverHttp && typeof serverHttp.closeAllConnections === 'function') {
+    try { serverHttp.closeAllConnections(); } catch (e) { }
+  }
   server.close(() => {
     console.log('Servidor encerrado.');
     process.exit(0);
@@ -13053,6 +13116,36 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       console.log('📅 Controller Concierge & Reservas de Mesas carregado com sucesso.');
     } catch (eReservas) {
       console.error('Erro ao carregar o Controller Reservas:', eReservas);
+    }
+
+    try {
+      require('./controllers/engenharia-cardapio')(app, { db, masterDb, io, verificarToken, getTenantDb });
+      console.log('📊 Controller Engenharia de Cardápio & Matriz BCG carregado com sucesso.');
+    } catch (eEngenharia) {
+      console.error('Erro ao carregar o Controller Engenharia de Cardápio:', eEngenharia);
+    }
+
+    try {
+      require('./controllers/sommelier-ia')(app, { db, masterDb, io, verificarToken, getTenantDb });
+      console.log('🍷 Controller Sommelier IA & Harmonização Enogastronômica carregado com sucesso.');
+    } catch (eSommelier) {
+      console.error('Erro ao carregar o Controller Sommelier IA:', eSommelier);
+    }
+
+    try {
+      require('./controllers/hub-marketing')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth,
+        JWT_SECRET
+      });
+      console.log('📣 Controller Hub Marketing (CRM, Segmentação, Campanhas, Plataformas, Analytics RFM) carregado com sucesso.');
+    } catch (eHubMkt) {
+      console.error('Erro ao carregar o Controller Hub Marketing:', eHubMkt);
     }
 
     try {

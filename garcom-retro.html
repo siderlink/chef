@@ -1,37 +1,637 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>Garçom (Modo Retro)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
   <style>
-    body { font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
-    .header { background: #3ab55b; color: white; padding: 15px; font-size: 18px; font-weight: bold; text-align: center; }
-    .container { padding: 10px; }
-    .card { background: white; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; }
-    .btn { background: #3ab55b; color: white; padding: 10px; text-align: center; font-size: 16px; border-radius: 5px; border: none; width: 100%; display: block; margin-top: 10px; cursor: pointer; font-weight: bold; }
-    .btn-secondary { background: #666; }
-    .list-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 16px; }
-    .list-item:active { background: #ddd; }
-    h3 { margin-top: 0; }
-    input[type="text"], input[type="number"] { width: 90%; padding: 10px; font-size: 16px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; }
-    #cart-badge { background: red; color: white; border-radius: 10px; padding: 2px 6px; font-size: 12px; position: absolute; right: 10px; top: 15px; cursor: pointer; }
+    * { -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, Helvetica, Arial, sans-serif; background: #f1f5f9; color: #1e293b; padding-bottom: 30px; }
+    .header { background: #16a34a; color: white; padding: 12px 14px; font-size: 17px; font-weight: bold; position: relative; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+    .header-title { font-size: 17px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 75%; }
+    .header-actions { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; gap: 8px; }
+    .cart-badge { background: #ef4444; color: white; border-radius: 12px; padding: 4px 10px; font-size: 13px; font-weight: bold; cursor: pointer; border: 1.5px solid white; display: inline-block; }
+    .container { padding: 10px 12px; max-width: 800px; margin: 0 auto; }
+    .card { background: white; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .btn { background: #16a34a; color: white; padding: 12px 14px; text-align: center; font-size: 15px; border-radius: 8px; border: none; width: 100%; display: block; margin-top: 8px; cursor: pointer; font-weight: bold; -webkit-appearance: none; }
+    .btn:active { opacity: 0.8; }
+    .btn-secondary { background: #64748b; }
+    .btn-danger { background: #dc2626; }
+    .btn-primary { background: #2563eb; }
+    .btn-warning { background: #d97706; }
+    .btn-sm { width: auto; display: inline-block; padding: 6px 12px; font-size: 13px; margin: 0; }
+    .list-item { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 15px; cursor: pointer; }
+    .list-item:active { background: #f8fafc; }
+    h3 { font-size: 15px; margin: 12px 0 6px 0; color: #334155; text-transform: uppercase; letter-spacing: 0.5px; }
+    input[type="text"], input[type="number"], select { width: 100%; padding: 11px 12px; font-size: 15px; margin-bottom: 8px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: white; color: #1e293b; outline: none; -webkit-box-sizing: border-box; box-sizing: border-box; }
+    input:focus, select:focus { border-color: #16a34a; }
+    .mesa-grid { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: 0 -4px; }
+    .mesa-col { width: 50%; padding: 4px; -webkit-box-sizing: border-box; box-sizing: border-box; }
+    @media (min-width: 600px) { .mesa-col { width: 33.333%; } }
+    .mesa-box { background: white; border: 2px solid #cbd5e1; border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; }
+    .mesa-box:active { background: #f1f5f9; }
+    .mesa-box.ocupada { border-color: #f87171; background: #fff5f5; }
+    .mesa-box.disponivel { border-color: #86efac; background: #f0fdf4; }
+    .mesa-num { font-size: 18px; font-weight: bold; color: #0f172a; }
+    .mesa-st { font-size: 11px; font-weight: 600; margin-top: 4px; padding: 2px 6px; border-radius: 6px; display: inline-block; }
+    .mesa-st.ocupada { color: #b91c1c; background: #fee2e2; }
+    .mesa-st.disponivel { color: #15803d; background: #dcfce7; }
+    .mesa-val { font-size: 13px; font-weight: bold; color: #b91c1c; margin-top: 4px; }
+    .cat-scroll { overflow-x: auto; white-space: nowrap; padding-bottom: 8px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; }
+    .cat-chip { display: inline-block; padding: 7px 14px; margin-right: 6px; border-radius: 20px; background: #e2e8f0; color: #334155; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .cat-chip.active { background: #16a34a; color: white; }
+    .quick-tag { display: inline-block; padding: 5px 10px; margin: 3px; border-radius: 6px; background: #f1f5f9; border: 1px solid #cbd5e1; font-size: 12px; cursor: pointer; }
+    .quick-tag:active { background: #e2e8f0; }
+    .qtd-row { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; gap: 8px; margin: 8px 0; }
+    .btn-qtd { width: 44px; height: 44px; font-size: 20px; font-weight: bold; background: #e2e8f0; border: none; border-radius: 8px; cursor: pointer; }
   </style>
-  <script src="/theme-manager.js"></script>
-  <script src="/locales.js"></script>
-  <script src="/i18n.js"></script>
 </head>
 <body>
   <div class="header">
-    <span id="header-title">Mesas</span>
-    <span id="cart-badge" style="display:none;" onclick="showCart()">0</span>
+    <span class="header-title" id="header-title">Mesas</span>
+    <div class="header-actions">
+      <span class="cart-badge" id="cart-badge" style="display:none;" onclick="showCart()">0</span>
+    </div>
   </div>
   
   <div class="container" id="app">
     Carregando...
   </div>
 
-  
+  <script>
+    var state = {
+      view: 'mesas',
+      mesas: [],
+      cardapio: [],
+      todosPedidos: [],
+      mesaSelecionada: null,
+      produtoSelecionado: null,
+      carrinho: [],
+      nomeGarcom: (typeof localStorage !== 'undefined' && localStorage.getItem('chef_retro_garcom')) || 'Garçom 1',
+      categoriaAtiva: 'TODAS',
+      termoBusca: '',
+      filtroMesas: '',
+      mostrarItensMesa: false
+    };
+
+    function escHtml(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+    function escJs(s) { return JSON.stringify(String(s == null ? '' : s)).replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+
+    function ajax(method, url, data, callback) {
+      var xhr = new XMLHttpRequest();
+      xhr.open(method, url, true);
+      if (data) xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              callback(null, JSON.parse(xhr.responseText));
+            } catch (e) {
+              callback(null, xhr.responseText);
+            }
+          } else {
+            callback(xhr.status);
+          }
+        }
+      };
+      xhr.send(data ? JSON.stringify(data) : null);
+    }
+
+    function salvarNomeGarcom(val) {
+      state.nomeGarcom = val || 'Garçom';
+      try {
+        if (typeof localStorage !== 'undefined') localStorage.setItem('chef_retro_garcom', state.nomeGarcom);
+      } catch (_) {}
+    }
+
+    function extrairCategorias() {
+      var cats = ['TODAS'];
+      var seen = {};
+      seen['TODAS'] = true;
+      for (var i = 0; i < state.cardapio.length; i++) {
+        var c = state.cardapio[i].categoria || 'Geral';
+        if (!seen[c]) {
+          seen[c] = true;
+          cats.push(c);
+        }
+      }
+      return cats;
+    }
+
+    function obterPedidosDaMesa(nomeMesa) {
+      var res = [];
+      if (!state.todosPedidos || !nomeMesa) return res;
+      var nm = String(nomeMesa).toLowerCase().trim();
+      for (var i = 0; i < state.todosPedidos.length; i++) {
+        var p = state.todosPedidos[i];
+        var pMesa = String(p.mesa_comanda || p.localName || p.mesa_grupo || '').toLowerCase().trim();
+        if (pMesa === nm) {
+          res.push(p);
+        }
+      }
+      return res;
+    }
+
+    function calcularTotalMesa(nomeMesa) {
+      var pedidos = obterPedidosDaMesa(nomeMesa);
+      var tot = 0;
+      for (var i = 0; i < pedidos.length; i++) {
+        var val = parseFloat(String(pedidos[i].total || pedidos[i].price || 0).replace(',', '.')) || 0;
+        tot += val;
+      }
+      return tot;
+    }
+
+    function render() {
+      var app = document.getElementById('app');
+      var title = document.getElementById('header-title');
+      var badge = document.getElementById('cart-badge');
+
+      if (state.carrinho.length > 0) {
+        badge.style.display = 'inline-block';
+        badge.innerHTML = '🛒 ' + state.carrinho.length;
+      } else {
+        badge.style.display = 'none';
+      }
+
+      var html = '';
+
+      if (state.view === 'mesas') {
+        title.innerHTML = '⚡ Garçom Retro • Mesas';
+        html += '<div class="card" style="margin-bottom:12px;">';
+        html += '<label style="font-size:12px;font-weight:bold;color:#64748b;">NOME DO GARÇOM:</label>';
+        html += '<input type="text" id="input-garcom" value="' + escHtml(state.nomeGarcom) + '" placeholder="Seu Nome" onchange="salvarNomeGarcom(this.value)">';
+        html += '<div style="display:-webkit-flex;display:flex;gap:6px;">';
+        html += '<button class="btn btn-secondary btn-sm" style="flex:1;" onclick="loadMesas()">🔄 Atualizar Mesas</button>';
+        html += '</div>';
+        html += '</div>';
+
+        html += '<div class="card" style="margin-bottom:12px;">';
+        html += '<label style="font-size:12px;font-weight:bold;color:#64748b;">ABRIR MESA OU COMANDA RÁPIDA:</label>';
+        html += '<div style="display:-webkit-flex;display:flex;gap:6px;">';
+        html += '<input type="text" id="input-nova-mesa" placeholder="Ex: 05 ou Comanda 10" style="margin-bottom:0;flex:1;">';
+        html += '<button class="btn btn-sm" style="background:#2563eb;width:auto;margin:0;" onclick="abrirMesaDigitada()">Abrir</button>';
+        html += '</div>';
+        html += '</div>';
+
+        html += '<input type="text" placeholder="🔍 Filtrar mesas..." value="' + escHtml(state.filtroMesas) + '" onkeyup="state.filtroMesas=this.value;render()">';
+
+        html += '<h3>Mesas do Salão</h3>';
+        var listaMesas = [];
+        var filtro = (state.filtroMesas || '').toLowerCase().trim();
+        for (var mIdx = 0; mIdx < state.mesas.length; mIdx++) {
+          var mItem = state.mesas[mIdx];
+          if (!filtro || String(mItem.nome).toLowerCase().indexOf(filtro) !== -1) {
+            listaMesas.push(mItem);
+          }
+        }
+
+        if (listaMesas.length === 0) {
+          html += '<p style="padding:15px;color:#64748b;text-align:center;">Nenhuma mesa encontrada.</p>';
+        } else {
+          html += '<div class="mesa-grid">';
+          for (var i = 0; i < listaMesas.length; i++) {
+            var m = listaMesas[i];
+            var isOcupada = (m.status === 'Ocupada' || m.status === 'Aberta');
+            var clsBox = isOcupada ? 'ocupada' : 'disponivel';
+            var totM = calcularTotalMesa(m.nome);
+            html += '<div class="mesa-col">';
+            html += '<div class="mesa-box ' + clsBox + '" onclick="abrirMesa(' + escJs(m.nome) + ')">';
+            html += '<div class="mesa-num">' + escHtml(m.nome) + '</div>';
+            html += '<div class="mesa-st ' + clsBox + '">' + (isOcupada ? 'Ocupada' : 'Disponível') + '</div>';
+            if (isOcupada && totM > 0) {
+              html += '<div class="mesa-val">R$ ' + totM.toFixed(2).replace('.', ',') + '</div>';
+            }
+            html += '</div></div>';
+          }
+          html += '</div>';
+        }
+      } 
+      else if (state.view === 'cardapio') {
+        title.innerHTML = 'Mesa: ' + escHtml(state.mesaSelecionada);
+        html += '<div style="display:-webkit-flex;display:flex;gap:6px;margin-bottom:8px;">';
+        html += '<button class="btn btn-secondary btn-sm" style="flex:1;" onclick="voltarMesas()">⬅ Trocar Mesa</button>';
+        if (state.carrinho.length > 0) {
+          html += '<button class="btn btn-sm" style="flex:1;background:#2563eb;" onclick="showCart()">🛒 Ver Carrinho (' + state.carrinho.length + ')</button>';
+        }
+        html += '</div>';
+
+        var pedidosMesa = obterPedidosDaMesa(state.mesaSelecionada);
+        if (pedidosMesa.length > 0) {
+          var totalMesa = calcularTotalMesa(state.mesaSelecionada);
+          html += '<div class="card" style="background:#fef2f2;border-color:#fca5a5;">';
+          html += '<div style="display:-webkit-flex;display:flex;justify-content:space-between;align-items:center;">';
+          html += '<div><b>Consumo Atual:</b> R$ ' + totalMesa.toFixed(2).replace('.', ',') + ' (' + pedidosMesa.length + ' itens)</div>';
+          html += '<button class="btn btn-sm" style="background:#64748b;width:auto;" onclick="toggleItensMesa()">' + (state.mostrarItensMesa ? 'Ocultar' : 'Ver') + '</button>';
+          html += '</div>';
+          if (state.mostrarItensMesa) {
+            html += '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #f87171;font-size:13px;">';
+            for (var pIdx = 0; pIdx < pedidosMesa.length; pIdx++) {
+              var ped = pedidosMesa[pIdx];
+              var stPed = ped.status || 'Pendente';
+              html += '<div style="padding:4px 0;display:-webkit-flex;display:flex;justify-content:space-between;">';
+              html += '<span>' + (ped.quantity || 1) + 'x ' + escHtml(ped.productName) + '</span>';
+              html += '<span style="color:#64748b;">(' + escHtml(stPed) + ') R$ ' + (parseFloat(ped.total || ped.price || 0)).toFixed(2).replace('.', ',') + '</span>';
+              html += '</div>';
+            }
+            html += '</div>';
+          }
+          html += '</div>';
+        }
+
+        html += '<input type="text" placeholder="🔍 Buscar produto no cardápio..." value="' + escHtml(state.termoBusca) + '" onkeyup="onBuscaProduto(this.value)">';
+
+        var categorias = extrairCategorias();
+        html += '<div class="cat-scroll">';
+        for (var cIdx = 0; cIdx < categorias.length; cIdx++) {
+          var catNome = categorias[cIdx];
+          var clsCat = (state.categoriaAtiva === catNome) ? 'cat-chip active' : 'cat-chip';
+          html += '<span class="' + clsCat + '" onclick="selecionarCategoria(' + escJs(catNome) + ')">' + escHtml(catNome) + '</span>';
+        }
+        html += '</div>';
+
+        var termo = (state.termoBusca || '').toLowerCase().trim();
+        var catAtiva = state.categoriaAtiva;
+        var produtosFiltrados = [];
+        for (var j = 0; j < state.cardapio.length; j++) {
+          var pr = state.cardapio[j];
+          var matchCat = (catAtiva === 'TODAS' || (pr.categoria || 'Geral') === catAtiva);
+          var matchTermo = (!termo || (pr.nome || '').toLowerCase().indexOf(termo) !== -1 || (pr.categoria || '').toLowerCase().indexOf(termo) !== -1);
+          if (matchCat && matchTermo) {
+            produtosFiltrados.push({ idx: j, prod: pr });
+          }
+        }
+
+        if (produtosFiltrados.length === 0) {
+          html += '<p style="padding:20px;color:#64748b;text-align:center;">Nenhum produto encontrado nesta categoria.</p>';
+        } else {
+          for (var pf = 0; pf < produtosFiltrados.length; pf++) {
+            var itemP = produtosFiltrados[pf];
+            var prod = itemP.prod;
+            html += '<div class="card list-item" onclick="abrirProduto(' + itemP.idx + ')">';
+            html += '<div style="display:-webkit-flex;display:flex;justify-content:space-between;align-items:center;">';
+            html += '<div><b>' + escHtml(prod.nome) + '</b><br><span style="font-size:12px;color:#64748b;">' + escHtml(prod.categoria || 'Geral') + '</span></div>';
+            html += '<div style="font-size:16px;font-weight:bold;color:#16a34a;">R$ ' + parseFloat(prod.preco).toFixed(2).replace('.', ',') + '</div>';
+            html += '</div>';
+            html += '</div>';
+          }
+        }
+      }
+      else if (state.view === 'produto') {
+        var p = state.produtoSelecionado;
+        title.innerHTML = 'Adicionar Item';
+        html += '<div class="card">';
+        html += '<h2 style="font-size:18px;margin-bottom:4px;">' + escHtml(p.nome) + '</h2>';
+        html += '<div style="font-size:18px;font-weight:bold;color:#16a34a;margin-bottom:12px;">R$ ' + parseFloat(p.preco).toFixed(2).replace('.', ',') + '</div>';
+        
+        html += '<label style="font-weight:bold;font-size:13px;">Quantidade:</label>';
+        html += '<div class="qtd-row">';
+        html += '<button class="btn-qtd" onclick="alterarQtd(-1)">-</button>';
+        html += '<input type="number" id="prod-qtd" value="1" min="1" style="width:70px;text-align:center;margin-bottom:0;font-size:18px;font-weight:bold;" onchange="updateRetroMontavelPrice()">';
+        html += '<button class="btn-qtd" onclick="alterarQtd(1)">+</button>';
+        html += '</div>';
+
+        html += '<label style="font-weight:bold;font-size:13px;margin-top:8px;display:block;">Observações:</label>';
+        html += '<input type="text" id="prod-obs" placeholder="Ex: Sem cebola, gelo e limão...">';
+        html += '<div style="margin-bottom:10px;">';
+        html += '<span class="quick-tag" onclick="inserirTag(0)">+ Sem cebola</span>';
+        html += '<span class="quick-tag" onclick="inserirTag(1)">+ Sem gelo</span>';
+        html += '<span class="quick-tag" onclick="inserirTag(2)">+ Gelo e limão</span>';
+        html += '<span class="quick-tag" onclick="inserirTag(3)">+ Bem passado</span>';
+        html += '<span class="quick-tag" onclick="inserirTag(4)">+ Ao ponto</span>';
+        html += '<span class="quick-tag" onclick="inserirTag(5)">+ Para viagem</span>';
+        html += '</div>';
+
+        html += '<div id="retro-comps-section" style="display:none;margin-bottom:8px;"><div id="retro-montavel-cats"></div><div id="retro-montavel-preco" style="font-weight:700;color:#8b5cf6;margin-top:6px;font-size:15px;"></div><input type="hidden" id="retro-comps-json" value="[]"></div>';
+        
+        html += '<button class="btn" onclick="addCarrinho()">✅ Adicionar ao Pedido</button>';
+        html += '<button class="btn btn-secondary" onclick="cancelarProduto()">Voltar ao Cardápio</button>';
+        html += '</div>';
+      }
+      else if (state.view === 'carrinho') {
+        title.innerHTML = 'Carrinho • ' + escHtml(state.mesaSelecionada);
+        if (state.carrinho.length === 0) {
+          html += '<div class="card" style="text-align:center;padding:30px;">';
+          html += '<p style="font-size:16px;color:#64748b;margin-bottom:12px;">Seu carrinho está vazio.</p>';
+          html += '<button class="btn" onclick="cancelarProduto()">Ir para o Cardápio</button>';
+          html += '</div>';
+        } else {
+          var subtotalCarrinho = 0;
+          for (var k = 0; k < state.carrinho.length; k++) {
+            var item = state.carrinho[k];
+            var totItem = item.total || 0;
+            subtotalCarrinho += totItem;
+            html += '<div class="card">';
+            html += '<div style="display:-webkit-flex;display:flex;justify-content:space-between;align-items:center;">';
+            html += '<div><b>' + item.quantity + 'x ' + escHtml(item.productName) + '</b></div>';
+            html += '<div style="font-weight:bold;color:#16a34a;">R$ ' + totItem.toFixed(2).replace('.', ',') + '</div>';
+            html += '</div>';
+            if (item.observations) {
+              html += '<div style="font-size:12px;color:#dc2626;margin-top:4px;">Obs: ' + escHtml(item.observations) + '</div>';
+            }
+            if (item.composicoes && item.composicoes.length > 0) {
+              var nomesC = [];
+              for (var ci = 0; ci < item.composicoes.length; ci++) {
+                var comp = item.composicoes[ci];
+                nomesC.push(typeof comp === 'object' ? comp.categoria + ': ' + comp.opcao : comp);
+              }
+              html += '<div style="font-size:12px;color:#8b5cf6;margin-top:2px;">' + escHtml(nomesC.join(' | ')) + '</div>';
+            }
+            html += '<button class="btn btn-danger btn-sm" style="margin-top:8px;" onclick="removerItem(' + k + ')">🗑 Remover</button>';
+            html += '</div>';
+          }
+
+          html += '<div class="card" style="background:#f8fafc;border-color:#94a3b8;font-size:17px;font-weight:bold;display:-webkit-flex;display:flex;justify-content:space-between;">';
+          html += '<span>Subtotal Pedido:</span>';
+          html += '<span style="color:#16a34a;">R$ ' + subtotalCarrinho.toFixed(2).replace('.', ',') + '</span>';
+          html += '</div>';
+
+          html += '<button class="btn" id="btn-enviar" style="font-size:17px;padding:14px;" onclick="enviarPedido()">🚀 Enviar Pedido p/ Cozinha</button>';
+          html += '<button class="btn btn-secondary" onclick="cancelarProduto()">+ Adicionar Mais Itens</button>';
+        }
+      }
+
+      app.innerHTML = html;
+    }
+
+    function toggleItensMesa() {
+      state.mostrarItensMesa = !state.mostrarItensMesa;
+      render();
+    }
+
+    function onBuscaProduto(val) {
+      state.termoBusca = val || '';
+      render();
+    }
+
+    function selecionarCategoria(cat) {
+      state.categoriaAtiva = cat;
+      render();
+    }
+
+    function cancelarProduto() {
+      state.produtoSelecionado = null;
+      state.view = 'cardapio';
+      render();
+    }
+
+    function inserirTag(idx) {
+      var tags = ['Sem cebola', 'Sem gelo', 'Gelo e limão', 'Bem passado', 'Ao ponto', 'Para viagem'];
+      inserirObs(tags[idx] || '');
+    }
+
+    function alterarQtd(delta) {
+      var inp = document.getElementById('prod-qtd');
+      if (!inp) return;
+      var cur = parseInt(inp.value, 10) || 1;
+      cur += delta;
+      if (cur < 1) cur = 1;
+      inp.value = cur;
+      updateRetroMontavelPrice();
+    }
+
+    function inserirObs(texto) {
+      var inp = document.getElementById('prod-obs');
+      if (!inp) return;
+      var atual = inp.value ? inp.value.trim() : '';
+      if (atual) {
+        inp.value = atual + ', ' + texto;
+      } else {
+        inp.value = texto;
+      }
+    }
+
+    function loadMesas() {
+      ajax('GET', '/api/retro/mesas', null, function(err, data) {
+        if (!err && data) {
+          if (data.mesas) state.mesas = data.mesas;
+          if (data.pedidos) state.todosPedidos = data.pedidos;
+          render();
+        }
+      });
+    }
+
+    function loadCardapio() {
+      ajax('GET', '/api/retro/cardapio', null, function(err, data) {
+        if (!err && data && data.produtos) {
+          state.cardapio = data.produtos;
+          render();
+        }
+      });
+    }
+
+    function abrirMesa(nome) {
+      state.mesaSelecionada = nome;
+      state.view = 'cardapio';
+      state.termoBusca = '';
+      state.categoriaAtiva = 'TODAS';
+      state.mostrarItensMesa = false;
+      render();
+    }
+
+    function abrirMesaDigitada() {
+      var val = document.getElementById('input-nova-mesa') ? document.getElementById('input-nova-mesa').value : '';
+      val = val.trim();
+      if (val) {
+        abrirMesa(val);
+      }
+    }
+
+    function voltarMesas() {
+      state.mesaSelecionada = null;
+      state.view = 'mesas';
+      state.termoBusca = '';
+      state.mostrarItensMesa = false;
+      loadMesas();
+    }
+
+    function abrirProduto(idx) {
+      state.produtoSelecionado = state.cardapio[idx];
+      state.view = 'produto';
+      render();
+      fetchRetroMontavel(state.cardapio[idx].id);
+    }
+
+    var _retroComps = [];
+    var _retroMontavelConfig = null;
+
+    function fetchRetroMontavel(productId) {
+      _retroMontavelConfig = null;
+      _retroComps = [];
+      var section = document.getElementById('retro-comps-section');
+      if (section) section.style.display = 'none';
+      ajax('GET', '/api/montaveis/produto/' + productId, null, function(err, data) {
+        if (!err && data && data.id) { _retroMontavelConfig = data; renderRetroMontavelUI(); }
+      });
+    }
+
+    function renderRetroMontavelUI() {
+      var section = document.getElementById('retro-comps-section');
+      var catsContainer = document.getElementById('retro-montavel-cats');
+      var precoEl = document.getElementById('retro-montavel-preco');
+      var hiddenInput = document.getElementById('retro-comps-json');
+      if (!section || !_retroMontavelConfig) { if (section) section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      var p = state.produtoSelecionado;
+      _retroComps = [];
+      for (var ci = 0; ci < _retroMontavelConfig.categorias.length; ci++) {
+        _retroComps.push([]);
+      }
+
+      var htmlCats = '';
+      for (var i = 0; i < _retroMontavelConfig.categorias.length; i++) {
+        var cat = _retroMontavelConfig.categorias[i];
+        var isSingle = cat.max_escolhas === 1;
+        var optsHtml = '';
+        for (var oi = 0; oi < cat.opcoes.length; oi++) {
+          var opt = cat.opcoes[oi];
+          var inputType = isSingle ? 'radio' : 'checkbox';
+          var inputName = 'rretro-' + i;
+          optsHtml += '<label style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;gap:6px;padding:6px 8px;background:white;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;font-size:13px;margin-bottom:3px;">' +
+            '<input type="' + inputType + '" name="' + inputName + '" value="' + oi + '" onchange="onRetroMontavelSelect(' + i + ',' + oi + ',' + isSingle + ')">' +
+            '<span style="-webkit-flex:1;flex:1;">' + escHtml(opt.nome) + '</span>' +
+            (opt.preco > 0 ? '<span style="color:#2563eb;font-weight:bold;font-size:12px;">+R$' + opt.preco.toFixed(2).replace('.', ',') + '</span>' : '') +
+            '</label>';
+        }
+        htmlCats += '<div style="margin-bottom:8px;"><div style="font-size:12px;font-weight:bold;color:#475569;margin-bottom:3px;">' + escHtml(cat.nome) +
+          (cat.obrigatoria ? ' <span style="color:#dc2626;">*</span>' : '') +
+          (cat.max_escolhas > 1 ? ' <span style="color:#94a3b8;font-weight:normal;">(até ' + cat.max_escolhas + ')</span>' : '') +
+          '</div><div>' + optsHtml + '</div></div>';
+      }
+      catsContainer.innerHTML = htmlCats;
+      updateRetroMontavelPrice();
+      if (hiddenInput) hiddenInput.value = JSON.stringify(_retroComps);
+    }
+
+    window.onRetroMontavelSelect = function(catIdx, optIdx, isSingle) {
+      if (isSingle) {
+        _retroComps[catIdx] = [optIdx];
+      } else {
+        var arr = _retroComps[catIdx];
+        var pos = -1;
+        for (var pi = 0; pi < arr.length; pi++) {
+          if (arr[pi] === optIdx) { pos = pi; break; }
+        }
+        if (pos >= 0) {
+          arr.splice(pos, 1);
+        } else {
+          var max = _retroMontavelConfig.categorias[catIdx].max_escolhas || 1;
+          if (arr.length < max) arr.push(optIdx);
+        }
+      }
+      updateRetroMontavelPrice();
+      var hiddenInput = document.getElementById('retro-comps-json');
+      if (hiddenInput) hiddenInput.value = JSON.stringify(_retroComps);
+    };
+
+    function updateRetroMontavelPrice() {
+      var precoEl = document.getElementById('retro-montavel-preco');
+      if (!precoEl || !_retroMontavelConfig) return;
+      var p = state.produtoSelecionado;
+      var total = _retroMontavelConfig.pricing_model === 'fixo' ? _retroMontavelConfig.preco_fixo : p.preco;
+      if (_retroMontavelConfig.pricing_model === 'soma') {
+        for (var ci = 0; ci < _retroMontavelConfig.categorias.length; ci++) {
+          var cat = _retroMontavelConfig.categorias[ci];
+          var selOpts = _retroComps[ci] || [];
+          for (var si = 0; si < selOpts.length; si++) {
+            var oi = selOpts[si];
+            if (cat.opcoes[oi]) total += cat.opcoes[oi].preco || 0;
+          }
+        }
+      }
+      var qtd = parseInt(document.getElementById('prod-qtd') ? document.getElementById('prod-qtd').value : 1, 10) || 1;
+      precoEl.setAttribute('data-unit-price', total);
+      precoEl.textContent = 'Total: R$ ' + (total * qtd).toFixed(2).replace('.', ',');
+    }
+
+    function addCarrinho() {
+      var qtd = parseInt(document.getElementById('prod-qtd').value, 10) || 1;
+      var obs = document.getElementById('prod-obs').value || '';
+      var p = state.produtoSelecionado;
+      var rawComps = JSON.parse(document.getElementById('retro-comps-json') ? (document.getElementById('retro-comps-json').value || '[]') : '[]');
+      var composicoes = [];
+      var unitPrice = p.preco;
+
+      if (_retroMontavelConfig) {
+        for (var ci = 0; ci < _retroMontavelConfig.categorias.length; ci++) {
+          var cat = _retroMontavelConfig.categorias[ci];
+          var selOpts = rawComps[ci] || [];
+          for (var si = 0; si < selOpts.length; si++) {
+            var opt = cat.opcoes[selOpts[si]];
+            if (opt) composicoes.push({ categoria: cat.nome, opcao: opt.nome, preco: opt.preco || 0 });
+          }
+        }
+        var precoEl = document.getElementById('retro-montavel-preco');
+        unitPrice = precoEl && precoEl.getAttribute('data-unit-price') ? parseFloat(precoEl.getAttribute('data-unit-price')) : unitPrice;
+      } else {
+        composicoes = rawComps;
+      }
+
+      state.carrinho.push({
+        userName: state.nomeGarcom,
+        mesa_comanda: state.mesaSelecionada,
+        productName: p.nome,
+        quantity: qtd,
+        observations: obs,
+        composicoes: composicoes,
+        printer: p.impressora || '',
+        sector: p.setor || '',
+        total: unitPrice * qtd
+      });
+
+      _retroComps = [];
+      _retroMontavelConfig = null;
+      state.produtoSelecionado = null;
+      state.view = 'cardapio';
+      render();
+    }
+
+    function removerItem(idx) {
+      state.carrinho.splice(idx, 1);
+      render();
+    }
+
+    function showCart() {
+      if (state.mesaSelecionada) {
+        state.view = 'carrinho';
+        render();
+      }
+    }
+
+    function enviarPedido() {
+      if (state.carrinho.length === 0) return;
+      var btn = document.getElementById('btn-enviar');
+      btn.innerHTML = 'Enviando ao servidor...';
+      btn.disabled = true;
+
+      var sentCount = 0;
+      var errCount = 0;
+      var total = state.carrinho.length;
+
+      for (var i = 0; i < total; i++) {
+        var item = state.carrinho[i];
+        ajax('POST', '/api/retro/pedido', item, function(err, res) {
+          sentCount++;
+          if (err) errCount++;
+          if (sentCount === total) {
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Enviar Pedido p/ Cozinha';
+            if (errCount === 0) {
+              alert('Pedido enviado com sucesso para a produção!');
+              state.carrinho = [];
+              state.view = 'cardapio';
+              loadMesas();
+            } else {
+              alert('Atenção: Houve falha ao enviar ' + errCount + ' item(ns). Verifique o sinal do Wi-Fi e tente novamente.');
+            }
+          }
+        });
+      }
+    }
+
+    // Inicialização
+    loadCardapio();
+    loadMesas();
+  </script>
 </body>
 </html>
-

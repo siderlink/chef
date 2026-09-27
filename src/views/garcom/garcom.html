@@ -11,6 +11,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Detector Inteligente de Dispositivos Legados (iPad Mini 1G / Windows XP) -->
+  <script>
+    (function() {
+      try {
+        var ua = (navigator && navigator.userAgent) ? navigator.userAgent : '';
+        var isLegacyIOS = /(iPad|iPhone|iPod).*OS [5-9]_/i.test(ua) || /Version\/[5-9]\./i.test(ua);
+        var isWinXP = /Windows NT 5\./i.test(ua);
+        if (isLegacyIOS || isWinXP) {
+          if (confirm('Aparelho clássico detectado (iPad Mini / Windows XP).\n\nDeseja abrir o Modo Leve Turbo otimizado para o seu aparelho?')) {
+            window.location.replace('/garcom-retro.html');
+          }
+        }
+      } catch (_) {}
+    })();
+  </script>
   <!-- Dynamic GTAG & Meta Pixel Tracking -->
   <script src="/tracking-loader.js"></script>
   <script src="/theme-manager.js?v=20260901paletas"></script>
@@ -1519,6 +1534,12 @@
       </div>
 
       <button id="btn-login" aria-label="Entrar no sistema">Entrar</button>
+
+      <div style="margin-top:16px; text-align:center;">
+        <a href="/garcom-retro.html" style="font-size:12px; color:rgba(255,255,255,0.9); text-decoration:none; padding:6px 12px; border-radius:8px; background:rgba(0,0,0,0.18); display:inline-block; font-weight:600;">
+          ⚡ Modo Retro (iPad Mini 1G / Aparelhos Antigos)
+        </a>
+      </div>
     </div>
 
     <!-- Tables -->

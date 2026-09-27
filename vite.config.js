@@ -10,7 +10,8 @@ const copyRootStatics = () => ({
   closeBundle() {
     const files = [
       'style.css', 'fila.css', 'dark-mode.css', 'broadcast.js',
-      'main.js', 'auth.js', 'fuzzy-search.js'
+      'main.js', 'auth.js', 'fuzzy-search.js',
+      'device-adapters.css', 'device-adapters.js'
     ];
     for (const f of files) {
       let src = resolve(__dirname, f);
@@ -152,7 +153,8 @@ export default defineConfig({
         'pagina-vendas-3': resolve(__dirname, 'pagina-vendas-3.html'),
         'pagina-vendas-3d': resolve(__dirname, 'pagina-vendas-3d.html'),
         'site-vendas-nichos': resolve(__dirname, 'site-vendas-nichos.html'),
-        'vendas-nichos': resolve(__dirname, 'vendas-nichos.html')
+        'vendas-nichos': resolve(__dirname, 'vendas-nichos.html'),
+        'hub-marketing': resolve(__dirname, 'hub-marketing.html')
       }
     }
   }

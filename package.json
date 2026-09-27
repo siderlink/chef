@@ -6,7 +6,7 @@
     "scripts": {
         "prestart": "node boot.js",
         "start": "node setup-quiz.js",
-        "start:direct": "concurrently \"node server.js\" \"cross-env NODE_OPTIONS=--max-old-space-size=4096 vite --host\"",
+        "start:direct": "concurrently --restart-tries -1 --restart-after 3000 \"node server.js\" \"cross-env NODE_OPTIONS=--max-old-space-size=4096 vite --host\"",
         "start:watchdog": "node watchdog.js",
         "dev": "vite --host",
         "build": "vite build",

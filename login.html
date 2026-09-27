@@ -4,6 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Chef Cozinha</title>
+  <!-- Detector Inteligente de Dispositivos Legados (iPad Mini 1G / Windows XP) -->
+  <script>
+    (function() {
+      try {
+        var ua = (navigator && navigator.userAgent) ? navigator.userAgent : '';
+        var isLegacyIOS = /(iPad|iPhone|iPod).*OS [5-9]_/i.test(ua) || /Version\/[5-9]\./i.test(ua);
+        var isWinXP = /Windows NT 5\./i.test(ua);
+        if (isLegacyIOS || isWinXP) {
+          if (confirm('Aparelho clássico detectado (iPad Mini / Windows XP).\n\nDeseja abrir o Modo Leve Turbo otimizado para seu aparelho?')) {
+            window.location.replace('/garcom-retro.html');
+          }
+        }
+      } catch (_) {}
+    })();
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
@@ -586,6 +601,13 @@
       <div style="margin-top:14px; font-size:12.5px; color:#64748b; text-align:center;">
         O sistema direcionará automaticamente para sua tela autorizada (Garçom, Caixa ou Cozinha).
       </div>
+    </div>
+
+    <!-- Modo Leve / Aparelhos Antigos (iPad Mini 1G, tablets antigos) -->
+    <div style="margin-top: 20px; padding-top: 14px; border-top: 1px dashed var(--card-border); text-align: center;">
+      <a href="/garcom-retro.html" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-decoration: none; padding: 7px 12px; border-radius: 8px; background: var(--toggle-bg); border: 1px solid var(--input-border); transition: all 0.2s;" title="Interface superleve (ES5 puro) compatível com iPad Mini 1G, Windows XP e dispositivos antigos">
+        <span>⚡ Modo Leve (iPad Antigo / Garçom Retro)</span>
+      </a>
     </div>
   </div>
 

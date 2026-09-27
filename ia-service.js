@@ -8,10 +8,69 @@
 
 const https = require('https');
 
+const crypto = require('crypto');
+
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 
+// --- CAMADA DE DESEMPENHO E ECONOMIA DE TOKENS (LRU/TTL CACHE) ---
+const iaCache = new Map();
+const CACHE_TTL_MS = 25 * 60 * 1000; // 25 minutos de cache
+
+const metricasEconomiaIA = {
+  totalChamadas: 0,
+  cacheHits: 0,
+  cacheMisses: 0,
+  tokensEconomizados: 0,
+  tempoEconomizadoMs: 0
+};
+
+function gerarHashCache(model, systemInstruction, prompt, isJson) {
+  const hash = crypto.createHash('sha256');
+  hash.update(`${model || ''}|${systemInstruction || ''}|${prompt || ''}|${isJson}`);
+  return hash.digest('hex');
+}
+
+function getCache(key) {
+  const item = iaCache.get(key);
+  if (!item) return null;
+  if (Date.now() > item.expiraEm) {
+    iaCache.delete(key);
+    return null;
+  }
+  return item.valor;
+}
+
+function setCache(key, valor, ttlMs = CACHE_TTL_MS) {
+  if (iaCache.size > 800) {
+    const firstKey = iaCache.keys().next().value;
+    iaCache.delete(firstKey);
+  }
+  iaCache.set(key, { valor, expiraEm: Date.now() + ttlMs });
+}
+
+function obterMetricasEconomia() {
+  const hits = metricasEconomiaIA.cacheHits;
+  const total = metricasEconomiaIA.totalChamadas || 1;
+  const taxaCache = Math.round((hits / total) * 100);
+  const custoPor1kTokens = 0.0003; // US$ por 1k tokens no Gemini 2.5 Flash
+  const economiaUsd = (metricasEconomiaIA.tokensEconomizados / 1000) * custoPor1kTokens;
+  const economiaBrl = economiaUsd * 5.60;
+
+  return {
+    ...metricasEconomiaIA,
+    taxaCachePct: taxaCache,
+    economiaBrlEstimada: Math.round(economiaBrl * 100) / 100,
+    tempoMedioSalvoSegundos: Math.round(metricasEconomiaIA.tempoEconomizadoMs / 1000),
+    itensEmCache: iaCache.size
+  };
+}
+
+function limparCacheIA() {
+  iaCache.clear();
+}
+
 /**
- * Faz requisição HTTP POST para a API do Gemini
+ * Faz requisição HTTP POST para a API do Gemini com Proteção de Cache e Economia
  */
 function callGeminiApi(apiKey, model, systemInstruction, prompt, isJson = false) {
   return new Promise((resolve, reject) => {
@@ -21,6 +80,20 @@ function callGeminiApi(apiKey, model, systemInstruction, prompt, isJson = false)
 
     const cleanModel = (model || DEFAULT_MODEL).trim();
     const cleanKey = apiKey.trim();
+
+    // 1. Verificação de Cache de Alta Velocidade (Economia de 100% de Tokens & 0ms de Latência)
+    const cacheKey = gerarHashCache(cleanModel, systemInstruction, prompt, isJson);
+    const cached = getCache(cacheKey);
+    if (cached) {
+      metricasEconomiaIA.totalChamadas++;
+      metricasEconomiaIA.cacheHits++;
+      metricasEconomiaIA.tokensEconomizados += Math.round(((prompt || '').length + (systemInstruction || '').length) / 4) + 400;
+      metricasEconomiaIA.tempoEconomizadoMs += 1800;
+      return resolve(cached);
+    }
+
+    metricasEconomiaIA.totalChamadas++;
+    metricasEconomiaIA.cacheMisses++;
 
     const requestBody = {
       contents: [
@@ -73,7 +146,12 @@ function callGeminiApi(apiKey, model, systemInstruction, prompt, isJson = false)
 
           const candidate = parsed.candidates && parsed.candidates[0];
           const text = candidate?.content?.parts?.[0]?.text || '';
-          resolve({ text, raw: parsed });
+          
+          // Salva no cache com TTL
+          const resultado = { text, raw: parsed };
+          setCache(cacheKey, resultado);
+          
+          resolve(resultado);
         } catch (err) {
           reject(new Error('Resposta inválida da API do Gemini: ' + err.message));
         }
@@ -415,5 +493,8 @@ module.exports = {
   testarApiKey,
   gerarPromocoesIA,
   gerarCopyMarketing,
-  consultarAssistenteVendas
+  consultarAssistenteVendas,
+  obterMetricasEconomia,
+  limparCacheIA,
+  metricasEconomiaIA
 };

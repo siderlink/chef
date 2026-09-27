@@ -305,13 +305,15 @@ app.use((req, res, next) => {
     return res.status(403).send('Acesso negado.');
   }
 
-  // 5. Extensões restritas
-  if (PROD_BLOCKED_STATIC_EXTS.some(b => lower.endsWith(b))) {
-    return res.status(403).send('Acesso negado.');
+  // 5. Extensões restritas (permite instaladores oficiais sob /api/sync/installers/)
+  if (!lower.startsWith('/api/sync/installers/')) {
+    if (PROD_BLOCKED_STATIC_EXTS.some(b => lower.endsWith(b))) {
+      return res.status(403).send('Acesso negado.');
+    }
   }
 
   // 6. Arquivos .json que não sejam manifest.json ou plugins autorizados
-  if (lower.endsWith('.json') && filename !== 'manifest.json' && !lower.startsWith('/plugins/')) {
+  if (lower.endsWith('.json') && filename !== 'manifest.json' && filename !== 'super-admin-manifest.json' && !lower.startsWith('/plugins/')) {
     return res.status(403).send('Acesso negado.');
   }
 

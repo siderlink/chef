@@ -201,7 +201,7 @@ class TunnelManager {
     try {
       const child = spawn(cmd.bin, args, {
         stdio: ['pipe', 'pipe', 'pipe'],
-        shell: IS_WIN,
+        shell: tunnelName === 'localtunnel' && IS_WIN,
         windowsHide: true,
         env: { ...process.env }
       });
@@ -220,9 +220,12 @@ class TunnelManager {
         // Tenta extrair URL por regex
         const urlMatch = text.match(cmd.urlRegex);
         if (urlMatch && urlMatch.length > 0) {
-          tunnel.url = urlMatch[urlMatch.length - 1]; // pega a última URL encontrada
+          tunnel.url = urlMatch[urlMatch.length - 1].replace(/[.,;)"']+$/, '').trim();
           tunnel.status = 'running';
           this._log(tunnelName, `✓ URL pública: ${tunnel.url}`);
+          if (this.db) {
+            this.db.run("INSERT INTO configuracoes_global (chave, valor) VALUES ('tunnel_active_url', ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor", [tunnel.url], () => {});
+          }
           if (this.logCallback) this.logCallback(JSON.stringify({ type: 'url', tunnel: tunnelName, url: tunnel.url }));
         }
 
@@ -233,9 +236,12 @@ class TunnelManager {
             for (const line of lines) {
               const json = JSON.parse(line);
               if (json.payload && json.payload.url) {
-                tunnel.url = json.payload.url;
+                tunnel.url = json.payload.url.replace(/[.,;)"']+$/, '').trim();
                 tunnel.status = 'running';
                 this._log(tunnelName, `✓ URL pública: ${tunnel.url}`);
+                if (this.db) {
+                  this.db.run("INSERT INTO configuracoes_global (chave, valor) VALUES ('tunnel_active_url', ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor", [tunnel.url], () => {});
+                }
                 if (this.logCallback) this.logCallback(JSON.stringify({ type: 'url', tunnel: tunnelName, url: tunnel.url }));
               }
             }
@@ -248,9 +254,12 @@ class TunnelManager {
         // cloudflared escreve a URL no stderr também
         const urlMatch = text.match(cmd.urlRegex);
         if (urlMatch && urlMatch.length > 0) {
-          tunnel.url = urlMatch[urlMatch.length - 1];
+          tunnel.url = urlMatch[urlMatch.length - 1].replace(/[.,;)"']+$/, '').trim();
           tunnel.status = 'running';
           this._log(tunnelName, `✓ URL pública: ${tunnel.url}`);
+          if (this.db) {
+            this.db.run("INSERT INTO configuracoes_global (chave, valor) VALUES ('tunnel_active_url', ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor", [tunnel.url], () => {});
+          }
           if (this.logCallback) this.logCallback(JSON.stringify({ type: 'url', tunnel: tunnelName, url: tunnel.url }));
         }
       });
@@ -357,13 +366,19 @@ class TunnelManager {
     await this.loadConfig();
     if (this.globalConfig.mode !== 'auto') return;
     this._log('system', 'Auto-start habilitado — iniciando túneis configurados...');
+    let startedAny = false;
     for (const [name, tunnel] of Object.entries(this.tunnels)) {
       if (tunnel.config && tunnel.config.enabled) {
         this._log('system', `Auto-start: ${name}`);
         this.start(name);
+        startedAny = true;
         // Delay entre startups para evitar conflito
         await new Promise(r => setTimeout(r, 2000));
       }
+    }
+    if (!startedAny && TUNNEL_COMMANDS['cloudflare'] && TUNNEL_COMMANDS['cloudflare'].installed()) {
+      this._log('system', 'Auto-start: iniciando Cloudflare como túnel padrão...');
+      this.start('cloudflare');
     }
   }
 }

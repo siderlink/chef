@@ -17,6 +17,16 @@ const TunnelManager = require('../tunnel-manager');
 module.exports = function(app, masterDb, sqlite3, options) {
   const { superAdminAuth, io } = options || {};
   const tunnelManager = new TunnelManager();
+  tunnelManager.setDb(masterDb);
+  tunnelManager.loadConfig().catch(() => {});
+  if (io) {
+    tunnelManager.setLogCallback((msg) => {
+      try { io.emit('tunnel_log', msg); } catch (e) {}
+    });
+  }
+  setTimeout(() => {
+    tunnelManager.autoStart().catch(() => {});
+  }, 4000);
 
   function gitExec(cmd, timeoutMs) {
     return new Promise((resolve) => {
@@ -753,6 +763,70 @@ app.post('/api/super/servers/test', superAdminAuth, async (req, res) => {
   }
 });
 
+// POST /api/super/servers/ping-all — testa o nó local e todos os servidores adicionais em paralelo
+app.post('/api/super/servers/ping-all', superAdminAuth, async (req, res) => {
+  try {
+    const mem = process.memoryUsage();
+    const local = {
+      id: 'local',
+      nome: 'Nó Local (Host Atual)',
+      status: 'online',
+      latencia: '0ms',
+      uptime: Math.floor(process.uptime()),
+      memoria: (mem.heapUsed / (1024 * 1024)).toFixed(1) + ' MB',
+      node: process.version,
+      pid: process.pid
+    };
+
+    masterDb.get(`SELECT value FROM super_config WHERE key = 'multi_servers'`, [], async (err, row) => {
+      let servers = [];
+      try { servers = JSON.parse((row || {}).value || '[]'); } catch(e) {}
+
+      const resultados = await Promise.all(servers.map(async (s) => {
+        const testUrl = s.porta ? `${s.url.replace(/\/+$/, '')}:${s.porta}/` : `${s.url.replace(/\/+$/, '')}/`;
+        const inicio = Date.now();
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4000);
+        try {
+          const resp = await fetch(testUrl, { method: 'GET', signal: controller.signal });
+          clearTimeout(timeout);
+          const lat = Date.now() - inicio;
+          return {
+            id: s.id,
+            nome: s.nome,
+            url: s.url,
+            porta: s.porta,
+            status: resp.ok || resp.status < 500 ? 'online' : 'erro',
+            statusCode: resp.status,
+            latencia: lat + 'ms'
+          };
+        } catch (errPing) {
+          clearTimeout(timeout);
+          return {
+            id: s.id,
+            nome: s.nome,
+            url: s.url,
+            porta: s.porta,
+            status: 'offline',
+            erro: errPing.message || 'Timeout',
+            latencia: '--'
+          };
+        }
+      }));
+
+      res.json({
+        ok: true,
+        local,
+        servers: resultados,
+        totalOnline: 1 + resultados.filter(r => r.status === 'online').length,
+        totalServidores: 1 + resultados.length
+      });
+    });
+  } catch (err) {
+    res.json({ ok: false, erro: err.message });
+  }
+});
+
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
 // TÚNEIS & FALLBACK — endpoints para gerenciamento de túneis
 // �?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?
@@ -811,6 +885,436 @@ app.get('/api/super/tuneis/logs', superAdminAuth, (req, res) => {
 
 
 
-// ══════════════════════════════════════════════════════════════════
+// GET /api/super/tuneis/active-url — retorna a URL pública ativa do túnel
+app.get('/api/super/tuneis/active-url', superAdminAuth, (req, res) => {
+  const status = tunnelManager.getStatus();
+  const activeTunnel = status.tunnels.find(t => t.status === 'running' && t.url);
+  if (activeTunnel) {
+    res.json({
+      ok: true,
+      active: true,
+      url: activeTunnel.url,
+      superAdminUrl: `${activeTunnel.url}/super-admin.html`,
+      name: activeTunnel.name,
+      uptime: activeTunnel.uptime
+    });
+  } else {
+    res.json({
+      ok: true,
+      active: false,
+      url: null,
+      superAdminUrl: null
+    });
+  }
+});
+
+// POST /api/super/tuneis/quick-connect — inicia túnel Cloudflare rapidamente ou retorna existente
+app.post('/api/super/tuneis/quick-connect', superAdminAuth, async (req, res) => {
+  try {
+    const status = tunnelManager.getStatus();
+    const existing = status.tunnels.find(t => t.status === 'running' && t.url);
+    if (existing) {
+      return res.json({
+        ok: true,
+        active: true,
+        url: existing.url,
+        superAdminUrl: `${existing.url}/super-admin.html`,
+        name: existing.name
+      });
+    }
+
+    let target = 'cloudflare';
+    if (!status.tunnels.find(t => t.name === 'cloudflare' && t.installed)) {
+      if (status.tunnels.find(t => t.name === 'localtunnel' && t.installed)) target = 'localtunnel';
+      else if (status.tunnels.find(t => t.name === 'localhost.run' && t.installed)) target = 'localhost.run';
+    }
+
+    const startRes = tunnelManager.start(target);
+    if (!startRes.ok) {
+      return res.json({ ok: false, erro: startRes.erro || 'Falha ao iniciar túnel.' });
+    }
+
+    for (let i = 0; i < 16; i++) {
+      await new Promise(r => setTimeout(r, 500));
+      const cur = tunnelManager.getStatus(target);
+      if (cur && cur.url) {
+        return res.json({
+          ok: true,
+          active: true,
+          url: cur.url,
+          superAdminUrl: `${cur.url}/super-admin.html`,
+          name: target
+        });
+      }
+    }
+
+    const cur = tunnelManager.getStatus(target);
+    res.json({
+      ok: true,
+      active: cur ? cur.status === 'running' : false,
+      url: cur ? cur.url : null,
+      superAdminUrl: cur && cur.url ? `${cur.url}/super-admin.html` : null,
+      name: target,
+      aguardando: true
+    });
+  } catch (err) {
+    res.json({ ok: false, erro: err.message });
+  }
+});
+
+// POST /api/super/tuneis/toggle-auto-start — alterna inicialização automática no boot
+app.post('/api/super/tuneis/toggle-auto-start', superAdminAuth, async (req, res) => {
+  try {
+    const { enabled } = req.body || {};
+    const mode = enabled ? 'auto' : 'manual';
+    await tunnelManager.saveGlobalConfig(tunnelManager.globalConfig.port, mode, tunnelManager.globalConfig.priority);
+    // Também habilita o cloudflare especificamente se auto
+    if (enabled) {
+      await tunnelManager.saveConfig('cloudflare', { enabled: true });
+    }
+    res.json({ ok: true, mode, mensagem: `Modo de túnel configurado para: ${mode}` });
+  } catch (e) {
+    res.json({ ok: false, erro: e.message });
+  }
+});
+
+  function getTenantDbInstance(tenantId) {
+    const tid = parseInt(tenantId, 10) || 1;
+    const estPath = path.join(__dirname, '..', 'estabelecimentos', String(tid), 'database.sqlite');
+    const dbPath = fs.existsSync(estPath) ? estPath : path.join(__dirname, '..', `database_${tid}.sqlite`);
+    return new sqlite3.Database(dbPath);
+  }
+
+// POST /api/super/emergency/resolver-solicitacao — Centro de Comando Rápido Mobile S23
+app.post('/api/super/emergency/resolver-solicitacao', superAdminAuth, async (req, res) => {
+  const { acao, restaurante_id, params } = req.body || {};
+  if (!acao) return res.status(400).json({ ok: false, erro: 'Ação não informada.' });
+
+  try {
+    switch (acao) {
+      case 'liberar_terminais': {
+        const rid = parseInt(restaurante_id, 10);
+        if (!rid) return res.json({ ok: false, erro: 'ID do restaurante inválido.' });
+
+        masterDb.run(`UPDATE restaurantes SET ativo = 1 WHERE id = ?`, [rid], () => {});
+        masterDb.run(`UPDATE terminais_pareamento SET status = 'autorizado' WHERE restaurante_id = ? AND status = 'pendente'`, [rid], (err) => {
+          if (io) io.emit('terminais_atualizados', { restaurante_id: rid });
+          res.json({
+            ok: true,
+            mensagem: `Todos os terminais e acessos do restaurante #${rid} foram liberados!`
+          });
+        });
+        break;
+      }
+
+      case 'renovar_licenca': {
+        const rid = parseInt(restaurante_id, 10);
+        if (!rid) return res.json({ ok: false, erro: 'ID do restaurante inválido.' });
+        const dias = (params && parseInt(params.dias, 10)) || 30;
+
+        const d = new Date();
+        d.setDate(d.getDate() + dias);
+        const novaValidade = d.toISOString().split('T')[0];
+
+        masterDb.run(
+          `UPDATE restaurantes SET licenca = 'premium', ativo = 1, validade_licenca = ? WHERE id = ?`,
+          [novaValidade, rid],
+          function(err) {
+            if (err) return res.json({ ok: false, erro: err.message });
+            if (io) io.emit('licenca_atualizada', { restaurante_id: rid, validade: novaValidade });
+            res.json({
+              ok: true,
+              mensagem: `Licença do restaurante #${rid} renovada até ${novaValidade} (+${dias} dias)!`
+            });
+          }
+        );
+        break;
+      }
+
+      case 'otimizar_bancos': {
+        const files = fs.readdirSync(path.join(__dirname, '..'))
+          .filter(f => /^database_\d+\.sqlite$/.test(f) || f === 'master.sqlite');
+
+        let count = 0;
+        files.forEach(f => {
+          try {
+            const dbp = path.join(__dirname, '..', f);
+            const tdb = new sqlite3.Database(dbp);
+            tdb.run('PRAGMA optimize;', () => {});
+            tdb.run('PRAGMA wal_checkpoint(TRUNCATE);', () => {});
+            count++;
+          } catch (_) {}
+        });
+
+        res.json({
+          ok: true,
+          mensagem: `${count} bancos de dados SQLite (Master + Tenants) foram otimizados e desfragmentados!`
+        });
+        break;
+      }
+
+      case 'reiniciar_servidor': {
+        res.json({ ok: true, mensagem: 'Reiniciando servidor de forma segura... Watchdog reconectará em 3s.' });
+        setTimeout(() => {
+          process.exit(0);
+        }, 800);
+        break;
+      }
+
+      case 'impersonate': {
+        const rid = parseInt(restaurante_id, 10);
+        if (!rid) return res.json({ ok: false, erro: 'ID do restaurante inválido.' });
+
+        const jwt = require('jsonwebtoken');
+        const token = jwt.sign(
+          { userId: 999999, restauranteId: rid, perfil: 'admin', impersonated: true },
+          options.JWT_SECRET || 'chef_secret',
+          { expiresIn: '4h' }
+        );
+
+        res.json({
+          ok: true,
+          urlDono: `/painel-dono.html?impersonate_token=${token}`,
+          urlPdv: `/index.html?impersonate_token=${token}`,
+          mensagem: `Token de acesso direto gerado para o restaurante #${rid}.`
+        });
+        break;
+      }
+
+      case 'limpar_trava_caixa': {
+        const rid = parseInt(restaurante_id, 10);
+        if (!rid) return res.json({ ok: false, erro: 'ID do restaurante inválido.' });
+        const tdb = getTenantDbInstance(rid);
+
+        tdb.serialize(() => {
+          tdb.run(`UPDATE mesas SET status = 'livre', total = 0, atendente = NULL WHERE status IN ('fechando', 'bloqueada', 'em_pagamento', 'bloqueado')`, () => {});
+          tdb.run(`UPDATE pedidos SET status = 'Finalizado' WHERE status IN ('fechando', 'aguardando_fechamento')`, () => {});
+        });
+
+        setTimeout(() => {
+          try { tdb.close(); } catch (_) {}
+          if (io) {
+            io.emit('mesas_atualizadas', { restaurante_id: rid });
+            io.emit('caixa_atualizado', { restaurante_id: rid });
+          }
+          res.json({
+            ok: true,
+            mensagem: `Travas de caixas e comandas do restaurante #${rid} foram liberadas com sucesso!`
+          });
+        }, 120);
+        break;
+      }
+
+      case 'limpar_fila_impressao': {
+        const rid = parseInt(restaurante_id, 10);
+        if (!rid) return res.json({ ok: false, erro: 'ID do restaurante inválido.' });
+        const tdb = getTenantDbInstance(rid);
+
+        tdb.run(
+          `UPDATE pedidos_spool SET status = 'cancelado', erro_msg = 'Cancelado via SOS S23 Super Admin' WHERE status IN ('pendente', 'erro')`,
+          function(err) {
+            const alterados = this ? this.changes : 0;
+            try { tdb.close(); } catch (_) {}
+            if (io) io.emit('spool_atualizado', { restaurante_id: rid });
+            res.json({
+              ok: true,
+              alterados: alterados,
+              mensagem: alterados > 0
+                ? `${alterados} impressões travadas foram canceladas e a fila do restaurante #${rid} foi desobstruída!`
+                : `A fila de impressão do restaurante #${rid} já estava limpa.`
+            });
+          }
+        );
+        break;
+      }
+
+      case 'reabrir_caixa': {
+        const rid = parseInt(restaurante_id, 10);
+        if (!rid) return res.json({ ok: false, erro: 'ID do restaurante inválido.' });
+        const tdb = getTenantDbInstance(rid);
+
+        tdb.get(`SELECT id, data_abertura, data_fechamento FROM turnos_caixa WHERE status = 'Fechado' ORDER BY id DESC LIMIT 1`, [], (err, row) => {
+          if (err || !row) {
+            try { tdb.close(); } catch (_) {}
+            return res.json({ ok: false, erro: 'Nenhum turno fechado encontrado para reabrir.' });
+          }
+
+          tdb.run(`UPDATE turnos_caixa SET status = 'Aberto', data_fechamento = NULL WHERE id = ?`, [row.id], function(err2) {
+            try { tdb.close(); } catch (_) {}
+            if (err2) return res.json({ ok: false, erro: err2.message });
+            if (io) io.emit('caixa_atualizado', { restaurante_id: rid });
+            res.json({
+              ok: true,
+              turnoId: row.id,
+              mensagem: `Turno de caixa #${row.id} do restaurante #${rid} foi reaberto com sucesso!`
+            });
+          });
+        });
+        break;
+      }
+
+      case 'reset_senha_dono': {
+        const rid = parseInt(restaurante_id, 10);
+        if (!rid) return res.json({ ok: false, erro: 'ID do restaurante inválido.' });
+        const bcrypt = require('bcrypt');
+        const novaSenha = (params && params.nova_senha) || ('chef' + Math.floor(1000 + Math.random() * 9000));
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(novaSenha, salt);
+
+        masterDb.run(
+          `UPDATE usuarios SET password_hash = ? WHERE restaurante_id = ? AND (role = 'admin' OR role = 'dono')`,
+          [hash, rid],
+          function(err) {
+            if (err) return res.json({ ok: false, erro: err.message });
+            masterDb.get(`SELECT nome, dono_telefone, dono_nome FROM restaurantes WHERE id = ?`, [rid], (_, rest) => {
+              const nomeLoja = (rest && rest.nome) || `#${rid}`;
+              const telDono = (rest && rest.dono_telefone) || '';
+              const msgWhats = `Olá! A senha de administrador do Chef Cozinha para o restaurante ${nomeLoja} foi redefinida provisoriamente para: ${novaSenha}`;
+              res.json({
+                ok: true,
+                novaSenha: novaSenha,
+                telefone: telDono,
+                mensagem: `Senha de admin de ${nomeLoja} redefinida para '${novaSenha}'!`,
+                whatsappMsg: msgWhats
+              });
+            });
+          }
+        );
+        break;
+      }
+
+      case 'diagnostico_restaurante': {
+        const rid = parseInt(restaurante_id, 10);
+        if (!rid) return res.json({ ok: false, erro: 'ID do restaurante inválido.' });
+        const tdb = getTenantDbInstance(rid);
+
+        masterDb.get(`SELECT * FROM restaurantes WHERE id = ?`, [rid], (errRest, rest) => {
+          if (errRest || !rest) {
+            try { tdb.close(); } catch (_) {}
+            return res.json({ ok: false, erro: 'Restaurante não encontrado.' });
+          }
+
+          tdb.get(`SELECT COUNT(*) as abertos FROM pedidos WHERE status NOT IN ('Finalizado', 'Cancelado')`, [], (e1, rPed) => {
+            tdb.get(`SELECT COUNT(*) as ocupadas FROM mesas WHERE status = 'ocupada'`, [], (e2, rMes) => {
+              tdb.get(`SELECT COALESCE(SUM(total), 0) as totalHoje, COUNT(*) as qtdHoje FROM pedidos WHERE status = 'Finalizado' AND date(created_at) = date('now')`, [], (e3, rFin) => {
+                try { tdb.close(); } catch (_) {}
+                const nomeLoja = rest.nome || `Restaurante #${rid}`;
+                res.json({
+                  ok: true,
+                  diagnostico: {
+                    restaurante: nomeLoja,
+                    status: rest.ativo ? '🟢 Online / Ativo' : '🔴 Inativo / Bloqueado',
+                    licenca: rest.licenca || 'padrão',
+                    validade: rest.validade_licenca || 'Indeterminada',
+                    pedidosAbertos: (rPed && rPed.abertos) || 0,
+                    mesasOcupadas: (rMes && rMes.ocupadas) || 0,
+                    faturamentoHoje: Number((rFin && rFin.totalHoje) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                    pedidosFinalizadosHoje: (rFin && rFin.qtdHoje) || 0
+                  },
+                  mensagem: `Diagnóstico em tempo real concluído para ${nomeLoja}.`
+                });
+              });
+            });
+          });
+        });
+        break;
+      }
+
+      case 'backup_restaurante': {
+        const rid = parseInt(restaurante_id, 10);
+        if (!rid) return res.json({ ok: false, erro: 'ID do restaurante inválido.' });
+        const estPath = path.join(__dirname, '..', 'estabelecimentos', String(rid), 'database.sqlite');
+        const dbPath = fs.existsSync(estPath) ? estPath : path.join(__dirname, '..', `database_${rid}.sqlite`);
+        if (!fs.existsSync(dbPath)) return res.json({ ok: false, erro: 'Arquivo do banco de dados não encontrado.' });
+
+        const bkpDir = path.join(__dirname, '..', 'backups');
+        if (!fs.existsSync(bkpDir)) fs.mkdirSync(bkpDir, { recursive: true });
+        const bkpName = `backup_loja_${rid}_${new Date().toISOString().replace(/[:.]/g, '-')}.sqlite`;
+        const destPath = path.join(bkpDir, bkpName);
+
+        fs.copyFileSync(dbPath, destPath);
+        const stat = fs.statSync(destPath);
+        const mb = (stat.size / (1024 * 1024)).toFixed(2);
+
+        res.json({
+          ok: true,
+          arquivo: bkpName,
+          tamanho: `${mb} MB`,
+          mensagem: `Backup do restaurante #${rid} gerado com sucesso (${mb} MB)!`
+        });
+        break;
+      }
+
+      default:
+        res.json({ ok: false, erro: `Ação '${acao}' não reconhecida.` });
+    }
+  } catch (e) {
+    res.json({ ok: false, erro: e.message });
+  }
+});
+
+// POST /api/super/sql/executar — Console SQL Remoto Seguro para o Super Admin
+app.post('/api/super/sql/executar', superAdminAuth, (req, res) => {
+  const { sql, database } = req.body || {};
+  if (!sql || typeof sql !== 'string' || !sql.trim()) {
+    return res.json({ ok: false, erro: 'Instrução SQL é obrigatória.' });
+  }
+
+  const queryLimpa = sql.trim();
+  const lower = queryLimpa.toLowerCase();
+  if (lower.includes('load_extension') || lower.includes('attach ') || lower.includes('detach ')) {
+    return res.json({ ok: false, erro: 'Comando SQL não permitido por motivos de segurança.' });
+  }
+
+  let dbTarget;
+  let fecharNoFinal = false;
+
+  if (database === 'master' || database === 'global') {
+    dbTarget = masterDb;
+  } else {
+    const rid = parseInt(database, 10) || 1;
+    dbTarget = getTenantDbInstance(rid);
+    fecharNoFinal = true;
+  }
+
+  const inicio = Date.now();
+  const isSelect = /^\s*(SELECT|PRAGMA|EXPLAIN)\b/i.test(queryLimpa);
+
+  if (isSelect) {
+    dbTarget.all(queryLimpa, [], (err, rows) => {
+      const tempoMs = Date.now() - inicio;
+      if (fecharNoFinal) { try { dbTarget.close(); } catch (_) {} }
+      if (err) return res.json({ ok: false, erro: err.message, tempoMs });
+
+      const colunas = (rows && rows.length > 0) ? Object.keys(rows[0]) : [];
+      res.json({
+        ok: true,
+        tipo: 'SELECT',
+        colunas,
+        linhas: rows || [],
+        count: (rows || []).length,
+        tempoMs
+      });
+    });
+  } else {
+    dbTarget.run(queryLimpa, [], function(err) {
+      const tempoMs = Date.now() - inicio;
+      const alterados = this ? this.changes : 0;
+      const lastId = this ? this.lastID : null;
+      if (fecharNoFinal) { try { dbTarget.close(); } catch (_) {} }
+      if (err) return res.json({ ok: false, erro: err.message, tempoMs });
+
+      res.json({
+        ok: true,
+        tipo: 'MUTATION',
+        alterados,
+        lastInsertRowid: lastId,
+        mensagem: `Comando executado com sucesso! Linhas alteradas: ${alterados}`,
+        tempoMs
+      });
+    });
+  }
+});
 
 };
+

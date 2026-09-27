@@ -2390,11 +2390,12 @@
   <script src="/confetti.js"></script>
   <script src="/live-geo-map.js"></script>
   <link rel="icon" href="/icons/icon.ico">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#fc4b15">
+  <link rel="manifest" href="/super-admin-manifest.json">
+  <meta name="theme-color" content="#0b0f19">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Chef Cozinha">
+  <meta name="apple-mobile-web-app-title" content="Super Admin">
   <script>
     (function() {
       try {
@@ -2409,8 +2410,21 @@
     })();
   </script>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="super-admin.js?v=20260923enterprise"></script>
+  <script src="/vendor/qrcode/qrcode-generator.js"></script>
+  <script src="/vendor/qrcode/qr-helper.js"></script>
+  <script src="super-admin.js?v=20260927mobile"></script>
   <script src="/anti-tamper.js" defer></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/service-worker.js').then(function(reg) {
+          console.log('✅ ServiceWorker do Super Admin ativo (PWA Galaxy S23 Ultra habilitado):', reg.scope);
+        }).catch(function(err) {
+          console.warn('⚠️ Falha ao registrar ServiceWorker:', err);
+        });
+      });
+    }
+  </script>
 </head>
 
 <body>

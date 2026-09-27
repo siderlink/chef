@@ -1,14 +1,15 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
   <title>Área do Cliente - Fidelidade</title>
   
   <script src="/socket.io.min.js"></script>
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="stylesheet" href="/device-adapters.css">
   <script src="/theme-manager.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   
@@ -1245,6 +1246,7 @@
   // Service Worker: habilita o PWA (instalação + notificações)
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () { });
 </script>
+<script src="/device-adapters.js"></script>
 </body>
 </html>
 

@@ -1492,6 +1492,14 @@ socket.on('status_atualizado', (pedido) => {
   carregarMetricas();
   adicionarAoFeed('venda', `${pedido.productName} (${pedido.localName}) → ${pedido.status}`);
 });
+socket.on('alerta_vip_chegou', (data) => {
+  const mesa = data.mesa || 'Salão';
+  const nome = data.nome || 'Cliente VIP';
+  const valor = Number(data.total_gasto) || 0;
+  showToast(`👑 CLIENTE VIP: ${nome} chegou na Mesa ${mesa} (Gasto: R$ ${valor.toFixed(2)})`, 'ph-crown', 'warning');
+  adicionarAoFeed('alerta', `👑 VIP Chegou: ${nome} sentou na Mesa ${mesa} — Histórico: R$ ${valor.toFixed(2)}`);
+});
+
 socket.on('rh_update', () => {
   carregarMetricas();
   carregarFuncionariosControleRemoto();

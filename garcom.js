@@ -365,6 +365,29 @@ socket.on("ia_manobra_executada", (data) => {
   showToast(data.mensagem, "#22c55e");
 });
 
+// --- IA & Hub Marketing: Sentinela VIP no Salão ---
+socket.on("alerta_vip_chegou", (data) => {
+  var mesa = data.mesa || "Mesa", nome = data.nome || "Cliente VIP", totalGasto = Number(data.total_gasto) || 0, obs = data.observacao || "";
+  var msg = "👑 VIP na Mesa " + mesa + ": " + nome + " (Gasto: R$ " + totalGasto.toFixed(2) + ")";
+  showToast(msg, "#f59e0b");
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("👑 Cliente VIP na Mesa " + mesa, { body: msg, icon: "/favicon.ico" });
+  }
+  if (typeof queueIaNotif === "function" && typeof createIaOverlay === "function") {
+    queueIaNotif(function() {
+      createIaOverlay(
+        '<div style="font-weight:800;font-size:15px;margin-bottom:6px;color:#fbbf24;">👑 CLIENTE VIP DETECTADO!</div>' +
+        '<div style="font-size:13px;margin-bottom:4px;"><strong>Mesa ' + escHtml(mesa) + ':</strong> ' + escHtml(nome) + '</div>' +
+        '<div style="font-size:12px;color:#94a3b8;">Consumo Acumulado: <span style="color:#22c55e;font-weight:700;">R$ ' + totalGasto.toFixed(2) + '</span></div>' +
+        (obs ? '<div style="font-size:12px;margin-top:4px;color:#cbd5e1;">💡 Preferência: <em>' + escHtml(obs) + '</em></div>' : ''),
+        "#d97706",
+        '<button data-action="dismiss" style="flex:1;padding:10px;background:#22c55e;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">Entendido, atendimento VIP</button>',
+        25000
+      );
+    });
+  }
+});
+
 // --- IA: Event delegation for popup buttons (fixes zoom/touch issues) ---
 document.addEventListener("click", function(e) {
   var btn = e.target.closest("[data-action]");

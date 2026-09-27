@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="stylesheet" href="/device-adapters.css">
   <script src="/theme-manager.js?v=20260901paletas"></script>
   <script src="/socket.io/socket.io.js"></script>
 <style>
@@ -3302,12 +3303,13 @@
           <span class="rb-sub">Portal fornecedores e lances</span>
         </button>
 
-        <button class="remote-btn" onclick="window.open('sync-hub.html', '_blank')">
+        <button class="remote-btn" onclick="window.open('sync-hub.html', '_blank')" style="position: relative; border-color: rgba(16,185,129,0.4); background: linear-gradient(135deg, rgba(16,185,129,0.08), transparent);">
+          <span style="position:absolute; top:8px; right:10px; background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:9.5px; font-weight:800; padding:2px 8px; border-radius:999px; box-shadow:0 2px 6px rgba(16,185,129,0.4);">ANTI-QUEDA</span>
           <div class="rb-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
             <i class="ph-bold ph-cpu"></i>
           </div>
           <span class="rb-label">Sync Edge Hub</span>
-          <span class="rb-sub">Spooler, balança, BI e backups</span>
+          <span class="rb-sub">Zero queda de internet, spooler & balança</span>
         </button>
 
         <button class="remote-btn" onclick="window.open('radar-concorrencia.html', '_blank')">
@@ -5731,6 +5733,7 @@
   <script src="/vendor/qrcode/qrcode-generator.js"></script>
   <script src="/vendor/qrcode/qr-helper.js"></script>
   <script src="/chef-tz.js"></script>
+  <script src="/device-adapters.js"></script>
   <script src="/painel-dono.js?v=2.9.0"></script>
 
   <!-- Modal: Loja de Add-ons & Gestão de Plano -->

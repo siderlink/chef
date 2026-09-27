@@ -722,6 +722,7 @@ function switchTab(targetId) {
     'sec-licencas': ['Licenças & Telemetria', 'Chaves de ativação e telemetria dos estabelecimentos'],
     'sec-recuperar-acesso': ['Recuperar Acesso', 'Redefina email e senha de clientes'],
     'sec-clientes': ['Clientes', 'Perfil completo de todos os clientes da plataforma'],
+    'sec-hub-marketing': ['Hub Marketing', 'CRM avançado, segmentação inteligente, campanhas, vendas e analytics de clientes'],
     'sec-suporte': ['Equipe de Suporte', 'Funcionários que prestam suporte aos restaurantes'],
     'sec-terminal': ['Terminal', 'Execute comandos no servidor local'],
     'sec-instancias': ['Instâncias On-Premise', 'Gerencie instalações locais conectadas ao servidor'],
@@ -809,6 +810,13 @@ function switchTab(targetId) {
   else if (targetId === 'sec-ia-global') carregarConfig();
   else if (targetId === 'sec-licencas') { if (typeof window.carregarLicencas === 'function') window.carregarLicencas(); }
   else if (targetId === 'sec-clientes') carregarClientes();
+  else if (targetId === 'sec-hub-marketing') {
+    var iframe = document.getElementById('hub-marketing-iframe');
+    if (iframe && (!iframe.src || iframe.src === '' || iframe.src === 'about:blank' || !iframe.src.includes('hub-marketing'))) {
+      var tkn = localStorage.getItem('superAdminToken') || localStorage.getItem('token') || '';
+      iframe.src = '/hub-marketing.html' + (tkn ? '?token=' + encodeURIComponent(tkn) : '');
+    }
+  }
   else if (targetId === 'sec-suporte') carregarSuporte();
   else if (targetId === 'sec-funcoes') {
     if (typeof window.renderFuncoes === 'function') window.renderFuncoes();
@@ -1425,6 +1433,10 @@ function carregarDashboard() {
       document.getElementById('card-local-users').style.display = '';
     }
   });
+
+  if (typeof atualizarCardAcessoGlobal === 'function') {
+    atualizarCardAcessoGlobal();
+  }
 
   apiGet('/api/super/restaurantes', function(err, data) {
     if (err || !data || !data.ok) return;
@@ -9220,6 +9232,15 @@ function carregarCentralNotificacoesStats() {
         badgeMenu.textContent = n > 99 ? '99+' : String(n);
         badgeMenu.style.display = n > 0 ? 'inline-block' : 'none';
       }
+      var badgeMobNotif = document.getElementById('mob-notif-badge');
+      if (badgeMobNotif) {
+        badgeMobNotif.textContent = n > 99 ? '99+' : String(n);
+        badgeMobNotif.style.display = n > 0 ? 'inline-block' : 'none';
+      }
+      var badgeMobSos = document.getElementById('mob-sos-badge');
+      if (badgeMobSos) {
+        badgeMobSos.style.display = n > 0 ? 'inline-block' : 'none';
+      }
     }
   });
 }
@@ -13604,9 +13625,723 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+/* ══════════════════════════════════════════════════════════════════
+   ACESSO GLOBAL REMOTO & MOBILE S23 ULTRA COMMAND CENTER
+   ══════════════════════════════════════════════════════════════════ */
+window._activeGlobalUrl = null;
+
+function atualizarCardAcessoGlobal() {
+  apiGet('/api/super/tuneis/active-url', function(err, data) {
+    var badge = document.getElementById('badge-tunnel-global-status');
+    var containerUrl = document.getElementById('container-tunnel-url-ativa');
+    var linkUrl = document.getElementById('link-tunnel-url-ativa');
+    var btnAbrir = document.getElementById('btn-abrir-url-global');
+    var btnText = document.getElementById('btn-toggle-quick-tunnel-text');
+    var btnIcon = document.querySelector('#btn-toggle-quick-tunnel i');
+
+    // Elementos Mobile S23
+    var badgeS23 = document.getElementById('badge-tunel-s23');
+    var btnToggleS23 = document.getElementById('btn-toggle-tunel-s23');
+    var boxLinkS23 = document.getElementById('box-link-global-s23');
+    var inputUrlS23 = document.getElementById('input-url-global-s23');
+    var chkAutoStartS23 = document.getElementById('chk-auto-start-s23');
+
+    if (!err && data && data.ok && data.active && data.url) {
+      window._activeGlobalUrl = data.superAdminUrl || (data.url + '/super-admin.html');
+      if (badge) {
+        badge.style.background = 'rgba(16, 185, 129, 0.15)';
+        badge.style.color = '#10b981';
+        badge.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+        badge.innerHTML = '<i class="fa-solid fa-circle" style="font-size:6px;vertical-align:middle;margin-right:4px;"></i> Online (Global)';
+      }
+      if (containerUrl) containerUrl.style.display = 'flex';
+      if (linkUrl) {
+        linkUrl.href = window._activeGlobalUrl;
+        linkUrl.textContent = window._activeGlobalUrl;
+      }
+      if (btnAbrir) btnAbrir.href = window._activeGlobalUrl;
+      if (btnText) btnText.textContent = 'Desconectar';
+      if (btnIcon) btnIcon.className = 'fa-solid fa-power-off';
+
+      if (badgeS23) {
+        badgeS23.textContent = 'Online (HTTPS)';
+        badgeS23.style.background = 'rgba(16, 185, 129, 0.2)';
+        badgeS23.style.color = '#10b981';
+      }
+      var badgePill = document.getElementById('badge-tunel-s23-pill');
+      if (badgePill) {
+        badgePill.textContent = 'Ativo';
+        badgePill.style.background = 'rgba(16, 185, 129, 0.15)';
+        badgePill.style.color = '#10b981';
+      }
+      if (btnToggleS23) {
+        btnToggleS23.innerHTML = '<i class="fa-solid fa-power-off"></i> Desconectar';
+        btnToggleS23.style.background = '#ef4444';
+      }
+      if (boxLinkS23) boxLinkS23.style.display = 'flex';
+      if (inputUrlS23) inputUrlS23.value = window._activeGlobalUrl;
+    } else {
+      window._activeGlobalUrl = null;
+      if (badge) {
+        badge.style.background = 'rgba(239, 68, 68, 0.15)';
+        badge.style.color = '#ef4444';
+        badge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        badge.innerHTML = '<i class="fa-solid fa-circle" style="font-size:6px;vertical-align:middle;margin-right:4px;"></i> Local Apenas';
+      }
+      if (containerUrl) containerUrl.style.display = 'none';
+      if (btnText) btnText.textContent = 'Conectar ao Mundo';
+      if (btnIcon) btnIcon.className = 'fa-solid fa-bolt';
+
+      if (badgeS23) {
+        badgeS23.textContent = 'Desconectado';
+        badgeS23.style.background = 'rgba(239, 68, 68, 0.2)';
+        badgeS23.style.color = '#ef4444';
+      }
+      var badgePillOff = document.getElementById('badge-tunel-s23-pill');
+      if (badgePillOff) {
+        badgePillOff.textContent = 'Desconectado';
+        badgePillOff.style.background = 'rgba(239, 68, 68, 0.15)';
+        badgePillOff.style.color = '#ef4444';
+      }
+      if (btnToggleS23) {
+        btnToggleS23.innerHTML = '<i class="fa-solid fa-bolt"></i> Conectar';
+        btnToggleS23.style.background = '#10b981';
+      }
+      if (boxLinkS23) boxLinkS23.style.display = 'none';
+    }
+
+    // Carrega status de auto-start do túnel
+    apiGet('/api/super/tuneis/status', function(errSt, st) {
+      if (!errSt && st && st.global && chkAutoStartS23) {
+        chkAutoStartS23.checked = (st.global.mode === 'auto');
+      }
+    });
+  });
+}
+
+function alternarTunelGlobalRapido() {
+  var btnText = document.getElementById('btn-toggle-quick-tunnel-text');
+
+  if (window._activeGlobalUrl) {
+    if (confirm('Deseja desconectar o túnel global? O acesso externo será interrompido.')) {
+      if (btnText) btnText.textContent = 'Desconectando...';
+      apiPost('/api/super/tuneis/stop-all', {}, function() {
+        showToast('Túnel global desconectado.', 'info');
+        atualizarCardAcessoGlobal();
+      });
+    }
+    return;
+  }
+
+  if (btnText) btnText.textContent = 'Iniciando Cloudflare...';
+  apiPost('/api/super/tuneis/quick-connect', {}, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao iniciar túnel: ' + (data && data.erro || err && err.message || 'Falha de conexão'), 'error');
+      if (btnText) btnText.textContent = 'Conectar ao Mundo';
+      return;
+    }
+
+    if (data.url) {
+      window._activeGlobalUrl = data.superAdminUrl || (data.url + '/super-admin.html');
+      showToast('Conexão Global Ativada com Sucesso!', 'success');
+      atualizarCardAcessoGlobal();
+      abrirModalQrCodeAcessoGlobal();
+    } else {
+      showToast('Túnel em inicialização... Aguarde alguns instantes.', 'info');
+      setTimeout(atualizarCardAcessoGlobal, 3000);
+    }
+  });
+}
+
+function abrirModalQrCodeAcessoGlobal() {
+  var modal = document.getElementById('modal-qrcode-acesso-global');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  var container = document.getElementById('qrcode-s23-container');
+  var textoUrl = document.getElementById('texto-qrcode-url-s23');
+
+  function renderQr(url) {
+    if (textoUrl) textoUrl.textContent = url;
+    if (container) {
+      container.innerHTML = '';
+      if (window.qrcode) {
+        try {
+          var qr = window.qrcode(0, 'M');
+          qr.addData(url);
+          qr.make();
+          container.innerHTML = qr.createSvgTag({ scalable: true, cellSize: 4 });
+          var svg = container.querySelector('svg');
+          if (svg) {
+            svg.style.width = '180px';
+            svg.style.height = '180px';
+            svg.style.display = 'block';
+            svg.style.margin = '0 auto';
+          }
+          return;
+        } catch (_) {}
+      }
+      container.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url) + '" style="width:180px;height:180px;border-radius:8px;display:block;margin:0 auto;" alt="QR Code">';
+    }
+  }
+
+  if (window._activeGlobalUrl) {
+    renderQr(window._activeGlobalUrl);
+  } else {
+    if (container) container.innerHTML = '<div style="padding:40px 20px;color:#666;font-size:0.85rem;"><i class="fa-solid fa-spinner fa-spin" style="font-size:1.5rem;color:var(--primary);margin-bottom:8px;display:block;"></i>Obtendo URL segura do túnel...</div>';
+    apiPost('/api/super/tuneis/quick-connect', {}, function(err, data) {
+      if (!err && data && data.ok && data.url) {
+        window._activeGlobalUrl = data.superAdminUrl || (data.url + '/super-admin.html');
+        renderQr(window._activeGlobalUrl);
+        atualizarCardAcessoGlobal();
+      } else {
+        var fallback = location.origin + '/super-admin.html';
+        renderQr(fallback);
+      }
+    });
+  }
+}
+
+function fecharModalQrCodeAcessoGlobal() {
+  var modal = document.getElementById('modal-qrcode-acesso-global');
+  if (modal) modal.style.display = 'none';
+}
+
+function copiarUrlGlobalAtiva() {
+  var url = window._activeGlobalUrl || (location.origin + '/super-admin.html');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(function() {
+      showToast('Link copiado! Cole no navegador do seu Samsung S23 Ultra.', 'success');
+    }).catch(function() {
+      prompt('Copie o link abaixo:', url);
+    });
+  } else {
+    prompt('Copie o link abaixo:', url);
+  }
+}
+
+function pingarTodosServidoresS23() {
+  if (navigator.vibrate) try { navigator.vibrate(10); } catch (_) {}
+  var badge = document.getElementById('badge-servidores-s23');
+  var lista = document.getElementById('lista-nos-s23');
+  var listaCompleta = document.getElementById('lista-nos-s23-completa');
+  var txtRam = document.getElementById('txt-ram-local-s23');
+  var txtUptime = document.getElementById('txt-uptime-s23');
+  var txtNodeVer = document.getElementById('txt-node-ver-s23');
+  if (badge) badge.textContent = 'Testando...';
+
+  apiPost('/api/super/servers/ping-all', {}, function(err, data) {
+    if (err || !data || !data.ok) {
+      if (badge) badge.textContent = 'Erro ao pingar';
+      return;
+    }
+    if (badge) {
+      badge.textContent = data.totalOnline + '/' + data.totalServidores + ' Online';
+      badge.style.background = (data.totalOnline === data.totalServidores) ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)';
+      badge.style.color = (data.totalOnline === data.totalServidores) ? '#22c55e' : '#f59e0b';
+    }
+    if (txtRam && data.local) {
+      txtRam.textContent = 'RAM: ' + (data.local.memoria || '--');
+    }
+    if (txtUptime && data.local) {
+      var upSec = data.local.uptime || 0;
+      var h = Math.floor(upSec / 3600);
+      var m = Math.floor((upSec % 3600) / 60);
+      txtUptime.textContent = (h > 0 ? h + 'h ' : '') + m + 'm';
+    }
+    if (txtNodeVer && data.local) {
+      txtNodeVer.textContent = data.local.nodeVersion || 'v20+';
+    }
+
+    if (lista) {
+      var html = '<div style="background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:6px; border:1px solid var(--border-color); display:flex; align-items:center; gap:5px;">'
+        + '<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#22c55e;"></span>'
+        + '<strong>Host Local</strong>'
+        + '<span style="color:var(--text-muted);">' + ((data.local && data.local.memoria) || '') + '</span>'
+        + '</div>';
+
+      (data.servers || []).forEach(function(s) {
+        var isOnline = s.status === 'online';
+        var corDot = isOnline ? '#22c55e' : '#ef4444';
+        html += '<div style="background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:6px; border:1px solid var(--border-color); display:flex; align-items:center; gap:5px;">'
+          + '<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:' + corDot + ';"></span>'
+          + '<strong>' + esc(s.nome || 'Nó') + '</strong>'
+          + '<span style="color:' + (isOnline ? '#38bdf8' : '#ef4444') + ';">' + (s.latencia || '--') + '</span>'
+          + '</div>';
+      });
+      lista.innerHTML = html;
+    }
+
+    if (listaCompleta) {
+      if (!data.servers || data.servers.length === 0) {
+        listaCompleta.innerHTML = '<div style="color:var(--text-muted); font-size:0.72rem; text-align:center; padding:10px; background:rgba(0,0,0,0.2); border-radius:8px;">'
+          + '<i class="fa-solid fa-circle-check" style="color:#22c55e; margin-right:4px;"></i> Host Local ativo gerenciando todas as instâncias e conexões com total estabilidade.'
+          + '</div>';
+      } else {
+        var htmlNodes = '';
+        data.servers.forEach(function(s) {
+          var isOnline = s.status === 'online';
+          var cor = isOnline ? '#22c55e' : '#ef4444';
+          var bg = isOnline ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)';
+          htmlNodes += '<div style="background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center;">'
+            + '<div style="display:flex; align-items:center; gap:8px;">'
+            + '<span style="width:8px; height:8px; border-radius:50%; background:' + cor + ';"></span>'
+            + '<div>'
+            + '<div style="font-weight:700; font-size:0.78rem; color:var(--text-main);">' + esc(s.nome || 'Nó Remoto') + '</div>'
+            + '<div style="font-size:0.68rem; color:var(--text-muted);">' + esc(s.host || '127.0.0.1') + ':' + (s.porta || '8080') + '</div>'
+            + '</div>'
+            + '</div>'
+            + '<div style="font-size:0.72rem; padding:2px 8px; border-radius:6px; background:' + bg + '; color:' + cor + '; font-weight:700; font-family:monospace;">'
+            + (isOnline ? (s.latencia || 'Online') : 'Offline')
+            + '</div>'
+            + '</div>';
+        });
+        listaCompleta.innerHTML = htmlNodes;
+      }
+    }
+  });
+}
+
+function toggleAutoStartBoot(habilitado) {
+  if (navigator.vibrate) try { navigator.vibrate(10); } catch (_) {}
+  apiPost('/api/super/tuneis/toggle-auto-start', { enabled: habilitado }, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Falha ao configurar auto-start: ' + (data && data.erro || err), 'error');
+      return;
+    }
+    showToast(habilitado ? 'Auto-start do túnel ativado no boot!' : 'Auto-start desativado.', 'success');
+  });
+}
+
+function abrirCentroComandoMobile() {
+  var modal = document.getElementById('modal-comando-rapido-s23');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  if (navigator.vibrate) try { navigator.vibrate(20); } catch (_) {}
+
+  var sel = document.getElementById('select-emergencia-restaurante');
+  var badge = document.getElementById('badge-total-lojas-s23');
+  var diagCard = document.getElementById('card-diagnostico-s23');
+  var whatsCard = document.getElementById('container-whatsapp-s23');
+  if (diagCard) diagCard.style.display = 'none';
+  if (whatsCard) whatsCard.style.display = 'none';
+
+  atualizarCardAcessoGlobal();
+  pingarTodosServidoresS23();
+
+  if (sel) {
+    apiGet('/api/super/restaurantes', function(err, data) {
+      if (!err && data && data.clients) {
+        window._listaRestaurantesEmergencia = data.clients;
+        if (badge) badge.textContent = data.clients.length + ' lojas';
+        renderizarOptionsRestaurantes(data.clients);
+      }
+    });
+  }
+}
+
+function renderizarOptionsRestaurantes(lista) {
+  var sel = document.getElementById('select-emergencia-restaurante');
+  if (!sel) return;
+  var curVal = sel.value;
+  var opts = '<option value="">-- Selecione o Restaurante --</option>';
+  (lista || []).forEach(function(r) {
+    var selAttr = String(r.id) === String(curVal) ? ' selected' : '';
+    opts += '<option value="' + r.id + '"' + selAttr + '>#' + r.id + ' — ' + esc(r.restaurante) + ' (' + (r.status || 'ativo') + ')</option>';
+  });
+  sel.innerHTML = opts;
+}
+
+function filtrarRestaurantesEmergencia(termo) {
+  if (!window._listaRestaurantesEmergencia) return;
+  var t = (termo || '').toLowerCase().trim();
+  if (!t) {
+    renderizarOptionsRestaurantes(window._listaRestaurantesEmergencia);
+    return;
+  }
+  var filtrados = window._listaRestaurantesEmergencia.filter(function(r) {
+    return String(r.id).includes(t) || (r.restaurante || '').toLowerCase().includes(t);
+  });
+  renderizarOptionsRestaurantes(filtrados);
+}
+
+function fecharCentroComandoMobile() {
+  var modal = document.getElementById('modal-comando-rapido-s23');
+  if (modal) modal.style.display = 'none';
+  var fb = document.getElementById('feedback-comando-rapido-s23');
+  if (fb) fb.style.display = 'none';
+}
+
+function abrirWhatsappMensagem() {
+  if (!window._msgWhatsappEmergencia) {
+    showToast('Nenhuma mensagem gerada para o WhatsApp.', 'info');
+    return;
+  }
+  var url = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(window._msgWhatsappEmergencia);
+  window.open(url, '_blank');
+}
+
+function executarAcaoEmergenciaMobile(acao) {
+  if (navigator.vibrate) try { navigator.vibrate(15); } catch (_) {}
+  var sel = document.getElementById('select-emergencia-restaurante');
+  var rid = sel ? sel.value : null;
+  var fb = document.getElementById('feedback-comando-rapido-s23');
+  var diagCard = document.getElementById('card-diagnostico-s23');
+  var whatsCard = document.getElementById('container-whatsapp-s23');
+
+  var requerRestaurante = [
+    'liberar_terminais',
+    'limpar_trava_caixa',
+    'limpar_fila_impressao',
+    'reabrir_caixa',
+    'renovar_licenca',
+    'reset_senha_dono',
+    'diagnostico_restaurante',
+    'backup_restaurante',
+    'impersonate'
+  ];
+
+  if (requerRestaurante.includes(acao) && !rid) {
+    if (fb) {
+      fb.style.display = 'block';
+      fb.style.background = 'rgba(239, 68, 68, 0.15)';
+      fb.style.color = '#ef4444';
+      fb.textContent = 'Por favor, selecione um restaurante acima para esta ação.';
+    }
+    return;
+  }
+
+  if (acao === 'reiniciar_servidor' && !confirm('Tem certeza que deseja reiniciar o servidor? Todos os clientes reconectarão automaticamente em 3 segundos.')) {
+    return;
+  }
+
+  if (fb) {
+    fb.style.display = 'block';
+    fb.style.background = 'rgba(59, 130, 246, 0.15)';
+    fb.style.color = '#38bdf8';
+    fb.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Executando ação de emergência...';
+  }
+
+  apiPost('/api/super/emergency/resolver-solicitacao', { acao: acao, restaurante_id: rid }, function(err, data) {
+    if (err || !data || !data.ok) {
+      if (fb) {
+        fb.style.background = 'rgba(239, 68, 68, 0.15)';
+        fb.style.color = '#ef4444';
+        fb.textContent = 'Erro: ' + (data && data.erro || err && err.message || 'Falha ao executar');
+      }
+      return;
+    }
+
+    if (fb) {
+      fb.style.background = 'rgba(16, 185, 129, 0.15)';
+      fb.style.color = '#10b981';
+      fb.textContent = '✓ ' + (data.mensagem || 'Ação executada com sucesso!');
+    }
+    showToast(data.mensagem || 'Ação concluída com sucesso!', 'success');
+
+    // Se for diagnóstico, exibe card formatado
+    if (acao === 'diagnostico_restaurante' && data.diagnostico && diagCard) {
+      var d = data.diagnostico;
+      diagCard.style.display = 'block';
+      var elNome = document.getElementById('diag-nome-loja');
+      var elStatus = document.getElementById('diag-status-loja');
+      var elFat = document.getElementById('diag-faturamento');
+      var elPedHoje = document.getElementById('diag-pedidos-hoje');
+      var elPedAbertos = document.getElementById('diag-pedidos-abertos');
+      var elMesas = document.getElementById('diag-mesas-ocupadas');
+
+      if (elNome) elNome.textContent = d.restaurante;
+      if (elStatus) elStatus.textContent = d.status;
+      if (elFat) elFat.textContent = d.faturamentoHoje;
+      if (elPedHoje) elPedHoje.textContent = d.pedidosFinalizadosHoje;
+      if (elPedAbertos) elPedAbertos.textContent = d.pedidosAbertos;
+      if (elMesas) elMesas.textContent = d.mesasOcupadas;
+    }
+
+    // Se tiver mensagem WhatsApp gerada (ex: reset de senha)
+    if (data.whatsappMsg && whatsCard) {
+      window._msgWhatsappEmergencia = data.whatsappMsg;
+      whatsCard.style.display = 'flex';
+      var txtWhats = document.getElementById('texto-whatsapp-s23');
+      if (txtWhats) txtWhats.textContent = data.whatsappMsg;
+    }
+
+    if (acao === 'impersonate' && data.urlDono) {
+      setTimeout(function() {
+        window.open(data.urlDono, '_blank');
+      }, 600);
+    }
+  });
+}
+
+// ═══ NAVEGAÇÃO SEGMENTADA MODAL S23 (AÇÕES / SQL / SERVIDORES) ═══
+function alternarTabModalS23(tab) {
+  if (navigator.vibrate) try { navigator.vibrate(12); } catch (_) {}
+  var tabs = ['acoes', 'sql', 'servidores'];
+  tabs.forEach(function(t) {
+    var btn = document.getElementById('s23-tab-btn-' + t);
+    var view = document.getElementById('s23-subview-' + t);
+    if (btn) {
+      if (t === tab) {
+        btn.style.background = 'var(--primary)';
+        btn.style.color = '#fff';
+        btn.style.fontWeight = '700';
+      } else {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--text-muted)';
+        btn.style.fontWeight = '600';
+      }
+    }
+    if (view) {
+      view.style.display = (t === tab) ? 'flex' : 'none';
+    }
+  });
+
+  if (tab === 'sql') {
+    carregarBancosSqlS23();
+  } else if (tab === 'servidores') {
+    atualizarCardAcessoGlobal();
+    pingarTodosServidoresS23();
+  }
+}
+
+function carregarBancosSqlS23() {
+  var sel = document.getElementById('s23-sql-db-select');
+  if (!sel) return;
+  var curVal = sel.value;
+  var opts = '<option value="master">🌐 master.sqlite (Global &amp; Lojas)</option>';
+
+  if (window._listaRestaurantesEmergencia && window._listaRestaurantesEmergencia.length > 0) {
+    window._listaRestaurantesEmergencia.forEach(function(r) {
+      var selAttr = String(r.id) === String(curVal) ? ' selected' : '';
+      opts += '<option value="' + r.id + '"' + selAttr + '>🏪 #' + r.id + ' — ' + esc(r.restaurante) + '</option>';
+    });
+    sel.innerHTML = opts;
+  } else {
+    apiGet('/api/super/restaurantes', function(err, data) {
+      if (!err && data && data.clients) {
+        window._listaRestaurantesEmergencia = data.clients;
+        data.clients.forEach(function(r) {
+          var selAttr = String(r.id) === String(curVal) ? ' selected' : '';
+          opts += '<option value="' + r.id + '"' + selAttr + '>🏪 #' + r.id + ' — ' + esc(r.restaurante) + '</option>';
+        });
+        sel.innerHTML = opts;
+      }
+    });
+  }
+}
+
+function aplicarPresetSqlS23(presetKey) {
+  if (navigator.vibrate) try { navigator.vibrate(10); } catch (_) {}
+  var txt = document.getElementById('s23-sql-input');
+  var sel = document.getElementById('s23-sql-db-select');
+  if (!txt) return;
+
+  var queries = {
+    pedidos_recentes: "SELECT id, productName, quantity, total, status, paymentMethod, createdAt FROM pedidos ORDER BY id DESC LIMIT 10;",
+    mesas_ocupadas: "SELECT id, nome, status, total, atendidoPor FROM mesas WHERE status != 'livre' ORDER BY id ASC;",
+    fila_spool: "SELECT id, status, tentativas, erro_msg, criado_em FROM pedidos_spool ORDER BY id DESC LIMIT 10;",
+    turnos_caixa: "SELECT id, status, fundo_troco, data_abertura, data_fechamento FROM turnos_caixa ORDER BY id DESC LIMIT 5;",
+    usuarios_login: "SELECT id, username, role, restaurante_id, ativo FROM usuarios ORDER BY id ASC LIMIT 20;",
+    lojas_master: "SELECT id, nome, ativo, licenca, validade_licenca, dono_nome, dono_telefone FROM restaurantes ORDER BY id ASC;",
+    contagem_geral: "SELECT (SELECT COUNT(*) FROM pedidos) as total_pedidos, (SELECT COUNT(*) FROM mesas) as total_mesas, (SELECT COUNT(*) FROM turnos_caixa) as total_turnos;"
+  };
+
+  txt.value = queries[presetKey] || '';
+
+  if (presetKey === 'usuarios_login' || presetKey === 'lojas_master') {
+    if (sel) sel.value = 'master';
+  } else {
+    if (sel && sel.value === 'master' && window._listaRestaurantesEmergencia && window._listaRestaurantesEmergencia.length > 0) {
+      var selEmerg = document.getElementById('select-emergencia-restaurante');
+      if (selEmerg && selEmerg.value) {
+        sel.value = selEmerg.value;
+      } else {
+        sel.value = window._listaRestaurantesEmergencia[0].id;
+      }
+    }
+  }
+
+  showToast('Preset aplicado ao editor SQL!', 'info');
+}
+
+function executarSqlS23() {
+  if (navigator.vibrate) try { navigator.vibrate([15, 30, 15]); } catch (_) {}
+  var txt = document.getElementById('s23-sql-input');
+  var sel = document.getElementById('s23-sql-db-select');
+  var badge = document.getElementById('s23-sql-status-badge');
+  var cont = document.getElementById('s23-sql-resultado-container');
+  var btn = document.getElementById('btn-executar-sql-s23');
+
+  var sql = txt ? txt.value.trim() : '';
+  var db = sel ? sel.value : 'master';
+
+  if (!sql) {
+    showToast('Digite uma instrução SQL ou toque em um atalho acima.', 'warning');
+    return;
+  }
+
+  if (badge) {
+    badge.textContent = 'Executando...';
+    badge.style.color = '#38bdf8';
+  }
+  if (btn) btn.disabled = true;
+
+  apiPost('/api/super/sql/executar', { sql: sql, database: db }, function(err, data) {
+    if (btn) btn.disabled = false;
+    if (err || !data || !data.ok) {
+      var msgErro = (data && data.erro) || (err && err.message) || 'Erro na execução SQL';
+      if (badge) {
+        badge.textContent = 'Erro';
+        badge.style.color = '#ef4444';
+      }
+      if (cont) {
+        cont.innerHTML = '<div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#ef4444; padding:10px 12px; border-radius:8px; font-family:monospace; font-size:0.75rem; word-break:break-word;">'
+          + '<i class="fa-solid fa-triangle-exclamation"></i> <strong>Erro SQL:</strong> ' + esc(msgErro)
+          + '</div>';
+      }
+      return;
+    }
+
+    if (badge) {
+      badge.textContent = (data.tempoMs || 0) + 'ms';
+      badge.style.color = '#10b981';
+    }
+
+    if (data.tipo === 'SELECT') {
+      var rows = data.linhas || [];
+      var cols = data.colunas || [];
+      if (rows.length === 0) {
+        cont.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:16px;">'
+          + '<i class="fa-solid fa-circle-info"></i> Nenhuma linha retornada (0 resultados) em ' + (data.tempoMs || 0) + 'ms.'
+          + '</div>';
+        return;
+      }
+
+      var html = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:0.72rem; color:var(--text-muted);">'
+        + '<span><strong>' + rows.length + '</strong> linha(s) retornada(s)</span>'
+        + '<span style="font-family:monospace; color:#10b981;">' + (data.tempoMs || 0) + 'ms</span>'
+        + '</div>'
+        + '<div style="overflow-x:auto;">'
+        + '<table style="width:100%; border-collapse:collapse; text-align:left; font-family:monospace; font-size:0.72rem;">'
+        + '<thead><tr style="background:rgba(255,255,255,0.08); border-bottom:1.5px solid var(--border-color);">';
+
+      cols.forEach(function(c) {
+        html += '<th style="padding:6px 8px; color:var(--text-main); font-weight:700; white-space:nowrap;">' + esc(c) + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      rows.forEach(function(row, idx) {
+        var bg = (idx % 2 === 0) ? 'background:rgba(255,255,255,0.02);' : 'background:rgba(0,0,0,0.15);';
+        html += '<tr style="' + bg + ' border-bottom:1px solid rgba(255,255,255,0.05);">';
+        cols.forEach(function(c) {
+          var val = row[c];
+          if (val === null || val === undefined) val = '<span style="color:#64748b;">NULL</span>';
+          else if (typeof val === 'object') val = esc(JSON.stringify(val));
+          else val = esc(String(val));
+          html += '<td style="padding:5px 8px; white-space:nowrap; max-width:220px; overflow:hidden; text-overflow:ellipsis;">' + val + '</td>';
+        });
+        html += '</tr>';
+      });
+
+      html += '</tbody></table></div>';
+      cont.innerHTML = html;
+    } else {
+      // Mutation (UPDATE/INSERT/DELETE)
+      cont.innerHTML = '<div style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#10b981; padding:12px; border-radius:8px; font-size:0.78rem;">'
+        + '<div style="font-weight:700; display:flex; align-items:center; gap:6px; margin-bottom:4px;">'
+        + '<i class="fa-solid fa-circle-check"></i> ' + esc(data.mensagem || 'Comando executado com sucesso!')
+        + '</div>'
+        + '<div style="font-size:0.72rem; color:var(--text-muted); font-family:monospace;">'
+        + 'Linhas alteradas: <strong>' + (data.alterados !== undefined ? data.alterados : '--') + '</strong> • Tempo: ' + (data.tempoMs || 0) + 'ms'
+        + (data.lastInsertRowid ? ' • Último ID inserido: ' + data.lastInsertRowid : '')
+        + '</div>'
+        + '</div>';
+    }
+  });
+}
+
+function limparSqlS23() {
+  var txt = document.getElementById('s23-sql-input');
+  var cont = document.getElementById('s23-sql-resultado-container');
+  var badge = document.getElementById('s23-sql-status-badge');
+  if (txt) txt.value = '';
+  if (badge) {
+    badge.textContent = 'Pronto';
+    badge.style.color = 'var(--text-muted)';
+  }
+  if (cont) {
+    cont.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:24px 10px;">'
+      + '<i class="fa-solid fa-code" style="font-size:1.4rem; opacity:0.3; margin-bottom:6px; display:block;"></i>'
+      + 'Selecione um preset ou digite um comando SQL e toque em <strong>Executar Query</strong>.'
+      + '</div>';
+  }
+}
+
+// ═══ PWA INSTALL HANDLER PARA SAMSUNG GALAXY S23 ULTRA ═══
+var _deferredPromptS23 = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  _deferredPromptS23 = e;
+  var banner = document.getElementById('banner-pwa-s23');
+  if (banner) banner.style.display = 'flex';
+});
+
+function instalarAppS23() {
+  if (_deferredPromptS23) {
+    _deferredPromptS23.prompt();
+    _deferredPromptS23.userChoice.then(function(choice) {
+      if (choice && choice.outcome === 'accepted') {
+        showToast('Super Admin instalado com sucesso no seu Galaxy S23 Ultra!', 'success');
+        var banner = document.getElementById('banner-pwa-s23');
+        if (banner) banner.style.display = 'none';
+      }
+      _deferredPromptS23 = null;
+    });
+  } else {
+    showToast('Para instalar: no navegador toque no menu (⋮) e selecione "Instalar aplicativo" ou "Adicionar à tela inicial".', 'info');
+  }
+}
+
+// Bind explícito ao escopo global window
+window.atualizarCardAcessoGlobal = atualizarCardAcessoGlobal;
+window.alternarTunelGlobalRapido = alternarTunelGlobalRapido;
+window.abrirModalQrCodeAcessoGlobal = abrirModalQrCodeAcessoGlobal;
+window.fecharModalQrCodeAcessoGlobal = fecharModalQrCodeAcessoGlobal;
+window.copiarUrlGlobalAtiva = copiarUrlGlobalAtiva;
+window.abrirCentroComandoMobile = abrirCentroComandoMobile;
+window.fecharCentroComandoMobile = fecharCentroComandoMobile;
+window.filtrarRestaurantesEmergencia = filtrarRestaurantesEmergencia;
+window.abrirWhatsappMensagem = abrirWhatsappMensagem;
+window.executarAcaoEmergenciaMobile = executarAcaoEmergenciaMobile;
+window.pingarTodosServidoresS23 = pingarTodosServidoresS23;
+window.toggleAutoStartBoot = toggleAutoStartBoot;
+window.alternarTabModalS23 = alternarTabModalS23;
+window.carregarBancosSqlS23 = carregarBancosSqlS23;
+window.aplicarPresetSqlS23 = aplicarPresetSqlS23;
+window.executarSqlS23 = executarSqlS23;
+window.limparSqlS23 = limparSqlS23;
+window.instalarAppS23 = instalarAppS23;
+
 /* ═══ COMPATIBILIDADE GLOBAL DE FUNÇÕES HTML (ONCLICK BINDINGS) ═══ */
 (function() {
   var globalFns = {
+    atualizarCardAcessoGlobal: atualizarCardAcessoGlobal,
+    alternarTunelGlobalRapido: alternarTunelGlobalRapido,
+    abrirModalQrCodeAcessoGlobal: abrirModalQrCodeAcessoGlobal,
+    fecharModalQrCodeAcessoGlobal: fecharModalQrCodeAcessoGlobal,
+    copiarUrlGlobalAtiva: copiarUrlGlobalAtiva,
+    abrirCentroComandoMobile: abrirCentroComandoMobile,
+    fecharCentroComandoMobile: fecharCentroComandoMobile,
+    executarAcaoEmergenciaMobile: executarAcaoEmergenciaMobile,
+    pingarTodosServidoresS23: pingarTodosServidoresS23,
+    toggleAutoStartBoot: toggleAutoStartBoot,
+    alternarTabModalS23: alternarTabModalS23,
+    carregarBancosSqlS23: carregarBancosSqlS23,
+    aplicarPresetSqlS23: aplicarPresetSqlS23,
+    executarSqlS23: executarSqlS23,
+    limparSqlS23: limparSqlS23,
+    instalarAppS23: instalarAppS23,
     carregarRestaurantes: typeof carregarRestaurantes === 'function' ? carregarRestaurantes : null,
     enviarCertificado: typeof enviarCertificado === 'function' ? enviarCertificado : null,
     switchTab: typeof switchTab === 'function' ? switchTab : null,

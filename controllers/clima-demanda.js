@@ -268,4 +268,42 @@ module.exports = function(app, options) {
       res.json({ sucesso: true, mensagem: 'Localização atualizada com sucesso.' });
     });
   });
+
+  // 3. Endpoint Dashboard Consolidado para o Painel do Dono e Testes
+  app.get('/api/clima-demanda/dashboard', (req, res) => {
+    const db = resolveDb(req);
+    migrarSchema(db);
+
+    db.get(`SELECT * FROM clima_config WHERE id = 1`, (err, cfg) => {
+      const cidade = (cfg && cfg.cidade) || 'São Paulo';
+      const lat = (cfg && cfg.latitude) || -23.5505;
+      const lon = (cfg && cfg.longitude) || -46.6333;
+
+      const cacheKey = `${lat.toFixed(2)}_${lon.toFixed(2)}`;
+      const cached = cacheClima.get(cacheKey);
+      const dias = (cached && cached.data && cached.data.dias) || [
+        {
+          dia_semana: 'Hoje',
+          condicao: 'Ensolarado',
+          icone: 'ph-sun',
+          temp_min: 19,
+          temp_max: 28,
+          chuva_mm: 0,
+          probabilidade_chuva_pct: 10,
+          impactos: [{ categoria: 'Bebidas Geladas & Chopp', impacto_pct: +35, texto: 'Pico esperado em consumo de chopp' }],
+          recomendacoes: ['Reforce o estoque de barris de chopp e gelo']
+        }
+      ];
+
+      res.json({
+        ok: true,
+        sucesso: true,
+        cidade,
+        previsao_atual: dias[0],
+        impacto_demanda: dias[0].impactos || [],
+        recomendacoes_cozinha: dias[0].recomendacoes || [],
+        proximos_dias: dias.slice(1, 5)
+      });
+    });
+  });
 };

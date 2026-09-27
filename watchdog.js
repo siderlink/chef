@@ -71,9 +71,10 @@ function getBackoffMs() {
 function killPortOwner(port) {
   return new Promise((resolve) => {
     if (process.platform !== 'win32') return resolve();
-    const cmd = `Get-Process -Id (Get-NetTCPConnection -LocalPort ${port} -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue`;
+    const cmd = `Get-NetTCPConnection -LocalPort ${port} -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }`;
     const ps = spawn('powershell', ['-NoProfile', '-Command', cmd], { windowsHide: true });
-    ps.on('close', () => setTimeout(resolve, 1000));
+    ps.on('close', () => setTimeout(resolve, 800));
+    ps.on('error', () => resolve());
   });
 }
 
@@ -121,7 +122,6 @@ async function healthLoop() {
 function checkRam() {
   if (isShuttingDown || !currentChild) return;
   const used = process.memoryUsage();
-  const heapMB = Math.round(used.heapUsed / 1024 / 1024);
   const rssMB = Math.round(used.rss / 1024 / 1024);
 
   if (rssMB > RAM_THRESHOLD_MB) {
@@ -131,6 +131,18 @@ function checkRam() {
 }
 
 // ── Start / Restart ───────────────────────────────────────────────────
+async function restartServer(reason) {
+  if (isShuttingDown) return;
+  if (currentChild) {
+    try {
+      currentChild.removeAllListeners('exit');
+      currentChild.kill('SIGTERM');
+    } catch (e) {}
+    currentChild = null;
+  }
+  return startServer(reason);
+}
+
 async function startServer(reason) {
   if (isShuttingDown) return;
 
@@ -158,15 +170,25 @@ async function startServer(reason) {
     env: { ...process.env, WATCHDOG_ACTIVE: '1' }
   });
 
-  // Inicia Vite (se não for modo watchdog-only)
-  const viteCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-  viteChild = spawn(viteCmd, ['vite', '--host'], {
-    stdio: 'inherit',
-    cwd: __dirname,
-    shell: true
-  });
+  // Inicia Vite (apenas na primeira inicialização para não duplicar instâncias)
+  if (!viteChild) {
+    const viteCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+    viteChild = spawn(viteCmd, ['vite', '--host'], {
+      stdio: 'inherit',
+      cwd: __dirname,
+      shell: true
+    });
 
-  log('INFO', `Servidor iniciado (PID: ${currentChild.pid}, Vite PID: ${viteChild.pid})`);
+    viteChild.on('exit', (code, signal) => {
+      viteChild = null;
+      if (!isShuttingDown && currentChild) {
+        log('WARN', `Vite encerrou (code=${code}, signal=${signal}) — encerrando backend junto.`);
+        currentChild.kill();
+      }
+    });
+  }
+
+  log('INFO', `Servidor iniciado (PID: ${currentChild.pid}, Vite PID: ${viteChild ? viteChild.pid : 'existente'})`);
 
   // Health check loop — só começa 10s após o start
   setTimeout(() => {
@@ -178,16 +200,9 @@ async function startServer(reason) {
   // RAM monitor — a cada 60s
   ramTimer = setInterval(checkRam, 60000);
 
-  // Se o Vite morre, mata o backend também (cascata limpa)
-  viteChild.on('exit', (code, signal) => {
-    if (!isShuttingDown && currentChild) {
-      log('WARN', `Vite encerrou (code=${code}, signal=${signal}) — encerrando backend junto.`);
-      currentChild.kill();
-    }
-  });
-
   // Se o backend morre
   currentChild.on('exit', async (code, signal) => {
+    currentChild = null;
     if (isShuttingDown) {
       log('INFO', 'Servidor encerrado normalmente.');
       process.exit(0);
