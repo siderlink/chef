@@ -12706,6 +12706,24 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
     } catch (eReservas) {
       console.error('Erro ao carregar o Controller Reservas:', eReservas);
     }
+
+    try {
+      require('./controllers/rotas-faltantes')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        getTenantDbPath,
+        superAdminAuth,
+        suporteAuth: undefined, // definido internamente no controller quando necessário
+        JWT_SECRET,
+        bcrypt
+      });
+    } catch (eRotas) {
+      console.error('Erro ao carregar o Controller Rotas Faltantes:', eRotas);
+    }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);
   }

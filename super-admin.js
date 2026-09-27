@@ -634,6 +634,70 @@ function setLoginMode(mode) {
 }
 window.setLoginMode = setLoginMode;
 
+/* ═══ CHAVES OFFLINE ═══ */
+function carregarChavesOffline() {
+  fetch('/api/super/chaves', { headers: authHeaders() })
+    .then(r => r.json())
+    .then(d => {
+      const lista = document.getElementById('chaves-offline-lista');
+      if (!lista) return;
+      const chaves = d.chaves || [];
+      if (!chaves.length) {
+        lista.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem; padding:6px 4px;">Nenhuma chave emitida. Gere uma chave informando o servidor de destino.</p>';
+        return;
+      }
+      const statusCor = { ativa: '#22c55e', usada: '#94a3b8', revogada: '#ef4444' };
+      lista.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%; font-size:0.78rem; border-collapse:collapse;">' +
+        '<tr style="color:var(--text-muted); text-align:left;">' + ['Chave', 'Servidor', 'Status', 'Restaurante', 'Criada', 'Usada em', ''].map(h => `<th style="padding:6px 8px; font-weight:600;">${h}</th>`).join('') + '</tr>' +
+        chaves.map(c => `
+          <tr style="border-top:1px solid var(--border);">
+            <td style="padding:7px 8px; font-family:monospace; user-select:all;">${c.chave}</td>
+            <td style="padding:7px 8px;">${c.servidor_node || '-'}</td>
+            <td style="padding:7px 8px;"><span style="background:${statusCor[c.status] || '#94a3b8'}22; color:${statusCor[c.status] || '#94a3b8'}; font-weight:700; padding:2px 10px; border-radius:10px; text-transform:uppercase; font-size:0.68rem;">${c.status}</span></td>
+            <td style="padding:7px 8px;">${c.restaurante_nome || '-'}</td>
+            <td style="padding:7px 8px; white-space:nowrap;">${c.criada_em || '-'}</td>
+            <td style="padding:7px 8px; white-space:nowrap;">${c.usada_em || '-'}</td>
+            <td style="padding:7px 8px;">${c.status === 'ativa' ? `<button onclick="revogarChaveOffline(${c.id})" title="Revogar" style="color:#ef4444; background:none; border:none; cursor:pointer;"><i class="fa-solid fa-ban"></i></button>` : ''}</td>
+          </tr>`).join('') +
+        '</table></div>';
+    })
+    .catch(() => {});
+}
+window.carregarChavesOffline = carregarChavesOffline;
+
+function gerarChaveOffline() {
+  const input = document.getElementById('chave-servidor');
+  const servidor = input ? input.value.trim() : '';
+  if (!servidor) return alert('Informe o servidor/nó de destino da chave.');
+  fetch('/api/super/chaves', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ servidor_node: servidor })
+  })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        if (input) input.value = '';
+        carregarChavesOffline();
+        alert('✅ Chave gerada:\n\n' + d.chave + '\n\nEnvie ao cliente para usar no cadastro — ele entrará no servidor "' + d.servidor_node + '" com modo Offline-First.');
+      } else alert(d.erro || 'Erro ao gerar chave.');
+    })
+    .catch(() => alert('Erro de conexão.'));
+}
+window.gerarChaveOffline = gerarChaveOffline;
+
+function revogarChaveOffline(id) {
+  if (!confirm('Revogar esta chave? Ela não poderá mais ser usada.')) return;
+  fetch('/api/super/chaves/' + id + '/revogar', {
+    method: 'POST',
+    headers: authHeaders()
+  })
+    .then(r => r.json())
+    .then(d => { if (!d.ok) alert(d.erro || 'Erro.'); carregarChavesOffline(); })
+    .catch(() => {});
+}
+window.revogarChaveOffline = revogarChaveOffline;
+
 /* ═══ NAVEGAÇÃO ═══ */
 function switchTab(targetId) {
   var items = document.querySelectorAll('.menu-item');
@@ -730,120 +794,68 @@ function switchTab(targetId) {
   if (titleEl) titleEl.textContent = t[0];
   if (subTitleEl) subTitleEl.textContent = t[1];
 
-  window.carregarChavesOffline = function () {
-    fetch('/api/super/chaves', { headers: authHeaders() })
-      .then(r => r.json())
-      .then(d => {
-        const lista = document.getElementById('chaves-offline-lista');
-        if (!lista) return;
-        const chaves = d.chaves || [];
-        if (!chaves.length) {
-          lista.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem; padding:6px 4px;">Nenhuma chave emitida. Gere uma chave informando o servidor de destino.</p>';
-          return;
-        }
-        const statusCor = { ativa: '#22c55e', usada: '#94a3b8', revogada: '#ef4444' };
-        lista.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%; font-size:0.78rem; border-collapse:collapse;">' +
-          '<tr style="color:var(--text-muted); text-align:left;">' + ['Chave', 'Servidor', 'Status', 'Restaurante', 'Criada', 'Usada em', ''].map(h => `<th style="padding:6px 8px; font-weight:600;">${h}</th>`).join('') + '</tr>' +
-          chaves.map(c => `
-            <tr style="border-top:1px solid var(--border);">
-              <td style="padding:7px 8px; font-family:monospace; user-select:all;">${c.chave}</td>
-              <td style="padding:7px 8px;">${c.servidor_node || '-'}</td>
-              <td style="padding:7px 8px;"><span style="background:${statusCor[c.status] || '#94a3b8'}22; color:${statusCor[c.status] || '#94a3b8'}; font-weight:700; padding:2px 10px; border-radius:10px; text-transform:uppercase; font-size:0.68rem;">${c.status}</span></td>
-              <td style="padding:7px 8px;">${c.restaurante_nome || '-'}</td>
-              <td style="padding:7px 8px; white-space:nowrap;">${c.criada_em || '-'}</td>
-              <td style="padding:7px 8px; white-space:nowrap;">${c.usada_em || '-'}</td>
-              <td style="padding:7px 8px;">${c.status === 'ativa' ? `<button onclick="revogarChaveOffline(${c.id})" title="Revogar" style="color:#ef4444; background:none; border:none; cursor:pointer;"><i class="fa-solid fa-ban"></i></button>` : ''}</td>
-            </tr>`).join('') +
-          '</table></div>';
-      })
-      .catch(() => {});
-  };
-
-  window.gerarChaveOffline = function () {
-    const input = document.getElementById('chave-servidor');
-    const servidor = input ? input.value.trim() : '';
-    if (!servidor) return alert('Informe o servidor/nó de destino da chave.');
-    fetch('/api/super/chaves', {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ servidor_node: servidor })
-    })
-      .then(r => r.json())
-      .then(d => {
-        if (d.ok) {
-          if (input) input.value = '';
-          carregarChavesOffline();
-          alert('✅ Chave gerada:\n\n' + d.chave + '\n\nEnvie ao cliente para usar no cadastro — ele entrará no servidor "' + d.servidor_node + '" com modo Offline-First.');
-        } else alert(d.erro || 'Erro ao gerar chave.');
-      })
-      .catch(() => alert('Erro de conexão.'));
-  };
-
-  window.revogarChaveOffline = function (id) {
-    if (!confirm('Revogar esta chave? Ela não poderá mais ser usada.')) return;
-    fetch('/api/super/chaves/' + id + '/revogar', {
-      method: 'POST',
-      headers: authHeaders()
-    })
-      .then(r => r.json())
-      .then(d => { if (!d.ok) alert(d.erro || 'Erro.'); carregarChavesOffline(); })
-      .catch(() => {});
-  };
-
-
   if (targetId === 'sec-dash') carregarDashboard();
   else if (targetId === 'sec-bi') carregarBiFranquias();
   else if (targetId === 'sec-restaurantes') { carregarRestaurantes(); carregarChavesOffline(); }
   else if (targetId === 'sec-usuarios') carregarUsuarios();
   else if (targetId === 'sec-servidor') { carregarServidor(); carregarCerts(); }
   else if (targetId === 'sec-mensagens') carregarMensagens();
-  else if (targetId === 'sec-tema-custom') { carregarTemaCustomGlobal(); carregarTemasLista(); }
+  else if (targetId === 'sec-tema-custom') {
+    if (typeof window.carregarTemaCustomGlobal === 'function') window.carregarTemaCustomGlobal();
+    if (typeof window.carregarTemasLista === 'function') window.carregarTemasLista();
+  }
   else if (targetId === 'sec-logs') carregarLogs(0);
   else if (targetId === 'sec-config') carregarConfig();
   else if (targetId === 'sec-ia-global') carregarConfig();
-  else if (targetId === 'sec-licencas') carregarLicencas();
+  else if (targetId === 'sec-licencas') { if (typeof window.carregarLicencas === 'function') window.carregarLicencas(); }
   else if (targetId === 'sec-clientes') carregarClientes();
   else if (targetId === 'sec-suporte') carregarSuporte();
-  else if (targetId === 'sec-funcoes') { renderFuncoes(); carregarSolicitacoesFeatures(); }
-  else if (targetId === 'sec-features-restaurante') renderFeaturesRestaurante();
-  else if (targetId === 'sec-dominios') renderDominios();
-  else if (targetId === 'sec-capacidade') renderCapacidade();
-  else if (targetId === 'sec-mapa') renderMapa();
-  else if (targetId === 'sec-load-control') renderLoadControl();
+  else if (targetId === 'sec-funcoes') {
+    if (typeof window.renderFuncoes === 'function') window.renderFuncoes();
+    if (typeof window.carregarSolicitacoesFeatures === 'function') window.carregarSolicitacoesFeatures();
+  }
+  else if (targetId === 'sec-features-restaurante') { if (typeof window.renderFeaturesRestaurante === 'function') window.renderFeaturesRestaurante(); }
+  else if (targetId === 'sec-dominios') { if (typeof window.renderDominios === 'function') window.renderDominios(); }
+  else if (targetId === 'sec-capacidade') { if (typeof window.renderCapacidade === 'function') window.renderCapacidade(); }
+  else if (targetId === 'sec-mapa') { if (typeof window.renderMapa === 'function') window.renderMapa(); }
+  else if (targetId === 'sec-load-control') { if (typeof window.renderLoadControl === 'function') window.renderLoadControl(); }
   else if (targetId === 'sec-terminal') { resetInactivityTimer(); popularAlvosTerminal(); }
-  else if (targetId === 'sec-instancias') carregarInstancias();
+  else if (targetId === 'sec-instancias') { if (typeof window.carregarInstancias === 'function') window.carregarInstancias(); }
   else if (targetId === 'sec-suporte-remoto') { if (typeof abrirSecaoSuporteRemoto === 'function') abrirSecaoSuporteRemoto(); }
   else if (targetId === 'sec-recuperar-acesso') carregarUsuariosRecovery();
   else if (targetId === 'sec-tarefas') { if (typeof carregarTarefas === 'function') carregarTarefas(); }
   else if (targetId === 'sec-site-vendas') carregarSiteVendas();
   else if (targetId === 'sec-afiliados') carregarPainelAfiliadosCompleto();
   else if (targetId === 'sec-seguranca-waf') carregarConfigSeguranca();
-  else if (targetId === 'sec-alterar-senha') { var inp = document.getElementById('senha-atual-input'); if (inp) inp.focus(); }
+  else if (targetId === 'sec-alterar-senha') { var inp = document.getElementById('senha-atual-input'); if (inp && typeof inp.focus === 'function') inp.focus(); }
   else if (targetId === 'sec-synccheff') { if (typeof window.carregarSyncCheffStatus === 'function') window.carregarSyncCheffStatus(); }
-  else if (targetId === 'sec-deploy-updates') { carregarCommitsGit(); carregarGitStatus(); }
-  else if (targetId === 'sec-plugins-modulos') carregarPlugins();
+  else if (targetId === 'sec-deploy-updates') {
+    if (typeof window.carregarCommitsGit === 'function') window.carregarCommitsGit();
+    if (typeof window.carregarGitStatus === 'function') window.carregarGitStatus();
+  }
+  else if (targetId === 'sec-plugins-modulos') { if (typeof window.carregarPlugins === 'function') window.carregarPlugins(); }
   else if (targetId === 'sec-supabase') carregarSupabase();
   else if (targetId === 'sec-infra-cloud') carregarInfraCloud();
   else if (targetId === 'sec-tuneis') carregarTuneis();
-  else if (targetId === 'sec-image-providers') carregarImageProviders();
+  else if (targetId === 'sec-image-providers') { if (typeof window.carregarImageProviders === 'function') window.carregarImageProviders(); }
   else if (targetId === 'sec-notificacoes') {
     if (typeof carregarCentralNotificacoes === 'function') carregarCentralNotificacoes();
     else if (typeof window.carregarCentralNotificacoes === 'function') window.carregarCentralNotificacoes();
   }
   else if (targetId === 'sec-contador-gestao') {
-    carregarGestaoContadorCheff();
+    if (typeof window.carregarGestaoContadorCheff === 'function') window.carregarGestaoContadorCheff();
   }
   else if (targetId === 'sec-fin-custodia') {
-    carregarFinCustodia();
+    if (typeof window.carregarFinCustodia === 'function') window.carregarFinCustodia();
   }
   else if (targetId === 'sec-fin-assinaturas') {
-    carregarFinAssinaturas();
+    if (typeof window.carregarFinAssinaturas === 'function') window.carregarFinAssinaturas();
   }
   else if (targetId === 'sec-fin-contratacoes') {
-    carregarFinContratacoes();
+    if (typeof window.carregarFinContratacoes === 'function') window.carregarFinContratacoes();
   }
   else if (targetId === 'sec-fin-gateways') {
-    carregarFinGateways();
+    if (typeof window.carregarFinGateways === 'function') window.carregarFinGateways();
   }
 }
 
@@ -3097,6 +3109,34 @@ function initAdminPanelUI() {
   var btnWizardPrev = document.getElementById('btn-wizard-prev');
   if (btnWizardPrev) btnWizardPrev.addEventListener('click', passoAnteriorWizard);
 
+  var restSearch = document.getElementById('rest-search');
+  if (restSearch) restSearch.addEventListener('input', renderRestaurantes);
+  var restFilterStatus = document.getElementById('rest-filter-status');
+  if (restFilterStatus) restFilterStatus.addEventListener('change', renderRestaurantes);
+  ['rest-f-de', 'rest-f-ate', 'rest-f-endereco', 'rest-f-bairro', 'rest-f-cidade', 'rest-f-valor', 'rest-f-plano', 'rest-f-dispositivo'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', renderRestaurantes);
+      el.addEventListener('change', renderRestaurantes);
+    }
+  });
+  var btnRestLimpar = document.getElementById('btn-rest-limpar-filtros');
+  if (btnRestLimpar) {
+    btnRestLimpar.addEventListener('click', function() {
+      var rSearch = document.getElementById('rest-search'); if (rSearch) rSearch.value = '';
+      var rStatus = document.getElementById('rest-filter-status'); if (rStatus) rStatus.value = '';
+      var rDe = document.getElementById('rest-f-de'); if (rDe) rDe.value = '';
+      var rAte = document.getElementById('rest-f-ate'); if (rAte) rAte.value = '';
+      var rEnd = document.getElementById('rest-f-endereco'); if (rEnd) rEnd.value = '';
+      var rBairro = document.getElementById('rest-f-bairro'); if (rBairro) rBairro.value = '';
+      var rCidade = document.getElementById('rest-f-cidade'); if (rCidade) rCidade.value = '';
+      var rVal = document.getElementById('rest-f-valor'); if (rVal) rVal.value = '';
+      var rPlano = document.getElementById('rest-f-plano'); if (rPlano) rPlano.value = '';
+      var rDisp = document.getElementById('rest-f-dispositivo'); if (rDisp) rDisp.value = '';
+      renderRestaurantes();
+    });
+  }
+
   // Add team row
   var btnAddTeam = document.getElementById('btn-add-team-row');
   if (btnAddTeam) btnAddTeam.addEventListener('click', function() {
@@ -3418,6 +3458,28 @@ function initAdminPanelUI() {
   if (clientesSearch) clientesSearch.addEventListener('input', renderClientes);
   var clientesFilterRest = document.getElementById('clientes-filter-rest');
   if (clientesFilterRest) clientesFilterRest.addEventListener('change', renderClientes);
+  ['cli-f-endereco', 'cli-f-bairro', 'cli-f-cidade', 'cli-f-valor', 'cli-f-data', 'cli-f-nivel', 'cli-f-dispositivo'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', renderClientes);
+      el.addEventListener('change', renderClientes);
+    }
+  });
+  var btnCliLimpar = document.getElementById('btn-cli-limpar-filtros');
+  if (btnCliLimpar) {
+    btnCliLimpar.addEventListener('click', function() {
+      var cSearch = document.getElementById('clientes-search'); if (cSearch) cSearch.value = '';
+      var cFilterRest = document.getElementById('clientes-filter-rest'); if (cFilterRest) cFilterRest.value = '';
+      var cEnd = document.getElementById('cli-f-endereco'); if (cEnd) cEnd.value = '';
+      var cBairro = document.getElementById('cli-f-bairro'); if (cBairro) cBairro.value = '';
+      var cCidade = document.getElementById('cli-f-cidade'); if (cCidade) cCidade.value = '';
+      var cVal = document.getElementById('cli-f-valor'); if (cVal) cVal.value = '';
+      var cData = document.getElementById('cli-f-data'); if (cData) cData.value = '';
+      var cNivel = document.getElementById('cli-f-nivel'); if (cNivel) cNivel.value = '';
+      var cDisp = document.getElementById('cli-f-dispositivo'); if (cDisp) cDisp.value = '';
+      renderClientes();
+    });
+  }
 
   /* ═══ TERMINAL ═══ */
   var btnExec = document.getElementById('btn-exec');
@@ -3780,7 +3842,8 @@ document.addEventListener('DOMContentLoaded', function() {
   /* ═══ LICENÇAS & TELEMETRIA ═══ */
   window.carregarLicencas = function() {
     carregarChaves();
-    carregarTelemetria();
+    if (typeof window.carregarTelemetria === 'function') window.carregarTelemetria();
+    else if (typeof carregarTelemetria === 'function') carregarTelemetria();
   };
 
   function carregarChaves() {
@@ -3872,7 +3935,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
 
-  window.carregarTelemetria = function() {
+  function carregarTelemetria() {
     apiGet('/api/super/telemetria', function(err, data) {
       var tbody = document.getElementById('telemetria-tbody');
       var cards = document.getElementById('telemetria-cards');
@@ -3922,7 +3985,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       tbody.innerHTML = html;
     });
-  };
+  }
+  window.carregarTelemetria = carregarTelemetria;
 
   function statCard(label, value, color) {
     return '<div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-color);border-radius:10px;padding:12px;text-align:center;">' +
@@ -4630,7 +4694,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     var btn = document.getElementById('btn-refresh-mapa');
-    if (btn) btn.addEventListener('click', renderMapa);
+    if (btn) btn.addEventListener('click', function() { if (typeof window.renderMapa === 'function') window.renderMapa(); });
   })();
 
 
@@ -4826,22 +4890,22 @@ document.addEventListener('DOMContentLoaded', function() {
     if (grid) {
       grid.addEventListener('click', function(ev) {
         var btn = ev.target.closest ? ev.target.closest('.lc-modo-btn') : null;
-        if (btn) girarChaveLoadControl(btn.getAttribute('data-modo'));
+        if (btn && typeof window.girarChaveLoadControl === 'function') window.girarChaveLoadControl(btn.getAttribute('data-modo'));
       });
     }
     var btnSave = document.getElementById('btn-lc-save');
-    if (btnSave) btnSave.addEventListener('click', salvarConfigLoadControl);
+    if (btnSave) btnSave.addEventListener('click', function() { if (typeof window.salvarConfigLoadControl === 'function') window.salvarConfigLoadControl(); });
     var btnRef = document.getElementById('btn-lc-refresh');
-    if (btnRef) btnRef.addEventListener('click', function() { renderLoadControl(true); });
+    if (btnRef) btnRef.addEventListener('click', function() { if (typeof window.renderLoadControl === 'function') window.renderLoadControl(true); });
     var tbTenants = document.getElementById('lc-tenants-tbody');
     if (tbTenants) {
       tbTenants.addEventListener('change', function(ev) {
         var sel = ev.target.closest ? ev.target.closest('.lc-tenant-override') : null;
-        if (sel) salvarOverrideTenantLC(sel.getAttribute('data-rid'), sel.value || null);
+        if (sel && typeof window.salvarOverrideTenantLC === 'function') window.salvarOverrideTenantLC(sel.getAttribute('data-rid'), sel.value || null);
       });
     }
     var btnSpike = document.getElementById('btn-lc-spike-save');
-    if (btnSpike) btnSpike.addEventListener('click', salvarSpikeLoadControl);
+    if (btnSpike) btnSpike.addEventListener('click', function() { if (typeof window.salvarSpikeLoadControl === 'function') window.salvarSpikeLoadControl(); });
     ['lc-spike-threshold', 'lc-spike-cooldown'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener('input', function() { el.dataset.touched = '1'; });
@@ -4860,7 +4924,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function startLcAuto() {
       _lcAutoTimer = setInterval(function() {
         var sec = document.getElementById('sec-load-control');
-        if (sec && sec.className.indexOf('active') !== -1) renderLoadControl(true);
+        if (sec && sec.classList && sec.classList.contains('active') && typeof window.renderLoadControl === 'function') window.renderLoadControl(true);
       }, 5000);
     }
     startLcAuto();
@@ -5040,9 +5104,12 @@ document.addEventListener('DOMContentLoaded', function() {
     apiGet('/api/super/servers', function(err, data) {
       if (!err && data && data.ok) renderServidoresHub(data.servers || [], data.strategy);
     });
-    carregarChavesDistribuicao();
-    carregarFilaSync();
-    carregarConflitosSync();
+    if (typeof window.carregarChavesDistribuicao === 'function') window.carregarChavesDistribuicao();
+    else if (typeof carregarChavesDistribuicao === 'function') carregarChavesDistribuicao();
+    if (typeof window.carregarFilaSync === 'function') window.carregarFilaSync();
+    else if (typeof carregarFilaSync === 'function') carregarFilaSync();
+    if (typeof window.carregarConflitosSync === 'function') window.carregarConflitosSync();
+    else if (typeof carregarConflitosSync === 'function') carregarConflitosSync();
   };
 
   window.carregarFilaSync = function() {
@@ -5376,7 +5443,7 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   /* ═══ CHAVES DE DISTRIBUIÇÃO & ONBOARDING ═══ */
-  window.carregarChavesDistribuicao = function() {
+  function carregarChavesDistribuicao() {
     apiGet('/api/super/distribution/keys', function(err, data) {
       var tbody = document.getElementById('chaves-table-body');
       if (!tbody) return;
@@ -5415,7 +5482,8 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       tbody.innerHTML = html;
     });
-  };
+  }
+  window.carregarChavesDistribuicao = carregarChavesDistribuicao;
 
   /* ═══ AUTO-INSTALADOR MULTIPLATAFORMA DO SYNC ═══ */
   window.abrirModalInstaladorSync = function(chaveOpcional, restauranteNome) {
@@ -8696,7 +8764,7 @@ window.carregarTemaCustomGlobal = function() {
     .catch(function() {});
   /* Preencher dropdown de tenants para escopo */
   var sel = document.getElementById('theme-scope-tenant');
-  if (sel && sel.options.length <= 1) {
+  if (sel && sel.options && sel.options.length <= 1) {
     fetch('/api/super/restaurantes', { headers: authHeaders() })
       .then(function(r) { return r.json(); })
       .then(function(d) {
@@ -10293,10 +10361,19 @@ initSuperAdminSockets = function () {
       b.style.background = 'var(--card-bg)';
       b.style.color = 'var(--text)';
     });
-    event.target.style.background = 'var(--primary)';
-    event.target.style.color = '#fff';
+    if (typeof event !== 'undefined' && event && event.target) {
+      event.target.style.background = 'var(--primary)';
+      event.target.style.color = '#fff';
+    }
     carregarTarefas();
   };
+
+  /* Aliases globais no window */
+  window.abrirModalTarefa = window.superAdmin.abrirModalTarefa;
+  window.salvarTarefa = window.superAdmin.salvarTarefa;
+  window.moverTarefa = window.superAdmin.moverTarefa;
+  window.excluirTarefa = window.superAdmin.excluirTarefa;
+  window.filtrarTarefas = window.superAdmin.filtrarTarefas;
 
   /* Auto-load quando a seção é aberta */
   const origShow = window.showSection;
@@ -10313,10 +10390,18 @@ initSuperAdminSockets = function () {
   });
 
   /* Socket: atualizar em tempo real */
-  if (typeof io !== 'undefined') {
-    io.on('tarefa_nova', () => { if (document.getElementById('sec-tarefas')?.classList.contains('active')) carregarTarefas(); });
-    io.on('tarefa_atualizada', () => { if (document.getElementById('sec-tarefas')?.classList.contains('active')) carregarTarefas(); });
-    io.on('tarefa_removida', () => { if (document.getElementById('sec-tarefas')?.classList.contains('active')) carregarTarefas(); });
+  function ligarSocketTarefas() {
+    var sock = window._superAdminSocket;
+    if (sock && typeof sock.on === 'function') {
+      sock.on('tarefa_nova', () => { if (document.getElementById('sec-tarefas')?.classList.contains('active')) carregarTarefas(); });
+      sock.on('tarefa_atualizada', () => { if (document.getElementById('sec-tarefas')?.classList.contains('active')) carregarTarefas(); });
+      sock.on('tarefa_removida', () => { if (document.getElementById('sec-tarefas')?.classList.contains('active')) carregarTarefas(); });
+    }
+  }
+  if (typeof window !== 'undefined' && window._superAdminSocket) {
+    ligarSocketTarefas();
+  } else {
+    setTimeout(ligarSocketTarefas, 1500);
   }
 
   /* Pre-carregar equipe e restaurantes */
@@ -11563,7 +11648,7 @@ window.trocarAbaSuperContador = function(aba) {
   });
 };
 
-window.carregarGestaoContadorCheff = function() {
+function carregarGestaoContadorCheff() {
   // 1. Carregar Métricas Financeiras
   fetch('/api/super/contador/metricas', { headers: authHeaders() })
     .then(function(r) { return r.json(); })
@@ -11597,19 +11682,24 @@ window.carregarGestaoContadorCheff = function() {
     });
 
   // 2. Carregar Contadores (para popular selects e lista)
-  carregarContadoresSuperAdmin();
+  if (typeof window.carregarContadoresSuperAdmin === 'function') window.carregarContadoresSuperAdmin();
+  else if (typeof carregarContadoresSuperAdmin === 'function') carregarContadoresSuperAdmin();
 
   // 3. Carregar Demandas
-  carregarDemandasSuperAdmin();
+  if (typeof window.carregarDemandasSuperAdmin === 'function') window.carregarDemandasSuperAdmin();
+  else if (typeof carregarDemandasSuperAdmin === 'function') carregarDemandasSuperAdmin();
 
   // 4. Carregar Assinantes
-  carregarAssinantesSuperAdmin();
+  if (typeof window.carregarAssinantesSuperAdmin === 'function') window.carregarAssinantesSuperAdmin();
+  else if (typeof carregarAssinantesSuperAdmin === 'function') carregarAssinantesSuperAdmin();
 
   // 5. Carregar Bonificações
-  carregarBonificacoesSuperAdmin();
-};
+  if (typeof window.carregarBonificacoesSuperAdmin === 'function') window.carregarBonificacoesSuperAdmin();
+  else if (typeof carregarBonificacoesSuperAdmin === 'function') carregarBonificacoesSuperAdmin();
+}
+window.carregarGestaoContadorCheff = carregarGestaoContadorCheff;
 
-window.carregarContadoresSuperAdmin = function() {
+function carregarContadoresSuperAdmin() {
   fetch('/api/super/contador/contadores', { headers: authHeaders() })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -11652,9 +11742,10 @@ window.carregarContadoresSuperAdmin = function() {
     .catch(function(err) {
       console.warn('Erro ao carregar contadores:', err);
     });
-};
+}
+window.carregarContadoresSuperAdmin = carregarContadoresSuperAdmin;
 
-window.carregarDemandasSuperAdmin = function() {
+function carregarDemandasSuperAdmin() {
   fetch('/api/super/contador/demandas', { headers: authHeaders() })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -11664,7 +11755,8 @@ window.carregarDemandasSuperAdmin = function() {
     .catch(function(err) {
       console.warn('Erro ao carregar demandas:', err);
     });
-};
+}
+window.carregarDemandasSuperAdmin = carregarDemandasSuperAdmin;
 
 function renderDemandasSuperAdmin(demandas) {
   var tbody = document.getElementById('super-cont-demandas-tbody');
@@ -11735,7 +11827,7 @@ window.filtrarDemandasSuperAdmin = function(status, btn) {
   }
 };
 
-window.carregarAssinantesSuperAdmin = function() {
+function carregarAssinantesSuperAdmin() {
   fetch('/api/super/contador/assinantes', { headers: authHeaders() })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -11779,9 +11871,10 @@ window.carregarAssinantesSuperAdmin = function() {
     .catch(function(err) {
       console.warn('Erro ao carregar assinantes:', err);
     });
-};
+}
+window.carregarAssinantesSuperAdmin = carregarAssinantesSuperAdmin;
 
-window.carregarBonificacoesSuperAdmin = function() {
+function carregarBonificacoesSuperAdmin() {
   fetch('/api/super/contador/bonificacoes', { headers: authHeaders() })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -11824,7 +11917,8 @@ window.carregarBonificacoesSuperAdmin = function() {
     .catch(function(err) {
       console.warn('Erro ao carregar bonificações:', err);
     });
-};
+}
+window.carregarBonificacoesSuperAdmin = carregarBonificacoesSuperAdmin;
 
 /* ── MODAL: ATRIBUIR DEMANDA ── */
 window.abrirModalAtribuirDemandaSuperAdmin = function(demandaId, titulo, restNome) {
@@ -12004,7 +12098,7 @@ window.confirmarPagamentoBonificacaoSuperAdmin = function() {
 /* ═════════════════════════════════════════════════════════════════════════ */
 
 /* ── 1. CUSTÓDIA & REPASSES DE VERBA ── */
-window.carregarFinCustodia = function() {
+function carregarFinCustodia() {
   // Atualiza métricas e KPIs
   fetch('/api/super/financeiro/metricas', { headers: authHeaders() })
     .then(function(r) { return r.json(); })
@@ -12071,7 +12165,8 @@ window.carregarFinCustodia = function() {
       console.error(err);
       if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#ef4444;">Erro de conexão ao carregar custódia.</td></tr>';
     });
-};
+}
+window.carregarFinCustodia = carregarFinCustodia;
 
 function renderFinCustodia(itens) {
   var tbody = document.getElementById('fin-custodia-tbody');
@@ -12399,7 +12494,7 @@ window.salvarNovoRepasseCustodia = function() {
 };
 
 /* ── 2. ASSINATURAS TENANTS ── */
-window.carregarFinAssinaturas = function() {
+function carregarFinAssinaturas() {
   var busca = (document.getElementById('fin-assin-busca') ? document.getElementById('fin-assin-busca').value : '').trim();
   var status = document.getElementById('fin-assin-filtro-status') ? document.getElementById('fin-assin-filtro-status').value : 'todos';
 
@@ -12423,7 +12518,8 @@ window.carregarFinAssinaturas = function() {
       console.error(err);
       if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#ef4444;">Erro de conexão ao carregar assinaturas.</td></tr>';
     });
-};
+}
+window.carregarFinAssinaturas = carregarFinAssinaturas;
 
 function renderFinAssinaturas(assinaturas) {
   var tbody = document.getElementById('fin-assinaturas-tbody');
@@ -12573,7 +12669,7 @@ window.salvarAssinaturaTenant = function() {
 };
 
 /* ── 3. CONTRATAÇÕES & FREELANCERS ── */
-window.carregarFinContratacoes = function() {
+function carregarFinContratacoes() {
   var tbody = document.getElementById('fin-contratacoes-tbody');
   if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Carregando contratações e escalas...</td></tr>';
 
@@ -12590,7 +12686,8 @@ window.carregarFinContratacoes = function() {
       console.error(err);
       if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#ef4444;">Erro de conexão.</td></tr>';
     });
-};
+}
+window.carregarFinContratacoes = carregarFinContratacoes;
 
 function renderFinContratacoes(contratacoes) {
   var tbody = document.getElementById('fin-contratacoes-tbody');
@@ -12640,7 +12737,7 @@ function renderFinContratacoes(contratacoes) {
 }
 
 /* ── 4. CONFIGURAÇÃO DE GATEWAYS (ASAAS / MERCADO PAGO) ── */
-window.carregarFinGateways = function() {
+function carregarFinGateways() {
   fetch('/api/super/financeiro/gateways?t=' + Date.now(), { headers: authHeaders() })
     .then(function(r) { return r.json(); })
     .then(function(res) {
@@ -12680,7 +12777,8 @@ window.carregarFinGateways = function() {
       if (elBloqCont) elBloqCont.checked = c.bloqueio_automatico_contestacao !== undefined ? !!c.bloqueio_automatico_contestacao : true;
     })
     .catch(function(e) { console.error('Erro ao carregar gateways:', e); });
-};
+}
+window.carregarFinGateways = carregarFinGateways;
 
 window.salvarConfigGatewaysSuperAdmin = function() {
   var payload = {
