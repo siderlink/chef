@@ -5444,9 +5444,14 @@
         </button>
       </div>
 
-      <button onclick="fecharModal('modal-checkout-addon'); if(typeof showToast==='function') showToast('✅ Solicitação recebida! Ativação em andamento.', 'ph-check-circle', 'success');" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer;">
-        Já realizei o Pix! Confirmar
-      </button>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button id="btn-confirmar-pix-addon" onclick="window.confirmarAtivacaoAddon(false)" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <i class="ph-bold ph-check-circle"></i> Já realizei o Pix! Ativar Agora
+        </button>
+        <button id="btn-trial-addon" onclick="window.confirmarAtivacaoAddon(true)" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text); border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <i class="ph-bold ph-sparkle" style="color: #f59e0b;"></i> Degustar 7 Dias Grátis (Sem Pagar Nada)
+        </button>
+      </div>
     </div>
   </div>
 

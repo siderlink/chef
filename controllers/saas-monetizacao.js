@@ -175,6 +175,54 @@ module.exports = function(app, masterDb, sqlite3, options) {
     });
   });
 
+  // Métricas de MRR de Add-ons e Assinaturas no Super Admin
+  app.get('/api/super/financeiro/saas/mrr-addons', saAuth, (req, res) => {
+    masterDb.all(`
+      SELECT 
+        COUNT(DISTINCT restaurante_id) as total_restaurantes_com_addons,
+        COUNT(*) as total_addons_ativos,
+        COALESCE(SUM(valor_mensal), 0) as mrr_total_addons,
+        chave_modulo,
+        nome_modulo,
+        COUNT(chave_modulo) as assinantes_por_modulo,
+        SUM(valor_mensal) as receita_por_modulo
+      FROM saas_assinaturas_modulos
+      WHERE status = 'ativo'
+      GROUP BY chave_modulo
+      ORDER BY receita_por_modulo DESC
+    `, [], (err, rows) => {
+      if (err) return res.status(500).json({ ok: false, erro: err.message });
+      
+      masterDb.all(`
+        SELECT 
+          licenca,
+          COUNT(*) as total_restaurantes,
+          CASE 
+            WHEN licenca = 'lite' THEN COUNT(*) * 39
+            WHEN licenca = 'starter' THEN COUNT(*) * 89
+            WHEN licenca = 'pro' OR licenca = 'profissional' THEN COUNT(*) * 149
+            WHEN licenca = 'enterprise' THEN COUNT(*) * 299
+            ELSE COUNT(*) * 149
+          END as mrr_plano
+        FROM restaurantes
+        WHERE ativo = 1
+        GROUP BY licenca
+      `, [], (errPlanos, rowsPlanos) => {
+        const mrrBase = (rowsPlanos || []).reduce((acc, p) => acc + (p.mrr_plano || 0), 0);
+        const mrrAddons = (rows || []).reduce((acc, a) => acc + (a.receita_por_modulo || 0), 0);
+        
+        res.json({
+          ok: true,
+          mrr_total_consolidado: mrrBase + mrrAddons,
+          mrr_planos_base: mrrBase,
+          mrr_addons: mrrAddons,
+          ranking_addons: rows || [],
+          distribuicao_planos: rowsPlanos || []
+        });
+      });
+    });
+  });
+
   // ═════════════════════════════════════════════════════════════════════════
   // PILAR 2: APP STORE SELF-SERVICE (ATIVAÇÃO 1-CLICK DE MÓDULOS)
   // ═════════════════════════════════════════════════════════════════════════
@@ -255,6 +303,57 @@ module.exports = function(app, masterDb, sqlite3, options) {
           res.json({
             ok: true,
             mensagem: `🎉 Módulo "${feat.nome}" ativado com sucesso para sua operação! Aproveite seus 7 dias de degustação.`,
+            modulo: feat,
+            ativo: true
+          });
+        });
+      });
+    } catch (e) {
+      res.status(500).json({ ok: false, erro: e.message });
+    }
+  });
+
+  // Ativação Express de Trial de 7 Dias para Dono
+  app.post('/api/dono/modulos/ativar-trial', authMiddleware, async (req, res) => {
+    try {
+      const rid = req.restaurante_id || req.tenantId || 1;
+      const { chave_modulo } = req.body || {};
+      const feat = featurePlans.FEATURES.find(f => f.chave === chave_modulo);
+      if (!feat) return res.status(404).json({ ok: false, erro: 'Módulo não encontrado no catálogo.' });
+
+      masterDb.get(`SELECT overrides_json FROM tenant_features WHERE restaurante_id = ?`, [rid], async (err, row) => {
+        let overrides = {};
+        if (row && row.overrides_json) {
+          try { overrides = JSON.parse(row.overrides_json) || {}; } catch(e) { overrides = {}; }
+        }
+        overrides[chave_modulo] = true;
+
+        masterDb.run(`
+          INSERT INTO tenant_features (restaurante_id, overrides_json, updated_at) 
+          VALUES (?, ?, datetime('now', 'localtime'))
+          ON CONFLICT(restaurante_id) DO UPDATE SET overrides_json = excluded.overrides_json, updated_at = excluded.updated_at
+        `, [rid, JSON.stringify(overrides)], async (errSave) => {
+          if (errSave) return res.status(500).json({ ok: false, erro: errSave.message });
+
+          const precoNumerico = parseFloat(String(feat.preco || '69').replace(/[^0-9.]/g, '')) || 69;
+          masterDb.run(`
+            INSERT INTO saas_assinaturas_modulos (restaurante_id, chave_modulo, nome_modulo, valor_mensal, status, trial_ate)
+            VALUES (?, ?, ?, ?, 'ativo', datetime('now', '+7 days'))
+            ON CONFLICT(restaurante_id, chave_modulo) DO UPDATE SET status = 'ativo', trial_ate = datetime('now', '+7 days')
+          `, [rid, chave_modulo, feat.nome, precoNumerico]);
+
+          if (typeof loadAllTenantFeatures === 'function') {
+            await loadAllTenantFeatures();
+          }
+
+          if (io) {
+            io.emit('tenant_features_updated', { restaurante_id: rid, feature: chave_modulo, enabled: true });
+          }
+
+          res.json({
+            ok: true,
+            trial: true,
+            mensagem: `🚀 Degustação de 7 dias liberada com sucesso para o módulo "${feat.nome}"!`,
             modulo: feat,
             ativo: true
           });

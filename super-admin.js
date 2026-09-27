@@ -1276,11 +1276,24 @@ window.toggleModuloTenant = function(restauranteId, moduloId, checked) {
   });
 };
 
+window.concederTrialModulo = function(restauranteId, moduloId, dias) {
+  apiPost('/api/super/modulos/tenant', { restaurante_id: restauranteId, modulo_id: moduloId, ativo: true, trial_dias: dias }, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao conceder trial: ' + (data ? data.erro : 'Conexão'), 'danger');
+      return;
+    }
+    showToast('Trial de ' + dias + ' dias liberado para o módulo ' + moduloId + '!', 'success');
+    carregarModulos();
+    setTimeout(carregarMatrizModulos, 250);
+  });
+};
+
 function carregarModulos() {
   apiGet('/api/super/modulos', function(err, data) {
     if (err || !data || !data.ok) return;
     window._modulosData = data.modulos || [];
     window._modulosOverrides = data.overrides || {};
+    window._modulosTrials = data.trials || {};
     renderizarModulosCards();
   });
 }
@@ -1329,7 +1342,8 @@ function carregarMatrizModulos() {
   carregarRestaurantesModulos(function() {
     var modulos = window._modulosData.filter(function(m) { return !m.obrigatorios; });
     var restaurantes = window._restaurantes;
-    var overrides = window._modulosOverrides;
+    var overrides = window._modulosOverrides || {};
+    var trials = window._modulosTrials || {};
 
     // Header
     var header = document.getElementById('modulos-matrix-header');
@@ -1354,12 +1368,33 @@ function carregarMatrizModulos() {
         var hasOverride = over !== undefined;
         var label = isOn ? '✓' : '✕';
         var color = isOn ? '#22c55e' : '#ef4444';
-        var style = 'cursor:pointer;padding:6px 12px;border-radius:8px;border:none;font-size:0.9rem;font-weight:600;'
+        var style = 'cursor:pointer;padding:5px 10px;border-radius:8px;border:none;font-size:0.85rem;font-weight:600;'
           + 'background:' + color + '18;color:' + color + ';transition:all 0.2s;';
-        bodyHtml += '<td style="padding:6px;text-align:center;border-bottom:1px solid var(--border-color);">';
+
+        var trialAte = trials[r.id] && trials[r.id][m.modulo_id];
+        var trialInfo = '';
+        if (trialAte) {
+          var msLeft = new Date(trialAte).getTime() - Date.now();
+          var diasLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+          if (diasLeft > 0) {
+            trialInfo = '<div style="font-size:0.62rem;color:#f59e0b;font-weight:700;margin-top:2px;">Trial ' + diasLeft + 'd</div>';
+          } else {
+            trialInfo = '<div style="font-size:0.62rem;color:#ef4444;font-weight:700;margin-top:2px;">Expirado</div>';
+          }
+        }
+
+        var trialBtns = '<div style="display:flex;gap:2px;justify-content:center;margin-top:3px;">'
+          + '<button type="button" title="Trial 7 dias" onclick="event.stopPropagation();window.concederTrialModulo(' + r.id + ',\'' + m.modulo_id + '\',7)" style="background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);font-size:0.58rem;padding:1px 3px;border-radius:4px;cursor:pointer;font-weight:700;">+7d</button>'
+          + '<button type="button" title="Trial 14 dias" onclick="event.stopPropagation();window.concederTrialModulo(' + r.id + ',\'' + m.modulo_id + '\',14)" style="background:rgba(168,85,247,0.15);color:#a855f7;border:1px solid rgba(168,85,247,0.3);font-size:0.58rem;padding:1px 3px;border-radius:4px;cursor:pointer;font-weight:700;">+14d</button>'
+          + '</div>';
+
+        bodyHtml += '<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--border-color);vertical-align:middle;">';
         bodyHtml += '<button style="' + style + '" onclick="toggleModuloTenant(' + r.id + ',\'' + m.modulo_id + '\',' + !isOn + ')">';
         bodyHtml += label + (hasOverride ? '<span style="font-size:0.6rem;">*</span>' : '');
-        bodyHtml += '</button></td>';
+        bodyHtml += '</button>';
+        bodyHtml += trialInfo;
+        bodyHtml += trialBtns;
+        bodyHtml += '</td>';
       });
       bodyHtml += '</tr>';
     });
@@ -1732,6 +1767,8 @@ function renderRestaurantes() {
     html += '<td><small>' + (r2.ultimaVer ? new Date(r2.ultimaVer).toLocaleDateString('pt-BR') : '--') + '</small></td>';
     html += '<td>';
     html += '<div class="row-actions">';
+    html += '<button class="btn-row-action" onclick="window.impersonarRestaurante(' + r2.id + ',' + escJs(r2.restaurante) + ')" title="Ghost Login (Acesso Suporte 1-Clique)" style="color:#f97316;background:rgba(249,115,22,0.14);border:1px solid rgba(249,115,22,0.3);"><i class="fa-solid fa-ghost"></i></button>';
+    html += '<button class="btn-row-action" onclick="window.exportarBancoTenant(' + r2.id + ',' + escJs(r2.restaurante) + ')" title="Exportar Banco SQLite (Backup 1-Clique)" style="color:#10b981;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.3);"><i class="fa-solid fa-database"></i></button>';
     html += '<button class="btn-row-action" onclick="window.alternarArquiteturaRestaurante(' + r2.id + ', \'' + (r2.modo_arquitetura === 'offline_first' ? 'cloud' : 'offline_first') + '\')" title="Alternar para ' + (r2.modo_arquitetura === 'offline_first' ? 'Cloud Version' : 'Sync Offline-First') + '"><i class="fa-solid ' + (r2.modo_arquitetura === 'offline_first' ? 'fa-cloud' : 'fa-bolt') + '" style="color:' + (r2.modo_arquitetura === 'offline_first' ? '#38bdf8' : '#10b981') + ';"></i></button>';
     html += '<button class="btn-row-action edit-action" onclick="editarRestaurante(' + r2.id + ')" title="Editar"><i class="fa-regular fa-pen-to-square"></i></button>';
     html += '<button class="btn-row-action block-action" onclick="toggleBloquearRest(' + r2.id + ',' + escJs(r2.status) + ')" title="' + (r2.status === 'bloqueado' ? 'Reativar' : 'Bloquear') + '"><i class="fa-solid ' + (r2.status === 'bloqueado' ? 'fa-unlock' : 'fa-ban') + '"></i></button>';
@@ -1740,6 +1777,37 @@ function renderRestaurantes() {
   }
   tbody.innerHTML = html;
 }
+
+window.impersonarRestaurante = function(id, nome) {
+  if (!confirm('Deseja acessar o painel do restaurante #' + id + ' (' + (nome || '') + ') em Modo Suporte (Ghost Login)?')) return;
+  apiPost('/api/super/impersonate/' + id, {}, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro no Ghost Login: ' + (data ? data.erro : 'Falha na conexão'), 'danger');
+      return;
+    }
+    showToast('Acesso concedido! Abrindo painel...', 'success');
+    var targetUrl = data.redirectUrl || ('/painel-dono.html?impersonate_token=' + data.token);
+    var win = window.open(targetUrl, '_blank');
+    if (!win) {
+      window.location.href = targetUrl;
+    }
+  });
+};
+
+window.exportarBancoTenant = function(id, nome) {
+  if (!confirm('Deseja gerar snapshot e baixar o banco SQLite de #' + id + ' (' + (nome || '') + ')?')) return;
+  showToast('Gerando snapshot do banco de dados...', 'info');
+  apiPost('/api/super/backup/export-tenant/' + id, {}, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao exportar: ' + (data ? data.erro : 'Falha na requisição'), 'danger');
+      return;
+    }
+    showToast(data.mensagem || 'Snapshot gerado com sucesso!', 'success');
+    if (data.arquivo && typeof window.downloadLocalBackup === 'function') {
+      window.downloadLocalBackup(data.arquivo);
+    }
+  });
+};
 
 window.alternarArquiteturaRestaurante = function(id, novoModo) {
   var label = novoModo === 'offline_first' ? 'Sync Offline-First (Nó Local)' : 'Cloud Version (Nuvem Central)';
@@ -9469,10 +9537,10 @@ function carregarBackupHistory() {
       el.innerHTML = '<div style="font-size:0.85rem;color:var(--text-muted);">Nenhum backup local encontrado.</div>';
       return;
     }
-    var html = '<table class="custom-table" style="width:100%;font-size:0.85rem;"><thead><tr><th>Arquivo</th><th>Tamanho</th><th>Data</th></tr></thead><tbody>';
+    var html = '<table class="custom-table" style="width:100%;font-size:0.85rem;"><thead><tr><th>Arquivo</th><th>Tamanho</th><th>Data</th><th style="text-align:right;">Ação</th></tr></thead><tbody>';
     data.history.forEach(function(h) {
       var d = new Date(h.data);
-      html += '<tr><td>' + esc(h.nome) + '</td><td>' + h.tamanho + ' KB</td><td>' + d.toLocaleString('pt-BR') + '</td></tr>';
+      html += '<tr><td>' + esc(h.nome) + '</td><td>' + h.tamanho + ' KB</td><td>' + d.toLocaleString('pt-BR') + '</td><td style="text-align:right;"><button class="btn-action" style="padding:0.25rem 0.6rem;font-size:0.78rem;background:rgba(252,75,21,0.15);color:var(--primary);border:1px solid rgba(252,75,21,0.3);" onclick="downloadLocalBackup(\'' + esc(h.nome) + '\')"><i class="fa-solid fa-download"></i> Baixar</button></td></tr>';
     });
     html += '</tbody></table>';
     el.innerHTML = html;
@@ -9628,8 +9696,52 @@ function carregarCrashHistory() {
 })();
 
 function downloadR2Backup(filename) {
-  showToast('Download de ' + filename + ' — funcionalidade em desenvolvimento.', 'info');
+  var token = getSuperAdminToken();
+  var url = '/api/super/infra-cloud/r2/download/' + encodeURIComponent(filename);
+  showToast('Iniciando download do R2: ' + filename, 'info');
+  fetch(url, { headers: { 'Authorization': 'Bearer ' + token, 'x-super-admin-token': token } })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Falha no download (HTTP ' + res.status + ')');
+      return res.blob();
+    })
+    .then(function(blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Download concluído: ' + filename, 'success');
+    })
+    .catch(function(err) {
+      showToast('Erro ao baixar: ' + err.message, 'danger');
+    });
 }
+
+function downloadLocalBackup(filename) {
+  var token = getSuperAdminToken();
+  var url = '/api/super/backup/download/' + encodeURIComponent(filename);
+  showToast('Baixando backup local: ' + filename, 'info');
+  fetch(url, { headers: { 'Authorization': 'Bearer ' + token, 'x-super-admin-token': token } })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Falha ao baixar backup (HTTP ' + res.status + ')');
+      return res.blob();
+    })
+    .then(function(blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Download concluído: ' + filename, 'success');
+    })
+    .catch(function(err) {
+      showToast('Erro ao baixar: ' + err.message, 'danger');
+    });
+}
+window.downloadLocalBackup = downloadLocalBackup;
+window.downloadR2Backup = downloadR2Backup;
 
 // ═══════════════════════════════════════════════════════════════════
 // TÚNEIS & FALLBACK
@@ -12862,5 +12974,598 @@ window.testarConexaoGateway = function(gw) {
       alert('Erro de rede ao testar gateway.');
     });
 };
+
+/* ═══ CENTRAL DE LICENÇAS E CHAVES OFFLINE ═══ */
+window.carregarLicencas = function() {
+  var tbody = document.getElementById('licencas-tbody');
+  if (!tbody) return;
+  apiGet('/api/super/licencas', function(err, data) {
+    if (err || !data || !data.ok) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#ef4444;padding:20px;">Erro ao carregar licenças.</td></tr>';
+      return;
+    }
+    var licencas = data.licencas || [];
+    if (licencas.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;">Nenhuma chave gerada ainda.</td></tr>';
+      return;
+    }
+    var html = '';
+    licencas.forEach(function(l) {
+      var stColor = l.status === 'disponivel' ? '#10b981' : (l.status === 'usada' ? '#3b82f6' : '#ef4444');
+      var stLabel = l.status === 'disponivel' ? 'Disponível' : (l.status === 'usada' ? 'Ativada / Em Uso' : 'Revogada');
+      var validadeStr = l.validade ? new Date(l.validade).toLocaleDateString('pt-BR') : '--';
+      var acoes = '<div style="display:flex;gap:6px;justify-content:center;">'
+        + '<button class="btn-row-action" title="Copiar Chave" onclick="window.copiarTextoDireto(\'' + l.chave + '\')"><i class="fa-solid fa-copy"></i></button>';
+      if (l.status !== 'revogada') {
+        acoes += '<button class="btn-row-action delete-action" title="Revogar Chave" onclick="window.revogarLicenca(' + l.id + ')"><i class="fa-solid fa-ban"></i></button>';
+      }
+      acoes += '</div>';
+
+      html += '<tr>'
+        + '<td><code style="font-size:0.9rem;font-weight:700;color:#60a5fa;letter-spacing:0.5px;">' + esc(l.chave) + '</code></td>'
+        + '<td><strong style="color:white;">' + esc(l.restaurante_nome || 'Restaurante') + '</strong></td>'
+        + '<td><span class="badge badge-plano">' + esc(String(l.plano || 'premium').toUpperCase()) + '</span></td>'
+        + '<td><small>' + validadeStr + ' (' + (l.dias || 365) + 'd)</small></td>'
+        + '<td><span class="badge" style="background:' + stColor + '20;color:' + stColor + ';border:1px solid ' + stColor + '40;">' + stLabel + '</span></td>'
+        + '<td><small>' + esc(l.usada_por || '--') + '</small></td>'
+        + '<td><small>' + (l.usada_em ? new Date(l.usada_em).toLocaleDateString('pt-BR') : '--') + '</small></td>'
+        + '<td style="text-align:center;">' + acoes + '</td>'
+        + '</tr>';
+    });
+    tbody.innerHTML = html;
+  });
+};
+
+window.gerarChave = function() {
+  var restNome = (document.getElementById('lic-restaurante-nome') || {}).value || '';
+  var plano = (document.getElementById('lic-plano') || {}).value || 'premium';
+  var dias = parseInt((document.getElementById('lic-dias') || {}).value, 10) || 365;
+  var maxDisp = parseInt((document.getElementById('lic-maxdisp') || {}).value, 10) || 0;
+  var obs = (document.getElementById('lic-obs') || {}).value || '';
+
+  if (!restNome.trim()) {
+    showToast('Informe o nome do restaurante para emitir a chave.', 'warning');
+    return;
+  }
+
+  apiPost('/api/super/licencas/gerar', {
+    restaurante_nome: restNome.trim(),
+    plano: plano,
+    dias: dias,
+    max_dispositivos: maxDisp,
+    obs: obs
+  }, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao gerar chave: ' + (data ? data.erro : 'Falha na conexão'), 'danger');
+      return;
+    }
+    var lic = data.licenca;
+    var resBox = document.getElementById('lic-result');
+    var resKey = document.getElementById('lic-result-key');
+    if (resBox && resKey) {
+      resKey.textContent = lic.chave;
+      resBox.style.display = 'block';
+    }
+    showToast('Chave ' + lic.chave + ' gerada com sucesso!', 'success');
+    window.carregarLicencas();
+  });
+};
+
+window.copiarChave = function(elementId) {
+  var el = document.getElementById(elementId);
+  var txt = el ? el.textContent.trim() : '';
+  window.copiarTextoDireto(txt);
+};
+
+window.copiarTextoDireto = function(texto) {
+  if (!texto) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(function() {
+      showToast('Chave copiada para a área de transferência!', 'success');
+    }).catch(function() {
+      showToast('Chave: ' + texto, 'info');
+    });
+  } else {
+    showToast('Chave: ' + texto, 'info');
+  }
+};
+
+window.revogarLicenca = function(id) {
+  if (!confirm('Deseja realmente revogar esta licença? O estabelecimento perderá acesso offline.')) return;
+  apiPost('/api/super/licencas/' + id + '/revogar', {}, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao revogar chave: ' + (data ? data.erro : 'Falha na conexão'), 'danger');
+      return;
+    }
+    showToast('Chave revogada com sucesso.', 'success');
+    window.carregarLicencas();
+  });
+};
+
+window.carregarTelemetria = function() {
+  var tbody = document.getElementById('telemetria-tbody');
+  var cards = document.getElementById('telemetria-cards');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text-muted);padding:20px;">Carregando telemetria...</td></tr>';
+
+  apiGet('/api/super/telemetria', function(err, data) {
+    if (err || !data || !data.ok) {
+      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#ef4444;padding:20px;">Erro ao carregar telemetria.</td></tr>';
+      return;
+    }
+    var rows = data.telemetria || [];
+    if (cards) {
+      var totTenants = rows.length;
+      var totVendasHoje = rows.reduce(function(acc, r) { return acc + (parseFloat(r.vendas_hoje) || 0); }, 0);
+      var totPedidos = rows.reduce(function(acc, r) { return acc + (parseInt(r.pedidos_total) || 0); }, 0);
+      cards.innerHTML = '<div style="background:var(--bg-card);padding:14px;border-radius:10px;border:1px solid var(--border-color);">'
+        + '<div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;">Tenants Monitorados</div>'
+        + '<div style="font-size:1.4rem;font-weight:800;color:white;margin-top:4px;">' + totTenants + '</div>'
+        + '</div>'
+        + '<div style="background:var(--bg-card);padding:14px;border-radius:10px;border:1px solid var(--border-color);">'
+        + '<div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;">Vendas Hoje (Total)</div>'
+        + '<div style="font-size:1.4rem;font-weight:800;color:#10b981;margin-top:4px;">R$ ' + formatMoney(totVendasHoje) + '</div>'
+        + '</div>'
+        + '<div style="background:var(--bg-card);padding:14px;border-radius:10px;border:1px solid var(--border-color);">'
+        + '<div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;">Pedidos Registrados</div>'
+        + '<div style="font-size:1.4rem;font-weight:800;color:#3b82f6;margin-top:4px;">' + totPedidos.toLocaleString() + '</div>'
+        + '</div>';
+    }
+
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text-muted);padding:24px;">Nenhuma telemetria recebida até o momento.</td></tr>';
+      return;
+    }
+
+    var html = '';
+    rows.forEach(function(r) {
+      var isOnline = r.ultima_atividade && (Date.now() - new Date(r.ultima_atividade).getTime() < 1000 * 60 * 10);
+      var stBadge = isOnline ? '<span class="badge badge-ativo">Online</span>' : '<span class="badge badge-bloqueado">Offline</span>';
+      html += '<tr>'
+        + '<td><strong>' + esc(r.rest_nome || 'Restaurante #' + r.restaurante_id) + '</strong></td>'
+        + '<td>' + stBadge + '</td>'
+        + '<td style="color:#10b981;font-weight:600;">R$ ' + formatMoney(r.vendas_hoje || 0) + '</td>'
+        + '<td>R$ ' + formatMoney(r.vendas_total || 0) + '</td>'
+        + '<td>' + (r.pedidos_total || 0) + '</td>'
+        + '<td>' + (r.funcionarios_count || 0) + '</td>'
+        + '<td>' + (r.produtos_count || 0) + '</td>'
+        + '<td>' + (r.mesas_count || 0) + '</td>'
+        + '<td>' + (r.dispositivos_count || 0) + '</td>'
+        + '<td><small>' + (r.tempo_uso_horas ? r.tempo_uso_horas + 'h' : '--') + '</small></td>'
+        + '<td style="color:#4ade80;">R$ ' + formatMoney(r.lucro_estimado || 0) + '</td>'
+        + '<td><small>' + esc(r.espaco_disco || '--') + '</small></td>'
+        + '</tr>';
+    });
+    tbody.innerHTML = html;
+  });
+};
+
+window.salvarConfigSuperLicenca = function() {
+  var url = (document.getElementById('super-cfg-script-url') || {}).value || '';
+  var sheet = (document.getElementById('super-cfg-sheet-id') || {}).value || '';
+  var trialDias = (document.getElementById('super-cfg-trial-dias') || {}).value || '14';
+  var modoOffline = (document.getElementById('super-cfg-modo-offline') || {}).checked;
+
+  apiPost('/api/super/config', {
+    script_url_licencas: url,
+    sheet_id_licencas: sheet,
+    trial_dias_padrao: trialDias,
+    modo_100_offline: modoOffline ? '1' : '0'
+  }, function(err, data) {
+    var msgEl = document.getElementById('super-cfg-msg');
+    if (err || !data || !data.ok) {
+      if (msgEl) {
+        msgEl.style.display = 'block';
+        msgEl.style.background = 'rgba(239,68,68,0.15)';
+        msgEl.style.color = '#ef4444';
+        msgEl.textContent = 'Erro ao salvar configurações de licença.';
+      }
+      return;
+    }
+    if (msgEl) {
+      msgEl.style.display = 'block';
+      msgEl.style.background = 'rgba(16,185,129,0.15)';
+      msgEl.style.color = '#10b981';
+      msgEl.textContent = 'Configurações de licenças salvas com sucesso!';
+    }
+    showToast('Configurações salvas!', 'success');
+  });
+};
+
+window.testarConexaoSuperScript = function() {
+  var msgEl = document.getElementById('super-cfg-msg');
+  if (msgEl) {
+    msgEl.style.display = 'block';
+    msgEl.style.background = 'rgba(59,130,246,0.15)';
+    msgEl.style.color = '#3b82f6';
+    msgEl.textContent = 'Testando conectividade do servidor de licenças...';
+  }
+  apiGet('/api/super/licencas', function(err, data) {
+    if (!err && data && data.ok) {
+      if (msgEl) {
+        msgEl.style.background = 'rgba(16,185,129,0.15)';
+        msgEl.style.color = '#10b981';
+        msgEl.textContent = '✅ Servidor de licenças operando normalmente (' + (data.licencas ? data.licencas.length : 0) + ' licenças registradas).';
+      }
+    } else {
+      if (msgEl) {
+        msgEl.style.background = 'rgba(239,68,68,0.15)';
+        msgEl.style.color = '#ef4444';
+        msgEl.textContent = '❌ Falha ao verificar licenças.';
+      }
+    }
+  });
+};
+
+/* ═══ ASSINATURAS DOS ESTABELECIMENTOS (TENANTS) ═══ */
+window.carregarFinAssinaturas = function() {
+  var tbody = document.getElementById('fin-assinaturas-tbody');
+  if (!tbody) return;
+  var busca = (document.getElementById('fin-assin-busca') || {}).value || '';
+  var status = (document.getElementById('fin-assin-filtro-status') || {}).value || 'todos';
+
+  var url = '/api/super/financeiro/assinaturas?status=' + encodeURIComponent(status) + '&busca=' + encodeURIComponent(busca);
+
+  apiGet(url, function(err, data) {
+    if (err || !data || !data.ok) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#ef4444;padding:24px;">Erro ao carregar assinaturas.</td></tr>';
+      return;
+    }
+    var rows = data.assinaturas || [];
+
+    var mrr = 0;
+    var ativas = 0;
+    var vencidas = 0;
+    var trials = 0;
+
+    rows.forEach(function(a) {
+      var st = (a.status || '').toLowerCase();
+      var val = parseFloat(a.valor_mensal) || 0;
+      if (st === 'em_dia' || st === 'ativo') {
+        mrr += val;
+        ativas++;
+      } else if (st === 'vencida' || st === 'pendente') {
+        vencidas++;
+      } else if (st === 'trial') {
+        trials++;
+      }
+    });
+
+    var elMrr = document.getElementById('fin-assin-mrr');
+    var elAtivas = document.getElementById('fin-assin-qtd-ativas');
+    var elVencidas = document.getElementById('fin-assin-vencidas-count');
+    var elTrial = document.getElementById('fin-assin-trial-count');
+    var elTot = document.getElementById('fin-assin-total-tenants');
+
+    if (elMrr) elMrr.textContent = 'R$ ' + formatMoney(mrr);
+    if (elAtivas) elAtivas.textContent = ativas;
+    if (elVencidas) elVencidas.textContent = vencidas;
+    if (elTrial) elTrial.textContent = trials;
+    if (elTot) elTot.textContent = rows.length;
+
+    // Carrega consolidado de Add-ons e Planos
+    carregarFinMrrAddons();
+
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">Nenhuma assinatura localizada com os filtros selecionados.</td></tr>';
+      return;
+    }
+
+    var html = '';
+    rows.forEach(function(a) {
+      var st = (a.status || 'em_dia').toLowerCase();
+      var stColor = st === 'em_dia' || st === 'ativo' ? '#10b981' : (st === 'trial' ? '#8b5cf6' : (st === 'pendente' ? '#f59e0b' : '#ef4444'));
+      var stLabel = st === 'em_dia' || st === 'ativo' ? 'Em Dia' : (st === 'trial' ? 'Trial Grátis' : (st === 'pendente' ? 'Pendente' : (st === 'vencida' ? 'Inadimplente' : 'Cancelada')));
+
+      var donoNome = a.dono_nome || '';
+      var donoTel = a.dono_telefone || '';
+      var infoDono = donoNome ? ('<div style="font-size:11.5px;color:var(--text-muted);"><i class="fa-solid fa-user"></i> ' + esc(donoNome) + (donoTel ? ' · ' + esc(donoTel) : '') + '</div>') : '';
+
+      var vencStr = a.proximo_vencimento ? new Date(a.proximo_vencimento).toLocaleDateString('pt-BR') : '--';
+      var gw = a.gateway || (a.forma_pagamento ? a.forma_pagamento.toUpperCase() : 'Asaas PIX');
+
+      html += '<tr style="border-bottom:1px solid var(--border-color);">'
+        + '<td style="padding:12px 14px;">'
+        + '<div style="font-weight:700;color:white;font-size:13.5px;">' + esc(a.restaurante_nome || a.restaurante_nome_real || 'Restaurante #' + a.restaurante_id) + '</div>'
+        + infoDono
+        + '</td>'
+        + '<td style="padding:12px 14px;"><span class="badge badge-plano">' + esc(a.plano || 'Profissional') + '</span></td>'
+        + '<td style="padding:12px 14px;font-weight:700;color:#10b981;">R$ ' + formatMoney(a.valor_mensal || 149) + '/mês</td>'
+        + '<td style="padding:12px 14px;"><small style="font-family:monospace;">' + vencStr + '</small></td>'
+        + '<td style="padding:12px 14px;"><span class="badge" style="background:' + stColor + '20;color:' + stColor + ';border:1px solid ' + stColor + '40;">' + stLabel + '</span></td>'
+        + '<td style="padding:12px 14px;"><small style="color:var(--text-muted);"><i class="fa-solid fa-credit-card"></i> ' + esc(gw) + '</small></td>'
+        + '<td style="padding:12px 14px;text-align:center;">'
+        + '<div style="display:flex;gap:6px;justify-content:center;">'
+        + '<button class="btn-row-action" title="Editar Plano e Assinatura" onclick="window.editarAssinaturaTenant(' + a.restaurante_id + ',\'' + escJs(a.restaurante_nome || '') + '\',\'' + escJs(a.plano || 'Profissional') + '\',' + (a.valor_mensal || 149) + ',\'' + st + '\')" style="color:#3b82f6;"><i class="fa-regular fa-pen-to-square"></i></button>'
+        + '<button class="btn-row-action" title="Ghost Login (Acesso Suporte)" onclick="window.impersonarRestaurante(' + a.restaurante_id + ',\'' + escJs(a.restaurante_nome || '') + '\')" style="color:#f97316;background:rgba(249,115,22,0.14);"><i class="fa-solid fa-ghost"></i></button>'
+        + '</div>'
+        + '</td>'
+        + '</tr>';
+    });
+    tbody.innerHTML = html;
+  });
+};
+
+window.editarAssinaturaTenant = function(restId, nome, planoAtual, valorAtual, statusAtual) {
+  if (typeof window.abrirModalEditarAssinatura === 'function') {
+    window.abrirModalEditarAssinatura(restId, nome, planoAtual, valorAtual, statusAtual, '', '');
+    return;
+  }
+  var novoPlano = prompt('Alterar Plano do Restaurante #' + restId + ' (' + nome + '):\nOpções: Lite, Profissional, Master, Enterprise', planoAtual);
+  if (novoPlano === null) return;
+  var novoValor = prompt('Valor Mensal em R$:', valorAtual);
+  if (novoValor === null) return;
+  var novoStatus = prompt('Status da Assinatura (em_dia, pendente, vencida, trial, cancelada):', statusAtual);
+  if (novoStatus === null) return;
+
+  fetch('/api/super/financeiro/assinaturas/' + restId, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify({
+      plano: novoPlano.trim(),
+      valor_mensal: parseFloat(novoValor) || 0,
+      status: novoStatus.trim()
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res && res.ok) {
+      showToast('Assinatura atualizada com sucesso!', 'success');
+      window.carregarFinAssinaturas();
+    } else {
+      alert(res.erro || 'Falha ao atualizar assinatura.');
+    }
+  })
+  .catch(function() {
+    alert('Erro de rede ao salvar assinatura.');
+  });
+};
+
+window.carregarFinMrrAddons = function() {
+  apiGet('/api/super/financeiro/saas/mrr-addons', function(errAddons, resAddons) {
+    if (!errAddons && resAddons && resAddons.ok) {
+      var elMrrTotal = document.getElementById('fin-assin-mrr-total');
+      var elMrrAddons = document.getElementById('fin-assin-mrr-addons');
+      var elQtdAddons = document.getElementById('fin-assin-qtd-addons');
+
+      var fmt = function(v) {
+        return typeof formatMoney === 'function' ? formatMoney(v || 0) : Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      };
+
+      if (elMrrTotal) elMrrTotal.textContent = 'R$ ' + fmt(resAddons.mrr_total_consolidado || 0);
+      if (elMrrAddons) elMrrAddons.textContent = 'R$ ' + fmt(resAddons.mrr_addons || 0);
+
+      var sanitize = function(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      };
+
+      // Renderiza ranking de add-ons mais lucrativos
+      var rankingTbody = document.getElementById('fin-addons-ranking-tbody');
+      if (rankingTbody) {
+        var ranking = resAddons.ranking_addons || [];
+        var totalAddonsQtd = 0;
+        if (ranking.length === 0) {
+          rankingTbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-muted);">Nenhum add-on ativo assinado no momento.</td></tr>';
+        } else {
+          var rHtml = '';
+          ranking.forEach(function(item, idx) {
+            totalAddonsQtd += (item.assinantes_por_modulo || 0);
+            var rankBadge = idx === 0 ? '🥇 ' : (idx === 1 ? '🥈 ' : (idx === 2 ? '🥉 ' : ''));
+            rHtml += '<tr style="border-bottom:1px solid var(--border-color);">'
+              + '<td style="padding:10px;"><strong>' + rankBadge + sanitize(item.nome_modulo || item.chave_modulo) + '</strong><br><span style="font-size:11px; color:var(--text-muted);">' + sanitize(item.chave_modulo) + '</span></td>'
+              + '<td style="padding:10px; text-align:center;"><span class="badge" style="background:rgba(59,130,246,0.15); color:#3b82f6; font-size:11px; padding:2px 7px; border-radius:10px;">' + (item.assinantes_por_modulo || 0) + ' restaurantes</span></td>'
+              + '<td style="padding:10px; text-align:right; font-weight:700; color:#10b981;">R$ ' + fmt(item.receita_por_modulo || 0) + '</td>'
+              + '</tr>';
+          });
+          rankingTbody.innerHTML = rHtml;
+        }
+        if (elQtdAddons) elQtdAddons.textContent = totalAddonsQtd;
+      }
+
+      // Distribuição dos Planos Base
+      var planosContainer = document.getElementById('fin-planos-distribuicao-container');
+      if (planosContainer) {
+        var dist = resAddons.distribuicao_planos || [];
+        if (dist.length === 0) {
+          planosContainer.innerHTML = '<div style="text-align:center; padding:15px; color:var(--text-muted);">Nenhum plano base ativo.</div>';
+        } else {
+          var pHtml = '';
+          dist.forEach(function(d) {
+            var licName = (d.licenca || 'pro').toUpperCase();
+            var licColor = licName === 'ENTERPRISE' ? '#a855f7' : (licName === 'PRO' || licName === 'PROFISSIONAL' ? '#3b82f6' : (licName === 'STARTER' ? '#059669' : '#64748b'));
+            pHtml += '<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:rgba(255,255,255,0.02); border-radius:8px; border:1px solid var(--border-color);">'
+              + '<div style="display:flex; align-items:center; gap:8px;">'
+              + '<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:' + licColor + ';"></span>'
+              + '<strong style="font-size:13px;">Plano ' + licName + '</strong>'
+              + '<span style="font-size:11.5px; color:var(--text-muted);">(' + d.total_restaurantes + ' estabelecimentos)</span>'
+              + '</div>'
+              + '<strong style="font-size:13.5px; color:#10b981;">R$ ' + fmt(d.mrr_plano || 0) + '<span style="font-size:11px; font-weight:normal; color:var(--text-muted);">/mês</span></strong>'
+              + '</div>';
+          });
+          planosContainer.innerHTML = pHtml;
+        }
+      }
+    }
+  });
+};
+
+window.carregarFinContratacoes = function() {
+  var tbody = document.getElementById('fin-contratacoes-tbody');
+  if (!tbody) return;
+  apiGet('/api/super/financeiro/contratacoes', function(err, data) {
+    if (err || !data || !data.ok) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#ef4444;padding:24px;">Erro ao carregar contratações.</td></tr>';
+      return;
+    }
+    var rows = data.contratacoes || [];
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">Nenhuma escala ou contratação de freelancer registrada no momento.</td></tr>';
+      return;
+    }
+    var html = '';
+    rows.forEach(function(c) {
+      var dTurno = c.data_turno ? new Date(c.data_turno).toLocaleDateString('pt-BR') : '--';
+      var stEscala = c.status_escala === 'concluida' ? '<span class="badge badge-ativo">Concluída</span>' : '<span class="badge badge-plano">' + esc(c.status_escala || 'Agendada') + '</span>';
+      var stCust = c.custodia_status === 'liberado' ? '<span class="badge badge-ativo">Liberado</span>' : '<span class="badge badge-bloqueado">Retido 15D</span>';
+
+      html += '<tr>'
+        + '<td style="padding:12px 14px;"><small style="font-family:monospace;">' + dTurno + ' (' + esc(c.periodo || 'Turno') + ')</small></td>'
+        + '<td style="padding:12px 14px;"><strong>' + esc(c.restaurante_nome || '#' + c.restaurante_id) + '</strong></td>'
+        + '<td style="padding:12px 14px;">' + esc(c.talento_nome || 'Profissional') + ' <small style="color:var(--text-muted);">(' + esc(c.cargo || 'Geral') + ')</small></td>'
+        + '<td style="padding:12px 14px;color:#10b981;font-weight:700;">R$ ' + formatMoney(c.valor_diaria || 0) + '</td>'
+        + '<td style="padding:12px 14px;">' + stEscala + '</td>'
+        + '<td style="padding:12px 14px;">' + stCust + '</td>'
+        + '<td style="padding:12px 14px;text-align:center;"><small style="font-family:monospace;color:#60a5fa;">' + esc(c.chave_pix || '--') + '</small></td>'
+        + '</tr>';
+    });
+    tbody.innerHTML = html;
+  });
+};
+
+/* ═══ FUNCIONALIDADES POR RESTAURANTE (TENANT FEATURES) ═══ */
+window.renderFeaturesRestaurante = function() {
+  var tbody = document.getElementById('rest-feat-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px;">Carregando funcionalidades dos restaurantes...</td></tr>';
+
+  apiGet('/api/super/features', function(err, data) {
+    if (err || !data || !data.ok) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#ef4444;padding:24px;">Erro ao carregar funcionalidades.</td></tr>';
+      return;
+    }
+    window._tenantFeaturesDefs = data.features || [];
+    window._tenantsFeaturesList = data.tenants || [];
+    window.filtrarFeaturesRestaurantes();
+  });
+};
+
+window.filtrarFeaturesRestaurantes = function() {
+  var tbody = document.getElementById('rest-feat-tbody');
+  if (!tbody) return;
+  var search = ((document.getElementById('rest-feat-search') || {}).value || '').toLowerCase();
+  var featuresDefs = window._tenantFeaturesDefs || [];
+  var tenants = window._tenantsFeaturesList || [];
+
+  var filtered = tenants.filter(function(t) {
+    if (!search) return true;
+    return String(t.id).includes(search) || (t.nome || '').toLowerCase().includes(search) || (t.plano || '').toLowerCase().includes(search);
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px;">Nenhum restaurante encontrado.</td></tr>';
+    return;
+  }
+
+  var html = '';
+  filtered.forEach(function(t) {
+    var featBadges = '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    featuresDefs.forEach(function(f) {
+      var isAtivo = !!t.features[f.chave];
+      var hasOv = t.overrides && t.overrides[f.chave] !== undefined;
+      var bg = isAtivo ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+      var color = isAtivo ? '#10b981' : '#ef4444';
+      var border = isAtivo ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)';
+
+      featBadges += '<button type="button" title="' + esc(f.descricao || f.nome) + '" '
+        + 'onclick="window.toggleTenantFeatureDirect(' + t.id + ',\'' + f.chave + '\',' + !isAtivo + ')" '
+        + 'style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;background:' + bg + ';color:' + color + ';border:1px solid ' + border + ';transition:all 0.15s;">'
+        + (isAtivo ? '✓ ' : '✕ ') + esc(f.nome) + (hasOv ? '*' : '')
+        + '</button>';
+    });
+    featBadges += '</div>';
+
+    html += '<tr>'
+      + '<td style="vertical-align:middle;font-family:monospace;"><small>#' + t.id + '</small></td>'
+      + '<td style="vertical-align:middle;">'
+      + '<div style="font-weight:700;color:white;">' + esc(t.nome) + '</div>'
+      + '<div><span class="badge badge-plano">' + esc(String(t.plano || 'trial').toUpperCase()) + '</span></div>'
+      + '</td>'
+      + '<td style="vertical-align:middle;padding:10px;">' + featBadges + '</td>'
+      + '</tr>';
+  });
+  tbody.innerHTML = html;
+};
+
+window.toggleTenantFeatureDirect = function(rid, featureKey, enabled) {
+  apiPost('/api/super/features', {
+    restaurante_id: rid,
+    feature: featureKey,
+    enabled: enabled
+  }, function(err, data) {
+    if (err || !data || !data.ok) {
+      showToast('Erro ao alternar feature: ' + (data ? data.erro : 'Falha na conexão'), 'danger');
+      return;
+    }
+    showToast('Funcionalidade ' + featureKey + (enabled ? ' ativada' : ' desativada') + ' para Restaurante #' + rid, 'success');
+    window.renderFeaturesRestaurante();
+  });
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+  var sInp = document.getElementById('rest-feat-search');
+  if (sInp) {
+    sInp.addEventListener('input', function() {
+      if (typeof window.filtrarFeaturesRestaurantes === 'function') window.filtrarFeaturesRestaurantes();
+    });
+  }
+  var btnRef = document.getElementById('btn-refresh-rest-feat');
+  if (btnRef) {
+    btnRef.addEventListener('click', function() {
+      if (typeof window.renderFeaturesRestaurante === 'function') window.renderFeaturesRestaurante();
+    });
+  }
+});
+
+/* ═══ COMPATIBILIDADE GLOBAL DE FUNÇÕES HTML (ONCLICK BINDINGS) ═══ */
+(function() {
+  var globalFns = {
+    carregarRestaurantes: typeof carregarRestaurantes === 'function' ? carregarRestaurantes : null,
+    enviarCertificado: typeof enviarCertificado === 'function' ? enviarCertificado : null,
+    switchTab: typeof switchTab === 'function' ? switchTab : null,
+    salvarTunnelConfig: typeof salvarTunnelConfig === 'function' ? salvarTunnelConfig : null,
+    testarTunnel: typeof testarTunnel === 'function' ? testarTunnel : null,
+    pararTunnel: typeof pararTunnel === 'function' ? pararTunnel : null,
+    abrirModalNovoProvider: typeof abrirModalNovoProvider === 'function' ? abrirModalNovoProvider : null,
+    salvarProviderManual: typeof salvarProviderManual === 'function' ? salvarProviderManual : null,
+    carregarPainelAfiliadosCompleto: typeof carregarPainelAfiliadosCompleto === 'function' ? carregarPainelAfiliadosCompleto : null,
+    abrirModalNovaMetaAfiliado: typeof abrirModalNovaMetaAfiliado === 'function' ? abrirModalNovaMetaAfiliado : null,
+    abrirModalNovoAfiliado: typeof abrirModalNovoAfiliado === 'function' ? abrirModalNovoAfiliado : null,
+    trocarSubtabAfiliados: typeof trocarSubtabAfiliados === 'function' ? trocarSubtabAfiliados : null,
+    carregarConfigSeguranca: typeof carregarConfigSeguranca === 'function' ? carregarConfigSeguranca : null,
+    salvarConfigSeguranca: typeof salvarConfigSeguranca === 'function' ? salvarConfigSeguranca : null,
+    adicionarIpBlacklist: typeof adicionarIpBlacklist === 'function' ? adicionarIpBlacklist : null,
+    removerIpBlacklist: typeof removerIpBlacklist === 'function' ? removerIpBlacklist : null,
+    carregarWafLogs: typeof carregarWafLogs === 'function' ? carregarWafLogs : null,
+    renderSiteVendasTab: typeof renderSiteVendasTab === 'function' ? renderSiteVendasTab : null,
+    adicionarFaq: typeof adicionarFaq === 'function' ? adicionarFaq : null,
+    salvarSiteConteudo: typeof salvarSiteConteudo === 'function' ? salvarSiteConteudo : null,
+    salvarSiteBlocos: typeof salvarSiteBlocos === 'function' ? salvarSiteBlocos : null,
+    salvarSiteSEO: typeof salvarSiteSEO === 'function' ? salvarSiteSEO : null,
+    salvarSiteIndexacao: typeof salvarSiteIndexacao === 'function' ? salvarSiteIndexacao : null,
+    adicionarPlano: typeof adicionarPlano === 'function' ? adicionarPlano : null,
+    salvarSitePlanos: typeof salvarSitePlanos === 'function' ? salvarSitePlanos : null,
+    salvarSiteGateways: typeof salvarSiteGateways === 'function' ? salvarSiteGateways : null,
+    salvarTrackingConfig: typeof salvarTrackingConfig === 'function' ? salvarTrackingConfig : null,
+    gerarCopyAnuncio: typeof gerarCopyAnuncio === 'function' ? gerarCopyAnuncio : null,
+    exportarAudienciaCSV: typeof exportarAudienciaCSV === 'function' ? exportarAudienciaCSV : null,
+    copiarTextoAnuncio: typeof copiarTextoAnuncio === 'function' ? copiarTextoAnuncio : null,
+    salvarSiteDesign: typeof salvarSiteDesign === 'function' ? salvarSiteDesign : null,
+    salvarSiteConsultor: typeof salvarSiteConsultor === 'function' ? salvarSiteConsultor : null,
+    fecharModalAfiliado: typeof fecharModalAfiliado === 'function' ? fecharModalAfiliado : null,
+    salvarAfiliado: typeof salvarAfiliado === 'function' ? salvarAfiliado : null,
+    fecharModalAfiliadoDetalhes: typeof fecharModalAfiliadoDetalhes === 'function' ? fecharModalAfiliadoDetalhes : null,
+    fecharModalNovaMetaAfiliado: typeof fecharModalNovaMetaAfiliado === 'function' ? fecharModalNovaMetaAfiliado : null,
+    salvarNovaMetaAfiliado: typeof salvarNovaMetaAfiliado === 'function' ? salvarNovaMetaAfiliado : null,
+    confirmarPagamentoPixBonificacao: typeof confirmarPagamentoPixBonificacao === 'function' ? confirmarPagamentoPixBonificacao : null
+  };
+  for (var k in globalFns) {
+    if (globalFns[k] && !window[k]) {
+      window[k] = globalFns[k];
+    }
+  }
+})();
+
+
 
 

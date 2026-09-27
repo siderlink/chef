@@ -4568,11 +4568,37 @@ io.on('connection', (socket) => {
     const clientPhone = pedido.cliente_telefone ? pedido.cliente_telefone.trim() : null;
 
     function proceedWithOrder(clienteId) {
-      pedido.cliente_id = clienteId || pedido.cliente_id || null;
-      let status = pedido.status_inicial || 'Em preparo';
-      if (pedido.sector === 'Bar' && status === 'Em espera') {
-        status = 'Em preparo';
-      }
+      const tid = socket.restaurante_id || socketTenantId || 1;
+      masterDb.get('SELECT licenca FROM restaurantes WHERE id = ?', [tid], (errLic, rest) => {
+        const licenca = (rest && rest.licenca) || 'lite';
+        const limits = featurePlans.getPlanLimits(licenca);
+        if (limits.max_pedidos_mes !== Infinity) {
+          db.get(`
+            SELECT COUNT(*) AS total FROM pedidos 
+            WHERE (
+              strftime('%Y-%m', time) = strftime('%Y-%m', 'now') 
+              OR strftime('%Y-%m', criado_em) = strftime('%Y-%m', 'now')
+              OR date(time) >= date('now', 'start of month')
+            )
+          `, (errP, rowP) => {
+            if (!errP && rowP && rowP.total >= limits.max_pedidos_mes) {
+              socket.emit('pedido_erro', { msg: `⚠️ Limite mensal de ${limits.max_pedidos_mes} pedidos do seu plano atingido! Faça upgrade para o Plano Pro para continuar recebendo pedidos.` });
+              socket.emit('upgrade_necessario', { recurso: 'pedidos', limite: limits.max_pedidos_mes, atual: rowP.total });
+              return;
+            }
+            executarOrdem();
+          });
+        } else {
+          executarOrdem();
+        }
+      });
+
+      function executarOrdem() {
+        pedido.cliente_id = clienteId || pedido.cliente_id || null;
+        let status = pedido.status_inicial || 'Em preparo';
+        if (pedido.sector === 'Bar' && status === 'Em espera') {
+          status = 'Em preparo';
+        }
       const etapa = pedido.etapa || 'Principal';
       const marchaStatus = pedido.marcha_status || (pedido.aguardar_marcha ? 'aguardando_marcha' : 'marchado');
       if (marchaStatus === 'aguardando_marcha') {
@@ -4736,6 +4762,7 @@ io.on('connection', (socket) => {
           }
         }
       });
+      }
     }
 
     if (clientName) {
@@ -5507,9 +5534,29 @@ io.on('connection', (socket) => {
   socket.on('get_produtos', () => broadcastProdutos(socket));
   socket.on('get_funcionarios', () => db.all(`SELECT * FROM funcionarios`, (err, rows) => socket.emit('funcionarios_atualizados', rows || [])));
 
-  socket.on('add_mesa', (nome) => db.run(`INSERT INTO mesas (nome) VALUES (?)`, [nome], () => {
-    db.all(`SELECT * FROM mesas`, (e, r) => io.emit('mesas_atualizadas', r || []));
-  }));
+  socket.on('add_mesa', (nome) => {
+    const tid = socket.restaurante_id || socketTenantId || 1;
+    masterDb.get('SELECT licenca FROM restaurantes WHERE id = ?', [tid], (errLic, rest) => {
+      const licenca = (rest && rest.licenca) || 'lite';
+      const limits = featurePlans.getPlanLimits(licenca);
+      if (limits.max_mesas !== Infinity) {
+        db.get('SELECT COUNT(*) as total FROM mesas', (errM, rowM) => {
+          if (!errM && rowM && rowM.total >= limits.max_mesas) {
+            socket.emit('erro_servidor', `Limite do plano atingido: seu plano permite até ${limits.max_mesas} mesas. Faça upgrade para o Plano Pro para ter mesas ilimitadas!`);
+            socket.emit('upgrade_necessario', { recurso: 'mesas', limite: limits.max_mesas, atual: rowM.total });
+            return;
+          }
+          db.run(`INSERT INTO mesas (nome) VALUES (?)`, [nome], () => {
+            db.all(`SELECT * FROM mesas`, (e, r) => io.emit('mesas_atualizadas', r || []));
+          });
+        });
+      } else {
+        db.run(`INSERT INTO mesas (nome) VALUES (?)`, [nome], () => {
+          db.all(`SELECT * FROM mesas`, (e, r) => io.emit('mesas_atualizadas', r || []));
+        });
+      }
+    });
+  });
   socket.on('delete_mesa', (id) => {
     if (!exigirAdminSocket(socket)) return;
     db.run(`DELETE FROM mesas WHERE id = ?`, [id], () => {
@@ -5517,15 +5564,41 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('add_produto', (p) => db.run(`INSERT INTO produtos (categoria, nome, preco, emoji, hasAddons, setor, status_inicial, status, categoria_fiscal, descricao, codigo_barras, visibilidade) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [p.categoria, p.nome, p.preco, p.emoji, p.hasAddons, p.setor || 'Cozinha 1', p.status_inicial || 'Em espera', p.status || 'ativo', p.categoria_fiscal || 'Alimentacao', p.descricao || '', p.codigo_barras || null, p.visibilidade || 'todos'], (err) => {
-      if (err) {
-        console.error(err);
-        socket.emit('erro_servidor', 'Falha ao adicionar o produto.');
-        return;
+  socket.on('add_produto', (p) => {
+    const tid = socket.restaurante_id || socketTenantId || 1;
+    masterDb.get('SELECT licenca FROM restaurantes WHERE id = ?', [tid], (errLic, rest) => {
+      const licenca = (rest && rest.licenca) || 'lite';
+      const limits = featurePlans.getPlanLimits(licenca);
+      if (limits.max_produtos !== Infinity) {
+        db.get('SELECT COUNT(*) as total FROM produtos WHERE status = "ativo" OR ativo = 1', (errP, rowP) => {
+          if (!errP && rowP && rowP.total >= limits.max_produtos) {
+            socket.emit('erro_servidor', `Limite do plano atingido: seu plano permite até ${limits.max_produtos} produtos no cardápio. Faça upgrade para o Plano Pro para cardápio ilimitado!`);
+            socket.emit('upgrade_necessario', { recurso: 'produtos', limite: limits.max_produtos, atual: rowP.total });
+            return;
+          }
+          db.run(`INSERT INTO produtos (categoria, nome, preco, emoji, hasAddons, setor, status_inicial, status, categoria_fiscal, descricao, codigo_barras, visibilidade) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [p.categoria, p.nome, p.preco, p.emoji, p.hasAddons, p.setor || 'Cozinha 1', p.status_inicial || 'Em espera', p.status || 'ativo', p.categoria_fiscal || 'Alimentacao', p.descricao || '', p.codigo_barras || null, p.visibilidade || 'todos'], (err) => {
+              if (err) {
+                console.error(err);
+                socket.emit('erro_servidor', 'Falha ao adicionar o produto.');
+                return;
+              }
+              broadcastProdutos();
+            });
+        });
+      } else {
+        db.run(`INSERT INTO produtos (categoria, nome, preco, emoji, hasAddons, setor, status_inicial, status, categoria_fiscal, descricao, codigo_barras, visibilidade) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [p.categoria, p.nome, p.preco, p.emoji, p.hasAddons, p.setor || 'Cozinha 1', p.status_inicial || 'Em espera', p.status || 'ativo', p.categoria_fiscal || 'Alimentacao', p.descricao || '', p.codigo_barras || null, p.visibilidade || 'todos'], (err) => {
+            if (err) {
+              console.error(err);
+              socket.emit('erro_servidor', 'Falha ao adicionar o produto.');
+              return;
+            }
+            broadcastProdutos();
+          });
       }
-      broadcastProdutos();
-    }));
+    });
+  });
 
   socket.on('edit_produto', (p) => {
     db.run(`UPDATE produtos SET categoria=?, nome=?, preco=?, emoji=?, setor=?, status_inicial=?, status=?, categoria_fiscal=?, descricao=?, codigo_barras=?, visibilidade=? WHERE id=?`,
@@ -11912,7 +11985,32 @@ const FUNCOES_MODULOS = [
   { chave: 'painel_tv_senhas', nome: 'Painel TV de Senhas & Digital Signage (Fast-Food)', desc: 'Transforma qualquer Smart TV em painel profissional com voz sintetizada (Pronto/Preparando) e carrossel de ofertas/combos lucrativos.', icone: 'ph-television', categorias: ['Hardware', 'Operação'], preco: 'R$ 39/mês', roi: 'Atendimento profissional de fast-food com voz e +20% em vendas de sobremesas', badge: 'Fast-Food TV' },
   { chave: 'encomendas_eventos', nome: 'Gestão de Encomendas, Buffets & Ceias', desc: 'Controle de vendas com data futura, adiantamento de 50% de sinal via Pix, orçamentos personalizados e calendário de produção da cozinha.', icone: 'ph-cake', categorias: ['Vendas', 'Operação'], preco: 'R$ 69/mês', roi: 'Organiza pedidos com data futura e garante sinal de 50% antecipado', badge: 'Eventos & Ceias' },
   { chave: 'redes_franquias', nome: 'Gestão Multi-Lojas, Redes e Franquias (Master Chain)', desc: 'Dashboard executivo consolidado multi-CNPJ, transferência de insumos entre matriz e filiais, e replicação de cardápio com 1 clique.', icone: 'ph-buildings', categorias: ['Gestão'], preco: 'R$ 149/mês por filial', roi: 'DRE consolidado, transferências entre lojas e replicação de cardápio', badge: 'Corporativo' },
-  { chave: 'gift_card_wallet', nome: 'Gift Cards Corporativos & Saldo Pré-Pago VIP', desc: 'Venda de vouchers para presentes ou empresas e carteira pré-paga para clientes fiéis (consumo antecipado com bônus).', icone: 'ph-wallet', categorias: ['Vendas', 'Marketing'], preco: 'R$ 49/mês + 1% recarga', roi: 'Injeção imediata de capital de giro e fidelização de clientes', badge: 'Capital Giro' }
+  { chave: 'gift_card_wallet', nome: 'Gift Cards Corporativos & Saldo Pré-Pago VIP', desc: 'Venda de vouchers para presentes ou empresas e carteira pré-paga para clientes fiéis (consumo antecipado com bônus).', icone: 'ph-wallet', categorias: ['Vendas', 'Marketing'], preco: 'R$ 49/mês + 1% recarga', roi: 'Injeção imediata de capital de giro e fidelização de clientes', badge: 'Capital Giro' },
+
+  // NOVOS MÓDULOS DE ALTA RENTABILIDADE & FINTECH EXPANDIDOS
+  { chave: 'antecipacao_recebiveis_giro', nome: 'Antecipação de Recebíveis & Crédito Giro', desc: 'Crédito giro no Pix antecipando cartões e repasses iFood na hora com taxa competitiva.', icone: 'ph-currency-dollar', categorias: ['Financeiro', 'Fintech'], preco: '3.2% spread', roi: 'Capital de giro na mesma hora via Pix', badge: 'Fintech Banking' },
+  { chave: 'totem_kiosk_touchscreen', nome: 'Totem Kiosk Touchscreen Autoatendimento', desc: 'Transforme tablets em terminais de autoatendimento estilo fast-food com pagamento e senha.', icone: 'ph-device-tablet-speaker', categorias: ['Hardware', 'Operação'], preco: 'R$ 69/mês', roi: 'Economia de R$ 2.500/mês por atendente', badge: 'Hardware Kiosk' },
+  { chave: 'trafego_hiperlocal_1clique', nome: 'Piloto de Tráfego Pago Hiperlocal 1-Clique', desc: 'Dispare anúncios no Instagram/Meta no raio de 3km com 1 toque para lotar terças e quartas.', icone: 'ph-megaphone-simple', categorias: ['Marketing'], preco: 'R$ 49/mês', roi: '+25 a +40 clientes nas noites fracas', badge: 'Tráfego Pago' },
+  { chave: 'auditor_glosas_ifood', nome: 'Auditor de Repasses & Glosas do iFood', desc: 'Detecte cancelamentos indevidos e retenções no extrato do iFood com laudo de contestação.', icone: 'ph-magnifying-glass-plus', categorias: ['Fiscal', 'Financeiro'], preco: 'R$ 89/mês', roi: 'Recupera em média R$ 1.400/mês', badge: 'Auditor Fiscal' },
+  { chave: 'tv_senhas_chamada_voz', nome: 'TV Chamador de Senhas com Voz em Português', desc: 'Transforme qualquer Smart TV em painel profissional com voz sintetizada para balcão e delivery.', icone: 'ph-television', categorias: ['Hardware', 'Operação'], preco: 'R$ 39/mês', roi: 'Zero aglomeração e retirada rápida', badge: 'Smart TV' },
+  { chave: 'gorjeta_legal_13419', nome: 'Split de Gorjeta Legalizada (Lei nº 13.419)', desc: 'Calcula a retenção de encargos (20%/33%) e distribui por pontos via Pix diretamente aos garçons.', icone: 'ph-hand-coins', categorias: ['Fiscal', 'Equipe'], preco: 'R$ 69/mês + R$ 0,25/op', roi: 'Blindagem contra passivo trabalhista e equipe motivada', badge: 'Lei da Gorjeta' },
+  { chave: 'antichurn_preditivo_whats', nome: 'Robô Preditivo Anti-Churn WhatsApp', desc: 'Detecta desvio do intervalo de compra e dispara cupom de resgate personalizado no WhatsApp.', icone: 'ph-whatsapp-logo', categorias: ['Marketing', 'Vendas'], preco: 'R$ 59/mês', roi: 'Recupera em média 28% dos clientes sumidos', badge: 'Anti-Churn IA' },
+  { chave: 'gamificacao_salao_metas', nome: 'Gamificação do Salão & Venda Sugestiva', desc: 'Metas em tempo real no PDV para garçons venderem sobremesas e bebidas com comissão ao vivo.', icone: 'ph-trophy', categorias: ['Gestão', 'Equipe'], preco: 'R$ 59/mês', roi: '+15% a +25% de aumento no ticket médio', badge: 'Venda Sugestiva' },
+  { chave: 'influencer_roi_rastreado', nome: 'Portal do Influencer com ROI Real', desc: 'Links e cupons rastreados para blogueiros gastronômicos com comissão paga apenas sobre vendas reais.', icone: 'ph-instagram-logo', categorias: ['Marketing'], preco: 'R$ 49/mês', roi: 'Fim do jantar de graça sem retorno comprovado', badge: 'Influencer ROI' },
+  { chave: 'voucher_vr_antecipacao', nome: 'Conciliação & Antecipação VR/VA', desc: 'Audita taxas de Ticket, Sodexo e Alelo e antecipa recebíveis futuros via Pix em minutos.', icone: 'ph-credit-card', categorias: ['Financeiro', 'Fintech'], preco: 'R$ 89/mês + 3.5% spread', roi: 'Fluxo de caixa imediato sem 60 dias de espera', badge: 'VR/VA Antecipado' },
+  { chave: 'drivethru_curbside_geofence', nome: 'Drive-Thru & Pegue-e-Leve Geofence', desc: 'Rastreia aproximação por GPS (300m) e entrega a sacola quente direto na vaga do carro.', icone: 'ph-car', categorias: ['Operação', 'Delivery'], preco: 'R$ 49/mês', roi: 'Retirada rápida sem fila nem vaga de estacionamento', badge: 'Drive-Thru' },
+  { chave: 'rfid_pulseira_cashless', nome: 'Comanda RFID / Pulseira Cashless', desc: 'Elimina filas de fechamento de conta com consumo por aproximação em bares, baladas e eventos.', icone: 'ph-broadcast', categorias: ['Hardware', 'Operação'], preco: 'R$ 99/mês + R$ 0,30/op', roi: 'Aumento de 25% a 35% no consumo interno', badge: 'Cashless RFID' },
+  { chave: 'hotel_room_service_pms', nome: 'Room Service & Integração PMS Hotéis', desc: 'Lança consumos de frigobar e restaurante direto na conta do quarto do hóspede no check-out.', icone: 'ph-bed', categorias: ['Gestão'], preco: 'R$ 149/mês', roi: 'Atende hotéis, resorts e pousadas sem retrabalho', badge: 'Hotelaria PMS' },
+  { chave: 'perdas_avarias_barata_zero', nome: 'Auditor de Quebras & Barata Zero', desc: 'Controle fotográfico e financeiro de pratos quebrados, chopp derramado e insumos queimados.', icone: 'ph-trash', categorias: ['Operação', 'Financeiro'], preco: 'R$ 59/mês', roi: 'Economiza R$ 2k-5k/mês eliminando vazamentos', badge: 'Zero Desperdício' },
+  { chave: 'reforma_tributaria_simulador', nome: 'Simulador Reforma Tributária (IBS/CBS)', desc: 'Calcula o impacto da transição tributária, aproveitamento de créditos de insumos e split payment.', icone: 'ph-calculator', categorias: ['Fiscal'], preco: 'R$ 99/mês', roi: 'Adequação preventiva à nova legislação', badge: 'Reforma 2026' },
+  { chave: 'marmitas_b2b_corporativo', nome: 'Assinatura Corporativa de Refeições B2B', desc: 'Contratos recorrentes com empresas para fornecimento diário de marmitas com portal de escolha.', icone: 'ph-buildings', categorias: ['Vendas'], preco: 'R$ 79/mês + 1% faturamento', roi: 'Faturamento corporativo garantido e previsível', badge: 'Contratos B2B' },
+  { chave: 'recrutador_gastronomico_flash', nome: 'Recrutador Flash de Equipe Gastronômica', desc: 'Disparo de vagas urgentes e triagem expressa de garçons, chapeiros e cozinheiros com score.', icone: 'ph-user-plus', categorias: ['Gestão'], preco: 'R$ 49/mês', roi: 'Contratação em minutos para noites de pico', badge: 'RH Express' },
+  { chave: 'franquias_royalties_fpp', nome: 'Franquias & Master Franchising', desc: 'Apuração automática de royalties, fundo de propaganda e gestão de redes auditada pelo PDV.', icone: 'ph-tree-structure', categorias: ['Gestão'], preco: 'R$ 199/mês por franqueado', roi: 'Prestação de contas blindada para o franqueador', badge: 'Redes & Franquias' },
+  { chave: 'polo_gastronomico_compartilhado', nome: 'Polo Gastronômico Delivery Compartilhado', desc: 'Carrinho unificado para múltiplos restaurantes da mesma praça ou vila com frete único.', icone: 'ph-storefront', categorias: ['Delivery'], preco: 'R$ 149/mês + 2% take-rate', roi: 'Ticket médio 40% maior reunindo múltiplos parceiros', badge: 'Praça de Alimentação' },
+  { chave: 'antifurto_inventario_cego', nome: 'Sentinela de Inventário Cego (Carnes & Whisky)', desc: 'Contagem cega de 3 minutos por turno dos 10 itens mais caros com alerta imediato de desvio no WhatsApp.', icone: 'ph-eye', categorias: ['Operação', 'Segurança'], preco: 'R$ 79/mês', roi: 'Elimina R$ 3k-8k/mês em desvios internos', badge: 'Antifurto Cego' },
+  { chave: 'fidelidade_tiers_vip', nome: 'Fidelidade por Níveis VIP (Bronze a Diamante)', desc: 'Níveis de prestígio com benefícios exclusivos, drink cortesia e cashback progressivo.', icone: 'ph-medal', categorias: ['Marketing'], preco: 'R$ 69/mês', roi: 'Eleva ticket médio e frequência de clientes fiéis', badge: 'Tiers VIP' },
+  { chave: 'menuboard_tv_balcao', nome: 'Menu Board Digital para TVs de Balcão', desc: 'Exibição de cardápio digital em Smart TVs com troca automática por momento do dia.', icone: 'ph-monitor', categorias: ['Hardware', 'Vendas'], preco: 'R$ 49/mês por tela', roi: '+20% em combos e visual profissional de fast-food', badge: 'Menu Board TV' },
+  { chave: 'satisfacao_ia_emocional', nome: 'Totem de Satisfação IA Emocional & Áudio', desc: 'Totem tátil de 4 emojis com transcrição e análise de sentimento em áudio com alerta crítico no WhatsApp.', icone: 'ph-smiley', categorias: ['Operação'], preco: 'R$ 39/mês', roi: 'Alerta em 5s no WhatsApp antes do cliente postar no Google', badge: 'Satisfação IA' }
 ];
 
 // Config de ativação de cada módulo (restaurante liga/desliga; padrão ligado quando disponível)
@@ -13147,6 +13245,51 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       console.log('🚀 Controller CRM & WhatsApp Marketing Turbo carregado com sucesso.');
     } catch (eCrm) {
       console.error('Erro ao carregar o Controller CRM Marketing Turbo:', eCrm);
+    }
+
+    try {
+      require('./controllers/addons-receita-maxima')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('💎 Controller Add-ons Receita Maxima (Gorjeta Legal, Anti-Churn, Gamificacao, Influencer, Vouchers, Drive-Thru) carregado com sucesso.');
+    } catch (eRecMax) {
+      console.error('Erro ao carregar o Controller Add-ons Receita Maxima:', eRecMax);
+    }
+
+    try {
+      require('./controllers/addons-expansao-extrema')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('🌟 Controller Add-ons Expansao Extrema (RFID Cashless, Room Service PMS, Quebras/Avarias, Reforma Tributaria, Refeicoes B2B, RH Flash) carregado com sucesso.');
+    } catch (eExtrema) {
+      console.error('Erro ao carregar o Controller Add-ons Expansao Extrema:', eExtrema);
+    }
+
+    try {
+      require('./controllers/addons-monetizacao-suprema')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('👑 Controller Add-ons Monetizacao Suprema (Franquias Royalties, Polo Compartilhado, Inventario Cego, Tiers VIP, Menu Board TV, Totem Feedback IA) carregado com sucesso.');
+    } catch (eSuprema) {
+      console.error('Erro ao carregar o Controller Add-ons Monetizacao Suprema:', eSuprema);
     }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);

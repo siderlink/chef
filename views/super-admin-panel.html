@@ -4620,24 +4620,34 @@
             </div>
 
             <!-- CARDS DE MRR E METRICAS DE ASSINATURA -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:24px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:24px;">
               <div class="card" style="padding:16px; border-left:4px solid #10b981; background:var(--bg-card);">
-                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">MRR Recorrente Ativo</div>
-                <div id="fin-assin-mrr" style="font-size:24px; font-weight:900; color:#10b981; margin:6px 0;">R$ 0,00</div>
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">MRR Consolidado Total</div>
+                <div id="fin-assin-mrr-total" style="font-size:24px; font-weight:900; color:#10b981; margin:6px 0;">R$ 0,00</div>
+                <div style="font-size:11.5px; color:var(--text-muted);">Planos Base + Add-ons Ativos</div>
+              </div>
+              <div class="card" style="padding:16px; border-left:4px solid #059669; background:var(--bg-card);">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">MRR Planos Base</div>
+                <div id="fin-assin-mrr" style="font-size:24px; font-weight:900; color:#059669; margin:6px 0;">R$ 0,00</div>
                 <div style="font-size:11.5px; color:var(--text-muted);"><span id="fin-assin-qtd-ativas">0</span> tenants pagantes em dia</div>
+              </div>
+              <div class="card" style="padding:16px; border-left:4px solid #f59e0b; background:var(--bg-card);">
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">MRR Add-ons &amp; Módulos</div>
+                <div id="fin-assin-mrr-addons" style="font-size:24px; font-weight:900; color:#f59e0b; margin:6px 0;">R$ 0,00</div>
+                <div style="font-size:11.5px; color:var(--text-muted);"><span id="fin-assin-qtd-addons">0</span> módulos extras ativos</div>
               </div>
               <div class="card" style="padding:16px; border-left:4px solid #ef4444; background:var(--bg-card);">
                 <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Assinaturas Vencidas</div>
                 <div id="fin-assin-vencidas-count" style="font-size:24px; font-weight:900; color:#ef4444; margin:6px 0;">0</div>
-                <div style="font-size:11.5px; color:#ef4444;">Aguardando liquidação de boleto/PIX</div>
+                <div style="font-size:11.5px; color:#ef4444;">Aguardando liquidação</div>
               </div>
               <div class="card" style="padding:16px; border-left:4px solid #8b5cf6; background:var(--bg-card);">
                 <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Em Teste Grátis (Trial)</div>
                 <div id="fin-assin-trial-count" style="font-size:24px; font-weight:900; color:#8b5cf6; margin:6px 0;">0</div>
-                <div style="font-size:11.5px; color:var(--text-muted);">Estabelecimentos nos 14 dias trial</div>
+                <div style="font-size:11.5px; color:var(--text-muted);">Período de degustação 14 dias</div>
               </div>
               <div class="card" style="padding:16px; border-left:4px solid #3b82f6; background:var(--bg-card);">
-                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Total de Estabelecimentos</div>
+                <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Total Estabelecimentos</div>
                 <div id="fin-assin-total-tenants" style="font-size:24px; font-weight:900; color:#3b82f6; margin:6px 0;">0</div>
                 <div style="font-size:11.5px; color:var(--text-muted);">Restaurantes integrados na base</div>
               </div>
@@ -4683,6 +4693,44 @@
                     <tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">Carregando assinaturas...</td></tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            <!-- PAINEL DE RECEITA EXTRA: RANKING & ADOÇÃO DE ADD-ONS -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:18px; margin-top:24px;">
+              <div class="card" style="padding:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                  <h3 style="margin:0; font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-trophy" style="color:#eab308;"></i> Top Módulos Mais Lucrativos (MRR Add-ons)
+                  </h3>
+                  <span class="badge" style="background:rgba(234,179,8,0.15); color:#eab308; font-size:11px; padding:3px 8px; border-radius:12px;">App Store Ativa</span>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table class="data-table" style="width:100%; border-collapse:collapse; font-size:12.5px;">
+                    <thead>
+                      <tr style="background:rgba(255,255,255,0.02); border-bottom:1px solid var(--border-color); text-align:left;">
+                        <th style="padding:8px 10px;">Módulo / Add-on</th>
+                        <th style="padding:8px 10px; text-align:center;">Assinantes</th>
+                        <th style="padding:8px 10px; text-align:right;">MRR Gerado</th>
+                      </tr>
+                    </thead>
+                    <tbody id="fin-addons-ranking-tbody">
+                      <tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-muted);">Carregando ranking...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card" style="padding:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                  <h3 style="margin:0; font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-chart-pie" style="color:#6366f1;"></i> Distribuição de Planos Base
+                  </h3>
+                  <span class="badge" style="background:rgba(99,102,241,0.15); color:#6366f1; font-size:11px; padding:3px 8px; border-radius:12px;">Assinaturas Base</span>
+                </div>
+                <div id="fin-planos-distribuicao-container" style="display:flex; flex-direction:column; gap:10px;">
+                  <div style="text-align:center; padding:15px; color:var(--text-muted);">Carregando distribuição de planos...</div>
+                </div>
               </div>
             </div>
           </div>

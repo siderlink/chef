@@ -331,7 +331,28 @@ function aplicarTamanhosCSS(sizes) {
   root.style.setProperty('--kds-card-min-width', (sizes.cardMin || 290) + 'px');
   root.style.setProperty('--kds-font-size', (sizes.fontSize || 15) + 'px');
 
+  // Ajustes dinâmicos de Grid Columns
+  const colCss = (sizes.gridCols && sizes.gridCols !== 'auto')
+    ? `repeat(${sizes.gridCols}, minmax(0, 1fr))`
+    : `repeat(auto-fill, minmax(var(--kds-card-min-width, ${sizes.cardMin || 290}px), 1fr))`;
+  root.style.setProperty('--kds-grid-columns', colCss);
+
+  // Densidade de padding e min-height para modo grid
+  let gridPad = '16px';
+  let gridMinH = '190px';
+  if (sizes.cardSize === 'p') { gridPad = '10px 12px'; gridMinH = '140px'; }
+  else if (sizes.cardSize === 'm') { gridPad = '16px'; gridMinH = '190px'; }
+  else if (sizes.cardSize === 'g') { gridPad = '22px'; gridMinH = '240px'; }
+  else if (sizes.cardSize === 'gg') { gridPad = '28px'; gridMinH = '300px'; }
+  root.style.setProperty('--kds-card-grid-padding', gridPad);
+  root.style.setProperty('--kds-card-grid-min-height', gridMinH);
+
   if (queueList) {
+    queueList.style.setProperty('--kds-grid-columns', colCss);
+    queueList.style.setProperty('--kds-card-gap', (sizes.gap !== undefined ? sizes.gap : 12) + 'px');
+    queueList.style.setProperty('--kds-card-grid-padding', gridPad);
+    queueList.style.setProperty('--kds-card-grid-min-height', gridMinH);
+
     queueList.classList.remove('grade-2col', 'grade-3col', 'grade-4col', 'grade-5col');
     if (sizes.gridCols && sizes.gridCols !== 'auto') {
       queueList.classList.add(`grade-${sizes.gridCols}col`);
@@ -406,13 +427,28 @@ window.alterarColunasGrade = function(cols) {
   kdsSectionSizes.gridCols = cols;
   localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
   aplicarTamanhosCSS(kdsSectionSizes);
+  renderQueue(true);
   kdsAgendarSalvarNoServidor();
 };
 
 window.alterarTamanhoCard = function(tam) {
   kdsSectionSizes.cardSize = tam;
+  if (tam === 'p') {
+    kdsSectionSizes.fontSize = 13;
+    kdsSectionSizes.gap = 8;
+  } else if (tam === 'm') {
+    kdsSectionSizes.fontSize = 15;
+    kdsSectionSizes.gap = 12;
+  } else if (tam === 'g') {
+    kdsSectionSizes.fontSize = 18;
+    kdsSectionSizes.gap = 16;
+  } else if (tam === 'gg') {
+    kdsSectionSizes.fontSize = 22;
+    kdsSectionSizes.gap = 20;
+  }
   localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
   aplicarTamanhosCSS(kdsSectionSizes);
+  renderQueue(true);
   kdsAgendarSalvarNoServidor();
 };
 
@@ -424,6 +460,7 @@ window.aplicarPresetDensidade = function(preset) {
     kdsSectionSizes.qty = 44;
     kdsSectionSizes.action = 170;
     kdsSectionSizes.header = 200;
+    kdsSectionSizes.cardSize = 'p';
   } else if (preset === 'compacto') {
     kdsSectionSizes.gap = 6;
     kdsSectionSizes.height = 52;
@@ -431,6 +468,7 @@ window.aplicarPresetDensidade = function(preset) {
     kdsSectionSizes.qty = 48;
     kdsSectionSizes.action = 200;
     kdsSectionSizes.header = 230;
+    kdsSectionSizes.cardSize = 'p';
   } else if (preset === 'padrao') {
     kdsSectionSizes.gap = 12;
     kdsSectionSizes.height = 76;
@@ -438,6 +476,7 @@ window.aplicarPresetDensidade = function(preset) {
     kdsSectionSizes.qty = 54;
     kdsSectionSizes.action = 230;
     kdsSectionSizes.header = 260;
+    kdsSectionSizes.cardSize = 'm';
   } else if (preset === 'amplo') {
     kdsSectionSizes.gap = 18;
     kdsSectionSizes.height = 96;
@@ -445,9 +484,11 @@ window.aplicarPresetDensidade = function(preset) {
     kdsSectionSizes.qty = 64;
     kdsSectionSizes.action = 260;
     kdsSectionSizes.header = 290;
+    kdsSectionSizes.cardSize = 'g';
   }
   localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
   aplicarTamanhosCSS(kdsSectionSizes);
+  renderQueue(true);
   kdsAgendarSalvarNoServidor();
 };
 
@@ -460,13 +501,16 @@ window.toggleCaixaAlta = function(forcar) {
   localStorage.setItem('chef_kds_caixa_alta', kdsSectionSizes.caixaAlta ? '1' : '0');
   localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
   aplicarTamanhosCSS(kdsSectionSizes);
+  renderQueue(true);
   kdsAgendarSalvarNoServidor();
 };
 
 window.restaurarTamanhosPadrao = function() {
   kdsSectionSizes = Object.assign({}, DEFAULT_SECTION_SIZES);
   localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
+  localStorage.setItem('chef_kds_caixa_alta', '0');
   aplicarTamanhosCSS(kdsSectionSizes);
+  renderQueue(true);
   kdsAgendarSalvarNoServidor();
 };
 
@@ -2220,7 +2264,8 @@ function renderizarCardIndividual(item) {
 
   const itemsHtml = filtered.map(renderizarCardIndividual).join('');
 
-  if (forceRerender || typeof window.morphdom !== 'function') {
+  const hadKanban = queueList ? !!queueList.querySelector('.kds-kanban-column') : false;
+  if (forceRerender || hadKanban || typeof window.morphdom !== 'function') {
     queueList.innerHTML = itemsHtml;
   } else {
     const tempWrapper = queueList.cloneNode(false);
@@ -2694,7 +2739,7 @@ window.alterarModoDisposicao = function(modo) {
   }
 
   aplicarTamanhosCSS(kdsSectionSizes);
-  renderQueue();
+  renderQueue(true);
   kdsAgendarSalvarNoServidor();
 };
 

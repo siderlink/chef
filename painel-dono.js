@@ -7,6 +7,82 @@ function escHtml(v) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// 0. Ghost Login / Impersonate Ingestion
+(function checkImpersonate() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const impToken = urlParams.get('impersonate_token');
+    if (impToken) {
+      const parts = impToken.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        localStorage.setItem('chef_token', impToken);
+        if (payload.restaurante_id) {
+          localStorage.setItem('restaurante_id', String(payload.restaurante_id));
+        }
+        localStorage.setItem('logged_user', payload.usuario || 'admin');
+        const creds = {
+          id: payload.id,
+          cargo: payload.cargo || 'Dono',
+          role: payload.role || 'admin',
+          nome: payload.nome || 'Proprietário',
+          usuario: payload.usuario || 'admin',
+          restaurante_id: payload.restaurante_id || 1,
+          impersonated: true,
+          impersonated_by: payload.impersonated_by || 'SuperAdmin'
+        };
+        localStorage.setItem('chef_credentials', JSON.stringify(creds));
+        sessionStorage.setItem('chef_impersonate_session', 'true');
+        sessionStorage.setItem('chef_impersonate_admin', payload.impersonated_by || 'SuperAdmin');
+        sessionStorage.setItem('chef_impersonate_rest', payload.restaurante_nome || ('Restaurante #' + payload.restaurante_id));
+
+        urlParams.delete('impersonate_token');
+        const newQs = urlParams.toString();
+        const newUrl = window.location.pathname + (newQs ? '?' + newQs : '');
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    }
+  } catch (e) {
+    console.error('[Impersonate Ingest Error]', e);
+  }
+})();
+
+// Injeta banner de suporte remoto se em sessão de Ghost Login
+(function renderSupportBanner() {
+  if (sessionStorage.getItem('chef_impersonate_session') !== 'true') return;
+  const doRender = function() {
+    if (document.getElementById('banner-ghost-support')) return;
+    const admin = sessionStorage.getItem('chef_impersonate_admin') || 'SuperAdmin';
+    const restNome = sessionStorage.getItem('chef_impersonate_rest') || 'Restaurante';
+    const b = document.createElement('div');
+    b.id = 'banner-ghost-support';
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999999;background:linear-gradient(90deg,#ea580c,#c2410c);color:#fff;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.5);font-family:sans-serif;font-size:13px;font-weight:700;letter-spacing:0.3px;';
+    b.innerHTML = '<div style="display:flex;align-items:center;gap:10px;">'
+      + '<span style="background:rgba(255,255,255,0.2);padding:3px 8px;border-radius:6px;font-size:11px;text-transform:uppercase;">Modo Suporte Remoto</span>'
+      + '<span>Acessando <strong>' + restNome + '</strong> como Super Admin (<strong>' + admin + '</strong>)</span>'
+      + '</div>'
+      + '<button type="button" onclick="window.sairSessaoSuporte()" style="background:#fff;color:#c2410c;border:none;padding:5px 12px;border-radius:6px;font-weight:800;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">'
+      + '<span>✕ Sair do Acesso e Voltar</span>'
+      + '</button>';
+    document.body.prepend(b);
+    document.body.style.paddingTop = (parseInt(document.body.style.paddingTop || 0) + 42) + 'px';
+  };
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', doRender);
+  } else {
+    doRender();
+  }
+})();
+
+window.sairSessaoSuporte = function() {
+  sessionStorage.removeItem('chef_impersonate_session');
+  sessionStorage.removeItem('chef_impersonate_admin');
+  sessionStorage.removeItem('chef_impersonate_rest');
+  localStorage.removeItem('chef_token');
+  localStorage.removeItem('chef_credentials');
+  window.location.href = '/super-admin.html';
+};
+
 // 1. Auth check
 const token = localStorage.getItem('chef_token');
 const loggedUser = localStorage.getItem('logged_user');
@@ -6058,7 +6134,27 @@ const CAT_ADDONS_DONO = [
   { id: 'ficha_tecnica_visual', cat: 'gestao', nome: 'Ficha Técnica Visual com Foto do Prato', preco: 'R$ 49/mês', roi: 'Padrão 100% fiel na montagem', desc: 'Foto do prato montado, modo de preparo e checklist no KDS da cozinha.', icone: 'ph-fork-knife', cor: '#ec4899' },
   { id: 'link_pagamento_virtual', cat: 'fiscal', nome: 'Maquininha Virtual & Link WhatsApp', preco: 'R$ 59/mês', roi: '+15% de ticket no delivery', desc: 'Envie links de pagamento parcelado via WhatsApp com baixa automática no caixa.', icone: 'ph-credit-card', cor: '#14b8a6' },
   { id: 'foto_ia_cardapio', cat: 'vendas', nome: 'Cardápio com Foto IA Instantânea', preco: 'R$ 49/mês', roi: '+30% de conversão no QR', desc: 'Gere fotos profissionais realistas dos pratos usando IA sem contratar fotógrafo.', icone: 'ph-camera', cor: '#6366f1' },
-  { id: 'escala_inteligente_ia', cat: 'gestao', nome: 'Agenda de Escalas CLT com IA', preco: 'R$ 69/mês', roi: '-30% em horas extras', desc: 'Gera escalas automáticas respeitando folgas CLT, preferências e picos de venda.', icone: 'ph-calendar-check', cor: '#84cc16' }
+  { id: 'escala_inteligente_ia', cat: 'gestao', nome: 'Agenda de Escalas CLT com IA', preco: 'R$ 69/mês', roi: '-30% em horas extras', desc: 'Gera escalas automáticas respeitando folgas CLT, preferências e picos de venda.', icone: 'ph-calendar-check', cor: '#84cc16' },
+
+  // NOVOS MÓDULOS EXPANDIDOS DE ALTA RENTABILIDADE & FINTECH
+  { id: 'gorjeta_legal_13419', cat: 'fiscal', nome: 'Split de Gorjeta Legalizada (Lei 13.419)', preco: 'R$ 69/mês + R$ 0,25/op', roi: 'Zero passivo trabalhista e rateio Pix', desc: 'Calcula retenção de encargos (20%/33%) e distribui por pontos diretamente via Pix aos garçons.', icone: 'ph-hand-coins', cor: '#10b981' },
+  { id: 'antichurn_preditivo_whats', cat: 'vendas', nome: 'Robô Preditivo Anti-Churn WhatsApp', preco: 'R$ 59/mês', roi: 'Recupera em média 28% dos clientes', desc: 'Detecta desvio do intervalo de compra e dispara cupom personalizado de resgate.', icone: 'ph-whatsapp-logo', cor: '#25d366' },
+  { id: 'gamificacao_salao_metas', cat: 'gestao', nome: 'Gamificação do Salão & Venda Sugestiva', preco: 'R$ 59/mês', roi: '+15% a +25% no ticket médio', desc: 'Metas ao vivo no PDV para garçons venderem sobremesas e drinks com comissão instantânea.', icone: 'ph-trophy', cor: '#f59e0b' },
+  { id: 'influencer_roi_rastreado', cat: 'vendas', nome: 'Portal do Influencer com ROI Real', preco: 'R$ 49/mês', roi: 'Fim do jantar de graça sem retorno', desc: 'Gera links e cupons rastreados com comissão paga apenas sobre vendas reais geradas.', icone: 'ph-instagram-logo', cor: '#e1306c' },
+  { id: 'voucher_vr_antecipacao', cat: 'fiscal', nome: 'Conciliação & Antecipação VR/VA', preco: 'R$ 89/mês + 3.5% spread', roi: 'Fluxo de caixa na hora sem 60 dias de espera', desc: 'Audita taxas de Ticket, Sodexo e Alelo e antecipa recebíveis futuros via Pix.', icone: 'ph-credit-card', cor: '#0ea5e9' },
+  { id: 'drivethru_curbside_geofence', cat: 'vendas', nome: 'Drive-Thru & Pegue-e-Leve Geofence', preco: 'R$ 49/mês', roi: 'Entrega na janela do carro sem filas', desc: 'Rastreia aproximação por GPS (300m) e entrega a sacola direto na vaga do carro.', icone: 'ph-car', cor: '#f97316' },
+  { id: 'rfid_pulseira_cashless', cat: 'fiscal', nome: 'Comanda RFID / Pulseira Cashless', preco: 'R$ 99/mês + R$ 0,30/op', roi: 'Aumento de 25% a 35% no consumo', desc: 'Elimina filas de saída com débito por aproximação em bares, baladas e eventos.', icone: 'ph-broadcast', cor: '#ec4899' },
+  { id: 'hotel_room_service_pms', cat: 'gestao', nome: 'Room Service & Integração PMS Hotéis', preco: 'R$ 149/mês', roi: 'Cobrança unificada no check-out', desc: 'Lança consumos de frigobar e restaurante direto na conta do quarto do hóspede.', icone: 'ph-bed', cor: '#8b5cf6' },
+  { id: 'perdas_avarias_barata_zero', cat: 'gestao', nome: 'Auditor de Quebras & Barata Zero', preco: 'R$ 59/mês', roi: 'Economiza R$ 2k-5k/mês em desperdício', desc: 'Registro com foto de quebras, carne queimada e garrafas quebradas por turno.', icone: 'ph-trash', cor: '#ef4444' },
+  { id: 'reforma_tributaria_simulador', cat: 'fiscal', nome: 'Simulador Reforma Tributária (IBS/CBS)', preco: 'R$ 99/mês', roi: 'Adequação fiscal preventiva', desc: 'Simula o split payment, créditos de atacado e recalibra preços de cardápio.', icone: 'ph-calculator', cor: '#10b981' },
+  { id: 'marmitas_b2b_corporativo', cat: 'compras', nome: 'Assinatura Corporativa de Refeições B2B', preco: 'R$ 79/mês + 1% faturamento', roi: 'Faturamento previsível com empresas', desc: 'Contratos com empresas para marmitas diárias com portal de escolha dos funcionários.', icone: 'ph-buildings', cor: '#0ea5e9' },
+  { id: 'recrutador_gastronomico_flash', cat: 'gestao', nome: 'Recrutador Flash de Equipe Gastronômica', preco: 'R$ 49/mês', roi: 'Mão de obra de pico em 15 minutos', desc: 'Disparo de vagas urgentes e triagem rápida de cozinheiros, chapeiros e garçons.', icone: 'ph-user-plus', cor: '#f59e0b' },
+  { id: 'franquias_royalties_fpp', cat: 'gestao', nome: 'Franquias & Master Franchising', preco: 'R$ 199/mês por franqueado', roi: 'Royalties auditados direto do PDV', desc: 'Apuração automática de royalties e fundo de propaganda de múltiplas unidades.', icone: 'ph-tree-structure', cor: '#8b5cf6' },
+  { id: 'polo_gastronomico_compartilhado', cat: 'vendas', nome: 'Polo Gastronômico Delivery Compartilhado', preco: 'R$ 149/mês + 2% take-rate', roi: 'Frete unificado multi-lojas', desc: 'Carrinho único de delivery para shoppings, vilas gastronômicas e praças.', icone: 'ph-storefront', cor: '#06b6d4' },
+  { id: 'antifurto_inventario_cego', cat: 'fiscal', nome: 'Sentinela de Inventário Cego (Carnes & Whisky)', preco: 'R$ 79/mês', roi: 'Elimina R$ 3k-8k/mês de furtos internos', desc: 'Contagem cega de 3 min dos 10 itens mais caros com alerta imediato ao dono.', icone: 'ph-eye', cor: '#ef4444' },
+  { id: 'fidelidade_tiers_vip', cat: 'vendas', nome: 'Fidelidade por Níveis VIP (Bronze a Diamante)', preco: 'R$ 69/mês', roi: 'Aumenta ticket e frequência de visita', desc: 'Níveis de prestígio com benefícios exclusivos, drink de boas-vindas e cashback.', icone: 'ph-medal', cor: '#eab308' },
+  { id: 'menuboard_tv_balcao', cat: 'gestao', nome: 'Menu Board Digital para TVs de Balcão', preco: 'R$ 49/mês por tela', roi: '+20% em vendas de combos estilo fast-food', desc: 'Transforme Smart TVs suspensas em painéis dinâmicos com troca por horário.', icone: 'ph-monitor', cor: '#3b82f6' },
+  { id: 'satisfacao_ia_emocional', cat: 'gestao', nome: 'Totem de Satisfação IA Emocional', preco: 'R$ 39/mês', roi: 'Alerta de crise no WhatsApp em 5s', desc: 'Totem de 4 emojis com gravação de áudio e análise de sentimento instantânea.', icone: 'ph-smiley', cor: '#10b981' }
 ];
 
 window.abrirLojaAddonsDono = function() {
@@ -6175,6 +6271,10 @@ window.abrirCheckoutModal = function(nome, valor, id) {
   const pix = document.getElementById('checkout-pix-copia');
   const qr = document.getElementById('checkout-qr-img');
 
+  window._addonCheckoutAtualId = id;
+  window._addonCheckoutAtualNome = nome;
+  window._addonCheckoutAtualPreco = valor;
+
   const precoNum = typeof valor === 'number' ? valor : parseFloat(String(valor).replace(/[^0-9,]/g, '').replace(',', '.')) || 99;
 
   if (tit) tit.textContent = 'Ativar ' + nome;
@@ -6185,6 +6285,50 @@ window.abrirCheckoutModal = function(nome, valor, id) {
 
   if (typeof abrirModal === 'function') abrirModal('modal-checkout-addon');
   else modal.classList.remove('hidden');
+};
+
+window.confirmarAtivacaoAddon = async function(isTrial) {
+  const chave = window._addonCheckoutAtualId;
+  const nome = window._addonCheckoutAtualNome || 'Módulo';
+  if (!chave) return;
+
+  const btnConfirmar = document.getElementById('btn-confirmar-pix-addon');
+  const btnTrial = document.getElementById('btn-trial-addon');
+  if (btnConfirmar) btnConfirmar.disabled = true;
+  if (btnTrial) btnTrial.disabled = true;
+
+  try {
+    const endpoint = isTrial ? '/api/dono/modulos/ativar-trial' : '/api/dono/modulos/ativar-imediato';
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (localStorage.getItem('chef_token') || '')
+      },
+      body: JSON.stringify({ chave_modulo: chave })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      if (typeof fecharModal === 'function') fecharModal('modal-checkout-addon');
+      else {
+        const m = document.getElementById('modal-checkout-addon');
+        if (m) m.classList.add('hidden');
+      }
+      if (typeof showToast === 'function') {
+        showToast(d.mensagem || `✅ Módulo "${nome}" ativado com sucesso!`, 'ph-check-circle', 'success');
+      } else {
+        alert(d.mensagem || `Módulo "${nome}" ativado!`);
+      }
+      window.renderizarAddonsLoja('todos');
+    } else {
+      alert((d && d.erro) || 'Não foi possível ativar o módulo.');
+    }
+  } catch(e) {
+    alert('Erro de conexão ao ativar o módulo.');
+  } finally {
+    if (btnConfirmar) btnConfirmar.disabled = false;
+    if (btnTrial) btnTrial.disabled = false;
+  }
 };
 
 window.copiarPixCheckout = function() {

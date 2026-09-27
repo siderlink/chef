@@ -247,37 +247,54 @@ body.kds-body, .kds-body {
   box-sizing: border-box !important;
 }
 
-/* Colunas Específicas na Grade */
-#queue-list.grade-2col {
+/* Colunas Específicas na Grade (Alta especificidade para sobrepor seletor base) */
+#queue-list.grade-2col:not(.modo-lista):not(.modo-kanban),
+#queue-list.grade-2col,
+.queue-list.grade-2col {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }
-#queue-list.grade-3col {
+#queue-list.grade-3col:not(.modo-lista):not(.modo-kanban),
+#queue-list.grade-3col,
+.queue-list.grade-3col {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
 }
-#queue-list.grade-4col {
+#queue-list.grade-4col:not(.modo-lista):not(.modo-kanban),
+#queue-list.grade-4col,
+.queue-list.grade-4col {
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
 }
-#queue-list.grade-5col {
+#queue-list.grade-5col:not(.modo-lista):not(.modo-kanban),
+#queue-list.grade-5col,
+.queue-list.grade-5col {
   grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
 }
 
-/* Tamanhos / Densidades de Card */
-#queue-list.card-tam-p .queue-item {
+/* Tamanhos / Densidades de Card (Alta especificidade para sobrepor seletor base) */
+#queue-list.card-tam-p:not(.modo-lista):not(.modo-kanban) .queue-item,
+#queue-list.card-tam-p .queue-item,
+.queue-list.card-tam-p .queue-item {
   padding: 10px 12px !important;
   min-height: 140px !important;
   border-radius: 12px !important;
   gap: 8px !important;
 }
 #queue-list.card-tam-p .kds-product-name {
-  font-size: 14px !important;
+  font-size: 13.5px !important;
 }
-#queue-list.card-tam-m .queue-item {
+#queue-list.card-tam-m:not(.modo-lista):not(.modo-kanban) .queue-item,
+#queue-list.card-tam-m .queue-item,
+.queue-list.card-tam-m .queue-item {
   padding: 16px !important;
   min-height: 190px !important;
   border-radius: 18px !important;
   gap: 12px !important;
 }
-#queue-list.card-tam-g .queue-item {
+#queue-list.card-tam-m .kds-product-name {
+  font-size: var(--kds-font-size, 16px) !important;
+}
+#queue-list.card-tam-g:not(.modo-lista):not(.modo-kanban) .queue-item,
+#queue-list.card-tam-g .queue-item,
+.queue-list.card-tam-g .queue-item {
   padding: 22px !important;
   min-height: 240px !important;
   border-radius: 20px !important;
@@ -286,7 +303,9 @@ body.kds-body, .kds-body {
 #queue-list.card-tam-g .kds-product-name {
   font-size: 19px !important;
 }
-#queue-list.card-tam-gg .queue-item {
+#queue-list.card-tam-gg:not(.modo-lista):not(.modo-kanban) .queue-item,
+#queue-list.card-tam-gg .queue-item,
+.queue-list.card-tam-gg .queue-item {
   padding: 28px !important;
   min-height: 300px !important;
   border-radius: 24px !important;
@@ -304,10 +323,10 @@ body.kds-body, .kds-body {
   background: var(--kds-card-bg) !important;
   border: 2px solid var(--kds-card-border) !important;
   border-radius: 18px !important;
-  padding: 16px !important;
-  min-height: 190px !important;
+  padding: var(--kds-card-grid-padding, 16px) !important;
+  min-height: var(--kds-card-grid-min-height, 190px) !important;
   box-shadow: var(--kds-card-shadow) !important;
-  gap: 12px !important;
+  gap: var(--kds-card-gap, 12px) !important;
   box-sizing: border-box !important;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
 }
@@ -409,7 +428,7 @@ body.kds-body, .kds-body {
 }
 
 #queue-list.modo-lista .kds-product-name {
-  font-size: 17px !important;
+  font-size: var(--kds-font-size, 17px) !important;
   font-weight: 800 !important;
   color: var(--kds-text-primary) !important;
   white-space: normal !important;
@@ -1068,7 +1087,7 @@ body.kds-body, .kds-body {
 }
 
 .kds-product-name {
-  font-size: 16.5px !important;
+  font-size: var(--kds-font-size, 16.5px) !important;
   font-weight: 800 !important;
   color: var(--kds-text-primary) !important;
   line-height: 1.25 !important;

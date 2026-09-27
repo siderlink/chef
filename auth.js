@@ -24,6 +24,79 @@
     return;
   }
 
+  // Ghost Login / Impersonate Ingestion
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const impToken = urlParams.get('impersonate_token');
+    if (impToken) {
+      const parts = impToken.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        localStorage.setItem('chef_token', impToken);
+        if (payload.restaurante_id) {
+          localStorage.setItem('restaurante_id', String(payload.restaurante_id));
+        }
+        localStorage.setItem('logged_user', payload.usuario || 'admin');
+        const creds = {
+          id: payload.id,
+          cargo: payload.cargo || 'Dono',
+          role: payload.role || 'admin',
+          nome: payload.nome || 'Proprietário',
+          usuario: payload.usuario || 'admin',
+          restaurante_id: payload.restaurante_id || 1,
+          impersonated: true,
+          impersonated_by: payload.impersonated_by || 'SuperAdmin'
+        };
+        localStorage.setItem('chef_credentials', JSON.stringify(creds));
+        sessionStorage.setItem('chef_impersonate_session', 'true');
+        sessionStorage.setItem('chef_impersonate_admin', payload.impersonated_by || 'SuperAdmin');
+        sessionStorage.setItem('chef_impersonate_rest', payload.restaurante_nome || ('Restaurante #' + payload.restaurante_id));
+
+        urlParams.delete('impersonate_token');
+        const newQs = urlParams.toString();
+        const newUrl = window.location.pathname + (newQs ? '?' + newQs : '');
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    }
+  } catch (e) {
+    console.error('[Impersonate Ingest Error]', e);
+  }
+
+  // Injeta banner de suporte se em sessão de Ghost Login
+  if (sessionStorage.getItem('chef_impersonate_session') === 'true') {
+    const renderBanner = function() {
+      if (document.getElementById('banner-ghost-support')) return;
+      const admin = sessionStorage.getItem('chef_impersonate_admin') || 'SuperAdmin';
+      const restNome = sessionStorage.getItem('chef_impersonate_rest') || 'Restaurante';
+      const b = document.createElement('div');
+      b.id = 'banner-ghost-support';
+      b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999999;background:linear-gradient(90deg,#ea580c,#c2410c);color:#fff;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.5);font-family:sans-serif;font-size:13px;font-weight:700;';
+      b.innerHTML = '<div style="display:flex;align-items:center;gap:10px;">'
+        + '<span style="background:rgba(255,255,255,0.2);padding:3px 8px;border-radius:6px;font-size:11px;text-transform:uppercase;">Modo Suporte Remoto</span>'
+        + '<span>Acessando <strong>' + restNome + '</strong> como Super Admin (<strong>' + admin + '</strong>)</span>'
+        + '</div>'
+        + '<button type="button" onclick="window.sairSessaoSuporte()" style="background:#fff;color:#c2410c;border:none;padding:5px 12px;border-radius:6px;font-weight:800;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">'
+        + '<span>✕ Sair do Acesso e Voltar</span>'
+        + '</button>';
+      document.body.prepend(b);
+      document.body.style.paddingTop = (parseInt(document.body.style.paddingTop || 0) + 42) + 'px';
+    };
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', renderBanner);
+    } else {
+      renderBanner();
+    }
+  }
+
+  window.sairSessaoSuporte = function() {
+    sessionStorage.removeItem('chef_impersonate_session');
+    sessionStorage.removeItem('chef_impersonate_admin');
+    sessionStorage.removeItem('chef_impersonate_rest');
+    localStorage.removeItem('chef_token');
+    localStorage.removeItem('chef_credentials');
+    window.location.href = '/super-admin.html';
+  };
+
   // Obter token
   const token = localStorage.getItem('chef_token');
 

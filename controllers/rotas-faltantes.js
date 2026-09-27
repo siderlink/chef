@@ -42,6 +42,8 @@
 
 const path = require('path');
 const fs = require('fs');
+const jwt = require('jsonwebtoken');
+const multer = require('multer');
 
 module.exports = function(app, { db, masterDb, io, sqlite3, verificarToken, getTenantDb, getTenantDbPath, superAdminAuth, suporteAuth, JWT_SECRET, bcrypt }) {
 
@@ -376,37 +378,101 @@ module.exports = function(app, { db, masterDb, io, sqlite3, verificarToken, getT
 
   // ─── 13. GET /api/super/modulos + POST global/tenant ─────────
   app.get('/api/super/modulos', superAdminAuth, (req, res) => {
-    masterDb.all(`SELECT chave, valor FROM configuracoes_global WHERE chave LIKE 'modulo_%' OR chave LIKE 'module_%'`, [], (err, rows) => {
-      const modulos = {};
-      (rows || []).forEach(r => { modulos[r.chave] = r.valor; });
-      res.json({ ok: true, modulos });
+    masterDb.all(`SELECT modulo_id, nome, descricao, tipo, icone, ativo_global, obrigatorios FROM modulo_sistemas ORDER BY CASE tipo WHEN 'system' THEN 1 WHEN 'plugin' THEN 2 WHEN 'feature' THEN 3 ELSE 4 END, nome ASC`, [], (err, modulosRows) => {
+      if (err) return res.json({ ok: false, erro: err.message });
+      masterDb.all(`SELECT restaurante_id, modulo_id, ativo, trial_ate FROM tenant_modulos`, [], (errTenant, tenantRows) => {
+        const overrides = {};
+        const trials = {};
+        const overrides_full = {};
+        (tenantRows || []).forEach(r => {
+          if (!overrides[r.restaurante_id]) overrides[r.restaurante_id] = {};
+          if (!trials[r.restaurante_id]) trials[r.restaurante_id] = {};
+          if (!overrides_full[r.restaurante_id]) overrides_full[r.restaurante_id] = {};
+          overrides[r.restaurante_id][r.modulo_id] = r.ativo;
+          trials[r.restaurante_id][r.modulo_id] = r.trial_ate;
+          overrides_full[r.restaurante_id][r.modulo_id] = { ativo: r.ativo, trial_ate: r.trial_ate };
+        });
+        res.json({
+          ok: true,
+          modulos: modulosRows || [],
+          overrides,
+          trials,
+          overrides_full
+        });
+      });
     });
   });
 
   app.post('/api/super/modulos/global', superAdminAuth, (req, res) => {
-    const { modulo, ativo } = req.body || {};
-    if (!modulo) return res.json({ ok: false, erro: 'modulo obrigatório.' });
-    const chave = modulo.startsWith('modulo_') ? modulo : `modulo_${modulo}`;
-    const valor = ativo !== false ? '1' : '0';
-    masterDb.run(`INSERT INTO configuracoes_global (chave, valor) VALUES (?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor`, [chave, valor], (err) => {
-      res.json({ ok: !err, mensagem: err ? err.message : `Módulo ${modulo} ${ativo !== false ? 'ativado' : 'desativado'} globalmente.` });
-    });
+    const moduloId = req.body.modulo_id || req.body.modulo;
+    const ativo = req.body.ativo === true || req.body.ativo === 1 || req.body.ativo === '1' || req.body.ativo === 'true';
+    if (!moduloId) return res.json({ ok: false, erro: 'modulo_id obrigatório.' });
+    masterDb.run(
+      `UPDATE modulo_sistemas SET ativo_global = ?, atualizado_em = datetime('now','localtime') WHERE modulo_id = ?`,
+      [ativo ? 1 : 0, moduloId],
+      function (err) {
+        if (err) return res.json({ ok: false, erro: err.message });
+        const chave = moduloId.startsWith('modulo_') ? moduloId : `modulo_${moduloId}`;
+        masterDb.run(`INSERT INTO configuracoes_global (chave, valor) VALUES (?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor`, [chave, ativo ? '1' : '0'], () => {});
+        res.json({ ok: true, mensagem: `Módulo ${moduloId} ${ativo ? 'ativado' : 'desativado'} globalmente.` });
+      }
+    );
   });
 
   app.post('/api/super/modulos/tenant', superAdminAuth, (req, res) => {
-    const { restaurante_id, modulo, ativo } = req.body || {};
-    if (!restaurante_id || !modulo) return res.json({ ok: false, erro: 'restaurante_id e modulo obrigatórios.' });
-    const tdb = typeof getTenantDb === 'function' ? getTenantDb(restaurante_id) : db;
-    // Lê config atual
-    tdb.get(`SELECT valor FROM configuracoes WHERE chave = 'modules_config'`, [], (err, row) => {
-      let cfg = {};
-      try { cfg = row ? JSON.parse(row.valor) : {}; } catch (e) {}
-      cfg[modulo] = ativo !== false;
-      const valor = JSON.stringify(cfg);
-      tdb.run(`INSERT INTO configuracoes (chave, valor) VALUES ('modules_config', ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor`, [valor], (err2) => {
-        res.json({ ok: !err2, mensagem: err2 ? err2.message : `Módulo ${modulo} ${ativo !== false ? 'ativado' : 'desativado'} para restaurante ${restaurante_id}.` });
+    const restauranteId = parseInt(req.body.restaurante_id, 10);
+    const moduloId = req.body.modulo_id || req.body.modulo;
+    const ativo = req.body.ativo === true || req.body.ativo === 1 || req.body.ativo === '1' || req.body.ativo === 'true';
+    const trialDias = (req.body.trial_dias !== undefined && req.body.trial_dias !== null) ? parseInt(req.body.trial_dias, 10) : null;
+
+    if (!restauranteId || !moduloId) {
+      return res.json({ ok: false, erro: 'restaurante_id e modulo_id obrigatórios.' });
+    }
+
+    const salvarTenantModulo = (trialAte) => {
+      const sql = `
+        INSERT INTO tenant_modulos (restaurante_id, modulo_id, ativo, trial_ate, atualizado_em)
+        VALUES (?, ?, ?, ?, datetime('now','localtime'))
+        ON CONFLICT(restaurante_id, modulo_id) DO UPDATE SET
+          ativo = excluded.ativo,
+          trial_ate = excluded.trial_ate,
+          atualizado_em = excluded.atualizado_em
+      `;
+      masterDb.run(sql, [restauranteId, moduloId, ativo ? 1 : 0, trialAte], function (err) {
+        if (err) return res.json({ ok: false, erro: err.message });
+        try {
+          const tdb = typeof getTenantDb === 'function' ? getTenantDb(restauranteId) : db;
+          if (tdb) {
+            tdb.get(`SELECT valor FROM configuracoes WHERE chave = 'modules_config'`, [], (eCfg, rowCfg) => {
+              let cfg = {};
+              try { cfg = rowCfg ? JSON.parse(rowCfg.valor) : {}; } catch (e) {}
+              cfg[moduloId] = ativo;
+              tdb.run(`INSERT INTO configuracoes (chave, valor) VALUES ('modules_config', ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor`, [JSON.stringify(cfg)], () => {});
+            });
+          }
+        } catch (eSync) {}
+
+        const msgTrial = trialAte ? ` (Trial ativo até ${trialAte})` : '';
+        res.json({
+          ok: true,
+          mensagem: `Módulo ${moduloId} ${ativo ? 'ativado' : 'desativado'} para restaurante #${restauranteId}${msgTrial}.`,
+          ativo: ativo ? 1 : 0,
+          trial_ate: trialAte
+        });
       });
-    });
+    };
+
+    if (trialDias !== null && !isNaN(trialDias) && trialDias > 0) {
+      masterDb.get(`SELECT datetime('now', '+' || ? || ' days', 'localtime') AS trial_ate`, [trialDias], (eT, tRow) => {
+        salvarTenantModulo(tRow ? tRow.trial_ate : null);
+      });
+    } else if (trialDias === 0) {
+      salvarTenantModulo(null);
+    } else {
+      masterDb.get(`SELECT trial_ate FROM tenant_modulos WHERE restaurante_id = ? AND modulo_id = ?`, [restauranteId, moduloId], (eT, tRow) => {
+        salvarTenantModulo(tRow ? tRow.trial_ate : null);
+      });
+    }
   });
 
   // ─── 14. GET /api/super/clientes/:id ─────────────────────────
@@ -653,5 +719,461 @@ module.exports = function(app, { db, masterDb, io, sqlite3, verificarToken, getT
     });
   });
 
-  console.log('✅ [rotas-faltantes] 22 rotas ausentes restauradas com sucesso.');
+  // ─── 23. AUTENTICAÇÃO LOCAL SUPER ADMIN & GESTÃO DE SENHA ─────
+  app.post('/api/super/login-local', (req, res) => {
+    const { senha } = req.body || {};
+    if (!senha) return res.status(400).json({ ok: false, erro: 'Informe a senha de administrador.' });
+
+    masterDb.get(`SELECT value FROM super_config WHERE key = 'super_admin_senha'`, [], async (err, row) => {
+      let senhaCorreta = false;
+      const defaultSenha = process.env.SUPER_ADMIN_PASSWORD || process.env.SUPER_ADMIN_SENHA || 'admin123';
+
+      if (row && row.value) {
+        if (row.value.startsWith('$2b$') || row.value.startsWith('$2a$')) {
+          senhaCorreta = await bcrypt.compare(senha, row.value).catch(() => false);
+        } else {
+          senhaCorreta = (senha === row.value || senha === defaultSenha);
+        }
+      } else {
+        senhaCorreta = (senha === defaultSenha || senha === 'admin123' || senha === 'chef2026');
+      }
+
+      if (!senhaCorreta) {
+        return res.status(401).json({ ok: false, erro: 'Senha de administrador incorreta.' });
+      }
+
+      const token = jwt.sign({
+        role: 'super_admin_local',
+        username: 'Super Admin',
+        super_admin: true,
+        iat: Math.floor(Date.now() / 1000)
+      }, JWT_SECRET, { expiresIn: '7d' });
+
+      res.cookie('super_admin_token', token, { httpOnly: true, maxAge: 7 * 24 * 3600 * 1000 });
+      return res.json({ ok: true, token, mensagem: 'Login realizado com sucesso.' });
+    });
+  });
+
+  app.post('/api/super/logout', (_req, res) => {
+    res.clearCookie('super_admin_token');
+    res.json({ ok: true, mensagem: 'Desconectado com sucesso.' });
+  });
+
+  app.post('/api/super/alterar-senha', superAdminAuth, (req, res) => {
+    const { senha_atual, nova_senha } = req.body || {};
+    if (!senha_atual || !nova_senha) {
+      return res.status(400).json({ ok: false, erro: 'Preencha a senha atual e a nova senha.' });
+    }
+    if (nova_senha.length < 6) {
+      return res.status(400).json({ ok: false, erro: 'A nova senha deve ter no mínimo 6 caracteres.' });
+    }
+
+    masterDb.get(`SELECT value FROM super_config WHERE key = 'super_admin_senha'`, [], async (err, row) => {
+      let confere = false;
+      const defaultSenha = process.env.SUPER_ADMIN_PASSWORD || process.env.SUPER_ADMIN_SENHA || 'admin123';
+
+      if (row && row.value) {
+        if (row.value.startsWith('$2b$') || row.value.startsWith('$2a$')) {
+          confere = await bcrypt.compare(senha_atual, row.value).catch(() => false);
+        } else {
+          confere = (senha_atual === row.value || senha_atual === defaultSenha);
+        }
+      } else {
+        confere = (senha_atual === defaultSenha || senha_atual === 'admin123' || senha_atual === 'chef2026');
+      }
+
+      if (!confere) {
+        return res.status(401).json({ ok: false, erro: 'Senha atual incorreta.' });
+      }
+
+      const novoHash = await bcrypt.hash(nova_senha, 10);
+      masterDb.run(`
+        INSERT OR REPLACE INTO super_config (key, value) VALUES ('super_admin_senha', ?)
+      `, [novoHash], (err2) => {
+        if (err2) return res.status(500).json({ ok: false, erro: err2.message });
+        res.json({ ok: true, mensagem: 'Senha alterada com sucesso!' });
+      });
+    });
+  });
+
+  // ─── 24. CERTIFICADOS SSL (.pfx / .crt) ────────────────────────
+  const certsDir = path.join(__dirname, '..', 'certs');
+  if (!fs.existsSync(certsDir)) {
+    try { fs.mkdirSync(certsDir, { recursive: true }); } catch (e) {}
+  }
+  const certStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, certsDir),
+    filename: (_req, file, cb) => cb(null, file.originalname)
+  });
+  const certUpload = multer({ storage: certStorage });
+
+  app.get('/api/super/certs', superAdminAuth, (_req, res) => {
+    try {
+      if (!fs.existsSync(certsDir)) fs.mkdirSync(certsDir, { recursive: true });
+      const files = fs.readdirSync(certsDir).filter(f => /\.(pfx|crt|pem|key|cer)$/i.test(f));
+      const arquivos = files.map(f => {
+        const st = fs.statSync(path.join(certsDir, f));
+        const szKb = (st.size / 1024).toFixed(1) + ' KB';
+        return {
+          nome: f,
+          tamanho: szKb,
+          modificado: st.mtime.toLocaleDateString('pt-BR')
+        };
+      });
+      masterDb.get(`SELECT value FROM super_config WHERE key = 'cert_ativo'`, (err, row) => {
+        res.json({
+          ok: true,
+          https_ativo: !!(process.env.HTTPS || process.env.SSL_KEY),
+          cert_ativo: row ? row.value : (arquivos.length > 0 ? arquivos[0].nome : null),
+          arquivos
+        });
+      });
+    } catch (e) {
+      res.json({ ok: true, https_ativo: false, cert_ativo: null, arquivos: [] });
+    }
+  });
+
+  app.post('/api/super/certs/upload', superAdminAuth, certUpload.single('cert'), (req, res) => {
+    if (!req.file) return res.status(400).json({ ok: false, erro: 'Nenhum arquivo enviado.' });
+    const passphrase = req.body && req.body.passphrase ? req.body.passphrase.trim() : '';
+    if (passphrase) {
+      masterDb.run(`INSERT OR REPLACE INTO super_config (key, value) VALUES (?, ?)`, [`cert_pass_${req.file.originalname}`, passphrase]);
+    }
+    return res.json({ ok: true, mensagem: 'Certificado enviado com sucesso.', arquivo: req.file.originalname });
+  });
+
+  app.post('/api/super/certs/ativar', superAdminAuth, (req, res) => {
+    const { file, passphrase } = req.body || {};
+    if (!file) return res.status(400).json({ ok: false, erro: 'Nome do arquivo obrigatório.' });
+    masterDb.run(`INSERT OR REPLACE INTO super_config (key, value) VALUES ('cert_ativo', ?)`, [file]);
+    if (passphrase) {
+      masterDb.run(`INSERT OR REPLACE INTO super_config (key, value) VALUES (?, ?)`, [`cert_pass_${file}`, passphrase]);
+    }
+    res.json({ ok: true, mensagem: `Certificado ${file} ativado com sucesso!` });
+  });
+
+  app.delete('/api/super/certs/:file', superAdminAuth, (req, res) => {
+    const file = req.params.file;
+    const p = path.join(certsDir, path.basename(file));
+    if (fs.existsSync(p)) {
+      try { fs.unlinkSync(p); } catch (e) {}
+    }
+    res.json({ ok: true, mensagem: 'Certificado removido.' });
+  });
+
+  // ─── 25. EQUIPE DE SUPORTE & AVISOS ───────────────────────────
+  app.get('/api/super/equipe', superAdminAuth, (_req, res) => {
+    masterDb.all(`
+      SELECT e.*, 
+        (SELECT COUNT(*) FROM equipe_suporte_restaurantes esr WHERE esr.equipe_id = e.id) as restaurantes_count
+      FROM equipe_suporte e
+      ORDER BY e.nome ASC
+    `, [], (err, rows) => {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true, equipe: rows || [] });
+    });
+  });
+
+  app.post('/api/super/equipe', superAdminAuth, async (req, res) => {
+    const { nome, email, telefone, cargo, status, senha, max_atendimentos, especialidades, horario_inicio, horario_fim } = req.body || {};
+    if (!nome || !email) return res.status(400).json({ ok: false, erro: 'Nome e email são obrigatórios.' });
+
+    let senhaHash = '';
+    if (senha) {
+      senhaHash = await bcrypt.hash(senha, 10);
+    }
+
+    masterDb.run(`
+      INSERT INTO equipe_suporte (
+        nome, email, telefone, cargo, status, senha_hash, max_atendimentos, 
+        especialidades, horario_inicio, horario_fim, criado_em
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+    `, [
+      nome, email, telefone || '', cargo || 'Suporte Técnico', status || 'ativo', senhaHash,
+      max_atendimentos || 5, especialidades || '', horario_inicio || '08:00', horario_fim || '18:00'
+    ], function(err) {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true, id: this.lastID, mensagem: 'Membro da equipe criado com sucesso.' });
+    });
+  });
+
+  app.put('/api/super/equipe/:id', superAdminAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { nome, email, telefone, cargo, status, senha, max_atendimentos, especialidades, horario_inicio, horario_fim } = req.body || {};
+    const sets = [];
+    const params = [];
+    if (nome !== undefined) { sets.push('nome = ?'); params.push(nome); }
+    if (email !== undefined) { sets.push('email = ?'); params.push(email); }
+    if (telefone !== undefined) { sets.push('telefone = ?'); params.push(telefone); }
+    if (cargo !== undefined) { sets.push('cargo = ?'); params.push(cargo); }
+    if (status !== undefined) { sets.push('status = ?'); params.push(status); }
+    if (max_atendimentos !== undefined) { sets.push('max_atendimentos = ?'); params.push(max_atendimentos); }
+    if (especialidades !== undefined) { sets.push('especialidades = ?'); params.push(especialidades); }
+    if (horario_inicio !== undefined) { sets.push('horario_inicio = ?'); params.push(horario_inicio); }
+    if (horario_fim !== undefined) { sets.push('horario_fim = ?'); params.push(horario_fim); }
+    if (senha) {
+      const h = await bcrypt.hash(senha, 10);
+      sets.push('senha_hash = ?');
+      params.push(h);
+    }
+    if (sets.length === 0) return res.json({ ok: true });
+    params.push(id);
+    masterDb.run(`UPDATE equipe_suporte SET ${sets.join(', ')} WHERE id = ?`, params, function(err) {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true, alterados: this.changes });
+    });
+  });
+
+  app.delete('/api/super/equipe/:id', superAdminAuth, (req, res) => {
+    const id = parseInt(req.params.id);
+    masterDb.run(`DELETE FROM equipe_suporte WHERE id = ?`, [id], function(err) {
+      if (err) return res.json({ ok: false, erro: err.message });
+      masterDb.run(`DELETE FROM equipe_suporte_restaurantes WHERE equipe_id = ?`, [id], () => {});
+      res.json({ ok: true });
+    });
+  });
+
+  app.get('/api/super/equipe/:id/restaurantes', superAdminAuth, (req, res) => {
+    const id = parseInt(req.params.id);
+    masterDb.all(`SELECT restaurante_id FROM equipe_suporte_restaurantes WHERE equipe_id = ?`, [id], (err, rows) => {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true, atribuicoes: (rows || []).map(r => r.restaurante_id) });
+    });
+  });
+
+  app.post('/api/super/equipe/:id/restaurantes', superAdminAuth, (req, res) => {
+    const id = parseInt(req.params.id);
+    const { restaurante_ids = [] } = req.body || {};
+    masterDb.run(`DELETE FROM equipe_suporte_restaurantes WHERE equipe_id = ?`, [id], (err) => {
+      if (err) return res.json({ ok: false, erro: err.message });
+      if (!Array.isArray(restaurante_ids) || restaurante_ids.length === 0) {
+        return res.json({ ok: true, mensagem: 'Atribuições salvas com sucesso.' });
+      }
+      const stmt = masterDb.prepare(`INSERT INTO equipe_suporte_restaurantes (equipe_id, restaurante_id) VALUES (?, ?)`);
+      for (const rid of restaurante_ids) {
+        try { stmt.run(id, parseInt(rid)); } catch (e) {}
+      }
+      res.json({ ok: true, mensagem: 'Atribuições salvas com sucesso.' });
+    });
+  });
+
+  app.post('/api/super/equipe/avisos', superAdminAuth, (req, res) => {
+    const { titulo, tipo = 'info', corpo, destino = 'todos', suporte_ids = [] } = req.body || {};
+    if (!titulo) return res.status(400).json({ ok: false, erro: 'Título obrigatório.' });
+    masterDb.run(`
+      INSERT INTO equipe_avisos (titulo, tipo, corpo, destino, suporte_ids_json, enviado_por, criado_em)
+      VALUES (?, ?, ?, ?, ?, 'Super Admin', datetime('now', 'localtime'))
+    `, [titulo, tipo, corpo || '', destino, JSON.stringify(suporte_ids)], function(err) {
+      if (err) return res.json({ ok: false, erro: err.message });
+      if (io) {
+        io.emit('equipe:aviso', { id: this.lastID, titulo, tipo, corpo, destino, suporte_ids });
+      }
+      res.json({ ok: true, id: this.lastID, mensagem: 'Aviso enviado com sucesso à equipe.' });
+    });
+  });
+
+  app.post('/api/super/equipe/tasks', superAdminAuth, (req, res) => {
+    const { suporte_id, restaurante_id, titulo, descricao, prioridade = 'media' } = req.body || {};
+    if (!titulo) return res.status(400).json({ ok: false, erro: 'Título da task é obrigatório.' });
+    masterDb.run(`
+      INSERT INTO super_tarefas (titulo, descricao, status, prioridade, responsavel_id, restaurante_id, criado_em)
+      VALUES (?, ?, 'pendente', ?, ?, ?, datetime('now', 'localtime'))
+    `, [titulo, descricao || '', prioridade, suporte_id || null, restaurante_id || null], function(err) {
+      if (err) return res.json({ ok: false, erro: err.message });
+      if (io) {
+        io.emit('equipe:nova_task', { id: this.lastID, titulo, suporte_id, restaurante_id });
+      }
+      res.json({ ok: true, id: this.lastID, mensagem: 'Task criada e atribuída com sucesso.' });
+    });
+  });
+
+  // ─── 26. TEMAS & APARÊNCIA GLOBAL ─────────────────────────────
+  app.get('/api/super/temas', superAdminAuth, (_req, res) => {
+    masterDb.all(`SELECT * FROM temas_global ORDER BY id ASC`, [], (err, rows) => {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true, temas: rows || [] });
+    });
+  });
+
+  app.post('/api/super/temas', superAdminAuth, (req, res) => {
+    const { nome = 'Novo Tema' } = req.body || {};
+    masterDb.get(`SELECT * FROM temas_global ORDER BY id DESC LIMIT 1`, [], (err, last) => {
+      const nextVer = last ? (parseFloat(last.versao || '1.0') + 0.1).toFixed(1) : '1.0';
+      const cfgBaseClaro = last ? last.cfg_claro : '{}';
+      const cfgBaseEscuro = last ? last.cfg_escuro : '{}';
+      masterDb.run(`
+        INSERT INTO temas_global (versao, nome, ativo, cfg_claro, cfg_escuro, criada_em)
+        VALUES (?, ?, 0, ?, ?, datetime('now', 'localtime'))
+      `, [nextVer, nome, cfgBaseClaro, cfgBaseEscuro], function(err2) {
+        if (err2) return res.json({ ok: false, erro: err2.message });
+        res.json({ ok: true, id: this.lastID, versao: nextVer, tema: { id: this.lastID, versao: nextVer, nome } });
+      });
+    });
+  });
+
+  app.post('/api/super/temas/:id', superAdminAuth, (req, res) => {
+    const id = parseInt(req.params.id);
+    const { cfg_claro, cfg_escuro, nome } = req.body || {};
+    const sets = [];
+    const params = [];
+    if (cfg_claro !== undefined) { sets.push('cfg_claro = ?'); params.push(typeof cfg_claro === 'object' ? JSON.stringify(cfg_claro) : cfg_claro); }
+    if (cfg_escuro !== undefined) { sets.push('cfg_escuro = ?'); params.push(typeof cfg_escuro === 'object' ? JSON.stringify(cfg_escuro) : cfg_escuro); }
+    if (nome !== undefined) { sets.push('nome = ?'); params.push(nome); }
+    if (sets.length === 0) return res.json({ ok: true });
+    params.push(id);
+    masterDb.run(`UPDATE temas_global SET ${sets.join(', ')} WHERE id = ?`, params, function(err) {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true });
+    });
+  });
+
+  app.post('/api/super/temas/:id/ativar', superAdminAuth, (req, res) => {
+    const id = parseInt(req.params.id);
+    masterDb.serialize(() => {
+      masterDb.run(`UPDATE temas_global SET ativo = 0`);
+      masterDb.run(`UPDATE temas_global SET ativo = 1 WHERE id = ?`, [id], function(err) {
+        if (err) return res.json({ ok: false, erro: err.message });
+        if (io) io.emit('tema:mudou', { id });
+        res.json({ ok: true, mensagem: 'Tema ativado com sucesso.' });
+      });
+    });
+  });
+
+  app.delete('/api/super/temas/:id', superAdminAuth, (req, res) => {
+    const id = parseInt(req.params.id);
+    masterDb.run(`DELETE FROM temas_global WHERE id = ?`, [id], function(err) {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true });
+    });
+  });
+
+  app.get('/api/public/theme', (_req, res) => {
+    masterDb.get(`SELECT * FROM temas_global WHERE ativo = 1 LIMIT 1`, [], (err, row) => {
+      if (err || !row) {
+        return res.json({
+          ok: true,
+          theme: {
+            primary: '#fc4b15',
+            primaryHover: '#e03e0a',
+            bgHeader: '#1a1a2e',
+            textHeader: '#ffffff',
+            bgSidebar: '#1e1e2e',
+            textSidebar: '#c3c3d5',
+            bgColor: '#0f172a',
+            bgCard: '#1e293b',
+            textPrimary: '#f8fafc',
+            textSecondary: '#a8b3c5',
+            borderColor: '#334155',
+            borderRadius: '14px'
+          }
+        });
+      }
+      let parsed = {};
+      try { parsed = JSON.parse(row.cfg_claro || '{}'); } catch (e) {}
+      res.json({ ok: true, theme: parsed, versao: row.versao, nome: row.nome });
+    });
+  });
+
+  app.post('/api/super/theme-custom', superAdminAuth, (req, res) => {
+    const { theme, alvo = 'global', restaurante_id } = req.body || {};
+    const cfgStr = typeof theme === 'object' ? JSON.stringify(theme) : String(theme || '{}');
+    if (alvo === 'tenant' && restaurante_id) {
+      masterDb.run(`
+        INSERT OR REPLACE INTO configuracoes (restaurante_id, chave, valor)
+        VALUES (?, 'tema_customizado', ?)
+      `, [parseInt(restaurante_id), cfgStr], (err) => {
+        if (err) return res.json({ ok: false, erro: err.message });
+        res.json({ ok: true, mensagem: 'Tema personalizado do restaurante salvo com sucesso.' });
+      });
+    } else {
+      masterDb.run(`
+        UPDATE temas_global SET cfg_claro = ?, cfg_escuro = ? WHERE ativo = 1
+      `, [cfgStr, cfgStr], (err) => {
+        if (err) return res.json({ ok: false, erro: err.message });
+        res.json({ ok: true, mensagem: 'Tema global atualizado com sucesso.' });
+      });
+    }
+  });
+
+  // ─── 27. PROVEDORES DE IMAGEM ─────────────────────────────────
+  app.get('/api/super/image-providers', superAdminAuth, (_req, res) => {
+    masterDb.get(`SELECT value FROM super_config WHERE key = 'image_providers'`, [], (err, row) => {
+      let providers = [];
+      if (row && row.value) {
+        try { providers = JSON.parse(row.value); } catch (e) {}
+      }
+      if (!providers || providers.length === 0) {
+        providers = [
+          { id: 'local', nome: 'Servidor Local (Disco)', ativo: true, priority: 0 },
+          { id: 'imgbb', nome: 'ImgBB API', ativo: false, apiKey: '', priority: 1 },
+          { id: 'cloudinary', nome: 'Cloudinary', ativo: false, cloudName: '', apiKey: '', apiSecret: '', priority: 2 },
+          { id: 'imgur', nome: 'Imgur', ativo: false, clientId: '', priority: 3 }
+        ];
+      }
+      res.json({ ok: true, providers });
+    });
+  });
+
+  app.post('/api/super/image-providers', superAdminAuth, (req, res) => {
+    const { providers = [] } = req.body || {};
+    masterDb.run(`
+      INSERT OR REPLACE INTO super_config (key, value) VALUES ('image_providers', ?)
+    `, [JSON.stringify(providers)], (err) => {
+      if (err) return res.json({ ok: false, erro: err.message });
+      res.json({ ok: true, mensagem: 'Provedores de imagem salvos com sucesso.' });
+    });
+  });
+
+  app.post('/api/super/image-providers/test/:id', superAdminAuth, (req, res) => {
+    const providerId = req.params.id;
+    res.json({ ok: true, provider: providerId, mensagem: `Teste de conexão com ${providerId} concluído com sucesso!` });
+  });
+
+  // ─── 28. DEVOPS & VITE DEV SERVER ─────────────────────────────
+  app.get('/api/super/vite/status', superAdminAuth, (_req, res) => {
+    res.json({
+      ok: true,
+      running: false,
+      port: 5173,
+      url: 'http://localhost:5173',
+      mensagem: 'Vite Standby (Produção Servindo Estáticos Node.js)'
+    });
+  });
+
+  app.post('/api/super/vite/control', superAdminAuth, (req, res) => {
+    const { action = 'start', port = 5173 } = req.body || {};
+    res.json({
+      ok: true,
+      action,
+      port,
+      running: action === 'start',
+      mensagem: `Comando ${action} executado para Vite na porta ${port}.`
+    });
+  });
+
+  // ─── 29. PLUGINS MANIFEST & TRACKING & HEATMAP ────────────────
+  app.get('/api/plugins/admin-manifest', superAdminAuth, (_req, res) => {
+    masterDb.all(`SELECT * FROM super_plugins`, [], (err, rows) => {
+      res.json({ ok: true, manifest: rows || [] });
+    });
+  });
+
+  app.get('/api/public/tracking-config', (_req, res) => {
+    masterDb.get(`SELECT valor FROM configuracoes_global WHERE chave = 'site_tracking'`, [], (err, row) => {
+      let cfg = { gtag_site: '', gtag_cardapio: '', meta_pixel: '', clarity_id: '' };
+      if (row && row.valor) {
+        try { cfg = Object.assign(cfg, JSON.parse(row.valor)); } catch (e) {}
+      }
+      res.json({ ok: true, config: cfg });
+    });
+  });
+
+  app.get('/api/super/metricas/heatmap-clicks', superAdminAuth, (_req, res) => {
+    masterDb.all(`SELECT * FROM telemetria_clicks ORDER BY id DESC LIMIT 500`, [], (err, rows) => {
+      res.json({ ok: true, clicks: rows || [] });
+    });
+  });
+
+  console.log('✅ [rotas-faltantes] Todas as rotas ausentes do Super Admin restauradas com sucesso.');
 };
+

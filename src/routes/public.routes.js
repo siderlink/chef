@@ -25,6 +25,20 @@ module.exports = function (appContext) {
     });
   });
 
+  router.get(['/api/public/features', '/api/public/site-vendas/addons', '/api/public/site-vendas/features'], (req, res) => {
+    try {
+      const featurePlans = require('../../feature-plans');
+      res.json({
+        ok: true,
+        features: featurePlans.FEATURES || [],
+        planos: featurePlans.FEATURE_PLANS || {},
+        limites: featurePlans.PLAN_LIMITS || {}
+      });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+
   router.post('/api/public/geo-hit', express.json({ limit: '1mb' }), (req, res) => {
     const payload = req.body || {};
     const baseLat = -14.2350;

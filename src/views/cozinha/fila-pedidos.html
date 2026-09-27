@@ -27,9 +27,71 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Chef Cozinha">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <script src="/resilience-guard.js"></script>
+  <script src="/offline-queue.js"></script>
   <script src="/socket.io.min.js"></script>
   <script src="/chef-tz.js"></script>
   <script src="/vendor/sortablejs/Sortable.min.js"></script>
+  <style>
+    /* Estilos KDS Smart-Sync de Cozinha */
+    .kds-smart-sync-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 800;
+      margin-top: 6px;
+      transition: all 0.25s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .kds-smart-sync-badge.hold {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1.5px solid rgba(245, 158, 11, 0.4);
+      color: #b45309;
+    }
+    .kds-smart-sync-badge.fogo {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1.5px solid #ef4444;
+      color: #dc2626;
+      animation: pulseFogo 1.5s infinite;
+    }
+    .kds-smart-sync-badge.prep {
+      background: rgba(59, 130, 246, 0.12);
+      border: 1.5px solid rgba(59, 130, 246, 0.35);
+      color: #1d4ed8;
+    }
+    .kds-smart-sync-badge.sync-done {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1.5px solid #10b981;
+      color: #047857;
+    }
+    .kds-btn-force-fire {
+      background: #ea580c;
+      color: white;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: transform 0.15s, background 0.15s;
+    }
+    .kds-btn-force-fire:hover {
+      background: #c2410c;
+      transform: scale(1.04);
+    }
+    @keyframes pulseFogo {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+      70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+  </style>
   <script src="fila.js?v=20260921"></script>
 </head>
 
@@ -81,12 +143,28 @@
         <button class="kds-chip-item active sector-modal-btn" data-sector="Todos" onclick="filtrarSetor('Todos')">
           <i class="ph-bold ph-storefront"></i> <span>Todos os Setores</span>
         </button>
+        <button class="kds-chip-item" id="kds-filter-ifood" onclick="window.filtrarCanal('ifood')" title="Filtrar apenas pedidos de Delivery iFood">
+          <i class="ph-bold ph-moped" style="color: #ea1d2c;"></i> <span>iFood</span>
+          <span class="kds-badge-count" id="kds-badge-ifood" style="display:none; background:#ea1d2c; color:white; font-size:10px; padding:1px 6px; border-radius:10px; margin-left:4px; font-weight:800;">0</span>
+        </button>
         <div id="kds-sectors-chips-dynamic" style="display: contents;"></div>
       </div>
     </div>
 
     <!-- DIREITA: SELETOR GRADE/LINHAS/KANBAN + AJUSTES DE LAYOUT + BUSCA + TEMA -->
     <div class="kds-navbar-right">
+      <!-- Botão Sincronizar Poller iFood -->
+      <button type="button" id="btn-sync-ifood" onclick="window.sincronizarIfoodManual()" class="kds-nav-btn" style="background: rgba(234,29,44,0.12); color: #ea1d2c; border: 1.5px solid rgba(234,29,44,0.3); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px;" title="Consultar novos pedidos no iFood agora (Poller)">
+        <i class="ph-bold ph-moped" style="font-size: 16px;"></i>
+        <span>iFood Sync</span>
+      </button>
+
+      <!-- Botão Smart-Sync de Cozinha (Saída Simultânea) -->
+      <button type="button" id="btn-toggle-smartsync" onclick="window.alternarSmartSync()" class="kds-nav-btn" style="background: rgba(139,92,246,0.15); color: #8b5cf6; border: 1.5px solid rgba(139,92,246,0.4); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px;" title="Ativar/Desativar sincronização inteligente de tempos de cocção para saída simultânea">
+        <i class="ph-bold ph-hourglass-high" style="font-size: 16px;"></i>
+        <span id="label-smartsync">Smart-Sync: ON</span>
+      </button>
+
       <!-- Seletor de Modo de Exibição: Grade vs Linhas vs Kanban -->
       <div style="display: flex; background: var(--bg-tertiary, #1e293b); padding: 3px; border-radius: 10px; border: 1px solid var(--border-color, #334155); gap: 2px;">
         <button type="button" id="btn-layout-grid" onclick="window.alterarModoDisposicao('grid')" title="Modo Grade de Cards" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 800; cursor: pointer; background: #fc4b15; color: white; display: flex; align-items: center; gap: 4px;">
@@ -104,6 +182,13 @@
       <button type="button" id="btn-switch-to-v1" onclick="window.trocarVersaoFila('classica')" class="kds-nav-btn kds-btn-version-switch" title="Alternar para a Fila de Pedidos V1 (Clássica)">
         <i class="ph-bold ph-arrow-counter-clockwise"></i>
         <span>V1 Clássica</span>
+      </button>
+
+      <!-- Botão Loja de Presets de Nicho (Pizzaria, Buffet, Sushi, Bar, etc) -->
+      <button type="button" id="btn-loja-layouts" onclick="window.abrirLojaLayouts()" class="kds-nav-btn kds-btn-loja" title="Loja de Presets Especializados (Pizzarias, Sushis, Buffets, Bares e À La Carte)">
+        <i class="ph-bold ph-storefront"></i>
+        <span>Loja de Presets</span>
+        <span class="kds-badge-pulse-store">Nichos</span>
       </button>
 
       <!-- Botão Ajustar Layout & Tamanhos -->
@@ -161,6 +246,9 @@
       </button>
       <button type="button" class="kds-drawer-tab-btn" data-tab="apelidos" onclick="window.trocarAbaLayoutDrawer('apelidos')">
         <i class="ph-bold ph-identification-badge"></i> <span>Apelidos</span>
+      </button>
+      <button type="button" class="kds-drawer-tab-btn" data-tab="loja" onclick="window.trocarAbaLayoutDrawer('loja')">
+        <i class="ph-bold ph-storefront"></i> <span>Loja Presets</span>
       </button>
     </div>
 
@@ -334,6 +422,22 @@
           </p>
         </div>
       </div>
+
+      <!-- ABA 5: PRESETS DE NICHO RÁPIDOS -->
+      <div class="kds-drawer-tab-content" data-tab="loja" style="display:none;">
+        <div class="kds-control-section">
+          <span class="kds-control-title">Presets de Cozinha (1 Clique)</span>
+          <p style="font-size: 12px; color: var(--kds-text-muted, #94a3b8); margin: 0 0 12px 0; line-height: 1.4;">
+            Selecione o nicho do seu restaurante para aplicar dimensões, colunas e tempos recomendados instantaneamente:
+          </p>
+          <div id="kds-drawer-presets-container" class="kds-drawer-presets-list">
+            <!-- Gerado dinamicamente via fila.js -->
+          </div>
+          <button type="button" onclick="window.toggleLayoutDrawer(false); window.abrirLojaLayouts();" class="kds-btn-apply-preset" style="margin-top: 14px;">
+            <i class="ph-bold ph-storefront"></i> <span>Abrir Loja Completa com Detalhes</span>
+          </button>
+        </div>
+      </div>
     </div>
   </aside>
 
@@ -489,6 +593,62 @@
             <input type="number" id="cfg-tempo-pulse" min="1" max="30" value="3" class="fila-settings-input">
             <span style="font-size: 12px; color: #64748b; font-weight: 600;">seg. piscando</span>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LOJA DE PRESETS DA COZINHA (KDS PRESET HUB) -->
+  <div id="modal-loja-layouts" class="kds-modal-store-overlay" style="display:none;" onclick="if(event.target===this)window.fecharLojaLayouts()">
+    <div class="kds-modal-store-card">
+      <div class="kds-store-header">
+        <div class="kds-store-title-wrap">
+          <div class="kds-store-icon-badge">
+            <i class="ph-bold ph-storefront"></i>
+          </div>
+          <div>
+            <h2>Loja de Layouts & Presets da Cozinha <span class="kds-badge-pulse-store" style="font-size:10.5px;">Cheff.pro Hub</span></h2>
+            <p>Selecione a especialidade do seu restaurante para aplicar tamanhos, colunas, visibilidade e sincronia ideais instantaneamente.</p>
+          </div>
+        </div>
+        <button type="button" class="kds-store-close-btn" onclick="window.fecharLojaLayouts()" title="Fechar Loja">&times;</button>
+      </div>
+
+      <!-- Filtros de Nicho -->
+      <div class="kds-store-filters" id="kds-store-filter-bar">
+        <button type="button" class="kds-store-filter-chip active" data-cat="todos" onclick="window.filtrarLojaPresets('todos')">
+          <i class="ph-bold ph-squares-four"></i> <span>Todos os Nichos (8)</span>
+        </button>
+        <button type="button" class="kds-store-filter-chip" data-cat="buffet" onclick="window.filtrarLojaPresets('buffet')">
+          <i class="ph-bold ph-cooking-pot"></i> <span>Buffet & A Quilo</span>
+        </button>
+        <button type="button" class="kds-store-filter-chip" data-cat="pizzaria" onclick="window.filtrarLojaPresets('pizzaria')">
+          <i class="ph-bold ph-pizza"></i> <span>Pizzarias</span>
+        </button>
+        <button type="button" class="kds-store-filter-chip" data-cat="sushi" onclick="window.filtrarLojaPresets('sushi')">
+          <i class="ph-bold ph-fish"></i> <span>Sushis & Rodízio</span>
+        </button>
+        <button type="button" class="kds-store-filter-chip" data-cat="bar" onclick="window.filtrarLojaPresets('bar')">
+          <i class="ph-bold ph-beer-bottle"></i> <span>Bares & Pubs</span>
+        </button>
+        <button type="button" class="kds-store-filter-chip" data-cat="alacarte" onclick="window.filtrarLojaPresets('alacarte')">
+          <i class="ph-bold ph-fork-knife"></i> <span>À La Carte</span>
+        </button>
+        <button type="button" class="kds-store-filter-chip" data-cat="hamburgueria" onclick="window.filtrarLojaPresets('hamburgueria')">
+          <i class="ph-bold ph-hamburger"></i> <span>Hamburguerias</span>
+        </button>
+        <button type="button" class="kds-store-filter-chip" data-cat="delivery" onclick="window.filtrarLojaPresets('delivery')">
+          <i class="ph-bold ph-moped"></i> <span>Delivery & Dark Kitchen</span>
+        </button>
+        <button type="button" class="kds-store-filter-chip" data-cat="cafeteria" onclick="window.filtrarLojaPresets('cafeteria')">
+          <i class="ph-bold ph-coffee"></i> <span>Cafeterias</span>
+        </button>
+      </div>
+
+      <!-- Grid dos Cards de Nicho -->
+      <div class="kds-store-body">
+        <div class="kds-store-grid" id="kds-store-cards-grid">
+          <!-- Cards gerados dinamicamente via fila.js -->
         </div>
       </div>
     </div>

@@ -32,7 +32,18 @@ module.exports = function (app, masterDb, sqlite3, options) {
     console.error('[Super Admin Sub-controllers Error]', errMod);
   }
 
-  // Inicializa Controle de Carga
+  // Inicializa Controle de Carga e Migrações
+  try {
+    masterDb.all(`PRAGMA table_info(tenant_modulos)`, [], (errPragma, cols) => {
+      if (!errPragma && Array.isArray(cols)) {
+        const hasTrial = cols.some(c => c.name === 'trial_ate');
+        if (!hasTrial) {
+          masterDb.run(`ALTER TABLE tenant_modulos ADD COLUMN trial_ate DATETIME`, () => {});
+        }
+      }
+    });
+  } catch (ePragma) {}
+
   const loadControl = createLoadControl({ masterDb });
   try {
     loadControl.init(() => {
@@ -353,6 +364,68 @@ module.exports = function (app, masterDb, sqlite3, options) {
           });
         });
       });
+    });
+  });
+
+  // ─── POST /api/super/impersonate/:id ───────────────────────────
+  // Ghost Login / Impersonate 1-Clique: Super Admin acessa painel do restaurante diretamente
+  app.post('/api/super/impersonate/:id', superAdminAuth, (req, res) => {
+    const restId = parseInt(req.params.id, 10);
+    if (!restId) return res.status(400).json({ ok: false, erro: 'ID do restaurante inválido.' });
+
+    masterDb.get('SELECT id, nome, ativo, licenca, dono_nome, dono_telefone, dono_email FROM restaurantes WHERE id = ?', [restId], (err, rest) => {
+      if (err) return res.status(500).json({ ok: false, erro: err.message });
+      if (!rest) return res.status(404).json({ ok: false, erro: 'Restaurante não encontrado.' });
+
+      // Buscar usuário administrador/dono existente para esse tenant
+      masterDb.get(
+        `SELECT id, username, nome, role FROM usuarios WHERE restaurante_id = ? AND (role = 'admin' OR role = 'dono') ORDER BY id ASC LIMIT 1`,
+        [restId],
+        (errU, user) => {
+          const uId = (user && user.id) ? user.id : 99990 + restId;
+          const uUsername = (user && user.username) ? user.username : (rest.dono_email || `admin_r${restId}@chef.local`);
+          const uNome = (user && user.nome) ? user.nome : (rest.dono_nome || rest.nome || 'Proprietário');
+          const superAdminUser = (req.superAdmin && req.superAdmin.username) || (req.user && req.user.username) || 'SuperAdmin';
+
+          const payload = {
+            id: uId,
+            restaurante_id: rest.id,
+            role: 'admin',
+            cargo: 'Dono',
+            nome: uNome,
+            usuario: uUsername,
+            tipo: 'dono',
+            impersonated: true,
+            impersonated_by: superAdminUser,
+            restaurante_nome: rest.nome,
+            iat: Math.floor(Date.now() / 1000)
+          };
+
+          const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '12h' });
+
+          // Registrar em log de auditoria
+          try {
+            const ip = getClientIp(req);
+            masterDb.run(
+              `INSERT INTO suporte_logs_audit (suporte_id, suporte_nome, acao, detalhes, ip, data_acao, operador_nome) VALUES (?, ?, ?, ?, ?, datetime('now','localtime'), ?)`,
+              [1, superAdminUser, 'GHOST_LOGIN', `Acesso 1-clique ao restaurante #${rest.id} (${rest.nome})`, ip, superAdminUser],
+              () => {}
+            );
+          } catch (eAudit) {}
+
+          res.json({
+            ok: true,
+            token,
+            redirectUrl: `/painel-dono.html?impersonate_token=${token}`,
+            redirectPdvUrl: `/index.html?impersonate_token=${token}`,
+            restaurante: {
+              id: rest.id,
+              nome: rest.nome,
+              licenca: rest.licenca
+            }
+          });
+        }
+      );
     });
   });
 
@@ -2648,6 +2721,23 @@ module.exports = function (app, masterDb, sqlite3, options) {
     return [];
   }
 
+  function registrarWafLog(ip, metodo, endpoint, motivo) {
+    try {
+      const logs = lerWafLogs();
+      logs.unshift({
+        data: new Date().toISOString(),
+        ip: String(ip || 'desconhecido').replace('::ffff:', ''),
+        metodo: String(metodo || 'GET').toUpperCase(),
+        endpoint: String(endpoint || '').slice(0, 120),
+        motivo: String(motivo || 'Violação de segurança')
+      });
+      if (logs.length > 200) logs.length = 200;
+      const dir = path.dirname(WAF_LOGS_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(WAF_LOGS_FILE, JSON.stringify(logs, null, 2), 'utf8');
+    } catch (e) {}
+  }
+
   // GET /api/super/waf-config
   app.get('/api/super/waf-config', superAdminAuth, (req, res) => {
     try {
@@ -2709,6 +2799,183 @@ module.exports = function (app, masterDb, sqlite3, options) {
       res.json({ ok: true, config: cfg });
     } catch (e) {
       res.json({ ok: false, erro: e.message });
+    }
+  });
+
+  // GET /api/super/backup/list — listar backups locais
+  app.get('/api/super/backup/list', superAdminAuth, (req, res) => {
+    try {
+      const rootDir = path.join(__dirname, '..');
+      const backupDir = path.join(rootDir, 'backups');
+      if (!fsSync.existsSync(backupDir)) return res.json({ ok: true, backups: [] });
+      const files = fsSync.readdirSync(backupDir)
+        .filter(f => f.endsWith('.sqlite') || f.endsWith('.db') || f.endsWith('.gz') || f.endsWith('.zip'))
+        .map(f => {
+          const st = fsSync.statSync(path.join(backupDir, f));
+          return {
+            nome: f,
+            tamanho: Math.round(st.size / 1024),
+            data: st.mtime
+          };
+        })
+        .sort((a, b) => new Date(b.data) - new Date(a.data));
+      res.json({ ok: true, backups: files });
+    } catch (e) {
+      res.json({ ok: false, erro: e.message });
+    }
+  });
+
+  // GET /api/super/backup/download/:filename — download seguro de backup local
+  app.get('/api/super/backup/download/:filename', superAdminAuth, (req, res) => {
+    try {
+      const rootDir = path.join(__dirname, '..');
+      const backupDir = path.join(rootDir, 'backups');
+      const filename = path.basename(req.params.filename);
+      const filePath = path.join(backupDir, filename);
+      if (!fsSync.existsSync(filePath)) {
+        return res.status(404).json({ ok: false, erro: 'Arquivo de backup não encontrado.' });
+      }
+      res.download(filePath, filename);
+    } catch (e) {
+      res.status(500).json({ ok: false, erro: e.message });
+    }
+  });
+
+  // GET /api/super/infra-cloud/r2/download/:filename — download de backup do R2 ou local
+  app.get('/api/super/infra-cloud/r2/download/:filename', superAdminAuth, async (req, res) => {
+    try {
+      const rootDir = path.join(__dirname, '..');
+      const filename = path.basename(req.params.filename);
+      const localFile = path.join(rootDir, 'backups', filename);
+      if (fsSync.existsSync(localFile)) {
+        return res.download(localFile, filename);
+      }
+      const bucket = await getInfraConfig('r2_bucket');
+      const accountId = await getInfraConfig('r2_account_id');
+      if (!bucket || !accountId) return res.status(400).json({ ok: false, erro: 'R2 não configurado e arquivo local não existe.' });
+      const getUrl = `https://${bucket}.${accountId}.r2.cloudflarestorage.com/backups/${filename}`;
+      const resp = await fetch(getUrl);
+      if (!resp.ok) return res.status(404).json({ ok: false, erro: 'Arquivo não encontrado no bucket R2.' });
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      const ab = await resp.arrayBuffer();
+      res.send(Buffer.from(ab));
+    } catch (e) {
+      res.status(500).json({ ok: false, erro: e.message });
+    }
+  });
+
+  // POST /api/super/backup/export-tenant/:id — snapshot e download sob demanda de um tenant
+  app.post('/api/super/backup/export-tenant/:id', superAdminAuth, (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.id, 10);
+      if (isNaN(tenantId) || tenantId < 1) return res.status(400).json({ ok: false, erro: 'ID de restaurante inválido.' });
+      const rootDir = path.join(__dirname, '..');
+      const dbFile = tenantId === 1 ? 'database_1.sqlite' : `database_${tenantId}.sqlite`;
+      const srcPath = path.join(rootDir, dbFile);
+      if (!fsSync.existsSync(srcPath)) {
+        return res.status(404).json({ ok: false, erro: `Banco de dados ${dbFile} não encontrado.` });
+      }
+      const backupDir = path.join(rootDir, 'backups');
+      if (!fsSync.existsSync(backupDir)) fsSync.mkdirSync(backupDir, { recursive: true });
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const destName = `tenant_${tenantId}_backup_${timestamp}.sqlite`;
+      const destPath = path.join(backupDir, destName);
+      fsSync.copyFileSync(srcPath, destPath);
+      res.json({
+        ok: true,
+        mensagem: `Snapshot do restaurante ${tenantId} gerado com sucesso!`,
+        arquivo: destName,
+        downloadUrl: `/api/super/backup/download/${destName}`
+      });
+    } catch (e) {
+      res.status(500).json({ ok: false, erro: e.message });
+    }
+  });
+
+  // ── WAF Enforcement Middleware ──
+  const ipRateMap = new Map();
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, entry] of ipRateMap.entries()) {
+      if (now > entry.resetAt) ipRateMap.delete(ip);
+    }
+  }, 60000);
+
+  app.use((req, res, next) => {
+    try {
+      const cfg = lerWafConfig();
+      if (!cfg || !cfg.enabled) return next();
+
+      const rawIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1';
+      const ip = (typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : '127.0.0.1').replace('::ffff:', '');
+
+      // 1. Blacklist check
+      if (Array.isArray(cfg.blacklist_ips) && cfg.blacklist_ips.includes(ip)) {
+        registrarWafLog(ip, req.method, req.originalUrl, 'IP na Blacklist Manual');
+        return res.status(403).json({ ok: false, erro: 'Acesso bloqueado pelas diretrizes de segurança WAF.' });
+      }
+
+      // 2. Security headers
+      if (cfg.headers_enabled) {
+        res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('X-XSS-Protection', '1; mode=block');
+      }
+
+      // Bypass rate limit and inspections for static assets
+      if (req.originalUrl.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff2?|ttf|eot)$/i)) {
+        return next();
+      }
+
+      // 3. Rate limiting per minute
+      const maxReqs = parseInt(cfg.max_reqs_per_minute, 10) || 300;
+      const now = Date.now();
+      let record = ipRateMap.get(ip);
+      if (!record || now > record.resetAt) {
+        record = { count: 1, resetAt: now + 60000 };
+        ipRateMap.set(ip, record);
+      } else {
+        record.count++;
+        if (record.count > maxReqs) {
+          registrarWafLog(ip, req.method, req.originalUrl, `Rate Limit Excedido (${record.count}/${maxReqs} reqs/min)`);
+          return res.status(429).json({ ok: false, erro: 'Muitas requisições. Tente novamente em instantes.' });
+        }
+      }
+
+      // 4. SQL Injection / XSS inspect (ignoring terminal commands or raw sql executed by super-admin)
+      if (cfg.block_sqli_xss && !req.originalUrl.includes('/api/super/terminal')) {
+        const sqliPattern = /(\b(UNION\s+ALL\s+SELECT|UNION\s+SELECT|DROP\s+TABLE|ALTER\s+TABLE|EXEC\s*\(|TRUNCATE\s+TABLE)\b|--\s*[\r\n]|\/\*[\s\S]*?\*\/)/i;
+        const xssPattern = /(<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>|javascript:[^\s"'>]+|onerror\s*=\s*['"]?[^'"]+['"]?)/i;
+
+        const checkStr = (val) => {
+          if (typeof val === 'string') {
+            if (sqliPattern.test(val)) return 'Tentativa de SQL Injection detectada';
+            if (xssPattern.test(val)) return 'Tentativa de XSS detectada';
+          }
+          return null;
+        };
+
+        let violation = checkStr(req.originalUrl);
+        if (!violation && req.body && typeof req.body === 'object') {
+          for (const key of Object.keys(req.body)) {
+            const v = req.body[key];
+            if (typeof v === 'string') {
+              violation = checkStr(v);
+              if (violation) break;
+            }
+          }
+        }
+
+        if (violation) {
+          registrarWafLog(ip, req.method, req.originalUrl, violation);
+          return res.status(400).json({ ok: false, erro: violation });
+        }
+      }
+
+      next();
+    } catch (e) {
+      next();
     }
   });
 
