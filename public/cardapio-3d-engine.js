@@ -1,58 +1,308 @@
 /**
  * ══════════════════════════════════════════════════════════════════════════════
- * CHEF COZINHA 3D ULTRA ENGINE (Three.js High-Performance Experience)
- * Otimizado exclusivamente para dispositivos com 6GB RAM ou mais (6GB+ Pro Tier)
+ * CHEF COZINHA 3D ULTRA ENGINE & AR EXPERIENCE (Three.js 6GB+ Pro Tier)
  *
- * Recursos:
- * 1. Aura Gastronômica 3D: Fundo ambiente fluido e reativo às categorias
- * 2. Prato 3D Interativo no Modal: Modelos gastronômicos PBR procedurais com
- *    rotação 360°, fumaça/vapor volumétrico, controle de luz e toque/mouse
- * 3. Partículas de Adição ao Carrinho: Vórtice 3D com arco parabólico até o carrinho
- * 4. Tilt 3D Holográfico nos Cards com reflexo especular dinâmico
- * 5. Gerenciamento estrito de memória e bateria (auto-pause em background e 60/120fps)
+ * 1. REALIDADE AUMENTADA (AR "Ver Prato na Minha Mesa"):
+ *    - Câmera traseira nativa via WebRTC passthrough
+ *    - Projeção tridimensional com sombra projetada na toalha da mesa
+ *    - Toque 1-dedo para mover, pinça 2-dedos para escala 100% real e rotação
+ *    - Captura de foto holográfica para salvar/compartilhar (Instagram/WhatsApp)
+ *
+ * 2. ÁUDIO SENSORIAL GASTRONÔMICO (ASMR WebAudio) & HÁPTICA:
+ *    - Efervescência procedural de cerveja, chopp e refrigerante
+ *    - Chiado de brasa e chapa quente para carnes e filés
+ *    - Brisa marinha harmônica para frutos do mar e peixes
+ *    - Cristal doce para sobremesas e pudim
+ *    - Arpeggio harmônico ao adicionar ao pedido
+ *    - Vibração háptica tátil (navigator.vibrate) em rotações e ações
+ *
+ * 3. AURA GASTRONÔMICA 3D & FLY-TO-CART:
+ *    - Fundo ambiente fluido reativo às categorias
+ *    - Arco parabólico de partículas do botão até o carrinho
+ *    - Tilt 3D com reflexo especular nos cards
  * ══════════════════════════════════════════════════════════════════════════════
  */
 
 (function () {
   'use strict';
 
-  // Configuração e Estado Global do Motor 3D
+  // ══════════════════════════════════════════════════════════════════════════
+  // MÓDULO 1: ÁUDIO SENSORIAL GASTRONÔMICO (ASMR WebAudio Procedural)
+  // ══════════════════════════════════════════════════════════════════════════
+  const ChefGastronomicAudio = {
+    ctx: null,
+    isMuted: localStorage.getItem('chef_3d_asmr') === 'false',
+    lastSoundTime: 0,
+
+    init: function () {
+      if (this.ctx) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) this.ctx = new AudioCtx();
+      } catch (e) { }
+    },
+
+    resume: function () {
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    },
+
+    toggle: function () {
+      this.isMuted = !this.isMuted;
+      localStorage.setItem('chef_3d_asmr', String(!this.isMuted));
+      return !this.isMuted;
+    },
+
+    // Efervescência de chopp, cerveja gelada e refrigerante
+    playFizz: function () {
+      if (this.isMuted) return;
+      this.init();
+      this.resume();
+      if (!this.ctx) return;
+
+      const now = Date.now();
+      if (now - this.lastSoundTime < 80) return;
+      this.lastSoundTime = now;
+
+      const t = this.ctx.currentTime;
+      const dur = 0.14;
+      const bufferSize = Math.floor(this.ctx.sampleRate * dur);
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.45));
+      }
+
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(4500 + Math.random() * 1400, t);
+      filter.Q.setValueAtTime(4.5, t);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.08, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      noise.start(t);
+    },
+
+    // Chiado de chapa quente e carnes grelhadas
+    playSizzle: function () {
+      if (this.isMuted) return;
+      this.init();
+      this.resume();
+      if (!this.ctx) return;
+
+      const now = Date.now();
+      if (now - this.lastSoundTime < 100) return;
+      this.lastSoundTime = now;
+
+      const t = this.ctx.currentTime;
+      const dur = 0.16;
+      const bufferSize = Math.floor(this.ctx.sampleRate * dur);
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * (Math.random() > 0.4 ? 1 : 0.25);
+      }
+
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.setValueAtTime(2800, t);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.07, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      noise.start(t);
+    },
+
+    // Brisa marinha / chime límpido para peixes e frutos do mar
+    playOceanChime: function () {
+      if (this.isMuted) return;
+      this.init();
+      this.resume();
+      if (!this.ctx) return;
+
+      const now = Date.now();
+      if (now - this.lastSoundTime < 220) return;
+      this.lastSoundTime = now;
+
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      const freqs = [659.25, 783.99, 880.0, 987.77];
+      const freq = freqs[Math.floor(Math.random() * freqs.length)];
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+
+      gain.gain.setValueAtTime(0.045, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + 0.34);
+    },
+
+    // Cristal doce suave para sobremesas e pudim
+    playDessertChime: function () {
+      if (this.isMuted) return;
+      this.init();
+      this.resume();
+      if (!this.ctx) return;
+
+      const now = Date.now();
+      if (now - this.lastSoundTime < 200) return;
+      this.lastSoundTime = now;
+
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1046.50 + Math.random() * 180, t);
+
+      gain.gain.setValueAtTime(0.055, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + 0.4);
+    },
+
+    // Arpeggio harmônico ao adicionar ao pedido
+    playAddToCart: function () {
+      if (this.isMuted) return;
+      this.init();
+      this.resume();
+      if (!this.ctx) return;
+
+      const t = this.ctx.currentTime;
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+
+      notes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + idx * 0.045);
+
+        gain.gain.setValueAtTime(0.1, t + idx * 0.045);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.045 + 0.22);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t + idx * 0.045);
+        osc.stop(t + idx * 0.045 + 0.24);
+      });
+    },
+
+    // Som de obturador de foto em AR
+    playShutter: function () {
+      this.init();
+      this.resume();
+      if (!this.ctx) return;
+
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(880, t);
+      osc.frequency.exponentialRampToValueAtTime(220, t + 0.08);
+
+      gain.gain.setValueAtTime(0.12, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + 0.1);
+    }
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // MÓDULO 2: FEEDBACK HÁPTICO (Vibração Tátil no Celular)
+  // ══════════════════════════════════════════════════════════════════════════
+  const ChefHaptics = {
+    canVibrate: typeof navigator !== 'undefined' && 'vibrate' in navigator,
+
+    tick: function () {
+      if (this.canVibrate) {
+        try { navigator.vibrate(8); } catch (e) { }
+      }
+    },
+
+    switchToggle: function () {
+      if (this.canVibrate) {
+        try { navigator.vibrate(14); } catch (e) { }
+      }
+    },
+
+    pop: function () {
+      if (this.canVibrate) {
+        try { navigator.vibrate([15, 30, 20]); } catch (e) { }
+      }
+    },
+
+    arPlace: function () {
+      if (this.canVibrate) {
+        try { navigator.vibrate(30); } catch (e) { }
+      }
+    }
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // MÓDULO 3: MOTOR CHEF CARDÁPIO 3D
+  // ══════════════════════════════════════════════════════════════════════════
   const ChefCardapio3D = {
-    version: '2.5.0-ultra-6gb',
+    version: '3.0.0-ultra-ar-asmr',
     isSupported: false,
     isEnabled: false,
     threeLoaded: false,
     deviceMemory: navigator.deviceMemory || 8,
     hardwareConcurrency: navigator.hardwareConcurrency || 4,
 
-    // Módulos
     ambient: null,
     dishStage: null,
     flyEffect: null,
 
-    // Categoria ativa para coloração ambiental
-    activeCategory: 'Todos',
-    activeAmbiance: 'gourmet',
-
-    /**
-     * Verificação de Hardware (>= 6GB RAM) e GPU
-     */
     detectCapability: function () {
-      // 1. Preferência salva pelo usuário
       const saved = localStorage.getItem('chef_3d_mode');
       if (saved === 'false') return false;
       if (saved === 'true') return true;
 
-      // 2. Não ativar se usuário ativou economia de movimento
       if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         return false;
       }
 
-      // 3. Critério de 6GB RAM ou mais
       const mem = navigator.deviceMemory || 8;
       const cores = navigator.hardwareConcurrency || 4;
 
-      // Suporte WebGL 1/2 obrigatório
       const hasWebGL = (function () {
         try {
           const canvas = document.createElement('canvas');
@@ -63,23 +313,15 @@
       })();
 
       if (!hasWebGL) return false;
-
-      // Se navigator.deviceMemory estiver disponível e for >= 6GB
       if (mem >= 6) return true;
-
-      // Dispositivos onde deviceMemory reporta 4GB por privacidade do navegador (ex: Firefox/Safari),
-      // mas possuem 8 ou mais núcleos de CPU e tela de alta densidade (flagships)
       if (mem >= 4 && cores >= 8 && window.devicePixelRatio >= 2) return true;
 
       return false;
     },
 
-    /**
-     * Inicialização Principal
-     */
     init: function () {
       this.isSupported = this.detectCapability();
-      console.log(`[ChefCardapio3D] Dispositivo detectado: ${this.deviceMemory}GB RAM, ${this.hardwareConcurrency} Cores. Elegível para 3D: ${this.isSupported}`);
+      console.log(`[ChefCardapio3D] Dispositivo: ${this.deviceMemory}GB RAM, ${this.hardwareConcurrency} Cores. Suporte 3D/AR: ${this.isSupported}`);
 
       this.injectUiControls();
 
@@ -88,9 +330,6 @@
       }
     },
 
-    /**
-     * Carrega Three.js dinamicamente sem onerar dispositivos básicos
-     */
     loadThree: function (callback) {
       if (typeof THREE !== 'undefined') {
         this.threeLoaded = true;
@@ -104,12 +343,10 @@
 
       script.onload = () => {
         this.threeLoaded = true;
-        console.log('[ChefCardapio3D] Three.js r128 carregado localmente com sucesso!');
         callback();
       };
 
       script.onerror = () => {
-        console.warn('[ChefCardapio3D] Falha ao carregar Three.js local, tentando CDN...');
         const cdnScript = document.createElement('script');
         cdnScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
         cdnScript.async = true;
@@ -117,18 +354,12 @@
           this.threeLoaded = true;
           callback();
         };
-        cdnScript.onerror = () => {
-          console.error('[ChefCardapio3D] Não foi possível carregar Three.js.');
-        };
         document.head.appendChild(cdnScript);
       };
 
       document.head.appendChild(script);
     },
 
-    /**
-     * Ativa a Experiência 3D Completa
-     */
     enable: function () {
       this.isEnabled = true;
       localStorage.setItem('chef_3d_mode', 'true');
@@ -142,9 +373,6 @@
       });
     },
 
-    /**
-     * Desativa a Experiência 3D
-     */
     disable: function () {
       this.isEnabled = false;
       localStorage.setItem('chef_3d_mode', 'false');
@@ -166,9 +394,18 @@
       }
     },
 
-    /**
-     * Injeta Botão de Status 3D no Header
-     */
+    toggleAudio: function () {
+      const isNowActive = ChefGastronomicAudio.toggle();
+      ChefHaptics.switchToggle();
+      const icon = document.getElementById('icon-sound-status');
+      const label = document.getElementById('label-sound-status');
+      if (icon) icon.className = isNowActive ? 'ph-bold ph-speaker-high' : 'ph-bold ph-speaker-slash';
+      if (label) label.innerText = isNowActive ? 'ASMR On' : 'ASMR Mudo';
+      if (typeof showToast === 'function') {
+        showToast(isNowActive ? '🔊 Áudio ASMR Ativado' : '🔇 Áudio ASMR Silenciado', 'info');
+      }
+    },
+
     injectUiControls: function () {
       const headerRight = document.querySelector('.header-right') || document.querySelector('.header-info');
       if (!headerRight || document.getElementById('btn-toggle-3d-mode')) return;
@@ -218,9 +455,7 @@
       }
     },
 
-    /**
-     * ─── 1. AURA GASTRONÔMICA 3D (Fundo Ambiente Fluido) ───
-     */
+    // ─── AURA GASTRONÔMICA 3D (Fundo Ambiente Fluido) ───
     initAmbientAura: function () {
       let canvas = document.getElementById('cardapio-ambient-canvas');
       if (!canvas) {
@@ -257,7 +492,6 @@
       renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-      // Gerar textura de ponto circular suave via Canvas 2D procedural
       const pCanvas = document.createElement('canvas');
       pCanvas.width = 64;
       pCanvas.height = 64;
@@ -271,11 +505,9 @@
       pCtx.fillRect(0, 0, 64, 64);
       const particleTexture = new THREE.CanvasTexture(pCanvas);
 
-      // Partículas em nuvem fluida
       const count = 650;
       const geometry = new THREE.BufferGeometry();
       const positions = new Float32Array(count * 3);
-      const scales = new Float32Array(count);
       const velocities = new Float32Array(count * 3);
 
       for (let i = 0; i < count; i++) {
@@ -283,10 +515,8 @@
         positions[i * 3 + 1] = (Math.random() - 0.5) * 450;
         positions[i * 3 + 2] = (Math.random() - 0.5) * 200;
 
-        scales[i] = Math.random() * 14 + 6;
-
         velocities[i * 3] = (Math.random() - 0.5) * 0.2;
-        velocities[i * 3 + 1] = Math.random() * 0.4 + 0.15; // Flutua suavemente para cima
+        velocities[i * 3 + 1] = Math.random() * 0.4 + 0.15;
         velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.15;
       }
 
@@ -305,7 +535,6 @@
       const particleSystem = new THREE.Points(geometry, material);
       scene.add(particleSystem);
 
-      // Controle de Mouse/Touch para Parallax suave
       let mouseX = 0;
       let mouseY = 0;
       const onPointerMove = (e) => {
@@ -317,7 +546,6 @@
       window.addEventListener('mousemove', onPointerMove, { passive: true });
       window.addEventListener('touchmove', onPointerMove, { passive: true });
 
-      // Animação e Render Loop
       let animId = null;
       let isVisible = true;
       let clock = new THREE.Clock();
@@ -337,7 +565,6 @@
           pos[i * 3 + 1] += velocities[i * 3 + 1];
           pos[i * 3] += Math.sin(time * 0.6 + i) * 0.15;
 
-          // Reposiciona na base se passar do topo
           if (pos[i * 3 + 1] > 230) {
             pos[i * 3 + 1] = -230;
             pos[i * 3] = (Math.random() - 0.5) * 550;
@@ -345,7 +572,6 @@
         }
         geometry.attributes.position.needsUpdate = true;
 
-        // Efeito de Parallax da Câmera
         camera.position.x += (mouseX - camera.position.x) * 0.04;
         camera.position.y += (-mouseY - camera.position.y) * 0.04;
         camera.lookAt(scene.position);
@@ -356,7 +582,6 @@
       animate();
       canvas.style.opacity = '1';
 
-      // Resize
       const onResize = () => {
         if (!renderer) return;
         const w = window.innerWidth;
@@ -383,41 +608,50 @@
           renderer.dispose();
         },
         updateCategoryColor: (cat) => {
-          let targetHex = 0xfc4b15; // Laranja Gourmet Padrão
+          let targetHex = 0xfc4b15;
           const c = (cat || '').toLowerCase();
-          if (c.includes('cerveja') || c.includes('chopp')) targetHex = 0xf59e0b; // Dourado malte
-          else if (c.includes('bebida') || c.includes('drink')) targetHex = 0x06b6d4; // Ciano refrescante
-          else if (c.includes('peixe') || c.includes('marisco') || c.includes('camar')) targetHex = 0x0ea5e9; // Azul marinho fresco
-          else if (c.includes('sobremesa')) targetHex = 0xf43f5e; // Framboesa doce
-          else if (c.includes('chapa') || c.includes('prato') || c.includes('carne')) targetHex = 0xea580c; // Terracota brasa
+          if (c.includes('cerveja') || c.includes('chopp')) targetHex = 0xf59e0b;
+          else if (c.includes('bebida') || c.includes('drink')) targetHex = 0x06b6d4;
+          else if (c.includes('peixe') || c.includes('marisco') || c.includes('camar')) targetHex = 0x0ea5e9;
+          else if (c.includes('sobremesa')) targetHex = 0xf43f5e;
+          else if (c.includes('chapa') || c.includes('prato') || c.includes('carne')) targetHex = 0xea580c;
 
           material.color.setHex(targetHex);
         }
       };
     },
 
-    /**
-     * ─── 2. PALCO 3D INTERATIVO DO PRATO (Item Modal) ───
-     */
+    // ─── PALCO 3D INTERATIVO (Modal de Detalhes) ───
     initDishStage: function () {
-      // Injeta o container do palco 3D no modal de detalhes
       const modalContent = document.querySelector('#modal-item-details .modal-content');
       if (!modalContent || document.getElementById('modal-3d-stage')) return;
 
+      const isMuted = ChefGastronomicAudio.isMuted;
       const stageHtml = `
-        <div id="modal-3d-stage" class="modal-3d-stage" style="display:none; position:relative; width:100%; height:210px; border-radius:18px; margin:10px 0 12px 0; overflow:hidden; background:radial-gradient(circle at 50% 50%, rgba(252,75,21,0.08) 0%, rgba(15,23,42,0.03) 80%); border:1.5px solid rgba(252,75,21,0.2); box-shadow:inset 0 2px 14px rgba(0,0,0,0.06);">
+        <div id="modal-3d-stage" class="modal-3d-stage" style="display:none; position:relative; width:100%; height:215px; border-radius:18px; margin:10px 0 12px 0; overflow:hidden; background:radial-gradient(circle at 50% 50%, rgba(252,75,21,0.08) 0%, rgba(15,23,42,0.03) 80%); border:1.5px solid rgba(252,75,21,0.22); box-shadow:inset 0 2px 14px rgba(0,0,0,0.06);">
           <canvas id="dish-3d-canvas" style="width:100%; height:100%; display:block; outline:none; cursor:grab;"></canvas>
           
-          <!-- Badges & Dicas de Interação -->
-          <div style="position:absolute; top:8px; right:8px; display:flex; gap:6px; align-items:center; z-index:2;">
-            <span style="background:linear-gradient(135deg, #fc4b15, #f59e0b); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:8px; box-shadow:0 2px 6px rgba(252,75,21,0.3); display:inline-flex; align-items:center; gap:3px;">
-              <i class="ph-fill ph-sparkle"></i> 3D Ultra
-            </span>
+          <!-- Controles Superiores: Botão AR + Botão Som ASMR -->
+          <div style="position:absolute; top:8px; left:8px; right:8px; display:flex; justify-content:space-between; align-items:center; z-index:2; pointer-events:none;">
+            <button type="button" id="btn-open-ar-mode" onclick="window.ChefCardapio3D.openAR()" style="pointer-events:auto; background:linear-gradient(135deg, #fc4b15, #f59e0b); border:none; color:#fff; font-size:10.5px; font-weight:800; padding:5px 12px; border-radius:14px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; box-shadow:0 3px 10px rgba(252,75,21,0.35); transition:transform 0.15s ease;">
+              <i class="ph-bold ph-camera"></i> <span>Ver na Mesa (AR)</span>
+            </button>
+
+            <div style="display:flex; gap:6px; align-items:center;">
+              <button type="button" id="btn-toggle-sound-3d" onclick="window.ChefCardapio3D.toggleAudio()" style="pointer-events:auto; background:rgba(15,23,42,0.72); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.2); color:#fff; font-size:10px; font-weight:700; padding:4px 9px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                <i class="ph-bold ${isMuted ? 'ph-speaker-slash' : 'ph-speaker-high'}" id="icon-sound-status"></i>
+                <span id="label-sound-status">${isMuted ? 'ASMR Mudo' : 'ASMR On'}</span>
+              </button>
+              <span style="background:rgba(15,23,42,0.72); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:#f59e0b; font-size:10px; font-weight:800; padding:4px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:3px; border:1px solid rgba(245,158,11,0.3);">
+                <i class="ph-fill ph-sparkle"></i> 3D Ultra
+              </span>
+            </div>
           </div>
 
+          <!-- Controles Inferiores: Dica de Toque + Vapor -->
           <div style="position:absolute; bottom:8px; left:8px; right:8px; display:flex; justify-content:space-between; align-items:center; z-index:2; pointer-events:none;">
-            <span style="background:rgba(15,23,42,0.72); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:#fff; font-size:10.5px; font-weight:600; padding:3px 10px; border-radius:20px; display:inline-flex; align-items:center; gap:5px;">
-              <i class="ph-bold ph-hand-pointing" style="color:#f59e0b;"></i> Toque e gire o prato
+            <span style="background:rgba(15,23,42,0.72); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:#fff; font-size:10px; font-weight:600; padding:4px 10px; border-radius:20px; display:inline-flex; align-items:center; gap:5px;">
+              <i class="ph-bold ph-hand-pointing" style="color:#f59e0b;"></i> Gire para ouvir o ASMR
             </span>
             <button type="button" id="btn-toggle-steam-3d" onclick="window.ChefCardapio3D.toggleSteam()" style="pointer-events:auto; background:rgba(15,23,42,0.72); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.2); color:#fff; font-size:10px; font-weight:700; padding:4px 9px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:all 0.2s ease;">
               <i class="ph-bold ph-wind"></i> <span id="label-steam-status">Vapor On</span>
@@ -426,7 +660,6 @@
         </div>
       `;
 
-      // Insere logo abaixo do emoji e título
       const titleWrapper = document.getElementById('modal-item-description');
       if (titleWrapper) {
         titleWrapper.insertAdjacentHTML('afterend', stageHtml);
@@ -438,9 +671,6 @@
       this.dishStage = new DishRenderer();
     },
 
-    /**
-     * Atualiza o prato 3D quando o usuário clica em um item
-     */
     showDish3D: function (item) {
       if (!this.isEnabled || !this.dishStage) return;
       const stage = document.getElementById('modal-3d-stage');
@@ -456,28 +686,57 @@
     },
 
     toggleSteam: function () {
+      ChefHaptics.switchToggle();
       if (this.dishStage) this.dishStage.toggleSteam();
     },
 
-    /**
-     * ─── 3. PARTÍCULAS DE ADIÇÃO AO CARRINHO (Fly-to-Cart 3D) ───
-     */
+    // ─── ABERTURA DA REALIDADE AUMENTADA (AR) ───
+    openAR: function () {
+      ChefHaptics.switchToggle();
+      if (!this.dishStage || !this.dishStage.currentItem) {
+        if (typeof showToast === 'function') showToast('Selecione um prato para ver em AR.', 'info');
+        return;
+      }
+      ChefARSession.start(this.dishStage.currentItem, this.dishStage);
+    },
+
+    closeAR: function () {
+      ChefHaptics.switchToggle();
+      ChefARSession.stop();
+    },
+
+    resetARScale: function () {
+      ChefHaptics.tick();
+      ChefARSession.resetScale();
+    },
+
+    takeARSnapshot: function () {
+      ChefARSession.takeSnapshot();
+    },
+
+    addFromAR: function () {
+      this.closeAR();
+      window.adicionarItemAoCarrinho && window.adicionarItemAoCarrinho();
+    },
+
+    // ─── FLY-TO-CART 3D ───
     initFlyToCart: function () {
       this.flyEffect = new FlyToCartManager();
     },
 
     triggerAddToCartFly: function (startEl) {
+      ChefGastronomicAudio.playAddToCart();
+      ChefHaptics.pop();
+
       if (!this.isEnabled || !this.flyEffect) return;
       const cartFab = document.getElementById('fab-cart');
       if (!cartFab) return;
       this.flyEffect.spawn(startEl || document.querySelector('.btn-submit'), cartFab);
     },
 
-    /**
-     * ─── 4. PARALLAX & TILT 3D NOS CARDS DO CARDÁPIO ───
-     */
+    // ─── TILT 3D NOS CARDS ───
     initCard3DTilt: function () {
-      if (window.matchMedia('(hover: none)').matches) return; // Apenas desktop/trackpad
+      if (window.matchMedia('(hover: none)').matches) return;
 
       document.addEventListener('mousemove', (e) => {
         if (!this.isEnabled) return;
@@ -507,11 +766,9 @@
     }
   };
 
-  /**
-   * ══════════════════════════════════════════════════════════════════════════
-   * CLASSE: DishRenderer (Palco 3D Procedural de Pratos Gourmet)
-   * ══════════════════════════════════════════════════════════════════════════
-   */
+  // ══════════════════════════════════════════════════════════════════════════
+  // MÓDULO 4: PALCO 3D DO PRATO (DishRenderer)
+  // ══════════════════════════════════════════════════════════════════════════
   function DishRenderer() {
     this.canvas = document.getElementById('dish-3d-canvas');
     if (!this.canvas) return;
@@ -531,39 +788,34 @@
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    // Iluminação de Estúdio de Gastronomia
     this.setupLighting();
 
-    // Grupo Giratório Principal (Turntable)
     this.dishGroup = new THREE.Group();
     this.scene.add(this.dishGroup);
 
-    // Vapor / Fumaça Culinária
     this.steamEnabled = true;
     this.steamParticles = [];
     this.initSteamSystem();
 
-    // Controles de Toque / Arrastar
     this.isDragging = false;
     this.prevMouseX = 0;
     this.prevMouseY = 0;
     this.autoRotate = true;
     this.rotVelocityX = 0;
-    this.rotVelocityY = 0;
+    this.rotDegreeAccumulator = 0;
+    this.currentItem = null;
+
     this.setupInteraction();
 
-    // Render loop
     this.active = false;
     this.animId = null;
     this.clock = new THREE.Clock();
   }
 
   DishRenderer.prototype.setupLighting = function () {
-    // Luz ambiente suave
     const amb = new THREE.AmbientLight(0xfff7ed, 0.9);
     this.scene.add(amb);
 
-    // Key Light (Luz quente principal com sombras suaves)
     const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
     keyLight.position.set(4, 7, 5);
     keyLight.castShadow = true;
@@ -571,12 +823,10 @@
     keyLight.shadow.mapSize.height = 1024;
     this.scene.add(keyLight);
 
-    // Rim Light (Fresnel dourado gastronômico por trás)
     const rimLight = new THREE.DirectionalLight(0xf59e0b, 1.1);
     rimLight.position.set(-4, 3, -4);
     this.scene.add(rimLight);
 
-    // Fill Light azulada suave para contraste
     const fillLight = new THREE.PointLight(0x38bdf8, 0.6, 10);
     fillLight.position.set(0, -1, 3);
     this.scene.add(fillLight);
@@ -592,6 +842,8 @@
       self.prevMouseX = clientX;
       self.prevMouseY = clientY;
       el.style.cursor = 'grabbing';
+      ChefGastronomicAudio.init();
+      ChefGastronomicAudio.resume();
     };
 
     const onMove = (clientX, clientY) => {
@@ -605,6 +857,29 @@
       self.rotVelocityX = dx * 0.004;
       self.prevMouseX = clientX;
       self.prevMouseY = clientY;
+
+      // Gatilho de Áudio ASMR & Háptica a cada rotação
+      if (Math.abs(dx) > 3) {
+        self.rotDegreeAccumulator += Math.abs(dx);
+        if (self.rotDegreeAccumulator > 32) {
+          self.rotDegreeAccumulator = 0;
+          ChefHaptics.tick();
+
+          if (self.currentItem) {
+            const n = (self.currentItem.nome || '').toLowerCase();
+            const c = (self.currentItem.categoria || '').toLowerCase();
+            if (c.includes('cerveja') || c.includes('bebida') || n.includes('chopp')) {
+              ChefGastronomicAudio.playFizz();
+            } else if (n.includes('filé') || n.includes('picanha') || c.includes('chapa') || c.includes('prato')) {
+              ChefGastronomicAudio.playSizzle();
+            } else if (n.includes('camar') || n.includes('peixe') || n.includes('ostra') || n.includes('siri')) {
+              ChefGastronomicAudio.playOceanChime();
+            } else if (c.includes('sobremesa') || n.includes('pudim')) {
+              ChefGastronomicAudio.playDessertChime();
+            }
+          }
+        }
+      }
     };
 
     const onEnd = () => {
@@ -679,11 +954,9 @@
     if (lbl) lbl.innerText = this.steamEnabled ? 'Vapor On' : 'Vapor Off';
   };
 
-  /**
-   * Constrói o modelo 3D correspondente ao produto selecionado
-   */
   DishRenderer.prototype.loadItem = function (item) {
-    // Limpa malhas anteriores do prato
+    this.currentItem = item;
+
     while (this.dishGroup.children.length > 0) {
       const obj = this.dishGroup.children[0];
       this.dishGroup.remove(obj);
@@ -694,74 +967,44 @@
       }
     }
 
-    // Reinicia vapor
     this.initSteamSystem();
 
     const nome = (item.nome || '').toLowerCase();
     const cat = (item.categoria || '').toLowerCase();
 
-    // 1. Frutos do Mar / Camarão / Peixes
     if (nome.includes('camar') || cat.includes('camar') || nome.includes('peixe') || nome.includes('ostra') || nome.includes('marisco') || nome.includes('siri')) {
-      this.buildSeafoodPlate(item);
-    }
-    // 2. Cervejas / Chopp / Bebidas em Copo/Garrafa
-    else if (cat.includes('cerveja') || cat.includes('bebida') || nome.includes('chopp') || nome.includes('heineken') || nome.includes('stella') || nome.includes('spaten') || nome.includes('refrigerante') || nome.includes('coca')) {
-      this.buildDrinkModel(item);
-    }
-    // 3. Drinks / Caipirinhas / Doses
-    else if (cat.includes('caipirinha') || cat.includes('drink') || cat.includes('dose') || nome.includes('caipir')) {
-      this.buildCocktailModel(item);
-    }
-    // 4. Sobremesas / Pudim
-    else if (cat.includes('sobremesa') || nome.includes('pudim') || nome.includes('doce')) {
-      this.buildDessertModel(item);
-    }
-    // 5. Carnes / Pratos Quentes / Filé
-    else if (nome.includes('filé') || nome.includes('file') || nome.includes('picanha') || nome.includes('frango') || cat.includes('prato') || cat.includes('chapa')) {
-      this.buildMeatSkillet(item);
-    }
-    // 6. Porções e Petiscos / Fritas / Pastéis
-    else {
-      this.buildSnackBasket(item);
+      this.buildSeafoodPlate();
+    } else if (cat.includes('cerveja') || cat.includes('bebida') || nome.includes('chopp') || nome.includes('heineken') || nome.includes('stella') || nome.includes('spaten') || nome.includes('refrigerante') || nome.includes('coca')) {
+      this.buildDrinkModel();
+    } else if (cat.includes('caipirinha') || cat.includes('drink') || cat.includes('dose') || nome.includes('caipir')) {
+      this.buildCocktailModel();
+    } else if (cat.includes('sobremesa') || nome.includes('pudim') || nome.includes('doce')) {
+      this.buildDessertModel();
+    } else if (nome.includes('filé') || nome.includes('file') || nome.includes('picanha') || nome.includes('frango') || cat.includes('prato') || cat.includes('chapa')) {
+      this.buildMeatSkillet();
+    } else {
+      this.buildSnackBasket();
     }
 
     this.dishGroup.rotation.set(0.18, 0, 0);
     this.start();
   };
 
-  /**
-   * Construtor 3D: Prato de Frutos do Mar com Camarões e Limão
-   */
   DishRenderer.prototype.buildSeafoodPlate = function () {
-    // 1. Prato de Cerâmica Escura Vulcânica Gourmet
     const plateGeom = new THREE.CylinderGeometry(2.1, 1.6, 0.22, 48);
-    const plateMat = new THREE.MeshStandardMaterial({
-      color: 0x18181b,
-      roughness: 0.35,
-      metalness: 0.15
-    });
+    const plateMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.35, metalness: 0.15 });
     const plate = new THREE.Mesh(plateGeom, plateMat);
     plate.position.y = -0.11;
     plate.receiveShadow = true;
     this.dishGroup.add(plate);
 
-    // 2. Base de Cama Culinária (Pirão / Salada nobre)
     const baseGeom = new THREE.CylinderGeometry(1.65, 1.7, 0.12, 32);
-    const baseMat = new THREE.MeshStandardMaterial({
-      color: 0xd97706,
-      roughness: 0.8
-    });
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.8 });
     const base = new THREE.Mesh(baseGeom, baseMat);
     base.position.y = 0.05;
     this.dishGroup.add(base);
 
-    // 3. Camarões Suculentos em Curva (Torus Geometries com material coral brilhante)
-    const shrimpMat = new THREE.MeshStandardMaterial({
-      color: 0xf97316,
-      roughness: 0.25,
-      metalness: 0.1
-    });
-
+    const shrimpMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.25, metalness: 0.1 });
     const shrimpAngles = [0, 1.25, 2.5, 3.75, 5.0];
     shrimpAngles.forEach((ang) => {
       const sGeom = new THREE.TorusGeometry(0.42, 0.15, 14, 28, Math.PI * 1.35);
@@ -773,18 +1016,13 @@
       this.dishGroup.add(shrimp);
     });
 
-    // 4. Rodelas / Fatias de Limão Siciliano
     const lemonGeom = new THREE.CylinderGeometry(0.35, 0.35, 0.06, 18);
-    const lemonMat = new THREE.MeshStandardMaterial({
-      color: 0xfacc15,
-      roughness: 0.4
-    });
+    const lemonMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
     const lemon = new THREE.Mesh(lemonGeom, lemonMat);
     lemon.position.set(0, 0.22, 0);
     lemon.rotation.x = 0.2;
     this.dishGroup.add(lemon);
 
-    // 5. Ervas Finas Frescas (Salpicos verdes)
     const herbGeom = new THREE.DodecahedronGeometry(0.06);
     const herbMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.9 });
     for (let i = 0; i < 14; i++) {
@@ -794,11 +1032,7 @@
     }
   };
 
-  /**
-   * Construtor 3D: Caneco / Taça de Cerveja & Chopp com Espuma
-   */
   DishRenderer.prototype.buildDrinkModel = function () {
-    // 1. Caneca de Vidro Transparente com Efeito de Refração
     const glassGeom = new THREE.CylinderGeometry(0.95, 0.85, 2.3, 32, 1, true);
     const glassMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
@@ -813,41 +1047,29 @@
     glass.position.y = 1.15;
     this.dishGroup.add(glass);
 
-    // 2. Fundo Grosso do Caneco
     const bottomGeom = new THREE.CylinderGeometry(0.85, 0.88, 0.2, 32);
     const bottom = new THREE.Mesh(bottomGeom, glassMat);
     bottom.position.y = 0.1;
     this.dishGroup.add(bottom);
 
-    // 3. Líquido Dourado Puro Malte
     const beerGeom = new THREE.CylinderGeometry(0.9, 0.82, 1.9, 32);
-    const beerMat = new THREE.MeshStandardMaterial({
-      color: 0xf59e0b,
-      roughness: 0.15,
-      metalness: 0.2
-    });
+    const beerMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.15, metalness: 0.2 });
     const beer = new THREE.Mesh(beerGeom, beerMat);
     beer.position.y = 1.05;
     this.dishGroup.add(beer);
 
-    // 4. Colarinho de Espuma Cremosa
     const foamGeom = new THREE.CylinderGeometry(0.97, 0.92, 0.42, 32);
-    const foamMat = new THREE.MeshStandardMaterial({
-      color: 0xfffbeb,
-      roughness: 0.85
-    });
+    const foamMat = new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.85 });
     const foam = new THREE.Mesh(foamGeom, foamMat);
     foam.position.y = 2.18;
     this.dishGroup.add(foam);
 
-    // 5. Alça do Caneco
     const handleGeom = new THREE.TorusGeometry(0.55, 0.12, 16, 32, Math.PI);
     const handle = new THREE.Mesh(handleGeom, glassMat);
     handle.position.set(0.98, 1.25, 0);
     handle.rotation.z = -Math.PI / 2;
     this.dishGroup.add(handle);
 
-    // 6. Bolhas de efervescência subindo no chopp
     const bCount = 20;
     const bGeom = new THREE.SphereGeometry(0.04, 8, 8);
     const bMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -858,42 +1080,20 @@
     }
   };
 
-  /**
-   * Construtor 3D: Copo de Caipirinha & Drinks com Gelo e Limão
-   */
   DishRenderer.prototype.buildCocktailModel = function () {
-    // Copo Baixo (Old Fashioned)
     const glassGeom = new THREE.CylinderGeometry(1.05, 0.95, 1.8, 28);
-    const glassMat = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.35,
-      roughness: 0.1
-    });
+    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, roughness: 0.1 });
     const glass = new THREE.Mesh(glassGeom, glassMat);
     glass.position.y = 0.9;
     this.dishGroup.add(glass);
 
-    // Líquido Cítrico
     const liquidGeom = new THREE.CylinderGeometry(0.98, 0.9, 1.45, 28);
-    const liquidMat = new THREE.MeshStandardMaterial({
-      color: 0x84cc16,
-      transparent: true,
-      opacity: 0.75,
-      roughness: 0.2
-    });
+    const liquidMat = new THREE.MeshStandardMaterial({ color: 0x84cc16, transparent: true, opacity: 0.75, roughness: 0.2 });
     const liquid = new THREE.Mesh(liquidGeom, liquidMat);
     liquid.position.y = 0.75;
     this.dishGroup.add(liquid);
 
-    // Pedras de Gelo Cúbicas Translúcidas
-    const iceMat = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.55,
-      roughness: 0.05,
-      metalness: 0.1
-    });
+    const iceMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, roughness: 0.05, metalness: 0.1 });
     const iceGeom = new THREE.BoxGeometry(0.48, 0.48, 0.48);
 
     const ice1 = new THREE.Mesh(iceGeom, iceMat);
@@ -906,7 +1106,6 @@
     ice2.rotation.set(0.6, -0.3, 0.4);
     this.dishGroup.add(ice2);
 
-    // Fatias de Limão no topo
     const limeGeom = new THREE.CylinderGeometry(0.4, 0.4, 0.07, 16);
     const limeMat = new THREE.MeshStandardMaterial({ color: 0x65a30d, roughness: 0.35 });
     const lime = new THREE.Mesh(limeGeom, limeMat);
@@ -915,42 +1114,30 @@
     this.dishGroup.add(lime);
   };
 
-  /**
-   * Construtor 3D: Pudim de Leite Artesanal com Calda de Caramelo Dourada
-   */
   DishRenderer.prototype.buildDessertModel = function () {
-    // Prato de Sobremesa em Porcelana Branca Nobre
     const plateGeom = new THREE.CylinderGeometry(2.0, 1.5, 0.18, 48);
     const plateMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.05 });
     const plate = new THREE.Mesh(plateGeom, plateMat);
     plate.position.y = -0.09;
     this.dishGroup.add(plate);
 
-    // Pudim Cremoso com Furo Central
     const puddingGeom = new THREE.CylinderGeometry(1.0, 1.35, 0.8, 36);
     const puddingMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.4 });
     const pudding = new THREE.Mesh(puddingGeom, puddingMat);
     pudding.position.y = 0.4;
     this.dishGroup.add(pudding);
 
-    // Calda Dourada Espelhada de Caramelo
     const caramelGeom = new THREE.CylinderGeometry(1.02, 1.05, 0.16, 36);
-    const caramelMat = new THREE.MeshStandardMaterial({
-      color: 0x9a3412,
-      roughness: 0.15,
-      metalness: 0.3
-    });
+    const caramelMat = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.15, metalness: 0.3 });
     const caramel = new THREE.Mesh(caramelGeom, caramelMat);
     caramel.position.y = 0.82;
     this.dishGroup.add(caramel);
 
-    // Calda escorrida na base do prato
     const syrupPoolGeom = new THREE.CylinderGeometry(1.7, 1.7, 0.04, 32);
     const pool = new THREE.Mesh(syrupPoolGeom, caramelMat);
     pool.position.y = 0.02;
     this.dishGroup.add(pool);
 
-    // Folha de Hortelã Fresca decorativa no topo
     const mintGeom = new THREE.ConeGeometry(0.18, 0.35, 8);
     const mintMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.5 });
     const mint = new THREE.Mesh(mintGeom, mintMat);
@@ -959,38 +1146,30 @@
     this.dishGroup.add(mint);
   };
 
-  /**
-   * Construtor 3D: Frigideira de Ferro com Filé Grelhado
-   */
   DishRenderer.prototype.buildMeatSkillet = function () {
-    // Frigideira de Ferro Fundido
     const panGeom = new THREE.CylinderGeometry(1.9, 1.7, 0.35, 36);
     const panMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.6, metalness: 0.5 });
     const pan = new THREE.Mesh(panGeom, panMat);
     pan.position.y = 0.17;
     this.dishGroup.add(pan);
 
-    // Cabo da frigideira
     const handleGeom = new THREE.BoxGeometry(0.28, 0.14, 1.6);
     const handle = new THREE.Mesh(handleGeom, panMat);
     handle.position.set(0, 0.22, 2.3);
     this.dishGroup.add(handle);
 
-    // Bife Alto de Filé Grelhado
     const steakGeom = new THREE.CylinderGeometry(1.1, 1.15, 0.32, 24);
     const steakMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.7 });
     const steak = new THREE.Mesh(steakGeom, steakMat);
     steak.position.y = 0.42;
     this.dishGroup.add(steak);
 
-    // Manteiga de Ervas derretendo por cima
     const butterGeom = new THREE.CylinderGeometry(0.3, 0.35, 0.12, 16);
     const butterMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.25 });
     const butter = new THREE.Mesh(butterGeom, butterMat);
     butter.position.set(0.1, 0.62, -0.05);
     this.dishGroup.add(butter);
 
-    // Batatas Rústicas Douradas ao redor
     const fryMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.5 });
     const fryGeom = new THREE.BoxGeometry(0.18, 0.18, 0.7);
     for (let i = 0; i < 5; i++) {
@@ -1002,18 +1181,13 @@
     }
   };
 
-  /**
-   * Construtor 3D: Cestinha de Pastéis Artesanais ou Porções
-   */
   DishRenderer.prototype.buildSnackBasket = function () {
-    // Tábua de Madeira Nobre
     const boardGeom = new THREE.CylinderGeometry(1.9, 1.9, 0.18, 36);
     const boardMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.75 });
     const board = new THREE.Mesh(boardGeom, boardMat);
     board.position.y = 0.09;
     this.dishGroup.add(board);
 
-    // Pastéis Dourados e Crocantes em Leque
     const pastelMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4, metalness: 0.1 });
     const pastelGeom = new THREE.BoxGeometry(1.1, 0.14, 0.8);
 
@@ -1025,7 +1199,6 @@
       this.dishGroup.add(pastel);
     }
 
-    // Molheira de Cerâmica Branca com Molho da Casa
     const ramekinGeom = new THREE.CylinderGeometry(0.45, 0.35, 0.32, 24);
     const ramekinMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
     const ramekin = new THREE.Mesh(ramekinGeom, ramekinMat);
@@ -1048,17 +1221,14 @@
       if (!self.active) return;
       self.animId = requestAnimationFrame(render);
 
-      // Rotação suave do prato
       if (self.autoRotate && !self.isDragging) {
         self.dishGroup.rotation.y += 0.007;
       } else if (!self.isDragging) {
-        // Amortecimento inercial
         self.dishGroup.rotation.y += self.rotVelocityX;
         self.rotVelocityX *= 0.92;
         if (Math.abs(self.rotVelocityX) < 0.0005) self.autoRotate = true;
       }
 
-      // Animação de vapor culinário
       if (self.steamEnabled && self.steamMesh && self.steamData) {
         const pos = self.steamMesh.geometry.attributes.position.array;
         for (let i = 0; i < self.steamData.length; i++) {
@@ -1090,11 +1260,352 @@
     this.renderer.dispose();
   };
 
-  /**
-   * ══════════════════════════════════════════════════════════════════════════
-   * CLASSE: FlyToCartManager (Arco 3D de Partículas ao Adicionar Item)
-   * ══════════════════════════════════════════════════════════════════════════
-   */
+  // ══════════════════════════════════════════════════════════════════════════
+  // MÓDULO 5: SESSÃO DE REALIDADE AUMENTADA (ChefARSession)
+  // ══════════════════════════════════════════════════════════════════════════
+  const ChefARSession = {
+    overlay: null,
+    video: null,
+    canvas: null,
+    stream: null,
+    scene: null,
+    camera: null,
+    renderer: null,
+    dishGroup: null,
+    reticle: null,
+    animId: null,
+    dishScale: 1.0,
+    item: null,
+
+    start: function (item, sourceStage) {
+      this.item = item;
+      this.createOverlay();
+
+      const constraints = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false
+      };
+
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then((stream) => {
+          this.stream = stream;
+          this.video.srcObject = stream;
+          this.video.play();
+          this.overlay.style.display = 'flex';
+          this.initARScene(item, sourceStage);
+          ChefHaptics.arPlace();
+        })
+        .catch((err) => {
+          console.error('[ChefARSession] Erro ao acessar câmera:', err);
+          if (typeof showToast === 'function') {
+            showToast('Permissão de câmera necessária para projetar o prato na mesa.', 'warning');
+          } else {
+            alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.');
+          }
+          this.stop();
+        });
+    },
+
+    createOverlay: function () {
+      if (this.overlay) return;
+
+      const div = document.createElement('div');
+      div.id = 'chef-ar-overlay';
+      div.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 999999;
+        background: #000;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+      `;
+
+      div.innerHTML = `
+        <video id="chef-ar-video" autoplay playsinline muted style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;"></video>
+        <canvas id="chef-ar-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:auto; outline:none; touch-action:none;"></canvas>
+
+        <!-- Barra Superior -->
+        <div style="position:absolute; top:calc(env(safe-area-inset-top, 16px) + 12px); left:16px; right:16px; display:flex; justify-content:space-between; align-items:center; z-index:10; pointer-events:none;">
+          <div style="background:rgba(15,23,42,0.82); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.18); border-radius:16px; padding:8px 14px; color:#fff; pointer-events:auto; box-shadow:0 4px 14px rgba(0,0,0,0.25);">
+            <div id="ar-dish-name" style="font-weight:800; font-size:13.5px; color:#fff; max-width:210px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Prato em AR</div>
+            <div id="ar-dish-price" style="font-size:12px; font-weight:700; color:#fc4b15;">R$ 0,00</div>
+          </div>
+
+          <div style="display:flex; gap:8px; pointer-events:auto;">
+            <button type="button" id="btn-ar-reset-scale" onclick="window.ChefCardapio3D.resetARScale()" style="background:rgba(15,23,42,0.82); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.18); color:#f59e0b; font-size:11px; font-weight:800; padding:8px 12px; border-radius:14px; cursor:pointer;">
+              <span id="ar-scale-label">100% Real</span>
+            </button>
+            <button type="button" onclick="window.ChefCardapio3D.closeAR()" style="background:rgba(15,23,42,0.85); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.2); color:#fff; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:bold; cursor:pointer;">
+              &times;
+            </button>
+          </div>
+        </div>
+
+        <!-- Banner Central de Orientação -->
+        <div id="ar-hint-banner" style="position:absolute; top:86px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.78); backdrop-filter:blur(10px); color:#fff; padding:6px 14px; border-radius:20px; font-size:11.5px; font-weight:600; display:flex; align-items:center; gap:6px; z-index:10; pointer-events:none; border:1px solid rgba(255,255,255,0.12); white-space:nowrap;">
+          <i class="ph-bold ph-hand-pointing" style="color:#f59e0b;"></i> Aponte para a mesa e arraste para posicionar
+        </div>
+
+        <!-- Barra Inferior com Captura de Foto e Adicionar -->
+        <div style="position:absolute; bottom:calc(env(safe-area-inset-bottom, 16px) + 16px); left:16px; right:16px; display:flex; justify-content:space-between; align-items:center; z-index:10;">
+          <button type="button" onclick="window.ChefCardapio3D.takeARSnapshot()" style="flex:1; margin-right:10px; padding:12px 16px; border-radius:16px; background:linear-gradient(135deg, #fc4b15, #f59e0b); color:#fff; border:none; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 16px rgba(252,75,21,0.4);">
+            <i class="ph-bold ph-camera" style="font-size:17px;"></i> Tirar Foto na Mesa
+          </button>
+          <button type="button" onclick="window.ChefCardapio3D.addFromAR()" style="padding:12px 18px; border-radius:16px; background:#10b981; color:#fff; border:none; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 16px rgba(16,185,129,0.35);">
+            <i class="ph-bold ph-plus-circle" style="font-size:17px;"></i> Pedir
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(div);
+      this.overlay = div;
+      this.video = div.querySelector('#chef-ar-video');
+      this.canvas = div.querySelector('#chef-ar-canvas');
+    },
+
+    initARScene: function (item) {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      document.getElementById('ar-dish-name').innerText = item.nome || 'Prato Especial';
+      document.getElementById('ar-dish-price').innerText = `R$ ${parseFloat(item.preco || 0).toFixed(2).replace('.', ',')}`;
+
+      this.scene = new THREE.Scene();
+      this.camera = new THREE.PerspectiveCamera(55, w / h, 0.1, 100);
+      this.camera.position.set(0, 2.5, 4.2);
+      this.camera.lookAt(0, 0, 0);
+
+      this.renderer = new THREE.WebGLRenderer({
+        canvas: this.canvas,
+        alpha: true,
+        antialias: true,
+        powerPreference: 'high-performance',
+        preserveDrawingBuffer: true
+      });
+      this.renderer.setSize(w, h);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      // Iluminação com sombra de mesa realista
+      const ambLight = new THREE.AmbientLight(0xffffff, 1.2);
+      this.scene.add(ambLight);
+
+      const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.5);
+      dirLight.position.set(2, 6, 3);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 1024;
+      dirLight.shadow.mapSize.height = 1024;
+      this.scene.add(dirLight);
+
+      // Plano de Sombra Invisível na Superfície da Mesa
+      const shadowPlaneGeo = new THREE.PlaneGeometry(12, 12);
+      const shadowPlaneMat = new THREE.ShadowMaterial({ opacity: 0.45 });
+      const shadowPlane = new THREE.Mesh(shadowPlaneGeo, shadowPlaneMat);
+      shadowPlane.rotation.x = -Math.PI / 2;
+      shadowPlane.position.y = -0.01;
+      shadowPlane.receiveShadow = true;
+      this.scene.add(shadowPlane);
+
+      // Retículo circular indicador da mesa
+      const reticleGeo = new THREE.RingGeometry(1.6, 1.68, 36);
+      const reticleMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+      this.reticle = new THREE.Mesh(reticleGeo, reticleMat);
+      this.reticle.rotation.x = -Math.PI / 2;
+      this.reticle.position.y = 0.01;
+      this.scene.add(this.reticle);
+
+      // Grupo do Prato em AR
+      this.dishGroup = new THREE.Group();
+      this.scene.add(this.dishGroup);
+
+      // Clona o prato ativo usando o builder correspondente
+      const tempStage = new DishRenderer();
+      tempStage.dishGroup = this.dishGroup;
+      tempStage.loadItem(item);
+      tempStage.pause();
+
+      this.dishScale = 1.0;
+      this.dishGroup.scale.set(1.0, 1.0, 1.0);
+      this.dishGroup.position.set(0, 0, 0);
+
+      this.setupARGestures();
+
+      const self = this;
+      function renderLoop() {
+        self.animId = requestAnimationFrame(renderLoop);
+
+        // Pulso do retículo
+        if (self.reticle) {
+          const s = 1.0 + Math.sin(Date.now() * 0.003) * 0.05;
+          self.reticle.scale.set(s, s, s);
+        }
+
+        self.renderer.render(self.scene, self.camera);
+      }
+      renderLoop();
+    },
+
+    setupARGestures: function () {
+      const el = this.canvas;
+      const self = this;
+
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let initialDist = 0;
+      let initialScale = 1.0;
+
+      const getTouchDist = (t1, t2) => {
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+      };
+
+      el.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          isDragging = true;
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+          isDragging = false;
+          initialDist = getTouchDist(e.touches[0], e.touches[1]);
+          initialScale = self.dishScale;
+        }
+      }, { passive: true });
+
+      el.addEventListener('touchmove', (e) => {
+        if (isDragging && e.touches.length === 1) {
+          const dx = e.touches[0].clientX - startX;
+          const dy = e.touches[0].clientY - startY;
+
+          self.dishGroup.position.x += dx * 0.006;
+          self.dishGroup.position.z += dy * 0.006;
+          self.reticle.position.x = self.dishGroup.position.x;
+          self.reticle.position.z = self.dishGroup.position.z;
+
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+          const currentDist = getTouchDist(e.touches[0], e.touches[1]);
+          const ratio = currentDist / initialDist;
+          self.dishScale = Math.max(0.5, Math.min(1.8, initialScale * ratio));
+          self.dishGroup.scale.set(self.dishScale, self.dishScale, self.dishScale);
+
+          const lbl = document.getElementById('ar-scale-label');
+          if (lbl) lbl.innerText = `${Math.round(self.dishScale * 100)}% Real`;
+        }
+      }, { passive: true });
+
+      el.addEventListener('touchend', () => {
+        isDragging = false;
+        ChefHaptics.tick();
+      });
+
+      // Mouse drag no desktop
+      let isMouseDown = false;
+      el.addEventListener('mousedown', (e) => {
+        isMouseDown = true;
+        startX = e.clientX;
+        startY = e.clientY;
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!isMouseDown) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        self.dishGroup.position.x += dx * 0.006;
+        self.dishGroup.position.z += dy * 0.006;
+        self.reticle.position.x = self.dishGroup.position.x;
+        self.reticle.position.z = self.dishGroup.position.z;
+        startX = e.clientX;
+        startY = e.clientY;
+      });
+      window.addEventListener('mouseup', () => { isMouseDown = false; });
+    },
+
+    resetScale: function () {
+      this.dishScale = 1.0;
+      if (this.dishGroup) this.dishGroup.scale.set(1, 1, 1);
+      const lbl = document.getElementById('ar-scale-label');
+      if (lbl) lbl.innerText = '100% Real';
+    },
+
+    takeSnapshot: function () {
+      ChefGastronomicAudio.playShutter();
+      ChefHaptics.pop();
+
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const snapCanvas = document.createElement('canvas');
+      snapCanvas.width = w;
+      snapCanvas.height = h;
+      const ctx = snapCanvas.getContext('2d');
+
+      // Desenha frame da câmera
+      if (this.video) ctx.drawImage(this.video, 0, 0, w, h);
+      // Sobrepõe o prato 3D renderizado
+      if (this.canvas) ctx.drawImage(this.canvas, 0, 0, w, h);
+
+      // Marca d'água gastronômica elegante
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+      ctx.roundRect(16, h - 54, 230, 38, 12);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.fillText(this.item ? this.item.nome : 'Chef Cozinha AR', 28, h - 35);
+      ctx.fillStyle = '#fc4b15';
+      ctx.font = 'bold 10px Inter, sans-serif';
+      ctx.fillText('✨ Experiência 3D Realidade Aumentada', 28, h - 22);
+
+      snapCanvas.toBlob((blob) => {
+        if (!blob) return;
+        const file = new File([blob], 'Prato_ChefCozinha_AR.jpg', { type: 'image/jpeg' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({
+            title: this.item ? this.item.nome : 'Prato Chef Cozinha em AR',
+            text: 'Veja esse prato na minha mesa pelo cardápio digital do Chef Cozinha!',
+            files: [file]
+          }).catch(() => { });
+        } else {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `ChefCozinha_AR_${Date.now()}.jpg`;
+          a.click();
+          if (typeof showToast === 'function') {
+            showToast('📸 Foto salva com sucesso!', 'success');
+          }
+        }
+      }, 'image/jpeg', 0.95);
+    },
+
+    stop: function () {
+      if (this.animId) cancelAnimationFrame(this.animId);
+      if (this.stream) {
+        this.stream.getTracks().forEach(t => t.stop());
+        this.stream = null;
+      }
+      if (this.overlay) {
+        this.overlay.style.display = 'none';
+      }
+      if (this.renderer) {
+        this.renderer.dispose();
+      }
+    }
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // MÓDULO 6: VÓRTICE DE ADIÇÃO AO CARRINHO (Fly-to-Cart)
+  // ══════════════════════════════════════════════════════════════════════════
   function FlyToCartManager() {
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'cart-fly-canvas';
@@ -1130,7 +1641,7 @@
     const targetX = r2.left + r2.width / 2;
     const targetY = r2.top + r2.height / 2;
 
-    const count = 28;
+    const count = 30;
     for (let i = 0; i < count; i++) {
       const delay = Math.random() * 0.25;
       const controlX = (startX + targetX) / 2 + (Math.random() - 0.5) * 160;
@@ -1146,8 +1657,7 @@
         progress: -delay,
         speed: 0.024 + Math.random() * 0.015,
         size: Math.random() * 6 + 3,
-        color: Math.random() > 0.4 ? '#fc4b15' : '#f59e0b',
-        trail: []
+        color: Math.random() > 0.4 ? '#fc4b15' : '#f59e0b'
       });
     }
 
@@ -1172,7 +1682,6 @@
 
         if (p.progress < 0) continue;
 
-        // Curva Bezier Quadrática B(t) = (1-t)^2 P0 + 2(1-t)t P1 + t^2 P2
         const t = p.progress;
         const mt = 1 - t;
         const x = mt * mt * p.startX + 2 * mt * t * p.controlX + t * t * p.targetX;
@@ -1192,7 +1701,6 @@
         self.animId = requestAnimationFrame(loop);
       } else {
         self.animId = null;
-        // Efeito de impacto no botão do carrinho
         const cartFab = document.getElementById('fab-cart');
         if (cartFab) {
           cartFab.style.transform = 'scale(1.22)';
@@ -1208,6 +1716,8 @@
   // INICIALIZAÇÃO AUTOMÁTICA
   // ══════════════════════════════════════════════════════════════════════════
   window.ChefCardapio3D = ChefCardapio3D;
+  window.ChefGastronomicAudio = ChefGastronomicAudio;
+  window.ChefHaptics = ChefHaptics;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => ChefCardapio3D.init());
