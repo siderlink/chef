@@ -1285,7 +1285,7 @@ function renderOrders() {
             </div>
             <div class="mesa-client" style="color: var(--text-secondary);"><i class="ph ph-armchair" style="margin-right:3px;"></i> ${escHtml(entry.mesaName)}</div>
             <div class="mesa-client">${entry.items} item(s)</div>
-            <div class="mesa-value">R$ ${entry.total.toFixed(2).replace('.', ',')}</div>
+            <div class="mesa-value">R$ ${Math.max(0, entry.total).toFixed(2).replace('.', ',')}</div>
           </div>
       `;
     });
@@ -1357,7 +1357,7 @@ function renderOrders() {
       if (isGroup && taxaCheckbox && taxaCheckbox.checked) {
         totalBase *= 1.1; // Add 10%
       }
-      const valTotal = isGroup ? totalBase.toFixed(2).replace('.', ',') : '0,00';
+      const valTotal = isGroup ? Math.max(0, totalBase).toFixed(2).replace('.', ',') : '0,00';
       let atendente = isGroup ? item.userName : '-';
       let cliente = '-';
       const mesaCli = (!isGroup && window.mesaClientes && window.mesaClientes[nome]) ? window.mesaClientes[nome] : null;
@@ -1814,7 +1814,7 @@ function renderOrders() {
         const descEl = document.getElementById('resumo-descontos');
         if (descEl) descEl.innerText = `R$ ${window.descontoAdicional.toFixed(2).replace('.', ',')}`;
 
-        const formattedTotal = `R$ ${totalComTaxa.toFixed(2).replace('.', ',')}`;
+        const formattedTotal = `R$ ${Math.max(0, totalComTaxa).toFixed(2).replace('.', ',')}`;
         document.getElementById('total-pagar-text').innerText = formattedTotal;
         const mobTotal = document.getElementById('mobile-info-total');
         if (mobTotal) mobTotal.innerText = formattedTotal;
@@ -1918,14 +1918,14 @@ function renderOrders() {
 
         // Atualizar textos antigos (se existirem)
         const elTot = document.getElementById('total-pagar-text');
-        if (elTot) elTot.innerText = `R$ ${finalTotal.toFixed(2).replace('.', ',')}`;
+        if (elTot) elTot.innerText = `R$ ${Math.max(0, finalTotal).toFixed(2).replace('.', ',')}`;
         const elPago = document.getElementById('total-pago-text');
-        if (elPago) elPago.innerText = `R$ ${totalEfetivoPago.toFixed(2).replace('.', ',')}`;
+        if (elPago) elPago.innerText = `R$ ${Math.max(0, totalEfetivoPago).toFixed(2).replace('.', ',')}`;
         const elFalta = document.getElementById('falta-pagar-text');
         if (elFalta) elFalta.innerText = `R$ ${falta > 0 ? falta.toFixed(2).replace('.', ',') : '0,00'}`;
 
         const acoesTotal = document.getElementById('acoes-info-total');
-        if (acoesTotal) acoesTotal.innerText = `R$ ${finalTotal.toFixed(2).replace('.', ',')}`;
+        if (acoesTotal) acoesTotal.innerText = `R$ ${Math.max(0, finalTotal).toFixed(2).replace('.', ',')}`;
         const acoesFalta = document.getElementById('acoes-info-falta');
         if (acoesFalta) acoesFalta.innerText = `Falta: R$ ${falta > 0 ? falta.toFixed(2).replace('.', ',') : '0,00'}`;
 
@@ -1935,16 +1935,16 @@ function renderOrders() {
         const valorServicos = (taxaCheckbox && taxaCheckbox.checked) ? Math.max(0, subtotal - desc) * 0.10 : 0;
 
         const modSubtotal = document.getElementById('checkout-modal-subtotal');
-        if (modSubtotal) modSubtotal.innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+        if (modSubtotal) modSubtotal.innerText = `R$ ${Math.max(0, subtotal).toFixed(2).replace('.', ',')}`;
         const modDesc = document.getElementById('checkout-modal-descontos');
         if (modDesc) modDesc.innerText = `R$ ${desc.toFixed(2).replace('.', ',')}`;
         const modTaxasVal = document.getElementById('checkout-modal-taxas-val');
         if (modTaxasVal) modTaxasVal.innerText = `R$ ${valorServicos.toFixed(2).replace('.', ',')}`;
 
         const modTotal = document.getElementById('checkout-modal-total-pagar');
-        if (modTotal) modTotal.innerText = `R$ ${finalTotal.toFixed(2).replace('.', ',')}`;
+        if (modTotal) modTotal.innerText = `R$ ${Math.max(0, finalTotal).toFixed(2).replace('.', ',')}`;
         const modPago = document.getElementById('checkout-modal-pago');
-        if (modPago) modPago.innerText = `R$ ${totalEfetivoPago.toFixed(2).replace('.', ',')}`;
+        if (modPago) modPago.innerText = `R$ ${Math.max(0, totalEfetivoPago).toFixed(2).replace('.', ',')}`;
 
         const modRest = document.getElementById('checkout-modal-restante');
         const modRestLabel = document.getElementById('checkout-modal-restante-label');
@@ -2029,7 +2029,7 @@ function renderOrders() {
                    </td>
                    <td style="padding: 8px 4px; text-align: center;">${order.quantity || 1}</td>
                    <td style="padding: 8px 4px; text-align: center;">${canSelect ? `<input type="checkbox" ${semTaxa ? '' : 'checked'} title="Cobrar taxa de serviço neste item?" onchange="window.checkoutItemTaxaToggle(${order.id}, this.checked)" style="width:15px;height:15px;accent-color:#fc4b15;cursor:pointer;">` : '—'}</td>
-                   <td style="padding: 8px 4px; text-align: right; font-weight: 700; color: #3ab55b;">R$ ${totalVal.toFixed(2).replace('.', ',')}</td>
+                   <td style="padding: 8px 4px; text-align: right; font-weight: 700; color: #3ab55b;">R$ ${Math.max(0, totalVal).toFixed(2).replace('.', ',')}</td>
                    <td style="padding: 8px 4px; text-align: center;">
                      ${canSelect ? `
                        <button type="button" onclick="window.abrirSubmodalFracionamentoCheckout(${order.id})" title="Fracionar este item em frações (½, ⅓, etc.)" style="background: rgba(234,88,12,0.12); color: #ea580c; border: 1px solid rgba(234,88,12,0.35); border-radius: 7px; padding: 3px 7px; font-size: 11.5px; cursor: pointer; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s;">
@@ -2289,7 +2289,7 @@ window.renderItensPainelMesa = function (item) {
          </td>
          <td>R$ ${(totalVal / (order.quantity || 1)).toFixed(2).replace('.', ',')}</td>
          <td>${order.quantity || 1}</td>
-         <td style="font-weight: 600; color: #3ab55b;">R$ ${totalVal.toFixed(2).replace('.', ',')}</td>
+         <td style="font-weight: 600; color: #3ab55b;">R$ ${Math.max(0, totalVal).toFixed(2).replace('.', ',')}</td>
          <td>${order.userName || 'Caixa'}</td>
          <td>
             ${isPaid ? '' : `
@@ -2363,7 +2363,7 @@ window.renderRachaComandas = function (item) {
                 ondrop="window.onDropItemOnComanda(event, '${cName}')"
                 title="Clique para cobrar ${mesaLabel.toLowerCase()} '${cName}' ou Arraste um produto aqui para colocá-lo nesta ${mesaLabel.toLowerCase()}">
                <span style="font-weight:600; color:#fc4b15;"><i class="ph ${mesaIcon}"></i> ${cName}</span>
-               <span style="font-weight:700; color:#3ab55b;">R$ ${total.toFixed(2).replace('.', ',')}</span>
+               <span style="font-weight:700; color:#3ab55b;">R$ ${Math.max(0, total).toFixed(2).replace('.', ',')}</span>
            </div>
         `;
   });
@@ -4379,7 +4379,7 @@ document.addEventListener('DOMContentLoaded', () => {
         (st.comps[ci] || []).forEach(oi => { if (cat.opcoes[oi]) total += Number(cat.opcoes[oi].preco) || 0; });
       });
     }
-    preco.textContent = '🛠️ Total: R$ ' + total.toFixed(2).replace('.', ',');
+    preco.textContent = '🛠️ Total: R$ ' + Math.max(0, total).toFixed(2).replace('.', ',');
     st.unitPrice = total;
   };
 
@@ -4524,7 +4524,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const descontoValor = descontoInfo.valor || 0;
     const totalComDesconto = Math.max(0, total - descontoValor);
 
-    if (totalPrice) totalPrice.innerText = `R$ ${totalComDesconto.toFixed(2).replace('.', ',')}`;
+    if (totalPrice) totalPrice.innerText = `R$ ${Math.max(0, totalComDesconto).toFixed(2).replace('.', ',')}`;
     if (cartCountBadge) cartCountBadge.innerText = `${totalItemsCount} item${totalItemsCount === 1 ? '' : 's'} selecionado${totalItemsCount === 1 ? '' : 's'}`;
 
     if (cartList) {
@@ -5544,11 +5544,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="divider"></div>
           ${itemsHtml}
           <div class="divider"></div>
-          <div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>R$ ${subtotal.toFixed(2).replace('.', ',')}</span></div>
+          <div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>R$ ${Math.max(0, subtotal).toFixed(2).replace('.', ',')}</span></div>
           ${window.descontoAdicional > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Desconto:</span><span>- R$ ${window.descontoAdicional.toFixed(2).replace('.', ',')}</span></div>` : ''}
           ${taxaVal > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Serviços/Taxas:</span><span>R$ ${taxaVal.toFixed(2).replace('.', ',')}</span></div>` : ''}
           <div class="divider"></div>
-          <div class="bold" style="display:flex; justify-content:space-between; font-size:14px;"><span>TOTAL:</span><span>R$ ${totalFinal.toFixed(2).replace('.', ',')}</span></div>
+          <div class="bold" style="display:flex; justify-content:space-between; font-size:14px;"><span>TOTAL:</span><span>R$ ${Math.max(0, totalFinal).toFixed(2).replace('.', ',')}</span></div>
           <div class="center" style="margin-top:20px; font-size:10px;">Obrigado pela preferência!</div>
         </body></html>
       `);
@@ -6834,7 +6834,7 @@ window.onSubmodalItemFracionarChange = (itemId) => {
   const qtdEl = document.getElementById('submodal-fracao-qtd');
   if (qtdEl) qtdEl.innerText = `Qtd: ${submodalItemFracaoAtual.qty} un`;
   const totalEl = document.getElementById('submodal-fracao-total');
-  if (totalEl) totalEl.innerText = `R$ ${submodalItemFracaoAtual.total.toFixed(2).replace('.', ',')}`;
+  if (totalEl) totalEl.innerText = `R$ ${Math.max(0, submodalItemFracaoAtual.total).toFixed(2).replace('.', ',')}`;
 
   window.selecionarSubmodalPresetFracao(submodalPresetFracoesAtual || 2);
 };
@@ -6957,13 +6957,13 @@ window.carregarGrupoSubmodalAlocar = (checkedCheckboxes) => {
           <span>${emoji}</span>
           <span>${nome} (${qtd}x)</span>
         </span>
-        <strong style="color: #2563eb; font-weight: 700;">R$ ${totalVal.toFixed(2).replace('.', ',')}</strong>
+        <strong style="color: #2563eb; font-weight: 700;">R$ ${Math.max(0, totalVal).toFixed(2).replace('.', ',')}</strong>
       </div>
     `;
   });
 
   if (txtQtd) txtQtd.innerText = `${checkedCheckboxes.length} itens marcados`;
-  if (txtTotal) txtTotal.innerText = `R$ ${totalGrupo.toFixed(2).replace('.', ',')}`;
+  if (txtTotal) txtTotal.innerText = `R$ ${Math.max(0, totalGrupo).toFixed(2).replace('.', ',')}`;
   if (containerLista) containerLista.innerHTML = htmlItens;
 };
 
@@ -7318,7 +7318,7 @@ window.abrirModalCustomNfce = () => {
 
   const inpTotal = document.getElementById('custom-nfce-total-agrupado');
   if (inpTotal) {
-    inpTotal.value = window.customNfceConfig.totalAgrupado.toFixed(2).replace('.', ',');
+    inpTotal.value = Math.max(0, window.customNfceConfig.totalAgrupado).toFixed(2).replace('.', ',');
   }
 
   window.toggleAgruparNfce();
@@ -7365,7 +7365,7 @@ window.renderCustomNfceTable = () => {
           <input type="number" step="0.01" value="${item.preco.toFixed(2)}" onchange="window.editarItemCustomNfce(${index}, 'preco', this.value)" style="width: 100%; padding: 4px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 11px; text-align: right;">
         </td>
         <td style="padding: 6px; text-align: right; border-bottom: 1px solid var(--border-color);">
-          R$ ${totalItem.toFixed(2).replace('.', ',')}
+          R$ ${Math.max(0, totalItem).toFixed(2).replace('.', ',')}
         </td>
         <td style="padding: 6px; text-align: center; border-bottom: 1px solid var(--border-color);">
           <button onclick="window.removerItemCustomNfce(${index})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px;"><i class="ph ph-trash"></i></button>
@@ -7376,7 +7376,7 @@ window.renderCustomNfceTable = () => {
 
   const spanTotal = document.getElementById('custom-nfce-total-calculado');
   if (spanTotal) {
-    spanTotal.innerText = 'R$ ' + totalCalc.toFixed(2).replace('.', ',');
+    spanTotal.innerText = 'R$ ' + Math.max(0, totalCalc).toFixed(2).replace('.', ',');
   }
 };
 
@@ -7445,7 +7445,7 @@ window.salvarCustomNfce = () => {
 
   const btn = document.getElementById('btn-customizar-nfce');
   if (btn) {
-    btn.innerHTML = `<i class="ph ph-check-circle"></i> Configuração Salva (R$ ${window.customNfceConfig.finalTotal.toFixed(2).replace('.', ',')})`;
+    btn.innerHTML = `<i class="ph ph-check-circle"></i> Configuração Salva (R$ ${Math.max(0, window.customNfceConfig.finalTotal).toFixed(2).replace('.', ',')})`;
     btn.style.background = '#dcfce7';
     btn.style.color = '#166534';
     btn.style.border = '1px solid #86efac';
@@ -7698,7 +7698,7 @@ window.recalcComandaModal = function () {
   window.comandaModalTotalVal = baseTotal;
   const totalEl = document.getElementById('comanda-modal-total');
   if (totalEl) {
-    totalEl.innerText = `R$ ${baseTotal.toFixed(2).replace('.', ',')}`;
+    totalEl.innerText = `R$ ${Math.max(0, baseTotal).toFixed(2).replace('.', ',')}`;
   }
 };
 
@@ -8506,7 +8506,7 @@ window.filtrarNotasNfce = function () {
   const elAut = document.getElementById('nfce-count-autorizadas');
   const elCanc = document.getElementById('nfce-count-canceladas');
 
-  if (elTot) elTot.innerText = 'R$ ' + totalEmitido.toFixed(2).replace('.', ',');
+  if (elTot) elTot.innerText = 'R$ ' + Math.max(0, totalEmitido).toFixed(2).replace('.', ',');
   if (elAut) elAut.innerText = countAut;
   if (elCanc) elCanc.innerText = countCanc;
 

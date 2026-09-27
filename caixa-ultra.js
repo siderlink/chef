@@ -389,7 +389,7 @@
             </div>
             <div class="ultra-mesa-footer">
               <span class="ultra-mesa-items-count">${m.items.length} item(s)</span>
-              <span class="ultra-mesa-value">R$ ${m.total.toFixed(2).replace('.', ',')}</span>
+              <span class="ultra-mesa-value">R$ ${Math.max(0, m.total).toFixed(2).replace('.', ',')}</span>
             </div>
           </div>
         `;
@@ -419,7 +419,7 @@
         let totalCalculado = mesa.total;
         if (this.taxaServicoAtiva) totalCalculado *= 1.1;
         totalCalculado = Math.max(0, totalCalculado - this.descontoAtual);
-        this.valorDigitado = totalCalculado.toFixed(2);
+        this.valorDigitado = Math.max(0, totalCalculado).toFixed(2);
       } else {
         this.valorDigitado = '0.00';
       }
@@ -504,10 +504,10 @@
       const desc = this.descontoAtual || 0;
       const totalGeral = Math.max(0, subtotal + taxa - desc);
 
-      if (elSubtotal) elSubtotal.innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+      if (elSubtotal) elSubtotal.innerText = `R$ ${Math.max(0, subtotal).toFixed(2).replace('.', ',')}`;
       if (elTaxa) elTaxa.innerText = `R$ ${taxa.toFixed(2).replace('.', ',')}`;
       if (elDesconto) elDesconto.innerText = `R$ ${desc.toFixed(2).replace('.', ',')}`;
-      if (elTotal) elTotal.innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
+      if (elTotal) elTotal.innerText = `R$ ${Math.max(0, totalGeral).toFixed(2).replace('.', ',')}`;
     },
 
     toggleTaxaServico: function () {
@@ -520,7 +520,7 @@
         let totalCalculado = this.mesaAtual.total;
         if (this.taxaServicoAtiva) totalCalculado *= 1.1;
         totalCalculado = Math.max(0, totalCalculado - this.descontoAtual);
-        this.valorDigitado = totalCalculado.toFixed(2);
+        this.valorDigitado = Math.max(0, totalCalculado).toFixed(2);
         this.updateVisor();
       }
     },
@@ -559,7 +559,7 @@
       total = Math.max(0, total - this.descontoAtual);
 
       if (tipo === 'exato') {
-        this.valorDigitado = total.toFixed(2);
+        this.valorDigitado = Math.max(0, total).toFixed(2);
       } else if (tipo === '+10') {
         const atual = parseFloat(this.valorDigitado || total) || 0;
         this.valorDigitado = (atual + 10).toFixed(2);
@@ -608,7 +608,7 @@
             <div class="ultra-troco-diagram">
               <div class="ultra-troco-math-row">
                 <span>Recebido: R$ ${val.toFixed(2).replace('.', ',')}</span>
-                <span>Conta: R$ ${total.toFixed(2).replace('.', ',')}</span>
+                <span>Conta: R$ ${Math.max(0, total).toFixed(2).replace('.', ',')}</span>
               </div>
               <div class="ultra-troco-notes-drawer">
                 ${chipsHtml}
@@ -985,7 +985,7 @@
       const percentual = (100 / n).toFixed(1);
 
       const elCenterVal = document.getElementById('ultra-pie-center-val');
-      if (elCenterVal) elCenterVal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+      if (elCenterVal) elCenterVal.innerText = `R$ ${Math.max(0, total).toFixed(2).replace('.', ',')}`;
 
       // Renderiza fatias do Prato / Pizza em SVG
       const svg = document.getElementById('ultra-pie-svg');
@@ -1165,7 +1165,7 @@
               <div class="ultra-tray-footer">
                 <div class="ultra-tray-total-box">
                   <span style="font-size:10px; color:var(--ultra-text-muted);">Total com serviço (10%):</span>
-                  <span class="ultra-tray-total-val">R$ ${totalPessoa.toFixed(2).replace('.', ',')}</span>
+                  <span class="ultra-tray-total-val">R$ ${Math.max(0, totalPessoa).toFixed(2).replace('.', ',')}</span>
                 </div>
                 <button class="ultra-btn-action primary" style="padding:6px 14px; font-size:11.5px;" onclick="ChefUltraApp.cobrarCotaEspecifica(${pIdx}, ${totalPessoa})" ${totalPessoa <= 0 ? 'disabled' : ''}>
                   <i class="ph-bold ph-hand-coins"></i> Cobrar Esta Pessoa

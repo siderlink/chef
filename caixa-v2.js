@@ -177,7 +177,7 @@
     state.pesoAtual = kg;
     document.getElementById('hig-display-peso').textContent = kg.toFixed(3) + ' kg';
     const total = kg * state.precoKg;
-    document.getElementById('hig-display-total-peso').textContent = 'R$ ' + total.toFixed(2);
+    document.getElementById('hig-display-total-peso').textContent = 'R$ ' + Math.max(0, total).toFixed(2);
   };
 
   window.lancarPesagemNoCaixa = function() {
@@ -199,7 +199,7 @@
 
   function atualizarComandaUI() {
     const total = itensComanda.reduce((acc, i) => acc + i.preco, 0);
-    document.getElementById('hig-pdv-total').textContent = 'R$ ' + total.toFixed(2);
+    document.getElementById('hig-pdv-total').textContent = 'R$ ' + Math.max(0, total).toFixed(2);
     document.getElementById('kpi-faturamento').textContent = 'R$ ' + (total + 1450.00).toFixed(2);
   }
 

@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chef Cozinha Quantum — O Futuro da Gastronomia Autônoma</title>
+  <meta name="description" content="A primeira inteligência preditiva e ecossistema 3D imersivo para restaurantes, bares e pizzarias de alta demanda.">
+  <link rel="icon" href="/icons/icon.ico" type="image/x-icon">
+
+  <!-- Typography: Syne / Outfit + Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Phosphor Icons -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/fill/style.css">
+
+  <style>
+    /* ══════════════════════════════════════════════════════════════
+       DESIGN SYSTEM & CSS VARIABLES — CYBERNETIC GASTRONOMY
+       ══════════════════════════════════════════════════════════════ */
+    :root {
+      --bg-void: #030712;
+      --bg-deep: #050b18;
+      --primary-neon: #fc4b15;
+      --primary-glow: rgba(252, 75, 21, 0.45);
+      --cyan-neon: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.35);
+      --emerald-neon: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.35);
+      --purple-neon: #8b5cf6;
+      --card-glass: rgba(15, 23, 42, 0.65);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-glow: rgba(252, 75, 21, 0.3);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --font-display: 'Outfit', sans-serif;
+      --font-mono: 'Space Grotesk', monospace;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-void);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ═══ CANVAS 3D FLUTUANTE ═══ */
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* ═══ PRE-LOADER HOLOGRÁFICO ═══ */
+    #preloader {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-void);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s;
+    }
+
+    .preloader-atom {
+      width: 100px;
+      height: 100px;
+      position: relative;
+      margin-bottom: 28px;
+    }
+
+    .atom-ring {
+      position: absolute;
+      inset: 0;
+      border: 2px dashed rgba(252, 75, 21, 0.4);
+      border-radius: 50%;
+      animation: atom-spin 8s linear infinite;
+    }
+    .atom-ring:nth-child(2) {
+      border-color: rgba(6, 182, 212, 0.4);
+      animation: atom-spin-reverse 6s linear infinite;
+      transform: rotate(45deg);
+    }
+    .atom-core {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 24px;
+      background: radial-gradient(circle, var(--primary-neon), #ff8a00);
+      border-radius: 50%;
+      box-shadow: 0 0 24px var(--primary-neon);
+      animation: core-pulse 1.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes atom-spin { to { transform: rotate(360deg); } }
+    @keyframes atom-spin-reverse { to { transform: rotate(-360deg); } }
+    @keyframes core-pulse {
+      from { transform: translate(-50%, -50%) scale(0.9); box-shadow: 0 0 15px var(--primary-neon); }
+      to { transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 0 35px var(--primary-neon); }
+    }
+
+    .preloader-status {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .preloader-bar-wrapper {
+      width: 260px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .preloader-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan-neon), var(--primary-neon));
+      box-shadow: 0 0 10px var(--primary-neon);
+      transition: width 0.15s ease;
+    }
+
+    .preloader-percent {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ═══ INTERFACE HUD & HEADER ═══ */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 100;
+      padding: 20px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(3, 7, 18, 0.85) 0%, transparent 100%);
+      backdrop-filter: blur(12px);
+    }
+
+    .hud-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    .hud-logo-symbol {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary-neon), #ff7e5f);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 0 20px var(--primary-glow);
+    }
+
+    .hud-telemetry {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .telemetry-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .telemetry-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--emerald-neon);
+      box-shadow: 0 0 8px var(--emerald-neon);
+      animation: core-pulse 1.2s infinite;
+    }
+
+    .btn-hud-action {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-hud-action:hover {
+      background: var(--primary-neon);
+      border-color: var(--primary-neon);
+      box-shadow: 0 0 25px var(--primary-glow);
+      transform: translateY(-2px);
+    }
+
+    /* ═══ SCROLL CONTAINER ═══ */
+    .content-overlay {
+      position: relative;
+      z-index: 10;
+      pointer-events: auto;
+    }
+
+    section {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 100px 8%;
+    }
+
+    /* ═══ HERO SECTION ═══ */
+    .hero-section {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      max-width: 1400px;
+      margin: 0 auto;
+      pointer-events: none;
+    }
+    .hero-section > * {
+      pointer-events: auto;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(252, 75, 21, 0.08);
+      border: 1px solid rgba(252, 75, 21, 0.25);
+      padding: 6px 18px;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--primary-neon);
+      margin-bottom: 24px;
+      letter-spacing: 1px;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(40px, 6.2vw, 84px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      max-width: 950px;
+      margin-bottom: 24px;
+      background: linear-gradient(180deg, #ffffff 20%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-title .glow-word {
+      background: linear-gradient(90deg, var(--primary-neon), #ff8a00, var(--cyan-neon));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 40px var(--primary-glow);
+    }
+
+    .hero-subtitle {
+      font-size: clamp(16px, 1.8vw, 20px);
+      color: var(--text-muted);
+      max-width: 620px;
+      margin-bottom: 40px;
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    /* Botão Magnético de Elite */
+    .magnetic-wrap {
+      display: inline-block;
+      position: relative;
+    }
+
+    .btn-magnetic {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 20px 46px;
+      background: linear-gradient(135deg, var(--primary-neon) 0%, #e03e0b 100%);
+      color: #fff;
+      border-radius: 14px;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 15px 40px var(--primary-glow);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s;
+    }
+    .btn-magnetic::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.6s ease;
+    }
+    .btn-magnetic:hover::before {
+      transform: translateX(100%);
+    }
+    .btn-magnetic:hover {
+      box-shadow: 0 20px 60px rgba(252, 75, 21, 0.7);
+    }
+
+    /* ═══ SCROLL TRIGGER PINNED SECTIONS (AS ESTAÇÕES) ═══ */
+    .stations-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .station-slide {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .station-card {
+      background: var(--card-glass);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 48px;
+      max-width: 540px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .station-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--station-accent, var(--primary-neon));
+      box-shadow: 0 0 15px var(--station-accent, var(--primary-neon));
+    }
+
+    .station-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--station-accent, var(--cyan-neon));
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .station-title {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3.2vw, 42px);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 18px;
+    }
+
+    .station-desc {
+      color: var(--text-muted);
+      font-size: 16px;
+      line-height: 1.65;
+      margin-bottom: 28px;
+    }
+
+    .station-metric-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--card-border);
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: #fff;
+    }
+    .station-metric-badge i {
+      color: var(--station-accent, var(--emerald-neon));
+      font-size: 18px;
+    }
+
+    /* Posições Alternadas das Estações */
+    .station-slide.align-right {
+      justify-content: flex-end;
+    }
+    .station-slide.align-left {
+      justify-content: flex-start;
+    }
+
+    /* ═══ SEÇÃO O DIFERENCIAL / TENSOR PREDITIVO ═══ */
+    .tensor-section {
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+
+    .tensor-beam {
+      width: 2px;
+      height: 140px;
+      background: linear-gradient(180deg, transparent, var(--primary-neon), var(--cyan-neon), transparent);
+      box-shadow: 0 0 15px var(--primary-neon);
+      margin-bottom: 30px;
+      animation: beam-pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes beam-pulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(0.9); }
+      50% { opacity: 1; transform: scaleY(1.1); }
+    }
+
+    .tensor-title {
+      font-family: var(--font-display);
+      font-size: clamp(32px, 4.5vw, 60px);
+      font-weight: 800;
+      margin-bottom: 20px;
+      max-width: 850px;
+    }
+
+    .tensor-desc {
+      font-size: 18px;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin-bottom: 50px;
+    }
+
+    .tensor-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .tensor-card {
+      background: var(--card-glass);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 32px 24px;
+      text-align: left;
+      backdrop-filter: blur(12px);
+      transition: all 0.3s ease;
+    }
+    .tensor-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--card-border-glow);
+    }
+    .tensor-card i {
+      font-size: 32px;
+      color: var(--primary-neon);
+      margin-bottom: 18px;
+      display: block;
+    }
+    .tensor-card h4 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+    .tensor-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ═══ SEÇÃO PLANOS E OFERTA (TILT 3D) ═══ */
+    .plans-section {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 120px 8%;
+    }
+
+    .plans-header {
+      text-align: center;
+      margin-bottom: 70px;
+      max-width: 780px;
+    }
+
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      max-width: 1300px;
+      width: 100%;
+      perspective: 1000px;
+    }
+
+    .plan-card-3d {
+      background: var(--card-glass);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 44px 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      backdrop-filter: blur(16px);
+      transition: border-color 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+      transform-style: preserve-3d;
+    }
+    .plan-card-3d.featured {
+      border: 2px solid var(--primary-neon);
+      box-shadow: 0 0 50px -10px var(--primary-glow);
+    }
+    .featured-ribbon {
+      position: absolute;
+      top: 20px;
+      right: -35px;
+      background: var(--primary-neon);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 40px;
+      transform: rotate(45deg);
+      box-shadow: 0 4px 15px var(--primary-glow);
+    }
+
+    .plan-code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--cyan-neon);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .plan-name {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .plan-roi-badge {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: var(--emerald-neon);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      display: inline-block;
+    }
+    .plan-price {
+      font-family: var(--font-display);
+      font-size: 44px;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+    .plan-price span {
+      font-size: 15px;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+    .plan-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+    .plan-features {
+      list-style: none;
+      margin-bottom: 36px;
+      flex-grow: 1;
+    }
+    .plan-features li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-main);
+      margin-bottom: 12px;
+    }
+    .plan-features li i {
+      color: var(--emerald-neon);
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .btn-plan {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.25s ease;
+      text-decoration: none;
+      text-align: center;
+    }
+    .btn-plan-primary {
+      background: linear-gradient(135deg, var(--primary-neon), #e03e0b);
+      color: #fff;
+      box-shadow: 0 10px 25px var(--primary-glow);
+    }
+    .btn-plan-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 35px rgba(252, 75, 21, 0.6);
+    }
+    .btn-plan-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: #fff;
+    }
+    .btn-plan-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #fff;
+    }
+
+    /* ═══ FOOTER CYBERNETICO ═══ */
+    footer {
+      padding: 60px 8%;
+      background: #02040a;
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 10;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    /* ═══ RESPONSIVIDADE ═══ */
+    @media (max-width: 1024px) {
+      .tensor-grid, .plans-grid { grid-template-columns: 1fr; }
+      .station-slide { justify-content: center !important; }
+      .station-card { max-width: 100%; }
+      .hud-telemetry { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ PRELOADER DE IDENTIDADE ═══ -->
+  <div id="preloader">
+    <div class="preloader-atom">
+      <div class="atom-ring"></div>
+      <div class="atom-ring"></div>
+      <div class="atom-core"></div>
+    </div>
+    <div class="preloader-status" id="preloader-status">Sincronizando fluxo de dados...</div>
+    <div class="preloader-bar-wrapper">
+      <div class="preloader-bar" id="preloader-bar"></div>
+    </div>
+    <div class="preloader-percent" id="preloader-percent">0%</div>
+  </div>
+
+  <!-- ═══ THREE.JS WEBGL CANVAS ═══ -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- ═══ HUD NAVEGADOR FIXO ═══ -->
+  <header>
+    <a href="#" class="hud-logo">
+      <div class="hud-logo-symbol"><i class="ph-fill ph-cooking-pot"></i></div>
+      <span>CHEF QUANTUM</span>
+    </a>
+
+    <div class="hud-telemetry">
+      <div class="telemetry-tag">
+        <div class="telemetry-dot"></div>
+        <span>NÚCLEO OFFLINE-FIRST: ATIVO</span>
+      </div>
+      <div class="telemetry-tag">
+        <span>LATÊNCIA: 0.12ms</span>
+      </div>
+      <div class="telemetry-tag">
+        <span>CRIPTO-AUDITORIA: BLINDADA</span>
+      </div>
+    </div>
+
+    <div>
+      <a href="/site.html" class="btn-hud-action">
+        <i class="ph ph-arrow-square-out"></i>
+        <span>Página Tradicional</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ═══ CONTEÚDO STORYTELLING (GSAP SCROLLTRIGGER) ═══ -->
+  <div class="content-overlay">
+
+    <!-- 1. SEÇÃO HERO -->
+    <section class="hero-section" id="sec-hero">
+      <div class="hero-pill">
+        <i class="ph-fill ph-lightning"></i>
+        <span>PROTOCOLO QUANTUM v4.0 • INTELIGÊNCIA PREVENTIVA</span>
+      </div>
+
+      <h1 class="hero-title">
+        A Era do Restaurante Analógico <span class="glow-word">Acabou.</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Assuma o controlo absoluto da sua operação com a primeira inteligência preditiva para gastronomia. Garçom ultra-rápido, cozinha cirúrgica e trava antifraude com precisão milimétrica.
+      </p>
+
+      <div class="magnetic-wrap" id="magnetic-wrap">
+        <button class="btn-magnetic" id="btn-hero-cta" onclick="document.getElementById('planos').scrollIntoView({behavior:'smooth'})">
+          <i class="ph-fill ph-rocket-launch"></i>
+          <span>Assumir Comando</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 2 e 3. AS ESTAÇÕES DE COMANDO (PINNED STORYTELLING) -->
+    <div class="stations-wrapper" id="stations-wrapper">
+      
+      <!-- Estação 01 -->
+      <div class="station-slide align-left" id="station-1">
+        <div class="station-card" style="--station-accent: var(--primary-neon);">
+          <div class="station-tag">
+            <i class="ph-fill ph-device-mobile"></i>
+            <span>Estação 01 // Salão Autônomo</span>
+          </div>
+          <h2 class="station-title">Atendimento Inteligente & Garçom Neural</h2>
+          <p class="station-desc">
+            Mesa Inteligente com pedidos instantâneos que prevêem o padrão de consumo e eliminam falhas humanas na entrega. O garçom não se perde: atende com latência zero e operação blindada mesmo se o Wi-Fi colapsar.
+          </p>
+          <div class="station-metric-badge">
+            <i class="ph-fill ph-chart-line-up"></i>
+            <span>+42% no giro de mesas • Erro humano zerado</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estação 02 -->
+      <div class="station-slide align-right" id="station-2">
+        <div class="station-card" style="--station-accent: var(--cyan-neon);">
+          <div class="station-tag">
+            <i class="ph-fill ph-fire"></i>
+            <span>Estação 02 // Produção Sincronizada</span>
+          </div>
+          <h2 class="station-title">A Cozinha Cirúrgica & Monitor KDS</h2>
+          <p class="station-desc">
+            Sincronização Perfeita. Painéis neurais que ditam o ritmo exato da cozinha. Cada praça sabe exatamente o momento de iniciar a guarnição e a proteína para entrega simultânea e quente ao cliente. Desperdício zero, velocidade máxima.
+          </p>
+          <div class="station-metric-badge">
+            <i class="ph-fill ph-timer"></i>
+            <span>Tempo médio de saída: 6.8 min • 100% de precisão</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estação 03 -->
+      <div class="station-slide align-left" id="station-3">
+        <div class="station-card" style="--station-accent: var(--emerald-neon);">
+          <div class="station-tag">
+            <i class="ph-fill ph-shield-check"></i>
+            <span>Estação 03 // Blindagem Financeira</span>
+          </div>
+          <h2 class="station-title">A Torre de Controle & Visão Omnisciente</h2>
+          <p class="station-desc">
+            O seu faturamento, estoque real e métricas preditivas analisados em tempo real na palma da sua mão. Trava matemática que impede cancelamentos suspeitos no caixa e furos de inventário.
+          </p>
+          <div class="station-metric-badge">
+            <i class="ph-fill ph-lock-key"></i>
+            <span>Auditoria Criptográfica • Furo de caixa: 0%</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 4. O DIFERENCIAL: O TENSOR PREDITIVO -->
+    <section class="tensor-section">
+      <div class="tensor-beam"></div>
+
+      <div class="station-tag" style="color: var(--primary-neon);">
+        <i class="ph-fill ph-cpu"></i>
+        <span>Algoritmo Preditivo Quantum</span>
+      </div>
+
+      <h2 class="tensor-title">A Inteligência que Antecipa o Caos.</h2>
+      <p class="tensor-desc">
+        O nosso algoritmo avisa-o sobre faltas de estoque e picos de movimento antes mesmo de abrir as portas. Não reaja ao mercado: antecipe-se a ele.
+      </p>
+
+      <div class="tensor-grid">
+        <div class="tensor-card">
+          <i class="ph-fill ph-chart-polar"></i>
+          <h4>Previsão de Demanda</h4>
+          <p>Análise de histórico, clima e datas festivas para sugerir o volume exato de insumos a produzir no dia.</p>
+        </div>
+        <div class="tensor-card">
+          <i class="ph-fill ph-currency-circle-dollar"></i>
+          <h4>DRE Dinâmico em Tempo Real</h4>
+          <p>Saiba quanto lucrou líquido no turno antes de fechar as portas, com custos de insumos já debitados.</p>
+        </div>
+        <div class="tensor-card">
+          <i class="ph-fill ph-cloud-slash"></i>
+          <h4>Arquitetura Descentralizada</h4>
+          <p>Se a internet da operadora cair, as impressoras continuam imprimindo e o caixa continua faturando.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. PLANOS E OFERTA (3D TILT CARDS) -->
+    <section class="plans-section" id="planos">
+      <div class="plans-header">
+        <div class="station-tag" style="justify-content: center; color: var(--emerald-neon);">
+          <i class="ph-fill ph-sparkle"></i>
+          <span>Investimento com Retorno Matemático</span>
+        </div>
+        <h2 class="tensor-title" style="margin-bottom: 12px;">Planos de Alta Performance</h2>
+        <p style="color: var(--text-muted); font-size: 16px;">Sem fidelidade contratual, sem pegadinhas. Teste por 14 dias grátis.</p>
+      </div>
+
+      <div class="plans-grid">
+        <!-- Plano 1: Órbita -->
+        <div class="plan-card-3d" data-tilt>
+          <div>
+            <div class="plan-code">// NÍVEL 01</div>
+            <div class="plan-name">Plano Órbita</div>
+            <div class="plan-roi-badge">+R$ 1.800/mês economizados em erros</div>
+            <div class="plan-price">R$ 89 <span>/mês</span></div>
+            <div class="plan-desc">Para balcões rápidos, cafés e operações de foco em velocidade no checkout.</div>
+            <ul class="plan-features">
+              <li><i class="ph-fill ph-check-circle"></i> 1 Ponto de Caixa PDV Offline-First</li>
+              <li><i class="ph-fill ph-check-circle"></i> Atalhos de teclado ultrarrápidos</li>
+              <li><i class="ph-fill ph-check-circle"></i> Controle de Balcão e Retirada</li>
+              <li><i class="ph-fill ph-check-circle"></i> Backup e Criptografia Local</li>
+            </ul>
+          </div>
+          <button class="btn-plan btn-plan-secondary" onclick="window.location.href='/site.html'">Assumir Órbita</button>
+        </div>
+
+        <!-- Plano 2: Galáxia (Destaque) -->
+        <div class="plan-card-3d featured" data-tilt>
+          <div class="featured-ribbon">POPULAR</div>
+          <div>
+            <div class="plan-code" style="color: var(--primary-neon);">// NÍVEL 02 • POTÊNCIA TOTAL</div>
+            <div class="plan-name">Plano Galáxia</div>
+            <div class="plan-roi-badge" style="background: rgba(252,75,21,0.15); border-color: rgba(252,75,21,0.3); color: var(--primary-neon);">+R$ 6.500/mês com giro acelerado</div>
+            <div class="plan-price">R$ 149 <span>/mês</span></div>
+            <div class="plan-desc">A máquina definitiva para salões, bares, pizzarias e pubs de alta demanda.</div>
+            <ul class="plan-features">
+              <li><i class="ph-fill ph-check-circle"></i> Tudo do plano Órbita</li>
+              <li><i class="ph-fill ph-check-circle"></i> Garçom Mobile Ilimitado (Zero taxa extra)</li>
+              <li><i class="ph-fill ph-check-circle"></i> Monitor de Cozinha KDS Dinâmico</li>
+              <li><i class="ph-fill ph-check-circle"></i> Ponto Digital dos Garçons por QR</li>
+              <li><i class="ph-fill ph-check-circle"></i> Trava Antifraude & Auditoria</li>
+            </ul>
+          </div>
+          <button class="btn-plan btn-plan-primary" onclick="window.location.href='/site.html'">Comandar Galáxia</button>
+        </div>
+
+        <!-- Plano 3: Singularidade -->
+        <div class="plan-card-3d" data-tilt>
+          <div>
+            <div class="plan-code">// NÍVEL 03</div>
+            <div class="plan-name">Singularidade</div>
+            <div class="plan-roi-badge">+12% margem líquida consolidada</div>
+            <div class="plan-price">R$ 299 <span>/mês</span></div>
+            <div class="plan-desc">Controle absoluto para redes, franquias e casas noturnas com multicentros.</div>
+            <ul class="plan-features">
+              <li><i class="ph-fill ph-check-circle"></i> Tudo do plano Galáxia</li>
+              <li><i class="ph-fill ph-check-circle"></i> Múltiplas Lojas Centralizadas</li>
+              <li><i class="ph-fill ph-check-circle"></i> Estoque Avançado & Ficha Técnica</li>
+              <li><i class="ph-fill ph-check-circle"></i> Acesso à API para Integrações</li>
+              <li><i class="ph-fill ph-check-circle"></i> Gerente de Contas Exclusivo 24/7</li>
+            </ul>
+          </div>
+          <button class="btn-plan btn-plan-secondary" onclick="window.location.href='/site.html'">Comandar Rede</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ═══ RODAPÉ CYBERNÉTICO ═══ -->
+  <footer>
+    <div>© 2026 CHEF QUANTUM • ECOSSISTEMA AUTÔNOMO DE GESTÃO</div>
+    <div>TELEMETRIA ATIVA // PROTOCOLO SYNCCHEFF SECURE</div>
+  </footer>
+
+  <!-- ═══ DEPENDÊNCIAS WEBGL E ANIMAÇÃO: THREE.JS & GSAP ═══ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <script>
+    // ══════════════════════════════════════════════════════════════
+    // ARQUITETURA DE CONTROLE THREE.JS & GSAP SCROLLTRIGGER
+    // ══════════════════════════════════════════════════════════════
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    // 1. SIMULAÇÃO DO PRELOADER
+    const preloaderStatus = document.getElementById('preloader-status');
+    const preloaderBar = document.getElementById('preloader-bar');
+    const preloaderPercent = document.getElementById('preloader-percent');
+    const preloaderEl = document.getElementById('preloader');
+
+    let loadProgress = 0;
+    const loadSteps = [
+      { p: 25, txt: 'Sincronizando fluxo de dados...' },
+      { p: 60, txt: 'Calibrando malha WebGL e nós neurais...' },
+      { p: 90, txt: 'Ativando protocolo Offline-First...' },
+      { p: 100, txt: 'Ecossistema Pronto.' }
+    ];
+
+    let currentStep = 0;
+    const loadInterval = setInterval(() => {
+      loadProgress += 4;
+      if (loadProgress > 100) loadProgress = 100;
+
+      preloaderBar.style.width = loadProgress + '%';
+      preloaderPercent.textContent = loadProgress + '%';
+
+      if (loadSteps[currentStep] && loadProgress >= loadSteps[currentStep].p) {
+        preloaderStatus.textContent = loadSteps[currentStep].txt;
+        currentStep++;
+      }
+
+      if (loadProgress >= 100) {
+        clearInterval(loadInterval);
+        setTimeout(() => {
+          gsap.to(preloaderEl, {
+            opacity: 0,
+            duration: 0.8,
+            ease: 'power2.inOut',
+            onComplete: () => {
+              preloaderEl.style.visibility = 'hidden';
+              startEntranceAnimation();
+            }
+          });
+        }, 400);
+      }
+    }, 45);
+
+    // 2. CONFIGURAÇÃO DA CENA 3D (THREE.JS)
+    const canvas = document.getElementById('webgl-canvas');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x030712, 0.04);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 16);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // Luzes
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambientLight);
+
+    const orangeLight = new THREE.PointLight(0xfc4b15, 3, 50);
+    orangeLight.position.set(5, 5, 8);
+    scene.add(orangeLight);
+
+    const cyanLight = new THREE.PointLight(0x06b6d4, 2.5, 50);
+    cyanLight.position.set(-6, -4, 6);
+    scene.add(cyanLight);
+
+    // 3. CRIAÇÃO DO MODELO 3D: NÚCLEO HOLOGRÁFICO DO RESTAURANTE (EXPLODING VIEW)
+    const restaurantGroup = new THREE.Group();
+    scene.add(restaurantGroup);
+
+    // Grid de Partículas no Fundo
+    const particleCount = 1200;
+    const particleGeo = new THREE.BufferGeometry();
+    const particlePos = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount * 3; i += 3) {
+      particlePos[i] = (Math.random() - 0.5) * 50;
+      particlePos[i + 1] = (Math.random() - 0.5) * 50;
+      particlePos[i + 2] = (Math.random() - 0.5) * 40;
+    }
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+    const particleMat = new THREE.PointsMaterial({
+      color: 0x06b6d4,
+      size: 0.12,
+      transparent: true,
+      opacity: 0.45
+    });
+    const starField = new THREE.Points(particleGeo, particleMat);
+    scene.add(starField);
+
+    // Sub-camadas para a Vista Explodida (Exploding View)
+    // Camada Inferior: Base de Conectividade
+    const baseGeo = new THREE.BoxGeometry(6, 0.4, 4);
+    const baseMat = new THREE.MeshStandardMaterial({
+      color: 0x0b1329,
+      metalness: 0.85,
+      roughness: 0.2,
+      wireframe: false
+    });
+    const layerBase = new THREE.Mesh(baseGeo, baseMat);
+    restaurantGroup.add(layerBase);
+
+    // Borda Wireframe Neon na Base
+    const baseWire = new THREE.LineSegments(
+      new THREE.EdgesGeometry(baseGeo),
+      new THREE.LineBasicMaterial({ color: 0x06b6d4, linewidth: 2 })
+    );
+    layerBase.add(baseWire);
+
+    // Camada Central: Núcleo Neural (Processador Holográfico)
+    const coreGeo = new THREE.OctahedronGeometry(1.6, 1);
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: 0xfc4b15,
+      emissive: 0xfc4b15,
+      emissiveIntensity: 0.7,
+      wireframe: true
+    });
+    const layerCore = new THREE.Mesh(coreGeo, coreMat);
+    layerCore.position.y = 1.2;
+    restaurantGroup.add(layerCore);
+
+    // Anéis Quânticos ao Redor do Núcleo
+    const ringGeo = new THREE.TorusGeometry(2.4, 0.04, 16, 100);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.8 });
+    const ringMesh1 = new THREE.Mesh(ringGeo, ringMat);
+    ringMesh1.rotation.x = Math.PI / 2.5;
+    layerCore.add(ringMesh1);
+
+    const ringMesh2 = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xfc4b15, transparent: true, opacity: 0.8 }));
+    ringMesh2.rotation.y = Math.PI / 3;
+    layerCore.add(ringMesh2);
+
+    // Camada Superior: Mesa / Painel de Toque Flutuante
+    const topGeo = new THREE.BoxGeometry(5.2, 0.2, 3.4);
+    const topMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      metalness: 0.9,
+      roughness: 0.1,
+      transparent: true,
+      opacity: 0.85
+    });
+    const layerTop = new THREE.Mesh(topGeo, topMat);
+    layerTop.position.y = 2.4;
+    restaurantGroup.add(layerTop);
+
+    const topWire = new THREE.LineSegments(
+      new THREE.EdgesGeometry(topGeo),
+      new THREE.LineBasicMaterial({ color: 0xfc4b15, linewidth: 2 })
+    );
+    layerTop.add(topWire);
+
+    // 4. RAYCASTING & PARALLAX DO MOUSE
+    let mouseX = 0, mouseY = 0;
+    let targetX = 0, targetY = 0;
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+      mouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
+    });
+
+    // 5. ANIMAÇÃO DE ENTRADA CINEMATOGRÁFICA (GSAP)
+    function startEntranceAnimation() {
+      gsap.fromTo(camera.position, 
+        { z: 22, y: 4 },
+        { z: 12, y: 0, duration: 2.2, ease: 'power3.out' }
+      );
+      gsap.fromTo(restaurantGroup.rotation,
+        { y: -Math.PI },
+        { y: -0.3, duration: 2.5, ease: 'power3.out' }
+      );
+      gsap.from('.hero-pill, .hero-title, .hero-subtitle, .magnetic-wrap', {
+        y: 40,
+        opacity: 0,
+        duration: 1.2,
+        stagger: 0.15,
+        ease: 'power2.out',
+        delay: 0.4
+      });
+    }
+
+    // 6. GSAP SCROLLTRIGGER: TRANSIÇÕES 3D PELO RESTAURANTE
+    // A. Desfragmentação / Exploding View com Scroll
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#sec-hero',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: 1.2
+      }
+    })
+    .to(layerTop.position, { y: 4.5, ease: 'none' }, 0)
+    .to(layerBase.position, { y: -2.2, ease: 'none' }, 0)
+    .to(layerCore.scale, { x: 1.4, y: 1.4, z: 1.4, ease: 'none' }, 0)
+    .to(restaurantGroup.rotation, { y: Math.PI * 0.7, x: 0.35, ease: 'none' }, 0)
+    .to(restaurantGroup.position, { x: 3.5, ease: 'none' }, 0);
+
+    // B. Estação 01: Foco na Mesa Inteligente
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#station-1',
+        start: 'top center',
+        end: 'bottom center',
+        scrub: 1.2
+      }
+    })
+    .to(restaurantGroup.position, { x: 4, y: 0.5, z: 2, ease: 'power1.inOut' }, 0)
+    .to(orangeLight, { intensity: 5, color: 0xfc4b15 }, 0)
+    .fromTo('#station-1 .station-card', { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: 0.8 }, 0);
+
+    // C. Estação 02: Cozinha Cirúrgica (Câmera viaja para a esquerda)
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#station-2',
+        start: 'top center',
+        end: 'bottom center',
+        scrub: 1.2
+      }
+    })
+    .to(restaurantGroup.position, { x: -4, y: -0.8, z: 1 }, 0)
+    .to(restaurantGroup.rotation, { y: Math.PI * 1.4, x: -0.2 }, 0)
+    .to(cyanLight, { intensity: 6, color: 0x06b6d4 }, 0)
+    .fromTo('#station-2 .station-card', { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: 0.8 }, 0);
+
+    // D. Estação 03: Torre de Controle (Painel de Telemetria e Vista Aérea)
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#station-3',
+        start: 'top center',
+        end: 'bottom center',
+        scrub: 1.2
+      }
+    })
+    .to(restaurantGroup.position, { x: 3.8, y: -0.2, z: 0 }, 0)
+    .to(restaurantGroup.rotation, { y: Math.PI * 2.1, x: 0.5 }, 0)
+    .to(layerCore.rotation, { z: Math.PI, ease: 'none' }, 0)
+    .fromTo('#station-3 .station-card', { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: 0.8 }, 0);
+
+    // E. Retorno ao Centro para a Seção de Planos
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: '#planos',
+        start: 'top 85%',
+        end: 'top 20%',
+        scrub: 1.5
+      }
+    })
+    .to(restaurantGroup.position, { x: 0, y: 5.2, z: -8 }, 0)
+    .to(restaurantGroup.rotation, { x: 0.2, y: Math.PI * 3 }, 0)
+    .to(layerTop.position, { y: 2.4 }, 0)
+    .to(layerBase.position, { y: 0 }, 0);
+
+    // 7. BOTÃO MAGNÉTICO (GSAP MOUSE MAGNET)
+    const wrap = document.getElementById('magnetic-wrap');
+    const btn = document.getElementById('btn-hero-cta');
+
+    if (wrap && btn) {
+      wrap.addEventListener('mousemove', (e) => {
+        const rect = wrap.getBoundingClientRect();
+        const x = (e.clientX - rect.left - rect.width / 2) * 0.45;
+        const y = (e.clientY - rect.top - rect.height / 2) * 0.45;
+        gsap.to(btn, { x, y, duration: 0.3, ease: 'power2.out' });
+      });
+
+      wrap.addEventListener('mouseleave', () => {
+        gsap.to(btn, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)' });
+      });
+    }
+
+    // 8. TILT 3D NOS CARDS DE PLANOS (MICROINTERAÇÃO)
+    document.querySelectorAll('[data-tilt]').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        gsap.to(card, {
+          rotationY: x * 18,
+          rotationX: -y * 18,
+          transformPerspective: 900,
+          duration: 0.4,
+          ease: 'power2.out'
+        });
+      });
+
+      card.addEventListener('mouseleave', () => {
+        gsap.to(card, {
+          rotationY: 0,
+          rotationX: 0,
+          duration: 0.7,
+          ease: 'power2.out'
+        });
+      });
+    });
+
+    // 9. LOOP DE RENDERIZAÇÃO 3D (60/120 FPS)
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      const time = clock.getElapsedTime();
+
+      // Rotação orgânica contínua
+      layerCore.rotation.y += 0.015;
+      ringMesh1.rotation.z += 0.02;
+      ringMesh2.rotation.z -= 0.018;
+
+      // Movimento suave do mouse (Lerp)
+      targetX += (mouseX * 0.4 - targetX) * 0.05;
+      targetY += (mouseY * 0.3 - targetY) * 0.05;
+      camera.position.x = targetX;
+      camera.position.y = targetY;
+
+      // Ondulação suave das partículas
+      starField.rotation.y = time * 0.02;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // 10. REDIMENSIONAMENTO DE JANELA
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

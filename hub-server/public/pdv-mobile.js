@@ -234,7 +234,7 @@ function renderMesas() {
         </div>
         <div class="mesa-card-cliente">${escHtml(cliente)}</div>
         <div class="mesa-card-info">${orders.length} pedido(s)</div>
-        <div class="mesa-card-total">R$ ${total.toFixed(2).replace('.', ',')}</div>
+        <div class="mesa-card-total">R$ ${Math.max(0, total).toFixed(2).replace('.', ',')}</div>
         ${isOcupada ? `<button onclick="event.stopPropagation();abrirCheckoutMesa(${escJs(mesa.nome)})" style="margin-top:8px;width:100%;padding:8px;background:var(--success);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
           <i class="ph ph-currency-dollar" style="margin-right:4px;"></i> Pagar
         </button>` : ''}
@@ -515,7 +515,7 @@ window.abrirDivisao = () => {
   const itemsDiv = document.getElementById('divisao-items');
   const totalDiv = document.getElementById('divisao-total');
 
-  totalDiv.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+  totalDiv.textContent = `R$ ${Math.max(0, total).toFixed(2).replace('.', ',')}`;
 
   itemsDiv.innerHTML = pending.map(p => {
     const val = parseFloat(String(p.total).replace(',', '.')) || 0;
@@ -675,7 +675,7 @@ window.alterarQtd = (num) => {
     selectedQtd += num;
     document.getElementById('modal-produto-qtd').textContent = selectedQtd;
     const total = selectedProduto.preco * selectedQtd;
-    document.getElementById('modal-produto-preco').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+    document.getElementById('modal-produto-preco').textContent = `R$ ${Math.max(0, total).toFixed(2).replace('.', ',')}`;
   }
 };
 
@@ -733,7 +733,7 @@ function renderCheckoutSummary() {
       <div class="checkout-summary-row"><span>Mesa</span><span>${currentMesa}</span></div>
       <div class="checkout-summary-row"><span>Subtotal</span><span>R$ ${bruto.toFixed(2).replace('.', ',')}</span></div>
       ${aplicarTaxaServico ? `<div class="checkout-summary-row"><span>Servico (10%)</span><span>R$ ${taxaVal.toFixed(2).replace('.', ',')}</span></div>` : ''}
-      <div class="checkout-summary-row total"><span>Total</span><span>R$ ${total.toFixed(2).replace('.', ',')}</span></div>`;
+      <div class="checkout-summary-row total"><span>Total</span><span>R$ ${Math.max(0, total).toFixed(2).replace('.', ',')}</span></div>`;
   }
 }
 

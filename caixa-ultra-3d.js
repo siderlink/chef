@@ -437,7 +437,7 @@
 
       if (status === 'ocupada') {
         colorHex = 0xfc4b15; // Ocupada
-        statusLabel = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        statusLabel = `R$ ${Math.max(0, total).toFixed(2).replace('.', ',')}`;
       } else if (status === 'solicitada') {
         colorHex = 0x3b82f6; // Pede conta
         statusLabel = 'Pede Conta';

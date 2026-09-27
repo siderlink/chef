@@ -1173,8 +1173,8 @@ window.renderBillView = () => {
   const grandTotal = Math.max(0, consumedSubtotal + serviceFee - totalPayments);
   const totalDaMesa = grossSubtotal * multiplier;
 
-  document.getElementById('bill-subtotal').innerText = `R$ ${totalDaMesa.toFixed(2).replace('.',',')}`;
-  document.getElementById('bill-grand-total').innerText = `R$ ${grandTotal.toFixed(2).replace('.',',')}`;
+  document.getElementById('bill-subtotal').innerText = `R$ ${Math.max(0, totalDaMesa).toFixed(2).replace('.',',')}`;
+  document.getElementById('bill-grand-total').innerText = `R$ ${Math.max(0, grandTotal).toFixed(2).replace('.',',')}`;
 
   if (billCurrentMode === 'pessoas') {
     billActionValue = grandTotal / billSplitCount;
@@ -1439,7 +1439,7 @@ window.openPaymentModal = () => {
   const grandTotal = Math.max(0, consumedSubtotal + serviceFee - totalPayments);
   
   if (billActionValue > grandTotal + 0.05) {
-    alert(`Atenção: O saldo restante da mesa é apenas R$ ${grandTotal.toFixed(2).replace('.',',')}. O valor a pagar será ajustado para o restante da conta.`);
+    alert(`Atenção: O saldo restante da mesa é apenas R$ ${Math.max(0, grandTotal).toFixed(2).replace('.',',')}. O valor a pagar será ajustado para o restante da conta.`);
     billActionValue = grandTotal;
   }
   
@@ -1906,7 +1906,7 @@ function renderCart() {
       <div class="cart-item" style="padding: 16px; background: #fff; border: 1px solid #eee; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
         <div style="display:flex; justify-content:space-between; margin-bottom: 6px; align-items: center;">
           <strong style="font-size: 16px; color: #333;">${item.quantity}x ${item.productName}</strong>
-          <strong style="color: #fc4b15; font-size: 16px;">R$ ${item.total.toFixed(2).replace('.',',')}</strong>
+          <strong style="color: #fc4b15; font-size: 16px;">R$ ${iteMath.max(0, m.total).toFixed(2).replace('.',',')}</strong>
         </div>
         ${item.obs ? `<div style="font-size: 13px; color: #777; margin-bottom: 8px; background: #f9f9f9; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #ddd;">Obs: ${item.obs}</div>` : ''}
         ${item.composicoes && item.composicoes.length > 0 ? `<div style="font-size: 12px; color: #1e40af; margin-bottom: 8px; background: #dbeafe; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #3b82f6; font-weight: 600;">Monte: ${item.composicoes.map(c => typeof c === 'object' ? c.categoria + ': ' + c.opcao : c).join(' | ')}</div>` : ''}
@@ -1926,7 +1926,7 @@ function renderCart() {
       </div>
     `;
   }).join('');
-  document.getElementById('cart-total-value').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+  document.getElementById('cart-total-value').innerText = `R$ ${Math.max(0, total).toFixed(2).replace('.', ',')}`;
 }
 
 window.removeFromCart = (idx) => {
@@ -1949,7 +1949,7 @@ document.getElementById('btn-send-order').onclick = () => {
       ...item,
       observations: item.obs || item.observations || '',
       composicoes: item.composicoes || [],
-      total: item.total.toFixed(2).replace('.', ','),
+      total: iteMath.max(0, m.total).toFixed(2).replace('.', ','),
       mesa_comanda: comandaName,
       cliente_telefone: phone || '',
       etapa: item.etapa || 'Principal',
@@ -3283,7 +3283,7 @@ window.abrirMinhasVendasGarcom = function() {
   const comissao = totalVendido * 0.10;
 
   if (document.getElementById('garcom-stat-total-vendido')) {
-    document.getElementById('garcom-stat-total-vendido').innerText = `R$ ${totalVendido.toFixed(2).replace('.', ',')}`;
+    document.getElementById('garcom-stat-total-vendido').innerText = `R$ ${Math.max(0, totalVendido).toFixed(2).replace('.', ',')}`;
   }
   if (document.getElementById('garcom-stat-comissao')) {
     document.getElementById('garcom-stat-comissao').innerText = `R$ ${comissao.toFixed(2).replace('.', ',')}`;
@@ -3573,7 +3573,7 @@ window.abrirModalFracionarItem = function (itemId) {
           </div>
           <div>
             <h4 style="margin:0; font-size:16px; font-weight:800; color:#0f172a;">Dividir / Fracionar Item</h4>
-            <span style="font-size:12px; color:#64748b;">${item.productEmoji || '🍽️'} ${item.productName} (R$ ${valorTotal.toFixed(2).replace('.', ',')})</span>
+            <span style="font-size:12px; color:#64748b;">${item.productEmoji || '🍽️'} ${item.productName} (R$ ${Math.max(0, valorTotal).toFixed(2).replace('.', ',')})</span>
           </div>
         </div>
         <button onclick="document.getElementById('modal-fracionar-item-mobile').style.display='none'" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:50%; color:#64748b; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
