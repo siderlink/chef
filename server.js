@@ -714,6 +714,39 @@ app.use(publicRoutes({
   deploymentConfig
 }));
 
+// Rotas amigáveis para as páginas de vendas (Vendas 2 e Vendas 3D Three.js)
+app.get([
+  '/pagina-de-vendas-2', '/pagina-vendas-2', '/vendas-2', '/vendas2',
+  '/pagina-de-vendas-2.html', '/pagina-vendas-2.html'
+], (req, res) => {
+  const candidates = [
+    path.join(BASE_DIR, 'pagina-de-vendas-2.html'),
+    path.join(BASE_DIR, 'pagina-vendas-2.html'),
+    path.join(DIST_DIR, 'pagina-de-vendas-2.html'),
+    path.join(DIST_DIR, 'pagina-vendas-2.html')
+  ];
+  for (const f of candidates) {
+    if (fs.existsSync(f)) return res.sendFile(f);
+  }
+  res.status(404).send('Página de Vendas 2 não encontrada.');
+});
+
+app.get([
+  '/pagina-vendas-3', '/pagina-de-vendas-3', '/pagina-vendas-3d', '/vendas-3d', '/vendas3d',
+  '/vendas-3', '/vendas3', '/pagina-vendas-3.html', '/pagina-de-vendas-3.html', '/pagina-vendas-3d.html'
+], (req, res) => {
+  const candidates = [
+    path.join(BASE_DIR, 'pagina-vendas-3.html'),
+    path.join(BASE_DIR, 'pagina-vendas-3d.html'),
+    path.join(DIST_DIR, 'pagina-vendas-3.html'),
+    path.join(DIST_DIR, 'pagina-vendas-3d.html')
+  ];
+  for (const f of candidates) {
+    if (fs.existsSync(f)) return res.sendFile(f);
+  }
+  res.status(404).send('Página de Vendas 3D não encontrada.');
+});
+
 // Middleware dinâmico para servir qualquer página .html sem precisar digitar .html na URL
 app.use((req, res, next) => {
   if (req.method !== 'GET' && req.method !== 'HEAD') return next();

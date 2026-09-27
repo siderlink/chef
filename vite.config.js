@@ -146,7 +146,11 @@ export default defineConfig({
         'painel-dono': resolve(__dirname, 'painel-dono.html'),
         totem: resolve(__dirname, 'totem.html'),
         'hub-delivery': resolve(__dirname, 'hub-delivery.html'),
-        'caixa-ultra': resolve(__dirname, 'caixa-ultra.html')
+        'caixa-ultra': resolve(__dirname, 'caixa-ultra.html'),
+        'pagina-de-vendas-2': resolve(__dirname, 'pagina-de-vendas-2.html'),
+        'pagina-vendas-2': resolve(__dirname, 'pagina-vendas-2.html'),
+        'pagina-vendas-3': resolve(__dirname, 'pagina-vendas-3.html'),
+        'pagina-vendas-3d': resolve(__dirname, 'pagina-vendas-3d.html')
       }
     }
   }
