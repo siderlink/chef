@@ -1718,6 +1718,19 @@
           onclick="window.garcomSearchQuery=''; document.getElementById('garcom-search-product').value=''; this.style.display='none'; renderMenu(); document.getElementById('garcom-search-product').focus();"
           style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; border: none; background: #f1f5f9; color: #64748b; font-size: 15px; font-weight: 700; cursor: pointer; align-items: center; justify-content: center; line-height: 1;">✕</button>
       </div>
+      <!-- Barra Marcha de Pratos (Disparo de Etapas no Salão) -->
+      <div id="bar-marcha-mesa" style="margin-bottom: 12px; padding: 10px 14px; background: linear-gradient(135deg, #ede9fe 0%, #fae8ff 100%); border: 1.5px solid #c084fc; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i class="ph-bold ph-fork-knife" style="font-size: 20px; color: #7c3aed;"></i>
+          <div>
+            <div style="font-size: 12px; font-weight: 800; color: #581c87;">Marcha de Pratos (Courses)</div>
+            <div style="font-size: 11px; color: #7e22ce;">Entrada ➔ Principal ➔ Sobremesa</div>
+          </div>
+        </div>
+        <button type="button" onclick="window.marcharEtapaMesa('Principal')" style="padding: 7px 12px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(124,58,237,0.25);">
+          <i class="ph-bold ph-play"></i> Marchar Principais
+        </button>
+      </div>
       <div id="menu-tabs"></div>
       <div id="menu-list"></div>
       <div id="menu-empty" style="display:none; text-align:center; padding:40px 20px; color:#94a3b8;">
@@ -1749,6 +1762,22 @@
         </div>
       </div>
       <div id="detail-addons" style="display:none;"></div>
+      <!-- Seletor de Etapas da Marcha -->
+      <div style="margin: 12px 0 8px;">
+        <label style="font-size: 11.5px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">
+          <i class="ph-bold ph-clock-countdown" style="color: #6366f1;"></i> Etapa do Prato (Marcha de Cozinha):
+        </label>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="etapas-selector">
+          <button type="button" class="btn-etapa" data-etapa="Entrada" onclick="window.selecionarEtapaPrato(this, 'Entrada')" style="flex: 1; min-width: 65px; padding: 7px 4px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: white; font-size: 11.5px; font-weight: 700; cursor: pointer;">🥗 Entrada</button>
+          <button type="button" class="btn-etapa active" data-etapa="Principal" onclick="window.selecionarEtapaPrato(this, 'Principal')" style="flex: 1; min-width: 65px; padding: 7px 4px; border: 1.5px solid #6366f1; border-radius: 8px; background: #eef2ff; color: #4338ca; font-size: 11.5px; font-weight: 800; cursor: pointer;">🥩 Principal</button>
+          <button type="button" class="btn-etapa" data-etapa="Sobremesa" onclick="window.selecionarEtapaPrato(this, 'Sobremesa')" style="flex: 1; min-width: 65px; padding: 7px 4px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: white; font-size: 11.5px; font-weight: 700; cursor: pointer;">🍰 Sobremesa</button>
+          <button type="button" class="btn-etapa" data-etapa="Bebida" onclick="window.selecionarEtapaPrato(this, 'Bebida')" style="flex: 1; min-width: 65px; padding: 7px 4px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: white; font-size: 11.5px; font-weight: 700; cursor: pointer;">🥤 Bebida</button>
+        </div>
+        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11.5px; color: #475569; cursor: pointer; background: #f8fafc; padding: 6px 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+          <input type="checkbox" id="check-aguardar-marcha" style="accent-color: #6366f1; width: 16px; height: 16px;">
+          <span><strong>Aguardar Marcha:</strong> Cozinha só prepara quando você disparar no salão.</span>
+        </label>
+      </div>
       <textarea id="detail-obs" placeholder="Ex: Sem cebola, ponto da carne..."></textarea>
       <div id="detail-comps-section" style="margin-top:8px; display:none;">
         <div style="font-size:12px; font-weight:700; color:#8b5cf6; margin-bottom:4px;">Monte o Seu — Composições:</div>

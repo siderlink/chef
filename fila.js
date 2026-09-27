@@ -55,6 +55,150 @@ window.trocarVersaoFila = function(versao) {
   window.location.href = isV1 ? '/fila-pedidos-classica.html?v=1' : '/fila-pedidos.html?v=2';
 };
 
+// ── PILAR 2: KDS Smart-Sync de Cozinha (Saída Simultânea de Pratos) ──
+const forcedFireItemIds = new Set();
+
+function inferirTempoPreparoPrato(nome) {
+  if (!nome) return 15;
+  const n = String(nome).toLowerCase();
+  if (/picanha|bife|steak|carne|costela|churrasco|feijoada|paella|bacalhau|moqueca|cordeiro|ancho|t-bone|wagyu/.test(n)) return 22;
+  if (/risoto|pizza|hamb[uú]rguer|burger|massa|lasanha|parmegiana|peixe|salm[aã]o|polvo|fondue/.test(n)) return 16;
+  if (/frango|omelete|pastel|por[cç][aã]o|batata|tapioca|sandu[ií]che|wrap|guarni[cç][aã]o/.test(n)) return 12;
+  if (/sobremesa|pudim|petit|torta|brownie|a[cç]a[ií]|sorvete|churros/.test(n)) return 6;
+  if (/salada|carpaccio|ceviche|tartare|bruschetta|couvert|entrada|tabua/.test(n)) return 6;
+  if (/bebida|refrigerante|suco|cerveja|chopp|vinho|drink|caipirinha|caf[eé]|água|shot/.test(n)) return 3;
+  return 15;
+}
+
+function calcularSmartSyncInfo(item, allData) {
+  const ssAtivo = localStorage.getItem('chef_kds_smartsync') !== '0';
+  if (!ssAtivo) return null;
+  if (['Finalizado', 'Cancelado', 'Entregue', 'Pago', 'Aguardando Marcha'].includes(item.status)) return null;
+
+  const tableKey = (item.mesa_comanda || item.localName || '').trim().toLowerCase();
+  if (!tableKey) return null;
+
+  const itemEtapa = (item.etapa || 'Principal').trim().toLowerCase();
+  const companions = (allData || []).filter(c => {
+    if (['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(c.status)) return false;
+    const cTable = (c.mesa_comanda || c.localName || '').trim().toLowerCase();
+    if (cTable !== tableKey) return false;
+    const cEtapa = (c.etapa || 'Principal').trim().toLowerCase();
+    return cEtapa === itemEtapa;
+  });
+
+  if (companions.length <= 1) return null;
+
+  const itemPrep = parseInt(item.tempo_preparo_min) || inferirTempoPreparoPrato(item.productName);
+  let maxPrep = 0;
+  let minCreatedAt = parseUtc(item.createdAt);
+
+  companions.forEach(c => {
+    const t = parseInt(c.tempo_preparo_min) || inferirTempoPreparoPrato(c.productName);
+    if (t > maxPrep) maxPrep = t;
+    const ca = parseUtc(c.createdAt);
+    if (ca < minCreatedAt) minCreatedAt = ca;
+  });
+
+  const allProntos = companions.every(c => c.status === 'Pronto' || c.status === 'Prontos');
+  if (allProntos) {
+    return { tipo: 'pronto_sincronizado' };
+  }
+
+  if (forcedFireItemIds.has(item.id)) {
+    return item.status === 'Em preparo' ? { tipo: 'prep', faltamMin: itemPrep, tempoPreparo: itemPrep } : null;
+  }
+
+  const holdMin = Math.max(0, maxPrep - itemPrep);
+  const idealStart = minCreatedAt + (holdMin * 60000);
+  const targetFinish = minCreatedAt + (maxPrep * 60000);
+  const now = Date.now();
+
+  if (item.status === 'Em espera' || item.status === 'Pendente') {
+    if (now < idealStart) {
+      const diffSec = Math.max(0, Math.ceil((idealStart - now) / 1000));
+      const m = Math.floor(diffSec / 60);
+      const s = diffSec % 60;
+      return { tipo: 'hold', minutos: m, segundos: s, tempoPreparo: itemPrep, maxPrep: maxPrep, idealStart };
+    } else {
+      return { tipo: 'fogo', tempoPreparo: itemPrep, maxPrep: maxPrep };
+    }
+  }
+
+  if (item.status === 'Em preparo' || item.status === 'Em Preparo') {
+    const diffSec = Math.max(0, Math.ceil((targetFinish - now) / 1000));
+    const m = Math.max(1, Math.floor(diffSec / 60));
+    return { tipo: 'prep', faltamMin: m, tempoPreparo: itemPrep };
+  }
+
+  return null;
+}
+
+window.alternarSmartSync = function() {
+  const current = localStorage.getItem('chef_kds_smartsync') !== '0';
+  const next = current ? '0' : '1';
+  localStorage.setItem('chef_kds_smartsync', next);
+  atualizarBotaoSmartSyncUI();
+  if (typeof renderQueue === 'function') renderQueue(true);
+};
+
+window.forcarInicioSmartSync = function(itemId) {
+  forcedFireItemIds.add(itemId);
+  if (typeof window.alterarStatusPedido === 'function') {
+    window.alterarStatusPedido(itemId, 'Em preparo');
+  }
+};
+
+function atualizarBotaoSmartSyncUI() {
+  const btn = document.getElementById('btn-toggle-smartsync');
+  const lbl = document.getElementById('label-smartsync');
+  if (!btn || !lbl) return;
+  const ativo = localStorage.getItem('chef_kds_smartsync') !== '0';
+  if (ativo) {
+    btn.style.background = 'rgba(139,92,246,0.18)';
+    btn.style.borderColor = 'rgba(139,92,246,0.5)';
+    btn.style.color = '#8b5cf6';
+    lbl.innerText = 'Smart-Sync: ON';
+    btn.title = 'Smart-Sync de Cozinha Ativo (Pratos sincronizados para saída simultânea). Clique para desativar.';
+  } else {
+    btn.style.background = 'transparent';
+    btn.style.borderColor = 'var(--border-color, #475569)';
+    btn.style.color = 'var(--text-muted, #94a3b8)';
+    lbl.innerText = 'Smart-Sync: OFF';
+    btn.title = 'Smart-Sync de Cozinha Desativado. Clique para ativar.';
+  }
+}
+
+// Timer vivo a cada 1 segundo para atualizar as contagens de hold
+setInterval(() => {
+  const holdBadges = document.querySelectorAll('.kds-smart-sync-badge.hold');
+  if (!holdBadges || holdBadges.length === 0) return;
+  let precisaRerender = false;
+  holdBadges.forEach(badge => {
+    const itemId = parseInt(badge.getAttribute('data-ss-item'));
+    if (!itemId) return;
+    const item = (queueData || []).find(q => q.id === itemId);
+    if (!item) return;
+    const info = calcularSmartSyncInfo(item, queueData);
+    if (!info || info.tipo !== 'hold') {
+      precisaRerender = true;
+    } else {
+      const segStr = String(info.segundos).padStart(2, '0');
+      const timerSpan = badge.querySelector('.ss-timer-display');
+      if (timerSpan) {
+        timerSpan.innerText = `${info.minutos}:${segStr}`;
+      }
+    }
+  });
+  if (precisaRerender && typeof renderQueue === 'function') {
+    renderQueue(false);
+  }
+}, 1000);
+
+document.addEventListener('DOMContentLoaded', () => {
+  atualizarBotaoSmartSyncUI();
+});
+
 // ── Preferências da fila sincronizadas com o servidor (config por restaurante) ──
 let kdsSyncTimer = null;
 function kdsSalvarNoServidor(extra) {
@@ -427,6 +571,9 @@ window.trocarAbaLayoutDrawer = function(aba) {
   });
   if (aba === 'apelidos') {
     renderizarListaApelidosDrawer();
+  }
+  if (aba === 'loja' && typeof window.renderizarDrawerPresets === 'function') {
+    window.renderizarDrawerPresets();
   }
 };
 
@@ -1544,7 +1691,7 @@ function renderQueue(forceRerender) {
   });
 
   // Atualizar badges de contagem em tempo real
-  const countEspera = queueData.filter(i => (i.status === 'Pendente' || i.status === 'Em espera') && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(i.status)).length;
+  const countEspera = queueData.filter(i => (i.status === 'Pendente' || i.status === 'Em espera' || i.status === 'Aguardando Marcha') && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(i.status)).length;
   const countPreparo = queueData.filter(i => (i.status === 'Em preparo' || i.status === 'Em Preparo') && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(i.status)).length;
   const countPronto = queueData.filter(i => (i.status === 'Pronto' || i.status === 'Prontos') && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(i.status)).length;
 
@@ -1617,7 +1764,13 @@ function renderizarCardIndividual(item) {
   let prevTitle = null;
   let isPronto = false;
 
-  if (status === 'Em espera' || status === 'Pendente') {
+  if (status === 'Aguardando Marcha') {
+    btnIcon = 'ph-play';
+    btnColor = '#8b5cf6';
+    nextStatus = 'Em preparo';
+    btnTitle = 'Forçar início do preparo';
+    btnText = '▶️ Forçar Marcha';
+  } else if (status === 'Em espera' || status === 'Pendente') {
     btnIcon = 'ph-fire';
     btnColor = '#eb5757';
     nextStatus = 'Em preparo';
@@ -1743,6 +1896,51 @@ function renderizarCardIndividual(item) {
   const ptQtd = `
       <div class="kds-qty-badge" data-field-key="quantidade">${qty}x</div>`;
 
+  const smartSyncInfo = calcularSmartSyncInfo(item, queueData);
+  let smartSyncHtml = '';
+  if (smartSyncInfo) {
+    if (smartSyncInfo.tipo === 'hold') {
+      const segFormat = String(smartSyncInfo.segundos).padStart(2, '0');
+      smartSyncHtml = `
+        <div class="kds-smart-sync-badge hold" data-ss-item="${id}">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <i class="ph-bold ph-hourglass-high"></i>
+            <span>HOLD SMART-SYNC: Inicia em <strong class="ss-timer-display">${smartSyncInfo.minutos}:${segFormat}</strong></span>
+          </div>
+          <button type="button" class="kds-btn-force-fire" onclick="event.stopPropagation(); window.forcarInicioSmartSync(${id})" title="Quebrar hold e iniciar preparo imediatamente">
+            <i class="ph-bold ph-fire"></i> Forçar
+          </button>
+        </div>`;
+    } else if (smartSyncInfo.tipo === 'fogo') {
+      smartSyncHtml = `
+        <div class="kds-smart-sync-badge fogo" data-ss-item="${id}">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <i class="ph-fill ph-fire"></i>
+            <span>🔥 FOGO! INICIAR AGORA</span>
+          </div>
+          <span style="font-size:10.5px;opacity:0.9;">Cocção ~${smartSyncInfo.tempoPreparo}m</span>
+        </div>`;
+    } else if (smartSyncInfo.tipo === 'prep') {
+      smartSyncHtml = `
+        <div class="kds-smart-sync-badge prep" data-ss-item="${id}">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <i class="ph-bold ph-cooking-pot"></i>
+            <span>SINCRONIZADO: ~${smartSyncInfo.faltamMin} min</span>
+          </div>
+          <span style="font-size:10px;opacity:0.85;">Saída conjunta</span>
+        </div>`;
+    } else if (smartSyncInfo.tipo === 'pronto_sincronizado') {
+      smartSyncHtml = `
+        <div class="kds-smart-sync-badge sync-done" data-ss-item="${id}">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <i class="ph-fill ph-sparkle"></i>
+            <span>MESA SINCRONIZADA</span>
+          </div>
+          <span style="font-size:10px;">Prontos juntos!</span>
+        </div>`;
+    }
+  }
+
   const ptProduto = `
       <div class="item-produto" data-field-key="produto">
         <div class="item-produto-title-line">
@@ -1752,6 +1950,7 @@ function renderizarCardIndividual(item) {
         </div>
         ${obsEsc ? `<div class="item-observacao" style="background:rgba(239,68,68,0.1); color:#ef4444; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;"><i class="ph-bold ph-warning-circle"></i> OBS: ${obsEsc}</div>` : ''}
         ${compsHtml}
+        ${smartSyncHtml}
       </div>`;
 
   const ptAcao = `
@@ -1788,7 +1987,7 @@ function renderizarCardIndividual(item) {
       return true;
     });
 
-    const itensEspera = itensValidos.filter(i => i.status === 'Pendente' || i.status === 'Em espera');
+    const itensEspera = itensValidos.filter(i => i.status === 'Pendente' || i.status === 'Em espera' || i.status === 'Aguardando Marcha');
     const itensPreparo = itensValidos.filter(i => i.status === 'Em preparo' || i.status === 'Em Preparo');
     const itensProntos = itensValidos.filter(i => i.status === 'Pronto' || i.status === 'Prontos');
 
@@ -2402,4 +2601,329 @@ socket.on('ifood_error', (msg) => {
     window.enqueueTopNotification(`⚠️ iFood: ${msg}`, '#ef4444', 4000);
   }
 });
+
+// ══════════════════════════════════════════════════════════════════
+// LOJA DE LAYOUTS & PRESETS DA COZINHA (KDS PRESET HUB)
+// ══════════════════════════════════════════════════════════════════
+
+window.KDS_PRESETS_DATA = {
+  buffet: {
+    id: 'buffet',
+    category: 'buffet',
+    name: 'Buffet, Self-Service & A Quilo',
+    subtitle: 'Visão de Longe para Reposição de Cubas',
+    icon: 'ph-cooking-pot',
+    color: '#10b981',
+    tag: 'Self-Service & Quilo',
+    desc: 'Ideal para cozinhas de reposição de pista e cubas a quilo. Cards gigantes (GG) em 2 colunas amplas com fonte 20px em CAIXA ALTA, permitindo leitura cristalina a mais de 5 metros de distância do fogão.',
+    layout: 'grid',
+    sizes: { gridCols: '2', cardSize: 'gg', height: 96, gap: 18, fontSize: 20, qty: 72, header: 320, action: 260, cardMin: 420, caixaAlta: true },
+    smartSync: false,
+    specs: [
+      { label: 'Disposição', val: 'Grade 2 Colunas (GG)' },
+      { label: 'Visibilidade', val: 'Leitura a 5+ metros' },
+      { label: 'Tipografia', val: '20px CAIXA ALTA' },
+      { label: 'Foco Operação', val: 'Reposição de Cubas' }
+    ]
+  },
+  pizzaria: {
+    id: 'pizzaria',
+    category: 'pizzaria',
+    name: 'Pizzaria & Forneria Tradicional',
+    subtitle: 'Sincronia de Forno, Bordas & Sabores',
+    icon: 'ph-pizza',
+    color: '#ea580c',
+    tag: 'Pizzaria & Forno',
+    desc: 'Otimizado para tempo de forno e comandas com múltiplos sabores (meio-a-meio) e bordas recheadas. Smart-Sync ativo em 15 minutos para sincronizar entradas e pizzas na mesma fornada.',
+    layout: 'grid',
+    sizes: { gridCols: '3', cardSize: 'm', height: 80, gap: 12, fontSize: 16, qty: 56, header: 270, action: 230, cardMin: 320, caixaAlta: true },
+    smartSync: true,
+    specs: [
+      { label: 'Disposição', val: 'Grade 3 Colunas' },
+      { label: 'Smart-Sync', val: 'ON (15 min Forno)' },
+      { label: 'Destaques', val: 'Bordas & Sabores' },
+      { label: 'Tipografia', val: '16px CAIXA ALTA' }
+    ]
+  },
+  sushi: {
+    id: 'sushi',
+    category: 'sushi',
+    name: 'Sushi Bar & Rodízio Japonês',
+    subtitle: 'Ultra-Compacto para Sushiman',
+    icon: 'ph-fish',
+    color: '#06b6d4',
+    tag: 'Rodízio Japonês',
+    desc: 'Projetado para altíssimo volume de peças (combinados, temakis, sashimis e sushis). Densidade P com 5 colunas para o sushiman visualizar 15+ pedidos simultaneamente sem rolagem.',
+    layout: 'grid',
+    sizes: { gridCols: '5', cardSize: 'p', height: 56, gap: 8, fontSize: 13, qty: 44, header: 210, action: 180, cardMin: 220, caixaAlta: false },
+    smartSync: false,
+    specs: [
+      { label: 'Disposição', val: 'Grade 5 Colunas (P)' },
+      { label: 'Densidade', val: 'Alta Visão (15+ itens)' },
+      { label: 'Agilidade', val: 'Finalização 1-clique' },
+      { label: 'Smart-Sync', val: 'OFF (Fluxo Contínuo)' }
+    ]
+  },
+  bar: {
+    id: 'bar',
+    category: 'bar',
+    name: 'Bar, Pub & Choperia',
+    subtitle: 'Linhas Ágeis & Foco em Bebidas',
+    icon: 'ph-beer-bottle',
+    color: '#f59e0b',
+    tag: 'Bar & Balcão',
+    desc: 'Fila horizontal em linhas compactas (banners de 58px) para bartenders e baristas. Foco em velocidade com tempo alvo inferior a 3 minutos para drinks, chopps e coquetéis.',
+    layout: 'lista',
+    sizes: { gridCols: 'auto', cardSize: 'p', height: 58, gap: 8, fontSize: 14, qty: 48, header: 220, action: 210, cardMin: 280, caixaAlta: false },
+    smartSync: false,
+    specs: [
+      { label: 'Disposição', val: 'Linhas Ágeis (58px)' },
+      { label: 'Tempo Alvo', val: '< 3 minutos' },
+      { label: 'Alertas', val: 'Foco Bartender' },
+      { label: 'Foco Operação', val: 'Chopps & Coquetéis' }
+    ]
+  },
+  alacarte: {
+    id: 'alacarte',
+    category: 'alacarte',
+    name: 'À La Carte & Alta Gastronomia',
+    subtitle: 'Hold & Fire com Marcha de Pratos',
+    icon: 'ph-fork-knife',
+    color: '#8b5cf6',
+    tag: 'Alta Gastronomia',
+    desc: 'Fluxo refinado de cozinha com Marcha de Cursos (Entradas ➔ Principais ➔ Sobremesas) e Smart-Sync ativo com contagem regressiva para carnes, massas e guarnições finalizarem no mesmo segundo.',
+    layout: 'grid',
+    sizes: { gridCols: '3', cardSize: 'g', height: 86, gap: 14, fontSize: 16, qty: 58, header: 280, action: 240, cardMin: 340, caixaAlta: false },
+    smartSync: true,
+    specs: [
+      { label: 'Disposição', val: 'Grade 3 Colunas (G)' },
+      { label: 'Smart-Sync', val: 'Hold & Fire Ativo' },
+      { label: 'Marcha', val: 'Controle de Cursos' },
+      { label: 'Tipografia', val: '16px Elegante' }
+    ]
+  },
+  hamburgueria: {
+    id: 'hamburgueria',
+    category: 'hamburgueria',
+    name: 'Hamburgueria, Smash & Fast-Food',
+    subtitle: 'Kanban por Estações de Chapa e Montagem',
+    icon: 'ph-hamburger',
+    color: '#ef4444',
+    tag: 'Smash & Burguer',
+    desc: 'Fluxo em 3 colunas Kanban sincronizadas (Espera ➔ Chapa/Montagem ➔ Expedição). Destaque em negrito para pontos de carne (ao ponto, bem passada) e lista visual clara de adicionais.',
+    layout: 'kanban',
+    sizes: { gridCols: '3', cardSize: 'm', height: 76, gap: 12, fontSize: 15, qty: 54, header: 250, action: 220, cardMin: 300, caixaAlta: true },
+    smartSync: true,
+    specs: [
+      { label: 'Disposição', val: 'Kanban 3 Estações' },
+      { label: 'Destaques', val: 'Pontos & Adicionais' },
+      { label: 'Fluxo', val: 'Chapa ➔ Expedição' },
+      { label: 'Tipografia', val: '15px CAIXA ALTA' }
+    ]
+  },
+  delivery: {
+    id: 'delivery',
+    category: 'delivery',
+    name: 'Delivery Exclusivo & Dark Kitchen',
+    subtitle: 'Expedição, Motoboy & iFood Poller',
+    icon: 'ph-moped',
+    color: '#ea1d2c',
+    tag: 'Dark Kitchen & iFood',
+    desc: 'Fila linear com rastreamento de tempo de despacho para motoboys e integração nativa com o Poller iFood. Exibe código do pedido, embalagem e cronômetro de tolerância de entrega.',
+    layout: 'lista',
+    sizes: { gridCols: 'auto', cardSize: 'm', height: 68, gap: 10, fontSize: 15, qty: 54, header: 270, action: 230, cardMin: 300, caixaAlta: false },
+    smartSync: true,
+    specs: [
+      { label: 'Disposição', val: 'Linhas com Endereço' },
+      { label: 'Canais', val: 'iFood, Whats & Balcão' },
+      { label: 'SLA Entrega', val: 'Timer Regressivo' },
+      { label: 'Despacho', val: 'Código Motoboy' }
+    ]
+  },
+  cafeteria: {
+    id: 'cafeteria',
+    category: 'cafeteria',
+    name: 'Cafeteria, Bistrô & Doceria',
+    subtitle: 'Balcão Rápido & Cafés Especiais',
+    icon: 'ph-coffee',
+    color: '#d97706',
+    tag: 'Cafeteria & Bistrô',
+    desc: 'Visual leve e direto para pedidos rápidos de balcão (cafés, toasts, tortas, salgados). Cards médios com 4 colunas para operadores visualizarem o preparo instantâneo com rapidez.',
+    layout: 'grid',
+    sizes: { gridCols: '4', cardSize: 'm', height: 72, gap: 10, fontSize: 14, qty: 50, header: 240, action: 200, cardMin: 260, caixaAlta: false },
+    smartSync: false,
+    specs: [
+      { label: 'Disposição', val: 'Grade 4 Colunas' },
+      { label: 'Operação', val: 'Balcão & Takeaway' },
+      { label: 'Tempo Médio', val: '< 5 minutos' },
+      { label: 'Smart-Sync', val: 'OFF' }
+    ]
+  }
+};
+
+let kdsPresetFilterCurrent = 'todos';
+
+window.abrirLojaLayouts = function() {
+  const modal = document.getElementById('modal-loja-layouts');
+  if (modal) {
+    modal.style.display = 'flex';
+    window.renderizarLojaPresets(kdsPresetFilterCurrent);
+  }
+};
+
+window.fecharLojaLayouts = function() {
+  const modal = document.getElementById('modal-loja-layouts');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+};
+
+window.filtrarLojaPresets = function(cat) {
+  kdsPresetFilterCurrent = cat;
+  document.querySelectorAll('#kds-store-filter-bar .kds-store-filter-chip').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-cat') === cat);
+  });
+  window.renderizarLojaPresets(cat);
+};
+
+window.renderizarLojaPresets = function(filtro = 'todos') {
+  const grid = document.getElementById('kds-store-cards-grid');
+  if (!grid) return;
+
+  const activePreset = localStorage.getItem('chef_kds_active_preset') || '';
+  const entries = Object.values(window.KDS_PRESETS_DATA).filter(p => {
+    return filtro === 'todos' || p.category === filtro;
+  });
+
+  grid.innerHTML = entries.map(preset => {
+    const isActive = activePreset === preset.id;
+    const specsHtml = preset.specs.map(s => `
+      <div class="kds-niche-spec-row">
+        <span>${s.label}:</span>
+        <strong>${s.val}</strong>
+      </div>
+    `).join('');
+
+    return `
+      <div class="kds-niche-card ${isActive ? 'active-preset' : ''}" data-preset-id="${preset.id}">
+        <div class="kds-niche-card-header">
+          <div class="kds-niche-title-box">
+            <span class="kds-niche-tag-niche" style="background: ${preset.color}20; color: ${preset.color};">${preset.tag}</span>
+            <h3 style="margin-top: 6px;">${preset.name}</h3>
+            <span style="font-size: 11.5px; color: var(--kds-text-muted);">${preset.subtitle}</span>
+          </div>
+          <div class="kds-niche-icon-wrap" style="background: ${preset.color}15; color: ${preset.color};">
+            <i class="ph-bold ${preset.icon}"></i>
+          </div>
+        </div>
+
+        <p class="kds-niche-desc">${preset.desc}</p>
+
+        <div class="kds-niche-specs">
+          ${specsHtml}
+        </div>
+
+        <div class="kds-niche-footer">
+          <button type="button" class="kds-btn-apply-preset ${isActive ? 'is-active' : ''}" onclick="window.aplicarPresetNicho('${preset.id}')">
+            <i class="ph-bold ${isActive ? 'ph-check-circle' : 'ph-sparkle'}"></i>
+            <span>${isActive ? 'Layout Ativo na Cozinha' : 'Aplicar Este Layout'}</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+window.renderizarDrawerPresets = function() {
+  const container = document.getElementById('kds-drawer-presets-container');
+  if (!container) return;
+
+  const activePreset = localStorage.getItem('chef_kds_active_preset') || '';
+  const list = Object.values(window.KDS_PRESETS_DATA);
+
+  container.innerHTML = list.map(preset => {
+    const isActive = activePreset === preset.id;
+    return `
+      <div class="kds-drawer-preset-item ${isActive ? 'active-preset' : ''}">
+        <div class="kds-drawer-preset-info">
+          <i class="ph-bold ${preset.icon}" style="color: ${preset.color};"></i>
+          <div class="kds-drawer-preset-texts">
+            <strong>${preset.name}</strong>
+            <span>${preset.tag} • ${preset.specs[0].val}</span>
+          </div>
+        </div>
+        <button type="button" class="kds-btn-drawer-apply ${isActive ? 'is-active' : ''}" onclick="window.aplicarPresetNicho('${preset.id}')">
+          ${isActive ? 'Ativo' : 'Ativar'}
+        </button>
+      </div>
+    `;
+  }).join('');
+};
+
+window.aplicarPresetNicho = function(presetId) {
+  const preset = window.KDS_PRESETS_DATA[presetId];
+  if (!preset) return;
+
+  // 1. Salvar preset ativo no LocalStorage
+  localStorage.setItem('chef_kds_active_preset', presetId);
+
+  // 2. Aplicar modo de layout (grid / lista / kanban)
+  if (typeof window.alterarModoDisposicao === 'function') {
+    window.alterarModoDisposicao(preset.layout);
+  }
+
+  // 3. Aplicar tamanhos e dimensões das seções
+  if (preset.sizes) {
+    Object.assign(kdsSectionSizes, preset.sizes);
+    localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
+    if (preset.sizes.caixaAlta !== undefined) {
+      localStorage.setItem('chef_kds_caixa_alta', preset.sizes.caixaAlta ? '1' : '0');
+    }
+    aplicarTamanhosCSS(kdsSectionSizes);
+  }
+
+  // 4. Aplicar SmartSync
+  if (preset.smartSync !== undefined) {
+    localStorage.setItem('chef_kds_smartsync', preset.smartSync ? '1' : '0');
+    if (typeof atualizarBotaoSmartSyncUI === 'function') {
+      atualizarBotaoSmartSyncUI();
+    }
+  }
+
+  // 5. Salvar preferências no servidor para persistência
+  if (typeof kdsAgendarSalvarNoServidor === 'function') {
+    kdsAgendarSalvarNoServidor();
+  }
+
+  // 6. Atualizar UI
+  window.renderizarLojaPresets(kdsPresetFilterCurrent);
+  window.renderizarDrawerPresets();
+
+  // 7. Forçar atualização imediata da fila de pedidos
+  if (typeof renderQueue === 'function') {
+    renderQueue(true);
+  }
+
+  // 8. Notificação visual de sucesso
+  if (typeof window.enqueueTopNotification === 'function') {
+    window.enqueueTopNotification(`✨ Layout ativado com sucesso: ${preset.name}`, preset.color || '#10b981', 4000);
+  } else {
+    const toast = document.createElement('div');
+    toast.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);background:${preset.color || '#10b981'};color:white;padding:12px 24px;border-radius:12px;font-size:13px;font-weight:800;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,0.3);`;
+    toast.innerHTML = `✨ Layout Ativado: <strong>${preset.name}</strong>`;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.4s'; }, 3000);
+    setTimeout(() => toast.remove(), 3500);
+  }
+};
+
+// Renderizar drawer presets ao carregar o DOM se necessário
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    if (typeof window.renderizarDrawerPresets === 'function') {
+      window.renderizarDrawerPresets();
+    }
+  } catch(e){}
+});
+
 

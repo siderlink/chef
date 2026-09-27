@@ -1571,6 +1571,20 @@
         <div id="modal-montavel-preco" style="margin-top:8px; font-weight:800; color:var(--primary); font-size:15px;"></div>
         <input type="hidden" id="modal-composicoes" value="[]">
       </div>
+      <!-- DICA DO SOMMELIER & HARMONIZAÇÃO DE VINHOS/BEBIDAS -->
+      <div id="sommelier-cardapio-box" style="display:none; margin: 12px 0 6px; padding: 10px 12px; border-radius: 12px; background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%); border: 1.5px solid #f0abfc;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+          <span style="font-size: 11px; font-weight: 800; color: #86198f; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;">
+            🍷 Dica do Sommelier Cheff.pro
+          </span>
+          <span id="sommelier-cardapio-preco" style="font-size: 12.5px; font-weight: 800; color: #7e22ce;"></span>
+        </div>
+        <div style="font-size: 13px; font-weight: 700; color: #4a044e;" id="sommelier-cardapio-nome">Nome da Bebida</div>
+        <div style="font-size: 11.5px; color: #701a75; margin: 2px 0 8px; line-height: 1.3;" id="sommelier-cardapio-motivo">Harmonização sugerida</div>
+        <button type="button" id="btn-add-sommelier-cardapio" onclick="window.adicionarBebidaSommelier()" style="width: 100%; padding: 7px; background: #9333ea; color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <i class="ph-bold ph-plus"></i> Harmonizar e Incluir Bebida
+        </button>
+      </div>
       <button class="btn-submit" onclick="window.adicionarItemAoCarrinho()" style="margin-top: 8px;">
         Adicionar ao Pedido
       </button>
@@ -1601,6 +1615,28 @@
         style="display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid var(--border); padding-top: 12px; font-weight: 800;">
         <span>Total:</span>
         <span id="cart-total-value" style="color: var(--primary); font-size: 17px;">R$ 0,00</span>
+      </div>
+
+      <!-- CLUBE VIP & CASHBACK CHEFF.PRO -->
+      <div id="box-cashback-vip" style="margin: 10px 0; padding: 12px; background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(236,72,153,0.08)); border: 1.5px solid rgba(139,92,246,0.25); border-radius: 14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px;">
+          <span style="font-size: 12px; font-weight: 800; color: #7c3aed; display:flex; align-items:center; gap: 5px;">
+            <i class="ph-fill ph-crown"></i> Cheff VIP Cashback (5% de Volta)
+          </span>
+          <span id="cashback-badge-saldo" style="display:none; font-size: 11px; background: #7c3aed; color:white; padding: 2px 7px; border-radius: 10px; font-weight:800;">Saldo: R$ 0,00</span>
+        </div>
+        <div style="display:flex; gap: 6px; margin-top: 4px;">
+          <input type="tel" id="input-cashback-phone" class="form-input" placeholder="WhatsApp (DDD + Número) para cashback" style="font-size: 12px; padding: 8px;" onblur="window.consultarCashbackCliente && window.consultarCashbackCliente(this.value)">
+          <button type="button" class="btn-submit" onclick="window.consultarCashbackCliente && window.consultarCashbackCliente(document.getElementById('input-cashback-phone').value)" style="width: auto; padding: 0 12px; font-size: 11px; white-space: nowrap; background: #7c3aed;">
+            Verificar
+          </button>
+        </div>
+        <div id="cashback-resgate-action" style="display:none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(139,92,246,0.3); align-items:center; justify-content:space-between;">
+          <span style="font-size: 11.5px; color: #475569;">Saldo disponível: <strong id="cashback-valor-disp" style="color: #7c3aed;">R$ 0,00</strong></span>
+          <button type="button" id="btn-aplicar-cashback" onclick="window.aplicarCashbackDesconto && window.aplicarCashbackDesconto()" style="background: #10b981; color: white; border: none; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer;">
+            Aplicar Desconto
+          </button>
+        </div>
       </div>
 
       <div class="form-group" style="margin-top: 8px;">
@@ -2342,6 +2378,17 @@
       }
     };
 
+    let PRODUTOS_ESTRELAS = new Set();
+    fetch('/api/financeiro/produtos-estrelas')
+      .then(r => r.json())
+      .then(d => {
+        if (d && Array.isArray(d.estrelas)) {
+          PRODUTOS_ESTRELAS = new Set(d.estrelas.map(s => s.toLowerCase().trim()));
+          if (MENU && MENU.length > 0) renderMenu();
+        }
+      })
+      .catch(() => {});
+
     function renderMenu() {
       const container = document.getElementById('menu-items');
       let filtered = MENU;
@@ -2363,8 +2410,10 @@
       container.innerHTML = filtered.map(p => {
         const desc = gerarDescricao(p);
         const fotoSegura = (p.foto_url && /^https?:\/\//i.test(p.foto_url)) ? p.foto_url.replace(/"/g, '&quot;') : '';
+        const isEstrela = PRODUTOS_ESTRELAS.has((p.nome || '').toLowerCase().trim());
         return `
         <div class="menu-card" onclick="window.abrirItemDetails(${p.id})">
+          ${isEstrela ? `<span class="badge-estrela" style="position:absolute; top:6px; right:8px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:6px; display:inline-flex; align-items:center; gap:3px; z-index:2; box-shadow:0 2px 6px rgba(245,158,11,0.25);"><i class="ph-fill ph-star"></i> Mais Pedido</span>` : ''}
           ${fotoSegura
             ? `<img class="menu-card-emoji" src="${fotoSegura}" alt="${p.nome.replace(/"/g, '')}" loading="lazy" style="width:56px; height:56px; border-radius:14px; object-fit:cover; flex-shrink:0;" onerror="this.outerHTML='<div class=\\'menu-card-emoji\\'>${p.emoji || '🍽️'}</div>'">`
             : `<div class="menu-card-emoji">${p.emoji || '🍽️'}</div>`}
@@ -2445,6 +2494,67 @@
       renderMenu();
     });
 
+    let _sommelierBebidaAtual = null;
+
+    function obterHarmonizacaoSommelierCardapio(item) {
+      if (!item || !item.nome) return null;
+      const catItem = (item.categoria || '').toLowerCase();
+      if (catItem.includes('bebida') || catItem.includes('drink') || catItem.includes('bar')) return null;
+
+      const nomeLower = (item.nome + ' ' + catItem).toLowerCase();
+      const bebidas = MENU.filter(m => {
+        const c = (m.categoria || '').toLowerCase();
+        return c.includes('bebida') || c.includes('vinho') || c.includes('cerveja') || c.includes('drink') || c.includes('bar');
+      });
+      if (bebidas.length === 0) return null;
+
+      let termoBusca = [];
+      let motivo = '';
+      if (nomeLower.includes('carne') || nomeLower.includes('bife') || nomeLower.includes('picanha') || nomeLower.includes('costela') || nomeLower.includes('burguer') || nomeLower.includes('hamburguer') || nomeLower.includes('churrasco')) {
+        termoBusca = ['malbec', 'cabernet', 'tinto', 'ipa', 'chopp', 'preta', 'cerveja'];
+        motivo = 'Harmonização Encorpada: taninos e lúpulo que quebram a gordura do corte e exaltam o sabor grelhado.';
+      } else if (nomeLower.includes('peixe') || nomeLower.includes('salm') || nomeLower.includes('camar') || nomeLower.includes('frutos') || nomeLower.includes('salada') || nomeLower.includes('tilapia')) {
+        termoBusca = ['branco', 'sauvignon', 'chardonnay', 'pilsen', 'gin', 'limonada', 'suco'];
+        motivo = 'Harmonização Cítrica & Fresca: frescor límpido ideal para realçar notas marinhas e texturas delicadas.';
+      } else if (nomeLower.includes('massa') || nomeLower.includes('pizza') || nomeLower.includes('lasanha') || nomeLower.includes('risoto')) {
+        termoBusca = ['tinto', 'merlot', 'chianti', 'chopp', 'refrigerante'];
+        motivo = 'Harmonização Clássica: acidez equilibrada que casa perfeitamente com molhos de tomate e queijos gratinados.';
+      } else if (nomeLower.includes('sobremesa') || nomeLower.includes('torta') || nomeLower.includes('petit') || nomeLower.includes('pudim') || nomeLower.includes('brownie')) {
+        termoBusca = ['porto', 'espresso', 'cafe', 'licor', 'doce'];
+        motivo = 'Harmonização de Fechamento: notas tostadas aromáticas que complementam o cacau e a calda de açúcar.';
+      } else {
+        termoBusca = ['chopp', 'cerveja', 'suco', 'refrigerante', 'agua'];
+        motivo = 'Sugestão do Chef: acompanhamento refrescante ideal para complementar este prato.';
+      }
+
+      let encontrada = null;
+      for (const t of termoBusca) {
+        encontrada = bebidas.find(b => b.nome.toLowerCase().includes(t));
+        if (encontrada) break;
+      }
+      if (!encontrada) encontrada = bebidas[0];
+      return { bebida: encontrada, motivo: motivo };
+    }
+
+    window.adicionarBebidaSommelier = function() {
+      if (!_sommelierBebidaAtual) return;
+      CART.push({
+        id: _sommelierBebidaAtual.id,
+        nome: _sommelierBebidaAtual.nome,
+        preco: parseFloat(_sommelierBebidaAtual.preco),
+        quantidade: 1,
+        emoji: _sommelierBebidaAtual.emoji || '🍷',
+        observacao: 'Harmonização Sommelier',
+        composicoes: []
+      });
+      atualizarBadgeCarrinho();
+      const box = document.getElementById('sommelier-cardapio-box');
+      if (box) {
+        box.innerHTML = '<div style="color:#15803d; font-weight:800; font-size:12px; text-align:center; padding:6px;">✓ ' + _sommelierBebidaAtual.nome + ' adicionado ao carrinho!</div>';
+      }
+      if (typeof showToast === 'function') showToast('🍷 Bebida harmonizada adicionada ao carrinho!', 'success');
+    };
+
     window.abrirItemDetails = (id) => {
       const item = MENU.find(x => x.id === id);
       if (!item) return;
@@ -2462,6 +2572,20 @@
 
       const montavelSection = document.getElementById('modal-montavel-section');
       if (montavelSection) montavelSection.style.display = 'none';
+
+      // Harmonização do Sommelier Cheff.pro
+      const sommelierBox = document.getElementById('sommelier-cardapio-box');
+      const par = obterHarmonizacaoSommelierCardapio(item);
+      if (sommelierBox && par && par.bebida) {
+        _sommelierBebidaAtual = par.bebida;
+        document.getElementById('sommelier-cardapio-nome').innerText = par.bebida.nome;
+        document.getElementById('sommelier-cardapio-motivo').innerText = par.motivo;
+        document.getElementById('sommelier-cardapio-preco').innerText = `+ R$ ${parseFloat(par.bebida.preco).toFixed(2).replace('.', ',')}`;
+        sommelierBox.style.display = 'block';
+      } else if (sommelierBox) {
+        sommelierBox.style.display = 'none';
+        _sommelierBebidaAtual = null;
+      }
 
       if (typeof restauranteId !== 'undefined' && item.id) {
         fetch('/api/montaveis/produto/' + item.id, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('chef_token') || '') } })
@@ -2727,6 +2851,58 @@
         window.fecharCarrinho();
       } else {
         window.abrirCarrinho();
+      }
+    };
+
+    // ── PILAR 4: CASHBACK VIP NO CARDÁPIO ──
+    let cashbackDescontoAplicado = 0;
+    window.consultarCashbackCliente = async function(tel) {
+      if (!tel || tel.replace(/\D/g, '').length < 8) return;
+      try {
+        const resp = await fetch('/api/cashback/consultar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ telefone: tel })
+        });
+        const data = await resp.json();
+        if (data && data.sucesso) {
+          const badge = document.getElementById('cashback-badge-saldo');
+          const actionBox = document.getElementById('cashback-resgate-action');
+          const valorDisp = document.getElementById('cashback-valor-disp');
+          if (badge) {
+            badge.innerText = `Saldo: R$ ${data.saldo_disponivel.toFixed(2)}`;
+            badge.style.display = 'inline-block';
+          }
+          if (actionBox && valorDisp) {
+            if (data.saldo_disponivel > 0) {
+              valorDisp.innerText = `R$ ${data.saldo_disponivel.toFixed(2)}`;
+              actionBox.style.display = 'flex';
+            } else {
+              actionBox.style.display = 'none';
+            }
+          }
+          const nameInput = document.getElementById('input-customer-name');
+          if (data.nome && nameInput && !nameInput.value.trim()) {
+            nameInput.value = data.nome;
+          }
+        }
+      } catch(e) {}
+    };
+
+    window.aplicarCashbackDesconto = function() {
+      const tel = (document.getElementById('input-cashback-phone').value || '').trim();
+      if (!tel) return alert('Informe seu WhatsApp para resgatar o cashback.');
+      const valorDispEl = document.getElementById('cashback-valor-disp');
+      const saldo = valorDispEl ? parseFloat(valorDispEl.innerText.replace('R$', '').replace(',', '.')) : 0;
+      if (saldo <= 0) return alert('Sem saldo disponível para resgate.');
+      
+      cashbackDescontoAplicado = saldo;
+      alert(`🎉 Desconto de R$ ${saldo.toFixed(2)} de Cashback aplicado na sua comanda!`);
+      const btn = document.getElementById('btn-aplicar-cashback');
+      if (btn) {
+        btn.innerText = '✓ Aplicado';
+        btn.style.background = '#059669';
+        btn.disabled = true;
       }
     };
 

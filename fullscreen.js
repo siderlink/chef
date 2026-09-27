@@ -170,6 +170,24 @@
   function injectButton() {
     if (document.getElementById('btn-global-fullscreen')) return;
 
+    // Se estiver no KDS Fila de Pedidos, não duplicar botões de tema ou engrenagem já existentes nativamente
+    if (location.pathname.includes('fila-pedidos') || document.querySelector('.kds-navbar')) {
+      const kdsRight = document.querySelector('.kds-navbar-right');
+      if (kdsRight && !document.getElementById('btn-global-fullscreen')) {
+        styleForLight(btn);
+        btn.id = 'btn-global-fullscreen';
+        btn.className = 'kds-icon-btn';
+        btn.style.width = '34px';
+        btn.style.height = '34px';
+        btn.style.borderRadius = '10px';
+        btn.style.display = 'inline-flex';
+        btn.style.alignItems = 'center';
+        btn.style.justifyContent = 'center';
+        kdsRight.appendChild(btn);
+      }
+      return;
+    }
+
     const headerRightActions = document.getElementById('header-right-actions');
     const topMenubar = document.querySelector('.top-menubar');
     const headerElement = document.querySelector('.header') || document.querySelector('header');

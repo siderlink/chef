@@ -655,6 +655,28 @@
       <div class="line"></div>
     </div>
 
+    <!-- CASHBACK VIP CHEFF.PRO -->
+    <div id="conta-cashback-box" style="margin: 16px 0; padding: 14px; background: linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(236,72,153,0.08) 100%); border: 1.5px solid rgba(139,92,246,0.25); border-radius: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:12.5px; font-weight:800; color:#7c3aed; display:flex; align-items:center; gap:6px;">
+          <i class="ph-fill ph-crown"></i> Resgatar Cashback Cheff VIP
+        </span>
+        <span id="conta-cb-saldo-badge" style="display:none; font-size:11px; background:#7c3aed; color:white; padding:2px 8px; border-radius:10px; font-weight:800;">Saldo: R$ 0,00</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <input type="tel" id="conta-cb-tel" placeholder="WhatsApp (DDD + Número)" style="flex:1; padding:8px 12px; border-radius:10px; border:1px solid rgba(139,92,246,0.3); font-size:12px; background:var(--card-bg); color:var(--text);" onblur="consultarCashbackConta(this.value)">
+        <button type="button" onclick="consultarCashbackConta(document.getElementById('conta-cb-tel').value)" style="padding:8px 14px; border-radius:10px; border:none; background:#7c3aed; color:white; font-size:12px; font-weight:800; cursor:pointer;">
+          Consultar
+        </button>
+      </div>
+      <div id="conta-cb-action" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed rgba(139,92,246,0.3); justify-content:space-between; align-items:center;">
+        <span style="font-size:12px; color:var(--text-secondary);">Disponível: <strong id="conta-cb-valor-disp" style="color:#7c3aed;">R$ 0,00</strong></span>
+        <button type="button" id="btn-resgatar-conta" onclick="aplicarDescontoCashbackConta()" style="padding:6px 12px; border-radius:8px; border:none; background:#10b981; color:white; font-size:11.5px; font-weight:800; cursor:pointer;">
+          Abater na Conta
+        </button>
+      </div>
+    </div>
+
     <div class="totals-wrapper">
       <div class="total-row" id="subtotal-row">
         <span class="label-group"><i class="ph ph-shopping-cart-simple"></i> Subtotal</span>
@@ -703,6 +725,41 @@
   const urlParams = new URLSearchParams(window.location.search);
 const mesaQuery = urlParams.get('mesa');
   let hasLoaded = false;
+
+  async function consultarCashbackConta(tel) {
+    if (!tel || tel.replace(/\D/g, '').length < 8) return;
+    try {
+      const resp = await fetch('/api/cashback/consultar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefone: tel })
+      });
+      const data = await resp.json();
+      if (data && data.sucesso) {
+        const badge = document.getElementById('conta-cb-saldo-badge');
+        const actionBox = document.getElementById('conta-cb-action');
+        const valorDisp = document.getElementById('conta-cb-valor-disp');
+        if (badge) {
+          badge.innerText = 'Saldo: R$ ' + data.saldo_disponivel.toFixed(2);
+          badge.style.display = 'inline-block';
+        }
+        if (actionBox && valorDisp) {
+          if (data.saldo_disponivel > 0) {
+            valorDisp.innerText = 'R$ ' + data.saldo_disponivel.toFixed(2);
+            actionBox.style.display = 'flex';
+          } else {
+            actionBox.style.display = 'none';
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  async function aplicarDescontoCashbackConta() {
+    const tel = (document.getElementById('conta-cb-tel').value || '').trim();
+    if (!tel) return alert('Informe o número de WhatsApp.');
+    const el = document.getElementById('conta-cb-valor-disp');
+    const valor = el ? parseFloat(el.innerText.replace('R
 
   // ── Pré-definição do restaurante: esta tela usa a paleta escolhida nas Configurações ──
   window.socket = (typeof socket !== 'undefined' && window.socket === undefined) ? socket : window.socket;
@@ -1088,4 +1145,3 @@ const mesaQuery = urlParams.get('mesa');
   </script>
 </body>
 </html>
-

@@ -1660,33 +1660,83 @@ window.addDirectToCart = (id) => {
   showToast(`${prod.name} adicionado ao carrinho!`, '#3ab55b');
 };
 
+function obterHarmonizacaoSommelier(product) {
+  if (!product || !product.name) return null;
+  const nomeLower = (product.name + ' ' + (product.category || '')).toLowerCase();
+  
+  const bebidas = MENU.filter(m => {
+    const cat = (m.category || '').toLowerCase();
+    return cat.includes('bebida') || cat.includes('vinho') || cat.includes('cerveja') || cat.includes('drink') || cat.includes('bar');
+  });
+  if (bebidas.length === 0) return null;
+
+  let termoBusca = [];
+  let motivo = '';
+
+  if (nomeLower.includes('carne') || nomeLower.includes('bife') || nomeLower.includes('picanha') || nomeLower.includes('costela') || nomeLower.includes('burguer') || nomeLower.includes('hamburguer') || nomeLower.includes('churrasco')) {
+    termoBusca = ['malbec', 'cabernet', 'tinto', 'ipa', 'chopp', 'preta', 'cerveja'];
+    motivo = 'Harmonização Encorpada: taninos e lúpulo que quebram a gordura do corte e exaltam o sabor grelhado.';
+  } else if (nomeLower.includes('peixe') || nomeLower.includes('salm') || nomeLower.includes('camar') || nomeLower.includes('frutos') || nomeLower.includes('salada') || nomeLower.includes('tilapia')) {
+    termoBusca = ['branco', 'sauvignon', 'chardonnay', 'pilsen', 'gin', 'limonada', 'suco'];
+    motivo = 'Harmonização Cítrica & Fresca: frescor límpido ideal para realçar notas marinhas e texturas delicadas.';
+  } else if (nomeLower.includes('massa') || nomeLower.includes('pizza') || nomeLower.includes('lasanha') || nomeLower.includes('risoto')) {
+    termoBusca = ['tinto', 'merlot', 'chianti', 'chopp', 'refrigerante'];
+    motivo = 'Harmonização Clássica: acidez equilibrada que casa perfeitamente com molhos de tomate e queijos gratinados.';
+  } else if (nomeLower.includes('sobremesa') || nomeLower.includes('torta') || nomeLower.includes('petit') || nomeLower.includes('pudim') || nomeLower.includes('brownie')) {
+    termoBusca = ['porto', 'espresso', 'cafe', 'licor', 'doce'];
+    motivo = 'Harmonização de Fechamento: notas tostadas aromáticas que complementam o cacau e a calda de açúcar.';
+  } else {
+    termoBusca = ['chopp', 'cerveja', 'suco', 'refrigerante', 'agua'];
+    motivo = 'Sugestão do Chef: acompanhamento refrescante ideal para complementar este prato.';
+  }
+
+  let bebidaEncontrada = null;
+  for (const t of termoBusca) {
+    bebidaEncontrada = bebidas.find(b => b.name.toLowerCase().includes(t));
+    if (bebidaEncontrada) break;
+  }
+  if (!bebidaEncontrada) bebidaEncontrada = bebidas[0];
+
+  return { bebida: bebidaEncontrada, motivo: motivo };
+}
+
 function renderSuggestions(product) {
   const sugSection = document.getElementById('detail-suggestions');
   const sugList = document.getElementById('sugestoes-list');
-  
-  let pool = MENU.filter(m => m.category !== product.category);
-  
-  if (!product.category.toLowerCase().includes('bebida')) {
-     const bebidas = pool.filter(m => m.category.toLowerCase().includes('bebida'));
-     if (bebidas.length > 0) pool = bebidas;
+  if (!sugSection || !sugList) return;
+
+  const sommelier = obterHarmonizacaoSommelier(product);
+  let pool = MENU.filter(m => m.category !== product.category && (!sommelier || m.id !== sommelier.bebida.id));
+  pool = pool.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+  let html = '';
+  if (sommelier && sommelier.bebida) {
+    const b = sommelier.bebida;
+    html += `
+      <div class="suggestion-card sommelier-card" style="border: 2px solid #a855f7; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); min-width: 170px; position: relative;">
+        <span style="position: absolute; top: 4px; right: 6px; font-size: 9px; font-weight: 800; background: #9333ea; color: white; padding: 2px 6px; border-radius: 6px;">🍷 Sommelier IA</span>
+        <div class="sug-img">${b.emoji}</div>
+        <div class="sug-name" style="font-weight: 800; color: #581c87;" title="${b.name}">${b.name}</div>
+        <div class="sug-price" style="color: #7e22ce;">R$ ${b.price.toFixed(2).replace('.', ',')}</div>
+        <div style="font-size: 9.5px; color: #6b21a8; margin: 4px 0 6px; line-height: 1.25;">${sommelier.motivo}</div>
+        <button onclick="addDirectToCart(${b.id})" style="width:100%; padding:6px; background:#9333ea; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">+ Harmonizar</button>
+      </div>
+    `;
   }
-  
-  pool = pool.sort(() => 0.5 - Math.random()).slice(0, 4); // Show up to 4 items
-  
-  if (pool.length === 0) {
-    sugSection.style.display = 'none';
-    return;
-  }
-  
+
+  pool.forEach(item => {
+    html += `
+      <div class="suggestion-card">
+        <div class="sug-img">${item.emoji}</div>
+        <div class="sug-name" title="${item.name}">${item.name}</div>
+        <div class="sug-price">R$ ${item.price.toFixed(2).replace('.', ',')}</div>
+        <button onclick="addDirectToCart(${item.id})" style="margin-top:8px; width:100%; padding:6px; background:#eaf8ef; color:#3ab55b; border:1px solid #3ab55b; border-radius:6px; font-weight:bold; cursor:pointer;">+ Adicionar</button>
+      </div>
+    `;
+  });
+
   sugSection.style.display = 'block';
-  sugList.innerHTML = pool.map(item => `
-    <div class="suggestion-card">
-      <div class="sug-img">${item.emoji}</div>
-      <div class="sug-name" title="${item.name}">${item.name}</div>
-      <div class="sug-price">R$ ${item.price.toFixed(2).replace('.', ',')}</div>
-      <button onclick="addDirectToCart(${item.id})" style="margin-top:8px; width:100%; padding:6px; background:#eaf8ef; color:#3ab55b; border:1px solid #3ab55b; border-radius:6px; font-weight:bold; cursor:pointer;">+ Adicionar</button>
-    </div>
-  `).join('');
+  sugList.innerHTML = html;
 }
 
 document.getElementById('btn-plus').onclick = () => { selectedQty++; document.getElementById('detail-qty').innerText = selectedQty; updateDetailPrice(); };
@@ -1789,6 +1839,15 @@ document.getElementById('btn-add-to-cart').onclick = () => {
     composicoes = rawComps;
   }
 
+  const btnEtapaAtiva = document.querySelector('#etapas-selector .btn-etapa.active');
+  const catLower = (selectedProduct.category || '').toLowerCase();
+  const etapa = btnEtapaAtiva ? btnEtapaAtiva.dataset.etapa : (
+    catLower.includes('entrada') || catLower.includes('aperitivo') || catLower.includes('porç') || catLower.includes('porc') ? 'Entrada' :
+    catLower.includes('sobremesa') || catLower.includes('doce') ? 'Sobremesa' :
+    catLower.includes('bebida') || catLower.includes('bar') || catLower.includes('drink') || catLower.includes('suco') ? 'Bebida' : 'Principal'
+  );
+  const aguardarMarcha = document.getElementById('check-aguardar-marcha') ? document.getElementById('check-aguardar-marcha').checked : false;
+
   cart.push({
     productName: selectedProduct.name,
     productEmoji: selectedProduct.emoji,
@@ -1801,7 +1860,10 @@ document.getElementById('btn-add-to-cart').onclick = () => {
     localName: currentTable,
     userName: loggedUser.nome,
     time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-    addons: []
+    addons: [],
+    etapa: etapa,
+    marcha_status: aguardarMarcha ? 'aguardando_marcha' : 'marchado',
+    aguardar_marcha: aguardarMarcha
   });
   _compsAtuais = [];
   _garcomMontavelConfig = null;
@@ -1889,7 +1951,10 @@ document.getElementById('btn-send-order').onclick = () => {
       composicoes: item.composicoes || [],
       total: item.total.toFixed(2).replace('.', ','),
       mesa_comanda: comandaName,
-      cliente_telefone: phone || ''
+      cliente_telefone: phone || '',
+      etapa: item.etapa || 'Principal',
+      marcha_status: item.marcha_status || 'marchado',
+      aguardar_marcha: item.aguardar_marcha || false
     };
     /* Offline-first (upsell): sem internet, grava no dispositivo e sincroniza depois */
     if (window.ChefOfflineQueue && window.ChefOfflineQueue.habilitado() && !navigator.onLine) {
@@ -1911,6 +1976,20 @@ document.getElementById('btn-send-order').onclick = () => {
   updateCartBadge();
   showToast('Pedido enviado com sucesso!');
   showView('tables', 'Comanda Mobile');
+};
+
+// ── MARCHA DE PRATOS DO SALÃO (DISPARO DE ETAPAS) ──
+window.marcharEtapaMesa = function(etapa) {
+  const etapaAlvo = etapa || 'Principal';
+  if (!currentTable) return alert('Selecione uma mesa ocupada primeiro.');
+  if (confirm(`Confirmar marcha dos ${etapaAlvo}s da mesa ${currentTable} para início imediato na cozinha?`)) {
+    socket.emit('marchar_etapa_mesa', {
+      mesa: currentTable,
+      etapa: etapaAlvo,
+      userName: loggedUser ? loggedUser.nome : 'Garçom'
+    });
+    showToast(`🔥 ${etapaAlvo}s da mesa ${currentTable} marchados! Cozinha notificada.`);
+  }
 };
 
 // --- Esteira ---
@@ -3695,5 +3774,27 @@ window.mostrarQrMesaCliente = function () {
 window.abrirLinkClienteDireto = function () {
   if (window._clienteUrlAtual) {
     window.open(window._clienteUrlAtual, '_blank');
+  }
+};
+
+
+window.selecionarEtapaPrato = function(btn, etapa) {
+  document.querySelectorAll('#etapas-selector .btn-etapa').forEach(b => {
+    b.classList.remove('active');
+    b.style.borderColor = '#cbd5e1';
+    b.style.background = 'white';
+    b.style.color = '#334155';
+    b.style.fontWeight = '700';
+  });
+  if (btn) {
+    btn.classList.add('active');
+    btn.style.borderColor = '#6366f1';
+    btn.style.background = '#eef2ff';
+    btn.style.color = '#4338ca';
+    btn.style.fontWeight = '800';
+  }
+  const check = document.getElementById('check-aguardar-marcha');
+  if (check) {
+    check.checked = (etapa === 'Principal' || etapa === 'Sobremesa');
   }
 };

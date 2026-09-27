@@ -636,18 +636,27 @@ module.exports = function(app, options) {
           item.quadrante = 'Estrela';
           item.icone_quadrante = '⭐';
           item.acao_sugerida = 'Produto Campeão: manter qualidade impecável, divulgar em banners e fidelizar.';
+          item.preco_sugerido = Math.round(item.preco_medio * 100) / 100;
+          item.ganho_potencial = 0;
         } else if (altaPopularidade && !altaLucratividade) {
           item.quadrante = 'Cavalo de Carga';
           item.icone_quadrante = '🐴';
-          item.acao_sugerida = 'Alto volume, margem apertada: renegociar custo de insumos ou reajustar levemente o preço.';
+          item.acao_sugerida = 'Alto volume, margem apertada: renegociar insumos ou reajustar levemente o preço (+8%).';
+          const recPreco = Math.ceil(item.preco_medio * 1.08 * 2) / 2; // Arredonda para 0.50
+          item.preco_sugerido = recPreco > item.preco_medio ? recPreco : Math.round((item.preco_medio + 2.00) * 100) / 100;
+          item.ganho_potencial = Math.round((item.preco_sugerido - item.preco_medio) * item.qtd * 100) / 100;
         } else if (!altaPopularidade && altaLucratividade) {
           item.quadrante = 'Quebra-Cabeça';
           item.icone_quadrante = '🧩';
           item.acao_sugerida = 'Alta rentabilidade, pouca saída: destacar nas comissões de garçom ou no topo do cardápio.';
+          item.preco_sugerido = Math.round(item.preco_medio * 0.95 * 2) / 2;
+          item.ganho_potencial = 0;
         } else {
           item.quadrante = 'Cão';
           item.icone_quadrante = '🐕';
-          item.acao_sugerida = 'Baixa margem e baixa saída: reavaliar relevância ou substituir por novidade no cardápio.';
+          item.acao_sugerida = 'Baixa margem e baixa saída: reavaliar relevância, testar combo ou retirar do cardápio.';
+          item.preco_sugerido = Math.round(item.preco_medio * 100) / 100;
+          item.ganho_potencial = 0;
         }
       });
 
@@ -664,6 +673,8 @@ module.exports = function(app, options) {
         caes: itensProcessados.filter(i => i.quadrante === 'Cão')
       };
 
+      const ganhoTotalPotencial = resumoQuadrantes.cavalos_de_carga.reduce((acc, c) => acc + (c.ganho_potencial || 0), 0);
+
       res.json({
         ok: true,
         periodo: { inicio: dtInicio, fim: dtFim },
@@ -672,7 +683,8 @@ module.exports = function(app, options) {
           volume_geral: volumeGeral,
           itens_distintos: rows.length,
           media_volume_por_item: mediaVolumePorProduto,
-          media_margem_unitaria: mediaMargemUnitaria
+          media_margem_unitaria: mediaMargemUnitaria,
+          ganho_potencial_reajuste: ganhoTotalPotencial
         },
         curva_abc: itensProcessados,
         classes: {
@@ -684,11 +696,69 @@ module.exports = function(app, options) {
           estrelas: resumoQuadrantes.estrelas.length,
           cavalos_de_carga: resumoQuadrantes.cavalos_de_carga.length,
           quebra_cabecas: resumoQuadrantes.quebra_cabecas.length,
-          caes: resumoQuadrantes.caes.length
+          caes: resumoQuadrantes.caes.length,
+          ganho_potencial_total: ganhoTotalPotencial,
+          itens_cavalos: resumoQuadrantes.cavalos_de_carga.map(c => ({
+            nome: c.nome,
+            qtd: c.qtd,
+            preco_atual: c.preco_medio,
+            preco_sugerido: c.preco_sugerido,
+            ganho_potencial: c.ganho_potencial
+          }))
         }
       });
     } catch (e) {
       res.status(500).json({ ok: false, erro: 'Falha ao processar Curva ABC: ' + e.message });
+    }
+  });
+
+  // 4.1 APLICAÇÃO DE PREÇO SUGERIDO (1-CLIQUE PELO DONO)
+  app.post('/api/financeiro/aplicar-preco-sugerido', authMiddleware, async (req, res) => {
+    const db = resolveDb(req);
+    const { nome, novo_preco } = req.body || {};
+    if (!nome || novo_preco === undefined || isNaN(novo_preco)) {
+      return res.status(400).json({ ok: false, erro: 'Nome do produto e novo preço numérico são obrigatórios.' });
+    }
+    const precoNum = Math.max(0, parseFloat(novo_preco));
+    db.run(
+      `UPDATE produtos SET preco = ? WHERE LOWER(TRIM(nome)) = LOWER(TRIM(?))`,
+      [precoNum, nome],
+      function (err) {
+        if (err) return res.status(500).json({ ok: false, erro: 'Erro ao atualizar preço: ' + err.message });
+        if (this && this.changes === 0) {
+          return res.status(404).json({ ok: false, erro: `Produto "${nome}" não localizado na tabela de produtos.` });
+        }
+        if (io) {
+          io.emit('produtos_atualizados');
+          io.emit('menu_alterado');
+        }
+        res.json({
+          ok: true,
+          mensagem: `Preço do item "${nome}" atualizado com sucesso para R$ ${precoNum.toFixed(2).replace('.', ',')}`,
+          produto: nome,
+          novo_preco: precoNum
+        });
+      }
+    );
+  });
+
+  // 4.2 LISTA DE ITENS ESTRELAS PARA O CARDÁPIO DIGITAL
+  app.get('/api/financeiro/produtos-estrelas', async (req, res) => {
+    const db = resolveDb(req);
+    try {
+      const rows = await new Promise(r => db.all(`
+        SELECT p.productName, SUM(p.quantity) as qtd
+        FROM pedidos p
+        WHERE p.status IN ('Finalizado', 'Pago')
+          AND date(COALESCE(p.createdAt, p.time)) >= date('now', '-30 days')
+        GROUP BY p.productName
+        ORDER BY qtd DESC
+        LIMIT 6
+      `, [], (e, d) => r(d || [])));
+      const nomes = rows.map(r => r.productName);
+      res.json({ ok: true, estrelas: nomes });
+    } catch(e) {
+      res.json({ ok: true, estrelas: [] });
     }
   });
 

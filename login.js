@@ -148,23 +148,36 @@ window.selecionarEstacaoTrabalho = function(url, estacaoNome) {
 window.setTipoPerfil = function(tipo) {
   _tipoPerfil = tipo;
   const btnOwner = document.getElementById('tab-login-owner');
+  const btnParear = document.getElementById('tab-login-parear');
   const btnColab = document.getElementById('tab-login-colaborador');
   const formOwner = document.getElementById('form-owner-side');
+  const formParear = document.getElementById('form-pareamento-side');
   const formColab = document.getElementById('form-colaborador-side');
   const title = document.getElementById('login-title');
   const subtitle = document.getElementById('login-subtitle');
 
+  // Reset visual das abas
+  [btnOwner, btnParear, btnColab].forEach(btn => {
+    if (btn) { btn.style.background = 'transparent'; btn.style.color = 'var(--text-muted)'; btn.style.fontWeight = '700'; }
+  });
+  if (formOwner) formOwner.style.display = 'none';
+  if (formParear) formParear.style.display = 'none';
+  if (formColab) formColab.style.display = 'none';
+
   if (tipo === 'owner') {
     if (btnOwner) { btnOwner.style.background = 'var(--primary)'; btnOwner.style.color = 'white'; btnOwner.style.fontWeight = '800'; }
-    if (btnColab) { btnColab.style.background = 'transparent'; btnColab.style.color = 'var(--text-muted)'; btnColab.style.fontWeight = '700'; }
     if (formOwner) formOwner.style.display = 'block';
-    if (formColab) formColab.style.display = 'none';
     if (title) title.innerText = 'Painel do Proprietário';
     if (subtitle) subtitle.innerText = 'Acesse a gestão, relatórios e controle financeiro.';
+  } else if (tipo === 'pareamento') {
+    if (btnParear) { btnParear.style.background = '#2563eb'; btnParear.style.color = 'white'; btnParear.style.fontWeight = '800'; }
+    if (formParear) formParear.style.display = 'block';
+    if (title) title.innerText = 'Liberar Aparelho (Zero Senha)';
+    if (subtitle) subtitle.innerText = 'O Dono autoriza este aparelho pelo celular dele sem você precisar de senha.';
+    ensureLoginSocket();
+    iniciarPareamentoTerminal();
   } else {
-    if (btnOwner) { btnOwner.style.background = 'transparent'; btnOwner.style.color = 'var(--text-muted)'; btnOwner.style.fontWeight = '700'; }
     if (btnColab) { btnColab.style.background = '#2563eb'; btnColab.style.color = 'white'; btnColab.style.fontWeight = '800'; }
-    if (formOwner) formOwner.style.display = 'none';
     if (formColab) formColab.style.display = 'block';
     if (title) title.innerText = 'Acesso do Colaborador';
     if (subtitle) subtitle.innerText = 'Digite seu PIN ou usuário para abrir suas rotas operacionais.';
@@ -360,6 +373,19 @@ function ensureLoginSocket() {
         btnSubmit.disabled = false;
       }
     });
+
+    // ─── LIBERAÇÃO REMOTA DE TERMINAL (ZERO SENHA) ───
+    loginSocket.on('aparelho_autorizado_remotamente', (payload) => {
+      console.log('[Login] 🚀 Aparelho autorizado remotamente pelo dono:', payload);
+      window.aplicarCredenciaisAutorizadas(payload);
+    });
+
+    loginSocket.on('pareamento_iniciado', (data) => {
+      if (data && data.code) {
+        _codigoPareamentoAtual = data.code;
+        window.atualizarDisplayCodigoPareamento(data.code);
+      }
+    });
   }
 }
 
@@ -390,6 +416,203 @@ window.attemptColaboradorLogin = function() {
   }
 };
 
+// ─── FUNÇÕES DE PAREAMENTO REMOTO (ZERO SENHA) ───
+let _codigoPareamentoAtual = null;
+let _pareamentoPollTimer = null;
+
+function getDeviceInfo() {
+  const ua = navigator.userAgent || '';
+  let os = 'Dispositivo';
+  if (/Android/i.test(ua)) os = 'Android';
+  else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+  else if (/Windows/i.test(ua)) os = 'Windows PC';
+  else if (/Macintosh|Mac OS/i.test(ua)) os = 'macOS';
+  else if (/Linux/i.test(ua)) os = 'Linux';
+
+  let browser = 'Navegador';
+  if (/Chrome|CriOS/i.test(ua)) browser = 'Chrome';
+  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = 'Safari';
+  else if (/Firefox/i.test(ua)) browser = 'Firefox';
+  else if (/Edge/i.test(ua)) browser = 'Edge';
+
+  const isTablet = /iPad|Android(?!.*Mobile)/i.test(ua) || (window.innerWidth >= 768 && window.innerWidth <= 1280);
+  const isMobile = /Mobile|iPhone/i.test(ua);
+  const tipo = isTablet ? 'Tablet' : (isMobile ? 'Celular' : 'Computador');
+
+  return {
+    model: `${tipo} ${os}`,
+    os: os,
+    browser: browser,
+    resolution: `${window.innerWidth}x${window.innerHeight}`,
+    userAgent: ua
+  };
+}
+
+window.iniciarPareamentoTerminal = function() {
+  ensureLoginSocket();
+  if (!_codigoPareamentoAtual) {
+    _codigoPareamentoAtual = Math.floor(100000 + Math.random() * 900000).toString();
+  }
+  window.atualizarDisplayCodigoPareamento(_codigoPareamentoAtual);
+
+  const selEst = document.getElementById('pairing-requested-station');
+  const requestedStation = selEst ? selEst.value : 'garcom';
+  const restId = localStorage.getItem('restaurante_id') || null;
+
+  if (loginSocket && loginSocket.emit) {
+    loginSocket.emit('solicitar_pareamento_terminal', {
+      code: _codigoPareamentoAtual,
+      deviceInfo: getDeviceInfo(),
+      restaurante_id: restId,
+      requestedStation: requestedStation
+    });
+  }
+
+  // Fallback via HTTP polling caso websocket oscile na rede do restaurante
+  if (_pareamentoPollTimer) clearInterval(_pareamentoPollTimer);
+  _pareamentoPollTimer = setInterval(async () => {
+    if (!_codigoPareamentoAtual) return;
+    try {
+      const res = await fetch(`/api/terminais/verificar-status?code=${_codigoPareamentoAtual}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.status === 'autorizado' && data.data) {
+          clearInterval(_pareamentoPollTimer);
+          _pareamentoPollTimer = null;
+          window.aplicarCredenciaisAutorizadas(data.data);
+        }
+      }
+    } catch (e) { }
+  }, 3000);
+};
+
+window.atualizarDisplayCodigoPareamento = function(code) {
+  _codigoPareamentoAtual = code;
+  const digitsEl = document.getElementById('pairing-code-digits');
+  const btnCopyLabel = document.getElementById('btn-copy-code-label');
+  const btnWa = document.getElementById('btn-whatsapp-dono-share');
+
+  if (digitsEl) {
+    const formatted = `${code.slice(0, 3)} ${code.slice(3)}`;
+    digitsEl.innerText = formatted;
+  }
+  if (btnCopyLabel) {
+    btnCopyLabel.innerText = `${code.slice(0, 3)} ${code.slice(3)}`;
+  }
+  if (btnWa) {
+    const selEst = document.getElementById('pairing-requested-station');
+    const nomeEst = selEst ? selEst.options[selEst.selectedIndex].text : 'Terminal';
+    const txt = encodeURIComponent(`Olá Dono! Estou configurando este aparelho (${nomeEst}) no restaurante. O código de 6 dígitos para você liberar o acesso pelo seu celular é: *${code.slice(0, 3)} ${code.slice(3)}*`);
+    btnWa.href = `https://wa.me/?text=${txt}`;
+  }
+};
+
+window.copiarCodigoPareamentoTerminal = function() {
+  if (!_codigoPareamentoAtual) return;
+  const formatted = `${_codigoPareamentoAtual.slice(0, 3)} ${_codigoPareamentoAtual.slice(3)}`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(_codigoPareamentoAtual).then(() => {
+      alert(`Código ${formatted} copiado! Envie para o Dono liberar no Painel.`);
+    }).catch(() => {
+      prompt('Copie o código abaixo:', _codigoPareamentoAtual);
+    });
+  } else {
+    prompt('Copie o código abaixo:', _codigoPareamentoAtual);
+  }
+};
+
+window.renovarCodigoPareamentoTerminal = function() {
+  _codigoPareamentoAtual = Math.floor(100000 + Math.random() * 900000).toString();
+  window.iniciarPareamentoTerminal();
+};
+
+window.atualizarEstacaoSolicitada = function(estacao) {
+  window.iniciarPareamentoTerminal();
+};
+
+window.aplicarCredenciaisAutorizadas = function(payload) {
+  if (!payload || !payload.token) return;
+  if (_pareamentoPollTimer) {
+    clearInterval(_pareamentoPollTimer);
+    _pareamentoPollTimer = null;
+  }
+
+  vibrar([10, 50, 10, 50]);
+
+  // Salvar no localStorage exatamente como login master/colaborador
+  localStorage.setItem('chef_token', payload.token);
+  localStorage.setItem('restaurante_id', String(payload.restaurante_id || 1));
+  localStorage.setItem('usuario_role', payload.cargo || payload.usuario_role || 'garcom');
+  localStorage.setItem('colaborador_cargo', payload.cargo || 'garcom');
+  localStorage.setItem('usuario_logado', payload.nome || payload.apelido || 'Terminal Autorizado');
+  localStorage.setItem('chef_operador_nome', payload.nome || payload.apelido || 'Terminal Autorizado');
+  localStorage.setItem('chef_operador_cargo', payload.cargo || 'garcom');
+  localStorage.setItem('chef_is_dono', 'false');
+  localStorage.setItem('chef_estacao_atual', payload.estacao || 'garcom');
+  localStorage.setItem('chef_permissoes_estacoes', JSON.stringify([payload.estacao || 'garcom']));
+
+  const credsObj = {
+    id: payload.id || ('term_' + Date.now()),
+    cargo: payload.cargo || 'Garçom',
+    role: payload.cargo || 'garcom',
+    nome: payload.nome || payload.apelido || 'Terminal Autorizado',
+    usuario: payload.usuario || 'terminal',
+    is_dono: false,
+    estacoes: [payload.estacao || 'garcom'],
+    token: payload.token
+  };
+  localStorage.setItem('chef_credentials', JSON.stringify(credsObj));
+  localStorage.setItem('chef_session', JSON.stringify(credsObj));
+  localStorage.setItem('chef_operador_atual', JSON.stringify(credsObj));
+
+  const banner = document.getElementById('pairing-success-banner');
+  if (banner) {
+    banner.style.display = 'block';
+  }
+  const statusTxt = document.getElementById('pairing-live-status-text');
+  if (statusTxt) {
+    statusTxt.innerText = '✅ Aparelho Liberado pelo Dono!';
+    statusTxt.style.color = '#15803d';
+  }
+
+  // Redireciona para a estação de destino
+  setTimeout(() => {
+    window.location.href = payload.url_destino || '/index.html';
+  }, 800);
+};
+
+window.verificarMagicLinkUrl = async function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token_pareamento') || urlParams.get('autorizacao_remota');
+  if (!token) return;
+
+  const overlay = document.getElementById('magic-link-overlay');
+  const statusEl = document.getElementById('magic-link-status');
+  if (overlay) overlay.style.display = 'flex';
+
+  try {
+    const res = await fetch('/api/terminais/validar-magic-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token,
+        deviceInfo: getDeviceInfo()
+      })
+    });
+    const data = await res.json();
+    if (data && data.success) {
+      if (statusEl) statusEl.innerText = `Acesso validado para ${data.restaurante_nome || 'o restaurante'}! Abrindo tela...`;
+      window.aplicarCredenciaisAutorizadas(data);
+    } else {
+      if (overlay) overlay.style.display = 'none';
+      alert(data.error || 'Link de acesso expirado ou inválido.');
+    }
+  } catch (err) {
+    if (overlay) overlay.style.display = 'none';
+    console.error('Erro ao validar magic link:', err);
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('password')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') attemptOwnerLogin();
@@ -400,4 +623,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('colab-pass-input')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') attemptColaboradorLogin();
   });
+
+  // Verifica se o terminal foi aberto via Link Mágico do WhatsApp
+  window.verificarMagicLinkUrl();
+
+  // Se a URL tiver hash #parear ou se não houver credenciais prévias e for mobile, facilita o pareamento
+  if (window.location.hash === '#parear') {
+    window.setTipoPerfil('pareamento');
+  }
 });

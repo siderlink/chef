@@ -3796,18 +3796,24 @@ window.carregarDREModalDono = async function(periodo) {
 
     const tbodyAbc = document.getElementById('modal-dono-abc-tbody');
     if (tbodyAbc && dataAbc.ok && dataAbc.curva_abc) {
-      tbodyAbc.innerHTML = dataAbc.curva_abc.slice(0, 10).map(item => {
-        let quadCor = item.quadrante === 'Estrela' ? '#10b981' : (item.quadrante === 'Cavalo de Carga' ? '#3b82f6' : (item.quadrante === 'Quebra-Cabeça' ? '#f59e0b' : '#f43f5e'));
-        return '<tr style="border-bottom: 1px solid var(--border);">' +
-            '<td style="padding: 8px 10px; font-weight: 600;">' + (item.emoji || '🍽️') + ' ' + escHtml(item.nome) + '</td>' +
-            '<td style="padding: 8px 10px; text-align: center; font-weight: 700;">' + item.qtd + 'x</td>' +
-            '<td style="padding: 8px 10px; text-align: right;">' + fmt(item.preco_medio) + '</td>' +
-            '<td style="padding: 8px 10px; text-align: right; color: #10b981; font-weight: 700;">' + fmt(item.margem_unitaria) + '</td>' +
-            '<td style="padding: 8px 10px; text-align: right; font-weight: 800; color: var(--primary);">' + fmt(item.faturamento) + '</td>' +
-            '<td style="padding: 8px 10px; text-align: center;"><span style="padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 11px; background: rgba(255,255,255,0.06);">Classe ' + item.classe_faturamento + '</span></td>' +
-            '<td style="padding: 8px 10px; text-align: center;"><span style="color: ' + quadCor + '; font-weight: 700; font-size: 11.5px;">' + (item.icone_quadrante || '') + ' ' + item.quadrante + '</span></td>' +
-          '</tr>';
-      }).join('');
+      window._dadosCurvaAbcAtual = dataAbc.curva_abc;
+
+      // Atualiza contadores dos 4 quadrantes
+      const q = dataAbc.engenharia_cardapio || {};
+      const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+      setEl('bcg-count-todos', dataAbc.curva_abc.length);
+      setEl('bcg-count-estrelas', q.estrelas || 0);
+      setEl('bcg-count-cavalos', q.cavalos_de_carga || 0);
+      setEl('bcg-count-puzzles', q.quebra_cabecas || 0);
+      setEl('bcg-count-caes', q.caes || 0);
+
+      const badgeGanho = document.getElementById('badge-ganho-potencial-bcg');
+      if (badgeGanho) {
+        const ganho = q.ganho_potencial_total || 0;
+        badgeGanho.innerText = 'Oportunidade de Lucro: + ' + fmt(ganho);
+      }
+
+      window.renderTabelaBCG(dataAbc.curva_abc);
     }
   } catch(e) {
     console.error('Erro ao carregar DRE modal dono:', e);
@@ -3818,6 +3824,84 @@ window.carregarDREModalDono = async function(periodo) {
 // MÓDULO CONTADOR CHEFF — GESTÃO & ASSESSORIA CONTÁBIL NO PAINEL DO DONO
 // ══════════════════════════════════════════════════════════════════
 
+
+
+window.filtrarBCGQuadrante = function(quad, element) {
+  document.querySelectorAll('#bcg-quad-cards-container .bcg-card-quad').forEach(c => {
+    c.style.borderWidth = '1.5px';
+    c.classList.remove('active');
+  });
+  if (element) {
+    element.style.borderWidth = '2px';
+    element.classList.add('active');
+  }
+  const lista = window._dadosCurvaAbcAtual || [];
+  if (quad === 'todos') {
+    window.renderTabelaBCG(lista);
+  } else {
+    window.renderTabelaBCG(lista.filter(i => i.quadrante === quad));
+  }
+};
+
+window.renderTabelaBCG = function(itens) {
+  const tbody = document.getElementById('modal-dono-abc-tbody');
+  if (!tbody) return;
+  const fmt = (v) => 'R$ ' + (parseFloat(v) || 0).toFixed(2).replace('.', ',');
+
+  if (!itens || itens.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:var(--text-sub);">Nenhum prato neste quadrante.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = itens.map(item => {
+    let quadCor = item.quadrante === 'Estrela' ? '#10b981' : (item.quadrante === 'Cavalo de Carga' ? '#f59e0b' : (item.quadrante === 'Quebra-Cabeça' ? '#8b5cf6' : '#ef4444'));
+    let acaoHtml = '';
+    if (item.quadrante === 'Cavalo de Carga' && item.preco_sugerido && item.preco_sugerido > item.preco_medio) {
+      acaoHtml = `<div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+        <span style="font-size:11px; color:#f59e0b; font-weight:700;">Reajuste p/ ${fmt(item.preco_sugerido)}</span>
+        <button onclick="window.aplicarPrecoSugerido('${escJs(item.nome)}', ${item.preco_sugerido})" style="padding:4px 8px; background:#f59e0b; color:white; border:none; border-radius:6px; font-size:10.5px; font-weight:800; cursor:pointer;">Aplicar</button>
+      </div>`;
+    } else if (item.quadrante === 'Estrela') {
+      acaoHtml = `<span style="font-size:11px; color:#10b981; font-weight:700;">⭐ Manter Qualidade & Destaque</span>`;
+    } else if (item.quadrante === 'Quebra-Cabeça') {
+      acaoHtml = `<span style="font-size:11px; color:#8b5cf6; font-weight:700;">🧩 Criar Combo ou Promover</span>`;
+    } else {
+      acaoHtml = `<span style="font-size:11px; color:#ef4444; font-weight:700;">🐕 Avaliar Retirada</span>`;
+    }
+
+    return '<tr style="border-bottom: 1px solid var(--border);">' +
+      '<td style="padding: 8px 10px; font-weight: 600;">' + (item.emoji || '🍽️') + ' ' + escHtml(item.nome) + '</td>' +
+      '<td style="padding: 8px 10px; text-align: center; font-weight: 700;">' + item.qtd + 'x</td>' +
+      '<td style="padding: 8px 10px; text-align: right;">' + fmt(item.preco_medio) + '</td>' +
+      '<td style="padding: 8px 10px; text-align: right; color: #10b981; font-weight: 700;">' + fmt(item.margem_unitaria) + '</td>' +
+      '<td style="padding: 8px 10px; text-align: right; font-weight: 800; color: var(--primary);">' + fmt(item.faturamento) + '</td>' +
+      '<td style="padding: 8px 10px; text-align: center;"><span style="color: ' + quadCor + '; font-weight: 700; font-size: 11.5px;">' + (item.icone_quadrante || '') + ' ' + item.quadrante + '</span></td>' +
+      '<td style="padding: 8px 10px; text-align: center;">' + acaoHtml + '</td>' +
+    '</tr>';
+  }).join('');
+};
+
+window.aplicarPrecoSugerido = async function(nome, novoPreco) {
+  if (!confirm(`Confirmar aplicação do novo preço de R$ ${novoPreco.toFixed(2).replace('.', ',')} para "${nome}"?`)) return;
+  const authToken = (typeof token !== 'undefined' && token) || localStorage.getItem('chef_token') || '';
+  try {
+    const res = await fetch('/api/financeiro/aplicar-preco-sugerido', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+      body: JSON.stringify({ nome, novo_preco: novoPreco })
+    });
+    const d = await res.json();
+    if (d.ok) {
+      alert(d.mensagem || 'Preço atualizado com sucesso!');
+      const p = document.getElementById('modal-dono-dre-periodo') ? document.getElementById('modal-dono-dre-periodo').value : 'mes';
+      window.carregarDREModalDono(p);
+    } else {
+      alert('Erro: ' + (d.erro || 'Falha ao atualizar'));
+    }
+  } catch(e) {
+    alert('Erro de conexão ao atualizar preço: ' + e.message);
+  }
+};
 window.statusContadorCheffAtual = null;
 
 async function carregarStatusContadorCheff() {
@@ -5143,5 +5227,807 @@ if (document.readyState === 'loading') {
       window.carregarResumoContratacaoSecao();
     }
   }, 100);
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// 🌦️ PILAR 5: PREVISÃO METEOROLÓGICA & DEMANDA PREDITIVA
+// ══════════════════════════════════════════════════════════════════
+window.atualizarPrevisaoClima = async function() {
+  const container = document.getElementById('clima-cards-semana');
+  const lblCidade = document.getElementById('clima-cidade-label');
+  const tituloResumo = document.getElementById('clima-resumo-titulo');
+  const alertaResumo = document.getElementById('clima-resumo-alerta');
+  if (!container) return;
+
+  try {
+    const token = typeof obterTokenAtual === 'function' ? obterTokenAtual() : (localStorage.getItem('token') || '');
+    const resp = await fetch('/api/clima-demanda/previsao', {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
+    const data = await resp.json();
+    if (!data || !data.dias) return;
+
+    if (lblCidade) lblCidade.innerText = "📍 " + (data.cidade || 'São Paulo');
+    if (data.resumo_executivo) {
+      if (tituloResumo) tituloResumo.innerText = "Hoje (" + data.resumo_executivo.hoje + "): " + data.resumo_executivo.clima_hoje + " (" + data.resumo_executivo.temp_hoje + ")";
+      if (alertaResumo) alertaResumo.innerText = "💡 Dica Operacional: " + data.resumo_executivo.alerta_principal;
+    }
+
+    container.innerHTML = data.dias.map(d => {
+      const isHoje = d.eh_hoje;
+      const borderHoje = isHoje ? 'border: 2px solid #0ea5e9; box-shadow: 0 4px 14px rgba(14,165,233,0.2);' : 'border: 1px solid var(--border);';
+      const badgeHoje = isHoje ? '<span style="background:#0ea5e9; color:white; font-size:10px; padding:1px 6px; border-radius:10px; font-weight:800; margin-left:4px;">HOJE</span>' : '';
+      
+      const chipsHtml = (d.impactos || []).slice(0, 2).map(imp => {
+        const cor = imp.impacto_pct > 0 ? '#10b981' : '#ef4444';
+        const sinal = imp.impacto_pct > 0 ? '+' : '';
+        return '<div style="font-size:10.5px; background:rgba(0,0,0,0.04); padding:3px 6px; border-radius:6px; margin-top:4px; font-weight:700; color:var(--text); display:flex; justify-content:space-between;">' +
+          '<span>' + imp.categoria + '</span>' +
+          '<span style="color:' + cor + ';">' + sinal + imp.impacto_pct + '%</span>' +
+        '</div>';
+      }).join('');
+
+      return '<div style="background:var(--card2); border-radius:14px; padding:12px; ' + borderHoje + ' display:flex; flex-direction:column; justify-content:space-between;">' +
+        '<div>' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">' +
+            '<strong style="font-size:12px; color:var(--text);">' + d.dia_semana.split('-')[0] + badgeHoje + '</strong>' +
+            '<span style="font-size:11px; color:var(--text-sub);">' + d.dia_mes + '</span>' +
+          '</div>' +
+          '<div style="display:flex; align-items:center; gap:8px; margin:8px 0;">' +
+            '<i class="ph-bold ' + d.icone + '" style="font-size:24px; color:' + d.cor_tema + ';"></i>' +
+            '<div>' +
+              '<div style="font-size:13px; font-weight:800; color:var(--text);">' + d.temp_min + '°C ~ ' + d.temp_max + '°C</div>' +
+              '<div style="font-size:10.5px; color:var(--text-sub);">' + d.condicao + '</div>' +
+            '</div>' +
+          '</div>' +
+          (d.chuva_mm > 0 ? '<div style="font-size:10.5px; color:#2563eb; font-weight:700; margin-bottom:4px;"><i class="ph-bold ph-drop"></i> ' + d.chuva_mm + 'mm (' + d.probabilidade_chuva_pct + '%)</div>' : '') +
+        '</div>' +
+        '<div>' + chipsHtml + '</div>' +
+      '</div>';
+    }).join('');
+
+  } catch (err) {
+    console.warn('[ClimaDemanda] Erro ao carregar previsão:', err);
+  }
+};
+
+// ══════════════════════════════════════════════════════════════════
+// 📅 PILAR 5: CONCIERGE & GESTÃO DE RESERVAS DE MESAS
+// ══════════════════════════════════════════════════════════════════
+window.carregarReservasDono = async function() {
+  const inputData = document.getElementById('filtro-data-reserva');
+  const container = document.getElementById('tabela-reservas-container');
+  if (!container) return;
+
+  const dataFiltro = (inputData && inputData.value) || new Date().toISOString().slice(0, 10);
+  if (inputData && !inputData.value) inputData.value = dataFiltro;
+
+  try {
+    const token = typeof obterTokenAtual === 'function' ? obterTokenAtual() : (localStorage.getItem('token') || '');
+    const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+
+    const [respList, respDisp] = await Promise.all([
+      fetch('/api/reservas?data=' + dataFiltro, { headers }),
+      fetch('/api/reservas/disponibilidade?data=' + dataFiltro, { headers })
+    ]);
+
+    const lista = await respList.json();
+    const disp = await respDisp.json();
+
+    if (disp) {
+      const elAlmoco = document.getElementById('reservas-capacidade-almoco');
+      const barAlmoco = document.getElementById('bar-capacidade-almoco');
+      if (elAlmoco && disp.almoco) {
+        elAlmoco.innerText = disp.almoco.reservadas + ' / ' + disp.almoco.capacidade_max + ' pessoas (' + disp.almoco.vagas_restantes + ' vagas)';
+        const pctA = Math.min(100, Math.round((disp.almoco.reservadas / (disp.almoco.capacidade_max || 1)) * 100));
+        if (barAlmoco) barAlmoco.style.width = pctA + '%';
+      }
+
+      const elJantar = document.getElementById('reservas-capacidade-jantar');
+      const barJantar = document.getElementById('bar-capacidade-jantar');
+      if (elJantar && disp.jantar) {
+        elJantar.innerText = disp.jantar.reservadas + ' / ' + disp.jantar.capacidade_max + ' pessoas (' + disp.jantar.vagas_restantes + ' vagas)';
+        const pctJ = Math.min(100, Math.round((disp.jantar.reservadas / (disp.jantar.capacidade_max || 1)) * 100));
+        if (barJantar) barJantar.style.width = pctJ + '%';
+      }
+    }
+
+    if (!lista || lista.length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding:30px; background:var(--card2); border-radius:14px; border:1px dashed var(--border);">' +
+        '<i class="ph ph-calendar-x" style="font-size:32px; color:var(--text-sub);"></i>' +
+        '<p style="margin:8px 0 0 0; font-size:13.5px; color:var(--text-sub);">Nenhuma reserva cadastrada para ' + dataFiltro + '.</p>' +
+      '</div>';
+      return;
+    }
+
+    let rowsHtml = lista.map(r => {
+      const whatsLimpo = String(r.telefone || '').replace(/\D/g, '');
+      const linkWhats = whatsLimpo ? 'https://wa.me/55' + whatsLimpo + '?text=' + encodeURIComponent('Olá ' + r.nome_cliente + '! Confirmamos sua reserva no Cheff.pro para ' + r.num_pessoas + ' pessoas hoje às ' + r.hora_reserva + '.') : '#';
+      
+      let badgeCor = '#f59e0b';
+      if (r.status === 'Confirmada') badgeCor = '#10b981';
+      if (r.status === 'Acomodada') badgeCor = '#3b82f6';
+      if (r.status === 'Cancelada') badgeCor = '#ef4444';
+
+      return '<tr style="border-bottom:1px solid var(--border);">' +
+        '<td style="padding:10px 12px; font-weight:700; color:var(--text);">' + escHtml(r.hora_reserva) + '</td>' +
+        '<td style="padding:10px 12px;">' +
+          '<div style="font-weight:800; color:var(--text);">' + escHtml(r.nome_cliente) + '</div>' +
+          '<a href="' + linkWhats + '" target="_blank" style="font-size:11.5px; color:#10b981; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">' +
+            '<i class="ph-bold ph-whatsapp-logo"></i> ' + escHtml(r.telefone) +
+          '</a>' +
+        '</td>' +
+        '<td style="padding:10px 12px; font-weight:700;">👥 ' + r.num_pessoas + ' pes.</td>' +
+        '<td style="padding:10px 12px;">' + escHtml(r.turno || 'Jantar') + '</td>' +
+        '<td style="padding:10px 12px; font-weight:700; color:var(--primary);">' + (r.mesa_designada ? escHtml(r.mesa_designada) : '<span style="color:var(--text-sub);">A definir</span>') + '</td>' +
+        '<td style="padding:10px 12px;">' +
+          '<span style="background:' + badgeCor + '22; color:' + badgeCor + '; border:1px solid ' + badgeCor + '55; padding:3px 8px; border-radius:8px; font-size:11px; font-weight:800;">' +
+            escHtml(r.status) +
+          '</span>' +
+        '</td>' +
+        '<td style="padding:10px 12px; text-align:right;">' +
+          '<button onclick="window.alterarStatusReserva(' + r.id + ', \'Acomodada\')" class="btn-secondary" style="padding:4px 8px; font-size:11px; border-radius:6px; cursor:pointer;" title="Cliente chegou e sentou na mesa">Acomodar</button> ' +
+          '<button onclick="window.alterarStatusReserva(' + r.id + ', \'Cancelada\')" class="btn-secondary" style="padding:4px 8px; font-size:11px; border-radius:6px; color:#ef4444; cursor:pointer;" title="Cancelar reserva">Cancelar</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+
+    container.innerHTML = '<table style="width:100%; border-collapse:collapse; font-size:12.5px; text-align:left;">' +
+      '<thead>' +
+        '<tr style="border-bottom:1.5px solid var(--border); color:var(--text-sub); font-size:11.5px;">' +
+          '<th style="padding:8px 12px;">Horário</th>' +
+          '<th style="padding:8px 12px;">Cliente & WhatsApp</th>' +
+          '<th style="padding:8px 12px;">Pessoas</th>' +
+          '<th style="padding:8px 12px;">Turno</th>' +
+          '<th style="padding:8px 12px;">Mesa</th>' +
+          '<th style="padding:8px 12px;">Status</th>' +
+          '<th style="padding:8px 12px; text-align:right;">Ações</th>' +
+        '</tr>' +
+      '</thead>' +
+      '<tbody>' + rowsHtml + '</tbody>' +
+    '</table>';
+
+  } catch(e) {
+    console.warn('[Reservas] Erro ao carregar:', e);
+  }
+};
+
+window.alterarStatusReserva = async function(id, status) {
+  try {
+    const token = typeof obterTokenAtual === 'function' ? obterTokenAtual() : (localStorage.getItem('token') || '');
+    await fetch('/api/reservas/' + id + '/status', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? 'Bearer ' + token : ''
+      },
+      body: JSON.stringify({ status })
+    });
+    window.carregarReservasDono();
+  } catch(e) {}
+};
+
+window.abrirModalCriarReserva = function() {
+  const nome = prompt('Nome do Cliente:');
+  if (!nome) return;
+  const tel = prompt('WhatsApp do Cliente (DDD + Número):');
+  if (!tel) return;
+  const data = prompt('Data da Reserva (AAAA-MM-DD):', new Date().toISOString().slice(0, 10));
+  if (!data) return;
+  const hora = prompt('Horário da Reserva (HH:MM):', '20:00');
+  if (!hora) return;
+  const pessoas = parseInt(prompt('Número de Pessoas:', '2')) || 2;
+  const mesa = prompt('Mesa pré-designada (opcional, ex: Mesa 04):', '');
+
+  fetch('/api/reservas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nome_cliente: nome,
+      telefone: tel,
+      data_reserva: data,
+      hora_reserva: hora,
+      num_pessoas: pessoas,
+      mesa_designada: mesa
+    })
+  }).then(r => r.json()).then(res => {
+    if (res.sucesso) {
+      alert('✅ Reserva criada e confirmada!');
+      window.carregarReservasDono();
+    } else {
+      alert('Erro: ' + (res.error || 'Falha ao criar reserva'));
+    }
+  }).catch(() => alert('Erro de conexão ao criar reserva.'));
+};
+
+// ══════════════════════════════════════════════════════════════════
+// 💎 PILAR 4: FIDELIDADE VIP & CASHBACK AUTOMATIZADO
+// ══════════════════════════════════════════════════════════════════
+window.carregarMetricasCashback = async function() {
+  const elClientes = document.getElementById('cb-total-clientes');
+  const elGerado = document.getElementById('cb-total-gerado');
+  const elResgatado = document.getElementById('cb-total-resgatado');
+  const elCirculante = document.getElementById('cb-saldo-circulante');
+  if (!elClientes) return;
+
+  try {
+    const token = typeof obterTokenAtual === 'function' ? obterTokenAtual() : (localStorage.getItem('token') || '');
+    const resp = await fetch('/api/cashback/resumo', {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
+    const data = await resp.json();
+    if (!data) return;
+
+    if (elClientes) elClientes.innerText = data.total_clientes_vip || 0;
+    if (elGerado) elGerado.innerText = formatCurrency(data.total_gerado || 0);
+    if (elResgatado) elResgatado.innerText = formatCurrency(data.total_resgatado || 0);
+    if (elCirculante) elCirculante.innerText = formatCurrency(data.saldo_circulante || 0);
+  } catch(e) {
+    console.warn('[Cashback] Erro ao carregar métricas:', e);
+  }
+};
+
+window.abrirModalConfigCashback = async function() {
+  try {
+    const resp = await fetch('/api/cashback/config');
+    const cfg = await resp.json();
+    const pctAtual = (cfg && cfg.percentual) || 5;
+    const diasAtual = (cfg && cfg.validade_dias) || 30;
+
+    const novoPct = prompt('Percentual de Cashback creditado aos clientes (%):', pctAtual);
+    if (novoPct === null) return;
+    const novosDias = prompt('Dias de validade do crédito antes de expirar:', diasAtual);
+    if (novosDias === null) return;
+
+    const token = typeof obterTokenAtual === 'function' ? obterTokenAtual() : (localStorage.getItem('token') || '');
+    const saveResp = await fetch('/api/cashback/config', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? 'Bearer ' + token : ''
+      },
+      body: JSON.stringify({
+        ativo: 1,
+        percentual: parseFloat(novoPct) || 5,
+        validade_dias: parseInt(novosDias) || 30
+      })
+    });
+    const resJson = await saveResp.json();
+    if (resJson.sucesso) {
+      alert('✅ Configurações de Cashback VIP salvas com sucesso!');
+      window.carregarMetricasCashback();
+    }
+  } catch(e) {
+    alert('Erro ao salvar configurações de cashback.');
+  }
+};
+
+// Auto-inicializar Clima, Reservas e Cashback ao carregar a página
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof window.atualizarPrevisaoClima === 'function') window.atualizarPrevisaoClima();
+    if (typeof window.carregarReservasDono === 'function') window.carregarReservasDono();
+    if (typeof window.carregarMetricasCashback === 'function') window.carregarMetricasCashback();
+    if (typeof window.carregarTerminaisPendentesDono === 'function') window.carregarTerminaisPendentesDono();
+  });
+} else {
+  setTimeout(() => {
+    if (typeof window.atualizarPrevisaoClima === 'function') window.atualizarPrevisaoClima();
+    if (typeof window.carregarReservasDono === 'function') window.carregarReservasDono();
+    if (typeof window.carregarMetricasCashback === 'function') window.carregarMetricasCashback();
+    if (typeof window.carregarTerminaisPendentesDono === 'function') window.carregarTerminaisPendentesDono();
+  }, 200);
+}
+
+/* =========================================================================
+   SISTEMA DE LIBERAÇÃO REMOTA DE TERMINAIS (ZERO SENHA PARA COLABORADORES)
+   Permite que o dono autorize estações sem compartilhar e-mail e senha.
+   ========================================================================= */
+
+function obterTokenDono() {
+  return localStorage.getItem('chef_token') || (typeof token !== 'undefined' ? token : '');
+}
+
+function labelEstacaoTerminal(estacao) {
+  const map = {
+    'garcom': '🍽️ Salão & Garçom',
+    'caixa': '🖥️ Caixa PDV Principal',
+    'caixa_mobile': '📱 Caixa Mobile Touch',
+    'cozinha': '🍳 KDS Cozinha & Bar',
+    'totem': '🤖 Totem Autoatendimento'
+  };
+  return map[estacao] || estacao || 'Geral';
+}
+
+window.abrirModalLiberarTerminalDono = function(tabInicial = 'codigo') {
+  const modal = document.getElementById('modal-liberar-terminal-dono');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+  window.alternarTabModalTerminal(tabInicial);
+  if (tabInicial === 'codigo') {
+    setTimeout(() => {
+      const inp = document.getElementById('modal-input-codigo-pareamento');
+      if (inp) inp.focus();
+    }, 150);
+  }
+};
+
+window.fecharModalLiberarTerminalDono = function() {
+  const modal = document.getElementById('modal-liberar-terminal-dono');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.style.display = 'none';
+};
+
+window.alternarTabModalTerminal = function(tab) {
+  const tabs = ['codigo', 'pendentes', 'whatsapp', 'autorizados'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`tab-btn-modal-${t}`);
+    const content = document.getElementById(`modal-tab-content-${t}`);
+    if (btn) {
+      if (t === tab) {
+        btn.classList.add('active');
+        btn.style.borderBottom = '2px solid #2563eb';
+        btn.style.color = '#2563eb';
+      } else {
+        btn.classList.remove('active');
+        btn.style.borderBottom = '2px solid transparent';
+        btn.style.color = 'var(--text-sub)';
+      }
+    }
+    if (content) {
+      content.style.display = (t === tab) ? 'block' : 'none';
+    }
+  });
+
+  if (tab === 'pendentes') {
+    window.carregarTerminaisPendentesDono();
+  } else if (tab === 'autorizados') {
+    window.carregarTerminaisAutorizadosDono();
+  }
+};
+
+// Autorizar código direto da seção de equipe no painel
+window.autorizarTerminalPorCodigoDono = async function() {
+  const inpCodigo = document.getElementById('dono-input-codigo-pareamento');
+  const selEstacao = document.getElementById('dono-select-estacao-pareamento');
+  const inpApelido = document.getElementById('dono-input-apelido-pareamento');
+
+  const codigo = (inpCodigo?.value || '').replace(/\D/g, '').trim();
+  const estacao = selEstacao?.value || 'garcom';
+  const apelido = inpApelido?.value?.trim() || '';
+
+  if (codigo.length !== 6) {
+    if (typeof showToast === 'function') showToast('⚠️ Digite o código de 6 dígitos exibido no aparelho.', 'ph-warning', 'error');
+    else alert('Digite o código de 6 dígitos exibido no aparelho.');
+    if (inpCodigo) inpCodigo.focus();
+    return;
+  }
+
+  try {
+    const resp = await fetch('/api/terminais/autorizar-codigo', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + obterTokenDono()
+      },
+      body: JSON.stringify({ codigo, estacao, apelido })
+    });
+    const dados = await resp.json();
+
+    if (resp.ok && dados.sucesso) {
+      if (typeof showToast === 'function') {
+        showToast(`🎉 Aparelho liberado com sucesso para ${labelEstacaoTerminal(estacao)}!`, 'ph-check-circle', 'success');
+      } else {
+        alert('Aparelho liberado com sucesso!');
+      }
+      if (inpCodigo) inpCodigo.value = '';
+      if (inpApelido) inpApelido.value = '';
+      window.carregarTerminaisPendentesDono();
+    } else {
+      const msg = dados.erro || 'Não foi possível autorizar o código. Verifique se expirou.';
+      if (typeof showToast === 'function') showToast(`❌ ${msg}`, 'ph-warning', 'error');
+      else alert(msg);
+    }
+  } catch(e) {
+    console.error('Erro ao autorizar terminal por código:', e);
+    if (typeof showToast === 'function') showToast('Erro de comunicação ao autorizar aparelho.', 'ph-warning', 'error');
+    else alert('Erro ao autorizar aparelho.');
+  }
+};
+
+// Autorizar código a partir do modal
+window.autorizarTerminalPorCodigoDonoModal = async function() {
+  const inpCodigo = document.getElementById('modal-input-codigo-pareamento');
+  const selEstacao = document.getElementById('modal-select-estacao-pareamento');
+  const inpApelido = document.getElementById('modal-input-apelido-pareamento');
+
+  const codigo = (inpCodigo?.value || '').replace(/\D/g, '').trim();
+  const estacao = selEstacao?.value || 'garcom';
+  const apelido = inpApelido?.value?.trim() || '';
+
+  if (codigo.length !== 6) {
+    if (typeof showToast === 'function') showToast('⚠️ Digite o código de 6 dígitos exibido no aparelho.', 'ph-warning', 'error');
+    else alert('Digite o código de 6 dígitos exibido no aparelho.');
+    if (inpCodigo) inpCodigo.focus();
+    return;
+  }
+
+  try {
+    const resp = await fetch('/api/terminais/autorizar-codigo', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + obterTokenDono()
+      },
+      body: JSON.stringify({ codigo, estacao, apelido })
+    });
+    const dados = await resp.json();
+
+    if (resp.ok && dados.sucesso) {
+      if (typeof showToast === 'function') {
+        showToast(`🎉 Aparelho liberado para ${labelEstacaoTerminal(estacao)}!`, 'ph-check-circle', 'success');
+      } else {
+        alert('Aparelho liberado com sucesso!');
+      }
+      if (inpCodigo) inpCodigo.value = '';
+      if (inpApelido) inpApelido.value = '';
+      window.alternarTabModalTerminal('autorizados');
+      window.carregarTerminaisPendentesDono();
+    } else {
+      const msg = dados.erro || 'Não foi possível autorizar o código.';
+      if (typeof showToast === 'function') showToast(`❌ ${msg}`, 'ph-warning', 'error');
+      else alert(msg);
+    }
+  } catch(e) {
+    console.error('Erro no modal ao autorizar terminal:', e);
+    if (typeof showToast === 'function') showToast('Erro de conexão ao autorizar aparelho.', 'ph-warning', 'error');
+    else alert('Erro ao autorizar aparelho.');
+  }
+};
+
+// Carregar lista de terminais pendentes de autorização
+window.carregarTerminaisPendentesDono = async function() {
+  try {
+    const resp = await fetch('/api/terminais/pendentes', {
+      headers: { 'Authorization': 'Bearer ' + obterTokenDono() }
+    });
+    if (!resp.ok) return;
+    const dados = await resp.json();
+    const pendentes = dados.pendentes || [];
+    const total = pendentes.length;
+
+    // Atualiza contadores
+    const countCard = document.getElementById('dono-count-terminais-pendentes');
+    if (countCard) countCard.innerText = total;
+
+    const countModal = document.getElementById('modal-dono-count-pendentes');
+    if (countModal) countModal.innerText = total;
+
+    const badgeHeader = document.getElementById('badge-pendentes-header');
+    if (badgeHeader) {
+      badgeHeader.innerText = total;
+      badgeHeader.style.display = total > 0 ? 'inline-flex' : 'none';
+    }
+
+    // Atualiza container da seção
+    const boxCard = document.getElementById('dono-box-terminais-pendentes');
+    const listaCard = document.getElementById('dono-lista-terminais-pendentes');
+    if (boxCard) boxCard.style.display = total > 0 ? 'block' : 'none';
+
+    if (listaCard) {
+      if (total === 0) {
+        listaCard.innerHTML = '<div style="font-size:12px; color:var(--text-sub);">Nenhum aparelho aguardando.</div>';
+      } else {
+        listaCard.innerHTML = pendentes.map(p => `
+          <div style="background:var(--card); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:20px; font-weight:900; font-family:monospace; color:#2563eb; background:rgba(37,99,235,0.1); padding:4px 10px; border-radius:8px; letter-spacing:2px;">
+                ${escHtml(p.codigo.slice(0,3))} ${escHtml(p.codigo.slice(3))}
+              </span>
+              <div>
+                <strong style="font-size:13px; color:var(--text); display:block;">${escHtml(p.apelido || labelEstacaoTerminal(p.estacaoSolicitada))}</strong>
+                <span style="font-size:11px; color:var(--text-sub);">${escHtml(p.dispositivoInfo || 'Aparelho na Rede')} • Solicitado há poucos instantes</span>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <select id="sel-pendente-${p.codigo}" style="padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:var(--card2); color:var(--text); font-size:12px; font-weight:700;">
+                <option value="garcom" ${p.estacaoSolicitada === 'garcom' ? 'selected' : ''}>🍽️ Salão</option>
+                <option value="caixa" ${p.estacaoSolicitada === 'caixa' ? 'selected' : ''}>🖥️ Caixa</option>
+                <option value="caixa_mobile" ${p.estacaoSolicitada === 'caixa_mobile' ? 'selected' : ''}>📱 Caixa Mobile</option>
+                <option value="cozinha" ${p.estacaoSolicitada === 'cozinha' ? 'selected' : ''}>🍳 Cozinha</option>
+                <option value="totem" ${p.estacaoSolicitada === 'totem' ? 'selected' : ''}>🤖 Totem</option>
+              </select>
+              <button type="button" class="btn-primary" onclick="aprovarTerminalPendenteDono('${p.codigo}')" style="padding:6px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #10b981, #059669); gap:4px;">
+                <i class="ph-bold ph-check"></i> Liberar Acesso
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Atualiza container do modal
+    const listaModal = document.getElementById('modal-lista-terminais-pendentes');
+    if (listaModal) {
+      if (total === 0) {
+        listaModal.innerHTML = `
+          <div style="text-align:center; padding:32px 16px; color:var(--text-sub);">
+            <i class="ph-bold ph-check-circle" style="font-size:32px; color:#10b981; margin-bottom:8px; display:block;"></i>
+            Nenhum aparelho aguardando aprovação no momento.
+          </div>
+        `;
+      } else {
+        listaModal.innerHTML = pendentes.map(p => `
+          <div style="background:var(--card2); border:1.5px solid rgba(245,158,11,0.4); border-radius:14px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span style="font-size:22px; font-weight:900; font-family:monospace; color:#2563eb; background:rgba(37,99,235,0.12); padding:6px 12px; border-radius:10px; letter-spacing:3px;">
+                ${escHtml(p.codigo.slice(0,3))} ${escHtml(p.codigo.slice(3))}
+              </span>
+              <div>
+                <strong style="font-size:14px; color:var(--text); display:block;">${escHtml(p.apelido || labelEstacaoTerminal(p.estacaoSolicitada))}</strong>
+                <span style="font-size:11.5px; color:var(--text-sub);">${escHtml(p.dispositivoInfo || 'Dispositivo Solicitante')}</span>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <select id="modal-sel-pendente-${p.codigo}" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:12px; font-weight:700;">
+                <option value="garcom" ${p.estacaoSolicitada === 'garcom' ? 'selected' : ''}>🍽️ Salão & Garçom</option>
+                <option value="caixa" ${p.estacaoSolicitada === 'caixa' ? 'selected' : ''}>🖥️ Caixa PDV Principal</option>
+                <option value="caixa_mobile" ${p.estacaoSolicitada === 'caixa_mobile' ? 'selected' : ''}>📱 Caixa Mobile Touch</option>
+                <option value="cozinha" ${p.estacaoSolicitada === 'cozinha' ? 'selected' : ''}>🍳 KDS Cozinha & Bar</option>
+                <option value="totem" ${p.estacaoSolicitada === 'totem' ? 'selected' : ''}>🤖 Totem Autoatendimento</option>
+              </select>
+              <button type="button" class="btn-primary" onclick="aprovarTerminalPendenteDono('${p.codigo}', true)" style="padding:8px 16px; font-size:13px; font-weight:800; border-radius:8px; background:linear-gradient(135deg, #10b981, #059669); gap:6px;">
+                <i class="ph-bold ph-check"></i> Liberar Agora
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+  } catch(e) {
+    console.error('Erro ao carregar terminais pendentes:', e);
+  }
+};
+
+// Aprovar terminal pendente com 1 clique
+window.aprovarTerminalPendenteDono = async function(codigo, isModal = false) {
+  const selId = isModal ? `modal-sel-pendente-${codigo}` : `sel-pendente-${codigo}`;
+  const selEl = document.getElementById(selId);
+  const estacao = selEl?.value || 'garcom';
+
+  try {
+    const resp = await fetch('/api/terminais/autorizar-codigo', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + obterTokenDono()
+      },
+      body: JSON.stringify({ codigo, estacao })
+    });
+    const dados = await resp.json();
+
+    if (resp.ok && dados.sucesso) {
+      if (typeof showToast === 'function') {
+        showToast(`🎉 Aparelho liberado com sucesso para ${labelEstacaoTerminal(estacao)}!`, 'ph-check-circle', 'success');
+      } else {
+        alert('Aparelho liberado com sucesso!');
+      }
+      window.carregarTerminaisPendentesDono();
+      if (isModal) window.alternarTabModalTerminal('autorizados');
+    } else {
+      const msg = dados.erro || 'Não foi possível autorizar o terminal.';
+      if (typeof showToast === 'function') showToast(`❌ ${msg}`, 'ph-warning', 'error');
+      else alert(msg);
+    }
+  } catch(e) {
+    console.error('Erro ao aprovar terminal pendente:', e);
+    if (typeof showToast === 'function') showToast('Erro de conexão ao liberar terminal.', 'ph-warning', 'error');
+  }
+};
+
+// Gerar link assinado de WhatsApp para a equipe
+window.gerarLinkWhatsAppEquipeDono = async function() {
+  const selEstacao = document.getElementById('modal-whatsapp-select-estacao');
+  const inpApelido = document.getElementById('modal-whatsapp-apelido');
+
+  const estacao = selEstacao?.value || 'garcom';
+  const apelido = inpApelido?.value?.trim() || `Equipe ${labelEstacaoTerminal(estacao)}`;
+
+  try {
+    const resp = await fetch('/api/terminais/gerar-link-whatsapp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + obterTokenDono()
+      },
+      body: JSON.stringify({ estacao, apelido, expiraEmHoras: 0.5 })
+    });
+    const dados = await resp.json();
+
+    if (resp.ok && dados.sucesso && dados.linkAcesso) {
+      const box = document.getElementById('modal-whatsapp-link-box');
+      const inpPreview = document.getElementById('modal-whatsapp-link-preview');
+      const btnWhats = document.getElementById('modal-whatsapp-link-send-btn');
+
+      if (inpPreview) inpPreview.value = dados.linkAcesso;
+      if (box) box.style.display = 'block';
+
+      if (btnWhats) {
+        const msgWhats = encodeURIComponent(`Olá! Aqui está o link de liberação segura da sua estação de trabalho (${labelEstacaoTerminal(estacao)}). Basta clicar nele no aparelho para acessar sem precisar de senha:\n\n${dados.linkAcesso}\n\n(Válido por 30 minutos)`);
+        btnWhats.href = `https://api.whatsapp.com/send?text=${msgWhats}`;
+      }
+
+      if (typeof showToast === 'function') showToast('🔗 Link mágico gerado com sucesso!', 'ph-check-circle', 'success');
+    } else {
+      const msg = dados.erro || 'Erro ao gerar link de WhatsApp.';
+      if (typeof showToast === 'function') showToast(`❌ ${msg}`, 'ph-warning', 'error');
+      else alert(msg);
+    }
+  } catch(e) {
+    console.error('Erro ao gerar link WhatsApp:', e);
+    if (typeof showToast === 'function') showToast('Erro de conexão ao gerar link.', 'ph-warning', 'error');
+  }
+};
+
+// Copiar link de WhatsApp para clipboard
+window.copiarLinkWhatsAppDono = function() {
+  const inpPreview = document.getElementById('modal-whatsapp-link-preview');
+  if (!inpPreview || !inpPreview.value) return;
+
+  navigator.clipboard.writeText(inpPreview.value).then(() => {
+    if (typeof showToast === 'function') showToast('📋 Link copiado para a área de transferência!', 'ph-copy', 'success');
+    else alert('Link copiado!');
+  }).catch(() => {
+    inpPreview.select();
+    document.execCommand('copy');
+    if (typeof showToast === 'function') showToast('📋 Link copiado!', 'ph-copy', 'success');
+  });
+};
+
+// Carregar aparelhos autorizados e ativos (com Kill Switch)
+window.carregarTerminaisAutorizadosDono = async function() {
+  const container = document.getElementById('modal-lista-terminais-autorizados');
+  if (!container) return;
+
+  try {
+    const resp = await fetch('/api/terminais/autorizados', {
+      headers: { 'Authorization': 'Bearer ' + obterTokenDono() }
+    });
+    if (!resp.ok) {
+      container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-sub);">Não foi possível carregar os aparelhos.</div>';
+      return;
+    }
+    const dados = await resp.json();
+    const dispositivos = dados.dispositivos || [];
+
+    if (dispositivos.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:32px 16px; color:var(--text-sub);">
+          <i class="ph-bold ph-devices" style="font-size:32px; color:var(--text-sub); margin-bottom:8px; display:block;"></i>
+          Nenhum aparelho ativo registrado ainda. Libere o primeiro aparelho via código de 6 dígitos!
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = dispositivos.map(d => {
+      const dataCriacao = d.criado_em ? new Date(d.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Recente';
+      const dataUso = d.ultimo_uso ? new Date(d.ultimo_uso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Nunca';
+      const ehAtivo = d.ativo !== 0;
+
+      return `
+        <div style="background:var(--card2); border:1px solid var(--border); border-radius:14px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:42px; height:42px; border-radius:12px; background:${ehAtivo ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'}; color:${ehAtivo ? '#10b981' : '#ef4444'}; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
+              <i class="ph-bold ${ehAtivo ? 'ph-device-tablet' : 'ph-device-tablet-slash'}"></i>
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <strong style="font-size:14px; color:var(--text);">${escHtml(d.nome_dispositivo || 'Aparelho')}</strong>
+                <span style="background:${ehAtivo ? '#10b981' : '#64748b'}; color:white; font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px;">
+                  ${labelEstacaoTerminal(d.estacao_autorizada)}
+                </span>
+                ${!ehAtivo ? '<span style="background:#ef4444; color:white; font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px;">REVOGADO</span>' : ''}
+              </div>
+              <div style="font-size:11.5px; color:var(--text-sub); margin-top:3px;">
+                Autorizado em: <strong>${dataCriacao}</strong> • Último acesso: <strong>${dataUso}</strong> • IP: ${escHtml(d.ip_criacao || 'N/A')}
+              </div>
+            </div>
+          </div>
+          <div>
+            ${ehAtivo ? `
+              <button type="button" onclick="revogarAcessoTerminalDono('${d.terminal_id}', '${escHtml(d.nome_dispositivo)}')" style="padding:7px 12px; font-size:12px; font-weight:700; border-radius:8px; background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3); cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                <i class="ph-bold ph-power"></i> Desconectar Remotamente
+              </button>
+            ` : `
+              <span style="font-size:12px; color:var(--text-sub); font-style:italic;">Acesso Bloqueado</span>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch(e) {
+    console.error('Erro ao listar aparelhos autorizados:', e);
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-sub);">Erro ao carregar dispositivos.</div>';
+  }
+};
+
+// Revogar acesso e desconectar terminal remotamente (Kill Switch)
+window.revogarAcessoTerminalDono = async function(terminalId, nome) {
+  if (!confirm(`Deseja realmente desconectar e revogar o acesso do aparelho "${nome}"?\n\nO aparelho perderá o acesso imediatamente.`)) {
+    return;
+  }
+
+  try {
+    const resp = await fetch('/api/terminais/revogar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + obterTokenDono()
+      },
+      body: JSON.stringify({ terminalId })
+    });
+    const dados = await resp.json();
+
+    if (resp.ok && dados.sucesso) {
+      if (typeof showToast === 'function') {
+        showToast(`🔒 Aparelho "${nome}" desconectado com sucesso!`, 'ph-shield-check', 'success');
+      } else {
+        alert('Aparelho desconectado com sucesso!');
+      }
+      window.carregarTerminaisAutorizadosDono();
+    } else {
+      const msg = dados.erro || 'Erro ao revogar acesso do terminal.';
+      if (typeof showToast === 'function') showToast(`❌ ${msg}`, 'ph-warning', 'error');
+      else alert(msg);
+    }
+  } catch(e) {
+    console.error('Erro ao revogar terminal:', e);
+    if (typeof showToast === 'function') showToast('Erro de conexão ao revogar aparelho.', 'ph-warning', 'error');
+  }
+};
+
+// Listeners em tempo real via Socket.IO
+if (typeof socket !== 'undefined' && socket && typeof socket.on === 'function') {
+  socket.on('novo_terminal_pendente', (data) => {
+    if (typeof window.carregarTerminaisPendentesDono === 'function') {
+      window.carregarTerminaisPendentesDono();
+    }
+    // Efeito sonoro discreto de notificação
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      }
+    } catch(e) {}
+
+    if (typeof showToast === 'function') {
+      showToast(`📱 Novo aparelho aguardando liberação (Código: ${data?.codigo || ''})`, 'ph-broadcast', 'info');
+    }
+  });
+
+  socket.on('terminal_pareamento_concluido', (data) => {
+    if (typeof window.carregarTerminaisPendentesDono === 'function') {
+      window.carregarTerminaisPendentesDono();
+    }
+    if (typeof showToast === 'function') {
+      showToast(`✅ Aparelho "${data?.apelido || 'Terminal'}" liberado para ${labelEstacaoTerminal(data?.estacao)}!`, 'ph-check-circle', 'success');
+    }
+  });
 }
 

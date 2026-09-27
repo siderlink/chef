@@ -326,6 +326,7 @@ const nfceService = require('./nfce-service');
 const iaService = require('./ia-service');
 const synccheffSecurity = require('./synccheff-security');
 const redeLocalController = require('./controllers/rede-local-controller');
+const terminalPairingService = require('./terminal-pairing-service');
 
 // Carrega variáveis do arquivo .env (sem dependência externa)
 try {
@@ -1381,6 +1382,7 @@ masterDb.serialize(() => {
     sockets INTEGER DEFAULT 0,
     UNIQUE(restaurante_id, dia, hora)
   )`);
+  terminalPairingService.initDatabase(masterDb);
 });
 
 // (Segurança) Verifica a senha do usuário admin local (tabela usuarios do
@@ -1964,6 +1966,10 @@ function applyTenantMigrations(tenantDb, done) {
     `ALTER TABLE pedidos ADD COLUMN promocao_id INTEGER`,
     `ALTER TABLE pedidos ADD COLUMN productEmoji TEXT`,
     `ALTER TABLE pedidos ADD COLUMN turno_id INTEGER`,
+    `ALTER TABLE pedidos ADD COLUMN etapa TEXT DEFAULT 'Principal'`,
+    `ALTER TABLE pedidos ADD COLUMN marcha_status TEXT DEFAULT 'marchado'`,
+    `ALTER TABLE pedidos ADD COLUMN tempo_preparo_min INTEGER DEFAULT 15`,
+    `ALTER TABLE produtos ADD COLUMN tempo_preparo_min INTEGER DEFAULT 15`,
     `ALTER TABLE clientes ADD COLUMN endereco TEXT`,
     `ALTER TABLE clientes ADD COLUMN data_nascimento TEXT`,
     `ALTER TABLE clientes ADD COLUMN pontos INTEGER DEFAULT 0`,
@@ -2161,6 +2167,8 @@ db.serialize(() => {
   db.run(`ALTER TABLE pedidos ADD COLUMN observations TEXT`, (err) => { });
   db.run(`ALTER TABLE pedidos ADD COLUMN options TEXT`, (err) => { });
   db.run(`ALTER TABLE pedidos ADD COLUMN composicoes TEXT`, (err) => { });
+  db.run(`ALTER TABLE pedidos ADD COLUMN etapa TEXT DEFAULT 'Principal'`, (err) => { });
+  db.run(`ALTER TABLE pedidos ADD COLUMN marcha_status TEXT DEFAULT 'marchado'`, (err) => { });
   db.run(`ALTER TABLE promocoes ADD COLUMN config TEXT`, (err) => { });
 
   // --- ITENS MONTÁVEIS (Build Your Own) ---
@@ -4451,6 +4459,11 @@ io.on('connection', (socket) => {
       if (pedido.sector === 'Bar' && status === 'Em espera') {
         status = 'Em preparo';
       }
+      const etapa = pedido.etapa || 'Principal';
+      const marchaStatus = pedido.marcha_status || (pedido.aguardar_marcha ? 'aguardando_marcha' : 'marchado');
+      if (marchaStatus === 'aguardando_marcha') {
+        status = 'Aguardando Marcha';
+      }
       const now = new Date();
       const dayOfWeek = now.getDay(); // 0-6
       const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -4537,10 +4550,29 @@ io.on('connection', (socket) => {
         }
 
         function savePedidoAndBonus() {
+          let tempoPreparo = parseInt(pedido.tempo_preparo_min) || 0;
+          if (!tempoPreparo) {
+            const prodNameLower = (pedido.productName || '').toLowerCase();
+            if (/picanha|bife|steak|carne|costela|churrasco|feijoada|paella|bacalhau|moqueca|cordeiro|ancho|t-bone|wagyu/.test(prodNameLower)) {
+              tempoPreparo = 22;
+            } else if (/risoto|pizza|hamb[uú]rguer|burger|massa|lasanha|parmegiana|peixe|salm[aã]o|polvo|fondue/.test(prodNameLower)) {
+              tempoPreparo = 16;
+            } else if (/frango|omelete|pastel|por[cç][aã]o|batata|tapioca|sandu[ií]che|wrap|guarni[cç][aã]o/.test(prodNameLower)) {
+              tempoPreparo = 12;
+            } else if (/sobremesa|pudim|petit|torta|brownie|a[cç]a[ií]|sorvete|churros/.test(prodNameLower)) {
+              tempoPreparo = 6;
+            } else if (/salada|carpaccio|ceviche|tartare|bruschetta|couvert|entrada|tabua/.test(prodNameLower)) {
+              tempoPreparo = 6;
+            } else if (/bebida|refrigerante|suco|cerveja|chopp|vinho|drink|caipirinha|caf[eé]|água|shot/.test(prodNameLower) || pedido.sector === 'Bar') {
+              tempoPreparo = 3;
+            } else {
+              tempoPreparo = 15;
+            }
+          }
           db.run(
-            `INSERT INTO pedidos (productName, productEmoji, quantity, time, localName, userName, total, status, sector, cliente_id, promocao_id, entregador_id, mesa_comanda, observations, composicoes, createdAt)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
-            [pedido.productName, pedido.productEmoji, pedido.quantity, pedido.time, pedido.localName, pedido.userName, pedido.total, status, pedido.sector || 'Cozinha 1', pedido.cliente_id || null, pedido.promocao_id || null, pedido.entregador_id || null, pedido.mesa_comanda || null, pedido.observations || '', JSON.stringify(pedido.composicoes || [])],
+            `INSERT INTO pedidos (productName, productEmoji, quantity, time, localName, userName, total, status, sector, cliente_id, promocao_id, entregador_id, mesa_comanda, observations, composicoes, etapa, marcha_status, tempo_preparo_min, createdAt)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
+            [pedido.productName, pedido.productEmoji, pedido.quantity, pedido.time, pedido.localName, pedido.userName, pedido.total, status, pedido.sector || 'Cozinha 1', pedido.cliente_id || null, pedido.promocao_id || null, pedido.entregador_id || null, pedido.mesa_comanda || null, pedido.observations || '', JSON.stringify(pedido.composicoes || []), etapa, marchaStatus, tempoPreparo],
             function (err) {
               if (err) {
                 console.error('Erro ao inserir pedido:', err);
@@ -4549,7 +4581,7 @@ io.on('connection', (socket) => {
               }
               const mainId = this.lastID;
               const finalSector = pedido.sector || 'Cozinha 1';
-              const newOrder = { ...pedido, id: mainId, status: status, sector: finalSector, createdAt: new Date().toISOString() };
+              const newOrder = { ...pedido, id: mainId, status: status, sector: finalSector, etapa: etapa, marcha_status: marchaStatus, tempo_preparo_min: tempoPreparo, createdAt: new Date().toISOString() };
               io.emit('pedido_adicionado', newOrder);
               sendPush('cozinha', '🆕 Novo Pedido!', `${newOrder.quantity || 1}x ${newOrder.productName || 'Item'} — ${newOrder.localName || ''}`.trim(), 'pedido-' + mainId, '/fila-pedidos.html');
               updateMesaStatus();
@@ -4613,6 +4645,29 @@ io.on('connection', (socket) => {
     } else {
       proceedWithOrder(null);
     }
+  });
+
+  // ── MARCHA DE PRATOS (COURSES: DISPARO DE ETAPAS DA MESA) ──
+  socket.on('marchar_etapa_mesa', ({ mesa, etapa, userName }) => {
+    if (!mesa) return;
+    const etapaAlvo = etapa || 'Principal';
+    const nowTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    db.run(
+      `UPDATE pedidos SET status = 'Em preparo', time = ? WHERE localName = ? AND (etapa = ? OR options LIKE ?) AND status = 'Aguardando Marcha'`,
+      [nowTime, mesa, etapaAlvo, `%"etapa":"${etapaAlvo}"%`],
+      function (err) {
+        if (err) console.error('Erro ao marchar etapa:', err);
+        const count = this ? this.changes : 0;
+        broadcastPedidos();
+        io.emit('marcha_disparada', { mesa, etapa: etapaAlvo, alterados: count });
+        if (count > 0) {
+          sendPush('cozinha', '🔥 Marcha de Pratos!', `Mesa ${mesa}: ${etapaAlvo} liberada para preparo imediato!`, 'marcha-' + mesa, '/fila-pedidos.html');
+          if (userName && global.registrarAuditoria) {
+            global.registrarAuditoria(userName, 'Marcha de Pratos', `Mesa ${mesa}: Etapa ${etapaAlvo} disparada (${count} itens)`, 'Salão', 'Médio');
+          }
+        }
+      }
+    );
   });
 
   // Atualiza Status (Cozinha/Bar)
@@ -8226,6 +8281,58 @@ io.on('connection', (socket) => {
         socket.emit('tenant_atualizado', { restaurante_id: payload.restaurante_id, token: sessToken });
       });
     });
+  });
+
+  // --- PAREAMENTO REMOTO DE TERMINAIS (ZERO SENHA PARA COLABORADOR) ---
+  socket.on('solicitar_pareamento_terminal', (data) => {
+    const clientIp = (socket.handshake && (socket.handshake.headers['x-forwarded-for'] || socket.handshake.address)) || '127.0.0.1';
+    const cleanIp = String(clientIp).split(',')[0].trim().replace('::ffff:', '');
+    const res = terminalPairingService.requestPairing({
+      socket,
+      code: data?.code,
+      deviceInfo: data?.deviceInfo,
+      restaurante_id: data?.restaurante_id || socketTenantId,
+      requestedStation: data?.requestedStation || 'garcom',
+      clientIp: cleanIp,
+      io
+    });
+    socket.emit('pareamento_iniciado', res);
+  });
+
+  socket.on('dono_listar_terminais_pendentes', (data) => {
+    const restId = (data && data.restaurante_id) || socket.restaurante_id || socketTenantId;
+    const list = terminalPairingService.listPending(restId);
+    socket.emit('terminais_pendentes_lista', list);
+  });
+
+  socket.on('dono_autorizar_terminal_por_codigo', async (data) => {
+    const restId = (data && data.restaurante_id) || socket.restaurante_id || socketTenantId;
+    const result = await terminalPairingService.authorizeByCode({
+      code: data?.code,
+      restaurante_id: restId,
+      cargo: data?.cargo,
+      apelido: data?.apelido,
+      estacao: data?.estacao,
+      validadeDias: data?.validadeDias,
+      donoNome: socket.auth?.nome || 'Proprietário',
+      masterDb,
+      JWT_SECRET,
+      io,
+      activeSockets
+    });
+    socket.emit('dono_autorizacao_resposta', result);
+  });
+
+  socket.on('dono_revogar_terminal', async (data) => {
+    const restId = (data && data.restaurante_id) || socket.restaurante_id || socketTenantId;
+    const result = await terminalPairingService.revokeTerminal({
+      id: data?.id,
+      restaurante_id: restId,
+      masterDb,
+      io,
+      activeSockets
+    });
+    socket.emit('dono_revogacao_resposta', result);
   });
 
   // --- PAINEL FUNCIONARIO: CALENDARIO E CONSUMO ---
@@ -12179,6 +12286,104 @@ app.post('/api/equipe/politica-acesso', verificarToken, (req, res) => {
   );
 });
 
+// ─── APIS DE LIBERAÇÃO REMOTA DE TERMINAIS (ZERO SENHA PARA COLABORADOR) ───
+app.post('/api/terminais/solicitar-pareamento', (req, res) => {
+  const { code, deviceInfo, restaurante_id, requestedStation } = req.body || {};
+  const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1').replace('::ffff:', '');
+  const result = terminalPairingService.requestPairing({
+    socket: null,
+    code,
+    deviceInfo,
+    restaurante_id,
+    requestedStation,
+    clientIp,
+    io
+  });
+  res.json(result);
+});
+
+app.get('/api/terminais/verificar-status', (req, res) => {
+  const { code } = req.query;
+  const result = terminalPairingService.checkPairingStatus(code);
+  res.json(result);
+});
+
+app.post('/api/terminais/validar-magic-link', async (req, res) => {
+  const { token, deviceInfo } = req.body || {};
+  const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1').replace('::ffff:', '');
+  const result = await terminalPairingService.validateMagicLink({
+    token,
+    clientIp,
+    deviceInfo,
+    masterDb,
+    JWT_SECRET
+  });
+  if (!result.success) return res.status(400).json(result);
+  res.json(result);
+});
+
+app.get('/api/terminais/pendentes', verificarToken, (req, res) => {
+  const list = terminalPairingService.listPending(req.restaurante_id);
+  res.json({ success: true, sucesso: true, pendentes: list, total: list.length });
+});
+
+app.post('/api/terminais/autorizar-codigo', verificarToken, async (req, res) => {
+  const { code, codigo, cargo, apelido, estacao, validadeDias } = req.body || {};
+  const result = await terminalPairingService.authorizeByCode({
+    code: code || codigo,
+    restaurante_id: req.restaurante_id,
+    cargo,
+    apelido,
+    estacao,
+    validadeDias,
+    donoNome: req.user_nome || 'Proprietário',
+    masterDb,
+    JWT_SECRET,
+    io,
+    activeSockets
+  });
+  if (!result.success) return res.status(400).json({ ...result, sucesso: false });
+  res.json({ ...result, sucesso: true });
+});
+
+app.post('/api/terminais/gerar-link-whatsapp', verificarToken, async (req, res) => {
+  const { cargo, estacao, nome, apelido, validadeDias, expiraEmHoras } = req.body || {};
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const diasCalculados = expiraEmHoras ? (expiraEmHoras / 24) : validadeDias;
+  const result = await terminalPairingService.generateMagicWhatsAppLink({
+    restaurante_id: req.restaurante_id,
+    cargo,
+    estacao,
+    nome: nome || apelido,
+    validadeDias: diasCalculados || 30,
+    baseUrl,
+    donoNome: req.user_nome || 'Proprietário',
+    masterDb,
+    JWT_SECRET
+  });
+  if (!result.success) return res.status(400).json({ ...result, sucesso: false });
+  res.json({ ...result, sucesso: true, linkAcesso: result.url });
+});
+
+app.get('/api/terminais/autorizados', verificarToken, async (req, res) => {
+  const list = await terminalPairingService.listAuthorized(req.restaurante_id, masterDb);
+  res.json({ success: true, sucesso: true, autorizados: list, dispositivos: list });
+});
+
+app.post('/api/terminais/revogar', verificarToken, async (req, res) => {
+  const { id, terminalId } = req.body || {};
+  const result = await terminalPairingService.revokeTerminal({
+    id: id || terminalId,
+    restaurante_id: req.restaurante_id,
+    masterDb,
+    io,
+    activeSockets
+  });
+  if (!result.success) return res.status(400).json({ ...result, sucesso: false });
+  res.json({ ...result, sucesso: true });
+});
+
+
 // ─── API: Autorização de Supervisor/Gerente por PIN ───
 app.post('/api/auth/verificar-pin-supervisor', verificarToken, async (req, res) => {
   const { pin } = req.body;
@@ -12479,6 +12684,27 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       });
     } catch (eMonetizacao) {
       console.error('Erro ao carregar o Controller SaaS Monetização:', eMonetizacao);
+    }
+
+    try {
+      require('./controllers/cashback')(app, { db, masterDb, io, verificarToken, getTenantDb });
+      console.log('💎 Controller Cashback VIP & Fidelidade carregado com sucesso.');
+    } catch (eCashback) {
+      console.error('Erro ao carregar o Controller Cashback:', eCashback);
+    }
+
+    try {
+      require('./controllers/clima-demanda')(app, { db, masterDb, io, verificarToken, getTenantDb });
+      console.log('🌦️ Controller Clima & Demanda Preditiva carregado com sucesso.');
+    } catch (eClima) {
+      console.error('Erro ao carregar o Controller Clima Demanda:', eClima);
+    }
+
+    try {
+      require('./controllers/reservas')(app, { db, masterDb, io, verificarToken, getTenantDb });
+      console.log('📅 Controller Concierge & Reservas de Mesas carregado com sucesso.');
+    } catch (eReservas) {
+      console.error('Erro ao carregar o Controller Reservas:', eReservas);
     }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);
