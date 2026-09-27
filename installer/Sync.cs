@@ -230,6 +230,7 @@ namespace ChefCozinha.Sync
         private Button btnSyncNow;
         private Button btnOpenPdv;
         private Button btnSettings;
+        private Button btnSyncHub;
         private Button btnMinimize;
         private Label lblNextPoll;
         private int pollCountdown;
@@ -413,19 +414,22 @@ namespace ChefCozinha.Sync
                 Padding = new Padding(20, 4, 20, 4)
             };
 
-            btnActivate = CreateButton("🔑 Ativar Restaurante", Color.FromArgb(252, 75, 21), 20, 160);
+            btnActivate = CreateButton("🔑 Ativar", Color.FromArgb(252, 75, 21), 20, 130);
             btnActivate.Click += (s, e) => OpenActivationDialog();
 
-            btnSyncNow = CreateButton("⚡ Sincronizar", Color.FromArgb(39, 39, 42), 190, 125);
+            btnSyncNow = CreateButton("⚡ Sincronizar", Color.FromArgb(39, 39, 42), 158, 110);
             btnSyncNow.Click += (s, e) => TriggerManualSync();
 
-            btnOpenPdv = CreateButton("🌐 Abrir PDV", Color.FromArgb(39, 39, 42), 325, 125);
+            btnOpenPdv = CreateButton("🌐 PDV", Color.FromArgb(39, 39, 42), 276, 95);
             btnOpenPdv.Click += (s, e) => OpenPdvInBrowser();
 
-            btnSettings = CreateButton("⚙️ Configurações", Color.FromArgb(39, 39, 42), 460, 135);
+            btnSyncHub = CreateButton("🚀 Módulos Locais", Color.FromArgb(39, 39, 42), 379, 135);
+            btnSyncHub.Click += (s, e) => OpenSyncHubInBrowser();
+
+            btnSettings = CreateButton("⚙️ Ajustes", Color.FromArgb(39, 39, 42), 522, 105);
             btnSettings.Click += (s, e) => OpenSettingsDialog();
 
-            btnMinimize = CreateButton("⬇ Minimizar", Color.FromArgb(39, 39, 42), 605, 110);
+            btnMinimize = CreateButton("⬇ Ocultar", Color.FromArgb(39, 39, 42), 635, 95);
             btnMinimize.Click += (s, e) => {
                 this.WindowState = FormWindowState.Minimized;
                 if (config.minimize_to_tray)
@@ -438,6 +442,7 @@ namespace ChefCozinha.Sync
             pnlActions.Controls.Add(btnActivate);
             pnlActions.Controls.Add(btnSyncNow);
             pnlActions.Controls.Add(btnOpenPdv);
+            pnlActions.Controls.Add(btnSyncHub);
             pnlActions.Controls.Add(btnSettings);
             pnlActions.Controls.Add(btnMinimize);
             this.Controls.Add(pnlActions);
@@ -583,6 +588,7 @@ namespace ChefCozinha.Sync
             trayMenu.Items.Add("Ativar / Conectar Restaurante", null, (s, e) => OpenActivationDialog());
             trayMenu.Items.Add("Sincronizar Agora", null, (s, e) => TriggerManualSync());
             trayMenu.Items.Add("Abrir PDV no Navegador", null, (s, e) => OpenPdvInBrowser());
+            trayMenu.Items.Add("🚀 Módulos Locais (Sync Hub)", null, (s, e) => OpenSyncHubInBrowser());
             trayMenu.Items.Add("-");
             trayMenu.Items.Add("Sair do Sync Agent", null, (s, e) => {
                 isExiting = true;
@@ -810,6 +816,20 @@ namespace ChefCozinha.Sync
                 string url = string.Format("http://localhost:{0}", config.local_port);
                 Process.Start(url);
                 AppendLog("Abrindo PDV no navegador: " + url, Color.FromArgb(140, 140, 155));
+            }
+            catch (Exception ex)
+            {
+                AppendLog("Erro ao abrir navegador: " + ex.Message, Color.FromArgb(239, 68, 68));
+            }
+        }
+
+        private void OpenSyncHubInBrowser()
+        {
+            try
+            {
+                string url = string.Format("http://localhost:{0}/sync-hub.html", config.local_port);
+                Process.Start(url);
+                AppendLog("Abrindo Sync Hub (Módulos Locais) no navegador: " + url, Color.FromArgb(16, 185, 129));
             }
             catch (Exception ex)
             {

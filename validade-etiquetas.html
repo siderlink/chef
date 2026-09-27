@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentinela de Validades ANVISA RDC 216 - Chef Cozinha</title>
+  <link rel="icon" href="/icon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card: #1e293b;
+      --border: rgba(255, 255, 255, 0.1);
+      --primary: #3b82f6;
+      --accent-red: #ef4444;
+      --accent-orange: #f97316;
+      --accent-yellow: #eab308;
+      --accent-green: #10b981;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 20px; min-height: 100vh; }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-nova-abertura {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Cards Métricas */
+    .metricas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metrica-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .metrica-label { font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; }
+    .metrica-valor { font-family: 'Outfit'; font-size: 28px; font-weight: 900; }
+
+    /* Grupos de Validade */
+    .secao-titulo {
+      font-family: 'Outfit';
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .itens-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .item-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .item-card.critico { border-left: 6px solid var(--accent-red); }
+    .item-card.hoje { border-left: 6px solid var(--accent-orange); }
+    .item-card.alerta { border-left: 6px solid var(--accent-yellow); }
+    .item-card.seguro { border-left: 6px solid var(--accent-green); }
+
+    .item-card h3 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .item-detalhes { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px; }
+
+    .item-acoes {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .btn-etiqueta {
+      flex: 1;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid var(--primary);
+      color: #60a5fa;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-queima {
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid var(--accent-orange);
+      color: #fb923c;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-card {
+      background: #1e293b;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12.5px; font-weight: 600; color: #cbd5e1; margin-bottom: 6px; }
+    .form-control {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      outline: none;
+    }
+
+    /* Print Template para Impressora Térmica 58mm / 80mm */
+    @media print {
+      body * { visibility: hidden; }
+      #etiquetaPrintArea, #etiquetaPrintArea * { visibility: visible; }
+      #etiquetaPrintArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 58mm;
+        font-family: monospace;
+        font-size: 11px;
+        color: #000;
+        padding: 4px;
+        line-height: 1.3;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-bar">
+    <div>
+      <h1>🏷️ Sentinela ANVISA RDC 216 & Validades</h1>
+      <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Controle padronizado de manipulação de alimentos e prevenção contra multas sanitárias.</div>
+    </div>
+    <button type="button" class="btn-nova-abertura" onclick="abrirModalAbertura()">
+      ➕ Registrar Abertura de Insumo
+    </button>
+  </div>
+
+  <!-- Métricas Rápidas -->
+  <div class="metricas-grid">
+    <div class="metrica-card">
+      <div class="metrica-label">Itens Monitorados</div>
+      <div class="metrica-valor" id="mTotal" style="color: #60a5fa;">0</div>
+    </div>
+    <div class="metrica-card">
+      <div class="metrica-label">Vencidos (Risco Imediato)</div>
+      <div class="metrica-valor" id="mVencidos" style="color: #ef4444;">0</div>
+    </div>
+    <div class="metrica-card">
+      <div class="metrica-label">Vencendo Hoje</div>
+      <div class="metrica-valor" id="mHoje" style="color: #f97316;">0</div>
+    </div>
+    <div class="metrica-card">
+      <div class="metrica-label">Conformidade Sanitária</div>
+      <div class="metrica-valor" id="mStatus" style="color: #34d399; font-size: 20px;">100% REGULAR</div>
+    </div>
+  </div>
+
+  <!-- Grupo: Vencendo Hoje (Queima Prioritária) -->
+  <div class="secao-titulo" style="color: #f97316;">
+    <span>⚡ VENCE HOJE / EM 24H (Queima Prioritária)</span>
+  </div>
+  <div class="itens-grid" id="gridHoje">
+    <!-- Injetado -->
+  </div>
+
+  <!-- Grupo: Dentro do Prazo -->
+  <div class="secao-titulo" style="color: #34d399;">
+    <span>✅ DENTRO DO PRAZO DE VALIDADE</span>
+  </div>
+  <div class="itens-grid" id="gridSeguro">
+    <!-- Injetado -->
+  </div>
+
+  <!-- Modal Registrar Abertura -->
+  <div id="modalAbertura" class="modal-overlay">
+    <div class="modal-card">
+      <h2 style="font-family:'Outfit'; font-size:18px; margin-bottom:16px;">Registrar Abertura de Insumo (ANVISA)</h2>
+      
+      <div class="form-group">
+        <label>Nome do Insumo / Produto *</label>
+        <input type="text" id="insumoNome" class="form-control" placeholder="Ex: Queijo Mussarela Peça, Bacon em Cubos, Maionese Artesanal" required>
+      </div>
+
+      <div class="form-group">
+        <label>Categoria</label>
+        <select id="insumoCategoria" class="form-control">
+          <option value="Frios & Laticínios">Frios & Laticínios</option>
+          <option value="Carnes & Aves">Carnes & Aves</option>
+          <option value="Molhos & Condimentos">Molhos & Condimentos</option>
+          <option value="Hortifruti Higienizado">Hortifruti Higienizado</option>
+          <option value="Panificação & Massas">Panificação & Massas</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Validade após Aberto (Horas)</label>
+        <select id="insumoHoras" class="form-control">
+          <option value="72">72 Horas (3 Dias - Padrão ANVISA Carnes/Frios)</option>
+          <option value="48">48 Horas (2 Dias - Molhos Artesanais / Aves)</option>
+          <option value="24">24 Horas (1 Dia - Frutos do Mar / Cremes)</option>
+          <option value="120">120 Horas (5 Dias - Embutidos Secos)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Cozinheiro Responsável *</label>
+        <input type="text" id="insumoResp" class="form-control" placeholder="Ex: Chef Carlos / Auxiliar Lucas" required>
+      </div>
+
+      <div class="form-group">
+        <label>Lote do Fabricante (Opcional)</label>
+        <input type="text" id="insumoLote" class="form-control" placeholder="Ex: Lote 4892A">
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button type="button" onclick="fecharModalAbertura()" style="background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:10px 16px; border-radius:10px; font-weight:600; cursor:pointer;">Cancelar</button>
+        <button type="button" onclick="salvarAbertura()" style="background:var(--primary); color:#fff; border:none; padding:10px 18px; border-radius:10px; font-weight:700; cursor:pointer;">💾 Salvar & Imprimir Etiqueta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Área Oculta para Impressão Térmica -->
+  <div id="etiquetaPrintArea" style="display:none;"></div>
+
+  <script>
+    async function carregarPainel() {
+      try {
+        const res = await fetch('/api/addons/anvisa-validades/painel');
+        const data = await res.json();
+
+        if (data.ok) {
+          const r = data.resumo_gerencial;
+          document.getElementById('mTotal').innerText = r.total_itens_monitorados;
+          document.getElementById('mVencidos').innerText = r.vencidos_criticos;
+          document.getElementById('mHoje').innerText = r.vencendo_em_24h;
+          document.getElementById('mStatus').innerText = r.risco_multa_anvisa.includes('ALTO') ? '⚠️ ATENÇÃO' : '100% REGULAR';
+          document.getElementById('mStatus').style.color = r.risco_multa_anvisa.includes('ALTO') ? '#ef4444' : '#34d399';
+
+          // Vencendo Hoje
+          const elHoje = document.getElementById('gridHoje');
+          const itensHoje = [...(data.grupos.alerta24h || []), ...(data.grupos.vencidos || [])];
+          elHoje.innerHTML = itensHoje.map(i => `
+            <div class="item-card ${i.horas_restantes <= 0 ? 'critico' : 'hoje'}">
+              <div>
+                <h3>${i.insumo_nome}</h3>
+                <div class="item-detalhes">
+                  <div><strong>Validade:</strong> ${new Date(i.data_vencimento).toLocaleString('pt-BR')}</div>
+                  <div><strong>Tempo Restante:</strong> ${i.horas_restantes <= 0 ? 'VENCIDO' : i.horas_restantes + ' horas'}</div>
+                  <div><strong>Responsável:</strong> ${i.responsavel}</div>
+                  <div><strong>Lote:</strong> ${i.lote_fornecedor || 'N/A'}</div>
+                </div>
+              </div>
+              <div class="item-acoes">
+                <button type="button" class="btn-etiqueta" onclick="reimprimirEtiqueta(${i.id}, '${i.insumo_nome}', '${i.data_abertura}', '${i.data_vencimento}', '${i.responsavel}', '${i.lote_fornecedor}')">🖨️ Reemprimir</button>
+                <button type="button" class="btn-queima" onclick="queimarEstoque(${i.id}, '${i.insumo_nome}')">🔥 Queimar Estoque</button>
+              </div>
+            </div>
+          `).join('') || '<div style="color:var(--text-muted); padding:10px;">Nenhum insumo crítico ou vencendo hoje. Parabéns!</div>';
+
+          // Seguros
+          const elSeguro = document.getElementById('gridSeguro');
+          elSeguro.innerHTML = (data.grupos.seguros || []).map(i => `
+            <div class="item-card seguro">
+              <div>
+                <h3>${i.insumo_nome}</h3>
+                <div class="item-detalhes">
+                  <div><strong>Validade:</strong> ${new Date(i.data_vencimento).toLocaleString('pt-BR')}</div>
+                  <div><strong>Tempo Restante:</strong> ${i.horas_restantes} horas</div>
+                  <div><strong>Responsável:</strong> ${i.responsavel}</div>
+                </div>
+              </div>
+              <div class="item-acoes">
+                <button type="button" class="btn-etiqueta" onclick="reimprimirEtiqueta(${i.id}, '${i.insumo_nome}', '${i.data_abertura}', '${i.data_vencimento}', '${i.responsavel}', '${i.lote_fornecedor}')">🖨️ Etiqueta</button>
+              </div>
+            </div>
+          `).join('') || '<div style="color:var(--text-muted); padding:10px;">Nenhum produto cadastrado.</div>';
+        }
+      } catch (e) {}
+    }
+
+    function abrirModalAbertura() {
+      document.getElementById('modalAbertura').style.display = 'flex';
+    }
+
+    function fecharModalAbertura() {
+      document.getElementById('modalAbertura').style.display = 'none';
+    }
+
+    async function salvarAbertura() {
+      const nome = document.getElementById('insumoNome').value.trim();
+      const cat = document.getElementById('insumoCategoria').value;
+      const horas = document.getElementById('insumoHoras').value;
+      const resp = document.getElementById('insumoResp').value.trim();
+      const lote = document.getElementById('insumoLote').value.trim();
+
+      if (!nome || !resp) {
+        alert('Nome do insumo e Cozinheiro responsável são obrigatórios.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/addons/anvisa-validades/registrar-abertura', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            insumo_nome: nome,
+            categoria: cat,
+            validade_horas: horas,
+            responsavel: resp,
+            lote_fornecedor: lote
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          fecharModalAbertura();
+          carregarPainel();
+          imprimirTextoEtiqueta(data.etiqueta_impressa_txt);
+        }
+      } catch (e) {
+        alert('Erro ao registrar abertura.');
+      }
+    }
+
+    function imprimirTextoEtiqueta(txt) {
+      const area = document.getElementById('etiquetaPrintArea');
+      area.style.display = 'block';
+      area.innerHTML = `<pre>${txt}</pre>`;
+      window.print();
+      area.style.display = 'none';
+    }
+
+    function reimprimirEtiqueta(id, nome, dtAb, dtVenc, resp, lote) {
+      const txt = [
+        '==============================',
+        '    ETIQUETA ANVISA RDC 216   ',
+        '==============================',
+        `PRODUTO: ${nome.toUpperCase()}`,
+        `ABERTO EM: ${new Date(dtAb).toLocaleString('pt-BR')}`,
+        `CONSUMIR ATE: ${new Date(dtVenc).toLocaleString('pt-BR')}`,
+        `RESPONSAVEL: ${resp}`,
+        `LOTE: ${lote || 'PADRAO'}`,
+        'CONSERVAÇÃO: Refrigerado',
+        '=============================='
+      ].join('\n');
+      imprimirTextoEtiqueta(txt);
+    }
+
+    async function queimarEstoque(insumoId, insumoNome) {
+      const desc = prompt(`Qual a porcentagem de desconto para a promoção relâmpago do prato com ${insumoNome}?`, '25');
+      if (!desc) return;
+
+      try {
+        const res = await fetch('/api/addons/anvisa-validades/gerar-queima-estoque', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            insumo_aberto_id: insumoId,
+            prato_nome: 'Especial com ' + insumoNome,
+            preco_original: 49.90,
+            desconto_pct: parseFloat(desc) || 25,
+            quantidade_pratos: 10
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          alert(data.mensagem);
+          carregarPainel();
+        }
+      } catch (e) {}
+    }
+
+    carregarPainel();
+  </script>
+</body>
+</html>

@@ -11320,7 +11320,28 @@ const FUNCOES_MODULOS = [
   { chave: 'fila_espera', nome: 'Fila de Espera Digital', desc: 'Fila digital de clientes com estimativa de tempo e chamada automática no celular.', icone: 'ph-users-three', categorias: ['Operação'], preco: 'R$ 39/mês', roi: 'Retém clientes em horários de pico', badge: 'Atendimento' },
   { chave: 'jogos', nome: 'Jogos / Batalha de Mesas', desc: 'Quizzes interativos na mesa e premiação para clientes duelarem e aumentarem o consumo.', icone: 'ph-game-controller', categorias: ['Entretenimento'], preco: 'R$ 39/mês', roi: 'Aumenta consumo de bebidas e permanência', badge: 'Engajamento' },
   { chave: 'ifood', nome: 'Integração Oficial iFood', desc: 'Sincronização bidirecional de cardápio, pedidos e status com a rede iFood.', icone: 'ph-storefront', categorias: ['Delivery'], preco: 'Incluso no Pro/Premium', roi: 'Importação automática de pedidos', badge: 'Oficial' },
-  { chave: 'nfce', nome: 'Emissão Fiscal NFC-e / SAT', desc: 'Emissão de cupom fiscal eletrônico na hora da venda com contingência offline automática.', icone: 'ph-receipt', categorias: ['Fiscal'], preco: 'Incluso no Pro/Premium', roi: 'Conformidade fiscal garantida', badge: 'Fiscal' }
+  { chave: 'nfce', nome: 'Emissão Fiscal NFC-e / SAT', desc: 'Emissão de cupom fiscal eletrônico na hora da venda com contingência offline automática.', icone: 'ph-receipt', categorias: ['Fiscal'], preco: 'Incluso no Pro/Premium', roi: 'Conformidade fiscal garantida', badge: 'Fiscal' },
+  { chave: 'guardiao_compras_nfe', nome: 'Guardião de Compras & Leitor XML NFe', desc: 'Importação automática de XML de fornecedores, radar de inflação de insumos e contas a pagar.', icone: 'ph-file-arrow-up', categorias: ['Financeiro', 'Gestão'], preco: 'R$ 79/mês', roi: 'Economiza 20h/mês e zera aumentos abusivos', badge: 'Alta Economia' },
+  { chave: 'resumo_noturno_whatsapp', nome: 'Resumo Noturno do Dono no WhatsApp', desc: 'Fechamento executivo automático às 23:45 direto no WhatsApp com faturamento, ticket e alertas.', icone: 'ph-moon-stars', categorias: ['Gestão', 'Marketing'], preco: 'R$ 49/mês', roi: 'Controle total na palma da mão sem stress', badge: 'Favorito dos Donos' },
+  { chave: 'crm_whatsapp_ia', nome: 'WhatsApp CRM & Reativação por IA', desc: 'Piloto automático para reconquistar clientes inativos, felicitar aniversariantes e pós-venda NPS.', icone: 'ph-robot', categorias: ['Marketing', 'Vendas'], preco: 'R$ 99/mês', roi: 'Reativa de 20 a 50 clientes sumidos por mês', badge: 'IA Lucrativa' },
+  { chave: 'clube_assinaturas', nome: 'Clube de Assinaturas & Fidelidade VIP', desc: 'Criação de planos de mensalidade (Chopp, Pizza, Executivo VIP) com receita recorrente garantida.', icone: 'ph-crown', categorias: ['Vendas', 'Marketing'], preco: 'R$ 79/mês', roi: 'Garante faturamento fixo antes do mês começar', badge: 'Receita Recorrente' },
+  { chave: 'auditor_cartoes', nome: 'Auditor de Taxas de Cartão & Conciliador', desc: 'Audita taxas de adquirentes (Stone, Cielo, Rede) e recupera cobranças divergentes de MDR.', icone: 'ph-credit-card', categorias: ['Financeiro'], preco: 'R$ 99/mês', roi: 'Recupera de R$ 300 a R$ 2.000 cobrados a mais', badge: 'Recupere Dinheiro' },
+  { chave: 'gamificacao_gorjetas', nome: 'Gamificação do Salão & Rateio Gorjetas', desc: 'Leaderboard de vendas em tempo real para garçons e divisão da taxa de serviço (Lei 13.419).', icone: 'ph-trophy', categorias: ['Gestão', 'Equipe'], preco: 'R$ 59/mês', roi: '+18% no ticket médio e zero passivo trabalhista', badge: 'Mais Vendido' },
+  { chave: 'roteirizador_entregas_tsp', nome: 'Roteirizador de Entregas TSP & Rastreio ao Vivo', desc: 'Otimizador de rotas com algoritmo TSP, despacho em lote e link de rastreio ao vivo para WhatsApp.', icone: 'ph-navigation-arrow', categorias: ['Delivery', 'Operação'], preco: 'R$ 69/mês', roi: '-35% em combustível e fim do cliente cobrando status', badge: 'Economia' },
+  { chave: 'seat_ordering', nome: 'Comanda por Assento & Split Instantâneo', desc: 'Organização de pedidos por cadeira/pessoa e fechamento parcial com Pix em 1 clique sem confusão.', icone: 'ph-chair', categorias: ['Operação', 'Vendas'], preco: 'R$ 49/mês', roi: 'Zera tempo de fechamento em mesas de 10+ pessoas', badge: 'Agilidade' },
+  { chave: 'bar_guardiao_chopp', nome: 'Guardião do Bar & Doses de Chopp', desc: 'Controle milimétrico de volume de barris (50L/30L), copos servidos, sangrias e prevenção de perdas.', icone: 'ph-beer-bottle', categorias: ['Operação', 'Financeiro'], preco: 'R$ 69/mês', roi: 'Economiza até R$ 2.500/mês em chopp não faturado', badge: 'Anti-Perda' },
+  { chave: 'cardapio_multilingue_i18n', nome: 'Cardápio Multilíngue Turístico por IA', desc: 'Tradução gastronômica automática para 5 idiomas (EN, ES, FR, DE, ZH) e filtro de alérgenos.', icone: 'ph-translate', categorias: ['Vendas', 'Marketing'], preco: 'R$ 59/mês', roi: '+40% de conversão de clientes estrangeiros', badge: 'Internacional' },
+  { chave: 'totem_fastpass', nome: 'Totem Fast-Pass & Reconhecimento VIP', desc: 'Identificação por CPF/QR Code com repetição do combo habitual em 1 toque e Pix dinâmico.', icone: 'ph-lightning', categorias: ['Hardware', 'Vendas'], preco: 'R$ 89/mês', roi: 'Reduz fila de autoatendimento de 90s para 15s', badge: 'Fast-Track' },
+  { chave: 'backup_nuvem_blindado', nome: 'Sentinela de Backup Criptografado em Nuvem', desc: 'Disaster recovery diário com AES-256 às 04:00, verificação de integridade e restore em 1 clique.', icone: 'ph-shield-check', categorias: ['Gestão', 'Segurança'], preco: 'R$ 49/mês', roi: 'Proteção blindada contra queima de HD ou perdas', badge: 'Segurança' },
+  { chave: 'menu_engenharia_lucro', nome: 'Engenharia de Cardápio BCG (Kasavana & Smith)', desc: 'Matriz analítica de Estrelas, Burros de Carga, Quebra-Cabeças e Cães para maximizar margem.', icone: 'ph-chart-polar', categorias: ['Inteligência', 'Financeiro'], preco: 'R$ 89/mês', roi: '+12% a +22% no lucro líquido do cardápio', badge: 'Margem Máxima' },
+  { chave: 'pague_na_mesa', nome: 'Auto-Pagamento na Mesa via QR Code (TabPay & Gorjeta)', desc: 'Cliente consulta comanda na mesa, divide a conta, insere gorjeta e paga com Pix/Cartão instantâneo liberando a mesa.', icone: 'ph-qr-code', categorias: ['Vendas', 'Operação'], preco: 'R$ 49/mês + 0.89% Pix', roi: 'Gira mesas até 20 minutos mais rápido e zera filas no caixa', badge: 'Fintech Salão' },
+  { chave: 'validade_anvisa_perdas', nome: 'Sentinela de Validades ANVISA & Etiquetas Térmicas', desc: 'RDC 216 ANVISA: geração automática de etiquetas térmicas de manipulação, alerta diário de vencimento e queima promocional de estoque.', icone: 'ph-barcode', categorias: ['Operação', 'Financeiro'], preco: 'R$ 69/mês', roi: 'Zera multas sanitárias e reduz desperdício de insumos em até 80%', badge: 'Zero Multas' },
+  { chave: 'cotacao_b2b_fornecedores', nome: 'Central de Cotações B2B & Compras Coletivas', desc: 'Disparo de cotações automáticas para distribuidores via WhatsApp, matriz comparativa de menores preços e pool de compras coletivas.', icone: 'ph-shopping-cart-simple', categorias: ['Financeiro', 'Gestão'], preco: 'R$ 89/mês', roi: 'Economiza até 18% nos insumos e poupa 10h/mês de cotações manuais', badge: 'Economia B2B' },
+  { chave: 'reputacao_google_ia', nome: 'Guardião de Reputação & Avaliações por IA (Google Maps/iFood)', desc: 'Filtro inteligente de NPS: avaliações 5 estrelas são direcionadas ao Google Maps; notas 1 a 3 alertam o gerente no WhatsApp para contenção.', icone: 'ph-star', categorias: ['Marketing', 'Vendas'], preco: 'R$ 59/mês', roi: 'Multiplica reviews 5 estrelas no Google e intercepta clientes insatisfeitos', badge: '5 Estrelas' },
+  { chave: 'painel_tv_senhas', nome: 'Painel TV de Senhas & Digital Signage (Fast-Food)', desc: 'Transforma qualquer Smart TV em painel profissional com voz sintetizada (Pronto/Preparando) e carrossel de ofertas/combos lucrativos.', icone: 'ph-television', categorias: ['Hardware', 'Operação'], preco: 'R$ 39/mês', roi: 'Atendimento profissional de fast-food com voz e +20% em vendas de sobremesas', badge: 'Fast-Food TV' },
+  { chave: 'encomendas_eventos', nome: 'Gestão de Encomendas, Buffets & Ceias', desc: 'Controle de vendas com data futura, adiantamento de 50% de sinal via Pix, orçamentos personalizados e calendário de produção da cozinha.', icone: 'ph-cake', categorias: ['Vendas', 'Operação'], preco: 'R$ 69/mês', roi: 'Organiza pedidos com data futura e garante sinal de 50% antecipado', badge: 'Eventos & Ceias' },
+  { chave: 'redes_franquias', nome: 'Gestão Multi-Lojas, Redes e Franquias (Master Chain)', desc: 'Dashboard executivo consolidado multi-CNPJ, transferência de insumos entre matriz e filiais, e replicação de cardápio com 1 clique.', icone: 'ph-buildings', categorias: ['Gestão'], preco: 'R$ 149/mês por filial', roi: 'DRE consolidado, transferências entre lojas e replicação de cardápio', badge: 'Corporativo' },
+  { chave: 'gift_card_wallet', nome: 'Gift Cards Corporativos & Saldo Pré-Pago VIP', desc: 'Venda de vouchers para presentes ou empresas e carteira pré-paga para clientes fiéis (consumo antecipado com bônus).', icone: 'ph-wallet', categorias: ['Vendas', 'Marketing'], preco: 'R$ 49/mês + 1% recarga', roi: 'Injeção imediata de capital de giro e fidelização de clientes', badge: 'Capital Giro' }
 ];
 
 // Config de ativação de cada módulo (restaurante liga/desliga; padrão ligado quando disponível)
@@ -13228,6 +13249,36 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       console.log('💎 Controller SaaS Monetização (Split Pix, AppStore 1-Click, Extras) carregado com sucesso.');
     } catch (eMonetizacao) {
       console.error('Erro ao carregar o Controller SaaS Monetização:', eMonetizacao);
+    }
+
+    try {
+      require('./controllers/addons-restaurante')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('🚀 Controller Add-ons de Alta Monetização carregado com sucesso no Prod.');
+    } catch (eAddons) {
+      console.error('Erro ao carregar o Controller Add-ons Restaurante:', eAddons);
+    }
+
+    try {
+      require('./controllers/addons-expansao-lucro')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('💎 Controller Expansão de Lucro (Pague na Mesa QR, ANVISA RDC 216, Cotação B2B, Reputação IA, TV Fast-Food, Encomendas, Gift Cards) carregado com sucesso no Prod.');
+    } catch (eExp) {
+      console.error('Erro ao carregar o Controller Expansão de Lucro Prod:', eExp);
     }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);

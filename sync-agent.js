@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
+const syncLocalEngine = require('./sync-local-engine');
 
 let ctx = {};
 let instanceId = null;
@@ -315,8 +316,25 @@ async function executeCommand(command, params) {
         caixa_operador: statusCaixa ? statusCaixa.operador : null,
         db_size_bytes: getDbSizeBytes(),
         node_version: process.version,
-        platform: os.platform() + ' ' + os.release()
+        platform: os.platform() + ' ' + os.release(),
+        local_modules: syncLocalEngine.modulosAtivos
       };
+    }
+
+    case 'trigger_local_backup': {
+      return await syncLocalEngine.executarBackupLocal();
+    }
+
+    case 'trigger_local_bi': {
+      return await syncLocalEngine.processarBiLocal(params ? params.data : null);
+    }
+
+    case 'local_print': {
+      return await syncLocalEngine.despacharImpressaoLocal(params ? params.impressora : null, params ? params.conteudo : null);
+    }
+
+    case 'trigger_local_tsp': {
+      return syncLocalEngine.otimizarRotaTspLocal(params ? params.pedidos : []);
     }
 
     default:
@@ -353,7 +371,8 @@ async function sendMetrics() {
       memory_usage_mb: Math.floor(mem.heapUsed / 1024 / 1024),
       db_size_bytes: getDbSizeBytes(),
       connected_clients: ctx.activeSockets ? ctx.activeSockets.size : 0,
-      cpu_usage_percent: os.loadavg() ? Math.round(os.loadavg()[0] * 100 / os.cpus().length) : 0
+      cpu_usage_percent: os.loadavg() ? Math.round(os.loadavg()[0] * 100 / os.cpus().length) : 0,
+      local_modules: syncLocalEngine.modulosAtivos
     });
 
     sendToServer('instance:metrics', msg);
@@ -633,6 +652,19 @@ async function initialize(deps) {
   await ctx.instanceIdentity.ensureTable(ctx.db);
   instanceId = await ctx.instanceIdentity.getOrCreateInstanceId(ctx.db);
   console.log('[Sync] Instance ID local:', instanceId);
+
+  // Inicializa o Motor de Edge Computing Local
+  try {
+    await syncLocalEngine.initialize({
+      db: ctx.db,
+      io: ctx.io,
+      app: ctx.app,
+      deploymentConfig: ctx.deploymentConfig,
+      instanceId: instanceId
+    });
+  } catch (errEngine) {
+    console.error('[Sync] Erro ao inicializar syncLocalEngine:', errEngine.message);
+  }
 
   // Verifica se o restaurante já estava bloqueado previamente
   try {

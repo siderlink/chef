@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gift Cards & Saldo Pré-Pago VIP - Chef Cozinha</title>
+  <link rel="icon" href="/icon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card: #131d2e;
+      --border: rgba(255, 255, 255, 0.08);
+      --primary: #8b5cf6;
+      --primary-hover: #7c3aed;
+      --accent: #10b981;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 24px 16px; min-height: 100vh; }
+
+    .container { max-width: 600px; margin: 0 auto; }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .badge-vip {
+      display: inline-block;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid var(--primary);
+      color: #c4b5fd;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 14px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 12px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.4);
+    }
+
+    /* Valores Pré-definidos */
+    .valores-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 12px 0 18px;
+    }
+
+    .valor-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 14px 6px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .valor-btn.active {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: var(--primary);
+      color: #c4b5fd;
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12.5px; font-weight: 600; color: #cbd5e1; margin-bottom: 6px; }
+    .form-control {
+      width: 100%;
+      background: #090d16;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .btn-comprar {
+      width: 100%;
+      background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+      color: #fff;
+      border: none;
+      padding: 16px;
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+    }
+
+    /* Cartão Visual Preview */
+    .cartao-preview {
+      background: linear-gradient(135deg, #2e1065 0%, #1e1b4b 100%);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+    }
+    .cartao-chip { width: 36px; height: 26px; background: #fbbf24; border-radius: 6px; margin-bottom: 24px; opacity: 0.8; }
+    .cartao-codigo { font-family: monospace; font-size: 20px; font-weight: 700; letter-spacing: 2px; color: #fff; margin-bottom: 12px; }
+    .cartao-saldo { font-size: 26px; font-weight: 900; color: #34d399; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge-vip">Clube Fidelidade & Vouchers</div>
+      <h1>🎁 Gift Cards & Carteira VIP</h1>
+      <div style="font-size: 13.5px; color: var(--text-muted);">Presenteie quem você ama ou garanta créditos para suas visitas gastronômicas.</div>
+    </header>
+
+    <div class="tabs">
+      <div class="tab-btn active" id="tabComprar" onclick="mudarAba('comprar')">Comprar Gift Card</div>
+      <div class="tab-btn" id="tabConsultar" onclick="mudarAba('consultar')">Consultar Saldo</div>
+    </div>
+
+    <!-- Aba 1: Comprar Gift Card -->
+    <div id="secaoComprar">
+      <div class="cartao-preview">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="cartao-chip"></div>
+          <span style="font-size:12px; font-weight:800; color:#c4b5fd;">CHEF COZINHA VIP</span>
+        </div>
+        <div class="cartao-codigo" id="prevCodigo">GIFT-••••-••••</div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+          <div>
+            <div style="font-size:11px; color:#a78bfa;">DESTINATÁRIO</div>
+            <div style="font-weight:700; font-size:14px;" id="prevNome">Para Alguém Especial</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px; color:#a78bfa;">CRÉDITO DISPONÍVEL</div>
+            <div class="cartao-saldo" id="prevSaldo">R$ 100,00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <label style="font-size: 13px; font-weight: 700; color: #cbd5e1;">Escolha o Valor do Presente</label>
+        <div class="valores-grid">
+          <div class="valor-btn" onclick="setValor(50, this)">R$ 50</div>
+          <div class="valor-btn active" onclick="setValor(100, this)">R$ 100</div>
+          <div class="valor-btn" onclick="setValor(150, this)">R$ 150</div>
+          <div class="valor-btn" onclick="setValor(200, this)">R$ 200</div>
+          <div class="valor-btn" onclick="setValor(300, this)">R$ 300</div>
+          <div class="valor-btn" onclick="setValor(500, this)">R$ 500</div>
+        </div>
+
+        <div class="form-group">
+          <label>Seu Nome (Comprador) *</label>
+          <input type="text" id="compradorNome" class="form-control" placeholder="Ex: Roberto Silva" required>
+        </div>
+
+        <div class="form-group">
+          <label>Seu WhatsApp (para recebimento do código) *</label>
+          <input type="tel" id="compradorWhats" class="form-control" placeholder="(11) 98888-0000" required>
+        </div>
+
+        <div class="form-group">
+          <label>Nome do Presenteado (Quem vai usar) *</label>
+          <input type="text" id="destNome" class="form-control" placeholder="Ex: Ana Clara" oninput="atualizarPreview()" required>
+        </div>
+
+        <div class="form-group">
+          <label>Mensagem Personalizada de Carinho</label>
+          <input type="text" id="destMsg" class="form-control" placeholder="Ex: Feliz Aniversário! Aproveite um jantar incrível por minha conta.">
+        </div>
+
+        <button type="button" class="btn-comprar" onclick="comprarGiftCard()">
+          ⚡ Pagar com Pix & Emitir Gift Card
+        </button>
+      </div>
+    </div>
+
+    <!-- Aba 2: Consultar Saldo -->
+    <div id="secaoConsultar" style="display: none;">
+      <div class="card">
+        <h2 style="font-size:16px; margin-bottom:12px; color:#fff;">Verificar Saldo do seu Voucher</h2>
+        <div class="form-group">
+          <label>Código do Gift Card</label>
+          <input type="text" id="codigoConsulta" class="form-control" placeholder="Ex: GIFT-ABCD-1234" style="text-transform: uppercase;">
+        </div>
+        <button type="button" class="btn-comprar" style="background:#3b82f6;" onclick="consultarSaldo()">
+          🔍 Consultar Saldo
+        </button>
+      </div>
+
+      <div id="resultadoConsulta" class="card" style="display: none; text-align: center;">
+        <div style="font-size:13px; color:var(--text-muted); margin-bottom:6px;">Saldo Disponível para Consumo:</div>
+        <div style="font-size:36px; font-weight:900; color:#34d399; margin-bottom:12px;" id="resSaldo">R$ 0,00</div>
+        <div style="font-size:13px; color:#cbd5e1; line-height:1.6;" id="resDetalhes">
+          <!-- Detalhes injetados -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let valorSelecionado = 100;
+
+    function setValor(val, btn) {
+      valorSelecionado = val;
+      document.querySelectorAll('.valor-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('prevSaldo').innerText = val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function atualizarPreview() {
+      const nome = document.getElementById('destNome').value.trim();
+      document.getElementById('prevNome').innerText = nome ? `Para ${nome}` : 'Para Alguém Especial';
+    }
+
+    function mudarAba(aba) {
+      if (aba === 'comprar') {
+        document.getElementById('tabComprar').classList.add('active');
+        document.getElementById('tabConsultar').classList.remove('active');
+        document.getElementById('secaoComprar').style.display = 'block';
+        document.getElementById('secaoConsultar').style.display = 'none';
+      } else {
+        document.getElementById('tabConsultar').classList.add('active');
+        document.getElementById('tabComprar').classList.remove('active');
+        document.getElementById('secaoConsultar').style.display = 'block';
+        document.getElementById('secaoComprar').style.display = 'none';
+      }
+    }
+
+    async function comprarGiftCard() {
+      const cNome = document.getElementById('compradorNome').value.trim();
+      const cWhats = document.getElementById('compradorWhats').value.trim();
+      const dNome = document.getElementById('destNome').value.trim();
+      const dMsg = document.getElementById('destMsg').value.trim();
+
+      if (!cNome || !cWhats) {
+        alert('Por favor preencha seu Nome e WhatsApp.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/addons/gift-cards/emitir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            comprador_nome: cNome,
+            comprador_whatsapp: cWhats,
+            destinatario_nome: dNome,
+            mensagem: dMsg,
+            valor: valorSelecionado
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          alert(`🎉 Gift Card emitido com sucesso!\n\nCódigo do Voucher: ${data.codigo_voucher}\nSaldo: R$ ${data.saldo_disponivel.toFixed(2)}\nValidade: 90 dias.\n\nEnvie o código para o presenteado usar no restaurante.`);
+          document.getElementById('prevCodigo').innerText = data.codigo_voucher;
+        }
+      } catch (e) {
+        alert('Erro ao emitir Gift Card.');
+      }
+    }
+
+    async function consultarSaldo() {
+      const cod = document.getElementById('codigoConsulta').value.trim();
+      if (!cod) return alert('Digite o código do Gift Card.');
+
+      try {
+        // Tenta abater 0 para apenas consultar saldo
+        const res = await fetch('/api/addons/gift-cards/resgatar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            codigo_voucher: cod,
+            valor_abater: 0.01, // teste leve
+            mesa_ou_pedido: 'Consulta de Saldo'
+          })
+        });
+
+        const data = await res.json();
+        const elRes = document.getElementById('resultadoConsulta');
+        elRes.style.display = 'block';
+
+        if (data.ok) {
+          document.getElementById('resSaldo').innerText = (data.saldo_remanescente + 0.01).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          document.getElementById('resDetalhes').innerHTML = `
+            <div><strong>Status:</strong> Ativo e Válido</div>
+            <div><strong>Código:</strong> ${cod.toUpperCase()}</div>
+            <div style="color:#34d399; margin-top:6px;">Apresente este código ao garçom no fechamento da sua conta para abater o valor.</div>
+          `;
+        } else {
+          document.getElementById('resSaldo').innerText = 'R$ 0,00';
+          document.getElementById('resDetalhes').innerHTML = `<span style="color:#ef4444;">${data.erro || 'Gift card não encontrado.'}</span>`;
+        }
+      } catch (e) {
+        alert('Erro ao consultar saldo.');
+      }
+    }
+  </script>
+</body>
+</html>

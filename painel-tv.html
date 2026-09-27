@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chef Cozinha - Painel de Chamada de Senhas & TV</title>
+  <link rel="icon" href="/icon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root {
+      --bg-dark: #0a0d14;
+      --bg-card: rgba(18, 24, 38, 0.85);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --accent-green: #10b981;
+      --accent-yellow: #f59e0b;
+      --accent-blue: #3b82f6;
+      --accent-red: #ef4444;
+      --text-white: #ffffff;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-white);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Bar */
+    header {
+      background: linear-gradient(90deg, #0f172a 0%, #1e1b4b 100%);
+      padding: 16px 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--border-color);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand img {
+      height: 48px;
+    }
+
+    .brand h1 {
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-time {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .clock {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #38bdf8;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .audio-badge {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Main Container Split */
+    .tv-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 24px;
+      padding: 24px;
+      height: calc(100vh - 84px);
+    }
+
+    /* Senhas Area */
+    .senhas-area {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100%;
+    }
+
+    .painel-destaque {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.25) 100%);
+      border: 2px solid var(--accent-green);
+      border-radius: 24px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 35px rgba(16, 185, 129, 0.2);
+      animation: pulseGlow 3s infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      from { box-shadow: 0 0 25px rgba(16, 185, 129, 0.2); }
+      to { box-shadow: 0 0 45px rgba(16, 185, 129, 0.45); }
+    }
+
+    .destaque-badge {
+      background: var(--accent-green);
+      color: #000;
+      font-size: 1.2rem;
+      font-weight: 900;
+      padding: 6px 20px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .destaque-numero {
+      font-size: 7rem;
+      font-weight: 900;
+      line-height: 1;
+      color: #ffffff;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+      letter-spacing: -2px;
+    }
+
+    .destaque-cliente {
+      font-size: 1.8rem;
+      color: #a7f3d0;
+      margin-top: 8px;
+      font-weight: 600;
+    }
+
+    /* Colunas Prontos x Preparando */
+    .senhas-colunas {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      min-height: 0;
+    }
+
+    .coluna-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      backdrop-filter: blur(10px);
+    }
+
+    .coluna-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .coluna-header h2 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot-pronto { background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+    .dot-preparo { background: var(--accent-yellow); box-shadow: 0 0 10px var(--accent-yellow); }
+
+    .senhas-lista {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 4px;
+    }
+
+    .senha-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.3s ease;
+    }
+
+    .senha-item.pronto {
+      border-left: 5px solid var(--accent-green);
+    }
+
+    .senha-item.preparando {
+      border-left: 5px solid var(--accent-yellow);
+    }
+
+    .senha-item .num {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #ffffff;
+    }
+
+    .senha-item .nome {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Right Column: Digital Signage / Carrossel de Ofertas */
+    .signage-area {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    .signage-carousel {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide.active {
+      opacity: 1;
+    }
+
+    .slide-img {
+      width: 100%;
+      height: 60%;
+      object-fit: cover;
+    }
+
+    .slide-info {
+      flex: 1;
+      padding: 24px;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 1) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .slide-badge {
+      background: #dc2626;
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.95rem;
+      padding: 4px 12px;
+      border-radius: 6px;
+      align-self: flex-start;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .slide-titulo {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .slide-subtitulo {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .slide-preco-container {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .slide-preco-label {
+      font-size: 1.2rem;
+      color: #cbd5e1;
+    }
+
+    .slide-preco {
+      font-size: 3.4rem;
+      font-weight: 900;
+      color: #38bdf8;
+      text-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <h1>CHEF COZINHA</h1>
+      <span style="color: var(--text-muted); font-size: 1.1rem; font-weight: 600;">| Painel de Senhas & Retirada</span>
+    </div>
+    <div class="header-time">
+      <div id="audioToggle" class="audio-badge" onclick="toggleAudio()">🔊 Voz Ativa</div>
+      <div id="relogio" class="clock">00:00:00</div>
+    </div>
+  </header>
+
+  <div class="tv-grid">
+    <!-- Esquerda: Senhas -->
+    <div class="senhas-area">
+      <!-- Destaque Última Senha Pronta -->
+      <div class="painel-destaque" id="painelDestaque">
+        <div class="destaque-badge">ÚLTIMA SENHA PRONTA</div>
+        <div class="destaque-numero" id="destaqueNum">--</div>
+        <div class="destaque-cliente" id="destaqueNome">Aguardando pedidos...</div>
+      </div>
+
+      <!-- Colunas Prontos e Preparando -->
+      <div class="senhas-colunas">
+        <div class="coluna-card">
+          <div class="coluna-header">
+            <h2><span class="badge-dot dot-pronto"></span> PRONTOS PARA RETIRADA</h2>
+            <span id="contProntos" style="color: var(--accent-green); font-weight: 800;">0</span>
+          </div>
+          <div class="senhas-lista" id="listaProntos">
+            <!-- Itens Prontos Injetados -->
+          </div>
+        </div>
+
+        <div class="coluna-card">
+          <div class="coluna-header">
+            <h2><span class="badge-dot dot-preparo"></span> EM PREPARO</h2>
+            <span id="contPreparo" style="color: var(--accent-yellow); font-weight: 800;">0</span>
+          </div>
+          <div class="senhas-lista" id="listaPreparo">
+            <!-- Itens Em Preparo Injetados -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Direita: Signage Digital Promocional (Aumenta Faturamento) -->
+    <div class="signage-area">
+      <div class="signage-carousel" id="carousel">
+        <div class="slide active">
+          <img class="slide-img" src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800" alt="Combo">
+          <div class="slide-info">
+            <div class="slide-badge">Combo Campeão de Vendas</div>
+            <div class="slide-titulo">Smash Burger Duplo + Fritas</div>
+            <div class="slide-subtitulo">Pão brioche artesanal tostado na manteiga, 2x carnes smash 100g, queijo cheddar inglês derretido e batata rústica crocante.</div>
+            <div class="slide-preco-container">
+              <span class="slide-preco-label">Apenas:</span>
+              <span class="slide-preco">R$ 38,90</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide">
+          <img class="slide-img" src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=800" alt="Sobremesa">
+          <div class="slide-info">
+            <div class="slide-badge">Sobremesa do Chef</div>
+            <div class="slide-titulo">Petit Gâteau com Sorvete Artesanal</div>
+            <div class="slide-subtitulo">Bolo quente de chocolate meio amargo com recheio cremoso e bola de sorvete de baunilha de Madagascar.</div>
+            <div class="slide-preco-container">
+              <span class="slide-preco-label">Peça no balcão:</span>
+              <span class="slide-preco">R$ 24,00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide">
+          <img class="slide-img" src="https://images.unsplash.com/photo-1608270116812-70b925b42d76?w=800" alt="Chopp">
+          <div class="slide-info">
+            <div class="slide-badge">Happy Hour da Casa</div>
+            <div class="slide-titulo">Chopp Pilsen Trincando 500ml</div>
+            <div class="slide-subtitulo">Pilsen puro malte geladíssimo servido na caneca ultracongelada direto da torneira.</div>
+            <div class="slide-preco-container">
+              <span class="slide-preco-label">Preço Especial:</span>
+              <span class="slide-preco">R$ 12,90</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let audioHabilitado = true;
+    let synth = window.speechSynthesis;
+
+    // Relógio Digital
+    function atualizarRelogio() {
+      const now = new Date();
+      document.getElementById('relogio').innerText = now.toLocaleTimeString('pt-BR');
+    }
+    setInterval(atualizarRelogio, 1000);
+    atualizarRelogio();
+
+    function toggleAudio() {
+      audioHabilitado = !audioHabilitado;
+      const el = document.getElementById('audioToggle');
+      el.innerText = audioHabilitado ? '🔊 Voz Ativa' : '🔇 Mudo';
+      el.style.borderColor = audioHabilitado ? 'var(--accent-green)' : 'var(--accent-red)';
+      el.style.color = audioHabilitado ? 'var(--accent-green)' : 'var(--accent-red)';
+    }
+
+    // Toca som de sino agradável de aeroporto/fast-food usando Web Audio API
+    function tocarSinoChamada() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Ré
+        osc.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.15); // Lá
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 1.2);
+      } catch (e) {}
+    }
+
+    function falarSenha(texto) {
+      if (!audioHabilitado || !synth) return;
+      tocarSinoChamada();
+      setTimeout(() => {
+        const utter = new SpeechSynthesisUtterance(texto);
+        utter.lang = 'pt-BR';
+        utter.rate = 1.0;
+        utter.pitch = 1.0;
+        synth.speak(utter);
+      }, 500);
+    }
+
+    // Carrossel Automático de Banners
+    let slideIdx = 0;
+    const slides = document.querySelectorAll('.slide');
+    setInterval(() => {
+      slides[slideIdx].classList.remove('active');
+      slideIdx = (slideIdx + 1) % slides.length;
+      slides[slideIdx].classList.add('active');
+    }, 7000);
+
+    // Carrega dados da API
+    async function carregarFeed() {
+      try {
+        const res = await fetch('/api/addons/painel-tv/feed');
+        const data = await res.json();
+        if (!data.ok) return;
+
+        // Destaque
+        if (data.ultima_senha_chamada) {
+          document.getElementById('destaqueNum').innerText = data.ultima_senha_chamada.senha_numero;
+          document.getElementById('destaqueNome').innerText = data.ultima_senha_chamada.cliente_nome ? `Cliente: ${data.ultima_senha_chamada.cliente_nome}` : 'Retirada no Balcão';
+        }
+
+        // Prontos
+        const elProntos = document.getElementById('listaProntos');
+        elProntos.innerHTML = (data.senhas_prontas || []).map(s => `
+          <div class="senha-item pronto">
+            <span class="num">${s.senha_numero}</span>
+            <span class="nome">${s.cliente_nome || s.tipo}</span>
+          </div>
+        `).join('') || '<div style="color:var(--text-muted); padding:10px;">Nenhuma senha pronta no momento.</div>';
+        document.getElementById('contProntos').innerText = (data.senhas_prontas || []).length;
+
+        // Preparando
+        const elPreparo = document.getElementById('listaPreparo');
+        elPreparo.innerHTML = (data.senhas_preparando || []).map(s => `
+          <div class="senha-item preparando">
+            <span class="num">${s.senha_numero}</span>
+            <span class="nome">${s.cliente_nome || s.tipo}</span>
+          </div>
+        `).join('') || '<div style="color:var(--text-muted); padding:10px;">Nenhuma senha em preparo.</div>';
+        document.getElementById('contPreparo').innerText = (data.senhas_preparando || []).length;
+
+      } catch (e) {
+        console.error('Erro ao atualizar feed da TV:', e);
+      }
+    }
+
+    carregarFeed();
+    setInterval(carregarFeed, 5000);
+
+    // Conexão Socket.IO em Tempo Real
+    try {
+      const socket = io();
+      socket.on('senha_chamada_tv', (evento) => {
+        carregarFeed();
+        if (evento.status === 'PRONTO') {
+          falarSenha(evento.texto_fala || `Senha ${evento.senha}, favor retirar no balcão.`);
+        }
+      });
+    } catch (e) {}
+  </script>
+</body>
+</html>
