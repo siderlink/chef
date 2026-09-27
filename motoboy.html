@@ -10,8 +10,10 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
   <script src="/socket.io.min.js"></script>
-
+  <script src="/vendor/qrcode/qrcode-generator.js"></script>
+  <script src="/vendor/qrcode/qr-helper.js"></script>
   <script src="/theme-manager.js"></script>
+
   <style>
     :root, [data-theme="light"], body.theme-light {
       --bg-page: #f8fafc;
@@ -20,6 +22,7 @@
       --border-card: #e2e8f0;
       --text-main: #0f172a;
       --text-muted: #64748b;
+      --primary: #fc4b15;
     }
 
     [data-theme="dark"], body.theme-dark, body.dark-mode {
@@ -29,8 +32,10 @@
       --border-card: #334155;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
+      --primary: #fb923c;
     }
 
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       padding: 0;
@@ -42,33 +47,42 @@
       flex-direction: column;
       transition: background 0.25s ease, color 0.25s ease;
     }
+
     .motoboy-header {
-      padding: 16px;
+      padding: 14px 16px;
       background: var(--bg-card);
       border-bottom: 1px solid var(--border-card);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
+
     .motoboy-card-rota {
       background: var(--bg-card);
       border: 1px solid var(--border-card);
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 16px;
       margin: 14px;
       display: flex;
       flex-direction: column;
       gap: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.04);
     }
+
     .item-entrega {
       background: var(--bg-item);
       border: 1px solid var(--border-card);
-      border-radius: 10px;
-      padding: 12px;
+      border-radius: 12px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      transition: all 0.2s ease;
     }
+
     .btn-maps {
       background: #2563eb;
       color: white;
@@ -82,8 +96,9 @@
       justify-content: center;
       gap: 6px;
     }
-    .btn-confirmar {
-      background: #16a34a;
+
+    .btn-cobranca {
+      background: linear-gradient(135deg, #16a34a, #15803d);
       color: white;
       border: none;
       padding: 10px;
@@ -95,35 +110,236 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
+      box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+    }
+
+    /* Modal de Cobrança ao Cliente */
+    .cobranca-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .cobranca-modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .cobranca-modal-sheet {
+      background: var(--bg-card);
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.25);
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .cobranca-modal-overlay.open .cobranca-modal-sheet {
+      transform: translateY(0);
+    }
+
+    .payment-tab-btn {
+      flex: 1;
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border-card);
+      background: var(--bg-item);
+      color: var(--text-main);
+      font-weight: 800;
+      font-size: 12.5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .payment-tab-btn.active {
+      border-color: #16a34a;
+      background: rgba(22, 163, 74, 0.12);
+      color: #16a34a;
+    }
+
+    .quick-cash-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border-card);
+      background: var(--bg-item);
+      color: var(--text-main);
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .quick-cash-btn.selected {
+      border-color: #16a34a;
+      background: #16a34a;
+      color: white;
+    }
+
+    .resumo-financeiro-box {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(16, 185, 129, 0.08));
+      border: 1.5px solid rgba(37, 99, 235, 0.2);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
   </style>
 </head>
 <body>
 
   <header class="motoboy-header">
-    <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 16px; color: #fb923c;">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 16px; color: #fb923c;">
       <i class="ph-bold ph-moped" style="font-size: 24px;"></i> CheffEntregas
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <button onclick="window.ChefTheme && window.ChefTheme.toggle()" title="Alternar Modo Claro / Escuro" style="background: none; border: 1px solid var(--border-card); color: var(--text-main); padding: 4px 8px; border-radius: 8px; cursor: pointer;"><i class="ph ph-moon" id="theme-toggle-icon"></i></button>
-      <div id="gps-status-badge" style="font-size: 11px; background: rgba(34,197,94,0.2); color: #4ade80; padding: 4px 10px; border-radius: 20px; font-weight: 700;">
-        📍 GPS Ligado
+      <button onclick="window.ChefTheme && window.ChefTheme.toggle()" title="Alternar Modo Claro / Escuro" style="background: none; border: 1px solid var(--border-card); color: var(--text-main); padding: 5px 9px; border-radius: 8px; cursor: pointer;">
+        <i class="ph ph-moon" id="theme-toggle-icon"></i>
+      </button>
+      <div id="gps-status-badge" style="font-size: 11px; background: rgba(34,197,94,0.18); color: #16a34a; padding: 4px 10px; border-radius: 20px; font-weight: 800; display:flex; align-items:center; gap:4px;">
+        <span style="width:8px; height:8px; border-radius:50%; background:#16a34a; display:inline-block; animation: pulseRetirada 1.5s infinite;"></span>
+        GPS Ativo
       </div>
     </div>
   </header>
 
   <main style="flex: 1;" id="conteudo-motoboy">
-    <div style="padding: 24px; text-align: center; color: var(--text-muted);">
-      <i class="ph-bold ph-hourglass-medium" style="font-size: 40px; color: #fb923c; margin-bottom: 12px;"></i>
+    <div style="padding: 30px; text-align: center; color: var(--text-muted);">
+      <i class="ph-bold ph-hourglass-medium" style="font-size: 44px; color: #fb923c; margin-bottom: 12px;"></i>
       <h3 style="color: var(--text-main); margin: 0 0 6px 0;">Você está na Sala de Espera</h3>
       <p style="font-size: 13px; margin: 0;">Aguardando o restaurante despachar sua próxima rota de entregas...</p>
     </div>
   </main>
 
+  <!-- MODAL / BOTTOM-SHEET: COBRANÇA FÁCIL AO CLIENTE -->
+  <div class="cobranca-modal-overlay" id="modal-cobranca" onclick="if(event.target === this) window.fecharModalCobranca()">
+    <div class="cobranca-modal-sheet">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 22px;">💳</span>
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 900; color: var(--text-main);">Cobrar Cliente</h3>
+            <span id="cobranca-cliente-nome" style="font-size: 12px; color: var(--text-muted);">Cliente</span>
+          </div>
+        </div>
+        <button onclick="window.fecharModalCobranca()" style="background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer;">&times;</button>
+      </div>
+
+      <!-- VALOR TOTAL A COBRAR -->
+      <div style="background: var(--bg-item); border: 1.5px solid var(--border-card); border-radius: 12px; padding: 12px; text-align: center;">
+        <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Valor do Pedido a Receber</span>
+        <div id="cobranca-valor-total" style="font-size: 26px; font-weight: 900; color: #16a34a; letter-spacing: -0.5px;">R$ 0,00</div>
+        <span id="cobranca-endereco-sub" style="font-size: 11.5px; color: var(--text-muted);">Endereço</span>
+      </div>
+
+      <!-- SELETOR DE FORMA DE COBRANÇA -->
+      <div>
+        <label style="font-size: 11.5px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">Forma de Pagamento no Ato:</label>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="payment-tab-btn active" id="tab-pix" onclick="window.selecionarMetodoPagamento('pix')">
+            <span style="font-size: 18px;">⚡</span>
+            <span>PIX QR Code</span>
+          </button>
+          <button type="button" class="payment-tab-btn" id="tab-cartao" onclick="window.selecionarMetodoPagamento('cartao')">
+            <span style="font-size: 18px;">💳</span>
+            <span>Maquininha</span>
+          </button>
+          <button type="button" class="payment-tab-btn" id="tab-dinheiro" onclick="window.selecionarMetodoPagamento('dinheiro')">
+            <span style="font-size: 18px;">💵</span>
+            <span>Dinheiro</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- PAINEL 1: PIX INSTANTÂNEO COM QR CODE -->
+      <div id="painel-pix" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0;">
+        <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Mostre este QR Code para o cliente escanear:</span>
+        <div id="pix-qr-container" style="background: white; padding: 12px; border-radius: 12px; border: 1.5px solid var(--border-card); box-shadow: 0 4px 12px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: center; min-width: 170px; min-height: 170px;">
+          <!-- QR Code Canvas injected here -->
+        </div>
+        <div style="display: flex; gap: 6px; width: 100%;">
+          <input type="text" id="pix-copia-cola" readonly class="form-input" style="font-size: 11px; flex: 1; text-overflow: ellipsis; padding: 8px;" value="PIX COPIA E COLA">
+          <button type="button" onclick="window.copiarCodigoPix()" style="background: #0284c7; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 800; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <i class="ph-bold ph-copy"></i> Copiar
+          </button>
+        </div>
+      </div>
+
+      <!-- PAINEL 2: CARTÃO NA MAQUININHA -->
+      <div id="painel-cartao" style="display: none; flex-direction: column; gap: 8px; padding: 8px 0;">
+        <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Selecione a modalidade aprovada na maquininha:</span>
+        <div style="display: flex; gap: 8px;">
+          <label style="flex:1; border:1.5px solid var(--border-card); padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:12px; cursor:pointer;">
+            <input type="radio" name="sub_cartao" value="Débito" checked> Débito
+          </label>
+          <label style="flex:1; border:1.5px solid var(--border-card); padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:12px; cursor:pointer;">
+            <input type="radio" name="sub_cartao" value="Crédito"> Crédito
+          </label>
+          <label style="flex:1; border:1.5px solid var(--border-card); padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:12px; cursor:pointer;">
+            <input type="radio" name="sub_cartao" value="Refeição/VR"> VR / Refeição
+          </label>
+        </div>
+      </div>
+
+      <!-- PAINEL 3: DINHEIRO COM CALCULADORA DE TROCO -->
+      <div id="painel-dinheiro" style="display: none; flex-direction: column; gap: 10px; padding: 8px 0;">
+        <div>
+          <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 700;">Notas Rápidas do Cliente:</span>
+          <div style="display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap;" id="quick-cash-container">
+            <!-- Buttons injected via JS -->
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 11.5px; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 4px;">Valor entregue pelo cliente (R$):</label>
+          <input type="number" step="0.50" id="dinheiro-entregue-input" class="form-input" style="font-size: 16px; font-weight: 900; padding: 10px;" oninput="window.calcularTroco()">
+        </div>
+
+        <div id="resultado-troco-box" style="background: rgba(22, 163, 74, 0.12); border: 1.5px solid #16a34a; border-radius: 10px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 12px; font-weight: 800; color: #16a34a;">TROCO A DEVOLVER:</span>
+          <span id="valor-troco-calculado" style="font-size: 18px; font-weight: 900; color: #16a34a;">R$ 0,00</span>
+        </div>
+      </div>
+
+      <!-- BOTÃO FINAL: CONFIRMAR RECEBIMENTO & ENTREGA -->
+      <button type="button" class="btn-confirmar" onclick="window.confirmarCobrancaEEntrega()" style="padding: 14px; font-size: 15px; margin-top: 4px;">
+        <i class="ph-bold ph-check-circle" style="font-size: 20px;"></i>
+        <span>Confirmar Pagamento & Entrega</span>
+      </button>
+    </div>
+  </div>
+
   <script>
     const socket = io();
     const urlParams = new URLSearchParams(window.location.search);
     const motoboyId = parseInt(urlParams.get('id') || '1');
+
+    window.cobrancaState = {
+      itemAtual: null,
+      metodo: 'pix',
+      valorPedido: 0,
+      valorEntregue: 0,
+      troco: 0
+    };
 
     // Transmissão Contínua de GPS
     if (navigator.geolocation) {
@@ -144,9 +360,9 @@
 
         if (!data || !data.temRota || !data.itens || data.itens.length === 0) {
           container.innerHTML = `
-            <div style="padding: 30px; text-align: center; color: #94a3b8;">
+            <div style="padding: 30px; text-align: center; color: var(--text-muted);">
               <i class="ph-bold ph-hourglass-medium" style="font-size: 48px; color: #fb923c; margin-bottom: 12px;"></i>
-              <h3 style="color: #f8fafc; margin: 0 0 6px 0;">Na Sala de Espera</h3>
+              <h3 style="color: var(--text-main); margin: 0 0 6px 0;">Na Sala de Espera</h3>
               <p style="font-size: 13.5px; margin: 0;">Nenhuma rota ativa no momento. Você será notificado assim que o despachante liberar sua rota.</p>
             </div>
           `;
@@ -155,33 +371,94 @@
 
         const rota = data.rota;
         const itens = data.itens;
+        window.itensRotaAtual = itens;
+
+        // Cálculo da Prestação de Contas em Tempo Real
+        let entreguesCount = 0;
+        let totalDinheiroEmMaos = 0;
+        let totalDigital = 0;
+        let taxaTotalGanha = 0;
+
+        itens.forEach(item => {
+          if (item.status === 'entregue') {
+            entreguesCount++;
+            taxaTotalGanha += (parseFloat(item.taxa_entrega) || 6.00);
+            const forma = (item.forma_recebida || item.forma_pagamento || '').toLowerCase();
+            const valor = parseFloat(item.valor_recebido || item.valor_pedido || 0);
+
+            if (forma.includes('dinheiro')) {
+              totalDinheiroEmMaos += valor;
+            } else {
+              totalDigital += valor;
+            }
+          }
+        });
+
+        const saldoRepassarCaixa = Math.max(0, totalDinheiroEmMaos - taxaTotalGanha);
 
         container.innerHTML = `
           <div class="motoboy-card-rota">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <b style="color: #fb923c; font-size: 15px;">🚀 Rota #${rota.id} (${itens.length} Entregas)</b>
-              <span style="font-size: 12px; font-weight: 700; color: #4ade80;">Taxa: R$ ${rota.total_taxas.toFixed(2)}</span>
+            <!-- CABEÇALHO DA ROTA -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <b style="color: #fb923c; font-size: 16px;">🚀 Rota #${rota.id}</b>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                  ${entreguesCount} de ${itens.length} entregas concluídas
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 13px; font-weight: 900; color: #16a34a;">Taxa: R$ ${rota.total_taxas.toFixed(2).replace('.', ',')}</span>
+                <div style="font-size: 11px; color: var(--text-muted);">Bairros: ${rota.bairros || 'Vários'}</div>
+              </div>
             </div>
-            <div style="font-size: 12px; color: #94a3b8;">Bairros: <b>${rota.bairros || 'Vários'}</b></div>
-            <div style="font-size: 12px; color: #fbbf24;">Cobrar em mãos: <b>R$ ${rota.total_a_receber.toFixed(2)}</b></div>
 
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+            <!-- RESUMO FINANCEIRO DA ROTA (PRESTAÇÃO DE CONTAS) -->
+            <div class="resumo-financeiro-box">
+              <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                <span>💵 Dinheiro em Mãos:</span>
+                <strong style="color: #16a34a;">R$ ${totalDinheiroEmMaos.toFixed(2).replace('.', ',')}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                <span>⚡ Pix / Cartão Recebido:</span>
+                <strong>R$ ${totalDigital.toFixed(2).replace('.', ',')}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                <span>🏍️ Sua Comissão Ganha:</span>
+                <strong style="color: #2563eb;">R$ ${taxaTotalGanha.toFixed(2).replace('.', ',')}</strong>
+              </div>
+              <div style="border-top: 1px dashed rgba(37,99,235,0.25); padding-top: 4px; display: flex; justify-content: space-between; font-size: 13px; font-weight: 900;">
+                <span>Saldo Líquido p/ Loja:</span>
+                <strong style="color: #ea580c;">R$ ${saldoRepassarCaixa.toFixed(2).replace('.', ',')}</strong>
+              </div>
+            </div>
+
+            <!-- LISTA DE ENTREGAS -->
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
               ${itens.map((item, idx) => `
-                <div class="item-entrega" style="${item.status === 'entregue' ? 'opacity: 0.5;' : ''}">
-                  <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 13px;">
+                <div class="item-entrega" style="${item.status === 'entregue' ? 'opacity: 0.65; border-color: #16a34a;' : ''}">
+                  <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 13.5px;">
                     <span>#${idx + 1} - ${item.cliente_nome}</span>
-                    <span style="color: #4ade80;">${item.status === 'entregue' ? '✅ Entregue' : 'Pendente'}</span>
+                    <span style="color: ${item.status === 'entregue' ? '#16a34a' : '#f59e0b'}; font-size: 12px;">
+                      ${item.status === 'entregue' ? '✅ Entregue (' + (item.forma_recebida || 'Pago') + ')' : '⏳ Pendente'}
+                    </span>
                   </div>
-                  <div style="font-size: 12px; color: #cbd5e1;">📍 ${item.endereco} (${item.bairro})</div>
-                  <div style="font-size: 11.5px; color: #fbbf24;">Forma: <b>${item.forma_pagamento}</b> (R$ ${item.valor_pedido.toFixed(2)})</div>
-                  
+
+                  <div style="font-size: 12.5px; color: var(--text-main); font-weight: 600;">
+                    📍 ${item.endereco} <span style="color: var(--text-muted); font-size: 11.5px;">(${item.bairro})</span>
+                  </div>
+
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; background: rgba(0,0,0,0.03); padding: 6px 8px; border-radius: 6px;">
+                    <span>Pedido: <b>R$ ${item.valor_pedido.toFixed(2).replace('.', ',')}</b></span>
+                    <span style="color: #ea580c; font-weight: 700;">Cobrar: ${item.forma_pagamento}</span>
+                  </div>
+
                   ${item.status !== 'entregue' ? `
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; margin-top: 4px;">
                       <a class="btn-maps" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.endereco)}" target="_blank">
-                        <i class="ph-bold ph-navigation-arrow"></i> Navegar
+                        <i class="ph-bold ph-navigation-arrow"></i> Rota GPS
                       </a>
-                      <button class="btn-confirmar" onclick="confirmarEntregaItem(${item.id})">
-                        <i class="ph-bold ph-check"></i> Entregue
+                      <button class="btn-cobranca" onclick="window.abrirModalCobranca(${item.id})">
+                        <i class="ph-bold ph-currency-dollar"></i> Cobrar Cliente
                       </button>
                     </div>
                   ` : ''}
@@ -189,26 +466,213 @@
               `).join('')}
             </div>
 
-            <button onclick="finalizarRotaCompleta(${rota.id})" style="background: #e11d48; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 800; margin-top: 10px; cursor: pointer;">
-              🏁 Concluir Rota & Fazer Acerto na Loja
+            <!-- BOTÃO PARA CONCLUIR ROTA -->
+            <button onclick="finalizarRotaCompleta(${rota.id})" style="background: linear-gradient(135deg, #e11d48, #be123c); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 14px; margin-top: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);">
+              <i class="ph-bold ph-check-square-offset" style="font-size: 18px;"></i> Concluir Rota & Acerto no Caixa
             </button>
           </div>
         `;
-      } catch (e) {}
+      } catch (e) {
+        console.error('Erro ao checar rota:', e);
+      }
     }
 
-    async function confirmarEntregaItem(itemId) {
-      if (!confirm('Confirmar que o pedido foi entregue ao cliente?')) return;
-      await fetch('/api/modulo/cheff-entregas/confirmar-entrega-item', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId })
+    // ─── MODAL DE COBRANÇA FÁCIL ──────────────────────────────────────
+    window.abrirModalCobranca = (itemId) => {
+      const item = (window.itensRotaAtual || []).find(x => x.id === itemId);
+      if (!item) return;
+
+      window.cobrancaState.itemAtual = item;
+      window.cobrancaState.valorPedido = parseFloat(item.valor_pedido) || 0;
+      window.cobrancaState.valorEntregue = window.cobrancaState.valorPedido;
+      window.cobrancaState.troco = 0;
+
+      document.getElementById('cobranca-cliente-nome').innerText = `${item.cliente_nome} • ${item.telefone || ''}`;
+      document.getElementById('cobranca-valor-total').innerText = `R$ ${item.valor_pedido.toFixed(2).replace('.', ',')}`;
+      document.getElementById('cobranca-endereco-sub').innerText = `${item.endereco} (${item.bairro})`;
+
+      const inputDinheiro = document.getElementById('dinheiro-entregue-input');
+      if (inputDinheiro) inputDinheiro.value = item.valor_pedido.toFixed(2);
+
+      // Render Quick Cash Buttons
+      renderQuickCashButtons(window.cobrancaState.valorPedido);
+
+      // Gera QR Code Pix Dinâmico com o valor
+      gerarPixQrParaItem(item);
+
+      // Auto seleciona método sugerido pelo pedido
+      const sug = (item.forma_pagamento || '').toLowerCase();
+      if (sug.includes('cartao') || sug.includes('cartão')) {
+        window.selecionarMetodoPagamento('cartao');
+      } else if (sug.includes('dinheiro')) {
+        window.selecionarMetodoPagamento('dinheiro');
+      } else {
+        window.selecionarMetodoPagamento('pix');
+      }
+
+      window.calcularTroco();
+      document.getElementById('modal-cobranca').classList.add('open');
+    };
+
+    window.fecharModalCobranca = () => {
+      document.getElementById('modal-cobranca').classList.remove('open');
+    };
+
+    window.selecionarMetodoPagamento = (metodo) => {
+      window.cobrancaState.metodo = metodo;
+      ['pix', 'cartao', 'dinheiro'].forEach(m => {
+        const btn = document.getElementById(`tab-${m}`);
+        const panel = document.getElementById(`painel-${m}`);
+        if (btn) btn.classList.toggle('active', m === metodo);
+        if (panel) panel.style.display = (m === metodo ? 'flex' : 'none');
       });
-      checarRota();
+    };
+
+    function renderQuickCashButtons(total) {
+      const container = document.getElementById('quick-cash-container');
+      if (!container) return;
+
+      const opts = [total];
+      [20, 50, 100, 200].forEach(n => {
+        if (n > total && !opts.includes(n)) opts.push(n);
+      });
+
+      container.innerHTML = opts.map(val => `
+        <button type="button" class="quick-cash-btn ${val === total ? 'selected' : ''}" onclick="window.aplicarNotaRapida(${val})">
+          ${val === total ? 'Exato (R$ ' + val.toFixed(2).replace('.', ',') + ')' : 'R$ ' + val.toFixed(2).replace('.', ',')}
+        </button>
+      `).join('');
     }
+
+    window.aplicarNotaRapida = (val) => {
+      const input = document.getElementById('dinheiro-entregue-input');
+      if (input) input.value = val.toFixed(2);
+      document.querySelectorAll('.quick-cash-btn').forEach(b => {
+        b.classList.toggle('selected', b.innerText.includes(val.toFixed(2).replace('.', ',')));
+      });
+      window.calcularTroco();
+    };
+
+    window.calcularTroco = () => {
+      const total = window.cobrancaState.valorPedido;
+      const input = document.getElementById('dinheiro-entregue-input');
+      const entregue = parseFloat(input ? input.value : total) || 0;
+      const troco = Math.max(0, entregue - total);
+      window.cobrancaState.valorEntregue = entregue;
+      window.cobrancaState.troco = troco;
+
+      const resBox = document.getElementById('resultado-troco-box');
+      const trocoEl = document.getElementById('valor-troco-calculado');
+
+      if (entregue < total) {
+        const falta = total - entregue;
+        if (resBox) {
+          resBox.style.background = '#fee2e2';
+          resBox.style.borderColor = '#ef4444';
+        }
+        if (trocoEl) {
+          trocoEl.style.color = '#dc2626';
+          trocoEl.innerText = `Falta R$ ${falta.toFixed(2).replace('.', ',')}`;
+        }
+      } else {
+        if (resBox) {
+          resBox.style.background = 'rgba(22, 163, 74, 0.12)';
+          resBox.style.borderColor = '#16a34a';
+        }
+        if (trocoEl) {
+          trocoEl.style.color = '#16a34a';
+          trocoEl.innerText = troco === 0 ? 'Sem Troco (Exato)' : `R$ ${troco.toFixed(2).replace('.', ',')}`;
+        }
+      }
+    };
+
+    function gerarPixQrParaItem(item) {
+      const total = parseFloat(item.valor_pedido) || 0;
+      const payloadPix = `00020126580014BR.GOV.BCB.PIX0136cheffpizzaria@pagamento.com.br520400005303986540${total.toFixed(2)}5802BR5915CHEFF PIZZARIA6009SAO PAULO62070503***6304`;
+
+      const copiaColaInput = document.getElementById('pix-copia-cola');
+      if (copiaColaInput) copiaColaInput.value = payloadPix;
+
+      const container = document.getElementById('pix-qr-container');
+      if (!container) return;
+
+      if (typeof window.generateQrCanvas === 'function') {
+        window.generateQrCanvas(payloadPix, 160, (dataUrl) => {
+          container.innerHTML = `<img src="${dataUrl}" alt="QR Pix" style="width:160px; height:160px; border-radius:8px;">`;
+        });
+      } else if (typeof window.qrcode === 'function') {
+        try {
+          const qr = window.qrcode(0, 'M');
+          qr.addData(payloadPix);
+          qr.make();
+          container.innerHTML = qr.createImgTag(4, 8);
+        } catch (_) {
+          container.innerHTML = `<span style="font-size:12px; color:#16a34a; font-weight:800;">Chave Pix: cheffpizzaria@pagamento.com.br</span>`;
+        }
+      } else {
+        container.innerHTML = `<span style="font-size:12px; color:#16a34a; font-weight:800;">Chave Pix: cheffpizzaria@pagamento.com.br</span>`;
+      }
+    }
+
+    window.copiarCodigoPix = () => {
+      const input = document.getElementById('pix-copia-cola');
+      if (input) {
+        input.select();
+        navigator.clipboard.writeText(input.value).then(() => {
+          alert('✅ Código Pix copiado para a área de transferência!');
+        }).catch(() => {
+          alert('Código copiado!');
+        });
+      }
+    };
+
+    window.confirmarCobrancaEEntrega = async () => {
+      const item = window.cobrancaState.itemAtual;
+      if (!item) return;
+
+      const metodo = window.cobrancaState.metodo;
+      let formaFinal = 'PIX';
+      let valorRecebido = window.cobrancaState.valorPedido;
+      let trocoDevolvido = 0;
+
+      if (metodo === 'pix') {
+        formaFinal = 'PIX Instantâneo';
+      } else if (metodo === 'cartao') {
+        const subRadio = document.querySelector('input[name="sub_cartao"]:checked');
+        const tipoCartao = subRadio ? subRadio.value : 'Cartão';
+        formaFinal = `Cartão (${tipoCartao})`;
+      } else if (metodo === 'dinheiro') {
+        formaFinal = 'Dinheiro';
+        valorRecebido = window.cobrancaState.valorEntregue;
+        trocoDevolvido = window.cobrancaState.troco;
+      }
+
+      try {
+        const res = await fetch('/api/modulo/cheff-entregas/confirmar-entrega-item', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            itemId: item.id,
+            formaRecebida: formaFinal,
+            valorRecebido: valorRecebido,
+            trocoDevolvido: trocoDevolvido
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          window.fecharModalCobranca();
+          checarRota();
+        } else {
+          alert('Erro ao confirmar: ' + (data.erro || 'Tente novamente'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Erro de conexão ao confirmar entrega.');
+      }
+    };
 
     async function finalizarRotaCompleta(rotaId) {
-      if (!confirm('Finalizar esta rota e dirigir-se ao caixa da loja para conferência de comprovantes?')) return;
+      if (!confirm('Finalizar esta rota e dirigir-se ao caixa da loja para conferência e acerto financeiro?')) return;
       await fetch('/api/modulo/cheff-entregas/finalizar-rota', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -60,12 +60,31 @@ module.exports = function ({ app, db, io, log }) {
         valor_pedido REAL DEFAULT 0.00,
         taxa_entrega REAL DEFAULT 6.00,
         forma_pagamento TEXT, -- 'Pago Online / PIX' | 'Cartao na Entrega' | 'Dinheiro'
+        forma_recebida TEXT,
+        valor_recebido REAL DEFAULT 0.00,
+        troco_devolvido REAL DEFAULT 0.00,
         troco_para REAL DEFAULT 0.00,
         status TEXT DEFAULT 'pendente', -- 'pendente' | 'entregue' | 'falha'
         comprovante_foto TEXT,
         entregue_em TEXT
       )
     `);
+
+    // Migrações seguras de colunas
+    db.all(`PRAGMA table_info(entregas_itens)`, [], (err, cols) => {
+      if (!err && cols) {
+        const names = cols.map(c => c.name);
+        if (!names.includes('forma_recebida')) {
+          db.run(`ALTER TABLE entregas_itens ADD COLUMN forma_recebida TEXT`, () => {});
+        }
+        if (!names.includes('valor_recebido')) {
+          db.run(`ALTER TABLE entregas_itens ADD COLUMN valor_recebido REAL DEFAULT 0.00`, () => {});
+        }
+        if (!names.includes('troco_devolvido')) {
+          db.run(`ALTER TABLE entregas_itens ADD COLUMN troco_devolvido REAL DEFAULT 0.00`, () => {});
+        }
+      }
+    });
 
     // Inserir motoboys de demonstração se tabela estiver vazia
     db.get('SELECT COUNT(*) as total FROM motoboys', [], (err, row) => {
@@ -206,20 +225,42 @@ module.exports = function ({ app, db, io, log }) {
     );
   });
 
-  // 6. Motoboy Confirma Entrega de um Item (com foto/comprovante opcional)
+  // 6. Motoboy Confirma Entrega e Cobrança de um Item
   app.post('/api/modulo/cheff-entregas/confirmar-entrega-item', (req, res) => {
-    const { itemId, comprovanteFoto } = req.body || {};
+    const { itemId, formaRecebida, valorRecebido, trocoDevolvido, comprovanteFoto } = req.body || {};
     if (!itemId) return res.status(400).json({ ok: false, erro: 'ID do item é obrigatório.' });
 
-    db.run(
-      `UPDATE entregas_itens SET status = 'entregue', comprovante_foto = ?, entregue_em = CURRENT_TIMESTAMP WHERE id = ?`,
-      [comprovanteFoto || '', itemId],
-      function (err) {
-        if (err) return res.status(500).json({ ok: false, erro: err.message });
-        io.emit('cheff_entregas_atualizado', { tipo: 'item_entregue', itemId });
-        res.json({ ok: true, mensagem: 'Entrega confirmada com sucesso!' });
-      }
-    );
+    db.get('SELECT * FROM entregas_itens WHERE id = ?', [itemId], (iErr, item) => {
+      db.run(
+        `UPDATE entregas_itens 
+         SET status = 'entregue', 
+             forma_recebida = ?, 
+             valor_recebido = ?, 
+             troco_devolvido = ?, 
+             comprovante_foto = ?, 
+             entregue_em = CURRENT_TIMESTAMP 
+         WHERE id = ?`,
+        [
+          formaRecebida || (item ? item.forma_pagamento : 'Dinheiro'),
+          parseFloat(valorRecebido) || (item ? item.valor_pedido : 0),
+          parseFloat(trocoDevolvido) || 0,
+          comprovanteFoto || '',
+          itemId
+        ],
+        function (err) {
+          if (err) return res.status(500).json({ ok: false, erro: err.message });
+
+          if (item && item.pedido_id) {
+            db.run(`UPDATE orders SET status = 'Entregue' WHERE id = ?`, [item.pedido_id]);
+            io.emit('pedido_status_cliente', { pedidoId: item.pedido_id, status: 'Entregue' });
+            io.emit('pedidos_atualizados');
+          }
+
+          io.emit('cheff_entregas_atualizado', { tipo: 'item_entregue', itemId });
+          res.json({ ok: true, mensagem: 'Entrega e cobrança confirmadas com sucesso!' });
+        }
+      );
+    });
   });
 
   // 7. Motoboy Finaliza Rota e Entra na Fila de Acerto do Caixa

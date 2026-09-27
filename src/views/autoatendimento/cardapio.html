@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Dynamic GTAG & Meta Pixel Tracking -->
   <script src="/tracking-loader.js"></script>
+  <script src="/resilience-guard.js"></script>
+  <script src="/offline-queue.js"></script>
   <script>if (window.ChefTracking) window.ChefTracking.init('cardapio');</script>
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
@@ -263,6 +265,47 @@
     .btn-add-to-cart:hover {
       transform: scale(1.1);
       background: var(--primary-hover);
+    }
+
+    /* Layouts Personalizados de Cardápio por Restaurante */
+    .menu-grid.layout-compacta {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+    }
+    .menu-grid.layout-compacta .menu-card {
+      padding: 8px 12px;
+      gap: 10px;
+    }
+    .menu-grid.layout-compacta .menu-card-emoji {
+      width: 42px;
+      height: 42px;
+      font-size: 20px;
+      border-radius: 8px;
+    }
+    .menu-grid.layout-compacta .btn-add-to-cart {
+      width: 36px;
+      height: 36px;
+      font-size: 16px;
+    }
+
+    .menu-grid.layout-bistro {
+      grid-template-columns: 1fr !important;
+      gap: 14px !important;
+    }
+    .menu-grid.layout-bistro .menu-card {
+      background: transparent !important;
+      border: none !important;
+      border-bottom: 1px dashed var(--border) !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      padding: 10px 4px !important;
+    }
+    .menu-grid.layout-bistro .menu-card-emoji {
+      display: none !important;
+    }
+    .menu-grid.layout-bistro .menu-card-price {
+      font-weight: 700;
+      font-size: 16px;
     }
 
     /* Floating Cart Button */
@@ -1254,6 +1297,365 @@
       transform: translateY(-1px);
     }
 
+    /* ══════════════════════════════════════════════════════════════
+       🍕 PIZZARIA ULTRA-PRO: MONTADOR DE PIZZAS, BORDAS & FATIAS
+       ══════════════════════════════════════════════════════════════ */
+    .pizza-builder-modal-content {
+      max-width: 680px !important;
+      width: 95vw !important;
+      max-height: 92vh !important;
+      padding: 20px 22px !important;
+      border-radius: 22px !important;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    .pizza-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pizza-visualizer-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, rgba(252, 75, 21, 0.05) 0%, rgba(245, 158, 11, 0.03) 100%);
+      border: 1.5px dashed rgba(252, 75, 21, 0.25);
+      border-radius: 20px;
+      padding: 16px;
+      margin: 4px 0 6px;
+      position: relative;
+    }
+
+    .pizza-svg-wrapper {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .pizza-svg-wrapper:hover {
+      transform: scale(1.02);
+    }
+
+    .pizza-size-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .pizza-size-card {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 12px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .pizza-size-card:hover {
+      border-color: rgba(252, 75, 21, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .pizza-size-card.active {
+      border-color: var(--primary);
+      background: rgba(252, 75, 21, 0.06);
+      box-shadow: 0 4px 14px rgba(252, 75, 21, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .btn-num-sabor {
+      flex: 1;
+      padding: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-num-sabor:hover:not(:disabled) {
+      border-color: var(--primary);
+    }
+
+    .btn-num-sabor.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(252, 75, 21, 0.25);
+    }
+
+    .btn-num-sabor:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .pizza-flavor-slot {
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 14px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 8px;
+    }
+
+    .pizza-flavor-slot:hover {
+      border-color: #f59e0b;
+    }
+
+    .pizza-flavor-slot.active-focus {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.08);
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-flavor-filter {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .btn-flavor-filter.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .pizza-flavor-option-card {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .pizza-flavor-option-card:hover {
+      border-color: var(--primary);
+      transform: translateX(2px);
+    }
+
+    .pizza-flavor-option-card.selected {
+      border-color: var(--primary);
+      background: rgba(252, 75, 21, 0.08);
+    }
+
+    .pizza-chip-retirada {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1.5px solid #fca5a5;
+      background: #fef2f2;
+      color: #991b1b;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .pizza-chip-retirada:hover {
+      transform: scale(1.03);
+    }
+
+    .pizza-chip-retirada.selected {
+      background: #ef4444;
+      color: white;
+      border-color: #dc2626;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+    }
+
+    .pizza-chip-adicional {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1.5px solid #86efac;
+      background: #f0fdf4;
+      color: #166534;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .pizza-chip-adicional:hover {
+      transform: scale(1.03);
+    }
+
+    .pizza-chip-adicional.selected {
+      background: #10b981;
+      color: white;
+      border-color: #059669;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+    }
+
+    .pizza-borda-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+    }
+
+    .pizza-borda-card {
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      transition: all 0.15s;
+    }
+
+    .pizza-borda-card:hover {
+      border-color: #d97706;
+      transform: translateY(-2px);
+    }
+
+    .pizza-borda-card.active {
+      border-color: #d97706;
+      background: #fffbeb;
+      box-shadow: 0 2px 10px rgba(217, 119, 6, 0.2);
+    }
+
+    body.dark-mode .pizza-borda-card.active {
+      background: rgba(217, 119, 6, 0.15);
+    }
+
+    .pizza-upsell-card {
+      flex: 0 0 150px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .pizza-upsell-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .pizza-upsell-card.added {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    /* ══════ PILARES 3 & 4: RACHA-CONTA, MOTIVO GARÇOM & REPETIR RODADA ══════ */
+    .btn-motivo-garcom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 8px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: #1e293b;
+      text-align: center;
+    }
+    .btn-motivo-garcom:hover, .btn-motivo-garcom:active {
+      border-color: var(--primary, #fc4b15);
+      background: rgba(252, 75, 21, 0.05);
+      transform: translateY(-2px);
+    }
+    .prep-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      background: rgba(100, 116, 139, 0.08);
+      padding: 2px 6px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .btn-racha-conta {
+      background: linear-gradient(135deg, rgba(252,75,21,0.12), rgba(245,158,11,0.16));
+      color: var(--primary, #fc4b15);
+      border: 1px solid rgba(252,75,21,0.3);
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+    .btn-racha-conta:hover {
+      background: var(--primary, #fc4b15);
+      color: white;
+    }
+    .racha-chip {
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+      border: 1.5px solid #e2e8f0;
+      background: #f8fafc;
+      color: #334155;
+      transition: all 0.2s ease;
+    }
+    .racha-chip.active {
+      border-color: var(--primary, #fc4b15);
+      background: var(--primary, #fc4b15);
+      color: white;
+    }
+    .racha-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 12.5px;
+    }
+    .racha-item-row:last-child {
+      border-bottom: none;
+    }
 </style>
   <script src="/locales.js"></script>
   <script src="/broadcast.js"></script>
@@ -1305,6 +1707,10 @@
         <button class="tour-toggle" onclick="window.abrirTourGastronomico()" style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 1.5px solid #fed7aa; color: #c2410c; padding: 7px 14px; border-radius: 20px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(252,75,21,0.12);">
           <i class="ph-fill ph-sparkle" style="color: #fc4b15; font-size: 16px;"></i>
           <span>Tour da Casa</span>
+        </button>
+        <button id="btn-header-racha-conta" onclick="window.abrirModalRachaConta()" style="background: linear-gradient(135deg, rgba(252,75,21,0.12), rgba(245,158,11,0.18)); border: 1.5px solid rgba(252,75,21,0.35); color: var(--primary); padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(252,75,21,0.12);" title="Dividir a conta da mesa">
+          <i class="ph-bold ph-receipt"></i>
+          <span>Racha-Conta</span>
         </button>
         <button id="btn-cardapio-theme" onclick="if(window.ChefTheme && window.ChefTheme.toggle) window.ChefTheme.toggle(); else document.body.classList.toggle('dark-mode');" style="background: transparent; border: 1px solid var(--border); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted);" title="Alternar Tema Claro / Escuro">
           <i id="cardapio-theme-icon" class="ph ph-moon"></i>
@@ -1456,6 +1862,23 @@
       <span class="tour-progress-text" id="tour-progress-text">0%</span>
     </div>
 
+    <!-- PIZZA BUILDER HERO BANNER -->
+    <div id="pizza-builder-hero" onclick="window.abrirMontadorPizza()" style="cursor:pointer; background:linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #fc4b15 100%); border-radius:18px; padding:16px 20px; color:white; display:flex; align-items:center; justify-content:space-between; gap:16px; box-shadow:0 10px 25px rgba(252,75,21,0.22); border:1.5px solid rgba(255,255,255,0.15); position:relative; overflow:hidden; margin-bottom:12px; transition:transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+      <div style="position:absolute; right:-20px; top:-20px; width:130px; height:130px; background:radial-gradient(circle, rgba(252,75,21,0.45) 0%, transparent 70%); border-radius:50%; filter:blur(25px); pointer-events:none;"></div>
+      <div style="flex:1; z-index:1;">
+        <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(252,75,21,0.35); border:1px solid rgba(255,255,255,0.2); padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
+          <i class="ph-fill ph-sparkle"></i> Pizzaria Cheff.pro
+        </div>
+        <h3 style="font-size:17px; font-weight:900; margin:0 0 4px 0; letter-spacing:-0.3px;">Monte a sua Pizza dos Sonhos 🍕</h3>
+        <p style="font-size:12.5px; opacity:0.92; margin:0; line-height:1.35;">Escolha tamanho, até 4 sabores em fatias, bordas recheadas e ingredientes do seu jeito!</p>
+      </div>
+      <div style="z-index:1; flex-shrink:0;">
+        <button type="button" style="background:#fc4b15; color:white; border:none; padding:10px 18px; border-radius:14px; font-weight:800; font-size:13px; display:flex; align-items:center; gap:6px; box-shadow:0 4px 15px rgba(0,0,0,0.3); cursor:pointer; pointer-events:none;">
+          <span>Montar</span> <i class="ph-bold ph-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
     <div class="categories-container" id="categories-tabs"></div>
 
     <div class="skeleton-grid" id="menu-skeletons">
@@ -1486,7 +1909,13 @@
   </main>
 
   <div id="tracking-panel">
-    <div class="tracking-header"><i class="ph ph-shopping-bag"></i> Meus Pedidos</div>
+    <div class="tracking-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <span><i class="ph ph-shopping-bag"></i> Meus Pedidos</span>
+      <button class="btn-racha-conta" onclick="window.abrirModalRachaConta()" title="Dividir conta da mesa">
+        <i class="ph-bold ph-receipt"></i> Racha-Conta
+      </button>
+    </div>
+    <div id="repetir-rodada-wrap"></div>
     <div id="tracking-items"></div>
   </div>
 
@@ -1509,6 +1938,140 @@
     </button>
   </div>
 
+  <!-- MODAL: MONTAGEM DA SUA PIZZA INTERATIVA ULTRA-PRO -->
+  <div class="modal-overlay" id="modal-montar-pizza" style="display:none; z-index:10005;">
+    <div class="modal-content pizza-builder-modal-content">
+      <button class="modal-close" onclick="window.fecharMontadorPizza()">&times;</button>
+      
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:28px;">🍕</span>
+        <div>
+          <h2 style="font-size:18px; font-weight:900; margin:0; color:var(--text); letter-spacing:-0.4px;">Monte a Sua Pizza dos Sonhos</h2>
+          <span style="font-size:12px; color:var(--text-muted);">Escolha o tamanho, sabores fracionados, borda e ingredientes!</span>
+        </div>
+      </div>
+
+      <!-- ETAPA 1: TAMANHO -->
+      <div class="pizza-section">
+        <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>1. Escolha o Tamanho:</span>
+          <span id="pizza-size-hint" style="font-size:11.5px; font-weight:700; color:var(--primary);">8 fatias • até 3 sabores</span>
+        </label>
+        <div class="pizza-size-grid" id="pizza-size-selector">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- VISUALIZADOR INTERATIVO DA PIZZA (FATIAS SVG) -->
+      <div class="pizza-visualizer-container">
+        <div style="position:absolute; top:10px; left:14px; font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">
+          <i class="ph-bold ph-eye"></i> Divisão das Fatias (Clique na fatia para mudar o sabor)
+        </div>
+        <div id="pizza-visualizer-svg-container" class="pizza-svg-wrapper">
+          <!-- SVG injected dynamically -->
+        </div>
+        <div id="pizza-visualizer-legend" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; font-size:12px; font-weight:700;">
+          <!-- Legend chips -->
+        </div>
+      </div>
+
+      <!-- ETAPA 2: QUANTIDADE DE SABORES -->
+      <div class="pizza-section">
+        <label class="form-label">2. Quantos Sabores? (Divisão de Fatias):</label>
+        <div style="display:flex; gap:8px;" id="pizza-num-sabores-container">
+          <!-- Buttons for 1, 2, 3, 4 sabores -->
+        </div>
+      </div>
+
+      <!-- ETAPA 3: ESCOLHA DOS SABORES POR FATIA -->
+      <div class="pizza-section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <label class="form-label" style="margin:0;">3. Escolha os Sabores das Fatias:</label>
+          <span style="font-size:11px; color:#16a34a; font-weight:700; background:#dcfce7; padding:2px 8px; border-radius:12px;">Cobrado pelo maior sabor</span>
+        </div>
+        <div id="pizza-flavor-slots-container">
+          <!-- Slots for each fraction (1/2, 1/2 etc.) -->
+        </div>
+
+        <!-- Seletor / Catálogo de Sabores para o Slot Ativo -->
+        <div id="pizza-flavor-picker-box" style="background:var(--bg); border:1.5px solid var(--border); border-radius:14px; padding:12px; margin-top:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+            <strong id="pizza-flavor-picker-title" style="font-size:13px; color:var(--text);">Escolha o Sabor para a Fatia 1:</strong>
+            <div style="display:flex; gap:4px;" id="pizza-flavor-filter-buttons">
+              <button type="button" class="btn-flavor-filter active" id="btn-filter-todos" onclick="window.filtrarSaboresPizza('todos')">Todos</button>
+              <button type="button" class="btn-flavor-filter" id="btn-filter-salgadas" onclick="window.filtrarSaboresPizza('salgadas')">Salgadas</button>
+              <button type="button" class="btn-flavor-filter" id="btn-filter-doces" onclick="window.filtrarSaboresPizza('doces')">Doces</button>
+            </div>
+          </div>
+          <div id="pizza-flavor-list" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; padding-right:4px;">
+            <!-- Flavors list -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ETAPA 4: INGREDIENTES, RETIRADAS & ADICIONAIS -->
+      <div class="pizza-section">
+        <label class="form-label">4. Customizar Ingredientes (Retiradas & Adicionais):</label>
+        <p style="font-size:11.5px; color:var(--text-muted); margin:-4px 0 6px 0;">Selecione o que deseja remover (sem custo) ou turbinar com adicionais:</p>
+        
+        <div style="margin-bottom:8px;">
+          <span style="font-size:11.5px; font-weight:800; color:#dc2626; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">
+            🚫 Retirar Ingredientes (Sem Cebola, etc):
+          </span>
+          <div id="pizza-retiradas-container" style="display:flex; flex-wrap:wrap; gap:6px;">
+            <!-- Chips for Removals -->
+          </div>
+        </div>
+
+        <div>
+          <span style="font-size:11.5px; font-weight:800; color:#16a34a; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">
+            🟢 Adicionais Especiais:
+          </span>
+          <div id="pizza-adicionais-container" style="display:flex; flex-wrap:wrap; gap:6px;">
+            <!-- Chips for Additions with prices -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ETAPA 5: BORDAS RECHEADAS -->
+      <div class="pizza-section">
+        <label class="form-label">5. Borda Recheada:</label>
+        <div class="pizza-borda-grid" id="pizza-bordas-selector">
+          <!-- Bordas options -->
+        </div>
+      </div>
+
+      <!-- ETAPA 6: BEBIDAS & ACOMPANHAMENTOS RECOMENDADOS (UPSELL) -->
+      <div class="pizza-section" style="background:linear-gradient(135deg, rgba(252,75,21,0.06), rgba(245,158,11,0.06)); border:1px solid rgba(252,75,21,0.2); border-radius:14px; padding:12px;">
+        <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase; margin-bottom:6px;">
+          <i class="ph-fill ph-sparkle"></i> Acompanhamentos Imperdíveis:
+        </div>
+        <div id="pizza-upsell-drinks" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;">
+          <!-- Quick drinks to add -->
+        </div>
+      </div>
+
+      <!-- ETAPA 7: OBSERVAÇÕES ADICIONAIS -->
+      <div class="form-group">
+        <label class="form-label">Observações da Pizza (opcional):</label>
+        <textarea id="pizza-custom-obs" rows="2" class="form-input" style="resize:none;" placeholder="Ex: Massa bem assada e crocante, cortar em fatias aperitivo..."></textarea>
+      </div>
+
+      <!-- RODAPÉ FIXO DO MODAL COM RESUMO E PREÇO -->
+      <div style="border-top:1.5px solid var(--border); padding-top:12px; display:flex; flex-direction:column; gap:8px; position:sticky; bottom:0; background:var(--surface); z-index:2;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:12px; color:var(--text-muted);" id="pizza-summary-text">Pizza Grande • 2 Sabores</div>
+            <div style="font-size:20px; font-weight:900; color:var(--primary);" id="pizza-total-price">R$ 52,00</div>
+          </div>
+          <button type="button" class="btn-submit" onclick="window.adicionarPizzaAoCarrinho()" style="width:auto; padding:12px 24px; font-size:15px; display:flex; align-items:center; gap:8px;">
+            <i class="ph-bold ph-plus-circle"></i> Adicionar ao Pedido
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: DETALHES / ADICIONAR ITEM -->
   <div class="modal-overlay" id="modal-item-details">
     <div class="modal-content">
@@ -1517,7 +2080,10 @@
         <div class="menu-card-emoji" id="modal-emoji">🍔</div>
         <div>
           <h3 id="modal-title" style="font-size: 17px; font-weight: 800;">Nome do Item</h3>
-          <span id="modal-price" style="font-weight: 800; color: var(--primary); font-size: 16px;">R$ 0,00</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span id="modal-price" style="font-weight: 800; color: var(--primary); font-size: 16px;">R$ 0,00</span>
+            <span id="modal-prep-badge" class="prep-badge"><i class="ph-bold ph-clock"></i> <span id="modal-prep-time">~15 min</span></span>
+          </div>
         </div>
       </div>
       <p id="modal-item-description" style="font-size: 13px; color: var(--text-muted, #64748b); margin: 10px 0 4px 0; line-height: 1.45; display: none;"></p>
@@ -1540,6 +2106,25 @@
         <div id="modal-montavel-preco" style="margin-top:8px; font-weight:800; color:var(--primary); font-size:15px;"></div>
         <input type="hidden" id="modal-composicoes" value="[]">
       </div>
+      <!-- DICA DO SOMMELIER & HARMONIZAÇÃO DE VINHOS/BEBIDAS -->
+      <div id="sommelier-cardapio-box" style="display:none; margin: 12px 0 6px; padding: 10px 12px; border-radius: 12px; background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%); border: 1.5px solid #f0abfc;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+          <span style="font-size: 11px; font-weight: 800; color: #86198f; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;">
+            🍷 Dica do Sommelier Cheff.pro
+          </span>
+          <span id="sommelier-cardapio-preco" style="font-size: 12.5px; font-weight: 800; color: #7e22ce;"></span>
+        </div>
+        <div style="font-size: 13px; font-weight: 700; color: #4a044e;" id="sommelier-cardapio-nome">Nome da Bebida</div>
+        <div style="font-size: 11.5px; color: #701a75; margin: 2px 0 8px; line-height: 1.3;" id="sommelier-cardapio-motivo">Harmonização sugerida</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <button type="button" id="btn-add-sommelier-cardapio" onclick="window.adicionarBebidaSommelier()" style="padding: 7px; background: #9333ea; color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <i class="ph-bold ph-plus"></i> Só Bebida
+          </button>
+          <button type="button" id="btn-combo-sommelier-cardapio" onclick="window.adicionarComboCompletoSommelier()" style="padding: 7px; background: linear-gradient(135deg, #fc4b15, #f59e0b); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 3px 10px rgba(252,75,21,0.25);">
+            <i class="ph-bold ph-lightning"></i> 🔥 Combo Completo
+          </button>
+        </div>
+      </div>
       <button class="btn-submit" onclick="window.adicionarItemAoCarrinho()" style="margin-top: 8px;">
         Adicionar ao Pedido
       </button>
@@ -1558,10 +2143,40 @@
         <!-- Injected via JS -->
       </div>
 
+      <!-- CHEFF AI: UPSELLING & CROSS-SELLING RECOMENDAÇÕES -->
+      <div id="cheff-ai-upsell-container" style="display:none; margin:10px 0; padding:12px; background:linear-gradient(135deg, rgba(252,75,21,0.06), rgba(245,158,11,0.06)); border:1.5px dashed rgba(252,75,21,0.35); border-radius:14px;">
+        <div style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
+          <i class="ph-fill ph-sparkle"></i> <span>Cheff AI Recomenda:</span>
+        </div>
+        <div id="cheff-ai-upsell-items" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
       <div
         style="display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid var(--border); padding-top: 12px; font-weight: 800;">
         <span>Total:</span>
         <span id="cart-total-value" style="color: var(--primary); font-size: 17px;">R$ 0,00</span>
+      </div>
+
+      <!-- CLUBE VIP & CASHBACK CHEFF.PRO -->
+      <div id="box-cashback-vip" style="margin: 10px 0; padding: 12px; background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(236,72,153,0.08)); border: 1.5px solid rgba(139,92,246,0.25); border-radius: 14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px;">
+          <span style="font-size: 12px; font-weight: 800; color: #7c3aed; display:flex; align-items:center; gap: 5px;">
+            <i class="ph-fill ph-crown"></i> Cheff VIP Cashback (5% de Volta)
+          </span>
+          <span id="cashback-badge-saldo" style="display:none; font-size: 11px; background: #7c3aed; color:white; padding: 2px 7px; border-radius: 10px; font-weight:800;">Saldo: R$ 0,00</span>
+        </div>
+        <div style="display:flex; gap: 6px; margin-top: 4px;">
+          <input type="tel" id="input-cashback-phone" class="form-input" placeholder="WhatsApp (DDD + Número) para cashback" style="font-size: 12px; padding: 8px;" onblur="window.consultarCashbackCliente && window.consultarCashbackCliente(this.value)">
+          <button type="button" class="btn-submit" onclick="window.consultarCashbackCliente && window.consultarCashbackCliente(document.getElementById('input-cashback-phone').value)" style="width: auto; padding: 0 12px; font-size: 11px; white-space: nowrap; background: #7c3aed;">
+            Verificar
+          </button>
+        </div>
+        <div id="cashback-resgate-action" style="display:none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(139,92,246,0.3); align-items:center; justify-content:space-between;">
+          <span style="font-size: 11.5px; color: #475569;">Saldo disponível: <strong id="cashback-valor-disp" style="color: #7c3aed;">R$ 0,00</strong></span>
+          <button type="button" id="btn-aplicar-cashback" onclick="window.aplicarCashbackDesconto && window.aplicarCashbackDesconto()" style="background: #10b981; color: white; border: none; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer;">
+            Aplicar Desconto
+          </button>
+        </div>
       </div>
 
       <div class="form-group" style="margin-top: 8px;">
@@ -1709,6 +2324,175 @@
           onclick="window.changeMesaNo()" id="btn-change-mesa-trigger">
           Não, alterar mesa
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ESCOLHA DE MOTIVO DO GARÇOM -->
+  <div class="modal-overlay" id="modal-motivo-garcom" style="display:none; align-items:flex-end; z-index:100000;">
+    <div class="modal-content" style="max-width:440px; width:100%; border-radius:24px 24px 0 0; padding:20px; animation:slideUp 0.28s ease;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, rgba(252,75,21,0.15), rgba(245,158,11,0.2)); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:18px;">
+            <i class="ph-bold ph-hand-waving"></i>
+          </div>
+          <div>
+            <h3 style="font-size:16px; font-weight:800; margin:0;">Chamar Garçom</h3>
+            <p style="font-size:12px; color:var(--text-muted); margin:0;">Como podemos te ajudar agora?</p>
+          </div>
+        </div>
+        <button onclick="window.fecharModalMotivoGarcom()" style="background:#f1f5f9; border:none; width:30px; height:30px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#64748b; font-size:16px;">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+        <button type="button" class="btn-motivo-garcom" onclick="window.confirmarChamadaGarcom('🧊 Trazer Gelo e Limão')">
+          <span style="font-size:22px;">🧊</span>
+          <span style="font-size:12px; font-weight:700;">Gelo e Limão</span>
+        </button>
+        <button type="button" class="btn-motivo-garcom" onclick="window.confirmarChamadaGarcom('🍽️ Pratos / Talheres Extras')">
+          <span style="font-size:22px;">🍽️</span>
+          <span style="font-size:12px; font-weight:700;">Pratos / Talheres</span>
+        </button>
+        <button type="button" class="btn-motivo-garcom" onclick="window.confirmarChamadaGarcom('🧂 Azeite, Sal ou Condimentos')">
+          <span style="font-size:22px;">🧂</span>
+          <span style="font-size:12px; font-weight:700;">Azeite / Molhos</span>
+        </button>
+        <button type="button" class="btn-motivo-garcom" onclick="window.confirmarChamadaGarcom('🧾 Pedir a Conta')">
+          <span style="font-size:22px;">🧾</span>
+          <span style="font-size:12px; font-weight:700;">Pedir a Conta</span>
+        </button>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <input type="text" id="input-outro-motivo-garcom" class="form-input" placeholder="Outro pedido específico? (ex: Guardanapo extra)" style="font-size:12.5px; padding:10px 12px; border-radius:10px;">
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <button type="button" onclick="window.enviarOutroMotivoGarcom()" class="btn-submit" style="flex:1; padding:10px; font-size:13px; font-weight:700; background:linear-gradient(135deg, #fc4b15, #f59e0b);">
+          Enviar Solicitação
+        </button>
+        <button type="button" onclick="window.confirmarChamadaGarcom('🙋‍♂️ Atendimento na Mesa')" style="padding:10px 14px; font-size:12px; font-weight:700; background:#f1f5f9; color:#475569; border:none; border-radius:12px; cursor:pointer;">
+          Apenas Chamar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RACHA-CONTA COLABORATIVO NA MESA -->
+  <div class="modal-overlay" id="modal-racha-conta" style="display:none; align-items:center; justify-content:center; z-index:100000;">
+    <div class="modal-content" style="max-width:440px; width:92%; max-height:90vh; overflow-y:auto; padding:20px; border-radius:20px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, rgba(252,75,21,0.15), rgba(245,158,11,0.2)); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:18px;">
+            <i class="ph-bold ph-receipt"></i>
+          </div>
+          <div>
+            <h3 style="font-size:16px; font-weight:800; margin:0;">Racha-Conta Colaborativo</h3>
+            <p id="racha-mesa-sub" style="font-size:11.5px; color:var(--text-muted); margin:0;">Mesa</p>
+          </div>
+        </div>
+        <button onclick="window.fecharModalRachaConta()" style="background:#f1f5f9; border:none; width:30px; height:30px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#64748b; font-size:16px;">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+
+      <!-- Resumo Total da Mesa -->
+      <div style="background:linear-gradient(135deg, #1e293b, #0f172a); color:white; padding:14px 16px; border-radius:14px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between;">
+        <div>
+          <span style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8; font-weight:700;">Total da Mesa</span>
+          <div id="racha-total-mesa" style="font-size:22px; font-weight:900; color:#38bdf8;">R$ 0,00</div>
+        </div>
+        <div style="text-align:right;">
+          <span id="racha-total-itens" style="font-size:11.5px; opacity:0.85;">0 itens pedidos</span>
+          <div style="font-size:11px; color:#10b981; font-weight:700;"><i class="ph-bold ph-users"></i> Mesa Ativa</div>
+        </div>
+      </div>
+
+      <!-- Abas de Divisão -->
+      <div style="display:flex; gap:6px; background:#f1f5f9; padding:4px; border-radius:12px; margin-bottom:14px;">
+        <button type="button" id="tab-racha-amigos" onclick="window.selecionarAbaRacha('amigos')" style="flex:1; padding:8px; border:none; border-radius:9px; font-weight:800; font-size:12px; cursor:pointer; background:white; color:var(--primary); box-shadow:0 2px 6px rgba(0,0,0,0.06); transition:all 0.2s;">
+          👥 Divisão Igual (Amigos)
+        </button>
+        <button type="button" id="tab-racha-itens" onclick="window.selecionarAbaRacha('itens')" style="flex:1; padding:8px; border:none; border-radius:9px; font-weight:700; font-size:12px; cursor:pointer; background:transparent; color:#64748b; transition:all 0.2s;">
+          📋 Meus Itens
+        </button>
+      </div>
+
+      <!-- CONTEÚDO 1: DIVISÃO IGUAL (AMIGOS) -->
+      <div id="racha-view-amigos" style="display:block;">
+        <div style="text-align:center; margin-bottom:14px;">
+          <label style="font-size:12.5px; font-weight:700; color:#475569; display:block; margin-bottom:8px;">Dividir a conta igualmente entre quantas pessoas?</label>
+          <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:10px;">
+            <button onclick="window.mudarQtdPessoasRacha(-1)" style="width:36px; height:36px; border-radius:50%; border:1.5px solid #cbd5e1; background:white; font-size:18px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;">-</button>
+            <span id="racha-num-pessoas" style="font-size:24px; font-weight:900; color:#1e293b; min-width:40px;">2</span>
+            <button onclick="window.mudarQtdPessoasRacha(1)" style="width:36px; height:36px; border-radius:50%; border:1.5px solid #cbd5e1; background:white; font-size:18px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+          </div>
+          <!-- Atalhos rápidos -->
+          <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
+            <span class="racha-chip active" onclick="window.definirQtdPessoasRacha(2)">2</span>
+            <span class="racha-chip" onclick="window.definirQtdPessoasRacha(3)">3</span>
+            <span class="racha-chip" onclick="window.definirQtdPessoasRacha(4)">4</span>
+            <span class="racha-chip" onclick="window.definirQtdPessoasRacha(5)">5</span>
+            <span class="racha-chip" onclick="window.definirQtdPessoasRacha(6)">6</span>
+            <span class="racha-chip" onclick="window.definirQtdPessoasRacha(8)">8</span>
+            <span class="racha-chip" onclick="window.definirQtdPessoasRacha(10)">10</span>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(135deg, rgba(252,75,21,0.06), rgba(245,158,11,0.08)); border:1.5px dashed rgba(252,75,21,0.35); border-radius:14px; padding:12px 14px; text-align:center; margin-bottom:14px;">
+          <span style="font-size:11.5px; font-weight:700; color:#854d0e; text-transform:uppercase;">Sua parte a pagar</span>
+          <div id="racha-valor-minha-parte" style="font-size:24px; font-weight:900; color:var(--primary); margin:2px 0;">R$ 0,00</div>
+          <span id="racha-explicacao-divisao" style="font-size:11px; color:#64748b;">(Total da mesa dividido por 2 amigos)</span>
+        </div>
+
+        <button type="button" class="btn-submit" onclick="window.avancarParaPixRacha()" style="background:linear-gradient(135deg, #10b981, #059669); font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <i class="ph-bold ph-qr-code"></i> Pagar Minha Parte via PIX
+        </button>
+      </div>
+
+      <!-- CONTEÚDO 2: POR MEUS ITENS -->
+      <div id="racha-view-itens" style="display:none;">
+        <p style="font-size:12px; color:var(--text-muted); margin:0 0 10px 0;">Selecione os itens que você consumiu na mesa:</p>
+        <div id="racha-lista-itens-mesa" style="max-height:220px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:12px; background:#fff;">
+          <!-- Injetado via JS -->
+        </div>
+
+        <div style="background:linear-gradient(135deg, rgba(252,75,21,0.06), rgba(245,158,11,0.08)); border:1.5px dashed rgba(252,75,21,0.35); border-radius:14px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+          <span style="font-size:12px; font-weight:800; color:#854d0e;">Total dos Meus Itens:</span>
+          <span id="racha-valor-meus-itens" style="font-size:18px; font-weight:900; color:var(--primary);">R$ 0,00</span>
+        </div>
+
+        <button type="button" class="btn-submit" onclick="window.avancarParaPixRachaItens()" style="background:linear-gradient(135deg, #10b981, #059669); font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <i class="ph-bold ph-qr-code"></i> Pagar Meus Itens via PIX
+        </button>
+      </div>
+
+      <!-- CONTEÚDO 3: TELA DE PIX DO RACHA-CONTA -->
+      <div id="racha-view-pix" style="display:none; text-align:center;">
+        <div style="margin-bottom:10px;">
+          <span style="font-size:12px; font-weight:700; color:#475569;">Valor da sua fração:</span>
+          <div id="racha-pix-valor-display" style="font-size:24px; font-weight:900; color:var(--primary);">R$ 0,00</div>
+          <span id="racha-pix-descricao" style="font-size:11.5px; color:#64748b;">Racha-conta na mesa</span>
+        </div>
+
+        <div style="background:white; padding:10px; border-radius:12px; border:1px solid #cbd5e1; display:inline-flex; align-items:center; justify-content:center; width:160px; height:160px; margin:4px 0 10px;">
+          <img id="racha-pix-qr-img" src="" alt="QR Code PIX Racha-Conta" style="width:140px; height:140px;">
+        </div>
+
+        <label style="font-size:11.5px; color:var(--text-muted); display:block; margin-bottom:4px;">Chave PIX Copia e Cola:</label>
+        <div class="pix-copia-cola" id="racha-pix-copia-string" onclick="window.copiarPixRacha()" style="font-size:11px; word-break:break-all; padding:8px; border-radius:8px; margin-bottom:6px; cursor:pointer;">-</div>
+        <span style="font-size:11px; color:#2b5c9e; font-weight:600; display:block; margin-bottom:14px;"><i class="ph ph-copy"></i> Toque no código acima para copiar</span>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button type="button" class="btn-submit" onclick="window.confirmarPagamentoPixRacha()" style="background:linear-gradient(135deg, #10b981, #059669); font-size:13.5px; font-weight:800;">
+            ✓ Já fiz o pagamento PIX da minha parte
+          </button>
+          <button type="button" onclick="window.voltarDoPixRacha()" style="background:transparent; border:none; color:#64748b; font-size:12px; font-weight:700; cursor:pointer; padding:6px;">
+            ← Voltar para opções de divisão
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -2156,9 +2940,63 @@
       .then(conf => {
         CONFIGS = conf;
         CONFIGS.qr_order_enabled = (CONFIGS.qr_order_enabled === 'true' || CONFIGS.qr_order_enabled === true);
-        if (CONFIGS.nome_restaurante) {
-          document.getElementById('restaurant-name-header').innerText = CONFIGS.nome_restaurante;
-          document.title = `${CONFIGS.nome_restaurante} | Cardápio`;
+        const nomeRest = CONFIGS.rest_nome || CONFIGS.nome_restaurante;
+        if (nomeRest) {
+          document.getElementById('restaurant-name-header').innerText = nomeRest;
+          document.title = `${nomeRest} | Cardápio`;
+        }
+
+        // Customizações Visuais & White-label do Restaurante
+        if (CONFIGS.rest_cor_primaria) {
+          document.documentElement.style.setProperty('--primary', CONFIGS.rest_cor_primaria);
+        }
+        if (CONFIGS.rest_cor_secundaria) {
+          document.documentElement.style.setProperty('--primary-hover', CONFIGS.rest_cor_secundaria);
+        }
+        if (CONFIGS.rest_fonte_familia) {
+          document.documentElement.style.setProperty('--app-font', CONFIGS.rest_fonte_familia);
+          document.body.style.fontFamily = CONFIGS.rest_fonte_familia;
+        }
+        if (CONFIGS.rest_slogan) {
+          const w = document.getElementById('welcome-user-crm');
+          if (w) w.innerText = CONFIGS.rest_slogan;
+        }
+        if (CONFIGS.rest_logo_url && /^https?:\/\//i.test(CONFIGS.rest_logo_url)) {
+          const hInfo = document.querySelector('.header-info');
+          if (hInfo && !document.getElementById('rest-logo-img-header')) {
+            const img = document.createElement('img');
+            img.id = 'rest-logo-img-header';
+            img.src = CONFIGS.rest_logo_url;
+            img.alt = 'Logo';
+            img.style.cssText = 'max-height: 40px; width: auto; border-radius: 8px; object-fit: contain; margin-bottom: 4px;';
+            hInfo.prepend(img);
+          }
+        }
+        if (CONFIGS.rest_banner_url && /^https?:\/\//i.test(CONFIGS.rest_banner_url)) {
+          const mainArea = document.getElementById('main-menu-area');
+          if (mainArea && !document.getElementById('rest-banner-hero')) {
+            const hero = document.createElement('div');
+            hero.id = 'rest-banner-hero';
+            hero.style.cssText = `width: 100%; height: 130px; background-image: url('${CONFIGS.rest_banner_url}'); background-size: cover; background-position: center; border-radius: 14px; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.08);`;
+            mainArea.prepend(hero);
+          }
+        }
+        if (CONFIGS.rest_tempo_preparo) {
+          const hInfo = document.querySelector('.header-info');
+          if (hInfo && !document.getElementById('badge-tempo-preparo')) {
+            const badge = document.createElement('span');
+            badge.id = 'badge-tempo-preparo';
+            badge.innerHTML = `<i class="ph ph-clock"></i> Preparo: ${CONFIGS.rest_tempo_preparo}`;
+            badge.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; font-size: 11px; background: rgba(252,75,21,0.12); color: var(--primary); padding: 2px 8px; border-radius: 10px; font-weight: 700; margin-top: 4px;';
+            hInfo.appendChild(badge);
+          }
+        }
+        if (CONFIGS.rest_layout_cardapio) {
+          const container = document.getElementById('menu-items');
+          if (container) {
+            if (CONFIGS.rest_layout_cardapio === 'lista_compacta') container.classList.add('layout-compacta');
+            else if (CONFIGS.rest_layout_cardapio === 'minimalista_bistro') container.classList.add('layout-bistro');
+          }
         }
 
         if (CONFIGS.qr_order_enabled === false) {
@@ -2281,14 +3119,20 @@
 
     function renderTabs() {
       const container = document.getElementById('categories-tabs');
-      const cats = ['Todos', ...new Set(MENU.map(p => p.categoria))];
+      const hasPizzas = (MENU || []).some(p => (p.categoria || '').toLowerCase().includes('pizza') || (p.nome || '').toLowerCase().includes('pizza'));
+      const extraTabs = hasPizzas ? ['🍕 Monte sua Pizza'] : [];
+      const cats = ['Todos', ...extraTabs, ...new Set(MENU.map(p => p.categoria))];
 
       container.innerHTML = cats.map(c => `
-        <div class="category-tab ${c === activeCategory ? 'active' : ''}" onclick="selectCategory('${c}')">${c}</div>
+        <div class="category-tab ${c === activeCategory ? 'active' : ''}" onclick="selectCategory('${c.replace(/'/g, "\\'")}')">${c}</div>
       `).join('');
     }
 
     window.selectCategory = (cat) => {
+      if (cat === '🍕 Monte sua Pizza') {
+        window.abrirMontadorPizza();
+        return;
+      }
       activeCategory = cat;
       if (window.ChefCardapio3D && window.ChefCardapio3D.ambient) {
         window.ChefCardapio3D.ambient.updateCategoryColor(cat);
@@ -2308,6 +3152,41 @@
         }, 30);
       }
     };
+
+    let PRODUTOS_ESTRELAS = new Set();
+    fetch('/api/financeiro/produtos-estrelas')
+      .then(r => r.json())
+      .then(d => {
+        if (d && Array.isArray(d.estrelas)) {
+          PRODUTOS_ESTRELAS = new Set(d.estrelas.map(s => s.toLowerCase().trim()));
+          if (MENU && MENU.length > 0) renderMenu();
+        }
+      })
+      .catch(() => {});
+
+    function calcularTempoPreparoItem(item) {
+      if (!item) return '~15 min';
+      const nomeLower = ((item.nome || '') + ' ' + (item.categoria || '')).toLowerCase();
+      let baseMin = 15;
+      if (nomeLower.match(/(chopp|cerveja|refrigerante|suco|agua|água|dose|vinho|drink|coquetel|refri|lata)/i)) {
+        baseMin = 5;
+      } else if (nomeLower.match(/(sobremesa|pudim|sorvete|doce|torta|acai|açaí)/i)) {
+        baseMin = 8;
+      } else if (nomeLower.match(/(porção|porcao|batata|mandioca|pastel|petisco|fritas|isca)/i)) {
+        baseMin = 14;
+      } else if (nomeLower.match(/(burger|hambúrguer|hamburguer|lanche|sanduíche|artesanal)/i)) {
+        baseMin = 18;
+      } else if (nomeLower.match(/(pizza)/i)) {
+        baseMin = 20;
+      } else if (nomeLower.match(/(carne|picanha|filé|file|bife|costela|salmão|peixe|camarão|risoto|parmegiana)/i)) {
+        baseMin = 22;
+      }
+      const activeKitchen = (trackingOrders || []).filter(o => o.status !== 'Pronto' && o.status !== 'Entregue').length;
+      if (activeKitchen > 3 && baseMin > 5) {
+        baseMin += 4;
+      }
+      return `~${baseMin} min`;
+    }
 
     function renderMenu() {
       const container = document.getElementById('menu-items');
@@ -2330,18 +3209,30 @@
       container.innerHTML = filtered.map(p => {
         const desc = gerarDescricao(p);
         const fotoSegura = (p.foto_url && /^https?:\/\//i.test(p.foto_url)) ? p.foto_url.replace(/"/g, '&quot;') : '';
+        const isEstrela = PRODUTOS_ESTRELAS.has((p.nome || '').toLowerCase().trim());
+        const isPizza = (p.categoria || '').toLowerCase().includes('pizza') || (p.nome || '').toLowerCase().includes('pizza');
+        const clickHandler = isPizza ? `window.abrirMontadorPizza('${p.nome.replace(/'/g, "\\'")}')` : `window.abrirItemDetails(${p.id})`;
+        const pizzaBadge = isPizza
+          ? `<div style="margin-top:4px;"><span style="background:#fff7ed; border:1px solid #ffedd5; color:#ea580c; border-radius:8px; padding:2px 7px; font-size:10px; font-weight:800; display:inline-flex; align-items:center; gap:4px;"><i class="ph-bold ph-pizza"></i> Monte ou Divida Sabores</span></div>`
+          : '';
+
         return `
-        <div class="menu-card" onclick="window.abrirItemDetails(${p.id})">
+        <div class="menu-card" onclick="${clickHandler}">
+          ${isEstrela ? `<span class="badge-estrela" style="position:absolute; top:6px; right:8px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:6px; display:inline-flex; align-items:center; gap:3px; z-index:2; box-shadow:0 2px 6px rgba(245,158,11,0.25);"><i class="ph-fill ph-star"></i> Mais Pedido</span>` : ''}
           ${fotoSegura
             ? `<img class="menu-card-emoji" src="${fotoSegura}" alt="${p.nome.replace(/"/g, '')}" loading="lazy" style="width:56px; height:56px; border-radius:14px; object-fit:cover; flex-shrink:0;" onerror="this.outerHTML='<div class=\\'menu-card-emoji\\'>${p.emoji || '🍽️'}</div>'">`
             : `<div class="menu-card-emoji">${p.emoji || '🍽️'}</div>`}
           <div class="menu-card-details">
             <h4 class="menu-card-title">${p.nome}</h4>
-            <span class="menu-card-price">R$ ${parseFloat(p.preco).toFixed(2).replace('.', ',')}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="menu-card-price">R$ ${parseFloat(p.preco).toFixed(2).replace('.', ',')}</span>
+              <span class="prep-badge"><i class="ph-bold ph-clock"></i> ${calcularTempoPreparoItem(p)}</span>
+            </div>
+            ${pizzaBadge}
             <div class="menu-card-descricao ${tourActive ? 'visible' : ''}">${desc}</div>
           </div>
-          <button class="btn-add-to-cart" onclick="event.stopPropagation(); window.abrirItemDetails(${p.id})">
-            <i class="ph ph-plus"></i>
+          <button class="btn-add-to-cart" onclick="event.stopPropagation(); ${clickHandler}">
+            <i class="ph ${isPizza ? 'ph-pizza' : 'ph-plus'}"></i>
           </button>
         </div>
       `}).join('');
@@ -2412,6 +3303,67 @@
       renderMenu();
     });
 
+    let _sommelierBebidaAtual = null;
+
+    function obterHarmonizacaoSommelierCardapio(item) {
+      if (!item || !item.nome) return null;
+      const catItem = (item.categoria || '').toLowerCase();
+      if (catItem.includes('bebida') || catItem.includes('drink') || catItem.includes('bar')) return null;
+
+      const nomeLower = (item.nome + ' ' + catItem).toLowerCase();
+      const bebidas = MENU.filter(m => {
+        const c = (m.categoria || '').toLowerCase();
+        return c.includes('bebida') || c.includes('vinho') || c.includes('cerveja') || c.includes('drink') || c.includes('bar');
+      });
+      if (bebidas.length === 0) return null;
+
+      let termoBusca = [];
+      let motivo = '';
+      if (nomeLower.includes('carne') || nomeLower.includes('bife') || nomeLower.includes('picanha') || nomeLower.includes('costela') || nomeLower.includes('burguer') || nomeLower.includes('hamburguer') || nomeLower.includes('churrasco')) {
+        termoBusca = ['malbec', 'cabernet', 'tinto', 'ipa', 'chopp', 'preta', 'cerveja'];
+        motivo = 'Harmonização Encorpada: taninos e lúpulo que quebram a gordura do corte e exaltam o sabor grelhado.';
+      } else if (nomeLower.includes('peixe') || nomeLower.includes('salm') || nomeLower.includes('camar') || nomeLower.includes('frutos') || nomeLower.includes('salada') || nomeLower.includes('tilapia')) {
+        termoBusca = ['branco', 'sauvignon', 'chardonnay', 'pilsen', 'gin', 'limonada', 'suco'];
+        motivo = 'Harmonização Cítrica & Fresca: frescor límpido ideal para realçar notas marinhas e texturas delicadas.';
+      } else if (nomeLower.includes('massa') || nomeLower.includes('pizza') || nomeLower.includes('lasanha') || nomeLower.includes('risoto')) {
+        termoBusca = ['tinto', 'merlot', 'chianti', 'chopp', 'refrigerante'];
+        motivo = 'Harmonização Clássica: acidez equilibrada que casa perfeitamente com molhos de tomate e queijos gratinados.';
+      } else if (nomeLower.includes('sobremesa') || nomeLower.includes('torta') || nomeLower.includes('petit') || nomeLower.includes('pudim') || nomeLower.includes('brownie')) {
+        termoBusca = ['porto', 'espresso', 'cafe', 'licor', 'doce'];
+        motivo = 'Harmonização de Fechamento: notas tostadas aromáticas que complementam o cacau e a calda de açúcar.';
+      } else {
+        termoBusca = ['chopp', 'cerveja', 'suco', 'refrigerante', 'agua'];
+        motivo = 'Sugestão do Chef: acompanhamento refrescante ideal para complementar este prato.';
+      }
+
+      let encontrada = null;
+      for (const t of termoBusca) {
+        encontrada = bebidas.find(b => b.nome.toLowerCase().includes(t));
+        if (encontrada) break;
+      }
+      if (!encontrada) encontrada = bebidas[0];
+      return { bebida: encontrada, motivo: motivo };
+    }
+
+    window.adicionarBebidaSommelier = function() {
+      if (!_sommelierBebidaAtual) return;
+      CART.push({
+        id: _sommelierBebidaAtual.id,
+        nome: _sommelierBebidaAtual.nome,
+        preco: parseFloat(_sommelierBebidaAtual.preco),
+        quantidade: 1,
+        emoji: _sommelierBebidaAtual.emoji || '🍷',
+        observacao: 'Harmonização Sommelier',
+        composicoes: []
+      });
+      atualizarBadgeCarrinho();
+      const box = document.getElementById('sommelier-cardapio-box');
+      if (box) {
+        box.innerHTML = '<div style="color:#15803d; font-weight:800; font-size:12px; text-align:center; padding:6px;">✓ ' + _sommelierBebidaAtual.nome + ' adicionado ao carrinho!</div>';
+      }
+      if (typeof showToast === 'function') showToast('🍷 Bebida harmonizada adicionada ao carrinho!', 'success');
+    };
+
     window.abrirItemDetails = (id) => {
       const item = MENU.find(x => x.id === id);
       if (!item) return;
@@ -2435,6 +3387,20 @@
 
       const montavelSection = document.getElementById('modal-montavel-section');
       if (montavelSection) montavelSection.style.display = 'none';
+
+      // Harmonização do Sommelier Cheff.pro
+      const sommelierBox = document.getElementById('sommelier-cardapio-box');
+      const par = obterHarmonizacaoSommelierCardapio(item);
+      if (sommelierBox && par && par.bebida) {
+        _sommelierBebidaAtual = par.bebida;
+        document.getElementById('sommelier-cardapio-nome').innerText = par.bebida.nome;
+        document.getElementById('sommelier-cardapio-motivo').innerText = par.motivo;
+        document.getElementById('sommelier-cardapio-preco').innerText = `+ R$ ${parseFloat(par.bebida.preco).toFixed(2).replace('.', ',')}`;
+        sommelierBox.style.display = 'block';
+      } else if (sommelierBox) {
+        sommelierBox.style.display = 'none';
+        _sommelierBebidaAtual = null;
+      }
 
       if (typeof restauranteId !== 'undefined' && item.id) {
         fetch('/api/montaveis/produto/' + item.id, { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('chef_token') || '') } })
@@ -2626,7 +3592,62 @@
       const total = CART.reduce((acc, c) => acc + c.total, 0);
       totalVal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
 
+      // Cheff AI: Buscar recomendações de upselling/cross-selling dinâmico
+      const upsellContainer = document.getElementById('cheff-ai-upsell-container');
+      const upsellList = document.getElementById('cheff-ai-upsell-items');
+      if (upsellContainer && upsellList) {
+        const itemNames = CART.map(c => c.productName).join(',');
+        fetch(`/api/cheff-ai/upsell?itens=${encodeURIComponent(itemNames)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data && data.success && data.recomendacoes && data.recomendacoes.length > 0) {
+              upsellList.innerHTML = data.recomendacoes.map(rec => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:8px 10px; border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                  <div style="flex:1; min-width:0; margin-right:8px;">
+                    <div style="font-size:12px; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${rec.nome}</div>
+                    <div style="font-size:10px; color:#f59e0b; font-weight:600;">${rec.motivo || 'Combina perfeitamente!'}</div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:12px; font-weight:800; color:var(--primary);">+R$ ${Number(rec.preco).toFixed(2).replace('.', ',')}</span>
+                    <button type="button" onclick='window.adicionarUpsellItemDirect(${JSON.stringify(rec.id)}, ${JSON.stringify(rec.nome)}, ${rec.preco}, ${JSON.stringify(rec.categoria || "")})' style="background:var(--primary); color:#fff; border:none; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:3px;">
+                      + Adicionar
+                    </button>
+                  </div>
+                </div>
+              `).join('');
+              upsellContainer.style.display = 'block';
+            } else {
+              upsellContainer.style.display = 'none';
+            }
+          })
+          .catch(() => {
+            upsellContainer.style.display = 'none';
+          });
+      }
+
       document.getElementById('modal-cart').style.display = 'flex';
+    };
+
+    window.adicionarUpsellItemDirect = (id, nome, preco, categoria) => {
+      const existing = CART.find(c => c.productId === id);
+      if (existing) {
+        existing.quantity += 1;
+        existing.total = existing.quantity * existing.preco;
+      } else {
+        CART.push({
+          productId: id,
+          productName: nome,
+          productEmoji: '✨',
+          quantity: 1,
+          preco: Number(preco),
+          obs: 'Adicionado via Sugestão Cheff AI',
+          composicoes: [],
+          sector: categoria === 'Bebidas' ? 'Bebidas' : 'Cozinha 1',
+          total: Number(preco)
+        });
+      }
+      atualizarCartBadge();
+      window.abrirCarrinho();
     };
 
     window.fecharCarrinho = () => {
@@ -2655,6 +3676,58 @@
         window.fecharCarrinho();
       } else {
         window.abrirCarrinho();
+      }
+    };
+
+    // ── PILAR 4: CASHBACK VIP NO CARDÁPIO ──
+    let cashbackDescontoAplicado = 0;
+    window.consultarCashbackCliente = async function(tel) {
+      if (!tel || tel.replace(/\D/g, '').length < 8) return;
+      try {
+        const resp = await fetch('/api/cashback/consultar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ telefone: tel })
+        });
+        const data = await resp.json();
+        if (data && data.sucesso) {
+          const badge = document.getElementById('cashback-badge-saldo');
+          const actionBox = document.getElementById('cashback-resgate-action');
+          const valorDisp = document.getElementById('cashback-valor-disp');
+          if (badge) {
+            badge.innerText = `Saldo: R$ ${data.saldo_disponivel.toFixed(2)}`;
+            badge.style.display = 'inline-block';
+          }
+          if (actionBox && valorDisp) {
+            if (data.saldo_disponivel > 0) {
+              valorDisp.innerText = `R$ ${data.saldo_disponivel.toFixed(2)}`;
+              actionBox.style.display = 'flex';
+            } else {
+              actionBox.style.display = 'none';
+            }
+          }
+          const nameInput = document.getElementById('input-customer-name');
+          if (data.nome && nameInput && !nameInput.value.trim()) {
+            nameInput.value = data.nome;
+          }
+        }
+      } catch(e) {}
+    };
+
+    window.aplicarCashbackDesconto = function() {
+      const tel = (document.getElementById('input-cashback-phone').value || '').trim();
+      if (!tel) return alert('Informe seu WhatsApp para resgatar o cashback.');
+      const valorDispEl = document.getElementById('cashback-valor-disp');
+      const saldo = valorDispEl ? parseFloat(valorDispEl.innerText.replace('R$', '').replace(',', '.')) : 0;
+      if (saldo <= 0) return alert('Sem saldo disponível para resgate.');
+      
+      cashbackDescontoAplicado = saldo;
+      alert(`🎉 Desconto de R$ ${saldo.toFixed(2)} de Cashback aplicado na sua comanda!`);
+      const btn = document.getElementById('btn-aplicar-cashback');
+      if (btn) {
+        btn.innerText = '✓ Aplicado';
+        btn.style.background = '#059669';
+        btn.disabled = true;
       }
     };
 
@@ -2893,44 +3966,91 @@
       showToast(`Garçom ${garcomNome} está indo até você`);
     });
 
-    const PREP_TIME = { 'Cozinha 1': 20, 'Bar': 5, 'Caixa': 1, 'Chamada': 0 };
+    const PREP_TIME = { 'Cozinha 1': 20, 'Pizzaria / Forno': 25, 'Forno': 15, 'Bar': 5, 'Caixa': 1, 'Chamada': 0 };
     let trackingOrders = [];
 
-    function calcProgress(createdAt) {
+    function calcProgress(createdAt, sectorName = 'Cozinha 1') {
       if (!createdAt) return { progress: 0, remaining: '...' };
       const created = new Date(createdAt + (createdAt.includes('T') ? '' : 'Z')).getTime();
       if (isNaN(created)) return { progress: 0, remaining: '...' };
       const now = Date.now();
-      const sector = 'Cozinha 1';
-      const prepMin = PREP_TIME[sector] || 20;
+      const prepMin = PREP_TIME[sectorName] || 20;
       const prepMs = prepMin * 60000;
       const elapsed = now - created;
       const progress = Math.min(100, Math.round((elapsed / prepMs) * 100));
       const remainingMs = Math.max(0, prepMs - elapsed);
       const remainingMin = Math.ceil(remainingMs / 60000);
-      return { progress, remaining: remainingMin > 0 ? `${remainingMin} min` : 'Saiu!' };
+      return { progress, remaining: remainingMin > 0 ? `~${remainingMin} min` : 'Quase pronto!' };
     }
 
     function renderTracking() {
       const container = document.getElementById('tracking-items');
       if (!trackingOrders.length) { container.innerHTML = ''; return; }
       container.innerHTML = trackingOrders.map(o => {
-        const { progress, remaining } = calcProgress(o.createdAt);
-        const statusMap = {
-          'Pendente': 'pendente', 'Em preparo': 'preparando', 'Preparando': 'preparando',
-          'Pronto': 'pronto', 'Entregue': 'Entregue', 'Finalizado': 'Finalizado'
-        };
-        const statusClass = statusMap[o.status] || 'pendente';
-        const statusLabel = o.status === 'Pronto' ? 'Pronto' : o.status === 'Entregue' ? 'Entregue' : o.status === 'Finalizado' ? 'Finalizado' : o.status === 'Em preparo' || o.status === 'Preparando' ? 'Preparando' : 'Pendente';
-        return `<div class="tracking-item">
-          <div class="tracking-item-emoji">${o.productEmoji || '🍽️'}</div>
-          <div class="tracking-item-info">
-            <div class="tracking-item-name">${o.productName}</div>
-            <div class="tracking-item-qty">Qtd: ${o.quantity || 1}</div>
-            <div class="tracking-progress"><div class="tracking-progress-bar" style="width:${progress}%"></div></div>
-            <div class="tracking-time">${remaining} &middot; ${o.sector || ''}</div>
+        const { progress, remaining } = calcProgress(o.createdAt, o.sector);
+        const statusLower = (o.status || '').toLowerCase();
+        let statusClass = 'pendente';
+        let statusLabel = 'Pendente';
+        let stepIdx = 1; // 1: Recebido, 2: Preparo, 3: Forno, 4: Saiu, 5: Entregue
+
+        if (statusLower.includes('forno') || statusLower.includes('assando')) {
+          statusClass = 'forno';
+          statusLabel = '🔥 No Forno';
+          stepIdx = 3;
+        } else if (statusLower.includes('saiu') || statusLower.includes('caminho') || statusLower.includes('entrega')) {
+          statusClass = 'saiu_entrega';
+          statusLabel = '🛵 A Caminho';
+          stepIdx = 4;
+        } else if (statusLower.includes('pronto')) {
+          statusClass = 'pronto';
+          statusLabel = '✅ Pronto';
+          stepIdx = 3;
+        } else if (statusLower.includes('preparo') || statusLower.includes('preparando')) {
+          statusClass = 'preparando';
+          statusLabel = '👨‍🍳 Em Preparo';
+          stepIdx = 2;
+        } else if (statusLower.includes('entregue') || statusLower.includes('finalizado')) {
+          statusClass = 'Entregue';
+          statusLabel = '🎉 Entregue';
+          stepIdx = 5;
+        }
+
+        const isPizza = (o.productName || '').toLowerCase().includes('pizza');
+
+        return `<div class="tracking-item" style="display:flex; flex-direction:column; gap:6px; padding:10px 0; border-bottom:1px solid #f1f5f9;">
+          <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="tracking-item-emoji">${o.productEmoji || (isPizza ? '🍕' : '🍽️')}</span>
+              <div>
+                <div class="tracking-item-name" style="font-weight:700; font-size:13px;">${escFila(o.productName)}</div>
+                <div class="tracking-item-qty" style="font-size:11px; color:#94a3b8;">Qtd: ${o.quantity || 1} &middot; Previsão: ${remaining}</div>
+              </div>
+            </div>
+            <span class="tracking-status-badge ${statusClass}" style="font-size:10.5px; font-weight:800;">${statusLabel}</span>
           </div>
-          <span class="tracking-status-badge ${statusClass}">${statusLabel}</span>
+
+          <!-- Pizzeria Visual Stepper -->
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px; padding:4px 6px; background:#f8fafc; border-radius:8px; font-size:10px; font-weight:700;">
+            <span style="color:${stepIdx >= 1 ? 'var(--primary)' : '#94a3b8'}; display:flex; align-items:center; gap:2px;">
+              <i class="ph-bold ph-check-circle" style="${stepIdx >= 1 ? 'color:var(--primary);' : ''}"></i> Recebido
+            </span>
+            <span style="color:#cbd5e1;">&rarr;</span>
+            <span style="color:${stepIdx >= 2 ? 'var(--primary)' : '#94a3b8'}; display:flex; align-items:center; gap:2px;">
+              <i class="ph-bold ph-cooking-pot" style="${stepIdx >= 2 ? 'color:var(--primary);' : ''}"></i> Montagem
+            </span>
+            <span style="color:#cbd5e1;">&rarr;</span>
+            <span style="color:${stepIdx >= 3 ? '#ea580c' : '#94a3b8'}; display:flex; align-items:center; gap:2px;">
+              <i class="ph-fill ph-fire" style="${stepIdx >= 3 ? 'color:#ea580c;' : ''}"></i> Forno
+            </span>
+            <span style="color:#cbd5e1;">&rarr;</span>
+            <span style="color:${stepIdx >= 4 ? '#2563eb' : '#94a3b8'}; display:flex; align-items:center; gap:2px;">
+              <i class="ph-bold ph-moped" style="${stepIdx >= 4 ? 'color:#2563eb;' : ''}"></i> Entrega
+            </span>
+          </div>
+
+          <div class="tracking-progress" style="margin-top:2px;">
+            <div class="tracking-progress-bar" style="width:${Math.max(15, (stepIdx / 4) * 100)}%;"></div>
+          </div>
         </div>`;
       }).join('');
     }
@@ -3604,6 +4724,656 @@
       socket.removeListener('fila_espera_atualizada', _origAtualizar);
       socket.on('fila_espera_atualizada', atualizarFilaEsperaCliente);
     }
+
+    // ══════════════════════════════════════════════════════════════════
+    // 🍕 PIZZARIA ULTRA-PRO: MOTOR DE MONTAGEM INTERATIVA DE PIZZA
+    // ══════════════════════════════════════════════════════════════════
+
+    const PIZZA_TAMANHOS = [
+      { id: 'broto', nome: 'Broto', fatias: 4, cm: '20cm', maxSabores: 1, precoBase: 38.00, badge: 'Individual' },
+      { id: 'media', nome: 'Média', fatias: 6, cm: '30cm', maxSabores: 2, precoBase: 46.00, badge: '2 Pessoas' },
+      { id: 'grande', nome: 'Grande', fatias: 8, cm: '35cm', maxSabores: 3, precoBase: 52.00, badge: 'Mais Pedida 🔥' },
+      { id: 'familia', nome: 'Família / Gigante', fatias: 12, cm: '40cm', maxSabores: 4, precoBase: 64.00, badge: 'Galera 🍕' }
+    ];
+
+    const PIZZA_BORDAS = [
+      { id: 'nenhuma', nome: 'Borda Tradicional (Sem Recheio)', preco: 0.00, emoji: '🥖' },
+      { id: 'catupiry', nome: 'Borda Catupiry Original', preco: 9.90, emoji: '🥟' },
+      { id: 'cheddar', nome: 'Borda Cheddar Cremoso', preco: 9.90, emoji: '🧀' },
+      { id: 'vulcao', nome: 'Borda Vulcão com Catupiry', preco: 14.90, emoji: '🌋' },
+      { id: 'chocolate', nome: 'Borda Chocolate com Avelã', preco: 11.90, emoji: '🍫' },
+      { id: 'doce_leite', nome: 'Borda Doce de Leite Mineiro', preco: 9.90, emoji: '🍯' }
+    ];
+
+    const PIZZA_RETIRADAS_PADRAO = [
+      'Sem Cebola', 'Sem Azeitona', 'Sem Orégano', 'Sem Tomate', 'Sem Pimenta'
+    ];
+
+    const PIZZA_ADICIONAIS_PADRAO = [
+      { id: 'dobro_queijo', nome: '+ Dobro de Muçarela', preco: 7.00 },
+      { id: 'bacon', nome: '+ Bacon Crocante em Cubos', preco: 6.00 },
+      { id: 'catupiry_extra', nome: '+ Catupiry Legítimo Extra', preco: 6.50 },
+      { id: 'palmito', nome: '+ Palmito Especial', preco: 5.00 },
+      { id: 'milho', nome: '+ Milho Verde Fresco', preco: 3.50 },
+      { id: 'alho_frito', nome: '+ Alho Frito Dourado', preco: 3.50 }
+    ];
+
+    const PIZZA_BEBIDAS_UPSELL = [
+      { id: 'coca2l', nome: 'Coca-Cola 2L Gelada', preco: 14.00, emoji: '🥤' },
+      { id: 'guarana2l', nome: 'Guaraná Antarctica 2L', preco: 12.00, emoji: '🥤' },
+      { id: 'suco15l', nome: 'Suco de Uva Integral 1.5L', preco: 16.00, emoji: '🧃' },
+      { id: 'cerveja_art', nome: 'Cerveja Artesanal 600ml', preco: 25.00, emoji: '🍺' }
+    ];
+
+    window.pizzaState = {
+      tamanho: 'grande',
+      numSabores: 2,
+      sabores: [null, null, null, null],
+      focoSaborIdx: 0,
+      retiradasPorSabor: [[], [], [], []],
+      adicionaisPorSabor: [[], [], [], []],
+      borda: PIZZA_BORDAS[0],
+      bebidasExtras: [],
+      filtroSabor: 'todos',
+      observacoes: '',
+      precoBaseCalculado: 52.00,
+      precoTotal: 52.00
+    };
+
+    function obterSaboresDisponiveis() {
+      const doCardapio = (typeof MENU !== 'undefined' ? MENU : []).filter(p => {
+        const cat = (p.categoria || '').toLowerCase();
+        const nome = (p.nome || '').toLowerCase();
+        return cat.includes('pizza') || nome.includes('pizza');
+      });
+
+      if (doCardapio.length > 0) return doCardapio;
+
+      return [
+        { id: 101, nome: 'Calabresa Especial', preco: 48.00, descricao: 'Muçarela, calabresa artesanal fatiada, cebola e azeitonas.', emoji: '🍕', categoria: 'Pizzas' },
+        { id: 102, nome: 'Frango com Catupiry', preco: 52.00, descricao: 'Peito de frango desfiado temperado com legítimo Catupiry cremoso.', emoji: '🍕', categoria: 'Pizzas' },
+        { id: 103, nome: 'Quatro Queijos', preco: 56.00, descricao: 'Muçarela, provolone defumado, gorgonzola e catupiry.', emoji: '🍕', categoria: 'Pizzas' },
+        { id: 104, nome: 'Portuguesa Tradicional', preco: 54.00, descricao: 'Presunto, muçarela, ovos, cebola, ervilha e azeitonas.', emoji: '🍕', categoria: 'Pizzas' },
+        { id: 105, nome: 'Margherita Gourmet', preco: 50.00, descricao: 'Muçarela de búfala, rodelas de tomate, manjericão fresco e azeite.', emoji: '🍕', categoria: 'Pizzas' },
+        { id: 106, nome: 'Bacon Suprema', preco: 55.00, descricao: 'Muçarela, bacon crocante em cubos e milho verde.', emoji: '🍕', categoria: 'Pizzas' },
+        { id: 107, nome: 'Carne Seca com Cream Cheese', preco: 62.00, descricao: 'Carne seca desfiada na manteiga de garrafa e cream cheese.', emoji: '🍕', categoria: 'Pizzas' },
+        { id: 108, nome: 'Pepperoni & Mel Picante', preco: 60.00, descricao: 'Muçarela, pepperoni curado italiano e mel com pimenta.', emoji: '🍕', categoria: 'Pizzas' },
+        { id: 109, nome: 'Brigadeiro com Morangos', preco: 45.00, descricao: 'Chocolate ao leite belga, granulado e morangos frescos.', emoji: '🍓', categoria: 'Pizzas Doces' },
+        { id: 110, nome: 'Romeu e Julieta', preco: 42.00, descricao: 'Muçarela especial com goiabada cascão cremosa derretida.', emoji: '🧀', categoria: 'Pizzas Doces' }
+      ];
+    }
+
+    function renderPizzaSvgVisualizer() {
+      const container = document.getElementById('pizza-visualizer-svg-container');
+      const legend = document.getElementById('pizza-visualizer-legend');
+      if (!container) return;
+
+      const num = window.pizzaState.numSabores;
+      const sabores = window.pizzaState.sabores;
+      const foco = window.pizzaState.focoSaborIdx;
+
+      const cx = 110, cy = 110, r = 86;
+      let slicesSvg = '';
+
+      if (num === 1) {
+        const isFoco = foco === 0;
+        const s = sabores[0];
+        const sNome = s ? s.nome : 'Escolha o sabor';
+        slicesSvg = `
+          <g onclick="window.focarSaborPizza(0)" style="cursor:pointer;">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="#fbbf24" stroke="${isFoco ? '#fc4b15' : '#e2e8f0'}" stroke-width="${isFoco ? '4' : '2'}" />
+            <circle cx="${cx - 24}" cy="${cy - 20}" r="8" fill="#dc2626" opacity="0.85" />
+            <circle cx="${cx + 25}" cy="${cy - 12}" r="9" fill="#dc2626" opacity="0.85" />
+            <circle cx="${cx - 16}" cy="${cy + 25}" r="7" fill="#dc2626" opacity="0.85" />
+            <circle cx="${cx + 18}" cy="${cy + 22}" r="8" fill="#dc2626" opacity="0.85" />
+            <circle cx="${cx}" cy="${cy + 2}" r="6" fill="#16a34a" opacity="0.9" />
+            <text x="${cx}" y="${cy - 4}" text-anchor="middle" dominant-baseline="middle" font-weight="900" font-size="13" fill="#78350f" style="pointer-events:none; text-shadow:0 1px 2px rgba(255,255,255,0.8);">1/1 INTEIRA</text>
+            <text x="${cx}" y="${cy + 14}" text-anchor="middle" dominant-baseline="middle" font-weight="700" font-size="10.5" fill="#92400e" style="pointer-events:none;">${sNome.slice(0, 18)}</text>
+          </g>
+        `;
+      } else {
+        const step = (2 * Math.PI) / num;
+        for (let i = 0; i < num; i++) {
+          const startAngle = i * step - Math.PI / 2;
+          const endAngle = (i + 1) * step - Math.PI / 2;
+          const x1 = cx + r * Math.cos(startAngle);
+          const y1 = cy + r * Math.sin(startAngle);
+          const x2 = cx + r * Math.cos(endAngle);
+          const y2 = cy + r * Math.sin(endAngle);
+          const largeArc = (endAngle - startAngle) > Math.PI ? 1 : 0;
+          const pathD = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+
+          const midAngle = startAngle + (endAngle - startAngle) / 2;
+          const textR = r * 0.58;
+          const tx = cx + textR * Math.cos(midAngle);
+          const ty = cy + textR * Math.sin(midAngle);
+
+          const isFoco = foco === i;
+          const fill = isFoco ? '#fef08a' : (i % 2 === 0 ? '#fde68a' : '#fed7aa');
+          const stroke = isFoco ? '#fc4b15' : '#ffffff';
+          const strokeW = isFoco ? 3.5 : 2;
+
+          const fracLabel = num === 2 ? '1/2' : (num === 3 ? '1/3' : '1/4');
+          const s = sabores[i];
+
+          slicesSvg += `
+            <g onclick="window.focarSaborPizza(${i})" style="cursor:pointer;">
+              <path d="${pathD}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
+              <!-- Toppings decorativos -->
+              <circle cx="${cx + (textR * 0.95) * Math.cos(midAngle - 0.22)}" cy="${cy + (textR * 0.95) * Math.sin(midAngle - 0.22)}" r="6" fill="#dc2626" opacity="0.8" />
+              <circle cx="${cx + (textR * 0.95) * Math.cos(midAngle + 0.22)}" cy="${cy + (textR * 0.95) * Math.sin(midAngle + 0.22)}" r="5" fill="#16a34a" opacity="0.8" />
+              <text x="${tx}" y="${ty - 2}" text-anchor="middle" dominant-baseline="middle" font-weight="900" font-size="12" fill="#78350f" style="pointer-events:none;">${fracLabel}</text>
+              <text x="${tx}" y="${ty + 11}" text-anchor="middle" dominant-baseline="middle" font-weight="700" font-size="9" fill="#92400e" style="pointer-events:none;">${s ? s.nome.slice(0, 11) : 'Fatia ' + (i+1)}</text>
+            </g>
+          `;
+        }
+      }
+
+      container.innerHTML = `
+        <svg viewBox="0 0 220 220" width="100%" height="100%">
+          <!-- Borda externa da massa assada -->
+          <circle cx="${cx}" cy="${cy}" r="102" fill="#d97706" />
+          <circle cx="${cx}" cy="${cy}" r="92" fill="#b45309" />
+          <!-- Molho de tomate -->
+          <circle cx="${cx}" cy="${cy}" r="${r + 2}" fill="#dc2626" />
+          ${slicesSvg}
+        </svg>
+      `;
+
+      if (legend) {
+        const frac = num === 1 ? '1/1' : (num === 2 ? '1/2' : (num === 3 ? '1/3' : '1/4'));
+        legend.innerHTML = Array.from({ length: num }).map((_, i) => {
+          const s = sabores[i];
+          const isFoco = foco === i;
+          return `
+            <div onclick="window.focarSaborPizza(${i})" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:12px; background:${isFoco ? 'rgba(252,75,21,0.12)' : 'var(--surface)'}; border:1.5px solid ${isFoco ? 'var(--primary)' : 'var(--border)'}; font-size:11.5px;">
+              <span style="background:${isFoco ? 'var(--primary)' : '#94a3b8'}; color:white; border-radius:6px; padding:1px 5px; font-size:10px; font-weight:800;">${frac}</span>
+              <span style="color:${isFoco ? 'var(--primary)' : 'var(--text)'}; font-weight:700;">${s ? s.nome : `Fatia ${i+1}`}</span>
+              ${isFoco ? '<i class="ph-fill ph-caret-right" style="color:var(--primary); font-size:10px;"></i>' : ''}
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    window.abrirMontadorPizza = (preselectedFlavor = null) => {
+      const modal = document.getElementById('modal-montar-pizza');
+      if (!modal) return;
+
+      const saboresDisponiveis = obterSaboresDisponiveis();
+      let saborInicial = null;
+      if (preselectedFlavor) {
+        saborInicial = saboresDisponiveis.find(s => s.nome.toLowerCase() === preselectedFlavor.toLowerCase() || s.id == preselectedFlavor);
+      }
+      if (!saborInicial && saboresDisponiveis.length > 0) {
+        saborInicial = saboresDisponiveis[0];
+      }
+
+      window.pizzaState.tamanho = 'grande';
+      window.pizzaState.numSabores = 2;
+      window.pizzaState.sabores = [saborInicial, saborInicial, null, null];
+      window.pizzaState.focoSaborIdx = 0;
+      window.pizzaState.retiradasPorSabor = [[], [], [], []];
+      window.pizzaState.adicionaisPorSabor = [[], [], [], []];
+      window.pizzaState.borda = PIZZA_BORDAS[0];
+      window.pizzaState.bebidasExtras = [];
+      window.pizzaState.filtroSabor = 'todos';
+      window.pizzaState.observacoes = '';
+
+      const obsEl = document.getElementById('pizza-custom-obs');
+      if (obsEl) obsEl.value = '';
+
+      window.renderizarMontadorPizza();
+      modal.style.display = 'flex';
+    };
+
+    window.fecharMontadorPizza = () => {
+      const modal = document.getElementById('modal-montar-pizza');
+      if (modal) modal.style.display = 'none';
+    };
+
+    window.selecionarTamanhoPizza = (tamId) => {
+      const tam = PIZZA_TAMANHOS.find(t => t.id === tamId);
+      if (!tam) return;
+      window.pizzaState.tamanho = tamId;
+      if (window.pizzaState.numSabores > tam.maxSabores) {
+        window.pizzaState.numSabores = tam.maxSabores;
+      }
+      if (window.pizzaState.focoSaborIdx >= window.pizzaState.numSabores) {
+        window.pizzaState.focoSaborIdx = 0;
+      }
+      window.renderizarMontadorPizza();
+    };
+
+    window.selecionarNumSabores = (n) => {
+      const tam = PIZZA_TAMANHOS.find(t => t.id === window.pizzaState.tamanho) || PIZZA_TAMANHOS[2];
+      if (n > tam.maxSabores) return;
+      window.pizzaState.numSabores = n;
+
+      // Garante que novos slots tenham sabor preenchido
+      const saborBase = window.pizzaState.sabores[0] || obterSaboresDisponiveis()[0];
+      for (let i = 0; i < n; i++) {
+        if (!window.pizzaState.sabores[i]) window.pizzaState.sabores[i] = saborBase;
+      }
+      if (window.pizzaState.focoSaborIdx >= n) {
+        window.pizzaState.focoSaborIdx = 0;
+      }
+      window.renderizarMontadorPizza();
+    };
+
+    window.focarSaborPizza = (slotIdx) => {
+      if (slotIdx >= window.pizzaState.numSabores) return;
+      window.pizzaState.focoSaborIdx = slotIdx;
+      window.renderizarMontadorPizza();
+    };
+
+    window.atribuirSabor = (saborId) => {
+      const saboresDisponiveis = obterSaboresDisponiveis();
+      const s = saboresDisponiveis.find(x => x.id == saborId || x.nome === saborId);
+      if (!s) return;
+
+      const idx = window.pizzaState.focoSaborIdx;
+      window.pizzaState.sabores[idx] = s;
+
+      // Se há próximo slot ainda não preenchido, avança automaticamente o foco
+      if (idx + 1 < window.pizzaState.numSabores && !window.pizzaState.sabores[idx + 1]) {
+        window.pizzaState.focoSaborIdx = idx + 1;
+      }
+
+      window.renderizarMontadorPizza();
+    };
+
+    window.filtrarSaboresPizza = (filtro) => {
+      window.pizzaState.filtroSabor = filtro;
+      ['todos', 'salgadas', 'doces'].forEach(f => {
+        const btn = document.getElementById(`btn-filter-${f}`);
+        if (btn) btn.classList.toggle('active', f === filtro);
+      });
+      renderListaSabores();
+    };
+
+    window.toggleRetirada = (item) => {
+      const idx = window.pizzaState.focoSaborIdx;
+      const arr = window.pizzaState.retiradasPorSabor[idx] || [];
+      const pos = arr.indexOf(item);
+      if (pos >= 0) arr.splice(pos, 1);
+      else arr.push(item);
+      window.pizzaState.retiradasPorSabor[idx] = arr;
+      renderRetiradasEAdicionais();
+    };
+
+    window.toggleAdicional = (addId) => {
+      const idx = window.pizzaState.focoSaborIdx;
+      const addObj = PIZZA_ADICIONAIS_PADRAO.find(a => a.id === addId);
+      if (!addObj) return;
+
+      const arr = window.pizzaState.adicionaisPorSabor[idx] || [];
+      const pos = arr.findIndex(a => a.id === addId);
+      if (pos >= 0) arr.splice(pos, 1);
+      else arr.push(addObj);
+      window.pizzaState.adicionaisPorSabor[idx] = arr;
+      recalcularPrecoPizza();
+      renderRetiradasEAdicionais();
+    };
+
+    window.selecionarBordaPizza = (bordaId) => {
+      const borda = PIZZA_BORDAS.find(b => b.id === bordaId) || PIZZA_BORDAS[0];
+      window.pizzaState.borda = borda;
+      recalcularPrecoPizza();
+      renderBordas();
+    };
+
+    window.toggleBebidaUpsell = (drinkId) => {
+      const d = PIZZA_BEBIDAS_UPSELL.find(x => x.id === drinkId);
+      if (!d) return;
+      const idx = window.pizzaState.bebidasExtras.findIndex(x => x.id === drinkId);
+      if (idx >= 0) {
+        window.pizzaState.bebidasExtras.splice(idx, 1);
+      } else {
+        window.pizzaState.bebidasExtras.push({ ...d, qty: 1 });
+      }
+      recalcularPrecoPizza();
+      renderBebidasUpsell();
+    };
+
+    function recalcularPrecoPizza() {
+      const state = window.pizzaState;
+      const tamInfo = PIZZA_TAMANHOS.find(t => t.id === state.tamanho) || PIZZA_TAMANHOS[2];
+
+      let maxSaborPreco = tamInfo.precoBase;
+      const saboresAtivos = state.sabores.slice(0, state.numSabores).filter(Boolean);
+      if (saboresAtivos.length > 0) {
+        const precos = saboresAtivos.map(s => parseFloat(s.preco) || tamInfo.precoBase);
+        maxSaborPreco = Math.max(...precos);
+      }
+
+      let totalAdicionais = 0;
+      for (let i = 0; i < state.numSabores; i++) {
+        const adds = state.adicionaisPorSabor[i] || [];
+        adds.forEach(add => {
+          totalAdicionais += parseFloat(add.preco) || 0;
+        });
+      }
+
+      const bordaPreco = parseFloat(state.borda ? state.borda.preco : 0) || 0;
+
+      let totalBebidas = 0;
+      (state.bebidasExtras || []).forEach(b => {
+        totalBebidas += (parseFloat(b.preco) || 0) * (b.qty || 1);
+      });
+
+      const totalFinal = maxSaborPreco + totalAdicionais + bordaPreco + totalBebidas;
+      state.precoBaseCalculado = maxSaborPreco;
+      state.precoTotal = totalFinal;
+
+      const priceEl = document.getElementById('pizza-total-price');
+      if (priceEl) priceEl.innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
+
+      const sumEl = document.getElementById('pizza-summary-text');
+      if (sumEl) {
+        const fracText = state.numSabores === 1 ? '1 Sabor' : `${state.numSabores} Sabores`;
+        const bordaText = state.borda.id !== 'nenhuma' ? ` • ${state.borda.nome}` : '';
+        sumEl.innerText = `Pizza ${tamInfo.nome} (${tamInfo.fatias} Fatias) • ${fracText}${bordaText}`;
+      }
+    }
+
+    function renderTamanhos() {
+      const container = document.getElementById('pizza-size-selector');
+      const hint = document.getElementById('pizza-size-hint');
+      if (!container) return;
+
+      container.innerHTML = PIZZA_TAMANHOS.map(t => {
+        const isActive = t.id === window.pizzaState.tamanho;
+        return `
+          <div class="pizza-size-card ${isActive ? 'active' : ''}" onclick="window.selecionarTamanhoPizza('${t.id}')">
+            <span style="font-size:24px;">🍕</span>
+            <strong style="font-size:13.5px; color:var(--text);">${t.nome}</strong>
+            <span style="font-size:11px; color:var(--text-muted);">${t.fatias} fatias • ${t.cm}</span>
+            <span style="font-size:11px; font-weight:800; color:var(--primary);">A partir de R$ ${t.precoBase.toFixed(2).replace('.', ',')}</span>
+            <span style="font-size:9.5px; background:${isActive ? 'var(--primary)' : '#e2e8f0'}; color:${isActive ? 'white' : '#475569'}; padding:2px 6px; border-radius:10px; font-weight:700;">${t.badge}</span>
+          </div>
+        `;
+      }).join('');
+
+      const tam = PIZZA_TAMANHOS.find(t => t.id === window.pizzaState.tamanho);
+      if (hint && tam) {
+        hint.innerText = `${tam.fatias} fatias • até ${tam.maxSabores} sabor(es)`;
+      }
+    }
+
+    function renderNumSabores() {
+      const container = document.getElementById('pizza-num-sabores-container');
+      if (!container) return;
+
+      const tam = PIZZA_TAMANHOS.find(t => t.id === window.pizzaState.tamanho) || PIZZA_TAMANHOS[2];
+      const max = tam.maxSabores;
+
+      const labels = [
+        { n: 1, label: '1 Sabor (Inteira)' },
+        { n: 2, label: '2 Sabores (1/2 cada)' },
+        { n: 3, label: '3 Sabores (1/3 cada)' },
+        { n: 4, label: '4 Sabores (1/4 cada)' }
+      ];
+
+      container.innerHTML = labels.map(item => {
+        const isDisabled = item.n > max;
+        const isActive = item.n === window.pizzaState.numSabores;
+        return `
+          <button type="button" class="btn-num-sabor ${isActive ? 'active' : ''}" ${isDisabled ? 'disabled' : ''} onclick="window.selecionarNumSabores(${item.n})" title="${isDisabled ? 'Tamanho selecionado não suporta ' + item.n + ' sabores' : ''}">
+            ${item.label}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderFlavorSlots() {
+      const container = document.getElementById('pizza-flavor-slots-container');
+      const titleEl = document.getElementById('pizza-flavor-picker-title');
+      if (!container) return;
+
+      const num = window.pizzaState.numSabores;
+      const foco = window.pizzaState.focoSaborIdx;
+      const frac = num === 1 ? 'Inteira (1/1)' : (num === 2 ? '1/2' : (num === 3 ? '1/3' : '1/4'));
+
+      container.innerHTML = Array.from({ length: num }).map((_, i) => {
+        const s = window.pizzaState.sabores[i];
+        const isFoco = foco === i;
+        const rets = window.pizzaState.retiradasPorSabor[i] || [];
+        const adds = window.pizzaState.adicionaisPorSabor[i] || [];
+
+        let customTags = '';
+        if (rets.length > 0) {
+          customTags += `<span style="font-size:10.5px; color:#dc2626; font-weight:700;">🚫 ${rets.join(', ')}</span> `;
+        }
+        if (adds.length > 0) {
+          customTags += `<span style="font-size:10.5px; color:#16a34a; font-weight:700;">🟢 ${adds.map(a => a.nome).join(', ')}</span>`;
+        }
+
+        return `
+          <div class="pizza-flavor-slot ${isFoco ? 'active-focus' : ''}" onclick="window.focarSaborPizza(${i})">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="background:${isFoco ? 'var(--primary)' : '#94a3b8'}; color:white; font-size:11px; font-weight:800; padding:2px 7px; border-radius:8px;">${frac}</span>
+              <div>
+                <strong style="font-size:13.5px; color:var(--text);">${s ? s.nome : `Escolher Sabor para Fatia ${i+1}`}</strong>
+                ${customTags ? `<div style="margin-top:2px;">${customTags}</div>` : ''}
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:13px; font-weight:800; color:var(--primary);">${s ? `R$ ${parseFloat(s.preco).toFixed(2).replace('.', ',')}` : ''}</span>
+              <span style="font-size:11.5px; color:${isFoco ? '#ea580c' : '#94a3b8'}; font-weight:700;">${isFoco ? 'Editando ✏️' : 'Mudar'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (titleEl) {
+        titleEl.innerText = `Escolha o sabor para a Fatia ${foco + 1} (${frac}):`;
+      }
+    }
+
+    function renderListaSabores() {
+      const container = document.getElementById('pizza-flavor-list');
+      if (!container) return;
+
+      const todos = obterSaboresDisponiveis();
+      const filtro = window.pizzaState.filtroSabor;
+      const foco = window.pizzaState.focoSaborIdx;
+      const saborAtual = window.pizzaState.sabores[foco];
+
+      let filtrados = todos;
+      if (filtro === 'salgadas') {
+        filtrados = todos.filter(s => !(s.categoria || '').toLowerCase().includes('doce'));
+      } else if (filtro === 'doces') {
+        filtrados = todos.filter(s => (s.categoria || '').toLowerCase().includes('doce'));
+      }
+
+      container.innerHTML = filtrados.map(s => {
+        const isSelected = saborAtual && (saborAtual.id == s.id || saborAtual.nome === s.nome);
+        return `
+          <div class="pizza-flavor-option-card ${isSelected ? 'selected' : ''}" onclick="window.atribuirSabor(${s.id})">
+            <div style="display:flex; align-items:center; gap:8px; flex:1;">
+              <span style="font-size:20px;">${s.emoji || '🍕'}</span>
+              <div>
+                <strong style="font-size:13px; color:var(--text);">${escFila(s.nome)}</strong>
+                <div style="font-size:11.5px; color:var(--text-muted); line-height:1.2;">${escFila(s.descricao || '')}</div>
+              </div>
+            </div>
+            <div style="text-align:right; flex-shrink:0;">
+              <div style="font-size:13.5px; font-weight:800; color:var(--primary);">R$ ${parseFloat(s.preco).toFixed(2).replace('.', ',')}</div>
+              ${isSelected ? '<span style="font-size:10px; font-weight:800; color:#16a34a;">✓ Selecionado</span>' : '<span style="font-size:10px; color:#94a3b8;">Escolher</span>'}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderRetiradasEAdicionais() {
+      const retContainer = document.getElementById('pizza-retiradas-container');
+      const addContainer = document.getElementById('pizza-adicionais-container');
+      const foco = window.pizzaState.focoSaborIdx;
+
+      const retsAtuais = window.pizzaState.retiradasPorSabor[foco] || [];
+      const addsAtuais = window.pizzaState.adicionaisPorSabor[foco] || [];
+
+      if (retContainer) {
+        retContainer.innerHTML = PIZZA_RETIRADAS_PADRAO.map(r => {
+          const isSel = retsAtuais.includes(r);
+          return `
+            <div class="pizza-chip-retirada ${isSel ? 'selected' : ''}" onclick="window.toggleRetirada('${r}')">
+              <i class="ph-bold ${isSel ? 'ph-x-circle' : 'ph-prohibit'}"></i>
+              <span>${r}</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      if (addContainer) {
+        addContainer.innerHTML = PIZZA_ADICIONAIS_PADRAO.map(a => {
+          const isSel = addsAtuais.some(x => x.id === a.id);
+          return `
+            <div class="pizza-chip-adicional ${isSel ? 'selected' : ''}" onclick="window.toggleAdicional('${a.id}')">
+              <i class="ph-bold ${isSel ? 'ph-check-circle' : 'ph-plus-circle'}"></i>
+              <span>${a.nome} (+ R$ ${a.preco.toFixed(2).replace('.', ',')})</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function renderBordas() {
+      const container = document.getElementById('pizza-bordas-selector');
+      if (!container) return;
+
+      container.innerHTML = PIZZA_BORDAS.map(b => {
+        const isSel = window.pizzaState.borda && window.pizzaState.borda.id === b.id;
+        return `
+          <div class="pizza-borda-card ${isSel ? 'active' : ''}" onclick="window.selecionarBordaPizza('${b.id}')">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:16px;">${b.emoji}</span>
+              <strong style="font-size:12.5px; color:var(--text);">${b.nome}</strong>
+            </div>
+            <span style="font-size:11.5px; font-weight:800; color:${b.preco > 0 ? 'var(--primary)' : '#16a34a'};">
+              ${b.preco > 0 ? `+ R$ ${b.preco.toFixed(2).replace('.', ',')}` : 'Grátis'}
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderBebidasUpsell() {
+      const container = document.getElementById('pizza-upsell-drinks');
+      if (!container) return;
+
+      container.innerHTML = PIZZA_BEBIDAS_UPSELL.map(d => {
+        const isAdded = window.pizzaState.bebidasExtras.some(x => x.id === d.id);
+        return `
+          <div class="pizza-upsell-card ${isAdded ? 'added' : ''}" onclick="window.toggleBebidaUpsell('${d.id}')">
+            <span style="font-size:24px;">${d.emoji}</span>
+            <strong style="font-size:11.5px; color:var(--text); line-height:1.2;">${d.nome}</strong>
+            <span style="font-size:11px; font-weight:800; color:var(--primary);">+ R$ ${d.preco.toFixed(2).replace('.', ',')}</span>
+            <button type="button" style="background:${isAdded ? '#10b981' : 'var(--primary)'}; color:white; border:none; padding:4px 8px; border-radius:8px; font-size:10px; font-weight:800; cursor:pointer; width:100%; pointer-events:none;">
+              ${isAdded ? '✓ Incluído' : '+ Incluir'}
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.renderizarMontadorPizza = () => {
+      renderTamanhos();
+      renderNumSabores();
+      renderPizzaSvgVisualizer();
+      renderFlavorSlots();
+      renderListaSabores();
+      renderRetiradasEAdicionais();
+      renderBordas();
+      renderBebidasUpsell();
+      recalcularPrecoPizza();
+    };
+
+    window.adicionarPizzaAoCarrinho = () => {
+      const state = window.pizzaState;
+      const tamInfo = PIZZA_TAMANHOS.find(t => t.id === state.tamanho) || PIZZA_TAMANHOS[2];
+      const saboresDisponiveis = obterSaboresDisponiveis();
+
+      const saborPrincipal = state.sabores.find(Boolean) || saboresDisponiveis[0];
+      for (let i = 0; i < state.numSabores; i++) {
+        if (!state.sabores[i]) state.sabores[i] = saborPrincipal;
+      }
+
+      const fracName = state.numSabores === 1 ? '1/1' : (state.numSabores === 2 ? '1/2' : (state.numSabores === 3 ? '1/3' : '1/4'));
+      const saboresTextArr = [];
+      const composicoes = [
+        { categoria: 'Tamanho', opcao: `${tamInfo.nome} (${tamInfo.fatias} Fatias)`, preco: 0 }
+      ];
+
+      for (let i = 0; i < state.numSabores; i++) {
+        const s = state.sabores[i];
+        saboresTextArr.push(`${fracName} ${s.nome}`);
+        composicoes.push({ categoria: `Fatia ${i+1} (${fracName})`, opcao: s.nome, preco: 0 });
+
+        const rets = state.retiradasPorSabor[i] || [];
+        rets.forEach(r => composicoes.push({ categoria: `Retirada Fatia ${i+1}`, opcao: r, preco: 0 }));
+
+        const adds = state.adicionaisPorSabor[i] || [];
+        adds.forEach(a => composicoes.push({ categoria: `Adicional Fatia ${i+1}`, opcao: a.nome, preco: a.preco }));
+      }
+
+      if (state.borda && state.borda.id !== 'nenhuma') {
+        composicoes.push({ categoria: 'Borda Recheada', opcao: state.borda.nome, preco: state.borda.preco });
+      }
+
+      const obsTexto = (document.getElementById('pizza-custom-obs') ? document.getElementById('pizza-custom-obs').value : '').trim();
+      const todasRetiradas = [].concat(...state.retiradasPorSabor);
+      const todosAdicionais = [].concat(...state.adicionaisPorSabor);
+
+      let obsLinha = `[PIZZA ${tamInfo.nome.toUpperCase()}] ${saboresTextArr.join(' | ')}`;
+      if (state.borda && state.borda.id !== 'nenhuma') obsLinha += ` • Borda: ${state.borda.nome}`;
+      if (todasRetiradas.length > 0) obsLinha += ` • 🚫 ${todasRetiradas.join(', ')}`;
+      if (todosAdicionais.length > 0) obsLinha += ` • 🟢 ${todosAdicionais.map(a => a.nome).join(', ')}`;
+      if (obsTexto) obsLinha += ` • Obs: ${obsTexto}`;
+
+      const totalBebidasExtras = state.bebidasExtras.reduce((acc, b) => acc + (b.preco * (b.qty || 1)), 0);
+      const precoPizzaUnit = state.precoTotal - totalBebidasExtras;
+
+      const pizzaItemId = `pizza_custom_${Date.now()}`;
+      const pizzaItemName = `Pizza ${tamInfo.nome} (${saboresTextArr.join(' / ')})`;
+
+      CART.push({
+        id: pizzaItemId,
+        productName: pizzaItemName,
+        productEmoji: '🍕',
+        quantity: 1,
+        preco: precoPizzaUnit,
+        obs: obsLinha,
+        composicoes: composicoes,
+        sector: 'Pizzaria / Forno',
+        total: precoPizzaUnit
+      });
+
+      (state.bebidasExtras || []).forEach(b => {
+        CART.push({
+          id: `bebida_${b.id}_${Date.now()}`,
+          productName: b.nome,
+          productEmoji: b.emoji || '🥤',
+          quantity: b.qty || 1,
+          preco: b.preco,
+          obs: 'Acompanhamento Pizza',
+          composicoes: [],
+          sector: 'Bar',
+          total: b.preco * (b.qty || 1)
+        });
+      });
+
+      if (window.atualizarCartBadge) window.atualizarCartBadge();
+      window.fecharMontadorPizza();
+
+      if (typeof showToast === 'function') {
+        showToast('🍕 Pizza adicionada ao pedido com sucesso!');
+      } else {
+        alert('🍕 Pizza adicionada ao seu pedido com sucesso!');
+      }
+    };
   </script>
 
 

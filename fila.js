@@ -1749,6 +1749,191 @@ function renderQueue(forceRerender) {
     return;
   }
 
+// ══════════════════════════════════════════════════════════════════
+// 🍕 KDS PIZZARIA: PARSER DE FATIAS, RETIRADAS, ADICIONAIS & FORNO
+// ══════════════════════════════════════════════════════════════════
+window.kdsFornoTimers = window.kdsFornoTimers || {};
+let _fornoLoopInterval = null;
+
+function iniciarLoopFornoTimer() {
+  if (_fornoLoopInterval) return;
+  _fornoLoopInterval = setInterval(() => {
+    const keys = Object.keys(window.kdsFornoTimers);
+    if (keys.length === 0) {
+      clearInterval(_fornoLoopInterval);
+      _fornoLoopInterval = null;
+      return;
+    }
+    let precisaRender = false;
+    keys.forEach(k => {
+      const t = window.kdsFornoTimers[k];
+      if (t && t.segRestantes > 0) {
+        t.segRestantes--;
+        precisaRender = true;
+        if (t.segRestantes === 0) {
+          try {
+            const bell = new Audio('/sounds/bell.mp3');
+            bell.play().catch(() => {});
+          } catch (_) {}
+        }
+      }
+    });
+    if (precisaRender && typeof renderQueue === 'function') {
+      renderQueue();
+    }
+  }, 1000);
+}
+
+window.iniciarTimerForno = function(itemId, minutos = 10) {
+  if (!itemId) return;
+  const segs = minutos * 60;
+  window.kdsFornoTimers[itemId] = {
+    segRestantes: segs,
+    totalSeg: segs
+  };
+
+  const p = queueData.find(x => x.id === itemId);
+  if (p) p.status = 'No Forno';
+
+  if (typeof socket !== 'undefined' && socket.connected) {
+    socket.emit('atualizar_status', { id: itemId, status: 'No Forno' });
+  }
+
+  iniciarLoopFornoTimer();
+  if (typeof renderQueue === 'function') renderQueue();
+};
+
+window.ajustarTimerForno = function(itemId, deltaSeg) {
+  if (!window.kdsFornoTimers[itemId]) return;
+  window.kdsFornoTimers[itemId].segRestantes = Math.max(0, window.kdsFornoTimers[itemId].segRestantes + deltaSeg);
+  if (typeof renderQueue === 'function') renderQueue();
+};
+
+window.pararTimerFornoEFinalizar = function(itemId) {
+  if (window.kdsFornoTimers[itemId]) {
+    delete window.kdsFornoTimers[itemId];
+  }
+  if (typeof window.alterarStatusPedido === 'function') {
+    window.alterarStatusPedido(itemId, 'Pronto');
+  }
+};
+
+function renderPizzaKdsDetails(item) {
+  const nomeLower = (item.productName || item.nome || '').toLowerCase();
+  const obs = item.observations || '';
+  let comps = [];
+  try {
+    comps = typeof item.composicoes === 'string' ? JSON.parse(item.composicoes) : (item.composicoes || []);
+  } catch (_) { comps = []; }
+
+  const isPizza = nomeLower.includes('pizza') || (item.sector || '').toLowerCase().includes('forno') || comps.some(c => {
+    const cat = (c.categoria || '').toLowerCase();
+    return cat.includes('fatia') || cat.includes('borda') || cat.includes('tamanho');
+  });
+
+  if (!isPizza) return '';
+
+  const fatias = comps.filter(c => (c.categoria || '').toLowerCase().includes('fatia'));
+  const retiradas = comps.filter(c => (c.categoria || '').toLowerCase().includes('retirada')).map(c => c.opcao || c.nome || String(c));
+  const adicionais = comps.filter(c => (c.categoria || '').toLowerCase().includes('adicional')).map(c => c.opcao || c.nome || String(c));
+  const borda = comps.find(c => (c.categoria || '').toLowerCase().includes('borda'));
+
+  if (retiradas.length === 0 && obs.includes('🚫')) {
+    const part = obs.split('🚫')[1];
+    if (part) {
+      const retsStr = part.split('•')[0].trim();
+      retsStr.split(',').forEach(r => { if (r.trim()) retiradas.push(r.trim()); });
+    }
+  }
+
+  if (adicionais.length === 0 && obs.includes('🟢')) {
+    const part = obs.split('🟢')[1];
+    if (part) {
+      const addsStr = part.split('•')[0].trim();
+      addsStr.split(',').forEach(a => { if (a.trim()) adicionais.push(a.trim()); });
+    }
+  }
+
+  let bordaStr = borda ? (borda.opcao || borda.nome || '') : '';
+  if (!bordaStr && obs.toLowerCase().includes('borda:')) {
+    const bPart = obs.split(/borda:/i)[1];
+    if (bPart) bordaStr = bPart.split('•')[0].trim();
+  }
+
+  let html = `<div class="kds-pizza-block">`;
+
+  if (fatias.length > 0) {
+    html += `<div style="display:flex; flex-wrap:wrap; gap:4px;">`;
+    fatias.forEach(f => {
+      html += `<span class="badge-kds-fatia">🍕 ${escHtml(f.categoria)}: ${escHtml(f.opcao || f.nome || '')}</span>`;
+    });
+    html += `</div>`;
+  }
+
+  if (retiradas.length > 0) {
+    html += `
+      <div class="kds-pizza-retiradas">
+        <span style="font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:4px;">
+          <i class="ph-bold ph-prohibit" style="color:#dc2626; font-size:14px;"></i> ATENÇÃO:
+        </span>
+        ${retiradas.map(r => `<span style="background:#ef4444; color:white; font-size:11px; font-weight:900; padding:2px 7px; border-radius:4px; text-transform:uppercase;">🚫 ${escHtml(r)}</span>`).join(' ')}
+      </div>`;
+  }
+
+  if (adicionais.length > 0) {
+    html += `
+      <div class="kds-pizza-adicionais" style="display:flex; flex-wrap:wrap; gap:4px;">
+        ${adicionais.map(a => `<span style="background:#dcfce7; color:#166534; border:1px solid #86efac; font-size:11px; font-weight:800; padding:2px 8px; border-radius:6px;">🟢 ${escHtml(a)}</span>`).join(' ')}
+      </div>`;
+  }
+
+  if (bordaStr && !bordaStr.toLowerCase().includes('sem recheio') && !bordaStr.toLowerCase().includes('nenhuma')) {
+    html += `
+      <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:6px; padding:4px 8px; color:#b45309; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:5px;">
+        <i class="ph-fill ph-circle-notch" style="color:#d97706;"></i>
+        <span>BORDA RECHEADA: <strong>${escHtml(bordaStr)}</strong></span>
+      </div>`;
+  }
+
+  const fornoAtivo = window.kdsFornoTimers && window.kdsFornoTimers[item.id];
+  const isPreparo = item.status === 'Em preparo' || item.status === 'Em Preparo';
+  if (isPreparo || fornoAtivo) {
+    if (fornoAtivo) {
+      const rest = fornoAtivo.segRestantes;
+      const min = Math.floor(rest / 60);
+      const seg = rest % 60;
+      const timeStr = `${String(min).padStart(2, '0')}:${String(seg).padStart(2, '0')}`;
+      const isPronto = rest <= 0;
+
+      html += `
+        <div class="kds-forno-active-box" style="background:${isPronto ? '#fee2e2' : '#ffedd5'}; border:2px solid ${isPronto ? '#dc2626' : '#ea580c'};">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:18px;">🔥</span>
+            <div>
+              <div style="font-size:11px; font-weight:800; color:${isPronto ? '#dc2626' : '#9a3412'}; text-transform:uppercase;">${isPronto ? '🔔 RETIRAR DO FORNO!' : 'No Forno (Assando)'}</div>
+              <div style="font-size:16px; font-weight:900; color:${isPronto ? '#b91c1c' : '#c2410c'}; font-family:monospace;">${timeStr}</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:4px;">
+            <button type="button" onclick="event.stopPropagation(); window.ajustarTimerForno(${item.id}, 60)" style="background:#fff; border:1px solid #ea580c; border-radius:6px; padding:4px 6px; font-weight:800; font-size:11px; color:#c2410c; cursor:pointer;">+1m</button>
+            <button type="button" onclick="event.stopPropagation(); window.ajustarTimerForno(${item.id}, -60)" style="background:#fff; border:1px solid #ea580c; border-radius:6px; padding:4px 6px; font-weight:800; font-size:11px; color:#c2410c; cursor:pointer;">-1m</button>
+            ${isPronto ? `<button type="button" onclick="event.stopPropagation(); window.pararTimerFornoEFinalizar(${item.id})" style="background:#16a34a; color:white; border:none; border-radius:6px; padding:4px 8px; font-weight:800; font-size:11px; cursor:pointer;">Pronto!</button>` : ''}
+          </div>
+        </div>`;
+    } else {
+      html += `
+        <div style="margin-top:4px;">
+          <button type="button" class="btn-iniciar-forno" onclick="event.stopPropagation(); window.iniciarTimerForno(${item.id}, 10)" style="background:linear-gradient(135deg, #f97316, #ea580c); color:white; border:none; padding:6px 12px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(234,88,12,0.3);">
+            <i class="ph-fill ph-fire"></i> Colocar no Forno (10m)
+          </button>
+        </div>`;
+    }
+  }
+
+  html += `</div>`;
+  return html;
+}
+
 function renderizarCardIndividual(item) {
   const timeCreated = parseUtc(item.createdAt);
   const diffMins = Math.floor((Date.now() - timeCreated) / 60000);
@@ -1941,6 +2126,8 @@ function renderizarCardIndividual(item) {
     }
   }
 
+  const pizzaKdsHtml = renderPizzaKdsDetails(item);
+
   const ptProduto = `
       <div class="item-produto" data-field-key="produto">
         <div class="item-produto-title-line">
@@ -1948,6 +2135,7 @@ function renderizarCardIndividual(item) {
           <span class="kds-product-name">${nomeEsc}</span>
           ${badgeEspecial}
         </div>
+        ${pizzaKdsHtml}
         ${obsEsc ? `<div class="item-observacao" style="background:rgba(239,68,68,0.1); color:#ef4444; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;"><i class="ph-bold ph-warning-circle"></i> OBS: ${obsEsc}</div>` : ''}
         ${compsHtml}
         ${smartSyncHtml}

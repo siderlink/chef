@@ -324,9 +324,38 @@
       console.log(`[ChefCardapio3D] Dispositivo: ${this.deviceMemory}GB RAM, ${this.hardwareConcurrency} Cores. Suporte 3D/AR: ${this.isSupported}`);
 
       this.injectUiControls();
+      this.initBatteryGuard();
 
       if (this.isSupported) {
         this.enable();
+      }
+    },
+
+    _ecoActive: false,
+
+    initBatteryGuard: function () {
+      if (typeof navigator !== 'undefined' && typeof navigator.getBattery === 'function') {
+        navigator.getBattery().then(battery => {
+          const evaluate = () => {
+            const isLow = battery.level <= 0.20 && !battery.charging;
+            if (isLow && this.isEnabled && !this._ecoActive) {
+              this._ecoActive = true;
+              console.log(`[ChefCardapio3D] Bateria baixa (${Math.round(battery.level * 100)}%). Ativando Modo Eco para poupar seu aparelho na mesa.`);
+              const ambCanvas = document.getElementById('cardapio-ambient-canvas');
+              if (ambCanvas) ambCanvas.style.opacity = '0.2';
+              if (typeof showToast === 'function') {
+                showToast('🔋 Bateria baixa: Modo Eco 3D ativado para poupar energia', 'info');
+              }
+            } else if (!isLow && this._ecoActive) {
+              this._ecoActive = false;
+              const ambCanvas = document.getElementById('cardapio-ambient-canvas');
+              if (ambCanvas) ambCanvas.style.opacity = '1';
+            }
+          };
+          evaluate();
+          battery.addEventListener('levelchange', evaluate);
+          battery.addEventListener('chargingchange', evaluate);
+        }).catch(() => {});
       }
     },
 
@@ -557,6 +586,7 @@
       function animate() {
         animId = requestAnimationFrame(animate);
         if (!isVisible || !self.isEnabled) return;
+        if (self._ecoActive && Math.random() > 0.45) return;
 
         const time = clock.getElapsedTime();
         const pos = geometry.attributes.position.array;
