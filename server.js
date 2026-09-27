@@ -11764,7 +11764,13 @@ const FUNCOES_MODULOS = [
   { chave: 'fila_espera', nome: 'Fila de Espera Digital', desc: 'Fila digital de clientes com estimativa de tempo e chamada automática no celular.', icone: 'ph-users-three', categorias: ['Operação'], preco: 'R$ 39/mês', roi: 'Retém clientes em horários de pico', badge: 'Atendimento' },
   { chave: 'jogos', nome: 'Jogos / Batalha de Mesas', desc: 'Quizzes interativos na mesa e premiação para clientes duelarem e aumentarem o consumo.', icone: 'ph-game-controller', categorias: ['Entretenimento'], preco: 'R$ 39/mês', roi: 'Aumenta consumo de bebidas e permanência', badge: 'Engajamento' },
   { chave: 'ifood', nome: 'Integração Oficial iFood', desc: 'Sincronização bidirecional de cardápio, pedidos e status com a rede iFood.', icone: 'ph-storefront', categorias: ['Delivery'], preco: 'Incluso no Pro/Premium', roi: 'Importação automática de pedidos', badge: 'Oficial' },
-  { chave: 'nfce', nome: 'Emissão Fiscal NFC-e / SAT', desc: 'Emissão de cupom fiscal eletrônico na hora da venda com contingência offline automática.', icone: 'ph-receipt', categorias: ['Fiscal'], preco: 'Incluso no Pro/Premium', roi: 'Conformidade fiscal garantida', badge: 'Fiscal' }
+  { chave: 'nfce', nome: 'Emissão Fiscal NFC-e / SAT', desc: 'Emissão de cupom fiscal eletrônico na hora da venda com contingência offline automática.', icone: 'ph-receipt', categorias: ['Fiscal'], preco: 'Incluso no Pro/Premium', roi: 'Conformidade fiscal garantida', badge: 'Fiscal' },
+  { chave: 'guardiao_compras_nfe', nome: 'Guardião de Compras & Leitor XML NFe', desc: 'Importação automática de XML de fornecedores, radar de inflação de insumos e contas a pagar.', icone: 'ph-file-arrow-up', categorias: ['Financeiro', 'Gestão'], preco: 'R$ 79/mês', roi: 'Economiza 20h/mês e zera aumentos abusivos', badge: 'Alta Economia' },
+  { chave: 'resumo_noturno_whatsapp', nome: 'Resumo Noturno do Dono no WhatsApp', desc: 'Fechamento executivo automático às 23:45 direto no WhatsApp com faturamento, ticket e alertas.', icone: 'ph-moon-stars', categorias: ['Gestão', 'Marketing'], preco: 'R$ 49/mês', roi: 'Controle total na palma da mão sem stress', badge: 'Favorito dos Donos' },
+  { chave: 'crm_whatsapp_ia', nome: 'WhatsApp CRM & Reativação por IA', desc: 'Piloto automático para reconquistar clientes inativos, felicitar aniversariantes e pós-venda NPS.', icone: 'ph-robot', categorias: ['Marketing', 'Vendas'], preco: 'R$ 99/mês', roi: 'Reativa de 20 a 50 clientes sumidos por mês', badge: 'IA Lucrativa' },
+  { chave: 'clube_assinaturas', nome: 'Clube de Assinaturas & Fidelidade VIP', desc: 'Criação de planos de mensalidade (Chopp, Pizza, Executivo VIP) com receita recorrente garantida.', icone: 'ph-crown', categorias: ['Vendas', 'Marketing'], preco: 'R$ 79/mês', roi: 'Garante faturamento fixo antes do mês começar', badge: 'Receita Recorrente' },
+  { chave: 'auditor_cartoes', nome: 'Auditor de Taxas de Cartão & Conciliador', desc: 'Audita taxas de adquirentes (Stone, Cielo, Rede) e recupera cobranças divergentes de MDR.', icone: 'ph-credit-card', categorias: ['Financeiro'], preco: 'R$ 99/mês', roi: 'Recupera de R$ 300 a R$ 2.000 cobrados a mais', badge: 'Recupere Dinheiro' },
+  { chave: 'gamificacao_gorjetas', nome: 'Gamificação do Salão & Rateio Gorjetas', desc: 'Leaderboard de vendas em tempo real para garçons e divisão da taxa de serviço (Lei 13.419).', icone: 'ph-trophy', categorias: ['Gestão', 'Equipe'], preco: 'R$ 59/mês', roi: '+18% no ticket médio e zero passivo trabalhista', badge: 'Mais Vendido' }
 ];
 
 // Config de ativação de cada módulo (restaurante liga/desliga; padrão ligado quando disponível)
@@ -12805,6 +12811,21 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       });
     } catch (eRotas) {
       console.error('Erro ao carregar o Controller Rotas Faltantes:', eRotas);
+    }
+
+    try {
+      require('./controllers/addons-restaurante')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('🚀 Controller Add-ons de Alta Monetização (XML NFe, WhatsApp Noturno, CRM IA, Clube, Auditor Taxas, Gorjeta) carregado com sucesso.');
+    } catch (eAddons) {
+      console.error('Erro ao carregar o Controller Add-ons Restaurante:', eAddons);
     }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);

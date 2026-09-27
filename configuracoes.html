@@ -665,7 +665,7 @@
       flex-direction: column !important;
       flex: 1 !important;
       min-height: 0 !important;
-      height: 100% !important;
+      /* Removido height: 100% para não quebrar o flex interno causando overflow oculto */
       overflow-x: hidden !important;
       overflow-y: auto !important;
       box-sizing: border-box !important;
@@ -682,9 +682,9 @@
       flex-shrink: 0;
       margin-bottom: 16px;
       width: 100%;
-      max-height: 50vh;
-      overflow-y: auto;
+      /* max-height: 50vh removido para evitar duplo scroll (conteúdo escondido) */
       padding-right: 4px;
+      padding-bottom: 12px;
     }
 
     .tab-table-scroll {

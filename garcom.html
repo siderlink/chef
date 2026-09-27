@@ -1495,6 +1495,10 @@
         <button id="btn-fullscreen"
           style="color:#10b981; font-size:24px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:none; border:none;"
           title="Alternar Tela Cheia" aria-label="Tela cheia"><i class="ph ph-corners-out"></i></button>
+        <button id="btn-leaderboard-garcom"
+          style="color:#eab308; font-size:24px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:none; border:none;"
+          title="Ranking & Desempenho do Turno" aria-label="Ranking do Turno"
+          onclick="window.abrirModalLeaderboardGarcom && window.abrirModalLeaderboardGarcom()"><i class="ph-bold ph-trophy"></i></button>
       </div>
     </header>
 
@@ -2595,6 +2599,77 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL DE GAMIFICAÇÃO & LEADERBOARD DO GARÇOM -->
+  <div id="modal-leaderboard-garcom"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:999999; flex-direction:column; align-items:center; justify-content:center; padding:16px; animation:fadeIn 0.2s ease;">
+    <div
+      style="background:var(--bg-card, #ffffff); border-radius:24px; max-width:420px; width:100%; max-height:85vh; overflow-y:auto; padding:24px 20px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.4); position:relative; border:1px solid rgba(255,255,255,0.1);">
+      <button type="button" onclick="document.getElementById('modal-leaderboard-garcom').style.display='none'"
+        style="position:absolute; right:16px; top:16px; width:36px; height:36px; border-radius:50%; border:none; background:rgba(0,0,0,0.06); color:var(--text-secondary, #64748b); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
+
+      <div style="width:52px; height:52px; border-radius:16px; background:rgba(234,179,8,0.15); color:#eab308; display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 12px;">
+        <i class="ph-bold ph-trophy"></i>
+      </div>
+
+      <h3 style="margin:0 0 4px; font-size:20px; font-weight:800; color:var(--text-primary, #0f172a);">Ranking & Desempenho</h3>
+      <p style="margin:0 0 16px; font-size:12.5px; color:var(--text-secondary, #64748b);">Seu desempenho no turno de hoje e missões ativas</p>
+
+      <!-- Lista do Leaderboard -->
+      <div id="leaderboard-garcom-lista" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px; text-align:left;">
+        <div style="text-align:center; padding:20px; color:var(--text-secondary); font-size:13px;">Carregando ranking do turno...</div>
+      </div>
+
+      <!-- Missões Ativas -->
+      <div id="leaderboard-garcom-missoes" style="background:var(--bg-main, #f8fafc); border-radius:14px; padding:12px; margin-bottom:16px; text-align:left; border:1px solid var(--border-color, #e2e8f0);">
+        <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#eab308; letter-spacing:0.5px; margin-bottom:8px;">🎯 Missões da Noite:</div>
+        <div style="font-size:12px; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+          <span>🍷 Venda 3 Vinhos ou Sobremesas</span>
+          <span style="margin-left:auto; font-weight:800; color:#10b981;">+ R$ 15 bônus</span>
+        </div>
+      </div>
+
+      <button type="button" onclick="document.getElementById('modal-leaderboard-garcom').style.display='none'"
+        style="width:100%; background:var(--primary, #fc4b15); color:#ffffff; border:none; padding:12px; border-radius:12px; font-weight:800; font-size:14px; cursor:pointer;">
+        Continuar Atendendo
+      </button>
+    </div>
+  </div>
+
+  <script>
+    window.abrirModalLeaderboardGarcom = function() {
+      const modal = document.getElementById('modal-leaderboard-garcom');
+      if (modal) modal.style.display = 'flex';
+      const container = document.getElementById('leaderboard-garcom-lista');
+      if (!container) return;
+
+      fetch('/api/addons/gamificacao/leaderboard')
+        .then(r => r.json())
+        .then(data => {
+          if (!data || !data.ranking || data.ranking.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:16px; color:#888; font-size:13px;">Nenhum pedido finalizado no turno ainda.</div>';
+            return;
+          }
+          container.innerHTML = data.ranking.map((g, idx) => `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:${idx === 0 ? 'rgba(234,179,8,0.1)' : 'var(--bg-main, #f8fafc)'}; border-radius:12px; border:1px solid ${idx === 0 ? 'rgba(234,179,8,0.3)' : 'var(--border-color, #e2e8f0)'};">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:18px;">${g.medalha}</span>
+                <div>
+                  <div style="font-weight:800; font-size:13.5px; color:var(--text-primary);">${g.garcom || 'Garçom'}</div>
+                  <div style="font-size:11px; color:var(--text-secondary);">${g.total_pedidos} pedidos • Ticket Médio: R$ ${(g.ticket_medio || 0).toFixed(2)}</div>
+                </div>
+              </div>
+              <div style="font-weight:900; font-size:14px; color:#10b981;">
+                R$ ${(g.total_vendido || 0).toFixed(2)}
+              </div>
+            </div>
+          `).join('');
+        })
+        .catch(() => {
+          container.innerHTML = '<div style="text-align:center; padding:16px; color:#ef4444; font-size:13px;">Erro ao carregar o ranking.</div>';
+        });
+    };
+  </script>
 
   <script src="/chef-colaborador-dock.js"></script>
   <script src="/chef-layout-injetor.js"></script>
