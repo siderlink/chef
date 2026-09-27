@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auditor de Repasses & Glosas iFood • Chef Cozinha</title>
+  <link rel="icon" href="/icon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: #0f141e;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-red: #ea1d2c; /* iFood Red */
+      --accent-red-hover: #b9101d;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-blue: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-title: 'Outfit', system-ui, sans-serif;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: rgba(15, 20, 30, 0.85);
+      border-bottom: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent-red), #99000d);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 900;
+      box-shadow: 0 4px 18px rgba(234, 29, 44, 0.4);
+    }
+
+    .brand-title h1 {
+      font-family: var(--font-title);
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-ifood {
+      background: rgba(234, 29, 44, 0.2);
+      border: 1px solid rgba(234, 29, 44, 0.4);
+      color: #ff6b76;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-title p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-action {
+      background: #1e293b;
+      border: 1px solid var(--card-border);
+      color: #cbd5e1;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    .btn-primary-action {
+      background: linear-gradient(135deg, var(--accent-red), var(--accent-red-hover));
+      color: #fff;
+      border: none;
+      box-shadow: 0 4px 14px rgba(234, 29, 44, 0.35);
+    }
+
+    .btn-primary-action:hover {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+
+    main {
+      flex: 1;
+      max-width: 1300px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Hero Banner de Prejuízo */
+    .loss-alert-banner {
+      background: linear-gradient(135deg, rgba(234, 29, 44, 0.12), rgba(15, 20, 30, 0.8));
+      border: 1.5px solid rgba(234, 29, 44, 0.4);
+      border-radius: 18px;
+      padding: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .loss-meta h2 {
+      font-family: var(--font-title);
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .loss-meta p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      max-width: 720px;
+      line-height: 1.5;
+    }
+
+    .loss-val-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(234, 29, 44, 0.5);
+      border-radius: 14px;
+      padding: 16px 24px;
+      text-align: right;
+    }
+
+    .loss-val-lbl {
+      font-size: 0.78rem;
+      color: #f87171;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .loss-val-num {
+      font-family: var(--font-mono);
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #ef4444;
+      line-height: 1.1;
+      margin-top: 4px;
+    }
+
+    /* Grid de Métricas do Extrato */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+    }
+
+    .metric-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .metric-card .lbl {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .metric-card .val {
+      font-family: var(--font-mono);
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .metric-card .sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Tabela de Glosas & Irregularidades */
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 14px;
+    }
+
+    .section-title {
+      font-family: var(--font-title);
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .table-glosas {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    .table-glosas th {
+      text-align: left;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .table-glosas td {
+      padding: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+    }
+
+    .table-glosas tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .tag-irregularidade {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .tag-cancelado { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .tag-taxa { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .tag-multa { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+    .btn-contest {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid #3b82f6;
+      color: #93c5fd;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .btn-contest:hover {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    /* Modal de Petição de Contestação */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 650px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .peticao-box {
+      background: #07090e;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #94a3b8;
+      line-height: 1.6;
+      height: 220px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    /* Assinatura / Monetização do Módulo */
+    .monetization-upsell {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(15, 20, 30, 0.95));
+      border: 1.5px solid rgba(16, 185, 129, 0.35);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header>
+    <div class="brand-box">
+      <div class="brand-logo">🍔</div>
+      <div class="brand-title">
+        <h1>Auditor de Repasses & Glosas <span class="badge-ifood">iFood Marketplace</span></h1>
+        <p>Detecção de cancelamentos indevidos, taxas divergentes e contestação de créditos em 1 clique</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="/sync-hub.html" class="btn-action">⚡ Sync Hub</a>
+      <a href="/crm-marketing.html" class="btn-action">💬 CRM WhatsApp</a>
+      <a href="/montador-pizza.html" class="btn-action">🍕 Montador</a>
+      <a href="/auditor-cartoes.html" class="btn-action">💳 Auditor Cartões</a>
+      <a href="/painel-dono.html" class="btn-action">👑 Painel Dono</a>
+      <button class="btn-action btn-primary-action" onclick="executarAuditoriaExtrato()">
+        <i class="ph-bold ph-arrows-clockwise"></i> Reauditar Extrato
+      </button>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main>
+
+    <!-- Alerta de Prejuízo Retido Detectado -->
+    <div class="loss-alert-banner">
+      <div class="loss-meta">
+        <h2>
+          <span>🚨</span> Retenções Indevidas Detectadas no iFood
+        </h2>
+        <p>
+          O algoritmo pericial cruzou <strong>348 pedidos</strong> emitidos no seu PDV com o extrato financeiro semanal depositado pelo iFood.
+          Identificamos cancelamentos após saída para entrega e retenções de taxas que descumprem o Termo de Uso do Parceiro.
+        </p>
+      </div>
+      <div class="loss-val-box">
+        <div class="loss-val-lbl">Prejuízo a Recuperar</div>
+        <div class="loss-val-num" id="val-glosa-total">R$ 1.416,00</div>
+        <span style="font-size:0.75rem; color:#94a3b8;">Laudo pericial pronto para protocolo</span>
+      </div>
+    </div>
+
+    <!-- Métricas do Período -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <span class="lbl">Vendas Brutas (PDV)</span>
+        <div class="val" id="val-faturamento-pdv">R$ 34.500,00</div>
+        <span class="sub">348 pedidos computados no sistema</span>
+      </div>
+      <div class="metric-card">
+        <span class="lbl">Repasse Contratual Esperado</span>
+        <div class="val" style="color:var(--accent-green);" id="val-esperado">R$ 29.256,00</div>
+        <span class="sub">Após dedução de 12% + 3.2% de taxa</span>
+      </div>
+      <div class="metric-card">
+        <span class="lbl">Depósito Efetivo no Banco</span>
+        <div class="val" style="color:#f87171;" id="val-depositado">R$ 27.840,00</div>
+        <span class="sub">TED/Pix recebido na conta jurídica</span>
+      </div>
+      <div class="metric-card">
+        <span class="lbl">Glosas & Erros Confirmados</span>
+        <div class="val" style="color:var(--accent-amber);" id="val-qtd-irregularidades">6 pedidos</div>
+        <span class="sub">100% elegíveis para reembolso</span>
+      </div>
+    </div>
+
+    <!-- Tabela Detalhada com os Pedidos Irregulares -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">
+          <i class="ph-bold ph-file-magnifying-glass" style="color:var(--accent-red);"></i>
+          <span>Extrato de Pedidos com Cobranças Indevidas / Não Repassados</span>
+        </div>
+        <button class="btn-action btn-primary-action" onclick="abrirModalPeticaoGeral()">
+          <i class="ph-bold ph-copy"></i> Copiar Laudo de Contestação Geral
+        </button>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="table-glosas">
+          <thead>
+            <tr>
+              <th>ID Pedido</th>
+              <th>Data/Hora</th>
+              <th>Cliente / Bairro</th>
+              <th>Tipo de Irregularidade</th>
+              <th>Valor Retido</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="lista-irregularidades">
+            <!-- Renderizado dinamicamente -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Monetização / Ativação do Módulo no Restaurante -->
+    <div class="monetization-upsell">
+      <div>
+        <div style="font-size:0.8rem; font-weight:800; color:var(--accent-green); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">
+          ⚡ Proteção Contínua • Módulo de Blindagem Fiscal
+        </div>
+        <h3 style="font-family:var(--font-title); font-size:1.25rem; font-weight:900; color:#fff; margin-bottom:6px;">
+          Automatize a Auditoria Semanal do iFood e Maquininhas
+        </h3>
+        <p style="color:var(--text-muted); font-size:0.88rem; max-width:680px; line-height:1.5;">
+          Nunca mais deixe dinheiro na mesa do marketplace. O Chef Cozinha escaneia cada TED e extrato CSV automaticamente,
+          notificando seu WhatsApp sempre que houver 1 centavo divergente.
+        </p>
+      </div>
+      <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+        <div style="text-align:right;">
+          <div style="font-size:1.4rem; font-weight:900; color:#fff; font-family:var(--font-mono);">R$ 89,00<span style="font-size:0.85rem; color:var(--text-muted); font-weight:500;">/mês</span></div>
+          <span style="font-size:0.75rem; color:var(--accent-green); font-weight:700;">Recupera +R$ 1.400 no 1º mês</span>
+        </div>
+        <button class="btn-action btn-primary-action" onclick="assinarAuditorIfood()" style="padding:12px 20px; font-size:0.95rem;">
+          <i class="ph-bold ph-shield-check"></i> Ativar Auditoria Contínua
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal com Petição Pronta para Colar no Suporte do iFood -->
+  <div class="modal-overlay" id="modal-peticao">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-family:var(--font-title); font-size:1.2rem; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px;">
+          <span>⚖️</span> Laudo Técnico de Contestação de Repasse
+        </h3>
+        <button onclick="fecharModalPeticao()" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+
+      <p style="font-size:0.82rem; color:var(--text-muted);">
+        Copie o texto pericial abaixo e cole no campo de chamado do <strong>Portal do Parceiro iFood</strong> (Financeiro ➔ Contestações de Repasse):
+      </p>
+
+      <div class="peticao-box" id="txt-peticao">
+        <!-- Texto injetado dinamicamente -->
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn-action" onclick="fecharModalPeticao()">Fechar</button>
+        <button class="btn-action btn-primary-action" onclick="copiarPeticao()">
+          <i class="ph-bold ph-copy"></i> Copiar Texto Completo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const itensIrregulares = [
+      { id: '#8491', data: '22/09 20:41', cliente: 'Camila P. (Jardins)', tipo: 'Cancelamento após despacho de motoboy', categoria: 'tag-cancelado', retido: 184.50, detalhe: 'Pedido despachado dentro do SLA. Cliente cancelou sem devolução do produto alimentício perecível. Art. 49 CDC inaplicável a refeições preparadas sob encomenda.' },
+      { id: '#9102', data: '23/09 21:15', cliente: 'Roberto M. (Pinheiros)', tipo: 'Cobrança indevida de taxa de entrega parceira', categoria: 'tag-taxa', retido: 220.00, detalhe: 'Taxa de R$ 22,00 cobrada 10x indevidamente em pedidos despachados por frota própria do restaurante.' },
+      { id: '#9234', data: '24/09 19:30', cliente: 'Juliana S. (Moema)', tipo: 'Comissão sobre cupom de incentivo da loja', categoria: 'tag-taxa', retido: 87.50, detalhe: 'Comissão contratual de 12% calculada sobre valor bruto sem abater o cupom de R$ 15,00 subsidiado integralmente pelo parceiro.' },
+      { id: '#9540', data: '25/09 22:04', cliente: 'Marcos T. (Bela Vista)', tipo: 'Multa automática de espera de entregador', categoria: 'tag-multa', retido: 119.00, detalhe: 'Multa indevida gerada pelo GPS do entregador descalibrado a 400m do restaurante, sendo que o pedido estava pronto na estufa.' },
+      { id: '#9711', data: '26/09 21:40', cliente: 'Beatriz L. (Vila Mariana)', tipo: 'Cancelamento por suposto atraso sem aviso', categoria: 'tag-cancelado', retido: 195.00, detalhe: 'Cliente solicitou cancelamento 4 minutos antes do prazo limite acordado na tela. Refeição perdida.' },
+      { id: '#0294', data: '27/09 00:00', cliente: 'Repasse Semanal iFood', tipo: 'Taxa de antecipação semanal não autorizada', categoria: 'tag-taxa', retido: 610.00, detalhe: 'Dedução de 2.8% a título de adiantamento financeiro sem termo de aceite formal assinado pelo titular do CNPJ.' }
+    ];
+
+    function renderizarTabela() {
+      const tbody = document.getElementById('lista-irregularidades');
+      tbody.innerHTML = itensIrregulares.map(i => `
+        <tr>
+          <td style="font-family:var(--font-mono); font-weight:800; color:#fff;">${i.id}</td>
+          <td style="font-size:0.8rem; color:var(--text-muted);">${i.data}</td>
+          <td style="font-weight:600;">${i.cliente}</td>
+          <td>
+            <span class="tag-irregularidade ${i.categoria}">${i.tipo}</span>
+          </td>
+          <td style="font-family:var(--font-mono); font-weight:900; color:#ef4444;">R$ ${i.retido.toFixed(2).replace('.', ',')}</td>
+          <td>
+            <button class="btn-contest" onclick="abrirModalPeticaoItem('${i.id}')">
+              <i class="ph-bold ph-scales"></i> Contestar
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function abrirModalPeticaoGeral() {
+      const txt = document.getElementById('txt-peticao');
+      txt.textContent = `AO DEPARTAMENTO FINANCEIRO E DE CONCILIAÇÃO - IFOOD BRASIL
+
+Ref: CONTESTAÇÃO DE GLOSAS E RETENÇÕES INDEVIDAS NO EXTRATO
+Período de Apuração: Últimos 15 dias
+Estabelecimento Parceiro: Chef Cozinha Gastronomia
+Valor Total Retido a Restituir: R$ 1.416,00
+
+Prezados,
+
+Por meio deste laudo técnico emitido pelo sistema de gestão e auditoria fiscal integrada Chef Cozinha, vimos formalmente requerer a revisão e estorno em conta corrente dos valores retidos indevidamente no extrato financeiro da loja, conforme demonstrativo individualizado:
+
+${itensIrregulares.map(i => `• Pedido ${i.id} (${i.data}) - R$ ${i.retido.toFixed(2)}:
+  Motivo: ${i.tipo}
+  Fundamentação: ${i.detalhe}`).join('\n\n')}
+
+VALOR TOTAL REQUERIDO PARA ESTORNO EM PRÓXIMO REPASSE: R$ 1.416,00.
+
+Requer-se a análise dentro do prazo regulamentar de 48 horas úteis, com o respectivo crédito na conta bancária cadastrada.
+
+Atenciosamente,
+Gerência Financeira & Auditoria`;
+
+      document.getElementById('modal-peticao').style.display = 'flex';
+    }
+
+    function abrirModalPeticaoItem(id) {
+      const item = itensIrregulares.find(i => i.id === id);
+      if (!item) return;
+
+      const txt = document.getElementById('txt-peticao');
+      txt.textContent = `SOLICITAÇÃO DE ESTORNO DE GLOSA INDEVIDA - IFOOD PORTAL
+
+Identificador do Pedido: ${item.id}
+Data e Horário: ${item.data}
+Cliente / Região: ${item.cliente}
+Valor Indevidamente Retido: R$ ${item.retido.toFixed(2)}
+
+Motivo da Contestação:
+${item.tipo}
+
+Fundamentação Fática e Contratual:
+${item.detalhe}
+
+Solicitamos a imediata liberação do crédito na conciliação semanal do estabelecimento.`;
+
+      document.getElementById('modal-peticao').style.display = 'flex';
+    }
+
+    function fecharModalPeticao() {
+      document.getElementById('modal-peticao').style.display = 'none';
+    }
+
+    function copiarPeticao() {
+      const txt = document.getElementById('txt-peticao').textContent;
+      navigator.clipboard.writeText(txt).then(() => {
+        alert('✔ Laudo pericial copiado com sucesso! Agora basta colar no chamado do Portal do Parceiro do iFood.');
+        fecharModalPeticao();
+      });
+    }
+
+    async function executarAuditoriaExtrato() {
+      const btn = document.querySelector('.btn-primary-action');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="ph-bold ph-spinner" style="animation:spin 1s infinite;"></i> Auditando...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/addons/auditor-marketplaces/analisar-extrato');
+        const data = await res.json();
+        if (data.ok && data.auditoria) {
+          alert('✔ Auditoria Pericial concluída! Foram confirmadas divergências no valor de R$ ' + data.auditoria.prejuizo_identificado.toFixed(2));
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    function assinarAuditorIfood() {
+      alert('🚀 Ativação do Módulo Auditor iFood!\n\nMensalidade: R$ 89,00/mês.\nSeu restaurante passará a ter auditoria contínua 24/7 com alerta direto no WhatsApp sempre que houver glosa ou retenção indevida!');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderizarTabela();
+    });
+  </script>
+</body>
+</html>

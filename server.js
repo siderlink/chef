@@ -13133,6 +13133,21 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
     } catch (ePizza) {
       console.error('Erro ao carregar o Controller Pizzaria Inteligente:', ePizza);
     }
+
+    try {
+      require('./controllers/crm-marketing-turbo')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb,
+        superAdminAuth
+      });
+      console.log('🚀 Controller CRM & WhatsApp Marketing Turbo carregado com sucesso.');
+    } catch (eCrm) {
+      console.error('Erro ao carregar o Controller CRM Marketing Turbo:', eCrm);
+    }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);
   }

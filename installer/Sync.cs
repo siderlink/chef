@@ -595,6 +595,8 @@ namespace ChefCozinha.Sync
             trayMenu.Items.Add("🍕 Montador de Pizza Visual", null, (s, e) => OpenPizzaBuilderInBrowser());
             trayMenu.Items.Add("🔥 KDS Cozinha (Linha Pizzas)", null, (s, e) => OpenKdsPizzaInBrowser());
             trayMenu.Items.Add("🛵 Despacho & Motoboys (TSP)", null, (s, e) => OpenMotoboyDispatchInBrowser());
+            trayMenu.Items.Add("🕵️ Auditor de Glosas iFood", null, (s, e) => OpenIfoodAuditorInBrowser());
+            trayMenu.Items.Add("💬 CRM & WhatsApp Turbo", null, (s, e) => OpenCrmMarketingInBrowser());
             trayMenu.Items.Add("-");
             trayMenu.Items.Add("Sair do Sync Agent", null, (s, e) => {
                 isExiting = true;
@@ -920,6 +922,34 @@ namespace ChefCozinha.Sync
                 string url = string.Format("http://localhost:{0}/painel-entregas.html", config.local_port);
                 Process.Start(url);
                 AppendLog("Abrindo Central de Despacho & Motoboys: " + url, Color.FromArgb(59, 130, 246));
+            }
+            catch (Exception ex)
+            {
+                AppendLog("Erro ao abrir navegador: " + ex.Message, Color.FromArgb(239, 68, 68));
+            }
+        }
+
+        private void OpenIfoodAuditorInBrowser()
+        {
+            try
+            {
+                string url = string.Format("http://localhost:{0}/auditor-ifood.html", config.local_port);
+                Process.Start(url);
+                AppendLog("Abrindo Auditor de Glosas iFood: " + url, Color.FromArgb(234, 29, 44));
+            }
+            catch (Exception ex)
+            {
+                AppendLog("Erro ao abrir navegador: " + ex.Message, Color.FromArgb(239, 68, 68));
+            }
+        }
+
+        private void OpenCrmMarketingInBrowser()
+        {
+            try
+            {
+                string url = string.Format("http://localhost:{0}/crm-marketing.html", config.local_port);
+                Process.Start(url);
+                AppendLog("Abrindo CRM & WhatsApp Marketing Turbo: " + url, Color.FromArgb(37, 211, 102));
             }
             catch (Exception ex)
             {
