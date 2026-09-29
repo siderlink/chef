@@ -1492,7 +1492,152 @@ module.exports = function(app, { db, masterDb, io, sqlite3, verificarToken, getT
       });
   });
 
-  console.log('✅ [rotas-faltantes] Todas as rotas ausentes do Super Admin restauradas com sucesso.');
+  // ─── 48. ATIVAÇÃO DE MÓDULOS PELO DONO (TRIAL E IMEDIATO) ──────
+  app.post('/api/dono/modulos/ativar-trial', verificarToken, (req, res) => {
+    const { chave_modulo } = req.body || {};
+    if (!chave_modulo) return res.status(400).json({ ok: false, erro: 'Chave do módulo não informada.' });
+    const restId = (req.usuario && req.usuario.restaurante_id) || 1;
+    masterDb.run(
+      `INSERT INTO tenant_modulos (restaurante_id, modulo_id, ativo, trial_ate, atualizado_em)
+       VALUES (?, ?, 1, datetime('now', '+7 days'), datetime('now','localtime'))
+       ON CONFLICT(restaurante_id, modulo_id) DO UPDATE SET ativo = 1, trial_ate = datetime('now', '+7 days'), atualizado_em = datetime('now','localtime')`,
+      [restId, chave_modulo],
+      (err) => {
+        if (err) return res.status(500).json({ ok: false, erro: err.message });
+        if (io) {
+          try { io.to(`restaurante_${restId}`).emit('modulo_status_alterado', { modulo_id: chave_modulo, ativo: true, trial: true }); } catch (e) {}
+        }
+        res.json({ ok: true, mensagem: 'Período de testes (Trial de 7 dias) ativado com sucesso!' });
+      }
+    );
+  });
+
+  app.post('/api/dono/modulos/ativar-imediato', verificarToken, (req, res) => {
+    const { chave_modulo } = req.body || {};
+    if (!chave_modulo) return res.status(400).json({ ok: false, erro: 'Chave do módulo não informada.' });
+    const restId = (req.usuario && req.usuario.restaurante_id) || 1;
+    masterDb.run(
+      `INSERT INTO tenant_modulos (restaurante_id, modulo_id, ativo, trial_ate, atualizado_em)
+       VALUES (?, ?, 1, NULL, datetime('now','localtime'))
+       ON CONFLICT(restaurante_id, modulo_id) DO UPDATE SET ativo = 1, trial_ate = NULL, atualizado_em = datetime('now','localtime')`,
+      [restId, chave_modulo],
+      (err) => {
+        if (err) return res.status(500).json({ ok: false, erro: err.message });
+        if (io) {
+          try { io.to(`restaurante_${restId}`).emit('modulo_status_alterado', { modulo_id: chave_modulo, ativo: true }); } catch (e) {}
+        }
+        res.json({ ok: true, mensagem: 'Módulo ativado com sucesso!' });
+      }
+    );
+  });
+
+  // ─── 49. MENSAGENS: CONFIRMAÇÃO DE LEITURA BROADCAST ───────────
+  app.post('/api/mensagens/:id/lida', (req, res) => {
+    res.json({ ok: true, success: true });
+  });
+
+  // ─── 50. CANCELAMENTO DE PEDIDO (FILA LITE) ───────────────────
+  app.delete('/api/pedidos/:id', (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const tenantDb = resolveTenantDb(req);
+    tenantDb.run(`UPDATE pedidos SET status = 'Cancelado' WHERE id = ?`, [id], function (err) {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+      if (io) {
+        try { io.emit('pedidos_atualizados'); } catch (e) {}
+      }
+      res.json({ success: true, mensagem: 'Pedido cancelado.' });
+    });
+  });
+
+  // ─── 51. STATUS GENÉRICO DE PLUGINS / MÓDULOS ──────────────────
+  app.get('/api/modulo/:id/status', (req, res) => {
+    res.json({ ok: true, modulo: req.params.id, status: 'online' });
+  });
+
+  // ─── 52. HUB DE MARKETING (ROTA RAIZ) ─────────────────────────
+  app.get('/api/hub-marketing', (req, res) => {
+    masterDb.get(`SELECT valor FROM configuracoes_global WHERE chave = 'site_conteudo'`, [], (err, row) => {
+      res.json({ ok: true, status: 'online', dados: row ? row.valor : null });
+    });
+  });
+
+  // ─── 53. ATIVAÇÃO CENTRAL DE LICENÇAS E TELEMETRIA HUB ─────────
+  app.post('/api/licenca/ativar', (req, res) => {
+    const { chave, install_id, nome_restaurante, versao, plataforma } = req.body || {};
+    if (!chave) return res.status(400).json({ ok: false, error: 'Chave de ativação não informada.' });
+    masterDb.get(`SELECT * FROM licencas WHERE chave = ?`, [chave.trim()], (err, lic) => {
+      if (err || !lic) {
+        return res.status(404).json({ ok: false, error: 'Chave de licença não encontrada ou inválida.' });
+      }
+      if (lic.status === 'revogada') {
+        return res.status(403).json({ ok: false, error: 'Chave de licença revogada pela administração central.' });
+      }
+      masterDb.run(
+        `UPDATE licencas SET status = 'usada', usada_em = datetime('now','localtime'), usada_por = ?, install_id = ? WHERE id = ?`,
+        [nome_restaurante || 'Desconhecido', install_id || '', lic.id],
+        () => {
+          res.json({
+            ok: true,
+            status: 'ativa',
+            plano: lic.plano || 'premium',
+            dias: lic.dias || 30,
+            validade: lic.validade,
+            max_dispositivos: lic.max_dispositivos || 50
+          });
+        }
+      );
+    });
+  });
+
+  app.post('/api/telemetria', (req, res) => {
+    const p = req.body || {};
+    const installId = p.install_id || p.installId || '';
+    if (installId) {
+      masterDb.run(
+        `INSERT INTO telemetria (install_id, restaurante_id, versao, plataforma, ip, ultima_atividade)
+         VALUES (?, ?, ?, ?, ?, datetime('now','localtime'))
+         ON CONFLICT(install_id) DO UPDATE SET
+           ultima_atividade = datetime('now','localtime'),
+           versao = excluded.versao,
+           ip = excluded.ip`,
+        [installId, p.restaurante_id || 1, p.versao || '', p.plataforma || '', req.ip || ''],
+        () => {}
+      );
+    }
+    res.json({ ok: true });
+  });
+
+  // ─── 54. IMPRIMIR PRÉ-CONTA / CONFERÊNCIA DE MESA ───────────────
+  app.post('/api/pedidos/imprimir-preconta', (req, res) => {
+    const { mesaName, operador } = req.body || {};
+    if (!mesaName) return res.status(400).json({ ok: false, error: 'Mesa não informada.' });
+    const tdb = resolveTenantDb(req);
+    tdb.all(`SELECT * FROM pedidos WHERE (localName = ? OR mesa_grupo = ?) AND status != 'Finalizado'`, [mesaName, mesaName], (err, rows) => {
+      if (err) return res.status(500).json({ ok: false, error: err.message });
+      const itens = rows || [];
+      const subtotal = itens.reduce((acc, it) => acc + (parseFloat(String(it.total).replace(',', '.')) || 0), 0);
+      const taxa = subtotal * 0.10;
+      const total = subtotal + taxa;
+      
+      if (typeof global.registrarAuditoria === 'function') {
+        global.registrarAuditoria(operador || 'Garçom', 'PRE_CONTA', `Pré-conta impressa para ${mesaName} (Total: R$ ${total.toFixed(2)})`, 'Salão', 'BAIXO');
+      }
+
+      res.json({
+        ok: true,
+        mesa: mesaName,
+        operador: operador || 'Garçom',
+        itens_count: itens.length,
+        subtotal: subtotal,
+        taxa_servico: taxa,
+        total: total,
+        mensagem: `Pré-conta da ${mesaName} gerada com sucesso.`
+      });
+    });
+  });
+
+  console.log('✅ [rotas-faltantes] Todas as rotas ausentes do Super Admin e Garçom restauradas com sucesso.');
 };
+
 
 

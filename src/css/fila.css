@@ -243,6 +243,7 @@ body.kds-body, .kds-body {
   display: grid !important;
   grid-template-columns: var(--kds-grid-columns, repeat(auto-fill, minmax(var(--kds-card-min-width, 290px), 1fr))) !important;
   gap: var(--kds-card-gap, 16px) !important;
+  align-items: start !important;
   width: 100% !important;
   box-sizing: border-box !important;
 }
@@ -319,16 +320,45 @@ body.kds-body, .kds-body {
 .queue-list:not(.modo-lista):not(.modo-kanban) .queue-item {
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
+  justify-content: flex-start !important;
   background: var(--kds-card-bg) !important;
   border: 2px solid var(--kds-card-border) !important;
   border-radius: 18px !important;
   padding: var(--kds-card-grid-padding, 16px) !important;
-  min-height: var(--kds-card-grid-min-height, 190px) !important;
+  min-height: var(--kds-card-grid-min-height, 160px) !important;
   box-shadow: var(--kds-card-shadow) !important;
-  gap: var(--kds-card-gap, 12px) !important;
+  gap: var(--kds-card-gap, 10px) !important;
   box-sizing: border-box !important;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+#queue-list:not(.modo-lista):not(.modo-kanban) .queue-item .item-pronto,
+.kds-kanban-column .queue-item .item-pronto {
+  margin-top: auto !important;
+  padding-top: 6px !important;
+}
+
+#queue-list:not(.modo-lista) [data-field-key="quantidade"] {
+  display: none !important;
+}
+
+#queue-list:not(.modo-lista) .kds-card-qty-inline {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #fc4b15 !important;
+  color: #ffffff !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  padding: 2px 8px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 6px rgba(252, 75, 21, 0.3) !important;
+  margin-right: 6px !important;
+  flex-shrink: 0 !important;
+}
+
+#queue-list.modo-lista .kds-card-qty-inline {
+  display: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -436,15 +466,21 @@ body.kds-body, .kds-body {
 }
 
 #queue-list.modo-lista .item-pronto {
-  flex: 0 0 var(--kds-col-action-width, 230px) !important;
-  width: var(--kds-col-action-width, 230px) !important;
-  min-width: var(--kds-col-action-width, 230px) !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: min(var(--kds-col-action-width, 270px), 100%) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: flex-end !important;
   gap: 8px !important;
   margin: 0 !important;
   flex-shrink: 0 !important;
+}
+
+#queue-list.modo-lista .item-pronto button {
+  flex: 0 0 auto !important;
+  padding: 0 14px !important;
+  white-space: nowrap !important;
 }
 
 /* Se ação for o último elemento da linha, empurra para a borda direita */
@@ -893,18 +929,34 @@ body.kds-body, .kds-body {
 @media (max-width: 900px) {
   #queue-list.modo-lista .queue-item,
   .queue-list.modo-lista .queue-item {
+    display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 12px !important;
+    min-height: auto !important;
+    padding: 10px 14px !important;
+    gap: 8px !important;
   }
   #queue-list.modo-lista .kds-card-mobile-header {
     max-width: 100% !important;
     width: 100% !important;
-    flex: 1 1 auto !important;
+    flex: 0 0 auto !important;
+    padding: 6px 10px !important;
+  }
+  #queue-list.modo-lista .item-produto {
+    padding: 0 4px !important;
+    min-width: 0 !important;
   }
   #queue-list.modo-lista .item-pronto {
     width: 100% !important;
+    min-width: 0 !important;
     margin-left: 0 !important;
+    gap: 8px !important;
+  }
+  #queue-list.modo-lista .kds-qty-badge {
+    height: 36px !important;
+    flex: 0 0 44px !important;
+    width: 44px !important;
+    font-size: 16px !important;
   }
 }
 
@@ -914,6 +966,250 @@ body.kds-body, .kds-body {
   #kds-mobile-bottom-nav {
     display: none !important;
   }
+}
+
+/* CELULAR (SMARTPHONE <= 680px): SEMPRE 1 COLUNA DE CARDS */
+@media (max-width: 680px) {
+  #queue-list.grade-2col:not(.modo-lista):not(.modo-kanban),
+  #queue-list.grade-3col:not(.modo-lista):not(.modo-kanban),
+  #queue-list.grade-4col:not(.modo-lista):not(.modo-kanban),
+  #queue-list.grade-5col:not(.modo-lista):not(.modo-kanban),
+  #queue-list:not(.modo-lista):not(.modo-kanban),
+  .queue-list:not(.modo-lista):not(.modo-kanban),
+  #queue-list:not(.modo-kanban),
+  .queue-list:not(.modo-kanban),
+  #queue-list.grade-2col,
+  #queue-list.grade-3col,
+  #queue-list.grade-4col,
+  #queue-list.grade-5col,
+  #queue-list,
+  .queue-list {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .queue-item {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+/* TABLET VERTICAL / COMPACT (681px a 960px): MÁXIMO 2 COLUNAS */
+@media (min-width: 681px) and (max-width: 960px) {
+  #queue-list.grade-2col:not(.modo-lista):not(.modo-kanban),
+  #queue-list.grade-3col:not(.modo-lista):not(.modo-kanban),
+  #queue-list.grade-4col:not(.modo-lista):not(.modo-kanban),
+  #queue-list.grade-5col:not(.modo-lista):not(.modo-kanban),
+  #queue-list:not(.modo-lista):not(.modo-kanban),
+  .queue-list:not(.modo-lista):not(.modo-kanban),
+  #queue-list.grade-3col,
+  #queue-list.grade-4col,
+  #queue-list.grade-5col {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+/* TABLET HORIZONTAL / LAPTOP PEQUENO (961px a 1200px): MÁXIMO 3 COLUNAS */
+@media (min-width: 961px) and (max-width: 1200px) {
+  #queue-list.grade-4col:not(.modo-lista):not(.modo-kanban),
+  #queue-list.grade-5col:not(.modo-lista):not(.modo-kanban),
+  #queue-list.grade-4col,
+  #queue-list.grade-5col {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BARRA DE NAVEGAÇÃO INFERIOR NO MOBILE & TABLET (< 769px)
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .kds-body, body.kds-body {
+    height: 100dvh !important;
+  }
+
+  .kds-main-container {
+    height: calc(100dvh - 64px - 60px) !important;
+    padding: 10px 10px 80px 10px !important;
+  }
+
+  /* Oculta abas duplicadas do topo no mobile */
+  #kds-status-tabs-desktop {
+    display: none !important;
+  }
+
+  .kds-sla-legend {
+    display: none !important;
+  }
+
+  #btn-switch-to-v1, #btn-loja-layouts {
+    display: none !important;
+  }
+
+  .kds-mobile-bottom-nav,
+  #kds-mobile-bottom-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    background: var(--kds-navbar-bg, #0f172a) !important;
+    border-top: 1.5px solid var(--kds-navbar-border, #1e293b) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    z-index: 9999 !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+
+  .kds-nav-tab {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    height: 100% !important;
+    background: transparent !important;
+    border: none !important;
+    color: var(--kds-text-secondary, #94a3b8) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    position: relative !important;
+    touch-action: manipulation !important;
+    transition: color 0.15s ease !important;
+  }
+
+  .kds-nav-tab i {
+    font-size: 20px !important;
+  }
+
+  .kds-nav-tab.active {
+    color: #fc4b15 !important;
+  }
+
+  .kds-nav-tab.active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 3px;
+    background: #fc4b15;
+    border-radius: 0 0 3px 3px;
+  }
+
+  .kds-tab-badge {
+    position: absolute !important;
+    top: 5px !important;
+    right: calc(50% - 20px) !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    padding: 0 5px !important;
+    border-radius: 9px !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #ffffff !important;
+  }
+
+  .kds-tab-badge.badge-espera { background: #f59e0b !important; }
+  .kds-tab-badge.badge-preparo { background: #3b82f6 !important; }
+  .kds-tab-badge.badge-pronto { background: #10b981 !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MODO TV / TELÃO (1080p, 4K, Widescreen)
+   ══════════════════════════════════════════════════════════════════ */
+body.kds-modo-tv {
+  --kds-font-size: 21px;
+  --kds-card-gap: 16px;
+  --kds-card-grid-min-height: 190px;
+}
+
+body.kds-modo-tv .kds-navbar {
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 0 14px !important;
+}
+
+body.kds-modo-tv .kds-search-bar,
+body.kds-modo-tv #btn-switch-to-v1,
+body.kds-modo-tv #btn-loja-layouts,
+body.kds-modo-tv #btn-toggle-layout-drawer {
+  display: none !important;
+}
+
+body.kds-modo-tv #queue-list:not(.modo-lista):not(.modo-kanban),
+body.kds-modo-tv #queue-list.grade-2col,
+body.kds-modo-tv #queue-list.grade-3col,
+body.kds-modo-tv #queue-list.grade-4col,
+body.kds-modo-tv #queue-list.grade-5col {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+  gap: 18px !important;
+}
+
+body.kds-modo-tv .queue-item {
+  border-width: 3.5px !important;
+  border-radius: 20px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.55) !important;
+  padding: 18px 20px !important;
+}
+
+body.kds-modo-tv .kds-mesa-title {
+  font-size: 22px !important;
+  font-weight: 900 !important;
+}
+
+body.kds-modo-tv #queue-list .kds-product-name,
+body.kds-modo-tv .kds-product-name {
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  line-height: 1.25 !important;
+}
+
+body.kds-modo-tv .kds-qty-badge,
+body.kds-modo-tv .kds-card-qty-inline {
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  padding: 3px 12px !important;
+}
+
+body.kds-modo-tv .kds-card-time-badge {
+  font-size: 16px !important;
+  padding: 6px 12px !important;
+  font-weight: 800 !important;
+}
+
+body.kds-modo-tv .item-pronto button {
+  height: 52px !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  border-radius: 14px !important;
+}
+
+/* Bump Bar Key Tag */
+.kds-bump-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--kds-card-border, rgba(255, 255, 255, 0.15));
+  color: var(--kds-text-secondary, #94a3b8);
+  font-size: 11px;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-family: monospace, sans-serif;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
 }
 
 /* CARD DETAILS (GERAL) */
@@ -1094,26 +1390,62 @@ body.kds-body, .kds-body {
 }
 
 .item-pronto {
-  display: flex;
-  gap: 8px;
-  width: 100%;
+  display: flex !important;
+  gap: 8px !important;
+  width: 100% !important;
+  align-items: center !important;
+}
+
+.item-pronto .btn-pronto,
+.item-pronto .btn-chamar,
+.item-pronto .btn-entregar {
+  flex: 1 1 auto !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  border: none !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+  white-space: nowrap !important;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 .item-pronto .btn-pronto {
-  flex: 1;
-  height: 44px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: none;
-  cursor: pointer;
   background: linear-gradient(135deg, #fc4b15, #ff6b35) !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 14px rgba(252, 75, 21, 0.35);
+  box-shadow: 0 4px 14px rgba(252, 75, 21, 0.35) !important;
+}
+
+.item-pronto .btn-entregar {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+}
+
+.item-pronto .btn-entregar:hover {
+  background: #059669 !important;
+  transform: translateY(-1px) !important;
+}
+
+.item-pronto .btn-chamar {
+  background: #8b5cf6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35) !important;
+}
+
+.item-pronto .btn-chamar:hover {
+  background: #7c3aed !important;
+  transform: translateY(-1px) !important;
+}
+
+.item-pronto .btn-chamar.chamado {
+  background: #6d28d9 !important;
+  animation: pulseChamado 1.5s infinite !important;
 }
 
 /* Modal Ajustes / Configurações do KDS */

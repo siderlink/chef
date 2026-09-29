@@ -568,13 +568,16 @@ module.exports = function(app, masterDb, sqlite3, options) {
   // PUT /api/super/suporte/:id/metas-comissao
   app.put('/api/super/suporte/:id/metas-comissao', superAdminAuth, (req, res) => {
     const id = parseInt(req.params.id);
-    const { meta_vendas_mes, comissao_percentual } = req.body || {};
+    const { meta_vendas_mes, comissao_padrao, comissao_percentual, bonificacao_meta } = req.body || {};
+    const comissao = parseFloat(comissao_padrao != null ? comissao_padrao : comissao_percentual) || 10;
+    const meta = parseInt(meta_vendas_mes) || 10;
+    const bonus = parseFloat(bonificacao_meta) || 0;
     masterDb.run(
-      `UPDATE equipe_suporte SET meta_vendas_mes = ?, comissao_percentual = ? WHERE id = ?`,
-      [parseInt(meta_vendas_mes) || 10, parseFloat(comissao_percentual) || 10, id],
+      `UPDATE equipe_suporte SET meta_vendas_mes = ?, comissao_padrao = ?, bonificacao_meta = ? WHERE id = ?`,
+      [meta, comissao, bonus, id],
       function(err) {
         if (err) return res.json({ ok: false, erro: err.message });
-        res.json({ ok: true, mensagem: 'Metas e comissões atualizadas!' });
+        res.json({ ok: true, mensagem: 'Metas e comissões atualizadas com sucesso!' });
       }
     );
   });

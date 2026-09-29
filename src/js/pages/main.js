@@ -3587,6 +3587,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.showToast && window.showToast('Configuração inicial concluída! 🎉', 'success');
   }
 
+  window._saveWizMesas = _saveWizMesas;
+  window._saveWizProdutos = _saveWizProdutos;
+  window._finishWizard = _finishWizard;
+
   /* Atualiza preview de mesas ao digitar */
   document.addEventListener('input', function(e) {
     if (e.target.id === 'wiz-qtd-mesas' || e.target.id === 'wiz-add-delivery' || e.target.id === 'wiz-add-balcao') {

@@ -7,10 +7,12 @@ window.alternarSubtabProdutos = function(subtab) {
     const content = document.getElementById('subtab-content-' + st);
     if (btn) {
       if (st === subtab) {
+        btn.classList.add('active');
         btn.style.background = '#fc4b15';
         btn.style.color = '#ffffff';
         btn.style.fontWeight = '800';
       } else {
+        btn.classList.remove('active');
         btn.style.background = 'var(--cfg-subtle-bg, #f1f5f9)';
         btn.style.color = 'var(--cfg-text, #0f172a)';
         btn.style.fontWeight = '700';
@@ -29,9 +31,24 @@ window.alternarSubtabProdutos = function(subtab) {
 
   window.toggleConfigSidebar = function() {
     const sidebar = document.querySelector('.config-sidebar');
+    const backdrop = document.getElementById('sidebar-mobile-backdrop');
     if (!sidebar) return;
-    sidebar.classList.toggle('collapsed');
-    localStorage.setItem('configSidebarCollapsed', sidebar.classList.contains('collapsed'));
+    if (window.innerWidth <= 768) {
+      const isOpen = sidebar.classList.toggle('mobile-open');
+      if (backdrop) backdrop.classList.toggle('active', isOpen);
+      document.body.classList.toggle('sidebar-drawer-open', isOpen);
+    } else {
+      sidebar.classList.toggle('collapsed');
+      localStorage.setItem('configSidebarCollapsed', sidebar.classList.contains('collapsed'));
+    }
+  };
+
+  window.closeConfigMobileSidebar = function() {
+    const sidebar = document.querySelector('.config-sidebar');
+    const backdrop = document.getElementById('sidebar-mobile-backdrop');
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.classList.remove('sidebar-drawer-open');
   };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -302,6 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { }
 
     carregarEstadoTemaCaixa();
+
   }
 });
 
@@ -889,13 +907,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebar = document.querySelector('.config-sidebar');
   if (btnToggleSidebar && sidebar) {
     const collapsed = localStorage.getItem('configSidebarCollapsed') === 'true';
-    if (collapsed) {
+    if (collapsed && window.innerWidth > 768) {
       sidebar.classList.add('collapsed');
     }
-    btnToggleSidebar.addEventListener('click', () => {
-      sidebar.classList.toggle('collapsed');
-      localStorage.setItem('configSidebarCollapsed', sidebar.classList.contains('collapsed'));
-    });
+
   }
 
   // ── BUSCA RÁPIDA DE CONFIGURAÇÕES NA SIDEBAR ──
@@ -941,6 +956,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (grupoTemMatch) {
         grp.style.display = 'block';
         grp.classList.remove('collapsed');
+        grp.classList.add('aberta');
       } else {
         grp.style.display = 'none';
       }
@@ -1097,15 +1113,101 @@ document.addEventListener('DOMContentLoaded', () => {
   // Aba control
   const STORAGE_KEY = 'config_active_tab';
 
+  const CONFIG_TAB_TITLES = {
+    'inicio':          { title: 'Central de Operações',          subtitle: 'Painel modular de status, atalhos rápidos e monitoramento da operação',                                  icon: 'ph-squares-four',         color: '#fc4b15' },
+    'perfil':          { title: 'Dados do Restaurante',          subtitle: 'Informações cadastrais, logotipo, endereço, contatos e redes sociais',                                 icon: 'ph-storefront',           color: '#10b981' },
+    'gerais':          { title: 'Sistema & Cardápio',            subtitle: 'Taxas, tempos médios, parâmetros operacionais e regras de pedidos',                                    icon: 'ph-sliders',              color: '#fc4b15' },
+    'resolucao':       { title: 'Resolução & Escala de Tela',   subtitle: 'Ajuste de zoom, proporções, densidade visual e modos de exibição',                                    icon: 'ph-monitor',              color: '#3b82f6' },
+    'sons':            { title: 'Sons & Notificações',           subtitle: 'Alertas sonoros de novos pedidos, chamados de garçom e volumes',                                       icon: 'ph-speaker-high',         color: '#f59e0b' },
+    'atalhos':         { title: 'Atalhos de Teclado',            subtitle: 'Combinações de teclas para agilizar a operação do caixa e garçons',                                  icon: 'ph-keyboard',             color: '#6366f1' },
+    'mesas':           { title: 'Mesas & Comandas',              subtitle: 'Gerenciamento de mesas físicas, cartões de comanda e QR Codes',                                       icon: 'ph-table',                color: '#0ea5e9' },
+    'salao':           { title: 'Layout do Salão',               subtitle: 'Organizador visual interativo de plantas, setores e posicionamento de mesas',                        icon: 'ph-blueprint',            color: '#0ea5e9' },
+    'reservas':        { title: 'Reservas Futuras',              subtitle: 'Gestão de agendamentos de mesas, confirmações e histórico de reservas',                              icon: 'ph-calendar-check',       color: '#0ea5e9' },
+    'fila-espera':     { title: 'Fila de Espera',                subtitle: 'Controle de recepção de clientes, chamadas e tempos médios de espera',                               icon: 'ph-hourglass-high',       color: '#f59e0b' },
+    'produtos':        { title: 'Produtos & Categorias',         subtitle: 'Catálogo de itens do cardápio, preços, fotos, estoques e descrições',                               icon: 'ph-hamburger',            color: '#f97316' },
+    'montaveis':       { title: 'Itens Montáveis & Adicionais', subtitle: 'Personalizações de pratos, etapas de montagem, grupos de adicionais e limites',                     icon: 'ph-puzzle-piece',         color: '#8b5cf6' },
+    'funcionarios':    { title: 'Funcionários & Acessos',        subtitle: 'Cadastro de equipe, cargos, níveis de permissão e senhas de acesso',                                icon: 'ph-users',                color: '#8b5cf6' },
+    'pins':            { title: 'PINs Temporários',              subtitle: 'Códigos rápidos de liberação de descontos, cancelamentos e estornos',                               icon: 'ph-key',                  color: '#8b5cf6' },
+    'clientes':        { title: 'Base de Clientes',              subtitle: 'Histórico de consumo, contatos, aniversários e preferências de clientes',                           icon: 'ph-address-book',         color: '#ec4899' },
+    'rh':              { title: 'RH, Folha & Caixa',            subtitle: 'Comissões, adiantamentos, vales e fechamentos financeiros de colaboradores',                         icon: 'ph-hand-coins',           color: '#10b981' },
+    'metricas':        { title: 'Métricas de Atendimento',       subtitle: 'Produtividade de garçons, tempo de atendimento e rankings de vendas',                              icon: 'ph-chart-line-up',        color: '#f59e0b' },
+    'promocoes':       { title: 'Promoções & Cupons',            subtitle: 'Descontos automáticos por dia da semana, horários de happy hour e cupons',                         icon: 'ph-tag',                  color: '#ec4899' },
+    'inteligencia':    { title: 'Inteligência de Vendas (IA)',   subtitle: 'Sugestões preditivas, combos inteligentes e insights de faturamento por IA',                        icon: 'ph-brain',                color: '#3b82f6' },
+    'fidelidade':      { title: 'Programa de Fidelidade',        subtitle: 'Pontuação por compra, resgate de prêmios e clube de benefícios exclusivos',                         icon: 'ph-gift',                 color: '#f59e0b' },
+    'jogos':           { title: 'Jogos & Prêmios',              subtitle: 'Gamificação interativa na mesa com roleta da sorte e raspadinhas premiadas',                        icon: 'ph-game-controller',      color: '#8b5cf6' },
+    'formas-pagamento':{ title: 'Formas de Pagamento',           subtitle: 'Configuração de cartões, dinheiro, PIX integrado e taxas de operadoras',                           icon: 'ph-wallet',               color: '#10b981' },
+    'maquininhas':     { title: 'Maquininhas de Cartão',         subtitle: 'Integrações diretas TEF, Smart POS e terminais de pagamento',                                       icon: 'ph-credit-card',          color: '#10b981' },
+    'nfce':            { title: 'Configuração NFC-e',            subtitle: 'Certificado digital A1, CSC, série, ambiente de emissão e enquadramento fiscal',                    icon: 'ph-receipt',              color: '#10b981' },
+    'gerenciar-notas': { title: 'Gerenciar Notas Fiscais',       subtitle: 'Consulta de documentos emitidos, cancelamentos, inutilizações e arquivos XML',                     icon: 'ph-list-magnifying-glass',color: '#10b981' },
+    'funcionalidades': { title: 'Funcionalidades Ativas',        subtitle: 'Habilitar ou desabilitar módulos e recursos operacionais do estabelecimento',                       icon: 'ph-toggle-left',          color: '#10b981' },
+    'funcoes':         { title: 'Funções do Sistema',            subtitle: 'Controle detalhado de permissões de cargos por tela e por ação',                                   icon: 'ph-sliders',              color: '#22d3ee' },
+    'modulos':         { title: 'Módulos & Extensões',           subtitle: 'Pacotes opcionais contratados, add-ons e integrações com terceiros',                               icon: 'ph-puzzle-piece',         color: '#8b5cf6' },
+    'compatibilidade': { title: 'Versões & Modo Clássico',       subtitle: 'Reverta novidades para versões clássicas/essenciais caso algum colaborador não se adapte',          icon: 'ph-clock-counter-clockwise', color: '#0284c7' },
+    'dispositivos':    { title: 'Dispositivos & Terminais',      subtitle: 'Gerenciamento de impressoras térmicas, tablets de comandas e KDS de cozinha',                      icon: 'ph-devices',              color: '#0284c7' },
+    'backup':          { title: 'Backup & Restauração',          subtitle: 'Cópias de segurança locais e em nuvem, exportação de dados e restaurações',                         icon: 'ph-hard-drives',          color: '#fc4b15' },
+    'auditoria':       { title: 'Auditoria & Anti-Fraude',       subtitle: 'Histórico de eventos sensíveis, cancelamentos de itens e alterações de preços',                    icon: 'ph-shield-warning',       color: '#e11d48' },
+    'licenca':         { title: 'Ativação & Licença',            subtitle: 'Chave de produto, validade da licença e status da assinatura Chef Cozinha',                       icon: 'ph-seal-check',           color: '#a78bfa' }
+  };
+
+  function atualizarCabecalhoEBannerConfig(tabId, contentEl) {
+    const info = CONFIG_TAB_TITLES[tabId] || {
+      title: 'Configurações', subtitle: 'Parâmetros operacionais do restaurante', icon: 'ph-sliders', color: '#fc4b15'
+    };
+    const pTitle    = document.getElementById('panel-title');
+    const pSubtitle = document.getElementById('panel-subtitle');
+    const pBreadcrumb = document.getElementById('panel-category-breadcrumb');
+    const brandIcon = document.getElementById('header-brand-icon') || document.querySelector('.header-branding .brand-badge i');
+
+    if (pTitle)    pTitle.textContent    = info.title;
+    if (pSubtitle) pSubtitle.textContent = info.subtitle;
+    if (brandIcon && info.icon) {
+      brandIcon.className = 'ph-bold ' + info.icon;
+      brandIcon.style.color = info.color || '#fc4b15';
+    }
+
+    // Identificar a categoria atual pelo botão ativo e sincronizar breadcrumb
+    const activeBtn = document.querySelector('.admin-tab-btn[data-tab="' + tabId + '"]');
+    if (activeBtn) {
+      const parentCat = activeBtn.closest('.menu-categoria');
+      document.querySelectorAll('.menu-categoria').forEach(cat => cat.classList.remove('has-active-tab'));
+      if (parentCat) {
+        parentCat.classList.add('has-active-tab');
+        const catName = parentCat.querySelector('.cat-header span');
+        if (pBreadcrumb && catName) {
+          pBreadcrumb.textContent = catName.textContent.trim();
+        }
+      }
+    }
+
+    if (!contentEl) return;
+    let banner = contentEl.querySelector(':scope > .info-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.className = 'info-banner';
+      contentEl.insertBefore(banner, contentEl.firstChild);
+    }
+    banner.style.borderLeftColor = info.color;
+    banner.innerHTML = '<div class="info-banner-icon" style="background:' + info.color + '18;color:' + info.color + ';"><i class="ph-bold ' + info.icon + '"></i></div><div class="info-banner-content"><h3>' + info.title + '</h3><p>' + info.subtitle + '</p></div>';
+  }
+
     function activateTab(tabId, skipSave) {
 
     if (tabId === 'montaveis') {
       activateTab('produtos', skipSave);
       setTimeout(() => {
-        if (typeof window.trocarSubTabProdutos === 'function') {
+        if (typeof window.alternarSubtabProdutos === 'function') {
+          window.alternarSubtabProdutos('montaveis');
+        } else if (typeof window.trocarSubTabProdutos === 'function') {
           window.trocarSubTabProdutos('montaveis');
         }
       }, 50);
+      document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+      const montBtn = document.querySelector('.admin-tab-btn[data-tab="montaveis"]');
+      if (montBtn) {
+        montBtn.classList.add('active');
+        const grp = montBtn.closest('.menu-categoria, .action-group');
+        if (grp) { grp.classList.add('aberta'); grp.classList.remove('collapsed'); }
+      }
       return;
     }
 
@@ -1125,13 +1227,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('.admin-tab-btn').forEach(b => {
       b.classList.remove('active');
-      b.style.fontWeight = 'normal';
     });
     btn.classList.add('active');
-    btn.style.fontWeight = 'bold';
     /* Garante que o grupo da aba ativa esteja expandido no acordeão */
-    const grp = btn.closest('.action-group');
-    if (grp) grp.classList.remove('collapsed');
+    const grp = btn.closest('.menu-categoria, .action-group');
+    if (grp) { grp.classList.add('aberta'); grp.classList.remove('collapsed'); }
 
     document.querySelectorAll('.admin-tab-content').forEach(c => {
       c.classList.remove('active');
@@ -1141,6 +1241,24 @@ document.addEventListener('DOMContentLoaded', () => {
     content.classList.add('active');
     content.style.display = 'flex';
     content.scrollTop = 0;
+
+    // Atualiza cabeçalho dinâmico e injeta .info-banner na aba
+    atualizarCabecalhoEBannerConfig(tabId, content);
+
+    // Fechar drawer no mobile ao selecionar aba
+    if (typeof window.closeConfigMobileSidebar === 'function') {
+      window.closeConfigMobileSidebar();
+    }
+
+    // Sincronizar pills de navegação rápida mobile
+    document.querySelectorAll('.mobile-quick-pill[data-tab]').forEach(pill => {
+      if (pill.getAttribute('data-tab') === tabId) {
+        pill.classList.add('active');
+        try { pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch(e) {}
+      } else {
+        pill.classList.remove('active');
+      }
+    });
 
     // Auto-scroll sidebar button into view (mobile horizontal scroll)
     try { btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch(e) {}
@@ -1161,6 +1279,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabId === 'funcionarios' && socket && typeof socket.emit === 'function') socket.emit('get_funcionarios');
       if (tabId === 'clientes' && socket && typeof socket.emit === 'function') socket.emit('get_clientes');
       if (tabId === 'dispositivos' && typeof window.carregarGerenciadorDispositivos === 'function') window.carregarGerenciadorDispositivos();
+      if (tabId === 'compatibilidade' && typeof window.carregarModosCompatibilidade === 'function') window.carregarModosCompatibilidade();
       if (tabId === 'salao') {
         const t = document.getElementById('admin-tab-salao');
         if (t) t.dataset.carregada = 'true';
@@ -1204,6 +1323,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabId === 'auditoria' && typeof window.carregarLogsAuditoria === 'function') window.carregarLogsAuditoria();
       if (tabId === 'backup' && typeof window.carregarHistoricoBackups === 'function') window.carregarHistoricoBackups();
       if (tabId === 'funcoes' && typeof carregarFuncoesSistema === 'function') carregarFuncoesSistema();
+      if (tabId === 'funcionalidades' && typeof initFuncionalidadesTab === 'function') initFuncionalidadesTab();
+      if (tabId === 'inicio' && typeof window.renderizarConfiguracaoModulosHome === 'function') window.renderizarConfiguracaoModulosHome();
     } catch (errLazy) {
       console.warn('[config tab lazy-load error]', tabId, errLazy);
     }
@@ -1221,7 +1342,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = e.target && e.target.closest ? e.target.closest('.admin-tab-btn') : null;
     if (btn) {
       const tab = btn.getAttribute('data-tab');
-      if (tab) activateTab(tab);
+      if (tab) {
+        activateTab(tab);
+        if (typeof window.closeConfigMobileSidebar === 'function') {
+          window.closeConfigMobileSidebar();
+        }
+      }
     }
   });
 
@@ -3138,11 +3264,16 @@ socket.on('zerar_concluido', (data) => {
 });
 
 socket.on('ia_config_atual', (config) => {
-  if (config.minutosRefillCerveja) document.getElementById('ia-minutos-refill').value = config.minutosRefillCerveja;
-  if (config.minutosAlertaEspera) document.getElementById('ia-minutos-alerta').value = config.minutosAlertaEspera;
-  if (config.minutosCriticoEspera) document.getElementById('ia-minutos-critico').value = config.minutosCriticoEspera;
-  if (config.minutosManobra) document.getElementById('ia-minutos-manobra').value = config.minutosManobra;
-  if (config.minutosAtencao) document.getElementById('ia-minutos-atencao').value = config.minutosAtencao;
+  if (!config) return;
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val !== undefined && val !== null) el.value = val;
+  };
+  setVal('ia-minutos-refill', config.minutosRefillCerveja);
+  setVal('ia-minutos-alerta', config.minutosAlertaEspera);
+  setVal('ia-minutos-critico', config.minutosCriticoEspera);
+  setVal('ia-minutos-manobra', config.minutosManobra);
+  setVal('ia-minutos-atencao', config.minutosAtencao);
   var chk = document.getElementById('ia-toggle-switch');
   if (chk) chk.checked = config.iaEnabled !== false;
   var track = document.getElementById('ia-toggle-track');
@@ -6780,6 +6911,12 @@ function popularSelectsSom() {
 
 function persistirSecoesFila(secoes) {
   configs.fila_secoes = secoes.slice();
+  const filaMod = document.getElementById('config-fila-modo');
+  if (filaMod) {
+    configs.fila_modo = filaMod.value;
+    localStorage.setItem('fila_modo', filaMod.value);
+    localStorage.setItem('chef_fila_modo', filaMod.value);
+  }
   try { localStorage.setItem('fila_secoes', JSON.stringify(secoes)); } catch (e) {}
   renderizarCardsSecoesFila();
   popularSelectsSom();
@@ -7946,6 +8083,62 @@ socket.on('restaurante_config', (cfg) => {
     if (document.getElementById('rest-fila-alocacao-auto')) {
       document.getElementById('rest-fila-alocacao-auto').value = cfg['rest_fila_alocacao_auto'] || 'manual';
     }
+    // Personalizações Visuais & White-label
+    if (document.getElementById('rest-cor-primaria')) {
+      const corPrim = cfg['rest_cor_primaria'] || '#fc4b15';
+      document.getElementById('rest-cor-primaria').value = corPrim;
+      if (document.getElementById('rest-cor-primaria-hex')) document.getElementById('rest-cor-primaria-hex').value = corPrim;
+    }
+    if (document.getElementById('rest-cor-secundaria')) {
+      const corSec = cfg['rest_cor_secundaria'] || '#ff8c00';
+      document.getElementById('rest-cor-secundaria').value = corSec;
+      if (document.getElementById('rest-cor-secundaria-hex')) document.getElementById('rest-cor-secundaria-hex').value = corSec;
+    }
+    if (document.getElementById('rest-fonte-familia')) {
+      document.getElementById('rest-fonte-familia').value = cfg['rest_fonte_familia'] || 'Inter, sans-serif';
+    }
+    if (document.getElementById('rest-logo-url')) {
+      document.getElementById('rest-logo-url').value = cfg['rest_logo_url'] || '';
+    }
+    if (document.getElementById('rest-banner-url')) {
+      document.getElementById('rest-banner-url').value = cfg['rest_banner_url'] || '';
+    }
+    // Cardápio & Autoatendimento
+    if (document.getElementById('rest-layout-cardapio')) {
+      document.getElementById('rest-layout-cardapio').value = cfg['rest_layout_cardapio'] || 'grid_fotos';
+    }
+    if (document.getElementById('rest-slogan')) {
+      document.getElementById('rest-slogan').value = cfg['rest_slogan'] || '';
+    }
+    if (document.getElementById('rest-tempo-preparo')) {
+      document.getElementById('rest-tempo-preparo').value = cfg['rest_tempo_preparo'] || '';
+    }
+    if (document.getElementById('rest-msg-boas-vindas')) {
+      document.getElementById('rest-msg-boas-vindas').value = cfg['rest_msg_boas_vindas'] || '';
+    }
+    if (document.getElementById('rest-pedido-minimo-delivery')) {
+      document.getElementById('rest-pedido-minimo-delivery').value = cfg['rest_pedido_minimo_delivery'] || '';
+    }
+    // Taxas do Salão
+    if (document.getElementById('rest-taxa-servico')) {
+      document.getElementById('rest-taxa-servico').value = cfg['rest_taxa_servico'] !== undefined ? cfg['rest_taxa_servico'] : '10';
+    }
+    if (document.getElementById('rest-couvert-artistico')) {
+      document.getElementById('rest-couvert-artistico').value = cfg['rest_couvert_artistico'] || '';
+    }
+    if (document.getElementById('rest-taxa-desperdicio')) {
+      document.getElementById('rest-taxa-desperdicio').value = cfg['rest_taxa_desperdicio'] || '';
+    }
+    // Cupom Térmico
+    if (document.getElementById('rest-cupom-rodape')) {
+      document.getElementById('rest-cupom-rodape').value = cfg['rest_cupom_rodape'] || '';
+    }
+    if (document.getElementById('rest-cupom-wifi')) {
+      document.getElementById('rest-cupom-wifi').value = cfg['rest_cupom_wifi'] || '';
+    }
+    if (document.getElementById('rest-cupom-google-review')) {
+      document.getElementById('rest-cupom-google-review').value = cfg['rest_cupom_google_review'] || '';
+    }
     // Dias de funcionamento
     let dias = [];
     try { dias = JSON.parse(cfg['rest_dias_funcionamento'] || '[]'); } catch(e) {}
@@ -7980,6 +8173,23 @@ if (_btnSalvarPerfil) _btnSalvarPerfil.onclick = () => {
     'rest_fechamento': document.getElementById('rest-fechamento').value,
     'rest_obs': document.getElementById('rest-obs').value,
     'rest_dias_funcionamento': JSON.stringify(dias),
+    // Personalizações Adicionais
+    'rest_cor_primaria': (document.getElementById('rest-cor-primaria') || {}).value || '#fc4b15',
+    'rest_cor_secundaria': (document.getElementById('rest-cor-secundaria') || {}).value || '#ff8c00',
+    'rest_fonte_familia': (document.getElementById('rest-fonte-familia') || {}).value || 'Inter, sans-serif',
+    'rest_logo_url': (document.getElementById('rest-logo-url') || {}).value || '',
+    'rest_banner_url': (document.getElementById('rest-banner-url') || {}).value || '',
+    'rest_layout_cardapio': (document.getElementById('rest-layout-cardapio') || {}).value || 'grid_fotos',
+    'rest_slogan': (document.getElementById('rest-slogan') || {}).value || '',
+    'rest_tempo_preparo': (document.getElementById('rest-tempo-preparo') || {}).value || '',
+    'rest_msg_boas_vindas': (document.getElementById('rest-msg-boas-vindas') || {}).value || '',
+    'rest_pedido_minimo_delivery': (document.getElementById('rest-pedido-minimo-delivery') || {}).value || '0',
+    'rest_taxa_servico': (document.getElementById('rest-taxa-servico') || {}).value || '10',
+    'rest_couvert_artistico': (document.getElementById('rest-couvert-artistico') || {}).value || '0',
+    'rest_taxa_desperdicio': (document.getElementById('rest-taxa-desperdicio') || {}).value || '0',
+    'rest_cupom_rodape': (document.getElementById('rest-cupom-rodape') || {}).value || '',
+    'rest_cupom_wifi': (document.getElementById('rest-cupom-wifi') || {}).value || '',
+    'rest_cupom_google_review': (document.getElementById('rest-cupom-google-review') || {}).value || '',
   };
   socket.emit('save_restaurante_config', config);
 
@@ -7997,6 +8207,29 @@ if (_btnSalvarPerfil) _btnSalvarPerfil.onclick = () => {
 socket.on('restaurante_config_salvo', () => {
   alert('Perfil salvo com sucesso!');
 });
+
+// Sincronização e presets do seletor de cores da marca
+(function initColorPresets() {
+  const pickerPrim = document.getElementById('rest-cor-primaria');
+  const hexPrim = document.getElementById('rest-cor-primaria-hex');
+  if (pickerPrim && hexPrim) {
+    pickerPrim.addEventListener('input', () => { hexPrim.value = pickerPrim.value.toUpperCase(); });
+    hexPrim.addEventListener('input', () => { if (/^#[0-9A-Fa-f]{6}$/.test(hexPrim.value)) pickerPrim.value = hexPrim.value; });
+  }
+  const pickerSec = document.getElementById('rest-cor-secundaria');
+  const hexSec = document.getElementById('rest-cor-secundaria-hex');
+  if (pickerSec && hexSec) {
+    pickerSec.addEventListener('input', () => { hexSec.value = pickerSec.value.toUpperCase(); });
+    hexSec.addEventListener('input', () => { if (/^#[0-9A-Fa-f]{6}$/.test(hexSec.value)) pickerSec.value = hexSec.value; });
+  }
+  document.querySelectorAll('#presets-cores-primarias .cor-preset').forEach(preset => {
+    preset.addEventListener('click', () => {
+      const cor = preset.dataset.cor;
+      if (pickerPrim) pickerPrim.value = cor;
+      if (hexPrim) hexPrim.value = cor.toUpperCase();
+    });
+  });
+})();
 
 // === SLUG & DOMÍNIO PERSONALIZADO ===
 (function() {
@@ -10114,6 +10347,339 @@ window.salvarMarcaSuporteUI = function() {
     }
   };
 
+  // ─── GESTÃO DE POLÍTICAS DE ACESSO DOS COLABORADORES ───
+  window.carregarPoliticasAcessoCfg = async function () {
+    try {
+      const res = await fetch('/api/equipe/politica-acesso', {
+        headers: { ...(typeof authHeaders === 'function' ? authHeaders() : {}), 'Authorization': 'Bearer ' + localStorage.getItem('chef_token') }
+      });
+      const data = await res.json();
+      if (data && data.success && data.politica) {
+        const p = data.politica;
+        const chkOp = document.getElementById('cfg-pol-exigir-op');
+        const selModo = document.getElementById('cfg-pol-modo-ident');
+        const selInat = document.getElementById('cfg-pol-inatividade');
+
+        if (chkOp) chkOp.checked = p.exigir_operador_acoes !== false;
+        if (selModo) selModo.value = p.modo_identificacao || 'pin';
+        if (selInat) selInat.value = String(p.bloqueio_inatividade_min || 0);
+
+        const acoes = p.acoes_exigem_gerente || ['desconto', 'cancelamento_item', 'cancelamento_mesa', 'sangria', 'reabertura'];
+        const chkDesc = document.getElementById('cfg-act-desconto');
+        const chkItem = document.getElementById('cfg-act-cancel-item');
+        const chkMesa = document.getElementById('cfg-act-cancel-mesa');
+        const chkSang = document.getElementById('cfg-act-sangria');
+        const chkReab = document.getElementById('cfg-act-reabertura');
+
+        if (chkDesc) chkDesc.checked = acoes.includes('desconto');
+        if (chkItem) chkItem.checked = acoes.includes('cancelamento_item');
+        if (chkMesa) chkMesa.checked = acoes.includes('cancelamento_mesa');
+        if (chkSang) chkSang.checked = acoes.includes('sangria');
+        if (chkReab) chkReab.checked = acoes.includes('reabertura');
+      }
+    } catch(e) {
+      console.warn('[Config Políticas]', e);
+    }
+  };
+
+  window.salvarPoliticasAcessoCfg = async function () {
+    const btn = document.getElementById('btn-salvar-politicas-acesso-cfg');
+    const chkOp = document.getElementById('cfg-pol-exigir-op');
+    const selModo = document.getElementById('cfg-pol-modo-ident');
+    const selInat = document.getElementById('cfg-pol-inatividade');
+
+    const acoes = [];
+    if (document.getElementById('cfg-act-desconto')?.checked) acoes.push('desconto');
+    if (document.getElementById('cfg-act-cancel-item')?.checked) acoes.push('cancelamento_item');
+    if (document.getElementById('cfg-act-cancel-mesa')?.checked) acoes.push('cancelamento_mesa');
+    if (document.getElementById('cfg-act-sangria')?.checked) acoes.push('sangria');
+    if (document.getElementById('cfg-act-reabertura')?.checked) acoes.push('reabertura');
+
+    const payload = {
+      exigir_operador_acoes: chkOp ? chkOp.checked : true,
+      modo_identificacao: selModo ? selModo.value : 'pin',
+      bloqueio_inatividade_min: selInat ? parseInt(selInat.value, 10) || 0 : 0,
+      acoes_exigem_gerente: acoes
+    };
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph-bold ph-spinner-gap" style="animation:spin 1s infinite linear;"></i> Salvando...';
+    }
+
+    try {
+      const res = await fetch('/api/equipe/politica-acesso', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem('chef_token')
+        },
+        body: JSON.stringify({ politica: payload })
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        localStorage.setItem('chef_politica_acesso', JSON.stringify(payload));
+        if (typeof showToast === 'function') {
+          showToast('Políticas de acesso da equipe salvas com sucesso!', 'success');
+        } else {
+          alert('Políticas de acesso da equipe salvas com sucesso!');
+        }
+      } else {
+        alert('Erro ao salvar políticas: ' + (data.error || 'Falha no servidor.'));
+      }
+    } catch(err) {
+      alert('Erro de conexão ao salvar políticas.');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Salvar Políticas';
+      }
+    }
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     window.renderizarConfiguracaoModulosHome();
+    window.carregarPoliticasAcessoCfg();
+    if (typeof window.carregarModosCompatibilidade === 'function') {
+      window.carregarModosCompatibilidade();
+    }
   });
+
+  // ══════════════════════════════════════════════════════════════════
+  // CENTRAL DE COMPATIBILIDADE & MODOS CLÁSSICOS (REVERSÃO RÁPIDA)
+  // ══════════════════════════════════════════════════════════════════
+
+  window.atualizarVisualSwitchCompat = function(chk, isAtivo) {
+    if (!chk) return;
+    chk.checked = !!isAtivo;
+    const track = chk.nextElementSibling;
+    const thumb = track ? track.nextElementSibling : null;
+    if (track && thumb) {
+      track.style.backgroundColor = isAtivo ? '#22c55e' : '#cbd5e1';
+      thumb.style.left = isAtivo ? '25px' : '3px';
+    }
+  };
+
+  window.carregarModosCompatibilidade = async function() {
+    try {
+      let cfgs = window.configs || {};
+      try {
+        const res = await fetch('/api/config');
+        if (res.ok) {
+          const fetched = await res.json();
+          cfgs = Object.assign({}, cfgs, fetched);
+          window.configs = cfgs;
+        }
+      } catch(e) {}
+
+      // 1. KDS Cozinha (fila_modo: 'nova' [true] | 'classica' [false])
+      const kdsModo = (localStorage.getItem('fila_modo') || localStorage.getItem('chef_fila_modo') || cfgs.fila_modo || 'nova').toLowerCase();
+      const isKdsNovo = (kdsModo !== 'classica' && kdsModo !== 'v1');
+      const chkKds = document.getElementById('chk-modo-kds');
+      window.atualizarVisualSwitchCompat(chkKds, isKdsNovo);
+      const badgeKds = document.getElementById('badge-status-kds');
+      if (badgeKds) {
+        badgeKds.textContent = isKdsNovo ? 'Moderna v2' : 'Clássica v1';
+        badgeKds.style.background = isKdsNovo ? '#dbeafe' : '#f1f5f9';
+        badgeKds.style.color = isKdsNovo ? '#1d4ed8' : '#475569';
+      }
+
+      // 2. App Garçom (garcom_modo: 'pro' [true] | 'classico' [false])
+      const garcomModo = (localStorage.getItem('garcom_modo') || cfgs.garcom_modo || 'pro').toLowerCase();
+      const isGarcomPro = (garcomModo !== 'classico' && garcomModo !== 'essencial');
+      const chkGarcom = document.getElementById('chk-modo-garcom');
+      window.atualizarVisualSwitchCompat(chkGarcom, isGarcomPro);
+      const badgeGarcom = document.getElementById('badge-status-garcom');
+      if (badgeGarcom) {
+        badgeGarcom.textContent = isGarcomPro ? 'Modo Pro' : 'Modo Clássico';
+        badgeGarcom.style.background = isGarcomPro ? '#dcfce7' : '#f1f5f9';
+        badgeGarcom.style.color = isGarcomPro ? '#15803d' : '#475569';
+      }
+
+      // 3. Mesa do Cliente (mesa_cliente_modo: 'interativo' [true] | 'simples' [false])
+      const mesaModo = (localStorage.getItem('mesa_cliente_modo') || cfgs.mesa_cliente_modo || 'interativo').toLowerCase();
+      const isMesaInterativa = (mesaModo !== 'simples' && mesaModo !== 'classico');
+      const chkMesa = document.getElementById('chk-modo-mesa');
+      window.atualizarVisualSwitchCompat(chkMesa, isMesaInterativa);
+      const badgeMesa = document.getElementById('badge-status-mesa');
+      if (badgeMesa) {
+        badgeMesa.textContent = isMesaInterativa ? 'Modo Interativo' : 'Modo Extrato Tradicional';
+        badgeMesa.style.background = isMesaInterativa ? '#ede9fe' : '#f1f5f9';
+        badgeMesa.style.color = isMesaInterativa ? '#6d28d9' : '#475569';
+      }
+
+      // 4. Pizzaria (pizzaria_modo: 'auto' [true] | 'manual' [false])
+      const pizzaModo = (localStorage.getItem('pizzaria_modo') || cfgs.pizzaria_modo || 'auto').toLowerCase();
+      const isPizzaAuto = (pizzaModo !== 'manual');
+      const chkPizza = document.getElementById('chk-modo-pizzaria');
+      window.atualizarVisualSwitchCompat(chkPizza, isPizzaAuto);
+      const badgePizza = document.getElementById('badge-status-pizzaria');
+      if (badgePizza) {
+        badgePizza.textContent = isPizzaAuto ? 'Cálculo Automático' : 'Modo Manual';
+        badgePizza.style.background = isPizzaAuto ? '#fef08a' : '#f1f5f9';
+        badgePizza.style.color = isPizzaAuto ? '#854d0e' : '#475569';
+      }
+
+      // 5. Buffet (buffet_modo: 'balanca_auto' [true] | 'manual' [false])
+      const buffetModo = (localStorage.getItem('buffet_modo') || cfgs.buffet_modo || 'balanca_auto').toLowerCase();
+      const isBuffetAuto = (buffetModo !== 'manual');
+      const chkBuffet = document.getElementById('chk-modo-buffet');
+      window.atualizarVisualSwitchCompat(chkBuffet, isBuffetAuto);
+      const badgeBuffet = document.getElementById('badge-status-buffet');
+      if (badgeBuffet) {
+        badgeBuffet.textContent = isBuffetAuto ? 'Leitor Balança EAN-13' : 'Digitação Manual';
+        badgeBuffet.style.background = isBuffetAuto ? '#bfdbfe' : '#f1f5f9';
+        badgeBuffet.style.color = isBuffetAuto ? '#1e40af' : '#475569';
+      }
+
+      // 6. Bar (bar_modo: 'cashless' [true] | 'comanda_padrao' [false])
+      const barModo = (localStorage.getItem('bar_modo') || cfgs.bar_modo || 'cashless').toLowerCase();
+      const isBarCashless = (barModo !== 'comanda_padrao' && barModo !== 'tradicional');
+      const chkBar = document.getElementById('chk-modo-bar');
+      window.atualizarVisualSwitchCompat(chkBar, isBarCashless);
+      const badgeBar = document.getElementById('badge-status-bar');
+      if (badgeBar) {
+        badgeBar.textContent = isBarCashless ? 'Cashless Pré-Pago' : 'Comanda Tradicional';
+        badgeBar.style.background = isBarCashless ? '#fce7f3' : '#f1f5f9';
+        badgeBar.style.color = isBarCashless ? '#9d174d' : '#475569';
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar modos de compatibilidade:', err);
+    }
+  };
+
+  window.salvarModoCompatibilidade = async function(chave, valor) {
+    try {
+      if (!window.configs) window.configs = {};
+      window.configs[chave] = valor;
+      localStorage.setItem(chave, valor);
+      if (chave === 'fila_modo') localStorage.setItem('chef_fila_modo', valor);
+
+      const payload = {};
+      payload[chave] = valor;
+
+      fetch('/api/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (typeof obterTokenAtual === 'function' ? obterTokenAtual() : localStorage.getItem('chef_token') || '')
+        },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+
+      await window.carregarModosCompatibilidade();
+
+      const nomesSetores = {
+        fila_modo: 'KDS da Cozinha',
+        garcom_modo: 'App do Garçom',
+        mesa_cliente_modo: 'Comanda da Mesa',
+        pizzaria_modo: 'Pizzaria',
+        buffet_modo: 'Buffet por Quilo',
+        bar_modo: 'Bar & Balcão'
+      };
+      const setor = nomesSetores[chave] || 'Setor';
+      const isClassico = (valor === 'classica' || valor === 'classico' || valor === 'simples' || valor === 'manual' || valor === 'comanda_padrao');
+      const statusMsg = isClassico ? 'Modo Clássico (Simples) ativado com sucesso!' : 'Modo Moderno (Pro) ativado com sucesso!';
+
+      if (typeof showToast === 'function') {
+        showToast(`${setor}: ${statusMsg}`, 'success');
+      } else {
+        console.log(`${setor}: ${statusMsg}`);
+      }
+    } catch(e) {
+      console.error('Falha ao salvar modo de compatibilidade:', e);
+    }
+  };
+
+  window.restaurarTodosModosClassicos = async function() {
+    const confirmou = confirm('Atenção: Deseja reverter TODOS os setores para a Versão Clássica / Tradicional?\n\n' +
+      '• KDS da Cozinha: Volta para a Fila v1 clássica e simples\n' +
+      '• App do Garçom: Volta para o Modo Essencial (somente mesas e comanda rápida)\n' +
+      '• Comanda na Mesa: Volta para o extrato tradicional sem semáforos\n' +
+      '• Pizzaria: Modo de valor manual livre\n' +
+      '• Buffet: Digitação manual de peso\n' +
+      '• Bar: Comanda convencional pós-paga\n\n' +
+      'Essa ação é recomendada caso sua equipe precise de uma transição mais suave.');
+    
+    if (!confirmou) return;
+
+    const payload = {
+      fila_modo: 'classica',
+      garcom_modo: 'classico',
+      mesa_cliente_modo: 'simples',
+      pizzaria_modo: 'manual',
+      buffet_modo: 'manual',
+      bar_modo: 'comanda_padrao'
+    };
+
+    Object.entries(payload).forEach(([k, v]) => {
+      localStorage.setItem(k, v);
+      if (k === 'fila_modo') localStorage.setItem('chef_fila_modo', v);
+      if (window.configs) window.configs[k] = v;
+    });
+
+    try {
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (typeof obterTokenAtual === 'function' ? obterTokenAtual() : localStorage.getItem('chef_token') || '')
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch(e) {}
+
+    await window.carregarModosCompatibilidade();
+
+    if (typeof showToast === 'function') {
+      showToast('Todos os setores foram revertidos para o Modo Clássico com sucesso!', 'success');
+    } else {
+      alert('Todos os setores foram revertidos para o Modo Clássico com sucesso!');
+    }
+  };
+
+  window.ativarTodosModosModernos = async function() {
+    const confirmou = confirm('Deseja ativar os Recursos Modernos & Modo Pro em TODOS os setores do restaurante?\n\n' +
+      '• KDS Cozinha: v2 Inteligente com Saída Simultânea e Presets de Nicho\n' +
+      '• App do Garçom: Modo Pro com Grade de Atalhos e Sommelier\n' +
+      '• Comanda na Mesa: Semáforo virtual de carnes e marcha autônoma\n' +
+      '• Pizzaria: Cálculo automático por fatia (maior valor / ponderada)\n' +
+      '• Buffet: Decodificador de Balança EAN-13 Toledo/Filizola\n' +
+      '• Bar: Cashless pré-pago recarregável');
+    
+    if (!confirmou) return;
+
+    const payload = {
+      fila_modo: 'nova',
+      garcom_modo: 'pro',
+      mesa_cliente_modo: 'interativo',
+      pizzaria_modo: 'auto',
+      buffet_modo: 'balanca_auto',
+      bar_modo: 'cashless'
+    };
+
+    Object.entries(payload).forEach(([k, v]) => {
+      localStorage.setItem(k, v);
+      if (k === 'fila_modo') localStorage.setItem('chef_fila_modo', v);
+      if (window.configs) window.configs[k] = v;
+    });
+
+    try {
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (typeof obterTokenAtual === 'function' ? obterTokenAtual() : localStorage.getItem('chef_token') || '')
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch(e) {}
+
+    await window.carregarModosCompatibilidade();
+
+    if (typeof showToast === 'function') {
+      showToast('Recursos Modernos Pro ativados em todos os setores!', 'success');
+    } else {
+      alert('Recursos Modernos Pro ativados em todos os setores!');
+    }
+  };

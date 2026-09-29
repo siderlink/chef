@@ -661,10 +661,17 @@ setTimeout(() => {
 }, 100);
 
 // --- MENU HAMBURGER MOBILE ---
+const openMobileMenu = function () {
+  const overlay = document.getElementById('mobile-menu-overlay');
+  if (overlay) overlay.classList.add('show');
+};
+window.openMobileMenu = openMobileMenu;
+
 const closeMobileMenu = function () {
   const overlay = document.getElementById('mobile-menu-overlay');
   if (overlay) overlay.classList.remove('show');
 };
+window.closeMobileMenu = closeMobileMenu;
 
 function initMobileMenu() {
   const hamburger = document.getElementById('mobile-hamburger-btn');
@@ -676,9 +683,10 @@ function initMobileMenu() {
     hamburger.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (overlay) overlay.classList.add('show');
+      openMobileMenu();
     });
   }
+
 
   if (closeBtn && !closeBtn._inited) {
     closeBtn._inited = true;
@@ -750,4 +758,4 @@ window.addEventListener('resize', () => {
   }
 });
 
-export { isDonoMaster, obterInfoDetalhadaDispositivo, enviarRegistroSessaoDetalhado, aplicarModoTotem, obterSerialDispositivo, apelidarDispositivo, closeMobileMenu, initMobileMenu, authHeaders };
+export { isDonoMaster, obterInfoDetalhadaDispositivo, enviarRegistroSessaoDetalhado, aplicarModoTotem, obterSerialDispositivo, apelidarDispositivo, openMobileMenu, closeMobileMenu, initMobileMenu, authHeaders };

@@ -28,11 +28,13 @@
   </script>
   <!-- Dynamic GTAG & Meta Pixel Tracking -->
   <script src="/tracking-loader.js"></script>
+  <script src="/resilience-guard.js"></script>
   <script src="/theme-manager.js?v=20260901paletas"></script>
   <script>if (window.ChefTracking) window.ChefTracking.init('colaborador');</script>
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="stylesheet" href="/device-adapters.css">
   <style>
     :root {
       --bg-main: #f8fafc;
@@ -1497,7 +1499,10 @@
           onclick="window.location.href='/painel-funcionario.html'" title="Área do Colaborador"><i
             class="ph ph-user"></i></button>
       </div>
-      <h1 id="header-title">Chef Garçom</h1>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <h1 id="header-title" style="margin: 0;">Chef Garçom</h1>
+        <span id="garcom-offline-badge" style="display: none; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 12px; background: #ef4444; color: #ffffff; white-space: nowrap;"></span>
+      </div>
       <div style="display: flex; gap: 8px;">
         <button id="btn-notificacoes"
           style="color:#3b82f6; font-size:24px; background:none; border:none; cursor:pointer; white-space:nowrap; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center;"
@@ -1509,6 +1514,10 @@
         <button id="btn-fullscreen"
           style="color:#10b981; font-size:24px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:none; border:none;"
           title="Alternar Tela Cheia" aria-label="Tela cheia"><i class="ph ph-corners-out"></i></button>
+        <button id="btn-leaderboard-garcom"
+          style="color:#eab308; font-size:24px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:none; border:none;"
+          title="Ranking & Desempenho do Turno" aria-label="Ranking do Turno"
+          onclick="window.abrirModalLeaderboardGarcom && window.abrirModalLeaderboardGarcom()"><i class="ph-bold ph-trophy"></i></button>
       </div>
     </header>
 
@@ -1580,6 +1589,88 @@
             title="Lista Corrida"
             style="padding:6px 12px; border-radius:7px; border:none; background:transparent; color:var(--text-secondary, #64748b); font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px;">
             <i class="ph-bold ph-list-dashes"></i> <span>Lista</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- BARRA DE ATALHOS RÁPIDOS EM PÍLULAS (ACESSO IMEDIATO A 1 TOQUE) -->
+      <div id="garcom-quick-pills-bar"
+        style="display:flex; gap:8px; overflow-x:auto; padding:2px 2px 10px 2px; margin-bottom:8px; -webkit-overflow-scrolling:touch; scrollbar-width:none;">
+        <button type="button" onclick="window.abrirModalTransferirMesaGarcom()"
+          style="white-space:nowrap; flex-shrink:0; padding:8px 14px; border-radius:20px; font-size:12.5px; font-weight:700; border:1.5px solid var(--g-border, #e2e8f0); background:var(--g-card-bg, #ffffff); color:var(--g-text, #334155); display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(0,0,0,0.03); cursor:pointer;">
+          <i class="ph-bold ph-arrows-left-right" style="color:#f97316; font-size:16px;"></i> <span>Transferir</span>
+        </button>
+        <button type="button" onclick="window.abrirModalJuntarMesasGarcom()"
+          style="white-space:nowrap; flex-shrink:0; padding:8px 14px; border-radius:20px; font-size:12.5px; font-weight:700; border:1.5px solid var(--g-border, #e2e8f0); background:var(--g-card-bg, #ffffff); color:var(--g-text, #334155); display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(0,0,0,0.03); cursor:pointer;">
+          <i class="ph-bold ph-link-simple" style="color:#8b5cf6; font-size:16px;"></i> <span>Juntar</span>
+        </button>
+        <button type="button" onclick="window.abrirModalPedirContaGarcom()"
+          style="white-space:nowrap; flex-shrink:0; padding:8px 14px; border-radius:20px; font-size:12.5px; font-weight:700; border:1.5px solid var(--g-border, #e2e8f0); background:var(--g-card-bg, #ffffff); color:var(--g-text, #334155); display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(0,0,0,0.03); cursor:pointer;">
+          <i class="ph-bold ph-receipt" style="color:#0284c7; font-size:16px;"></i> <span>Pré-Conta</span>
+        </button>
+        <button type="button" onclick="window.abrirModalDividirContaGarcom()"
+          style="white-space:nowrap; flex-shrink:0; padding:8px 14px; border-radius:20px; font-size:12.5px; font-weight:700; border:1.5px solid var(--g-border, #e2e8f0); background:var(--g-card-bg, #ffffff); color:var(--g-text, #334155); display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(0,0,0,0.03); cursor:pointer;">
+          <i class="ph-bold ph-calculator" style="color:#059669; font-size:16px;"></i> <span>Dividir R$</span>
+        </button>
+        <button type="button" onclick="window.abrirModalLimpezaMesaGarcom()"
+          style="white-space:nowrap; flex-shrink:0; padding:8px 14px; border-radius:20px; font-size:12.5px; font-weight:700; border:1.5px solid var(--g-border, #e2e8f0); background:var(--g-card-bg, #ffffff); color:var(--g-text, #334155); display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(0,0,0,0.03); cursor:pointer;">
+          <i class="ph-bold ph-sparkle" style="color:#06b6d4; font-size:16px;"></i> <span>Limpeza</span>
+        </button>
+        <button type="button" onclick="window.abrirModalAlergenosGarcom()"
+          style="white-space:nowrap; flex-shrink:0; padding:8px 14px; border-radius:20px; font-size:12.5px; font-weight:700; border:1.5px solid var(--g-border, #e2e8f0); background:var(--g-card-bg, #ffffff); color:var(--g-text, #334155); display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(0,0,0,0.03); cursor:pointer;">
+          <i class="ph-bold ph-shield-check" style="color:#e11d48; font-size:16px;"></i> <span>Alérgenos</span>
+        </button>
+        <button type="button" onclick="window.escanearQrMesaGarcom()"
+          style="white-space:nowrap; flex-shrink:0; padding:8px 14px; border-radius:20px; font-size:12.5px; font-weight:700; border:1.5px solid var(--g-border, #e2e8f0); background:var(--g-card-bg, #ffffff); color:var(--g-text, #334155); display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(0,0,0,0.03); cursor:pointer;">
+          <i class="ph-bold ph-qr-code" style="color:#f59e0b; font-size:16px;"></i> <span>Bipar QR</span>
+        </button>
+        <button type="button" onclick="window.showView('atalhos', 'Atalhos Rápidos')"
+          style="white-space:nowrap; flex-shrink:0; padding:8px 14px; border-radius:20px; font-size:12.5px; font-weight:700; border:1.5px solid #fed7aa; background:#fff7ed; color:#ea580c; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 6px rgba(252,75,21,0.08); cursor:pointer;">
+          <i class="ph-bold ph-lightning" style="color:#fc4b15; font-size:16px;"></i> <span>Mais Atalhos</span>
+        </button>
+      </div>
+
+      <!-- BANNER DE ALERTA DE PEDIDOS PRONTOS NA COZINHA (PASS / SINO) -->
+      <div id="garcom-pass-alert-banner"
+        style="display:none; margin-bottom:12px; background:linear-gradient(135deg, #15803d, #16a34a); color:white; padding:12px 16px; border-radius:16px; box-shadow:0 6px 18px rgba(22,163,74,0.3); align-items:center; justify-content:space-between; cursor:pointer;"
+        onclick="window.showView && window.showView('esteira', 'Prontos para Entrega')">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="ph-bold ph-bell-ringing" style="font-size:22px; color:#ffffff;"></i>
+          </div>
+          <div>
+            <div id="garcom-pass-alert-text" style="font-size:14px; font-weight:800; line-height:1.2;">1 pedido pronto na cozinha!</div>
+            <div style="font-size:11.5px; opacity:0.9; margin-top:2px;">Toque para ver a esteira e entregar</div>
+          </div>
+        </div>
+        <i class="ph-bold ph-arrow-right" style="font-size:20px; color:#ffffff;"></i>
+      </div>
+
+      <!-- CONTAINER DE BUSCA RÁPIDA E FILTRO POR SETORES/SALAS -->
+      <div id="garcom-search-filter-container" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+        <!-- Campo de Pesquisa Rápida de Mesas / Comandas -->
+        <div style="position:relative; width:100%;">
+          <i class="ph ph-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px;"></i>
+          <input type="text" id="input-busca-mesas" placeholder="Buscar mesa ou cliente (Ex: 5, VIP, Carlos)..." 
+            oninput="window.filtrarMesasPorTermo && window.filtrarMesasPorTermo(this.value)"
+            style="width:100%; box-sizing:border-box; padding:10px 36px 10px 36px; border-radius:12px; border:1.5px solid var(--g-border, #e2e8f0); background:var(--g-card-bg, #ffffff); color:var(--g-text, #0f172a); font-size:13px; font-weight:600; outline:none;">
+          <button type="button" id="btn-limpar-busca-mesas" onclick="window.limparBuscaMesas && window.limparBuscaMesas()" 
+            style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); border:none; background:transparent; color:#94a3b8; font-size:18px; cursor:pointer;">&times;</button>
+        </div>
+
+        <!-- Pílulas de Filtro por Status e Setores/Salas -->
+        <div id="garcom-sector-pills" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; -webkit-overflow-scrolling:touch;">
+          <button type="button" class="sector-pill active" onclick="window.filtrarSetorMesa('todas')" data-sector="todas"
+            style="white-space:nowrap; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; border:1.5px solid #fc4b15; background:#fc4b15; color:#ffffff; cursor:pointer;">
+            Todas
+          </button>
+          <button type="button" class="sector-pill" onclick="window.filtrarSetorMesa('ocupadas')" data-sector="ocupadas"
+            style="white-space:nowrap; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; border:1.5px solid var(--g-border, #e2e8f0); background:var(--g-card-bg, #ffffff); color:var(--g-text, #475569); cursor:pointer;">
+            Ocupadas
+          </button>
+          <button type="button" class="sector-pill" onclick="window.filtrarSetorMesa('livres')" data-sector="livres"
+            style="white-space:nowrap; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; border:1.5px solid var(--g-border, #e2e8f0); background:var(--g-card-bg, #ffffff); color:var(--g-text, #475569); cursor:pointer;">
+            Livres
           </button>
         </div>
       </div>
@@ -1673,6 +1764,26 @@
             style="padding: 15px; border-radius: 14px; border: 1.5px solid rgba(14,165,233,0.3); background: rgba(14,165,233,0.1); color: #0284c7; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
             <i class="ph-bold ph-device-mobile" style="font-size: 22px;"></i> Mostrar Conta ao Cliente
           </button>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 4px;">
+            <button onclick="window.abrirModalTransferirMesaGarcom()"
+              style="padding: 12px 6px; border-radius: 12px; border: 1.5px solid #fed7aa; background: #fff7ed; color: #ea580c; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer;">
+              <i class="ph-bold ph-arrows-left-right"></i> Transferir
+            </button>
+            <button onclick="window.abrirModalJuntarMesasGarcom()"
+              style="padding: 12px 6px; border-radius: 12px; border: 1.5px solid #ddd6fe; background: #f5f3ff; color: #7c3aed; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer;">
+              <i class="ph-bold ph-link-simple"></i> Juntar
+            </button>
+            <button onclick="window.abrirModalDividirContaGarcom()"
+              style="padding: 12px 6px; border-radius: 12px; border: 1.5px solid #bbf7d0; background: #f0fdf4; color: #16a34a; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer;">
+              <i class="ph-bold ph-calculator"></i> Dividir R$
+            </button>
+          </div>
+
+          <button onclick="window.abrirModalLimpezaMesaGarcom()"
+            style="padding: 12px; border-radius: 12px; border: 1.5px solid #cffafe; background: #ecfeff; color: #0891b2; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+            <i class="ph-bold ph-sparkle"></i> Chamar Limpeza desta Mesa
+          </button>
         </div>
 
       </div>
@@ -1738,6 +1849,19 @@
           onclick="window.garcomSearchQuery=''; document.getElementById('garcom-search-product').value=''; this.style.display='none'; renderMenu(); document.getElementById('garcom-search-product').focus();"
           style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 50%; border: none; background: #f1f5f9; color: #64748b; font-size: 15px; font-weight: 700; cursor: pointer; align-items: center; justify-content: center; line-height: 1;">✕</button>
       </div>
+      <!-- Barra Marcha de Pratos (Disparo de Etapas no Salão) -->
+      <div id="bar-marcha-mesa" style="margin-bottom: 12px; padding: 10px 14px; background: linear-gradient(135deg, #ede9fe 0%, #fae8ff 100%); border: 1.5px solid #c084fc; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i class="ph-bold ph-fork-knife" style="font-size: 20px; color: #7c3aed;"></i>
+          <div>
+            <div style="font-size: 12px; font-weight: 800; color: #581c87;">Marcha de Pratos (Courses)</div>
+            <div style="font-size: 11px; color: #7e22ce;">Entrada ➔ Principal ➔ Sobremesa</div>
+          </div>
+        </div>
+        <button type="button" onclick="window.marcharEtapaMesa('Principal')" style="padding: 7px 12px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(124,58,237,0.25);">
+          <i class="ph-bold ph-play"></i> Marchar Principais
+        </button>
+      </div>
       <div id="menu-tabs"></div>
       <div id="menu-list"></div>
       <div id="menu-empty" style="display:none; text-align:center; padding:40px 20px; color:#94a3b8;">
@@ -1768,7 +1892,51 @@
           <button class="qty-btn" id="btn-plus"><i class="ph ph-plus"></i></button>
         </div>
       </div>
+      <!-- Pílulas de Quantidade Rápida -->
+      <div style="display: flex; gap: 6px; margin: 4px 0 10px 0; overflow-x: auto; padding-bottom: 2px;">
+        <button type="button" onclick="window.setDetalheQtd(1)" style="flex:1; padding:6px 2px; border-radius:10px; border:1px solid #cbd5e1; background:white; font-size:12px; font-weight:700; color:#334155; cursor:pointer;">1x</button>
+        <button type="button" onclick="window.setDetalheQtd(2)" style="flex:1; padding:6px 2px; border-radius:10px; border:1px solid #cbd5e1; background:white; font-size:12px; font-weight:700; color:#334155; cursor:pointer;">2x</button>
+        <button type="button" onclick="window.setDetalheQtd(3)" style="flex:1; padding:6px 2px; border-radius:10px; border:1px solid #cbd5e1; background:white; font-size:12px; font-weight:700; color:#334155; cursor:pointer;">3x</button>
+        <button type="button" onclick="window.setDetalheQtd(4)" style="flex:1; padding:6px 2px; border-radius:10px; border:1px solid #cbd5e1; background:white; font-size:12px; font-weight:700; color:#334155; cursor:pointer;">4x</button>
+        <button type="button" onclick="window.setDetalheQtd(5)" style="flex:1; padding:6px 2px; border-radius:10px; border:1px solid #cbd5e1; background:white; font-size:12px; font-weight:700; color:#334155; cursor:pointer;">5x</button>
+        <button type="button" onclick="window.setDetalheQtd(10)" style="flex:1; padding:6px 2px; border-radius:10px; border:1px solid #cbd5e1; background:white; font-size:12px; font-weight:700; color:#334155; cursor:pointer;">10x</button>
+      </div>
       <div id="detail-addons" style="display:none;"></div>
+      <!-- Seletor de Etapas da Marcha -->
+      <div style="margin: 12px 0 8px;">
+        <label style="font-size: 11.5px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">
+          <i class="ph-bold ph-clock-countdown" style="color: #6366f1;"></i> Etapa do Prato (Marcha de Cozinha):
+        </label>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="etapas-selector">
+          <button type="button" class="btn-etapa" data-etapa="Entrada" onclick="window.selecionarEtapaPrato(this, 'Entrada')" style="flex: 1; min-width: 65px; padding: 7px 4px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: white; font-size: 11.5px; font-weight: 700; cursor: pointer;">🥗 Entrada</button>
+          <button type="button" class="btn-etapa active" data-etapa="Principal" onclick="window.selecionarEtapaPrato(this, 'Principal')" style="flex: 1; min-width: 65px; padding: 7px 4px; border: 1.5px solid #6366f1; border-radius: 8px; background: #eef2ff; color: #4338ca; font-size: 11.5px; font-weight: 800; cursor: pointer;">🥩 Principal</button>
+          <button type="button" class="btn-etapa" data-etapa="Sobremesa" onclick="window.selecionarEtapaPrato(this, 'Sobremesa')" style="flex: 1; min-width: 65px; padding: 7px 4px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: white; font-size: 11.5px; font-weight: 700; cursor: pointer;">🍰 Sobremesa</button>
+          <button type="button" class="btn-etapa" data-etapa="Bebida" onclick="window.selecionarEtapaPrato(this, 'Bebida')" style="flex: 1; min-width: 65px; padding: 7px 4px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: white; font-size: 11.5px; font-weight: 700; cursor: pointer;">🥤 Bebida</button>
+        </div>
+        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11.5px; color: #475569; cursor: pointer; background: #f8fafc; padding: 6px 10px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+          <input type="checkbox" id="check-aguardar-marcha" style="accent-color: #6366f1; width: 16px; height: 16px;">
+          <span><strong>Aguardar Marcha:</strong> Cozinha só prepara quando você disparar no salão.</span>
+        </label>
+      </div>
+
+      <!-- Observações Rápidas em Pílulas (1 Toque) -->
+      <div style="margin: 10px 0 6px;">
+        <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px;">
+          <i class="ph-bold ph-pencil-simple-line" style="color: #ea580c;"></i> Observações Rápidas (1 Toque):
+        </label>
+        <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none;">
+          <button type="button" class="btn-obs-rapida" onclick="window.adicionarObsRapida('Sem cebola')" style="padding: 5px 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: white; font-size: 11.5px; font-weight: 700; color: #334155; white-space: nowrap; cursor: pointer;">🧅 Sem cebola</button>
+          <button type="button" class="btn-obs-rapida" onclick="window.adicionarObsRapida('Sem gelo')" style="padding: 5px 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: white; font-size: 11.5px; font-weight: 700; color: #334155; white-space: nowrap; cursor: pointer;">🧊 Sem gelo</button>
+          <button type="button" class="btn-obs-rapida" onclick="window.adicionarObsRapida('Com limão e gelo')" style="padding: 5px 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: white; font-size: 11.5px; font-weight: 700; color: #334155; white-space: nowrap; cursor: pointer;">🍋 Limão e gelo</button>
+          <button type="button" class="btn-obs-rapida" onclick="window.adicionarObsRapida('Ao ponto')" style="padding: 5px 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: white; font-size: 11.5px; font-weight: 700; color: #334155; white-space: nowrap; cursor: pointer;">🥩 Ao ponto</button>
+          <button type="button" class="btn-obs-rapida" onclick="window.adicionarObsRapida('Bem passado')" style="padding: 5px 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: white; font-size: 11.5px; font-weight: 700; color: #334155; white-space: nowrap; cursor: pointer;">🔥 Bem passado</button>
+          <button type="button" class="btn-obs-rapida" onclick="window.adicionarObsRapida('Mal passado')" style="padding: 5px 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: white; font-size: 11.5px; font-weight: 700; color: #334155; white-space: nowrap; cursor: pointer;">🩸 Mal passado</button>
+          <button type="button" class="btn-obs-rapida" onclick="window.adicionarObsRapida('Molho à parte')" style="padding: 5px 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: white; font-size: 11.5px; font-weight: 700; color: #334155; white-space: nowrap; cursor: pointer;">🥣 Molho à parte</button>
+          <button type="button" class="btn-obs-rapida" onclick="window.adicionarObsRapida('Sem açúcar')" style="padding: 5px 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: white; font-size: 11.5px; font-weight: 700; color: #334155; white-space: nowrap; cursor: pointer;">🚫 Sem açúcar</button>
+          <button type="button" class="btn-obs-rapida" onclick="window.adicionarObsRapida('Para viagem')" style="padding: 5px 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: white; font-size: 11.5px; font-weight: 700; color: #334155; white-space: nowrap; cursor: pointer;">🥡 P/ viagem</button>
+          <button type="button" class="btn-obs-rapida" onclick="window.adicionarObsRapida('Urgente')" style="padding: 5px 10px; border-radius: 12px; border: 1.5px solid #fecaca; background: #fef2f2; font-size: 11.5px; font-weight: 800; color: #b91c1c; white-space: nowrap; cursor: pointer;">⚡ Urgente</button>
+        </div>
+      </div>
       <textarea id="detail-obs" placeholder="Ex: Sem cebola, ponto da carne..."></textarea>
       <div id="detail-comps-section" style="margin-top:8px; display:none;">
         <div style="font-size:12px; font-weight:700; color:#8b5cf6; margin-bottom:4px;">Monte o Seu — Composições:</div>
@@ -1842,6 +2010,8 @@
           Pessoas</button>
         <button id="tab-bill-itens" class="bill-tab" onclick="switchBillTab('itens')"
           style="flex: 1; background: transparent; color: #64748b;">Por Itens</button>
+        <button id="tab-bill-assentos" class="bill-tab" onclick="switchBillTab('assentos')"
+          style="flex: 1; background: transparent; color: #64748b;">🪑 Assentos</button>
       </div>
 
       <!-- Tab Content: Pessoas -->
@@ -1903,6 +2073,24 @@
           </button>
           <div id="bill-items-list" style="display: flex; flex-direction: column; gap: 12px;">
             <!-- Items rendered here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content: Assentos (Seat Ordering) -->
+      <div id="bill-content-assentos" class="bill-content" style="display: none;">
+        <div style="background: white; padding: 18px 16px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div>
+              <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Divisão por Assentos / Posição</div>
+              <div style="font-size: 12px; color: #64748b;">Fechamento individual ou parcial instantâneo</div>
+            </div>
+            <button onclick="carregarAssentosMesaGarcom()" style="background: #f1f5f9; border: none; border-radius: 10px; padding: 6px 12px; cursor: pointer; color: #0f172a; font-weight: 700; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+              <i class="ph-bold ph-arrows-clockwise"></i> Atualizar
+            </button>
+          </div>
+          <div id="bill-assentos-lista" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="text-align: center; color: #94a3b8; font-size: 13px; padding: 16px;">Carregando assentos da mesa...</div>
           </div>
         </div>
       </div>
@@ -2014,6 +2202,149 @@
           <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Minhas Vendas</strong>
           <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Total do Turno</span>
         </div>
+
+        <!-- Card Pizza Meio a Meio -->
+        <div class="atalho-card" id="card-atalho-pizza-meio-a-meio" onclick="window.abrirModalPizzaGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(252,75,21,0.12); color: #fc4b15; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-pizza"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Pizza Meio a Meio</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Frações &amp; Bordas</span>
+        </div>
+
+        <!-- Card Rodízio de Carnes -->
+        <div class="atalho-card" id="card-atalho-rodizio-carnes" onclick="window.abrirModalRodizioGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(16,185,129,0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-traffic-signal"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Sinal de Rodízio</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Verde / Vermelho</span>
+        </div>
+
+        <!-- Card Marchar Pratos (À La Carte) -->
+        <div class="atalho-card" id="card-atalho-marchar-prato" onclick="window.abrirModalMarcharGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(99,102,241,0.12); color: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-footprints"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Marchar Prato</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Liberar Cozinha</span>
+        </div>
+
+        <!-- Card Sommelier IA -->
+        <div class="atalho-card" id="card-atalho-sommelier-ia" onclick="window.abrirModalSommelierGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(236,72,153,0.12); color: #ec4899; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-wine"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Sommelier IA</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Harmonização &amp; Upsell</span>
+        </div>
+
+        <!-- Card Transferir Mesa -->
+        <div class="atalho-card" id="card-atalho-transferir-mesa" onclick="window.abrirModalTransferirMesaGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(249,115,22,0.12); color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-arrows-left-right"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Transferir Mesa</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Mudar de Mesa / Itens</span>
+        </div>
+
+        <!-- Card Juntar Mesas -->
+        <div class="atalho-card" id="card-atalho-juntar-mesas" onclick="window.abrirModalJuntarMesasGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(139,92,246,0.12); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-link-simple"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Juntar Mesas</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Unir Grupos &amp; Contas</span>
+        </div>
+
+        <!-- Card Pedir Pré-Conta -->
+        <div class="atalho-card" id="card-atalho-pedir-preconta" onclick="window.abrirModalPedirContaGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(14,165,233,0.12); color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-receipt"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Pedir Pré-Conta</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Conferência / Imprimir</span>
+        </div>
+
+        <!-- Card Dividir Conta -->
+        <div class="atalho-card" id="card-atalho-dividir-conta" onclick="window.abrirModalDividirContaGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(16,185,129,0.12); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-calculator"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Dividir Conta</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Calculadora p/ Pessoa</span>
+        </div>
+
+        <!-- Card Limpar Mesa / Higienização -->
+        <div class="atalho-card" id="card-atalho-limpar-mesa" onclick="window.abrirModalLimpezaMesaGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(6,182,212,0.12); color: #0891b2; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-sparkle"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Avisar Limpeza</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Higienizar Mesa</span>
+        </div>
+
+        <!-- Card Guia de Alérgenos -->
+        <div class="atalho-card" id="card-atalho-alergenos" onclick="window.abrirModalAlergenosGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(225,29,72,0.12); color: #e11d48; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-shield-check"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Guia Alérgenos</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Glúten, Lactose, Vegan</span>
+        </div>
+
+        <!-- Card Bipar QR Code da Mesa -->
+        <div class="atalho-card" id="card-atalho-ler-qr-mesa" onclick="window.escanearQrMesaGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(245,158,11,0.12); color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-qr-code"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Bipar QR da Mesa</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Abrir com Câmera</span>
+        </div>
+
+        <!-- Card Ranking & Metas -->
+        <div class="atalho-card" id="card-atalho-ranking-garcom" onclick="window.abrirModalLeaderboardGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(234,179,8,0.12); color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-trophy"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Ranking &amp; Metas</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Desempenho do Turno</span>
+        </div>
+
+        <!-- Card Alternar Tema Claro / Escuro -->
+        <div class="atalho-card" id="card-atalho-alternar-tema" onclick="window.alternarTemaGarcom()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(99,102,241,0.12); color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-moon-stars"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Tema Claro / Escuro</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Economizar Bateria</span>
+        </div>
       </div>
     </div>
 
@@ -2110,8 +2441,8 @@
           <div>
             <label for="new-comanda-phone"
               style="font-size: 13px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px; text-align: left;">Telefone
-              (com DDD):</label>
-            <input type="tel" id="new-comanda-phone" placeholder="Ex: (11) 99999-9999"
+              (com DDD) <span style="font-weight: 400; color: #94a3b8; font-size: 12px;">— opcional:</span></label>
+            <input type="tel" id="new-comanda-phone" placeholder="Ex: (11) 99999-9999 (opcional)"
               style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 14px; outline: none;">
           </div>
           <div>
@@ -2587,6 +2918,745 @@
     </div>
   </div>
 
+  <!-- MODAL DE GAMIFICAÇÃO & LEADERBOARD DO GARÇOM -->
+  <div id="modal-leaderboard-garcom"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:999999; flex-direction:column; align-items:center; justify-content:center; padding:16px; animation:fadeIn 0.2s ease;">
+    <div
+      style="background:var(--bg-card, #ffffff); border-radius:24px; max-width:420px; width:100%; max-height:85vh; overflow-y:auto; padding:24px 20px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.4); position:relative; border:1px solid rgba(255,255,255,0.1);">
+      <button type="button" onclick="document.getElementById('modal-leaderboard-garcom').style.display='none'"
+        style="position:absolute; right:16px; top:16px; width:36px; height:36px; border-radius:50%; border:none; background:rgba(0,0,0,0.06); color:var(--text-secondary, #64748b); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
+
+      <div style="width:52px; height:52px; border-radius:16px; background:rgba(234,179,8,0.15); color:#eab308; display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 12px;">
+        <i class="ph-bold ph-trophy"></i>
+      </div>
+
+      <h3 style="margin:0 0 4px; font-size:20px; font-weight:800; color:var(--text-primary, #0f172a);">Ranking & Desempenho</h3>
+      <p style="margin:0 0 16px; font-size:12.5px; color:var(--text-secondary, #64748b);">Seu desempenho no turno de hoje e missões ativas</p>
+
+      <!-- Lista do Leaderboard -->
+      <div id="leaderboard-garcom-lista" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px; text-align:left;">
+        <div style="text-align:center; padding:20px; color:var(--text-secondary); font-size:13px;">Carregando ranking do turno...</div>
+      </div>
+
+      <!-- Missões Ativas -->
+      <div id="leaderboard-garcom-missoes" style="background:var(--bg-main, #f8fafc); border-radius:14px; padding:12px; margin-bottom:16px; text-align:left; border:1px solid var(--border-color, #e2e8f0);">
+        <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#eab308; letter-spacing:0.5px; margin-bottom:8px;">🎯 Missões da Noite:</div>
+        <div style="font-size:12px; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+          <span>🍷 Venda 3 Vinhos ou Sobremesas</span>
+          <span style="margin-left:auto; font-weight:800; color:#10b981;">+ R$ 15 bônus</span>
+        </div>
+      </div>
+
+      <button type="button" onclick="document.getElementById('modal-leaderboard-garcom').style.display='none'"
+        style="width:100%; background:var(--primary, #fc4b15); color:#ffffff; border:none; padding:12px; border-radius:12px; font-weight:800; font-size:14px; cursor:pointer;">
+        Continuar Atendendo
+      </button>
+    </div>
+  </div>
+
+  <script>
+    window.abrirModalLeaderboardGarcom = function() {
+      const modal = document.getElementById('modal-leaderboard-garcom');
+      if (modal) modal.style.display = 'flex';
+      const container = document.getElementById('leaderboard-garcom-lista');
+      if (!container) return;
+
+      fetch('/api/addons/gamificacao/leaderboard')
+        .then(r => r.json())
+        .then(data => {
+          if (!data || !data.ranking || data.ranking.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:16px; color:#888; font-size:13px;">Nenhum pedido finalizado no turno ainda.</div>';
+            return;
+          }
+          container.innerHTML = data.ranking.map((g, idx) => `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:${idx === 0 ? 'rgba(234,179,8,0.1)' : 'var(--bg-main, #f8fafc)'}; border-radius:12px; border:1px solid ${idx === 0 ? 'rgba(234,179,8,0.3)' : 'var(--border-color, #e2e8f0)'};">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:18px;">${g.medalha}</span>
+                <div>
+                  <div style="font-weight:800; font-size:13.5px; color:var(--text-primary);">${g.garcom || 'Garçom'}</div>
+                  <div style="font-size:11px; color:var(--text-secondary);">${g.total_pedidos} pedidos • Ticket Médio: R$ ${(g.ticket_medio || 0).toFixed(2)}</div>
+                </div>
+              </div>
+              <div style="font-weight:900; font-size:14px; color:#10b981;">
+                R$ ${(g.total_vendido || 0).toFixed(2)}
+              </div>
+            </div>
+          `).join('');
+        })
+        .catch(() => {
+          container.innerHTML = '<div style="text-align:center; padding:16px; color:#ef4444; font-size:13px;">Erro ao carregar o ranking.</div>';
+        });
+    };
+
+    window.carregarAssentosMesaGarcom = function() {
+      const container = document.getElementById('bill-assentos-lista');
+      if (!container) return;
+      const mesa = (typeof currentTable !== 'undefined' && currentTable) ? currentTable : '1';
+      container.innerHTML = '<div style="text-align:center; padding:16px; color:#64748b; font-size:13px;"><i class="ph-bold ph-spinner ph-spin" style="margin-right:6px;"></i> Buscando assentos da ' + mesa + '...</div>';
+
+      fetch('/api/addons/assentos/mesa/' + encodeURIComponent(mesa))
+        .then(r => r.json())
+        .then(data => {
+          if (!data || !data.assentos || data.assentos.length === 0) {
+            container.innerHTML = `
+              <div style="text-align:center; padding:20px; color:#64748b;">
+                <i class="ph-bold ph-chair" style="font-size:32px; color:#94a3b8; margin-bottom:8px; display:inline-block;"></i>
+                <div style="font-weight:700; font-size:14px; color:#0f172a;">Nenhum assento lançado ainda nesta mesa</div>
+                <div style="font-size:12px; margin-top:4px;">Os itens gerais da mesa podem ser rachados por pessoa ou item.</div>
+              </div>
+            `;
+            return;
+          }
+
+          container.innerHTML = data.assentos.map(ass => `
+            <div style="background:${ass.status === 'pago' ? 'rgba(16,185,129,0.06)' : '#f8fafc'}; border:1.5px solid ${ass.status === 'pago' ? '#10b981' : '#e2e8f0'}; border-radius:14px; padding:12px 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="background:${ass.status === 'pago' ? '#10b981' : '#fc4b15'}; color:white; border-radius:50%; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:12px;">${ass.assento_numero}</span>
+                  <strong style="font-size:14px; color:#0f172a;">${ass.cliente_nome || 'Assento ' + ass.assento_numero}</strong>
+                </div>
+                <span style="font-size:11px; font-weight:800; padding:3px 8px; border-radius:8px; background:${ass.status === 'pago' ? '#dcfce7' : '#fef3c7'}; color:${ass.status === 'pago' ? '#15803d' : '#b45309'}; text-transform:uppercase;">
+                  ${ass.status === 'pago' ? '✓ Pago' : 'Pendente'}
+                </span>
+              </div>
+              <div style="font-size:12px; color:#64748b; margin-bottom:8px; line-height: 1.5;">
+                ${(ass.itens || []).map(it => `• ${it.quantidade}x ${it.produto_nome} <b style="color:#0f172a;">(R$ ${(it.subtotal || 0).toFixed(2)})</b>`).join('<br>')}
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #cbd5e1; padding-top:8px;">
+                <span style="font-size:13px; font-weight:700; color:#0f172a;">Total: R$ ${(ass.subtotal || 0).toFixed(2)}</span>
+                ${ass.status !== 'pago' ? `
+                  <button onclick="cobrarAssentoGarcom('${mesa}', ${ass.assento_numero})" style="background:#10b981; color:white; border:none; border-radius:10px; padding:6px 12px; font-weight:800; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                    <i class="ph-bold ph-qr-code"></i> Cobrar Pix/Cartão
+                  </button>
+                ` : '<span style="color:#10b981; font-size:12px; font-weight:800;">Liberado</span>'}
+              </div>
+            </div>
+          `).join('');
+        })
+        .catch(() => {
+          container.innerHTML = '<div style="text-align:center; padding:12px; color:#ef4444; font-size:12px;">Erro ao consultar assentos.</div>';
+        });
+    };
+
+    window.cobrarAssentoGarcom = function(mesa, assentoNum) {
+      if (!confirm(`Confirmar fechamento e cobrança do Assento ${assentoNum} da Mesa ${mesa}?`)) return;
+      fetch('/api/addons/assentos/pagar-individual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mesa_numero: mesa, assento_numero: assentoNum, forma_pagamento: 'PIX', incluir_servico: true })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.ok) {
+          alert(`Assento ${assentoNum} quitado com sucesso!\nValor Total: R$ ${(res.valor_total || 0).toFixed(2)}\nPix Copia e Cola gerado.`);
+          window.carregarAssentosMesaGarcom();
+        } else {
+          alert('Erro: ' + (res.erro || 'Falha ao cobrar assento.'));
+        }
+      });
+    };
+  </script>
+
+  <!-- Modal 1: Montar Pizza Meio a Meio / Frações -->
+  <div id="modal-garcom-pizza" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); z-index: 10010; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 28px 28px 0 0; padding: 22px; animation: slideUp 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(252,75,21,0.12); color: #fc4b15; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ph-bold ph-pizza"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0;">Pizza Meio a Meio</h3>
+            <span style="font-size: 11px; color: #64748b;">Cobrança automática pelo Maior Valor</span>
+          </div>
+        </div>
+        <button onclick="document.getElementById('modal-garcom-pizza').style.display='none'" style="background: #f1f5f9; border: none; font-size: 20px; color: #64748b; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Mesa de Destino:</label>
+          <input type="text" id="garcom-pizza-mesa" placeholder="Ex: Mesa 04" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none; box-sizing: border-box;">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">1º Sabor (1/2):</label>
+            <select id="garcom-pizza-sabor1" class="form-input" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 12px; outline: none;">
+              <option value="Calabresa Especial|54">Calabresa (R$ 54)</option>
+              <option value="Quatro Queijos Nobre|68">4 Queijos (R$ 68)</option>
+              <option value="Frango c/ Catupiry|58">Frango c/ Catupiry (R$ 58)</option>
+              <option value="Camarão Especial|84">Camarão Nobre (R$ 84)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">2º Sabor (1/2):</label>
+            <select id="garcom-pizza-sabor2" class="form-input" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 12px; outline: none;">
+              <option value="Quatro Queijos Nobre|68">4 Queijos (R$ 68)</option>
+              <option value="Calabresa Especial|54">Calabresa (R$ 54)</option>
+              <option value="Portuguesa Tradicional|62">Portuguesa (R$ 62)</option>
+              <option value="Camarão Especial|84">Camarão Nobre (R$ 84)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Borda Recheada:</label>
+          <select id="garcom-pizza-borda" class="form-input" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 12px; outline: none;">
+            <option value="Sem borda|0">Sem borda recheada (+R$ 0)</option>
+            <option value="Catupiry Vulcão|14">Catupiry Original Vulcão (+R$ 14,00)</option>
+            <option value="Cheddar Cremoso|12">Cheddar Cremoso (+R$ 12,00)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Observações da Cozinha:</label>
+          <input type="text" id="garcom-pizza-obs" placeholder="Ex: Sem cebola na calabresa, bem tostada" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <button type="button" onclick="window.confirmarPizzaGarcom()" style="width: 100%; background: linear-gradient(135deg, #fc4b15, #ff8c42); color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(252,75,21,0.3);">
+        <i class="ph-bold ph-paper-plane-tilt"></i> Lançar no Pedido &amp; KDS Forneiro
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal 2: Sinalizador de Rodízio de Carnes -->
+  <div id="modal-garcom-rodizio" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); z-index: 10010; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 28px 28px 0 0; padding: 22px; animation: slideUp 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16,185,129,0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ph-bold ph-traffic-signal"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0;">Sinalizador de Rodízio</h3>
+            <span style="font-size: 11px; color: #64748b;">Notificar espetos e passadores</span>
+          </div>
+        </div>
+        <button onclick="document.getElementById('modal-garcom-rodizio').style.display='none'" style="background: #f1f5f9; border: none; font-size: 20px; color: #64748b; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Mesa:</label>
+          <input type="text" id="garcom-rodizio-mesa" placeholder="Ex: Mesa 12" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none; box-sizing: border-box;">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button type="button" onclick="window.setSinalRodizioGarcom('quero_carne')" id="btn-sinal-verde" style="padding: 12px; border-radius: 12px; border: 2px solid #10b981; background: #f0fdf4; color: #15803d; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            🟢 Quero Carne
+          </button>
+          <button type="button" onclick="window.setSinalRodizioGarcom('pausa')" id="btn-sinal-vermelho" style="padding: 12px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #64748b; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            🔴 Pausa / Satisfeito
+          </button>
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Cortes Solicitados pela Mesa:</label>
+          <input type="text" id="garcom-rodizio-cortes" value="Picanha Nobre, Costela no Bafo" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <button type="button" onclick="window.confirmarRodizioGarcom()" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <i class="ph-bold ph-broadcast"></i> Disparar Alerta no Tablet dos Passadores
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal 3: Marchar Pratos (À La Carte) -->
+  <div id="modal-garcom-marchar" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); z-index: 10010; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 28px 28px 0 0; padding: 22px; animation: slideUp 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(99,102,241,0.12); color: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ph-bold ph-footprints"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0;">Marchar Prato</h3>
+            <span style="font-size: 11px; color: #64748b;">Comando de sincronismo de tempos</span>
+          </div>
+        </div>
+        <button onclick="document.getElementById('modal-garcom-marchar').style.display='none'" style="background: #f1f5f9; border: none; font-size: 20px; color: #64748b; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Mesa:</label>
+          <input type="text" id="garcom-marchar-mesa" placeholder="Ex: Mesa 07" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Etapa que a cozinha deve preparar AGORA:</label>
+          <select id="garcom-marchar-etapa" class="form-input" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none;">
+            <option value="prato_principal">🥘 Prato Principal (Iniciar Cocção Imediata)</option>
+            <option value="sobremesa">🍰 Sobremesas &amp; Cafés</option>
+            <option value="entrada">🥗 Couvert / Entradas</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="button" onclick="window.confirmarMarchaGarcom()" style="width: 100%; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <i class="ph-bold ph-bell"></i> Marchar Etapa para o Chef de Praça
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal 4: Sommelier IA & Harmonização -->
+  <div id="modal-garcom-sommelier" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); z-index: 10010; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 28px 28px 0 0; padding: 22px; animation: slideUp 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(236,72,153,0.12); color: #ec4899; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ph-bold ph-wine"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0;">Sommelier IA</h3>
+            <span style="font-size: 11px; color: #64748b;">Dica de harmonização para elevar a conta</span>
+          </div>
+        </div>
+        <button onclick="document.getElementById('modal-garcom-sommelier').style.display='none'" style="background: #f1f5f9; border: none; font-size: 20px; color: #64748b; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Prato Escolhido pelo Cliente:</label>
+          <select id="garcom-sommelier-prato" class="form-input" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none;">
+            <option value="1">Risoto de Cordeiro com Cogumelos</option>
+            <option value="2">Robalo Grelhado em Crosta de Ervas</option>
+            <option value="default">Prime Rib Angus na Brasa</option>
+          </select>
+        </div>
+        <div id="garcom-sommelier-resultado" style="background: #fdf2f8; border: 1.5px solid #fbcfe8; border-radius: 14px; padding: 14px; font-size: 12.5px; color: #831843; min-height: 50px;">
+          Selecione o prato acima e clique abaixo para gerar a recomendação do sommelier.
+        </div>
+      </div>
+
+      <button type="button" onclick="window.consultarSommelierGarcom()" style="width: 100%; background: linear-gradient(135deg, #ec4899, #be185d); color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <i class="ph-bold ph-sparkle"></i> Gerar Argumento de Venda
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal 5: Transferir Mesa ou Itens -->
+  <div id="modal-garcom-transferir" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); z-index: 10010; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 28px 28px 0 0; padding: 22px; animation: slideUp 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(249,115,22,0.12); color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ph-bold ph-arrows-left-right"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0;">Transferir Mesa</h3>
+            <span style="font-size: 11px; color: #64748b;">Mudar ocupação ou comandas de mesa</span>
+          </div>
+        </div>
+        <button onclick="document.getElementById('modal-garcom-transferir').style.display='none'" style="background: #f1f5f9; border: none; font-size: 20px; color: #64748b; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Mesa de Origem (Atual):</label>
+          <select id="garcom-transferir-origem" class="form-input" style="width: 100%; padding: 11px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none; background: #fff;">
+            <!-- Preenchido via JS -->
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Mesa de Destino (Nova):</label>
+          <select id="garcom-transferir-destino" class="form-input" style="width: 100%; padding: 11px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none; background: #fff;">
+            <!-- Preenchido via JS -->
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Modo de Transferência:</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <button type="button" id="btn-modo-transf-total" onclick="window.setModoTransferencia('total')" style="padding: 10px; border-radius: 10px; border: 2px solid #ea580c; background: #fff7ed; color: #c2410c; font-weight: 700; font-size: 12px; cursor: pointer;">
+              🔄 Mesa Toda (Origem Livre)
+            </button>
+            <button type="button" id="btn-modo-transf-itens" onclick="window.setModoTransferencia('itens')" style="padding: 10px; border-radius: 10px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #64748b; font-weight: 700; font-size: 12px; cursor: pointer;">
+              📦 Mover Apenas Itens
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" onclick="window.confirmarTransferirMesaGarcom()" style="width: 100%; background: linear-gradient(135deg, #ea580c, #c2410c); color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(234,88,12,0.3);">
+        <i class="ph-bold ph-arrows-left-right"></i> Confirmar Transferência
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal 6: Juntar Mesas em Grupo -->
+  <div id="modal-garcom-juntar" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); z-index: 10010; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 28px 28px 0 0; padding: 22px; animation: slideUp 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(139,92,246,0.12); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ph-bold ph-link-simple"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0;">Juntar Mesas</h3>
+            <span style="font-size: 11px; color: #64748b;">Unir duas mesas para consumo conjunto</span>
+          </div>
+        </div>
+        <button onclick="document.getElementById('modal-garcom-juntar').style.display='none'" style="background: #f1f5f9; border: none; font-size: 20px; color: #64748b; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Mesa Principal (Mesa A):</label>
+          <select id="garcom-juntar-mesa-a" class="form-input" style="width: 100%; padding: 11px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none; background: #fff;">
+            <!-- Preenchido via JS -->
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Mesa a Agrupar (Mesa B):</label>
+          <select id="garcom-juntar-mesa-b" class="form-input" style="width: 100%; padding: 11px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none; background: #fff;">
+            <!-- Preenchido via JS -->
+          </select>
+        </div>
+
+        <div style="background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 12px; padding: 10px 12px; font-size: 12px; color: #6d28d9; line-height: 1.4;">
+          💡 <strong>Como funciona:</strong> Os pedidos de ambas as mesas serão associados a um grupo compartilhado (Ex: <em>Mesa 01 + Mesa 02</em>). O caixa e a esteira verão o total unificado.
+        </div>
+      </div>
+
+      <button type="button" onclick="window.confirmarJuntarMesasGarcom()" style="width: 100%; background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(139,92,246,0.3);">
+        <i class="ph-bold ph-link-simple"></i> Unir Mesas em Grupo
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal 7: Pedir Pré-Conta & Imprimir Parcial -->
+  <div id="modal-garcom-preconta" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); z-index: 10010; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 28px 28px 0 0; padding: 22px; animation: slideUp 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(14,165,233,0.12); color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ph-bold ph-receipt"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0;">Pedir Pré-Conta</h3>
+            <span style="font-size: 11px; color: #64748b;">Conferência e solicitação de fechamento</span>
+          </div>
+        </div>
+        <button onclick="document.getElementById('modal-garcom-preconta').style.display='none'" style="background: #f1f5f9; border: none; font-size: 20px; color: #64748b; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Selecione a Mesa:</label>
+          <select id="garcom-preconta-mesa" onchange="window.atualizarResumoPreContaGarcom()" class="form-input" style="width: 100%; padding: 11px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none; background: #fff;">
+            <!-- Preenchido via JS -->
+          </select>
+        </div>
+
+        <!-- Box de Resumo da Conta -->
+        <div id="garcom-preconta-box" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; font-size: 13px; color: #475569; margin-bottom: 6px;">
+            <span>Subtotal Consumo:</span>
+            <strong id="garcom-preconta-subtotal" style="color: #0f172a;">R$ 0,00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; color: #475569; margin-bottom: 6px;">
+            <span>Taxa de Serviço (10% sugerido):</span>
+            <strong id="garcom-preconta-taxa" style="color: #0284c7;">R$ 0,00</strong>
+          </div>
+          <div style="border-top: 1px dashed #cbd5e1; margin: 8px 0; padding-top: 8px; display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; color: #0f172a;">
+            <span>Total com Serviço:</span>
+            <strong id="garcom-preconta-total" style="color: #16a34a;">R$ 0,00</strong>
+          </div>
+          <div style="font-size: 11px; color: #64748b; text-align: center; margin-top: 4px;" id="garcom-preconta-itens-count">0 itens registrados nesta mesa</div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button type="button" onclick="window.confirmarPedirContaGarcom()" style="width: 100%; background: linear-gradient(135deg, #0284c7, #0369a1); color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(2,132,199,0.3);">
+          <i class="ph-bold ph-bell-ringing"></i> Notificar Caixa (Toque Pedir Conta)
+        </button>
+        <button type="button" onclick="window.imprimirPreContaGarcom()" style="width: 100%; background: #f8fafc; border: 1.5px solid #cbd5e1; color: #334155; padding: 12px; border-radius: 14px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <i class="ph-bold ph-printer"></i> Imprimir Extrato Parcial
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 8: Calculadora de Divisão de Conta -->
+  <div id="modal-garcom-dividir-conta" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); z-index: 10010; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 28px 28px 0 0; padding: 22px; animation: slideUp 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16,185,129,0.12); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ph-bold ph-calculator"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0;">Dividir Conta</h3>
+            <span style="font-size: 11px; color: #64748b;">Cálculo rápido por pessoa com ou sem 10%</span>
+          </div>
+        </div>
+        <button onclick="document.getElementById('modal-garcom-dividir-conta').style.display='none'" style="background: #f1f5f9; border: none; font-size: 20px; color: #64748b; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div>
+            <label style="font-size: 11.5px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Puxar da Mesa:</label>
+            <select id="garcom-dividir-mesa" onchange="window.carregarValorMesaParaDivisao()" class="form-input" style="width: 100%; padding: 10px 8px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 12.5px; outline: none; background: #fff;">
+              <!-- Preenchido via JS -->
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 11.5px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Valor Total (R$):</label>
+            <input type="number" id="garcom-dividir-valor" step="0.01" min="0" placeholder="0,00" oninput="window.calcularDivisaoConta()" style="width: 100%; padding: 10px 10px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 14px; font-weight: 800; color: #0f172a; outline: none; box-sizing: border-box;">
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Número de Pessoas:</label>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" onclick="window.alterarPessoasDivisao(-1)" style="width: 44px; height: 44px; border-radius: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; font-size: 20px; font-weight: 800; color: #334155; cursor: pointer;">-</button>
+            <input type="number" id="garcom-dividir-pessoas" value="2" min="1" max="99" oninput="window.calcularDivisaoConta()" style="flex: 1; height: 44px; border-radius: 12px; border: 1.5px solid #cbd5e1; text-align: center; font-size: 18px; font-weight: 800; color: #0f172a; outline: none;">
+            <button type="button" onclick="window.alterarPessoasDivisao(1)" style="width: 44px; height: 44px; border-radius: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; font-size: 20px; font-weight: 800; color: #334155; cursor: pointer;">+</button>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 8px; overflow-x: auto; padding-bottom: 2px;">
+            <button type="button" onclick="window.setPessoasDivisao(2)" class="pill-divisao" style="padding: 4px 10px; border-radius: 14px; border: 1px solid #cbd5e1; background: #fff; font-size: 11px; font-weight: 700; cursor: pointer;">2p</button>
+            <button type="button" onclick="window.setPessoasDivisao(3)" class="pill-divisao" style="padding: 4px 10px; border-radius: 14px; border: 1px solid #cbd5e1; background: #fff; font-size: 11px; font-weight: 700; cursor: pointer;">3p</button>
+            <button type="button" onclick="window.setPessoasDivisao(4)" class="pill-divisao" style="padding: 4px 10px; border-radius: 14px; border: 1px solid #cbd5e1; background: #fff; font-size: 11px; font-weight: 700; cursor: pointer;">4p</button>
+            <button type="button" onclick="window.setPessoasDivisao(5)" class="pill-divisao" style="padding: 4px 10px; border-radius: 14px; border: 1px solid #cbd5e1; background: #fff; font-size: 11px; font-weight: 700; cursor: pointer;">5p</button>
+            <button type="button" onclick="window.setPessoasDivisao(6)" class="pill-divisao" style="padding: 4px 10px; border-radius: 14px; border: 1px solid #cbd5e1; background: #fff; font-size: 11px; font-weight: 700; cursor: pointer;">6p</button>
+            <button type="button" onclick="window.setPessoasDivisao(8)" class="pill-divisao" style="padding: 4px 10px; border-radius: 14px; border: 1px solid #cbd5e1; background: #fff; font-size: 11px; font-weight: 700; cursor: pointer;">8p</button>
+            <button type="button" onclick="window.setPessoasDivisao(10)" class="pill-divisao" style="padding: 4px 10px; border-radius: 14px; border: 1px solid #cbd5e1; background: #fff; font-size: 11px; font-weight: 700; cursor: pointer;">10p</button>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btn-dividir-com-10" onclick="window.toggleGorjetaDivisao(true)" style="flex: 1; padding: 10px; border-radius: 10px; border: 2px solid #10b981; background: #f0fdf4; color: #166534; font-weight: 800; font-size: 12px; cursor: pointer;">
+            ✓ Com 10% (Serviço)
+          </button>
+          <button type="button" id="btn-dividir-sem-10" onclick="window.toggleGorjetaDivisao(false)" style="flex: 1; padding: 10px; border-radius: 10px; border: 1.5px solid #cbd5e1; background: #fff; color: #64748b; font-weight: 700; font-size: 12px; cursor: pointer;">
+            Sem Taxa
+          </button>
+        </div>
+
+        <!-- Big Result Card -->
+        <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border-radius: 16px; padding: 18px; color: white; text-align: center; box-shadow: 0 4px 16px rgba(5,150,105,0.25);">
+          <span style="font-size: 12px; opacity: 0.9; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Valor por Pessoa</span>
+          <div id="garcom-dividir-resultado" style="font-size: 32px; font-weight: 900; margin: 4px 0;">R$ 0,00</div>
+          <div id="garcom-dividir-detalhe" style="font-size: 12px; opacity: 0.85;">Total: R$ 0,00 divididos entre 2 pessoas</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <button type="button" onclick="window.copiarResumoDivisao()" style="padding: 12px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #fff; color: #334155; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <i class="ph-bold ph-copy"></i> Copiar Resumo
+        </button>
+        <button type="button" onclick="window.compartilharWhatsappDivisao()" style="padding: 12px; border-radius: 12px; border: none; background: #25d366; color: white; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <i class="ph-bold ph-whatsapp-logo"></i> WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 9: Avisar Limpeza / Higienização -->
+  <div id="modal-garcom-limpeza" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); z-index: 10010; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 28px 28px 0 0; padding: 22px; animation: slideUp 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(6,182,212,0.12); color: #0891b2; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ph-bold ph-sparkle"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0;">Avisar Limpeza de Mesa</h3>
+            <span style="font-size: 11px; color: #64748b;">Notificar cumins e equipe de higienização</span>
+          </div>
+        </div>
+        <button onclick="document.getElementById('modal-garcom-limpeza').style.display='none'" style="background: #f1f5f9; border: none; font-size: 20px; color: #64748b; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Mesa:</label>
+          <select id="garcom-limpeza-mesa" class="form-input" style="width: 100%; padding: 11px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none; background: #fff;">
+            <!-- Preenchido via JS -->
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Estado / Solicitação:</label>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button type="button" id="btn-limpeza-suja" onclick="window.setEstadoLimpeza('suja')" style="padding: 12px; border-radius: 12px; border: 2px solid #0891b2; background: #ecfeff; color: #0e7490; font-weight: 800; font-size: 13px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px;">
+              🧹 Mesa Suja (Liberada pelo cliente, precisa recolher)
+            </button>
+            <button type="button" id="btn-limpeza-urgente" onclick="window.setEstadoLimpeza('urgente')" style="padding: 12px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #fff; color: #64748b; font-weight: 700; font-size: 13px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px;">
+              ⚠️ Limpeza Urgente (Clientes aguardando na fila)
+            </button>
+            <button type="button" id="btn-limpeza-pronta" onclick="window.setEstadoLimpeza('pronta')" style="padding: 12px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #fff; color: #64748b; font-weight: 700; font-size: 13px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px;">
+              ✨ Mesa Pronta &amp; Higienizada (Liberada p/ ocupar)
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Observação adicional:</label>
+          <input type="text" id="garcom-limpeza-obs" placeholder="Ex: Bebida derramada / Precisa de cadeirão" style="width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13px; outline: none; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <button type="button" onclick="window.confirmarLimpezaMesaGarcom()" style="width: 100%; background: linear-gradient(135deg, #0891b2, #0e7490); color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(8,145,178,0.3);">
+        <i class="ph-bold ph-paper-plane-tilt"></i> Disparar Chamado de Limpeza
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal 10: Guia Rápido de Alérgenos & Restrições -->
+  <div id="modal-garcom-alergenos" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); z-index: 10010; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 28px 28px 0 0; padding: 22px; animation: slideUp 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); max-height: 85vh; display: flex; flex-direction: column;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(225,29,72,0.12); color: #e11d48; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ph-bold ph-shield-check"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0;">Guia de Alérgenos</h3>
+            <span style="font-size: 11px; color: #64748b;">Consulte restrições alimentares com rapidez</span>
+          </div>
+        </div>
+        <button onclick="document.getElementById('modal-garcom-alergenos').style.display='none'" style="background: #f1f5f9; border: none; font-size: 20px; color: #64748b; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+
+      <!-- Barra de Busca -->
+      <div style="margin-bottom: 10px; position: relative;">
+        <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 18px;"></i>
+        <input type="text" id="garcom-alergenos-busca" placeholder="Buscar prato, carne ou ingrediente..." oninput="window.filtrarAlergenosGarcom()" style="width: 100%; padding: 10px 12px 10px 38px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 13.5px; outline: none; box-sizing: border-box;">
+      </div>
+
+      <!-- Pílulas de Filtros de Restrição -->
+      <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px; scrollbar-width: none;">
+        <button type="button" class="btn-filtro-alergeno active" onclick="window.setFiltroAlergeno('todos', this)" style="padding: 6px 12px; border-radius: 14px; border: 1.5px solid #e11d48; background: #e11d48; color: white; font-weight: 700; font-size: 11.5px; white-space: nowrap; cursor: pointer;">Todos</button>
+        <button type="button" class="btn-filtro-alergeno" onclick="window.setFiltroAlergeno('gluten_free', this)" style="padding: 6px 12px; border-radius: 14px; border: 1.5px solid #cbd5e1; background: #fff; color: #334155; font-weight: 700; font-size: 11.5px; white-space: nowrap; cursor: pointer;">🌾 Sem Glúten</button>
+        <button type="button" class="btn-filtro-alergeno" onclick="window.setFiltroAlergeno('lactose_free', this)" style="padding: 6px 12px; border-radius: 14px; border: 1.5px solid #cbd5e1; background: #fff; color: #334155; font-weight: 700; font-size: 11.5px; white-space: nowrap; cursor: pointer;">🥛 Sem Lactose</button>
+        <button type="button" class="btn-filtro-alergeno" onclick="window.setFiltroAlergeno('vegano', this)" style="padding: 6px 12px; border-radius: 14px; border: 1.5px solid #cbd5e1; background: #fff; color: #334155; font-weight: 700; font-size: 11.5px; white-space: nowrap; cursor: pointer;">🥦 Vegano</button>
+        <button type="button" class="btn-filtro-alergeno" onclick="window.setFiltroAlergeno('vegetariano', this)" style="padding: 6px 12px; border-radius: 14px; border: 1.5px solid #cbd5e1; background: #fff; color: #334155; font-weight: 700; font-size: 11.5px; white-space: nowrap; cursor: pointer;">🧀 Vegetariano</button>
+        <button type="button" class="btn-filtro-alergeno" onclick="window.setFiltroAlergeno('seafood_free', this)" style="padding: 6px 12px; border-radius: 14px; border: 1.5px solid #cbd5e1; background: #fff; color: #334155; font-weight: 700; font-size: 11.5px; white-space: nowrap; cursor: pointer;">🦐 Sem Frutos do Mar</button>
+      </div>
+
+      <!-- Lista de Produtos com Tags -->
+      <div id="garcom-alergenos-lista" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; max-height: 48vh; padding-bottom: 8px;">
+        <!-- Injetado dinamicamente -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 11: Bipar QR Code da Mesa -->
+  <div id="modal-garcom-escanear-qr" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); z-index: 10010; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 28px 28px 0 0; padding: 22px; animation: slideUp 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(245,158,11,0.12); color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="ph-bold ph-qr-code"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0;">Bipar QR da Mesa</h3>
+            <span style="font-size: 11px; color: #64748b;">Aponte para o QR da mesa ou digite o número</span>
+          </div>
+        </div>
+        <button onclick="window.fecharModalEscanearQr()" style="background: #f1f5f9; border: none; font-size: 20px; color: #64748b; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+
+      <!-- Container do Leitor de Câmera -->
+      <div style="width: 100%; border-radius: 16px; overflow: hidden; background: #000; min-height: 220px; display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 16px;">
+        <div id="garcom-qr-camera-viewport" style="width: 100%; height: 100%;"></div>
+        <div id="garcom-qr-camera-loading" style="position: absolute; color: white; font-size: 13px; font-weight: 600; text-align: center; padding: 20px;">
+          <i class="ph ph-camera" style="font-size: 32px; display: block; margin-bottom: 8px;"></i>
+          Iniciando câmera para leitura do QR...
+        </div>
+      </div>
+
+      <!-- Fallback manual rápido por número -->
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 14px; margin-bottom: 14px;">
+        <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Ou digite o número da Mesa / Comanda:</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="garcom-input-mesa-rapida" placeholder="Ex: 4 ou Mesa 04" style="flex: 1; padding: 11px 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 14px; font-weight: 700; outline: none;">
+          <button type="button" onclick="window.abrirMesaDiretaPorNumero(document.getElementById('garcom-input-mesa-rapida').value)" style="padding: 11px 18px; border-radius: 12px; background: #fc4b15; color: white; border: none; font-weight: 800; font-size: 13.5px; cursor: pointer;">
+            Abrir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 12: Pagamento em Dinheiro & Calculadora de Troco Mobile -->
+  <div id="modal-garcom-dinheiro-troco" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); z-index: 10020; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 28px 28px 0 0; padding: 24px; animation: slideUp 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.25); max-height: 85vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(22,163,74,0.12); color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            <i class="ph-bold ph-money"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 0;">Pagamento em Dinheiro</h3>
+            <span style="font-size: 12px; color: #64748b;">Calcule o troco e finalize com segurança</span>
+          </div>
+        </div>
+        <button onclick="window.fecharModalDinheiroTroco()" style="background: #f1f5f9; border: none; font-size: 20px; color: #64748b; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+
+      <!-- Valor a Cobrar -->
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 14px 16px; margin-bottom: 14px; text-align: center;">
+        <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Valor a Cobrar:</div>
+        <div id="dinheiro-valor-cobrar-display" style="font-size: 32px; font-weight: 900; color: #0f172a; margin-top: 2px;">R$ 0,00</div>
+      </div>
+
+      <!-- Cédulas Rápidas -->
+      <div style="margin-bottom: 14px;">
+        <div style="font-size: 11.5px; font-weight: 700; color: #64748b; margin-bottom: 8px;">SELECIONE A NOTA ENTREGUE:</div>
+        <div id="dinheiro-cedulas-chips" style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <button type="button" onclick="window.setDinheiroValorRecebido('exato')" style="flex: 1; min-width: 80px; padding: 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 800; font-size: 13px; cursor: pointer;">Valor Exato</button>
+          <button type="button" onclick="window.setDinheiroValorRecebido(10)" style="flex: 1; min-width: 60px; padding: 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 800; font-size: 13px; cursor: pointer;">R$ 10</button>
+          <button type="button" onclick="window.setDinheiroValorRecebido(20)" style="flex: 1; min-width: 60px; padding: 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 800; font-size: 13px; cursor: pointer;">R$ 20</button>
+          <button type="button" onclick="window.setDinheiroValorRecebido(50)" style="flex: 1; min-width: 60px; padding: 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 800; font-size: 13px; cursor: pointer;">R$ 50</button>
+          <button type="button" onclick="window.setDinheiroValorRecebido(100)" style="flex: 1; min-width: 60px; padding: 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 800; font-size: 13px; cursor: pointer;">R$ 100</button>
+          <button type="button" onclick="window.setDinheiroValorRecebido(200)" style="flex: 1; min-width: 60px; padding: 10px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 800; font-size: 13px; cursor: pointer;">R$ 200</button>
+        </div>
+      </div>
+
+      <!-- Campo Valor Entregue Manual -->
+      <div style="margin-bottom: 14px;">
+        <label for="dinheiro-input-recebido" style="font-size: 12.5px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Ou digite o valor entregue:</label>
+        <div style="position: relative;">
+          <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; color: #94a3b8; font-size: 16px;">R$</span>
+          <input type="text" inputmode="decimal" id="dinheiro-input-recebido" placeholder="0,00"
+            oninput="window.calcularTrocoDinheiro()"
+            style="width: 100%; box-sizing: border-box; padding: 12px 14px 12px 42px; border-radius: 14px; border: 2px solid #cbd5e1; font-size: 20px; font-weight: 800; color: #0f172a; outline: none; background: #ffffff;">
+        </div>
+      </div>
+
+      <!-- Card de Resultado do Troco -->
+      <div id="dinheiro-card-troco" style="padding: 14px 16px; border-radius: 14px; margin-bottom: 14px; background: #f0fdf4; border: 1.5px solid #86efac; text-align: center; transition: all 0.2s;">
+        <div id="dinheiro-troco-label" style="font-size: 12px; font-weight: 700; color: #166534; text-transform: uppercase;">Troco a Devolver:</div>
+        <div id="dinheiro-troco-valor" style="font-size: 26px; font-weight: 900; color: #15803d; margin-top: 2px;">R$ 0,00</div>
+      </div>
+
+      <!-- Opção de Caixinha / Gorjeta se houver troco -->
+      <div id="dinheiro-box-caixinha" style="display: none; background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 10px 14px; margin-bottom: 16px;">
+        <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 12.5px; font-weight: 700; color: #92400e;">
+          <span style="display: flex; align-items: center; gap: 8px;">
+            <i class="ph-bold ph-heart" style="color: #f59e0b; font-size: 18px;"></i>
+            Destinar troco como Caixinha da Equipe
+          </span>
+          <input type="checkbox" id="dinheiro-chk-caixinha" style="width: 18px; height: 18px; accent-color: #f59e0b; cursor: pointer;">
+        </label>
+      </div>
+
+      <!-- Ações de Confirmação -->
+      <div style="display: flex; gap: 10px;">
+        <button type="button" onclick="window.fecharModalDinheiroTroco()" style="flex: 1; padding: 14px; border-radius: 14px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 700; font-size: 14px; cursor: pointer;">
+          Voltar
+        </button>
+        <button type="button" id="btn-dinheiro-confirmar" onclick="window.confirmarPagamentoDinheiro()" style="flex: 2; padding: 14px; border-radius: 14px; border: none; background: #16a34a; color: #ffffff; font-weight: 800; font-size: 14.5px; cursor: pointer; box-shadow: 0 4px 14px rgba(22,163,74,0.3);">
+          Confirmar R$ <span id="btn-dinheiro-confirmar-val">0,00</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/device-adapters.js"></script>
   <script src="/chef-colaborador-dock.js"></script>
   <script src="/chef-layout-injetor.js"></script>
 </body>

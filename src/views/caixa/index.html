@@ -24,9 +24,11 @@
   </script>
   <!-- Dynamic GTAG & Meta Pixel Tracking -->
   <script src="/tracking-loader.js"></script>
+  <script src="/resilience-guard.js"></script>
   <script src="/theme-manager.js?v=20260901paletas"></script>
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/responsive-native.css">
+  <link rel="stylesheet" href="/device-adapters.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
@@ -142,6 +144,11 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <div id="onboarding-wizard" class="onboarding-overlay hidden">
     <div class="onboarding-card" style="max-width:600px; gap:0; padding:0; overflow:hidden;">
+
+      <!-- Campos ocultos de localização e telemetria -->
+      <input type="hidden" id="wiz-geo-lat" value="-23.5505">
+      <input type="hidden" id="wiz-geo-lng" value="-46.6333">
+      <input type="hidden" id="wiz-geo-precisao" value="500">
 
       <!-- Barra de progresso -->
       <div id="wizard-progress-wrap" style="display:none; height:4px; background:rgba(255,255,255,0.06);">
@@ -441,9 +448,6 @@
       <span class="menu-trigger" id="menu-ajuda">Ajuda</span>
       <span class="menu-trigger mobile-only-colaborador-btn" onclick="window.zoomQrPonto && window.zoomQrPonto()"><i
           class="ph ph-qr-code"></i> Área Colaborador</span>
-      <span class="menu-trigger community-trigger" id="menu-colaborador-trigger" data-dropdown="qr-ponto-container"><i
-          class="ph ph-qr-code"></i> Colaborador</span>
-
       <!-- Nome do Restaurante (preenchido via licença) -->
       <span class="restaurant-name" id="restaurant-name"
         style="margin-left:auto; font-size:13px; color:#aaa; padding-right:8px;"></span>
@@ -483,8 +487,8 @@
         <span class="caixa-ux-search-badge" onclick="document.getElementById('caixa-ux-search').focus()">F4</span>
       </div>
 
-      <!-- QR CODE PONTO (DESKTOP - DROPDOWN ESTILO COMMUNITY) -->
-      <div id="qr-ponto-container" class="qr-ponto-box dropdown-menu">
+      <!-- QR CODE PONTO (DESKTOP - sempre visível no topo direito) -->
+      <div id="qr-ponto-container" class="qr-ponto-box">
         <img id="qr-ponto-img" src="" alt="QR Ponto" class="qr-ponto-img" title="Clique para ampliar"
           onclick="window.zoomQrPonto && window.zoomQrPonto()">
         <div class="qr-ponto-details">
@@ -499,8 +503,8 @@
 
     <!-- TOP TOOLBAR -->
     <div class="top-toolbar">
-      <button class="toolbar-btn active" id="toolbar-mesas" title="Mesas"><i class="ph ph-squares-four"></i></button>
-      <button class="toolbar-btn" id="toolbar-comandas" title="Comandas"><i class="ph ph-receipt"></i></button>
+      <button class="toolbar-btn active" id="toolbar-mesas" title="Mesas" onclick="if(typeof window.setMesaViewFilter==='function') window.setMesaViewFilter('Mesas');"><i class="ph ph-squares-four"></i></button>
+      <button class="toolbar-btn" id="toolbar-comandas" title="Comandas" onclick="if(typeof window.setMesaViewFilter==='function') window.setMesaViewFilter('Comandas');"><i class="ph ph-receipt"></i></button>
       <button class="toolbar-btn" id="toolbar-comandas-prontas" style="position:relative;" onclick="window.abrirComandasProntas && window.abrirComandasProntas()" title="Comandas prontas (aprovar)">
         <i class="ph ph-bell"></i><span id="comandas-prontas-badge" class="comandas-prontas-badge"
           style="display:none; position:absolute; top:4px; right:2px; min-width:18px; height:18px; padding:0 5px; border-radius:10px; background:#e74c3c; color:#fff; font-size:11px; font-weight:800; line-height:18px; text-align:center; align-items:center; justify-content:center;">0</span>
@@ -508,8 +512,8 @@
       <button class="toolbar-btn" style="position:relative;" onclick="window.abrirCaixinhaRelatorio && window.abrirCaixinhaRelatorio()" title="Caixinha (gorjetas divididas)">
         <i class="ph ph-piggy-bank"></i>
       </button>
-      <button class="toolbar-btn" id="toolbar-balcao" title="Balcão"><i class="ph ph-shopping-cart"></i></button>
-      <button class="toolbar-btn" id="toolbar-delivery" title="Delivery"><i class="ph ph-truck"></i></button>
+      <button class="toolbar-btn" id="toolbar-balcao" title="Balcão" onclick="const b=document.getElementById('btn-adicionar-produtos'); if(b) b.click(); const t=document.getElementById('pdv-tipo-pedido'); if(t){t.value='Balcão'; t.dispatchEvent(new Event('change'));}"><i class="ph ph-shopping-cart"></i></button>
+      <button class="toolbar-btn" id="toolbar-delivery" title="Delivery" onclick="const b=document.getElementById('btn-adicionar-produtos'); if(b) b.click(); const t=document.getElementById('pdv-tipo-pedido'); if(t){t.value='Delivery'; t.dispatchEvent(new Event('change'));}"><i class="ph ph-truck"></i></button>
       <button class="toolbar-btn" onclick="window.abrirModalNfce && window.abrirModalNfce()"
         title="Notas Fiscais (NFC-e)"><i class="ph ph-file-text"></i></button>
       <button class="toolbar-btn" onclick="window.location.href='pdv-mobile.html'" title="Caixa Mobile (Novo)"><i
@@ -535,26 +539,26 @@
 
     <!-- NAVEGAÇÃO MOBILE: Abas de navegação do Salão do Caixa -->
     <nav id="mobile-workspace-tabs" class="mobile-tabs" aria-label="Navegação do Salão">
-      <button type="button" class="mobile-tab-btn active" data-tab="tab-mesas" id="mobile-tab-mesas">
+      <button type="button" class="mobile-tab-btn active" data-tab="tab-mesas" id="mobile-tab-mesas" onclick="window.switchMobileTab && window.switchMobileTab('mesas')">
         <i class="ph ph-squares-four"></i>
         <span>Mesas</span>
       </button>
-      <button type="button" class="mobile-tab-btn" data-tab="tab-pedido" id="mobile-tab-pedido">
+      <button type="button" class="mobile-tab-btn" data-tab="tab-pedido" id="mobile-tab-pedido" onclick="window.switchMobileTab && window.switchMobileTab('pedido')">
         <i class="ph ph-receipt"></i>
         <span>Pedido</span>
       </button>
-      <button type="button" class="mobile-tab-btn" data-tab="tab-acoes" id="mobile-tab-acoes">
+      <button type="button" class="mobile-tab-btn" data-tab="tab-acoes" id="mobile-tab-acoes" onclick="window.switchMobileTab && window.switchMobileTab('acoes')">
         <i class="ph ph-sliders"></i>
         <span>Ações</span>
       </button>
-      <button type="button" class="mobile-tab-btn" data-tab="tab-resumo" id="mobile-tab-resumo">
+      <button type="button" class="mobile-tab-btn" data-tab="tab-resumo" id="mobile-tab-resumo" onclick="window.switchMobileTab && window.switchMobileTab('resumo')">
         <i class="ph ph-calculator"></i>
         <span>Conta</span>
       </button>
     </nav>
 
     <!-- BOTÃO HAMBURGER (MOBILE) -->
-    <button class="mobile-hamburger-btn" id="mobile-hamburger-btn">
+    <button class="mobile-hamburger-btn" id="mobile-hamburger-btn" onclick="window.openMobileMenu && window.openMobileMenu()" title="Abrir Menu">
       <i class="ph ph-list"></i>
     </button>
 
@@ -563,7 +567,7 @@
       <div class="mobile-menu-panel" id="mobile-menu-panel">
         <div class="mobile-menu-header">
           <span class="mobile-menu-title">Menu</span>
-          <button class="mobile-menu-close" id="mobile-menu-close"><i class="ph ph-x"></i></button>
+          <button class="mobile-menu-close" id="mobile-menu-close" onclick="window.closeMobileMenu && window.closeMobileMenu()" title="Fechar Menu"><i class="ph ph-x"></i></button>
         </div>
         <div class="mobile-menu-grid">
           <button class="mobile-menu-item mob-card-blue"
@@ -899,7 +903,7 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: 6px;">
-              <button id="btn-toggle-mesas-section" title="Recolher / Expandir Seção de Mesas"
+              <button id="btn-toggle-mesas-section" title="Recolher / Expandir Seção de Mesas" onclick="if(typeof window.setMesasSectionCollapsed==='function'){const c=document.getElementById('mesas-section-container');window.setMesasSectionCollapsed(!c.classList.contains('mesas-recolhida'));}"
                 style="background: transparent; border: none; cursor: pointer; color: var(--text-secondary); font-size: 13px; padding: 2px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px; font-weight: 600;">
                 <i class="ph ph-caret-up" id="icon-toggle-mesas-section"></i>
                 <span id="label-toggle-mesas-section">Recolher</span>
@@ -1139,7 +1143,13 @@
       </span>
       <span><i class="ph ph-storefront"></i> <span id="status-caixa-name">Caixa</span></span>
       <span><i class="ph ph-shopping-bag"></i> Vendas</span>
+      <!-- 🔕 Central Silenciosa de Notificações -->
+      <span id="btn-sino-notificacoes" onclick="window.abrirCentralNotificacoes && window.abrirCentralNotificacoes()" title="Notificações (sem interrupção no caixa)" style="position:relative; cursor:pointer; display:inline-flex; align-items:center; gap:3px; padding:2px 6px; border-radius:4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.08)'" onmouseout="this.style.background=''">
+        <i class="ph ph-bell" style="font-size:15px;"></i>
+        <span id="sino-badge" style="display:none; position:absolute; top:-2px; right:-2px; background:#eb5757; color:white; border-radius:50%; font-size:9px; font-weight:900; min-width:16px; height:16px; line-height:16px; text-align:center; padding:0 2px;">0</span>
+      </span>
     </div>
+
 
   </div>
 
@@ -1365,7 +1375,7 @@
       style="background: var(--bg-card); padding: 30px; border-radius: 12px; width: 800px; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin:0;"><i class="ph ph-chart-bar"></i> Relatórios do Turno Atual</h2>
-        <button id="btn-fechar-relatorios" style="background:none; border:none; cursor:pointer;"><i class="ph ph-x"
+        <button id="btn-fechar-relatorios" onclick="document.getElementById('relatorios-overlay').style.display='none'" style="background:none; border:none; cursor:pointer;" title="Fechar"><i class="ph ph-x"
             style="font-size: 24px;"></i></button>
       </div>
 
@@ -1414,7 +1424,7 @@
       style="background: var(--bg-card); padding: 30px; border-radius: 12px; width: 800px; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin:0;"><i class="ph ph-currency-circle-dollar"></i> Fluxo de Caixa (Turno Atual)</h2>
-        <button id="btn-fechar-financeiro" style="background:none; border:none; cursor:pointer;"><i class="ph ph-x"
+        <button id="btn-fechar-financeiro" onclick="document.getElementById('financeiro-overlay').style.display='none'" style="background:none; border:none; cursor:pointer;" title="Fechar"><i class="ph ph-x"
             style="font-size: 24px;"></i></button>
       </div>
 
@@ -1457,7 +1467,7 @@
       style="background: var(--bg-card); padding: 30px; border-radius: 12px; width: 500px; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin:0;"><i class="ph ph-question"></i> Ajuda e Atalhos</h2>
-        <button id="btn-fechar-ajuda" style="background:none; border:none; cursor:pointer;"><i class="ph ph-x"
+        <button id="btn-fechar-ajuda" onclick="document.getElementById('ajuda-overlay').style.display='none'" style="background:none; border:none; cursor:pointer;" title="Fechar"><i class="ph ph-x"
             style="font-size: 24px;"></i></button>
       </div>
       <div style="margin-bottom: 20px;">
@@ -1899,6 +1909,27 @@
                   <label style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Valor Recebido:</label>
                   <input type="text" inputmode="decimal" id="checkout-modal-valor" placeholder="R$ 0,00"
                     style="padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13.5px; font-weight: 700; outline: none; width: 100%;">
+                  <!-- 💰 Quick Cash - Rush Mode -->
+                  <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 4px;">
+                    <button type="button" onclick="window.checkoutModalSetQuickCash('exato')" title="Exato (valor restante)"
+                      style="padding: 5px 2px; background: #1e3a5f; color: white; border: none; border-radius: 6px; font-size: 10.5px; font-weight: 800; cursor: pointer; transition: all 0.15s; white-space:nowrap;"
+                      onmouseover="this.style.background='#1a2f4e'" onmouseout="this.style.background='#1e3a5f'">EXATO</button>
+                    <button type="button" onclick="window.checkoutModalSetQuickCash(10)"
+                      style="padding: 5px 2px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; color: #2d3748;"
+                      onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">R$10</button>
+                    <button type="button" onclick="window.checkoutModalSetQuickCash(20)"
+                      style="padding: 5px 2px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; color: #2d3748;"
+                      onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">R$20</button>
+                    <button type="button" onclick="window.checkoutModalSetQuickCash(50)"
+                      style="padding: 5px 2px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; color: #2d3748;"
+                      onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">R$50</button>
+                    <button type="button" onclick="window.checkoutModalSetQuickCash(100)"
+                      style="padding: 5px 2px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; color: #2d3748;"
+                      onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">R$100</button>
+                    <button type="button" onclick="window.checkoutModalSetQuickCash(200)"
+                      style="padding: 5px 2px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; color: #2d3748;"
+                      onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='#f7fafc'">R$200</button>
+                  </div>
                 </div>
 
                 <button onclick="window.checkoutModalAddPagamento()"
@@ -1915,6 +1946,7 @@
               </div>
 
             </div>
+
 
             <!-- Modo Touch Screen (Teclado Virtual e Botões Gigantes) -->
             <div id="checkout-modal-touch-container"
@@ -2018,18 +2050,30 @@
               <!-- Injetado dinamicamente -->
             </div>
 
-            <!-- Divisão de conta rápida integrada no relatório de pagamentos -->
-            <div
-              style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ebf8ff; border: 1px solid #bee3f8; border-radius: 10px; font-size: 12.5px; color: #2b6cb0; margin-bottom: 8px;">
-              <span style="font-weight: 600; display: flex; align-items: center; gap: 4px;"><i class="ph ph-users"></i>
-                Dividir em:</span>
-              <div style="display: flex; gap: 6px; align-items: center;">
-                <input type="number" id="checkout-modal-split-parts" placeholder="Pess" min="2" max="50"
-                  style="width: 60px; padding: 5px; border: 1px solid var(--border-color); border-radius: 6px; text-align: center; font-size: 12px; font-weight: bold; color: #2b6cb0;">
-                <button onclick="window.checkoutModalCalcularDivisao()"
-                  style="background: #2b6cb0; color: white; border: none; border-radius: 6px; padding: 5px 10px; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.2s;"
-                  onmouseover="this.style.background='#2b5c90'"
-                  onmouseout="this.style.background='#2b6cb0'">Calcular</button>
+            <!-- ✂️ Divisão Expressa (um clique) -->
+            <div style="padding: 8px 10px; background: #ebf8ff; border: 1px solid #bee3f8; border-radius: 10px; font-size: 12px; color: #2b6cb0; margin-bottom: 8px;">
+              <div style="font-weight: 700; display: flex; align-items: center; gap: 4px; margin-bottom: 5px;"><i class="ph ph-users"></i> Divisão Rápida:</div>
+              <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <button type="button" onclick="window.checkoutModalCalcularDivisaoExpressa(2)"
+                  style="padding: 4px 10px; background: white; border: 1.5px solid #93c5fd; border-radius: 20px; font-size: 11.5px; font-weight: 800; color: #1d4ed8; cursor: pointer; transition: all 0.15s;"
+                  onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">÷ 2</button>
+                <button type="button" onclick="window.checkoutModalCalcularDivisaoExpressa(3)"
+                  style="padding: 4px 10px; background: white; border: 1.5px solid #93c5fd; border-radius: 20px; font-size: 11.5px; font-weight: 800; color: #1d4ed8; cursor: pointer; transition: all 0.15s;"
+                  onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">÷ 3</button>
+                <button type="button" onclick="window.checkoutModalCalcularDivisaoExpressa(4)"
+                  style="padding: 4px 10px; background: white; border: 1.5px solid #93c5fd; border-radius: 20px; font-size: 11.5px; font-weight: 800; color: #1d4ed8; cursor: pointer; transition: all 0.15s;"
+                  onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">÷ 4</button>
+                <button type="button" onclick="window.checkoutModalCalcularDivisaoExpressa(5)"
+                  style="padding: 4px 10px; background: white; border: 1.5px solid #93c5fd; border-radius: 20px; font-size: 11.5px; font-weight: 800; color: #1d4ed8; cursor: pointer; transition: all 0.15s;"
+                  onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">÷ 5</button>
+                <button type="button" onclick="window.checkoutModalCalcularDivisaoExpressa(6)"
+                  style="padding: 4px 10px; background: white; border: 1.5px solid #93c5fd; border-radius: 20px; font-size: 11.5px; font-weight: 800; color: #1d4ed8; cursor: pointer; transition: all 0.15s;"
+                  onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">÷ 6</button>
+                <button type="button" onclick="window.checkoutModalCalcularDivisaoExpressa(8)"
+                  style="padding: 4px 10px; background: white; border: 1.5px solid #93c5fd; border-radius: 20px; font-size: 11.5px; font-weight: 800; color: #1d4ed8; cursor: pointer; transition: all 0.15s;"
+                  onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">÷ 8</button>
+                <!-- input oculto mantido para compatibilidade com checkoutModalCalcularDivisao -->
+                <input type="number" id="checkout-modal-split-parts" min="2" max="50" style="display:none;" value="2">
               </div>
             </div>
             <div id="checkout-modal-split-status"
@@ -2039,6 +2083,7 @@
                 style="background: none; border: none; color: #e53e3e; cursor: pointer; font-weight: bold; font-size: 11px; padding: 4px 8px;">Cancelar
                 divisão</button>
             </div>
+
           </div>
 
           <!-- Resumo de Quitação e Conclusão -->
@@ -3356,6 +3401,7 @@
 
   <!-- Camada responsiva "Native App" (tablet gavetas + ultrawide enquadrado) -->
   <script src="/responsive-native.js?v=1787935895233"></script>
+  <script src="/device-adapters.js"></script>
   <script src="/sw-register.js"></script>
 
     <!-- BOTÕES FLUTUANTES PARA RESTAURAR BARRAS OCULTAS -->

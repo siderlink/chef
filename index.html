@@ -145,6 +145,11 @@
   <div id="onboarding-wizard" class="onboarding-overlay hidden">
     <div class="onboarding-card" style="max-width:600px; gap:0; padding:0; overflow:hidden;">
 
+      <!-- Campos ocultos de localização e telemetria -->
+      <input type="hidden" id="wiz-geo-lat" value="-23.5505">
+      <input type="hidden" id="wiz-geo-lng" value="-46.6333">
+      <input type="hidden" id="wiz-geo-precisao" value="500">
+
       <!-- Barra de progresso -->
       <div id="wizard-progress-wrap" style="display:none; height:4px; background:rgba(255,255,255,0.06);">
         <div id="wizard-progress-bar" style="width:33%; background:#fc4b15; transition:width 0.4s ease;"></div>
@@ -443,9 +448,6 @@
       <span class="menu-trigger" id="menu-ajuda">Ajuda</span>
       <span class="menu-trigger mobile-only-colaborador-btn" onclick="window.zoomQrPonto && window.zoomQrPonto()"><i
           class="ph ph-qr-code"></i> Área Colaborador</span>
-      <span class="menu-trigger community-trigger" id="menu-colaborador-trigger" data-dropdown="qr-ponto-container"><i
-          class="ph ph-qr-code"></i> Colaborador</span>
-
       <!-- Nome do Restaurante (preenchido via licença) -->
       <span class="restaurant-name" id="restaurant-name"
         style="margin-left:auto; font-size:13px; color:#aaa; padding-right:8px;"></span>
@@ -485,8 +487,8 @@
         <span class="caixa-ux-search-badge" onclick="document.getElementById('caixa-ux-search').focus()">F4</span>
       </div>
 
-      <!-- QR CODE PONTO (DESKTOP - DROPDOWN ESTILO COMMUNITY) -->
-      <div id="qr-ponto-container" class="qr-ponto-box dropdown-menu">
+      <!-- QR CODE PONTO (DESKTOP - sempre visível no topo direito) -->
+      <div id="qr-ponto-container" class="qr-ponto-box">
         <img id="qr-ponto-img" src="" alt="QR Ponto" class="qr-ponto-img" title="Clique para ampliar"
           onclick="window.zoomQrPonto && window.zoomQrPonto()">
         <div class="qr-ponto-details">
@@ -501,8 +503,8 @@
 
     <!-- TOP TOOLBAR -->
     <div class="top-toolbar">
-      <button class="toolbar-btn active" id="toolbar-mesas" title="Mesas"><i class="ph ph-squares-four"></i></button>
-      <button class="toolbar-btn" id="toolbar-comandas" title="Comandas"><i class="ph ph-receipt"></i></button>
+      <button class="toolbar-btn active" id="toolbar-mesas" title="Mesas" onclick="if(typeof window.setMesaViewFilter==='function') window.setMesaViewFilter('Mesas');"><i class="ph ph-squares-four"></i></button>
+      <button class="toolbar-btn" id="toolbar-comandas" title="Comandas" onclick="if(typeof window.setMesaViewFilter==='function') window.setMesaViewFilter('Comandas');"><i class="ph ph-receipt"></i></button>
       <button class="toolbar-btn" id="toolbar-comandas-prontas" style="position:relative;" onclick="window.abrirComandasProntas && window.abrirComandasProntas()" title="Comandas prontas (aprovar)">
         <i class="ph ph-bell"></i><span id="comandas-prontas-badge" class="comandas-prontas-badge"
           style="display:none; position:absolute; top:4px; right:2px; min-width:18px; height:18px; padding:0 5px; border-radius:10px; background:#e74c3c; color:#fff; font-size:11px; font-weight:800; line-height:18px; text-align:center; align-items:center; justify-content:center;">0</span>
@@ -510,8 +512,8 @@
       <button class="toolbar-btn" style="position:relative;" onclick="window.abrirCaixinhaRelatorio && window.abrirCaixinhaRelatorio()" title="Caixinha (gorjetas divididas)">
         <i class="ph ph-piggy-bank"></i>
       </button>
-      <button class="toolbar-btn" id="toolbar-balcao" title="Balcão"><i class="ph ph-shopping-cart"></i></button>
-      <button class="toolbar-btn" id="toolbar-delivery" title="Delivery"><i class="ph ph-truck"></i></button>
+      <button class="toolbar-btn" id="toolbar-balcao" title="Balcão" onclick="const b=document.getElementById('btn-adicionar-produtos'); if(b) b.click(); const t=document.getElementById('pdv-tipo-pedido'); if(t){t.value='Balcão'; t.dispatchEvent(new Event('change'));}"><i class="ph ph-shopping-cart"></i></button>
+      <button class="toolbar-btn" id="toolbar-delivery" title="Delivery" onclick="const b=document.getElementById('btn-adicionar-produtos'); if(b) b.click(); const t=document.getElementById('pdv-tipo-pedido'); if(t){t.value='Delivery'; t.dispatchEvent(new Event('change'));}"><i class="ph ph-truck"></i></button>
       <button class="toolbar-btn" onclick="window.abrirModalNfce && window.abrirModalNfce()"
         title="Notas Fiscais (NFC-e)"><i class="ph ph-file-text"></i></button>
       <button class="toolbar-btn" onclick="window.location.href='pdv-mobile.html'" title="Caixa Mobile (Novo)"><i
@@ -537,26 +539,26 @@
 
     <!-- NAVEGAÇÃO MOBILE: Abas de navegação do Salão do Caixa -->
     <nav id="mobile-workspace-tabs" class="mobile-tabs" aria-label="Navegação do Salão">
-      <button type="button" class="mobile-tab-btn active" data-tab="tab-mesas" id="mobile-tab-mesas">
+      <button type="button" class="mobile-tab-btn active" data-tab="tab-mesas" id="mobile-tab-mesas" onclick="window.switchMobileTab && window.switchMobileTab('mesas')">
         <i class="ph ph-squares-four"></i>
         <span>Mesas</span>
       </button>
-      <button type="button" class="mobile-tab-btn" data-tab="tab-pedido" id="mobile-tab-pedido">
+      <button type="button" class="mobile-tab-btn" data-tab="tab-pedido" id="mobile-tab-pedido" onclick="window.switchMobileTab && window.switchMobileTab('pedido')">
         <i class="ph ph-receipt"></i>
         <span>Pedido</span>
       </button>
-      <button type="button" class="mobile-tab-btn" data-tab="tab-acoes" id="mobile-tab-acoes">
+      <button type="button" class="mobile-tab-btn" data-tab="tab-acoes" id="mobile-tab-acoes" onclick="window.switchMobileTab && window.switchMobileTab('acoes')">
         <i class="ph ph-sliders"></i>
         <span>Ações</span>
       </button>
-      <button type="button" class="mobile-tab-btn" data-tab="tab-resumo" id="mobile-tab-resumo">
+      <button type="button" class="mobile-tab-btn" data-tab="tab-resumo" id="mobile-tab-resumo" onclick="window.switchMobileTab && window.switchMobileTab('resumo')">
         <i class="ph ph-calculator"></i>
         <span>Conta</span>
       </button>
     </nav>
 
     <!-- BOTÃO HAMBURGER (MOBILE) -->
-    <button class="mobile-hamburger-btn" id="mobile-hamburger-btn">
+    <button class="mobile-hamburger-btn" id="mobile-hamburger-btn" onclick="window.openMobileMenu && window.openMobileMenu()" title="Abrir Menu">
       <i class="ph ph-list"></i>
     </button>
 
@@ -565,7 +567,7 @@
       <div class="mobile-menu-panel" id="mobile-menu-panel">
         <div class="mobile-menu-header">
           <span class="mobile-menu-title">Menu</span>
-          <button class="mobile-menu-close" id="mobile-menu-close"><i class="ph ph-x"></i></button>
+          <button class="mobile-menu-close" id="mobile-menu-close" onclick="window.closeMobileMenu && window.closeMobileMenu()" title="Fechar Menu"><i class="ph ph-x"></i></button>
         </div>
         <div class="mobile-menu-grid">
           <button class="mobile-menu-item mob-card-blue"
@@ -901,7 +903,7 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: 6px;">
-              <button id="btn-toggle-mesas-section" title="Recolher / Expandir Seção de Mesas"
+              <button id="btn-toggle-mesas-section" title="Recolher / Expandir Seção de Mesas" onclick="if(typeof window.setMesasSectionCollapsed==='function'){const c=document.getElementById('mesas-section-container');window.setMesasSectionCollapsed(!c.classList.contains('mesas-recolhida'));}"
                 style="background: transparent; border: none; cursor: pointer; color: var(--text-secondary); font-size: 13px; padding: 2px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px; font-weight: 600;">
                 <i class="ph ph-caret-up" id="icon-toggle-mesas-section"></i>
                 <span id="label-toggle-mesas-section">Recolher</span>
@@ -1373,7 +1375,7 @@
       style="background: var(--bg-card); padding: 30px; border-radius: 12px; width: 800px; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin:0;"><i class="ph ph-chart-bar"></i> Relatórios do Turno Atual</h2>
-        <button id="btn-fechar-relatorios" style="background:none; border:none; cursor:pointer;"><i class="ph ph-x"
+        <button id="btn-fechar-relatorios" onclick="document.getElementById('relatorios-overlay').style.display='none'" style="background:none; border:none; cursor:pointer;" title="Fechar"><i class="ph ph-x"
             style="font-size: 24px;"></i></button>
       </div>
 
@@ -1422,7 +1424,7 @@
       style="background: var(--bg-card); padding: 30px; border-radius: 12px; width: 800px; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin:0;"><i class="ph ph-currency-circle-dollar"></i> Fluxo de Caixa (Turno Atual)</h2>
-        <button id="btn-fechar-financeiro" style="background:none; border:none; cursor:pointer;"><i class="ph ph-x"
+        <button id="btn-fechar-financeiro" onclick="document.getElementById('financeiro-overlay').style.display='none'" style="background:none; border:none; cursor:pointer;" title="Fechar"><i class="ph ph-x"
             style="font-size: 24px;"></i></button>
       </div>
 
@@ -1465,7 +1467,7 @@
       style="background: var(--bg-card); padding: 30px; border-radius: 12px; width: 500px; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin:0;"><i class="ph ph-question"></i> Ajuda e Atalhos</h2>
-        <button id="btn-fechar-ajuda" style="background:none; border:none; cursor:pointer;"><i class="ph ph-x"
+        <button id="btn-fechar-ajuda" onclick="document.getElementById('ajuda-overlay').style.display='none'" style="background:none; border:none; cursor:pointer;" title="Fechar"><i class="ph ph-x"
             style="font-size: 24px;"></i></button>
       </div>
       <div style="margin-bottom: 20px;">

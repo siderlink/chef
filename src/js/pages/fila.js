@@ -355,7 +355,16 @@ function aplicarTamanhosCSS(sizes) {
 
     queueList.classList.remove('grade-2col', 'grade-3col', 'grade-4col', 'grade-5col');
     if (sizes.gridCols && sizes.gridCols !== 'auto') {
-      queueList.classList.add(`grade-${sizes.gridCols}col`);
+      const w = window.innerWidth;
+      if (w <= 680) {
+        // No celular/smartphone, sempre 1 coluna limpa vertical
+      } else if (w <= 960 && parseInt(sizes.gridCols) > 2) {
+        queueList.classList.add('grade-2col');
+      } else if (w <= 1200 && parseInt(sizes.gridCols) > 3) {
+        queueList.classList.add('grade-3col');
+      } else {
+        queueList.classList.add(`grade-${sizes.gridCols}col`);
+      }
     }
     queueList.classList.remove('card-tam-p', 'card-tam-m', 'card-tam-g', 'card-tam-gg');
     if (sizes.cardSize) {
@@ -371,6 +380,16 @@ function aplicarTamanhosCSS(sizes) {
   }
   sincronizarControlesLayoutUI(sizes);
 }
+
+let kdsResizeDebounceTimer = null;
+window.addEventListener('resize', () => {
+  if (kdsResizeDebounceTimer) clearTimeout(kdsResizeDebounceTimer);
+  kdsResizeDebounceTimer = setTimeout(() => {
+    if (typeof aplicarTamanhosCSS === 'function') {
+      aplicarTamanhosCSS();
+    }
+  }, 120);
+});
 
 function sincronizarControlesLayoutUI(sizes) {
   if (!sizes) sizes = kdsSectionSizes;
@@ -983,6 +1002,10 @@ function aplicarFiltrosSalvos() {
       btn.classList.add('active');
     }
   });
+  document.querySelectorAll('#kds-mobile-bottom-nav .kds-nav-tab[data-status]').forEach(btn => {
+    const bStatus = btn.getAttribute('data-status');
+    btn.classList.toggle('active', bStatus === currentFilter || (currentFilter === 'Pronto' && (bStatus === 'Pronto' || bStatus === 'Prontos')));
+  });
   document.querySelectorAll('.queue-tipo-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tipo === filaTipoFiltro);
   });
@@ -1556,13 +1579,34 @@ socket.on('alerta_buffet_cozinha', (dados) => {
 window.filtrarFila = function(statusText) {
   currentFilter = statusText;
   localStorage.setItem('filaCurrentFilter', statusText);
+
+  // Desktop navbar segmented control
+  document.querySelectorAll('#kds-status-tabs-desktop .status-btn, .kds-segmented-control .status-btn').forEach(btn => {
+    const bStatus = btn.getAttribute('data-status');
+    btn.classList.toggle('active', bStatus === statusText || (statusText === 'Pronto' && (bStatus === 'Pronto' || bStatus === 'Prontos')));
+  });
+
+  // Mobile bottom navigation bar
+  document.querySelectorAll('#kds-mobile-bottom-nav .kds-nav-tab').forEach(btn => {
+    const bStatus = btn.getAttribute('data-status');
+    btn.classList.toggle('active', bStatus === statusText || (statusText === 'Pronto' && (bStatus === 'Pronto' || bStatus === 'Prontos')));
+  });
+
+  // Modal settings status buttons
+  document.querySelectorAll('.fila-settings-btn.status-btn').forEach(btn => {
+    const bStatus = btn.getAttribute('data-status');
+    btn.classList.toggle('active', bStatus === statusText || (statusText === 'Pronto' && (bStatus === 'Pronto' || bStatus === 'Prontos')));
+  });
+
+  // Legacy lateral panel status buttons
   document.querySelectorAll('.right-panel-status .status-btn').forEach(btn => {
     btn.classList.remove('active');
     const bStatus = btn.getAttribute('data-status');
-    if (bStatus === statusText || (statusText === 'Pronto' && bStatus === 'Pronto')) {
+    if (bStatus === statusText || (statusText === 'Pronto' && (bStatus === 'Pronto' || bStatus === 'Prontos'))) {
       btn.classList.add('active');
     }
   });
+
   renderQueue();
 };
 
@@ -1978,7 +2022,7 @@ function renderPizzaKdsDetails(item) {
   return html;
 }
 
-function renderizarCardIndividual(item) {
+function renderizarCardIndividual(item, itemIndex = 0) {
   const timeCreated = parseUtc(item.createdAt);
   const diffMins = Math.floor((Date.now() - timeCreated) / 60000);
   const bgColor = getBgColor(diffMins);
@@ -2038,9 +2082,15 @@ function renderizarCardIndividual(item) {
     ? `<span class="kds-badge-especial" style="background:${corSegura};color:white;${isManobra ? 'animation: pulseBadge 1.5s infinite;' : ''}">${isManobra ? '🔥 ' : ''}${escHtml(especial.mensagem)}</span>`
     : '';
 
-  const mainBtn = isPronto
-    ? `<button class="btn-chamar${chamadoClass}" onclick="window.chamarGarcom(${id}, ${escJs(item.productName)}, ${qty}, ${escJs(item.localName)}, ${escJs(item.userName)})" title="Chamar garçom para entregar" style="background: #8b5cf6; color: white;"><i class="ph ${btnIcon}"></i> <span>${btnText}</span></button>`
-    : `<button class="btn-pronto" onclick="window.alterarStatusPedido(${id}, '${nextStatus}')" style="background: ${btnColor}; color: white;" title="${btnTitle}"><i class="ph ${btnIcon}"></i> <span>${btnText}</span></button>`;
+  let mainBtn = '';
+  let btnEntregar = '';
+
+  if (isPronto) {
+    mainBtn = `<button class="btn-chamar${chamadoClass}" onclick="window.chamarGarcom(${id}, ${escJs(item.productName)}, ${qty}, ${escJs(item.localName)}, ${escJs(item.userName)})" title="Chamar garçom para entregar"><i class="ph ${btnIcon}"></i> <span>${btnText}</span></button>`;
+    btnEntregar = `<button class="btn-entregar" onclick="window.alterarStatusPedido(${id}, 'Finalizado')" title="Marcar como Entregue / Despachado (Concluir)"><i class="ph-bold ph-check-circle"></i> <span>Entregar</span></button>`;
+  } else {
+    mainBtn = `<button class="btn-pronto" onclick="window.alterarStatusPedido(${id}, '${nextStatus}')" style="background: ${btnColor}; color: white;" title="${btnTitle}"><i class="ph ${btnIcon}"></i> <span>${btnText}</span></button>`;
+  }
 
   const isMultipleClass = qty > 1 ? ' is-multiple' : '';
   const isNewClass = newOrderIds.has(id) ? ' new-order-entry-pulse' : '';
@@ -2089,6 +2139,8 @@ function renderizarCardIndividual(item) {
     ? `<span class="kds-ifood-badge" style="background:#ea1d2c;color:white;padding:2px 7px;border-radius:6px;font-size:11px;font-weight:900;display:inline-flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(234,29,44,0.3);"><i class="ph-bold ph-moped"></i> iFood</span>`
     : '';
 
+  const bumpKeyBadge = itemIndex < 9 ? `<span class="kds-bump-tag" title="Bump Bar: pressione a tecla [${itemIndex + 1}] para avançar">[${itemIndex + 1}]</span>` : '';
+
   const ptCabecalho = `
       <div class="kds-card-mobile-header" data-field-key="cabecalho">
         <div class="kds-card-mesa-badge">
@@ -2096,6 +2148,7 @@ function renderizarCardIndividual(item) {
           <div class="kds-card-mesa-info">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
               <strong class="kds-mesa-title">${localEsc}</strong>
+              ${bumpKeyBadge}
               ${badgeIfood}
               ${apelidoPedido ? `
                 <span class="kds-item-nickname-badge" onclick="event.stopPropagation(); window.cadastrarApelidoPedido(${id})" title="Apelido do Pedido: ${escHtml(apelidoPedido)}. Clique para alterar.">
@@ -2175,12 +2228,13 @@ function renderizarCardIndividual(item) {
   const ptProduto = `
       <div class="item-produto" data-field-key="produto">
         <div class="item-produto-title-line">
+          <span class="kds-card-qty-inline">${qty}x</span>
           <span class="item-emoji" style="font-size:20px;">${emojiEsc}</span>
           <span class="kds-product-name">${nomeEsc}</span>
           ${badgeEspecial}
         </div>
         ${pizzaKdsHtml}
-        ${obsEsc ? `<div class="item-observacao" style="background:rgba(239,68,68,0.1); color:#ef4444; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;"><i class="ph-bold ph-warning-circle"></i> OBS: ${obsEsc}</div>` : ''}
+        ${obsEsc ? `<div class="item-observacao" style="background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:4px 8px; border-radius:6px; font-size:12px; font-weight:800; margin-top:4px;"><i class="ph-bold ph-warning-circle"></i> OBS: ${obsEsc}</div>` : ''}
         ${compsHtml}
         ${smartSyncHtml}
       </div>`;
@@ -2189,6 +2243,7 @@ function renderizarCardIndividual(item) {
       <div class="item-pronto" data-field-key="acao">
         ${revertBtn}
         ${mainBtn}
+        ${btnEntregar}
       </div>`;
 
   const camposMontados = { cabecalho: ptCabecalho, quantidade: ptQtd, produto: ptProduto, acao: ptAcao };
@@ -3173,5 +3228,186 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch(e){}
 });
+
+// ══════════════════════════════════════════════════════════════════
+// 📺 KDS MULTI-DISPOSITIVOS: MODO TV, TELA CHEIA, SOM & BUMP BAR
+// ══════════════════════════════════════════════════════════════════
+
+window.alternarModoTv = function(forcar) {
+  const isTv = typeof forcar === 'boolean' ? forcar : !document.body.classList.contains('kds-modo-tv');
+  if (isTv) {
+    document.body.classList.add('kds-modo-tv');
+    localStorage.setItem('chef_kds_modo_tv', '1');
+    window.toggleKdsFullscreen(true);
+  } else {
+    document.body.classList.remove('kds-modo-tv');
+    localStorage.setItem('chef_kds_modo_tv', '0');
+  }
+  const btnTv = document.getElementById('btn-toggle-modo-tv');
+  if (btnTv) {
+    btnTv.classList.toggle('active', isTv);
+    btnTv.style.background = isTv ? '#10b981' : 'rgba(34,197,94,0.12)';
+    btnTv.style.color = isTv ? '#ffffff' : '#22c55e';
+    const span = btnTv.querySelector('span');
+    if (span) span.innerText = isTv ? 'Sair TV' : 'Modo TV';
+  }
+  renderQueue(true);
+};
+
+window.toggleKdsFullscreen = function(forcar) {
+  try {
+    if (forcar === true) {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    } else if (forcar === false) {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } else {
+      if (!document.fullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+    }
+  } catch(e) {}
+};
+
+function atualizarIconeFullscreenKds() {
+  const isFull = !!document.fullscreenElement;
+  const icon = document.getElementById('icon-kds-fullscreen');
+  if (icon) {
+    icon.className = isFull ? 'ph-bold ph-arrows-in' : 'ph-bold ph-arrows-out';
+  }
+}
+document.addEventListener('fullscreenchange', atualizarIconeFullscreenKds);
+
+window.toggleKdsSound = function() {
+  const isAtivo = localStorage.getItem('chef_kds_sound') !== '0';
+  const novo = !isAtivo;
+  localStorage.setItem('chef_kds_sound', novo ? '1' : '0');
+  window.atualizarIconeSomKds();
+  if (novo) {
+    if (typeof initAudio === 'function') initAudio();
+    if (typeof playOrderSoundAndVibrate === 'function') playOrderSoundAndVibrate('Em espera');
+  }
+};
+
+window.atualizarIconeSomKds = function() {
+  const isAtivo = localStorage.getItem('chef_kds_sound') !== '0';
+  const btn = document.getElementById('btn-toggle-sound');
+  if (btn) {
+    btn.innerHTML = isAtivo
+      ? `<i class="ph-bold ph-speaker-high" style="color: #10b981; font-size: 16px;"></i> <span>Som: ON</span>`
+      : `<i class="ph-bold ph-speaker-slash" style="color: #ef4444; font-size: 16px;"></i> <span>Mudo</span>`;
+    btn.style.borderColor = isAtivo ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)';
+    btn.title = isAtivo ? 'Alertas sonoros ativados (Clique para silenciar)' : 'Alertas sonoros mutados (Clique para ativar)';
+  }
+};
+
+window.entregarMesa = function(localName) {
+  if (!localName) return;
+  const prontos = (Array.isArray(queueData) ? queueData : []).filter(i => 
+    (i.status === 'Pronto' || i.status === 'Prontos') && 
+    (i.localName === localName || i.mesa_comanda === localName)
+  );
+  if (prontos.length === 0) return;
+  if (!confirm(`Entregar todos os ${prontos.length} itens prontos de "${localName}"?`)) return;
+  prontos.forEach(item => {
+    window.alterarStatusPedido(item.id, 'Finalizado');
+  });
+};
+
+// ── BUMP BAR & TECLADO PROFISSIONAL PARA KDS ──
+window.addEventListener('keydown', (e) => {
+  const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+  if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+  if (e.isComposing || e.defaultPrevented) return;
+
+  const key = e.key;
+
+  // Bump Bar 1 a 9: Avança o pedido correspondente
+  if (/^[1-9]$/.test(key)) {
+    const idx = parseInt(key, 10) - 1;
+    const cards = Array.from(document.querySelectorAll('#queue-list .queue-item'));
+    if (cards[idx]) {
+      const card = cards[idx];
+      if (e.shiftKey || e.altKey) {
+        const revBtn = card.querySelector('.btn-reverter');
+        if (revBtn) { revBtn.click(); e.preventDefault(); }
+      } else {
+        const actionBtn = card.querySelector('.btn-entregar') || card.querySelector('.btn-pronto') || card.querySelector('.btn-chamar');
+        if (actionBtn) {
+          actionBtn.click();
+          e.preventDefault();
+        }
+      }
+    }
+    return;
+  }
+
+  // Enter ou Espaço: Avança o primeiro pedido da lista
+  if (key === 'Enter' || key === ' ') {
+    const firstCard = document.querySelector('#queue-list .queue-item');
+    if (firstCard) {
+      const actionBtn = firstCard.querySelector('.btn-entregar') || firstCard.querySelector('.btn-pronto') || firstCard.querySelector('.btn-chamar');
+      if (actionBtn) {
+        actionBtn.click();
+        e.preventDefault();
+      }
+    }
+    return;
+  }
+
+  // U ou Ctrl+Z: Desfazer última ação
+  if ((key === 'z' && (e.ctrlKey || e.metaKey)) || key === 'u' || key === 'U') {
+    const undoBtn = document.querySelector('#btn-undo-action');
+    if (undoBtn) {
+      undoBtn.click();
+      e.preventDefault();
+    }
+    return;
+  }
+
+  // T: Alternar Modo TV
+  if ((key === 't' || key === 'T') && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    window.alternarModoTv();
+    e.preventDefault();
+    return;
+  }
+
+  // F: Alternar Tela Cheia
+  if ((key === 'f' || key === 'F') && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    window.toggleKdsFullscreen();
+    e.preventDefault();
+    return;
+  }
+
+  // B ou C: Chamar garçom no primeiro pedido pronto
+  if ((key === 'b' || key === 'B' || key === 'c' || key === 'C') && !e.ctrlKey && !e.altKey) {
+    const firstChamar = document.querySelector('#queue-list .btn-chamar');
+    if (firstChamar) {
+      firstChamar.click();
+      e.preventDefault();
+    }
+    return;
+  }
+});
+
+// Inicialização automática das preferências
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    if (localStorage.getItem('chef_kds_modo_tv') === '1') {
+      window.alternarModoTv(true);
+    }
+    window.atualizarIconeSomKds();
+  } catch(e) {}
+});
+
 
 

@@ -2676,6 +2676,10 @@ db.serialize(() => {
   db.run("ALTER TABLE cupons ADD COLUMN valor REAL", () => { });
   db.run("ALTER TABLE cupons ADD COLUMN limite_usos INTEGER DEFAULT 1", () => { });
   db.run("ALTER TABLE cupons ADD COLUMN titulo TEXT", () => { });
+  db.run("ALTER TABLE cupons ADD COLUMN descricao TEXT", () => { });
+  db.run("ALTER TABLE cupons ADD COLUMN valor_minimo REAL DEFAULT 0", () => { });
+  db.run("ALTER TABLE beneficios ADD COLUMN categoria TEXT", () => { });
+  db.run("ALTER TABLE beneficios ADD COLUMN descricao TEXT", () => { });
 
   db.run(`CREATE TABLE IF NOT EXISTS cupons_usos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -5237,7 +5241,7 @@ io.on('connection', (socket) => {
 
   socket.on('criar_pedido_qr', (data) => {
     // data: { mesa, cliente_nome, itens, valor_total, pago_pix, chave_pix, cliente_id, comanda_nome, is_fila, requires_validacao, mesa_origem }
-    const { mesa, cliente_nome, itens, valor_total, pago_pix, chave_pix, cliente_id, comanda_nome, is_fila, requires_validacao, mesa_origem } = data;
+    const { mesa, cliente_nome, itens, valor_total, pago_pix, chave_pix, cliente_id, comanda_nome, is_fila, requires_validacao, mesa_origem, cupom_codigo } = data;
     const needsValidation = requires_validacao ? 1 : 0;
 
     function insertPedido() {
@@ -5253,6 +5257,15 @@ io.on('connection', (socket) => {
             return;
           }
           const pedidoId = this.lastID;
+          if (cupom_codigo) {
+            db.run(`UPDATE cupons SET usado = usado + 1 WHERE UPPER(codigo) = UPPER(?)`, [cupom_codigo], () => {
+              db.run(
+                `INSERT INTO cupons_usos (cupom_codigo, mesa, garcom, cliente_nome, itens_resgatados) VALUES (?, ?, ?, ?, ?)`,
+                [cupom_codigo, mesa, 'Cardápio Digital QR', cliente_nome || 'Cliente', JSON.stringify((itens || []).map(i => (i.productName || '') + ' x' + (i.quantity || 1)))]
+              );
+              io.emit('cupons_atualizados');
+            });
+          }
           socket.emit('criar_pedido_qr_resposta', { success: true, id: pedidoId, requires_validacao: needsValidation });
           if (needsValidation) {
             io.emit('validacao_pedido_necessaria', { id: pedidoId, mesa, mesa_origem, cliente_nome });
@@ -8028,6 +8041,86 @@ io.on('connection', (socket) => {
     });
   });
 
+  
+  socket.on('get_cupons_ativos', (cb) => {
+    const agora = new Date();
+    const hojeStr = agora.getFullYear() + '-' + String(agora.getMonth() + 1).padStart(2, '0') + '-' + String(agora.getDate()).padStart(2, '0');
+    db.all(`SELECT codigo, titulo, descricao, valor_tipo, valor, validade, itens_json, valor_minimo, limite_usos, usado FROM cupons WHERE (validade IS NULL OR validade = '' OR validade >= ?) AND (usado < limite_usos OR limite_usos IS NULL OR limite_usos = 0) ORDER BY data_criacao DESC LIMIT 50`, [hojeStr], (err, rows) => {
+      const lista = rows || [];
+      if (typeof cb === 'function') cb(lista);
+      socket.emit('cupons_ativos_lista', lista);
+    });
+  });
+
+  socket.on('consultar_cupom', ({ codigo, valor_total, cliente_id }, cb) => {
+    if (!codigo) return cb && cb({ valido: false, error: 'Código de cupom não informado.' });
+    const cod = String(codigo).trim().toUpperCase();
+    db.get(`SELECT * FROM cupons WHERE UPPER(codigo) = ?`, [cod], (err, cupom) => {
+      if (err || !cupom) {
+        return cb && cb({ valido: false, error: 'Cupom inválido ou não encontrado.' });
+      }
+      const limiteUsos = cupom.limite_usos || 1;
+      const totalUsados = cupom.usado || 0;
+      if (limiteUsos > 0 && totalUsados >= limiteUsos) {
+        return cb && cb({ valido: false, error: 'Este cupom já atingiu o limite de usos.' });
+      }
+      const agora = new Date();
+      if (cupom.validade) {
+        const dataValidade = new Date(cupom.validade + 'T23:59:59');
+        if (agora > dataValidade) {
+          return cb && cb({ valido: false, error: 'Este cupom expirou em ' + cupom.validade + '.' });
+        }
+      }
+      if (cupom.dias_horarios_json) {
+        try {
+          const dh = typeof cupom.dias_horarios_json === 'string' ? JSON.parse(cupom.dias_horarios_json) : cupom.dias_horarios_json;
+          const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+          const hojeDia = diasSemana[agora.getDay()];
+          if (dh && dh[hojeDia]) {
+            const configHoje = dh[hojeDia];
+            if (!configHoje.ativo) return cb && cb({ valido: false, error: 'Cupom não é válido para ' + hojeDia + '.' });
+            const horaAtualStr = agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
+            if (configHoje.inicio && horaAtualStr < configHoje.inicio) return cb && cb({ valido: false, error: 'Cupom só é válido a partir de ' + configHoje.inicio });
+            if (configHoje.fim && horaAtualStr > configHoje.fim) return cb && cb({ valido: false, error: 'Cupom era válido apenas até as ' + configHoje.fim });
+          }
+        } catch (e) {}
+      }
+
+      const totalPedido = parseFloat(valor_total) || 0;
+      const minimo = parseFloat(cupom.valor_minimo) || 0;
+      if (minimo > 0 && totalPedido < minimo) {
+        return cb && cb({ valido: false, error: 'Pedido mínimo de R$ ' + minimo.toFixed(2).replace('.', ',') + ' para este cupom.' });
+      }
+
+      let desconto = 0;
+      if (cupom.valor_tipo === 'desconto_fixo') {
+        desconto = Math.min(totalPedido, parseFloat(cupom.valor) || 0);
+      } else if (cupom.valor_tipo === 'desconto_porcentagem' || cupom.valor_tipo === 'porcentagem') {
+        desconto = Math.round((totalPedido * ((parseFloat(cupom.valor) || 0) / 100)) * 100) / 100;
+      }
+
+      let itensBrinde = [];
+      try {
+        if (cupom.itens_json) itensBrinde = typeof cupom.itens_json === 'string' ? JSON.parse(cupom.itens_json) : cupom.itens_json;
+      } catch (e) {}
+
+      return cb && cb({
+        valido: true,
+        cupom: {
+          codigo: cupom.codigo,
+          titulo: cupom.titulo || cupom.codigo,
+          descricao: cupom.descricao || '',
+          valor_tipo: cupom.valor_tipo,
+          valor: cupom.valor,
+          desconto: desconto,
+          itens: itensBrinde,
+          validade: cupom.validade,
+          valor_minimo: minimo
+        }
+      });
+    });
+  });
+
   registerAdminRhEvents(socket);
 
   // --- MÓDULO FISCAL NFC-E SOCKETS ---
@@ -9006,7 +9099,58 @@ app.get('/api/server-status', (req, res) => {
 
 
 // --- API FORMAS DE PAGAMENTO & CARTÕES ---
-app.get('/api/formas-pagamento', (req, res) => {
+
+  app.get('/api/cupons/disponiveis', (req, res) => {
+    const agora = new Date();
+    const hojeStr = agora.getFullYear() + '-' + String(agora.getMonth() + 1).padStart(2, '0') + '-' + String(agora.getDate()).padStart(2, '0');
+    db.all(`SELECT codigo, titulo, descricao, valor_tipo, valor, validade, itens_json, valor_minimo, limite_usos, usado FROM cupons WHERE (validade IS NULL OR validade = '' OR validade >= ?) AND (usado < limite_usos OR limite_usos IS NULL OR limite_usos = 0) ORDER BY data_criacao DESC LIMIT 30`, [hojeStr], (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Erro ao buscar cupons' });
+      res.json({ cupons: rows || [] });
+    });
+  });
+
+  app.post('/api/cupons/consultar', (req, res) => {
+    const b = req.body || {};
+    const codigo = String(b.codigo || '').trim().toUpperCase();
+    const total = parseFloat(b.valor_total || b.total) || 0;
+    if (!codigo) return res.status(400).json({ valido: false, error: 'Código não informado.' });
+    db.get(`SELECT * FROM cupons WHERE UPPER(codigo) = ?`, [codigo], (err, cupom) => {
+      if (err || !cupom) return res.json({ valido: false, error: 'Cupom inválido ou não encontrado.' });
+      const limiteUsos = cupom.limite_usos || 1;
+      const totalUsados = cupom.usado || 0;
+      if (limiteUsos > 0 && totalUsados >= limiteUsos) return res.json({ valido: false, error: 'Este cupom já atingiu o limite de usos.' });
+      if (cupom.validade) {
+        const dataValidade = new Date(cupom.validade + 'T23:59:59');
+        if (new Date() > dataValidade) return res.json({ valido: false, error: 'Este cupom expirou.' });
+      }
+      const minimo = parseFloat(cupom.valor_minimo) || 0;
+      if (minimo > 0 && total < minimo) return res.json({ valido: false, error: 'Pedido mínimo de R$ ' + minimo.toFixed(2).replace('.', ',') + ' para este cupom.' });
+      let desconto = 0;
+      if (cupom.valor_tipo === 'desconto_fixo') {
+        desconto = Math.min(total, parseFloat(cupom.valor) || 0);
+      } else if (cupom.valor_tipo === 'desconto_porcentagem' || cupom.valor_tipo === 'porcentagem') {
+        desconto = Math.round((total * ((parseFloat(cupom.valor) || 0) / 100)) * 100) / 100;
+      }
+      let itensBrinde = [];
+      try { if (cupom.itens_json) itensBrinde = JSON.parse(cupom.itens_json); } catch(e) {}
+      res.json({
+        valido: true,
+        cupom: {
+          codigo: cupom.codigo,
+          titulo: cupom.titulo || cupom.codigo,
+          descricao: cupom.descricao || '',
+          valor_tipo: cupom.valor_tipo,
+          valor: cupom.valor,
+          desconto,
+          itens: itensBrinde,
+          validade: cupom.validade,
+          valor_minimo: minimo
+        }
+      });
+    });
+  });
+
+  app.get('/api/formas-pagamento', (req, res) => {
   withTenant(req, () => {
     db.all(`SELECT * FROM formas_pagamento ORDER BY ordem ASC, id ASC`, [], (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -9760,6 +9904,212 @@ app.post('/api/ia/pesquisar-estabelecimento-geo', (req, res) => {
           iaService.pesquisarEstabelecimentoGeo({ lat, lng, apiKey, model })
             .then(resultado => res.json({ ok: resultado.ok, tem_ia: !!apiKey, dados: resultado.dados, erro: resultado.erro }));
         }
+      }
+    });
+  });
+});
+
+// ── EXTRAÇÃO INTELIGENTE DE CARDÁPIO POR FOTOS (Gemini Vision / IA) ──
+app.post('/api/ia/extrair-cardapio-fotos', upload.array('fotos', 10), (req, res) => {
+  withTenant(req, async () => {
+    try {
+      const fotos = [];
+      if (Array.isArray(req.files) && req.files.length > 0) {
+        for (const f of req.files) {
+          try {
+            const buf = fs.readFileSync(f.path);
+            fotos.push({
+              mimeType: f.mimetype || 'image/jpeg',
+              data: buf.toString('base64')
+            });
+            try { fs.unlinkSync(f.path); } catch (_) {}
+          } catch (_) {}
+        }
+      } else if (Array.isArray(req.body.fotos) && req.body.fotos.length > 0) {
+        req.body.fotos.forEach(f => {
+          if (typeof f === 'string') {
+            fotos.push({ mimeType: 'image/jpeg', data: f });
+          } else if (f && f.data) {
+            fotos.push(f);
+          }
+        });
+      }
+
+      if (!fotos.length) {
+        return res.status(400).json({ ok: false, erro: 'Nenhuma foto enviada. Selecione ou tire fotos do cardápio.' });
+      }
+
+      db.all(`SELECT chave, valor FROM configuracoes WHERE chave IN ('ia_api_key','ia_model')`, [], (eCfg, rows) => {
+        const cfg = lerConfigIa(rows || []);
+        let apiKey = cfg.api_key;
+        let model = cfg.ia_model;
+
+        masterDb.get(`SELECT valor FROM configuracoes_global WHERE chave = 'ia_api_key'`, [], async (eG, rowG) => {
+          if (!apiKey && rowG && rowG.valor) apiKey = rowG.valor;
+          if (!apiKey) apiKey = process.env.GEMINI_API_KEY || process.env.ANTIGRAVITY_AI_KEY;
+
+          try {
+            const resultado = await iaService.extrairCardapioDeFotos({ apiKey, model, fotos });
+            res.json({ ok: true, ...resultado });
+          } catch (err) {
+            res.status(500).json({ ok: false, erro: err.message || 'Falha ao processar imagens do cardápio.' });
+          }
+        });
+      });
+    } catch (e) {
+      res.status(500).json({ ok: false, erro: e.message });
+    }
+  });
+});
+
+// ── CADASTRO EM LOTE DE PRODUTOS EXTRAÍDOS DO CARDÁPIO ──
+app.post('/api/ia/cadastrar-produtos-lote', verificarToken, (req, res) => {
+  const body = req.body || {};
+  const produtos = Array.isArray(body.produtos) ? body.produtos : [];
+  const substituir = !!body.substituir;
+
+  if (!produtos.length) {
+    return res.status(400).json({ ok: false, erro: 'Nenhum produto para cadastrar.' });
+  }
+
+  withTenant(req, () => {
+    db.serialize(() => {
+      if (substituir) {
+        db.run(`UPDATE produtos SET ativo = 0, status = 'inativo'`);
+      }
+
+      let inseridos = 0;
+      let erros = 0;
+      const stmt = db.prepare(`
+        INSERT INTO produtos (
+          categoria, nome, preco, emoji, hasAddons, setor, status_inicial, status,
+          categoria_fiscal, descricao, preco_custo, unidade, visibilidade, ativo
+        ) VALUES (?, ?, ?, ?, 0, ?, 'Em espera', 'ativo', 'Alimentacao', ?, 0, 'UN', 'todos', 1)
+      `);
+
+      produtos.forEach(p => {
+        const nome = String(p.nome || '').trim();
+        if (!nome) return;
+        const categoria = String(p.categoria || 'Geral').trim();
+        const preco = Math.abs(parseFloat(String(p.preco || '0').replace(',', '.'))) || 0;
+        const emoji = String(p.emoji || '🍽️').trim();
+        const descricao = String(p.descricao || '').trim();
+        const setor = (categoria.toLowerCase().includes('bebida') || categoria.toLowerCase().includes('drink') || categoria.toLowerCase().includes('suco') || categoria.toLowerCase().includes('chopp'))
+          ? 'Bar' : 'Cozinha 1';
+
+        stmt.run([categoria, nome, preco, emoji, setor, descricao], (err) => {
+          if (err) erros++;
+          else inseridos++;
+        });
+      });
+
+      stmt.finalize(() => {
+        broadcastProdutos();
+        res.json({
+          ok: true,
+          inseridos,
+          erros,
+          total: produtos.length,
+          mensagem: `${inseridos} produto(s) cadastrado(s) com sucesso no cardápio!`
+        });
+      });
+    });
+  });
+});
+
+// ── PESQUISA & CONEXÃO GOOGLE MEU NEGÓCIO ──
+app.post('/api/ia/pesquisar-google-negocio', (req, res) => {
+  const body = req.body || {};
+  const query = String(body.query || '').trim();
+  const lat = parseFloat(body.lat);
+  const lng = parseFloat(body.lng);
+
+  withTenant(req, () => {
+    db.all(`SELECT chave, valor FROM configuracoes WHERE chave IN ('ia_api_key','ia_model')`, [], (eCfg, rows) => {
+      const cfg = lerConfigIa(rows || []);
+      let apiKey = cfg.api_key;
+      let model = cfg.ia_model;
+
+      masterDb.get(`SELECT valor FROM configuracoes_global WHERE chave = 'ia_api_key'`, [], async (eG, rowG) => {
+        if (!apiKey && rowG && rowG.valor) apiKey = rowG.valor;
+        if (!apiKey) apiKey = process.env.GEMINI_API_KEY || process.env.ANTIGRAVITY_AI_KEY;
+
+        try {
+          const resultado = await iaService.pesquisarGoogleMeuNegocio({ query, lat, lng, apiKey, model });
+          res.json({ ok: resultado.ok, dados: resultado.dados, erro: resultado.erro });
+        } catch (err) {
+          res.status(500).json({ ok: false, erro: err.message });
+        }
+      });
+    });
+  });
+});
+
+// ── APLICAR DADOS DO GOOGLE MEU NEGÓCIO NO RESTAURANTE & CARDÁPIO ──
+app.post('/api/ia/aplicar-dados-google', verificarToken, (req, res) => {
+  const body = req.body || {};
+  const dados = body.dados || {};
+  const importarProdutos = body.importar_produtos !== false;
+
+  withTenant(req, () => {
+    db.serialize(() => {
+      const configsMap = {};
+      if (dados.nome) configsMap['nome_restaurante'] = dados.nome;
+      if (dados.endereco) configsMap['rest_endereco'] = dados.endereco;
+      if (dados.bairro) configsMap['rest_bairro'] = dados.bairro;
+      if (dados.cidade) configsMap['rest_cidade'] = dados.cidade;
+      if (dados.telefone) configsMap['rest_telefone'] = dados.telefone;
+      if (dados.horario_funcionamento) configsMap['rest_horario_funcionamento'] = dados.horario_funcionamento;
+      if (dados.avaliacao) configsMap['avaliacao_google'] = dados.avaliacao;
+      if (dados.categoria_culinaria) configsMap['rest_modalidade'] = dados.categoria_culinaria;
+      if (dados.google_maps_url) configsMap['rest-cupom-google-review'] = dados.google_maps_url;
+
+      const keys = Object.keys(configsMap);
+      if (keys.length > 0) {
+        const stmtCfg = db.prepare(`INSERT OR REPLACE INTO configuracoes (chave, valor) VALUES (?, ?)`);
+        keys.forEach(k => stmtCfg.run([k, String(configsMap[k])]));
+        stmtCfg.finalize();
+      }
+
+      let prodsInseridos = 0;
+      const produtos = Array.isArray(dados.produtos) ? dados.produtos : [];
+      if (importarProdutos && produtos.length > 0) {
+        const stmtProd = db.prepare(`
+          INSERT INTO produtos (
+            categoria, nome, preco, emoji, hasAddons, setor, status_inicial, status,
+            categoria_fiscal, descricao, preco_custo, unidade, visibilidade, ativo
+          ) VALUES (?, ?, ?, ?, 0, ?, 'Em espera', 'ativo', 'Alimentacao', ?, 0, 'UN', 'todos', 1)
+        `);
+
+        produtos.forEach(p => {
+          const nome = String(p.nome || '').trim();
+          if (!nome) return;
+          const categoria = String(p.categoria || 'Pratos Principais').trim();
+          const preco = Math.abs(parseFloat(String(p.preco || '0').replace(',', '.'))) || 0;
+          const emoji = String(p.emoji || '🍽️').trim();
+          const descricao = String(p.descricao || '').trim();
+          const setor = (categoria.toLowerCase().includes('bebida') || categoria.toLowerCase().includes('drink')) ? 'Bar' : 'Cozinha 1';
+
+          stmtProd.run([categoria, nome, preco, emoji, setor, descricao], (e) => {
+            if (!e) prodsInseridos++;
+          });
+        });
+
+        stmtProd.finalize(() => {
+          broadcastProdutos();
+          res.json({
+            ok: true,
+            mensagem: 'Dados e produtos do Google Meu Negócio importados com sucesso!',
+            produtos_inseridos: prodsInseridos,
+            dados_aplicados: keys.length
+          });
+        });
+      } else {
+        res.json({
+          ok: true,
+          mensagem: 'Dados do Google Meu Negócio aplicados com sucesso no perfil do restaurante!',
+          dados_aplicados: keys.length
+        });
       }
     });
   });
@@ -12554,7 +12904,7 @@ app.get('/api/marketing/status', (req, res) => {
 });
 
 app.post('/api/marketing/ativar', (req, res) => {
-  db.run('INSERT INTO configuracoes (chave, valor) VALUES ("modulo_marketing_ativo", "true") ON CONFLICT(chave) DO UPDATE SET valor = "true"', [], (err) => {
+  db.run(`INSERT INTO configuracoes (chave, valor) VALUES (?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor`, ['modulo_marketing_ativo', 'true'], (err) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true, mensagem: 'Módulo Premium de Mensagens & Push ativado!' });
   });

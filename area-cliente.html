@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-  <title>Área do Cliente - Fidelidade</title>
+  <title>Área do Cliente • Clube de Fidelidade & Vantagens</title>
   
   <script src="/socket.io.min.js"></script>
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
@@ -11,16 +11,38 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
   <link rel="stylesheet" href="/device-adapters.css">
   <script src="/theme-manager.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
     :root {
       --primary: #fc4b15;
       --primary-dark: #e03a0b;
-      --bg-color: #0f172a;
-      --card-bg: rgba(30, 41, 59, 0.7);
+      --primary-glow: rgba(252, 75, 21, 0.35);
+      --bg-color: #0b1120;
+      --card-bg: rgba(20, 29, 47, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(252, 75, 21, 0.4);
       --text: #f8fafc;
       --text-muted: #94a3b8;
+      --surface-sub: rgba(255, 255, 255, 0.04);
+      --surface-hover: rgba(255, 255, 255, 0.08);
+      --badge-bg: rgba(255, 255, 255, 0.08);
+      --tier-bronze: linear-gradient(135deg, #b45309, #78350f);
+      --tier-prata: linear-gradient(135deg, #94a3b8, #475569);
+      --tier-ouro: linear-gradient(135deg, #f59e0b, #d97706);
+      --tier-diamante: linear-gradient(135deg, #06b6d4, #3b82f6);
+    }
+
+    body.light-mode, :root[data-theme="light"] {
+      --bg-color: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --card-border: rgba(0, 0, 0, 0.08);
+      --card-hover-border: rgba(252, 75, 21, 0.5);
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --surface-sub: rgba(0, 0, 0, 0.03);
+      --surface-hover: rgba(0, 0, 0, 0.06);
+      --badge-bg: rgba(0, 0, 0, 0.05);
     }
     
     * {
@@ -28,6 +50,7 @@
       font-family: 'Outfit', sans-serif;
       margin: 0;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
     
     body {
@@ -37,19 +60,23 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      background-image: radial-gradient(circle at 15% 50%, rgba(252, 75, 21, 0.15), transparent 25%),
-                        radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.1), transparent 25%);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(252, 75, 21, 0.12), transparent 30%),
+        radial-gradient(circle at 90% 10%, rgba(56, 189, 248, 0.1), transparent 30%),
+        radial-gradient(circle at 50% 80%, rgba(245, 158, 11, 0.08), transparent 40%);
       background-attachment: fixed;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     /* GLASSMORPHISM */
     .glass-card {
       background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
       border-radius: 24px;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      transition: transform 0.2s ease, border-color 0.2s ease;
     }
 
     /* LOGIN SCREEN */
@@ -59,44 +86,95 @@
       justify-content: center;
       align-items: center;
       width: 100%;
-      height: 100vh;
-      padding: 20px;
+      min-height: 100vh;
+      padding: 24px;
     }
 
     .login-box {
       width: 100%;
-      max-width: 400px;
-      padding: 40px 30px;
+      max-width: 420px;
+      padding: 44px 32px;
       text-align: center;
-      animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
     }
 
-    .login-box i.ph-crown {
-      font-size: 64px;
+    .login-box::before {
+      content: '';
+      position: absolute;
+      top: -120px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 240px;
+      height: 240px;
+      background: radial-gradient(circle, rgba(252, 75, 21, 0.25) 0%, transparent 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .login-box-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .login-icon-badge {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 20px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(252, 75, 21, 0.2), rgba(245, 158, 11, 0.2));
+      border: 1.5px solid rgba(252, 75, 21, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
       color: var(--primary);
-      margin-bottom: 20px;
-      animation: pulse 2s infinite;
+      box-shadow: 0 8px 24px rgba(252, 75, 21, 0.25);
+      animation: pulse 2.5s infinite;
     }
 
     .login-box h1 {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
-      margin-bottom: 10px;
-      background: var(--title-grad);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
     }
 
     .login-box p {
       color: var(--text-muted);
-      margin-bottom: 30px;
-      font-size: 15px;
+      margin-bottom: 28px;
+      font-size: 14.5px;
+      line-height: 1.5;
+    }
+
+    .login-features-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .login-feature-item {
+      padding: 10px 6px;
+      background: var(--surface-sub);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+
+    .login-feature-item i {
+      font-size: 18px;
+      color: var(--primary);
+      display: block;
+      margin-bottom: 4px;
     }
 
     .input-group {
       position: relative;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
     .input-group i {
@@ -110,19 +188,21 @@
 
     .login-input {
       width: 100%;
-      padding: 16px 20px 16px 45px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(15, 23, 42, 0.6);
-      color: white;
+      padding: 16px 20px 16px 48px;
+      border-radius: 14px;
+      border: 1.5px solid var(--card-border);
+      background: var(--surface-sub);
+      color: var(--text);
       font-size: 16px;
+      font-weight: 600;
       outline: none;
-      transition: all 0.3s;
+      transition: all 0.25s;
     }
 
     .login-input:focus {
       border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(252, 75, 21, 0.15);
+      box-shadow: 0 0 0 4px var(--primary-glow);
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .btn-primary {
@@ -131,57 +211,94 @@
       background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white;
       border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 700;
+      border-radius: 14px;
+      font-size: 15.5px;
+      font-weight: 800;
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.2s;
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 8px;
+      box-shadow: 0 8px 24px rgba(252, 75, 21, 0.35);
     }
 
-    .btn-primary:active {
-      transform: scale(0.96);
-    }
-
-    .btn-primary:hover {
-      box-shadow: 0 10px 25px rgba(252, 75, 21, 0.4);
-    }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:hover { box-shadow: 0 10px 28px rgba(252, 75, 21, 0.5); }
 
     /* DASHBOARD SCREEN */
     #dashboard-screen {
       display: none;
       width: 100%;
-      max-width: 500px;
-      padding: 20px;
-      padding-bottom: 100px;
-      animation: fadeIn 0.5s ease-out;
+      max-width: 580px;
+      padding: 16px 16px 110px;
+      animation: fadeIn 0.4s ease-out;
     }
 
-    header {
+    header.dashboard-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30px;
-      margin-top: 20px;
+      margin-bottom: 20px;
+      margin-top: 10px;
+      padding: 4px 4px;
+    }
+
+    .user-profile-summary {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .avatar-ring {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      padding: 2.5px;
+      background: var(--tier-ouro);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+    }
+
+    .avatar-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--bg-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text);
     }
 
     .user-greeting h2 {
-      font-size: 22px;
-      font-weight: 700;
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      line-height: 1.2;
     }
 
     .user-greeting p {
       color: var(--text-muted);
-      font-size: 14px;
+      font-size: 12.5px;
+      margin-top: 2px;
     }
 
-    .logout-btn {
-      background: rgba(255, 255, 255, 0.1);
-      border: none;
-      color: white;
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .icon-btn {
+      background: var(--surface-sub);
+      border: 1px solid var(--card-border);
+      color: var(--text);
       width: 40px;
       height: 40px;
       border-radius: 50%;
@@ -189,18 +306,33 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 20px;
-      transition: 0.2s;
+      font-size: 18px;
+      transition: all 0.2s;
     }
 
-    .logout-btn:hover { background: var(--card-sub-hover); }
+    .icon-btn:hover {
+      background: var(--surface-hover);
+      border-color: var(--card-hover-border);
+      transform: scale(1.05);
+    }
 
+    /* POINTS CARD HERO */
     .points-card {
-      padding: 30px;
+      padding: 26px 20px;
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       position: relative;
       overflow: hidden;
+      border: 1.5px solid var(--card-border);
+    }
+
+    .points-card::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(252, 75, 21, 0.15) 0%, transparent 60%);
+      z-index: 0;
+      pointer-events: none;
     }
 
     .nivel-badge {
@@ -208,30 +340,67 @@
       z-index: 1;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 18px;
+      gap: 6px;
+      padding: 6px 16px;
       border-radius: 999px;
-      background: linear-gradient(135deg, #f59e0b, #b45309);
+      background: var(--tier-bronze);
       color: #fff;
       font-weight: 800;
-      font-size: 14px;
+      font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+      margin-bottom: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
     }
 
-    .nivel-badge.prata { background: linear-gradient(135deg, #c0c0c0, #94a3b8); box-shadow: 0 4px 16px rgba(148,163,184,0.4); }
-    .nivel-badge.ouro { background: linear-gradient(135deg, #fbbf24, #d97706); box-shadow: 0 4px 16px rgba(251,191,36,0.4); }
-    .nivel-badge.diamante { background: linear-gradient(135deg, #38bdf8, #6366f1); box-shadow: 0 4px 16px rgba(56,189,248,0.4); }
+    .nivel-badge.prata { background: var(--tier-prata); }
+    .nivel-badge.ouro { background: var(--tier-ouro); }
+    .nivel-badge.diamante { background: var(--tier-diamante); }
 
-    .nivel-progress-wrap {
+    .points-value-row {
       position: relative;
       z-index: 1;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+
+    .points-value {
+      font-size: 58px;
+      font-weight: 900;
+      color: var(--primary);
+      text-shadow: 0 0 24px rgba(252, 75, 21, 0.4);
+      line-height: 1;
+    }
+
+    .points-label {
+      position: relative;
+      z-index: 1;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 14px;
+    }
+
+    .nivel-progress-box {
+      position: relative;
+      z-index: 1;
+      background: var(--surface-sub);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-top: 10px;
+    }
+
+    .nivel-progress-wrap {
       height: 8px;
       border-radius: 999px;
-      background: rgba(255,255,255,0.1);
-      margin: 20px 10px 8px;
+      background: rgba(255, 255, 255, 0.1);
+      margin-bottom: 8px;
       overflow: hidden;
     }
 
@@ -239,160 +408,574 @@
       height: 100%;
       border-radius: 999px;
       background: linear-gradient(90deg, var(--primary), #fbbf24);
-      transition: width 0.6s ease;
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .nivel-progress-label {
-      position: relative;
-      z-index: 1;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .points-card::before {
-      content: '';
-      position: absolute;
-      top: -50%; left: -50%; width: 200%; height: 200%;
-      background: radial-gradient(circle, rgba(252,75,21,0.2) 0%, transparent 60%);
-      z-index: 0;
-    }
-
-    .points-value {
-      position: relative;
-      z-index: 1;
-      font-size: 64px;
-      font-weight: 800;
-      color: var(--primary);
-      text-shadow: 0 0 20px rgba(252, 75, 21, 0.3);
-      line-height: 1;
-      margin-bottom: 5px;
-    }
-
-    .points-label {
-      position: relative;
-      z-index: 1;
-      font-size: 16px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-
-    .section-title {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 15px;
+    .nivel-progress-info {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
     }
 
-    .section-title i { color: var(--primary); }
+    .nivel-progress-info strong {
+      color: var(--text);
+    }
 
-    .beneficios-list {
+    /* QUICK ACTIONS */
+    .quick-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .quick-action-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 12px 6px;
       display: flex;
       flex-direction: column;
-      gap: 15px;
-      margin-bottom: 30px;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: var(--text);
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
     }
 
-    .beneficio-item {
+    .quick-action-btn i {
+      font-size: 22px;
+      color: var(--primary);
+    }
+
+    .quick-action-btn:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    /* DAILY CHECK-IN CARD */
+    .card-checkin-banner {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
+      border: 1.5px solid rgba(16, 185, 129, 0.35);
+      border-radius: 18px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
-      padding: 15px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      transition: 0.3s;
+      justify-content: space-between;
+      gap: 12px;
     }
 
-    .beneficio-item:hover {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(252, 75, 21, 0.3);
+    .checkin-banner-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
-    .beneficio-img {
-      width: 50px;
-      height: 50px;
+    .checkin-icon {
+      width: 44px;
+      height: 44px;
       border-radius: 12px;
-      object-fit: cover;
-      margin-right: 15px;
-      background: rgba(255,255,255,0.1);
+      background: #10b981;
+      color: white;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 24px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
 
-    .beneficio-info {
-      flex: 1;
-    }
-
-    .beneficio-info h4 {
-      font-size: 16px;
-      margin-bottom: 4px;
-    }
-
-    .beneficio-info p {
-      font-size: 13px;
-      color: var(--primary);
-      font-weight: 700;
-    }
-
-    .resgatar-btn {
-      background: rgba(252, 75, 21, 0.1);
-      color: var(--primary);
-      border: 1px solid rgba(252, 75, 21, 0.3);
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .resgatar-btn:hover:not(:disabled) {
-      background: var(--primary);
+    .btn-checkin-action {
+      background: #10b981;
       color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.2s;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
 
-    .resgatar-btn:disabled {
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text-muted);
-      border-color: rgba(255, 255, 255, 0.1);
-      cursor: not-allowed;
+    .btn-checkin-action:hover:not(:disabled) { transform: scale(1.04); }
+    .btn-checkin-action:disabled { opacity: 0.7; cursor: default; }
+
+    /* NAV TABS */
+    .tabs-wrapper {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
+    .tabs-wrapper::-webkit-scrollbar { display: none; }
 
     .profile-tab {
-      padding: 10px 18px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.03);
+      padding: 10px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      background: var(--surface-sub);
       color: var(--text-muted);
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
       display: flex;
       align-items: center;
       gap: 6px;
-      transition: 0.2s;
+      transition: all 0.2s;
+      flex-shrink: 0;
     }
+
+    .profile-tab i { font-size: 16px; }
 
     .profile-tab.active {
       background: var(--primary);
       color: white;
       border-color: var(--primary);
+      box-shadow: 0 4px 14px rgba(252, 75, 21, 0.35);
     }
 
     .profile-tab:hover:not(.active) {
-      background: rgba(255,255,255,0.08);
+      background: var(--surface-hover);
+      color: var(--text);
     }
 
+    .tab-badge {
+      background: rgba(255, 255, 255, 0.25);
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 99px;
+    }
+
+    .profile-tab.active .tab-badge {
+      background: white;
+      color: var(--primary);
+    }
+
+    /* SECTION TITLES */
+    .section-title {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title i { color: var(--primary); font-size: 20px; }
+
+    /* CATEGORY PILLS (LOJA) */
+    .category-pills-bar {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-bottom: 16px;
+      padding-bottom: 4px;
+    }
+    .category-pills-bar::-webkit-scrollbar { display: none; }
+
+    .cat-pill {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--surface-sub);
+      color: var(--text-muted);
+      border: 1px solid var(--card-border);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: 0.2s;
+    }
+
+    .cat-pill.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* BENEFICIOS / REWARD CARDS (LOJA DE PONTOS) */
+    .beneficios-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .reward-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .reward-card:hover {
+      border-color: var(--card-hover-border);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .reward-card.can-redeem {
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .reward-img-wrap {
+      width: 72px;
+      height: 72px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--surface-sub);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .reward-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .reward-emoji-fallback {
+      font-size: 34px;
+    }
+
+    .reward-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .reward-top-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+
+    .reward-cat-tag {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--badge-bg);
+      color: var(--text-muted);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .reward-pts-pill {
+      font-size: 11px;
+      font-weight: 800;
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      padding: 2px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .reward-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .reward-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .reward-progress-mini {
+      height: 4px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.1);
+      margin-bottom: 4px;
+      overflow: hidden;
+    }
+
+    .reward-progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: #10b981;
+    }
+
+    .reward-status-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .btn-resgatar-card {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      box-shadow: 0 4px 12px rgba(252, 75, 21, 0.3);
+    }
+
+    .btn-resgatar-card:hover:not(:disabled) {
+      background: var(--primary-dark);
+      transform: scale(1.04);
+    }
+
+    .btn-resgatar-card:disabled {
+      background: var(--surface-sub);
+      color: var(--text-muted);
+      border: 1px solid var(--card-border);
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    /* CUPONS SECTION (VOUCHERS) */
+    .cupons-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .coupon-ticket {
+      background: var(--card-bg);
+      border: 1.5px dashed rgba(252, 75, 21, 0.4);
+      border-radius: 18px;
+      padding: 16px 18px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s;
+    }
+
+    .coupon-ticket:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+    }
+
+    .coupon-badge-left {
+      width: 68px;
+      height: 68px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(252, 75, 21, 0.2), rgba(245, 158, 11, 0.2));
+      border: 1px solid rgba(252, 75, 21, 0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .coupon-badge-val {
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .coupon-badge-sub {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    .coupon-ticket-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .coupon-code-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(252, 75, 21, 0.12);
+      border: 1px solid rgba(252, 75, 21, 0.25);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+    }
+
+    .coupon-ticket-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .coupon-ticket-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+
+    .coupon-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .coupon-actions-col {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-copiar-cupom {
+      background: var(--surface-sub);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+
+    .btn-copiar-cupom:hover {
+      background: var(--surface-hover);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-usar-cupom {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 11.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 4px 10px rgba(252, 75, 21, 0.3);
+      transition: transform 0.2s;
+    }
+
+    .btn-usar-cupom:hover { transform: scale(1.04); }
+
+    /* CUPOM ACTIVATION BOX */
+    .cupom-activate-box {
+      background: var(--surface-sub);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 18px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .cupom-activate-input {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1.5px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      outline: none;
+      letter-spacing: 0.5px;
+    }
+
+    .cupom-activate-input:focus {
+      border-color: var(--primary);
+    }
+
+    .btn-activate-cupom {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    /* PEDIDO CARDS */
     .pedido-card {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.06);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 16px;
       padding: 16px;
       margin-bottom: 12px;
+      transition: transform 0.2s;
+    }
+
+    .pedido-card:hover {
+      border-color: var(--card-hover-border);
     }
 
     .pedido-header {
@@ -403,15 +986,15 @@
     }
 
     .pedido-header h4 {
-      font-size: 14px;
-      font-weight: 700;
+      font-size: 14.5px;
+      font-weight: 800;
     }
 
     .pedido-header span {
       font-size: 11px;
       padding: 3px 10px;
       border-radius: 8px;
-      font-weight: 700;
+      font-weight: 800;
     }
 
     .pedido-itens {
@@ -426,14 +1009,15 @@
       align-items: center;
       margin-top: 10px;
       padding-top: 10px;
-      border-top: 1px solid var(--card-sub-border);
-      font-weight: 700;
+      border-top: 1px solid var(--card-border);
+      font-weight: 800;
       font-size: 14px;
     }
 
+    /* VISITA CARDS */
     .visita-card {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.06);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 14px;
       padding: 14px 16px;
       margin-bottom: 10px;
@@ -446,7 +1030,7 @@
       width: 44px;
       height: 44px;
       border-radius: 12px;
-      background: rgba(252, 75, 21, 0.1);
+      background: rgba(252, 75, 21, 0.12);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -455,30 +1039,86 @@
       flex-shrink: 0;
     }
 
-    .visita-info {
-      flex: 1;
+    .visita-info { flex: 1; }
+    .visita-info h4 { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+    .visita-info p { font-size: 12px; color: var(--text-muted); }
+
+    /* MODAL RESGATE */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+      padding: 16px;
     }
 
-    .visita-info h4 {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 2px;
+    .modal-content {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      padding: 34px 24px;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
     }
 
-    .visita-info p {
-      font-size: 12px;
-      color: var(--text-muted);
+    .modal-content .code-box {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      background: rgba(252, 75, 21, 0.1);
+      color: var(--primary);
+      padding: 14px;
+      border-radius: 14px;
+      margin: 18px 0;
+      border: 2px dashed var(--primary);
+      user-select: all;
     }
 
-    .visita-pontos {
-      font-size: 13px;
+    .qr-canvas-wrap {
+      display: inline-block;
+      padding: 12px;
+      background: white;
+      border-radius: 14px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    /* TOAST */
+    #chef-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      color: white;
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-size: 13.5px;
       font-weight: 700;
-      color: #10b981;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 10000;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    #chef-toast.show {
+      transform: translateX(-50%) translateY(0);
     }
 
     /* ANIMATIONS */
     @keyframes slideUp {
-      from { opacity: 0; transform: translateY(40px); }
+      from { opacity: 0; transform: translateY(30px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -488,257 +1128,410 @@
     }
 
     @keyframes pulse {
-      0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(252,75,21,0)); }
-      50% { transform: scale(1.05); filter: drop-shadow(0 0 15px rgba(252,75,21,0.5)); }
-      100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(252,75,21,0)); }
-    }
-
-    /* MODAL RESGATE */
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.8);
-      z-index: 9999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(8px);
-    }
-
-    .modal-content {
-      background: var(--bg-color);
-      border: 1px solid rgba(255,255,255,0.1);
-      padding: 40px 30px;
-      border-radius: 24px;
-      width: 90%;
-      max-width: 400px;
-      text-align: center;
-      animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .modal-content .code {
-      font-size: 32px;
-      font-weight: 800;
-      letter-spacing: 5px;
-      background: rgba(252, 75, 21, 0.1);
-      color: var(--primary);
-      padding: 15px;
-      border-radius: 12px;
-      margin: 20px 0;
-      border: 2px dashed var(--primary);
+      0% { transform: scale(1); box-shadow: 0 8px 24px rgba(252, 75, 21, 0.25); }
+      50% { transform: scale(1.05); box-shadow: 0 12px 32px rgba(252, 75, 21, 0.45); }
+      100% { transform: scale(1); box-shadow: 0 8px 24px rgba(252, 75, 21, 0.25); }
     }
   </style>
   <script src="/locales.js"></script>
   <script src="/broadcast.js"></script>
   <script src="/i18n.js"></script>
-<link rel="icon" href="/icons/icon.ico">
+  <link rel="icon" href="/icons/icon.ico">
   <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#fc4b15">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Chef Cozinha">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <meta name="theme-color" content="#fc4b15">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Chef Cozinha">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
 </head>
 <body>
 
   <!-- TELA DE LOGIN -->
   <div id="login-screen">
-    <button class="logout-btn" id="btn-theme-login" onclick="window.ChefTheme && window.ChefTheme.toggle()" title="Alternar Modo Claro / Escuro" style="position:fixed; top:18px; right:18px; z-index:99;"><i class="ph ph-moon" id="theme-toggle-icon"></i></button>
+    <button class="icon-btn" id="btn-theme-login" onclick="window.ChefTheme && window.ChefTheme.toggle()" title="Alternar Modo Claro / Escuro" style="position:fixed; top:18px; right:18px; z-index:99;">
+      <i class="ph ph-moon" id="theme-toggle-icon"></i>
+    </button>
     <div class="glass-card login-box">
-      <i class="ph-fill ph-crown"></i>
-      <h1>Clube de Vantagens</h1>
-      <p>Acesse com seu telefone para resgatar seus pontos e aproveitar benefícios.</p>
-      
-      <div class="input-group">
-        <i class="ph ph-phone"></i>
-        <input type="tel" id="input-telefone" class="login-input" placeholder="(11) 99999-9999" maxlength="15">
+      <div class="login-box-content">
+        <div class="login-icon-badge">
+          <i class="ph-fill ph-crown"></i>
+        </div>
+        <h1>Clube de Vantagens</h1>
+        <p>Acesse seu perfil com seu telefone para acumular pontos, resgatar prêmios e ativar cupons exclusivos.</p>
+
+        <div class="login-features-list">
+          <div class="login-feature-item">
+            <i class="ph-fill ph-star"></i>
+            <span>Ganhe Pontos</span>
+          </div>
+          <div class="login-feature-item">
+            <i class="ph-fill ph-ticket"></i>
+            <span>Cupons OFF</span>
+          </div>
+          <div class="login-feature-item">
+            <i class="ph-fill ph-gift"></i>
+            <span>Pratos Grátis</span>
+          </div>
+        </div>
+        
+        <div class="input-group">
+          <i class="ph ph-phone"></i>
+          <input type="tel" id="input-telefone" class="login-input" placeholder="(11) 99999-9999" maxlength="15" autocomplete="tel">
+        </div>
+        
+        <button class="btn-primary" id="btn-login" onclick="fazerLogin()">
+          <span>Acessar Meus Benefícios</span>
+          <i class="ph-bold ph-arrow-right"></i>
+        </button>
       </div>
-      
-      <button class="btn-primary" id="btn-login" onclick="fazerLogin()">
-        Acessar Meus Pontos <i class="ph ph-arrow-right"></i>
-      </button>
     </div>
   </div>
 
   <!-- TELA DASHBOARD -->
   <div id="dashboard-screen">
-    <header>
-      <div class="user-greeting">
-        <p id="welcome-subtitle">Olá, bem-vindo de volta!</p>
-        <h2 id="cliente-nome">---</h2>
+    <header class="dashboard-header">
+      <div class="user-profile-summary">
+        <div class="avatar-ring" id="user-avatar-ring">
+          <div class="avatar-inner" id="user-avatar-initials">--</div>
+        </div>
+        <div class="user-greeting">
+          <h2 id="cliente-nome">Carregando...</h2>
+          <p id="cliente-telefone-display">Telefone não identificado</p>
+        </div>
       </div>
-      <div style="display: flex; gap: 8px;">
-        <button class="logout-btn" id="btn-back-cardapio" onclick="window.history.back()" title="Voltar ao Cardápio" style="display:none;"><i class="ph ph-arrow-left"></i></button>
-        <button class="logout-btn" onclick="sair()"><i class="ph ph-sign-out"></i></button>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-theme-dash" onclick="window.ChefTheme && window.ChefTheme.toggle()" title="Tema Claro / Escuro">
+          <i class="ph ph-moon"></i>
+        </button>
+        <button class="icon-btn" id="btn-back-cardapio" onclick="voltarAoCardapio()" title="Voltar ao Cardápio" style="display:none; color:var(--primary);">
+          <i class="ph-bold ph-arrow-left"></i>
+        </button>
+        <button class="icon-btn" onclick="sair()" title="Sair da Conta">
+          <i class="ph ph-sign-out"></i>
+        </button>
       </div>
     </header>
 
+    <!-- HERO POINTS & TIER CARD -->
     <div class="glass-card points-card">
-      <div class="nivel-badge" id="cliente-nivel-badge"><i class="ph-fill ph-crown"></i> Bronze</div>
-      <div class="points-value" id="cliente-pontos">0</div>
-      <div class="points-label">Pontos Disponíveis</div>
-      <div class="nivel-progress-wrap"><div class="nivel-progress" id="cliente-nivel-progress" style="width:0%"></div></div>
-      <div class="nivel-progress-label" id="cliente-nivel-progress-label"></div>
+      <div class="nivel-badge" id="cliente-nivel-badge">
+        <i class="ph-fill ph-crown"></i> <span id="cliente-nivel-nome">Bronze</span>
+      </div>
+      <div class="points-value-row">
+        <div class="points-value" id="cliente-pontos">0</div>
+      </div>
+      <div class="points-label">Pontos Acumulados</div>
+      
+      <div class="nivel-progress-box">
+        <div class="nivel-progress-wrap">
+          <div class="nivel-progress" id="cliente-nivel-progress" style="width:0%"></div>
+        </div>
+        <div class="nivel-progress-info">
+          <span id="cliente-nivel-progress-label">0/100 pts para o próximo nível</span>
+          <strong id="cliente-nivel-bonus-label">+0% Bônus</strong>
+        </div>
+      </div>
     </div>
 
-    <div id="btn-fazer-pedido-wrap" style="display:none; margin-bottom: 20px;">
-      <button onclick="irParaCardapio()" style="width:100%; padding:14px 20px; border:none; border-radius:12px; background: linear-gradient(135deg, #f59e0b, #d97706); color:white; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow: 0 4px 15px rgba(245,158,11,0.3);">
-        <i class="ph ph-shopping-cart" style="font-size:22px;"></i> Fazer Pedido
+    <!-- QUICK ACTIONS GRID -->
+    <div class="quick-actions-grid">
+      <button class="quick-action-btn" onclick="irParaCardapio()">
+        <i class="ph-fill ph-shopping-cart-simple"></i>
+        <span>Cardápio</span>
+      </button>
+      <button class="quick-action-btn" onclick="showSection('cupons')">
+        <i class="ph-fill ph-ticket"></i>
+        <span>Cupons</span>
+      </button>
+      <button class="quick-action-btn" onclick="showSection('beneficios')">
+        <i class="ph-fill ph-gift"></i>
+        <span>Loja</span>
+      </button>
+      <button class="quick-action-btn" onclick="abrirContaCliente()">
+        <i class="ph-fill ph-receipt"></i>
+        <span>Comanda</span>
       </button>
     </div>
 
-    <!-- CHECK-IN DE RESERVA -->
-    <div id="card-checkin-reserva" style="background: linear-gradient(135deg,#0ea5e9,#0369a1); border-radius:16px; padding:18px; margin-bottom:20px; color:white;">
-      <h3 style="margin:0 0 6px 0; font-size:16px; font-weight:800;"><i class="ph ph-calendar-check" style="font-size:20px;"></i> Chegou para sua reserva?</h3>
-      <p style="margin:0 0 12px 0; font-size:12.5px; opacity:0.92;">Faça o check-in com o telefone da reserva e a mesa fica esperando por você.</p>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <input type="tel" id="checkin-res-telefone" placeholder="Telefone da reserva" style="flex:1; min-width:170px; padding:11px 13px; border:none; border-radius:10px; font-size:14px; background:white; color:#1e293b;">
-        <button onclick="fazerCheckinAreaCliente()" style="padding:11px 20px; border:none; border-radius:10px; background:#16a34a; color:white; font-weight:800; font-size:14px; cursor:pointer;">Check-in</button>
+    <!-- CHECK-IN DIÁRIO BANNER -->
+    <div class="card-checkin-banner" id="banner-checkin-diario">
+      <div class="checkin-banner-info">
+        <div class="checkin-icon"><i class="ph-fill ph-calendar-check"></i></div>
+        <div>
+          <h4 style="font-size:14px; font-weight:800; margin-bottom:2px;" id="checkin-status-title">Check-in Diário</h4>
+          <p style="font-size:12px; color:var(--text-muted);" id="checkin-status-desc">Ganhe +5 pontos todos os dias!</p>
+        </div>
       </div>
-      <div id="checkin-res-resultado" style="display:none; margin-top:10px; padding:10px 13px; border-radius:10px; font-size:13px; background:rgba(255,255,255,0.15);"></div>
+      <button class="btn-checkin-action" id="btn-realizar-checkin" onclick="fazerCheckinDiarioManual()">
+        +5 Pontos
+      </button>
+    </div>
+
+    <!-- CHECK-IN DE RESERVA (SE VEIO PARA RESERVA) -->
+    <div id="card-checkin-reserva" style="display:none; background: linear-gradient(135deg,#0ea5e9,#0369a1); border-radius:18px; padding:16px; margin-bottom:20px; color:white;">
+      <h3 style="margin:0 0 6px 0; font-size:15px; font-weight:800;"><i class="ph ph-calendar-check"></i> Chegou para sua reserva?</h3>
+      <p style="margin:0 0 10px 0; font-size:12px; opacity:0.92;">Confirme sua chegada para liberar sua mesa sem espera.</p>
+      <div style="display:flex; gap:8px;">
+        <input type="tel" id="checkin-res-telefone" placeholder="Telefone da reserva" style="flex:1; padding:10px 12px; border:none; border-radius:10px; font-size:13px; background:white; color:#1e293b;">
+        <button onclick="fazerCheckinAreaCliente()" style="padding:10px 18px; border:none; border-radius:10px; background:#16a34a; color:white; font-weight:800; font-size:13px; cursor:pointer;">Confirmar</button>
+      </div>
+      <div id="checkin-res-resultado" style="display:none; margin-top:8px; padding:8px 12px; border-radius:8px; font-size:12px; background:rgba(255,255,255,0.18);"></div>
     </div>
 
     <!-- NAV TABS -->
-    <div style="display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none;">
-      <button class="profile-tab active" data-section="pedidos" onclick="showSection('pedidos')"><i class="ph ph-receipt"></i> Pedidos</button>
-      <button class="profile-tab" data-section="visitas" onclick="showSection('visitas')"><i class="ph ph-map-pin"></i> Visitas</button>
-      <button class="profile-tab" data-section="ofertas" onclick="showSection('ofertas')"><i class="ph ph-megaphone"></i> Ofertas</button>
-      <button class="profile-tab" data-section="beneficios" onclick="showSection('beneficios')"><i class="ph ph-gift"></i> Loja</button>
-      <button class="profile-tab" data-section="resgates" onclick="showSection('resgates')"><i class="ph ph-ticket"></i> Resgates</button>
-      <button class="profile-tab" data-section="parceiros" onclick="showSection('parceiros')"><i class="ph ph-map-trifold"></i> Parceiros</button>
-      <button class="profile-tab" data-section="avaliar" onclick="showSection('avaliar')"><i class="ph ph-star"></i> Avaliar</button>
-      <button class="profile-tab" data-section="jogos" onclick="showSection('jogos')"><i class="ph ph-game-controller"></i> Jogos</button>
+    <div class="tabs-wrapper">
+      <button class="profile-tab active" data-section="beneficios" onclick="showSection('beneficios')">
+        <i class="ph-fill ph-gift"></i> Loja de Pontos <span class="tab-badge" id="badge-loja-count">0</span>
+      </button>
+      <button class="profile-tab" data-section="cupons" onclick="showSection('cupons')">
+        <i class="ph-fill ph-ticket"></i> Cupons <span class="tab-badge" id="badge-cupons-count">0</span>
+      </button>
+      <button class="profile-tab" data-section="resgates" onclick="showSection('resgates')">
+        <i class="ph-fill ph-clock-counter-clockwise"></i> Seus Vouchers
+      </button>
+      <button class="profile-tab" data-section="pedidos" onclick="showSection('pedidos')">
+        <i class="ph-fill ph-receipt"></i> Pedidos
+      </button>
+      <button class="profile-tab" data-section="visitas" onclick="showSection('visitas')">
+        <i class="ph-fill ph-map-pin"></i> Visitas
+      </button>
+      <button class="profile-tab" data-section="avaliar" onclick="showSection('avaliar')">
+        <i class="ph-fill ph-star"></i> Avaliar
+      </button>
+      <button class="profile-tab" data-section="parceiros" onclick="showSection('parceiros')">
+        <i class="ph-fill ph-map-trifold"></i> Parceiros
+      </button>
+      <button class="profile-tab" data-section="jogos" onclick="showSection('jogos')">
+        <i class="ph-fill ph-game-controller"></i> Jogos
+      </button>
     </div>
 
-    <!-- PEDIDOS RECENTES -->
-    <div class="profile-section" id="section-pedidos">
-      <h3 class="section-title"><i class="ph-fill ph-receipt"></i> Últimos Pedidos</h3>
-      <div class="beneficios-list" id="lista-pedidos">
-        <p style="color:#94a3b8; text-align:center; padding:20px;">Carregando...</p>
+    <!-- ══════ 1. LOJA DE PONTOS / BENEFÍCIOS ══════ -->
+    <div class="profile-section" id="section-beneficios">
+      <div class="section-title">
+        <div class="section-title-left">
+          <i class="ph-fill ph-gift"></i>
+          <span>Loja de Recompensas</span>
+        </div>
+        <span style="font-size:12px; font-weight:700; color:var(--text-muted);" id="loja-saldo-display">Saldo: 0 pts</span>
+      </div>
+
+      <!-- CATEGORY PILLS -->
+      <div class="category-pills-bar" id="beneficios-cats-bar">
+        <button class="cat-pill active" onclick="filtrarBeneficiosCat('Todos')">Todos</button>
+        <button class="cat-pill" onclick="filtrarBeneficiosCat('Bebidas')">Bebidas</button>
+        <button class="cat-pill" onclick="filtrarBeneficiosCat('Petiscos')">Petiscos</button>
+        <button class="cat-pill" onclick="filtrarBeneficiosCat('Sobremesas')">Sobremesas</button>
+        <button class="cat-pill" onclick="filtrarBeneficiosCat('Descontos')">Descontos</button>
+      </div>
+
+      <div class="beneficios-grid" id="lista-beneficios">
+        <p style="color:var(--text-muted); text-align:center; padding:24px;">Carregando recompensas...</p>
       </div>
     </div>
 
-    <!-- VISITAS -->
-    <div class="profile-section" id="section-visitas" style="display:none;">
-      <h3 class="section-title"><i class="ph-fill ph-map-pin"></i> Suas Visitas</h3>
-      <div id="lista-visitas">
-        <p style="color:#94a3b8; text-align:center; padding:20px;">Carregando...</p>
+    <!-- ══════ 2. CUPONS DE DESCONTO ══════ -->
+    <div class="profile-section" id="section-cupons" style="display:none;">
+      <div class="section-title">
+        <div class="section-title-left">
+          <i class="ph-fill ph-ticket"></i>
+          <span>Cupons & Promoções</span>
+        </div>
+      </div>
+
+      <!-- ATIVAR CUPOM MANUAL -->
+      <div class="cupom-activate-box">
+        <input type="text" id="input-ativar-cupom" class="cupom-activate-input" placeholder="DIGITE UM CÓDIGO (EX: VIP20)">
+        <button class="btn-activate-cupom" onclick="ativarCupomManual()">
+          <i class="ph-bold ph-plus"></i> Ativar
+        </button>
+      </div>
+
+      <div class="cupons-grid" id="lista-cupons">
+        <p style="color:var(--text-muted); text-align:center; padding:24px;">Carregando cupons disponíveis...</p>
       </div>
     </div>
 
-    <!-- OFERTAS -->
-    <div class="profile-section" id="section-ofertas" style="display:none;">
-      <h3 class="section-title"><i class="ph-fill ph-megaphone"></i> Ofertas para Você</h3>
-      <div id="lista-ofertas">
-        <p style="color:#94a3b8; text-align:center; padding:20px;">Carregando...</p>
-      </div>
-    </div>
-
-    <!-- BENEFICIOS / LOJA -->
-    <div class="profile-section" id="section-beneficios" style="display:none;">
-      <h3 class="section-title"><i class="ph-fill ph-gift"></i> Loja de Pontos</h3>
-      <div class="beneficios-list" id="lista-beneficios">
-        <!-- Injetado via JS -->
-      </div>
-    </div>
-
-    <!-- RESGATES -->
+    <!-- ══════ 3. SEUS RESGATES / VOUCHERS ATIVOS ══════ -->
     <div class="profile-section" id="section-resgates" style="display:none;">
-      <h3 class="section-title"><i class="ph-fill ph-clock-counter-clockwise"></i> Seus Resgates</h3>
-      <div class="beneficios-list" id="lista-resgates">
-        <!-- Injetado via JS -->
+      <div class="section-title">
+        <div class="section-title-left">
+          <i class="ph-fill ph-ticket"></i>
+          <span>Seus Vouchers Resgatados</span>
+        </div>
+      </div>
+      <div class="beneficios-grid" id="lista-resgates">
+        <p style="color:var(--text-muted); text-align:center; padding:24px;">Carregando vouchers...</p>
       </div>
     </div>
 
-    <!-- PARCEIROS (use seus pontos) -->
+    <!-- ══════ 4. PEDIDOS RECENTES ══════ -->
+    <div class="profile-section" id="section-pedidos" style="display:none;">
+      <div class="section-title">
+        <div class="section-title-left">
+          <i class="ph-fill ph-receipt"></i>
+          <span>Histórico de Pedidos</span>
+        </div>
+      </div>
+      <div id="lista-pedidos">
+        <p style="color:var(--text-muted); text-align:center; padding:24px;">Carregando pedidos...</p>
+      </div>
+    </div>
+
+    <!-- ══════ 5. VISITAS ══════ -->
+    <div class="profile-section" id="section-visitas" style="display:none;">
+      <div class="section-title">
+        <div class="section-title-left">
+          <i class="ph-fill ph-map-pin"></i>
+          <span>Suas Visitas ao Restaurante</span>
+        </div>
+      </div>
+      <div id="lista-visitas">
+        <p style="color:var(--text-muted); text-align:center; padding:24px;">Carregando visitas...</p>
+      </div>
+    </div>
+
+    <!-- ══════ 6. AVALIAR EXPERIÊNCIA ══════ -->
+    <div class="profile-section" id="section-avaliar" style="display:none;">
+      <div class="section-title">
+        <div class="section-title-left">
+          <i class="ph-fill ph-star"></i>
+          <span>Avalie sua Experiência</span>
+        </div>
+      </div>
+      <div class="glass-card" style="padding:22px; text-align:center;">
+        <p style="color:var(--text-muted); font-size:13.5px; margin-bottom:16px;">Sua nota é muito importante para aperfeiçoarmos nosso cardápio e atendimento!</p>
+        
+        <div id="estrelas-avaliacao" style="display:flex; gap:10px; justify-content:center; margin-bottom:12px;"></div>
+        <div id="avaliacao-sentimento" style="font-size:14px; font-weight:800; color:#f59e0b; margin-bottom:18px;">Excelente!</div>
+        
+        <textarea id="comentario-avaliacao" placeholder="O que você mais gostou ou o que podemos melhorar? (opcional)" rows="3"
+          style="width:100%; box-sizing:border-box; background:var(--surface-sub); border:1.5px solid var(--card-border); border-radius:14px; color:var(--text); padding:14px; font-size:13.5px; resize:none; outline:none; font-family:inherit; margin-bottom:14px;"></textarea>
+        
+        <button id="btn-enviar-avaliacao" onclick="enviarAvaliacao()" class="btn-primary">
+          <i class="ph-bold ph-paper-plane-tilt"></i> Enviar Avaliação (+10 pts)
+        </button>
+        <div id="avaliacao-feedback" style="display:none; text-align:center; color:#10b981; font-weight:800; margin-top:14px; font-size:14px;"></div>
+      </div>
+    </div>
+
+    <!-- ══════ 7. PARCEIROS (REDE DE PONTOS) ══════ -->
     <div class="profile-section" id="section-parceiros" style="display:none;">
-      <h3 class="section-title"><i class="ph-fill ph-map-trifold"></i> Use seus Pontos Aqui</h3>
-      <p style="color:#94a3b8; font-size:13px; margin-bottom:14px;">Parceiros da nossa rede de fidelidade. Toque no pin do mapa ou veja a lista abaixo.</p>
-      <div style="position:relative; border-radius:16px; overflow:hidden; background:#0b1220; margin-bottom:18px;">
-        <canvas id="mapa-parceiros-cliente" width="760" height="420" style="width:100%; height:auto; display:block; touch-action:none;"></canvas>
-        <div id="parceiros-vazio" style="position:absolute; inset:0; display:none; align-items:center; justify-content:center; color:#94a3b8; font-size:13px; text-align:center; padding:20px;">Nenhum parceiro cadastrado ainda.</div>
+      <div class="section-title">
+        <div class="section-title-left">
+          <i class="ph-fill ph-map-trifold"></i>
+          <span>Rede de Parceiros</span>
+        </div>
+      </div>
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom:14px;">Parceiros credenciados onde você pode acumular ou utilizar seus pontos.</p>
+      <div style="position:relative; border-radius:18px; overflow:hidden; background:#0b1220; margin-bottom:16px; border:1px solid var(--card-border);">
+        <canvas id="mapa-parceiros-cliente" width="760" height="380" style="width:100%; height:auto; display:block; touch-action:none;"></canvas>
+        <div id="parceiros-vazio" style="position:absolute; inset:0; display:none; align-items:center; justify-content:center; color:var(--text-muted); font-size:13px; text-align:center; padding:20px;">Nenhum parceiro cadastrado ainda.</div>
       </div>
       <div style="display:flex; flex-direction:column; gap:10px;" id="lista-parceiros-cliente"></div>
     </div>
 
-    <!-- AVALIAR -->
-    <div class="profile-section" id="section-avaliar" style="display:none;">
-      <h3 class="section-title"><i class="ph-fill ph-star"></i> Avalie sua Experiência</h3>
-      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:22px;">
-        <p style="color:#94a3b8; font-size:13px; margin-bottom:14px;">Sua opinião ajuda a melhorar!</p>
-        <div id="estrelas-avaliacao" style="display:flex; gap:8px; justify-content:center; margin-bottom:18px;"></div>
-        <textarea id="comentario-avaliacao" placeholder="Conte como foi sua experiência (opcional)" rows="3"
-          style="width:100%; box-sizing:border-box; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; color:#e2e8f0; padding:12px; font-size:14px; resize:none; outline:none; font-family:inherit;"></textarea>
-        <button id="btn-enviar-avaliacao" onclick="enviarAvaliacao()"
-          style="width:100%; margin-top:14px; background:linear-gradient(135deg,#f59e0b,#d97706); border:none; border-radius:12px; padding:14px; color:white; font-weight:800; font-size:15px; cursor:pointer;">Enviar Avaliação</button>
-        <div id="avaliacao-feedback" style="display:none; text-align:center; color:#34d399; font-weight:700; margin-top:12px; font-size:14px;"></div>
-      </div>
-    </div>
-
-    <!-- ══════ JOGOS / GAMIFICAÇÃO ══════ -->
+    <!-- ══════ 8. JOGOS NA MESA ══════ -->
     <div class="profile-section" id="section-jogos" style="display:none;">
-      <h3 class="section-title"><i class="ph-fill ph-game-controller"></i> Jogos na Mesa</h3>
-      <p style="color:#94a3b8; font-size:13px; margin-bottom:16px;">Desafie quem está na sua mesa! Abra um jogo e espere o adversário entrar.</p>
+      <div class="section-title">
+        <div class="section-title-left">
+          <i class="ph-fill ph-game-controller"></i>
+          <span>Jogos na Mesa</span>
+        </div>
+      </div>
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">Desafie amigos na mesma mesa enquanto aguarda seus pedidos!</p>
 
-      <!-- Lista de jogos disponíveis -->
       <div id="jogos-disponiveis" style="display:grid; gap:12px; margin-bottom:20px;"></div>
-
-      <!-- Partidas em andamento -->
       <div id="jogos-partidas-ativas" style="display:none;">
         <h4 style="color:white; margin-bottom:12px;"><i class="ph ph-sword"></i> Partidas em Andamento</h4>
         <div id="lista-partidas-ativas" style="display:grid; gap:12px;"></div>
       </div>
-
-      <!-- Área do jogo (quando em partida) -->
       <div id="jogos-game-area" style="display:none;">
         <div id="jogos-game-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;"></div>
-        <div id="jogos-game-content" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:24px;"></div>
+        <div id="jogos-game-content" style="background:var(--surface-sub); border:1px solid var(--card-border); border-radius:18px; padding:20px;"></div>
         <div id="jogos-game-actions" style="display:flex; gap:8px; margin-top:16px; flex-wrap:wrap;"></div>
       </div>
-
-      <!-- Histórico -->
-      <div id="jogos-historico" style="margin-top:24px;">
-        <h4 style="color:var(--text-muted); margin-bottom:12px; font-size:13px;">Últimas partidas</h4>
+      <div id="jogos-historico" style="margin-top:20px;">
+        <h4 style="color:var(--text-muted); margin-bottom:10px; font-size:13px;">Últimas partidas</h4>
         <div id="lista-jogos-historico"></div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL DE SUCESSO -->
+  <!-- MODAL DE RESGATE DE BENEFÍCIO CONCLUÍDO -->
   <div class="modal-overlay" id="modal-sucesso">
     <div class="modal-content">
-      <i class="ph-fill ph-check-circle" style="font-size: 64px; color: #10b981; margin-bottom: 15px;"></i>
-      <h2 style="margin-bottom: 10px;">Resgate Concluído!</h2>
-      <p style="color: var(--text-muted);">Mostre este código para o garçom ou no caixa para receber seu benefício.</p>
+      <i class="ph-fill ph-check-circle" style="font-size: 60px; color: #10b981; margin-bottom: 12px; display:inline-block;"></i>
+      <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">Voucher Resgatado com Sucesso!</h2>
+      <p style="color: var(--text-muted); font-size: 13.5px; line-height: 1.4;">Apresente este código ao garçom ou mostre no caixa para retirar seu benefício:</p>
       
-      <div class="code" id="codigo-gerado">ABC123</div>
-      
-      <button class="btn-primary" onclick="fecharModal()">Entendido</button>
+      <div class="code-box" id="codigo-gerado">ABC123</div>
+
+      <div class="qr-canvas-wrap" id="modal-qr-container">
+        <canvas id="qr-code-canvas" width="140" height="140" style="display:block;"></canvas>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button class="btn-primary" onclick="copiarCodigoResgate()" style="flex:1; background:var(--surface-sub); border:1px solid var(--card-border); color:var(--text); box-shadow:none;">
+          <i class="ph-bold ph-copy"></i> Copiar Código
+        </button>
+        <button class="btn-primary" onclick="fecharModal()" style="flex:1;">
+          <i class="ph-bold ph-check"></i> Entendido
+        </button>
+      </div>
     </div>
   </div>
 
-  
-<script src="/fullscreen.js"></script>
-<script>
-  const socket = io({ query: { token: localStorage.getItem('chef_token'), restaurante_id: new URLSearchParams(window.location.search).get('restaurante_id') || localStorage.getItem('restaurante_id') || '1' } });
+  <!-- TOAST NOTIFICATION -->
+  <div id="chef-toast">
+    <i class="ph-bold ph-info" id="toast-icon"></i>
+    <span id="toast-text">Mensagem</span>
+  </div>
+
+  <script src="/fullscreen.js"></script>
+  <script>
+    const socket = io({ 
+      query: { 
+        token: localStorage.getItem('chef_token'), 
+        restaurante_id: new URLSearchParams(window.location.search).get('restaurante_id') || localStorage.getItem('restaurante_id') || '1' 
+      } 
+    });
+
     let clienteAtual = null;
     let beneficiosGlobais = [];
+    let cuponsGlobais = [];
+    let categoriaLojaAtiva = 'Todos';
 
     const urlParams = new URLSearchParams(window.location.search);
     const fromCardapio = urlParams.get('from') === 'cardapio';
     const isCheckin = urlParams.get('checkin') === '1';
-    const secoesValidas = ['beneficios', 'avaliar', 'parceiros', 'resgates', 'ofertas', 'visitas', 'jogos'];
+    const secoesValidas = ['beneficios', 'cupons', 'resgates', 'pedidos', 'visitas', 'avaliar', 'parceiros', 'jogos'];
     const secaoParam = urlParams.get('secao');
-    const secaoInicial = secaoParam && secoesValidas.includes(secaoParam) ? secaoParam : null;
+    const secaoInicial = secaoParam && secoesValidas.includes(secaoParam) ? secaoParam : 'beneficios';
     const mesaUrl = urlParams.get('mesa') || '';
-
     const ridUrl = urlParams.get('restaurante_id');
     if (ridUrl) localStorage.setItem('restaurante_id', ridUrl);
 
+    // Formatador de Telefone
     document.getElementById('input-telefone').addEventListener('input', function (e) {
-      var x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+      let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
       e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
     });
+
+    document.getElementById('input-telefone').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') fazerLogin();
+    });
+
+    function showToast(msg, icon = 'ph-check') {
+      const toast = document.getElementById('chef-toast');
+      const text = document.getElementById('toast-text');
+      const iconEl = document.getElementById('toast-icon');
+      if (!toast) return;
+      text.innerText = msg;
+      iconEl.className = 'ph-bold ' + icon;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3200);
+    }
 
     function showSection(name) {
       document.querySelectorAll('.profile-section').forEach(s => s.style.display = 'none');
@@ -749,204 +1542,24 @@
       if (tab) tab.classList.add('active');
       if (name === 'parceiros') carregarParceirosCliente();
       if (name === 'avaliar' && !window.__chefAvaliacaoPronta) montarEstrelasAvaliacao();
-    }
-
-    /* ═══ PARCEIROS: mapa + lista ═══ */
-    var pcMapa = { cx: -46.63, cy: -23.55, pxDeg: 60 };
-    var parceirosCliente = [];
-
-    function pcProj(lng, lat, w, h) { return { x: w / 2 + (lng - pcMapa.cx) * pcMapa.pxDeg, y: h / 2 - (lat - pcMapa.cy) * pcMapa.pxDeg }; }
-    function pcUnproj(px, py, w, h) { return { lng: pcMapa.cx + (px - w / 2) / pcMapa.pxDeg, lat: pcMapa.cy - (py - h / 2) / pcMapa.pxDeg }; }
-
-    function desenharMapaCliente() {
-      var cv = document.getElementById('mapa-parceiros-cliente');
-      if (!cv) return;
-      var ctx = cv.getContext('2d');
-      var w = cv.width, h = cv.height;
-      ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = '#0b1220'; ctx.fillRect(0, 0, w, h);
-      var passo = 0.05;
-      while (passo * pcMapa.pxDeg < 70) passo *= 2;
-      ctx.strokeStyle = 'rgba(148,163,184,0.10)'; ctx.lineWidth = 1;
-      var L0 = Math.floor(pcUnproj(0, 0, w, h).lng / passo) * passo;
-      for (var L = L0; ; L += passo) {
-        var x = pcProj(L, 0, w, h).x;
-        if (x > w + 30) break;
-        if (x >= -30) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
-      }
-      var A0 = Math.floor(pcUnproj(0, h, w, h).lat / passo) * passo;
-      for (var A = A0; ; A += passo) {
-        var y = pcProj(0, A, w, h).y;
-        if (y < -30) break;
-        if (y <= h + 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
-      }
-      var locais = parceirosCliente.filter(function (p) { return p.latitude != null; });
-      locais.forEach(function (p) {
-        var pt = pcProj(parseFloat(p.longitude), parseFloat(p.latitude), w, h);
-        ctx.fillStyle = p.ativo ? '#22c55e' : '#64748b';
-        ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(pt.x, pt.y, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.font = 'bold 11px sans-serif'; ctx.fillStyle = '#e2e8f0';
-        ctx.strokeStyle = 'rgba(2,6,23,.85)'; ctx.lineWidth = 3;
-        ctx.strokeText(p.nome, pt.x + 11, pt.y + 4);
-        ctx.fillText(p.nome, pt.x + 11, pt.y + 4);
-      });
-      var vazio = document.getElementById('parceiros-vazio');
-      if (vazio) vazio.style.display = locais.length === 0 ? 'flex' : 'none';
-      if (locais.length === 1 && pcMapa.pxDeg === 60) {
-        pcMapa.cx = parseFloat(locais[0].longitude); pcMapa.cy = parseFloat(locais[0].latitude); pcMapa.pxDeg = 500;
-        desenharMapaCliente();
-      }
-    }
-
-    function renderListaParceiros() {
-      var box = document.getElementById('lista-parceiros-cliente');
-      if (!box) return;
-      if (!parceirosCliente.length) {
-        box.innerHTML = '<p style="color:#94a3b8; text-align:center;">Nenhum parceiro cadastrado ainda.</p>';
-        return;
-      }
-      box.innerHTML = parceirosCliente.map(function (p) {
-        var geo = (p.latitude != null && p.longitude != null)
-          ? '<a href="https://www.google.com/maps?q=' + p.latitude + ',' + p.longitude + '" target="_blank" rel="noopener" style="color:#38bdf8; font-size:12px; text-decoration:none;"><i class="ph ph-navigation-arrow"></i> Ver no mapa</a>' : '';
-        return '<div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px;">' +
-          '<div><div style="font-weight:800; color:#f1f5f9; font-size:15px;">' + (p.nome || '') + '</div>' +
-          '<div style="color:#94a3b8; font-size:12px;">' + [p.categoria, p.bairro, p.cidade].filter(Boolean).join(' · ') + '</div>' +
-          (p.pontos_minimos > 0 ? '<div style="color:#f59e0b; font-size:12px; font-weight:700; margin-top:4px;">A partir de ' + p.pontos_minimos + ' pts</div>' : '') +
-          '</div><div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">' +
-          geo +
-          '<span style="background:' + (p.ativo ? 'rgba(34,197,94,.15)' : 'rgba(100,116,139,.15)') + '; color:' + (p.ativo ? '#22c55e' : '#94a3b8') + '; font-size:11px; font-weight:700; padding:3px 10px; border-radius:99px;">' + (p.ativo ? 'Aceita pontos' : 'Inativo') + '</span>' +
-          '</div></div>';
-      }).join('');
-    }
-
-    function carregarParceirosCliente() {
-      fetch('/api/fidelidade/parceiros')
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          parceirosCliente = (data.parceiros || []).filter(function (p) { return p.ativo; });
-          renderListaParceiros();
-          desenharMapaCliente();
-        }).catch(function () { });
-    }
-
-    (function initMapaParceirosCliente() {
-      var cv = document.getElementById('mapa-parceiros-cliente');
-      if (!cv) return;
-      function coords(ev) {
-        var r = cv.getBoundingClientRect();
-        return { x: (ev.clientX - r.left) * (cv.width / r.width), y: (ev.clientY - r.top) * (cv.height / r.height) };
-      }
-      cv.addEventListener('wheel', function (ev) {
-        ev.preventDefault();
-        var c = coords(ev);
-        var antes = pcUnproj(c.x, c.y, cv.width, cv.height);
-        pcMapa.pxDeg = Math.min(20000, Math.max(1, pcMapa.pxDeg * (ev.deltaY < 0 ? 1.18 : 1 / 1.18)));
-        var depois = pcUnproj(c.x, c.y, cv.width, cv.height);
-        pcMapa.cx += antes.lng - depois.lng; pcMapa.cy += antes.lat - depois.lat;
-        desenharMapaCliente();
-      }, { passive: false });
-      var arrastando = false, ultimo = null;
-      cv.addEventListener('pointerdown', function (ev) { if (cv.__chefPinch) return; arrastando = true; ultimo = { x: ev.clientX, y: ev.clientY }; });
-      window.addEventListener('pointerup', function () { arrastando = false; });
-      window.addEventListener('pointermove', function (ev) {
-        if (!arrastando || !ultimo || cv.__chefPinch) return;
-        var r = cv.getBoundingClientRect();
-        var dx = (ev.clientX - ultimo.x) * (cv.width / r.width);
-        var dy = (ev.clientY - ultimo.y) * (cv.height / r.height);
-        pcMapa.cx -= dx / pcMapa.pxDeg; pcMapa.cy += dy / pcMapa.pxDeg;
-        ultimo = { x: ev.clientX, y: ev.clientY };
-        desenharMapaCliente();
-      });
-    })();
-
-    /* ═══ AVALIAÇÃO: estrelas + envio ═══ */
-    var notaSelecionada = 0;
-
-    function montarEstrelasAvaliacao() {
-      window.__chefAvaliacaoPronta = true;
-      notaSelecionada = 5;
-      var box = document.getElementById('estrelas-avaliacao');
-      if (!box) return;
-      box.innerHTML = '';
-      for (var i = 1; i <= 5; i++) {
-        (function (n) {
-          var b = document.createElement('button');
-          b.setAttribute('data-nota', n);
-          b.innerHTML = '<i class="ph-fill ph-star" style="font-size:38px;"></i>';
-          b.style.cssText = 'background:none;border:none;cursor:pointer;padding:4px;transition:transform .12s;';
-          b.addEventListener('click', function () { notaSelecionada = n; pintarEstrelas(); });
-          b.addEventListener('mouseenter', function () { pintarEstrelas(n); });
-          box.appendChild(b);
-        })(i);
-      }
-      box.addEventListener('mouseleave', function () { pintarEstrelas(); });
-      pintarEstrelas();
-    }
-
-    function pintarEstrelas(hover) {
-      var box = document.getElementById('estrelas-avaliacao');
-      if (!box) return;
-      Array.prototype.forEach.call(box.children, function (b) {
-        var n = parseInt(b.getAttribute('data-nota'), 10);
-        var ativa = n <= (hover || notaSelecionada);
-        var cor = ativa ? (n <= 2 ? '#ef4444' : (n === 3 ? '#f59e0b' : '#22c55e')) : 'rgba(148,163,184,0.35)';
-        b.querySelector('i').style.color = cor;
-      });
-    }
-
-    function enviarAvaliacao() {
-      if (!notaSelecionada) return alert('Escolha uma nota de 1 a 5.');
-      var btn = document.getElementById('btn-enviar-avaliacao');
-      btn.disabled = true;
-      btn.textContent = 'Enviando...';
-      var nome = (clienteAtual && clienteAtual.nome) || '';
-      fetch('/api/avaliacoes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cliente_nome: nome,
-          mesa: mesaUrl || '',
-          nota: notaSelecionada,
-          comentario: (document.getElementById('comentario-avaliacao') || {}).value || ''
-        })
-      }).then(function (r) { return r.json(); }).then(function (data) {
-        var fb = document.getElementById('avaliacao-feedback');
-        btn.disabled = false;
-        btn.textContent = 'Enviar Avaliação';
-        if (fb) {
-          fb.textContent = data.mensagem || data.error || 'Obrigado!';
-          fb.style.color = data.success ? '#34d399' : '#f87171';
-          fb.style.display = 'block';
-        }
-        if (data.success) {
-          document.getElementById('comentario-avaliacao').value = '';
-          if (data.mensagem && data.mensagem.indexOf('Google') !== -1) setTimeout(abrirConviteGoogle, 900);
-        }
-      }).catch(function () {
-        btn.disabled = false;
-        btn.textContent = 'Enviar Avaliação';
-      });
-    }
-
-    function abrirConviteGoogle() {
-      var place = urlParams.get('place_id') || localStorage.getItem('chef_google_place_id') || '';
-      var url = place
-        ? 'https://search.google.com/local/writereview?placeid=' + encodeURIComponent(place)
-        : 'https://www.google.com/maps';
-      window.open(url, '_blank');
+      if (name === 'cupons') carregarCupons();
     }
 
     function fazerLogin() {
       const tel = document.getElementById('input-telefone').value.replace(/\D/g, '');
-      if (tel.length < 10) return alert('Por favor, insira um telefone válido.');
+      if (tel.length < 10) return alert('Por favor, insira um telefone válido com DDD.');
       const btn = document.getElementById('btn-login');
-      btn.innerHTML = '<i class="ph ph-spinner-gap ph-spin"></i> Entrando...';
+      btn.innerHTML = '<i class="ph ph-spinner-gap ph-spin"></i> Acessando...';
+      btn.disabled = true;
       socket.emit('cliente_login', tel);
     }
 
     socket.on('cliente_login_response', (res) => {
-      document.getElementById('btn-login').innerHTML = 'Acessar Meus Pontos <i class="ph ph-arrow-right"></i>';
+      const btn = document.getElementById('btn-login');
+      if (btn) {
+        btn.innerHTML = '<span>Acessar Meus Benefícios</span> <i class="ph-bold ph-arrow-right"></i>';
+        btn.disabled = false;
+      }
       if (res.error) {
         alert(res.error);
       } else {
@@ -960,49 +1573,70 @@
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('dashboard-screen').style.display = 'block';
 
-      document.getElementById('cliente-nome').innerText = clienteAtual.nome;
-      animarPontos(0, clienteAtual.pontos);
-      atualizarNivel(clienteAtual.pontos);
+      // Dados do perfil
+      const nome = clienteAtual.nome || 'Cliente';
+      document.getElementById('cliente-nome').innerText = nome;
+      document.getElementById('cliente-telefone-display').innerText = formatarTelefone(clienteAtual.telefone);
+      
+      const initials = nome.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase();
+      document.getElementById('user-avatar-initials').innerText = initials || '👤';
 
+      animarPontos(0, clienteAtual.pontos || 0);
+      atualizarNivel(clienteAtual.pontos || 0);
+
+      // Botão Voltar ao Cardápio
       const btnBack = document.getElementById('btn-back-cardapio');
-      if (fromCardapio && btnBack) {
+      if (btnBack) {
         btnBack.style.display = 'flex';
-        btnBack.onclick = function () {
-          if (history.length > 1) {
-            history.back();
-          } else {
-            const mesa = urlParams.get('mesa');
-            const rid = localStorage.getItem('restaurante_id') || '1';
-            const base = mesa ? '/cardapio?mesa=' + encodeURIComponent(mesa) : '/cardapio';
-            window.location.href = base + (mesa ? '&' : '?') + 'restaurante_id=' + encodeURIComponent(rid);
-          }
-        };
-        document.getElementById('welcome-subtitle').innerText = 'Seu Perfil';
       }
 
+      // Check-in inicial se solicitado na URL
+      if (isCheckin) {
+        socket.emit('cliente_checkin', { cliente_id: clienteAtual.id, telefone: clienteAtual.telefone });
+      }
+
+      // Buscar dados
       socket.emit('get_beneficios');
       socket.emit('get_resgates_cliente', clienteAtual.id);
       socket.emit('get_cliente_pedidos', { cliente_id: clienteAtual.id, telefone: clienteAtual.telefone });
       socket.emit('get_cliente_visitas', { cliente_id: clienteAtual.id, telefone: clienteAtual.telefone });
       socket.emit('registrar_visita', { cliente_id: clienteAtual.id, cliente_nome: clienteAtual.nome, cliente_telefone: clienteAtual.telefone, mesa: mesaUrl });
+      carregarCupons();
 
-      if (isCheckin) {
-        socket.emit('cliente_checkin', { cliente_id: clienteAtual.id, telefone: clienteAtual.telefone });
-      }
+      // Verificar check-in diário
+      verificarCheckinDiarioStatus();
 
-      document.getElementById('lista-ofertas').innerHTML = '<p style="color:#94a3b8; text-align:center; padding:20px;">Nenhuma oferta disponível no momento.</p>';
+      showSection(secaoInicial);
+    }
 
-      if (secaoInicial) showSection(secaoInicial);
+    function formatarTelefone(t) {
+      if (!t) return '';
+      const num = String(t).replace(/\D/g, '');
+      if (num.length === 11) return `(${num.slice(0,2)}) ${num.slice(2,7)}-${num.slice(7)}`;
+      if (num.length === 10) return `(${num.slice(0,2)}) ${num.slice(2,6)}-${num.slice(6)}`;
+      return t;
+    }
 
-      if (mesaUrl || fromCardapio) {
-        document.getElementById('btn-fazer-pedido-wrap').style.display = 'block';
+    function voltarAoCardapio() {
+      if (history.length > 1 && fromCardapio) {
+        history.back();
+      } else {
+        irParaCardapio();
       }
     }
 
-    function irParaCardapio() {
+    function irParaCardapio(cupomParam) {
       const rid = localStorage.getItem('restaurante_id') || '1';
       const mesa = mesaUrl || '';
-      window.location.href = '/cardapio' + (mesa ? '?mesa=' + encodeURIComponent(mesa) : '') + (mesa ? '&' : '?') + 'restaurante_id=' + encodeURIComponent(rid);
+      let url = '/cardapio' + (mesa ? '?mesa=' + encodeURIComponent(mesa) : '?') + (mesa ? '&' : '') + 'restaurante_id=' + encodeURIComponent(rid);
+      if (cupomParam) url += '&cupom=' + encodeURIComponent(cupomParam);
+      window.location.href = url;
+    }
+
+    function abrirContaCliente() {
+      const rid = localStorage.getItem('restaurante_id') || '1';
+      const mesa = mesaUrl || '';
+      window.location.href = '/conta-cliente.html' + (mesa ? '?mesa=' + encodeURIComponent(mesa) : '?') + (mesa ? '&' : '') + 'restaurante_id=' + encodeURIComponent(rid);
     }
 
     function sair() {
@@ -1010,64 +1644,199 @@
       window.location.reload();
     }
 
-    window.onload = () => {
-      const cardapioProfile = localStorage.getItem('cliente_perfil');
-      if (cardapioProfile && fromCardapio) {
-        try {
-          const perfil = JSON.parse(cardapioProfile);
-          if (perfil && perfil.telefone) {
-            localStorage.setItem('fidelidade_telefone', perfil.telefone);
-          }
-        } catch (e) {}
+    function verificarCheckinDiarioStatus() {
+      const hoje = new Date().toISOString().slice(0, 10);
+      const btn = document.getElementById('btn-realizar-checkin');
+      const title = document.getElementById('checkin-status-title');
+      const desc = document.getElementById('checkin-status-desc');
+      if (clienteAtual && clienteAtual.ultimo_checkin === hoje) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph-bold ph-check"></i> Feito Hoje';
+        btn.style.background = '#64748b';
+        title.innerText = 'Check-in Realizado!';
+        desc.innerText = 'Você já garantiu seus +5 pontos hoje. Volte amanhã!';
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = '+5 Pontos';
+        btn.style.background = '#10b981';
+        title.innerText = 'Check-in Diário';
+        desc.innerText = 'Garanta +5 pontos grátis pelo seu acesso hoje!';
       }
-      const salvo = localStorage.getItem('fidelidade_telefone');
-      if (salvo) {
-        socket.emit('cliente_login', salvo);
-      }
-    };
+    }
+
+    function fazerCheckinDiarioManual() {
+      if (!clienteAtual) return;
+      const btn = document.getElementById('btn-realizar-checkin');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph ph-spinner-gap ph-spin"></i>';
+      socket.emit('cliente_checkin', { cliente_id: clienteAtual.id, telefone: clienteAtual.telefone });
+    }
 
     socket.on('checkin_response', (res) => {
+      const btn = document.getElementById('btn-realizar-checkin');
       if (res.error) {
-        alert(res.error);
+        showToast(res.error, 'ph-warning');
+        verificarCheckinDiarioStatus();
       } else if (res.success) {
-        alert('Check-in realizado! + ' + res.pontos + ' pontos. Saldo: ' + res.novoSaldo + ' pontos.');
-      } else {
-        alert(res.error || 'Check-in não realizado.');
+        clienteAtual.pontos = res.novoSaldo;
+        clienteAtual.ultimo_checkin = new Date().toISOString().slice(0, 10);
+        document.getElementById('cliente-pontos').innerText = res.novoSaldo;
+        atualizarNivel(res.novoSaldo);
+        verificarCheckinDiarioStatus();
+        showToast(`🎉 +${res.pontos} pontos adicionados! Saldo: ${res.novoSaldo} pts`, 'ph-sparkle');
+        renderizarBeneficios();
       }
-      if (isCheckin) window.location.href = '/area-cliente.html?restaurante_id=' + (urlParams.get('restaurante_id') || localStorage.getItem('restaurante_id') || '1');
     });
 
+    // ── NÍVEIS & PROGRESSO ──
+    function atualizarNivel(pontos) {
+      const niveis = [
+        { nome: 'Bronze', min: 0, proximo: 150, bonus: '0%', badgeClass: 'bronze' },
+        { nome: 'Prata', min: 150, proximo: 500, bonus: '+5%', badgeClass: 'prata' },
+        { nome: 'Ouro', min: 500, proximo: 1500, bonus: '+10%', badgeClass: 'ouro' },
+        { nome: 'Diamante', min: 1500, proximo: null, bonus: '+15%', badgeClass: 'diamante' }
+      ];
+      let atual = niveis[0];
+      for (const n of niveis) { if (pontos >= n.min) atual = n; }
+
+      const badge = document.getElementById('cliente-nivel-badge');
+      const nomeEl = document.getElementById('cliente-nivel-nome');
+      if (badge && nomeEl) {
+        badge.className = 'nivel-badge ' + atual.badgeClass;
+        nomeEl.innerText = atual.nome;
+      }
+
+      const ring = document.getElementById('user-avatar-ring');
+      if (ring) {
+        if (atual.nome === 'Prata') ring.style.background = 'var(--tier-prata)';
+        else if (atual.nome === 'Ouro') ring.style.background = 'var(--tier-ouro)';
+        else if (atual.nome === 'Diamante') ring.style.background = 'var(--tier-diamante)';
+        else ring.style.background = 'var(--tier-bronze)';
+      }
+
+      const bar = document.getElementById('cliente-nivel-progress');
+      const label = document.getElementById('cliente-nivel-progress-label');
+      const bonusLabel = document.getElementById('cliente-nivel-bonus-label');
+      if (bar && label) {
+        if (atual.proximo != null) {
+          const pct = Math.min(100, Math.round(((pontos - atual.min) / (atual.proximo - atual.min)) * 100));
+          bar.style.width = pct + '%';
+          label.innerHTML = `Faltam <strong>${atual.proximo - pontos} pts</strong> para o Nível ${niveis[niveis.indexOf(atual) + 1].nome}`;
+        } else {
+          bar.style.width = '100%';
+          label.innerHTML = '<strong>Nível Máximo Alcançado!</strong>';
+        }
+      }
+      if (bonusLabel) bonusLabel.innerText = atual.bonus + ' Bônus';
+
+      const saldoDisp = document.getElementById('loja-saldo-display');
+      if (saldoDisp) saldoDisp.innerText = `Saldo: ${pontos} pts`;
+    }
+
+    function animarPontos(start, end) {
+      let current = start;
+      const el = document.getElementById('cliente-pontos');
+      const diff = end - start;
+      if (diff === 0) { el.innerText = end; return; }
+      const increment = Math.ceil(diff / 25);
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= end) {
+          current = end;
+          clearInterval(timer);
+        }
+        el.innerText = current;
+      }, 25);
+    }
+
+    // ── LOJA DE PONTOS / BENEFÍCIOS ──
     socket.on('beneficios_lista', (lista) => {
-      beneficiosGlobais = lista;
+      beneficiosGlobais = lista || [];
+      const badgeCount = document.getElementById('badge-loja-count');
+      if (badgeCount) badgeCount.innerText = beneficiosGlobais.length;
       renderizarBeneficios();
     });
 
+    function filtrarBeneficiosCat(cat) {
+      categoriaLojaAtiva = cat;
+      document.querySelectorAll('#beneficios-cats-bar .cat-pill').forEach(b => {
+        b.classList.toggle('active', b.innerText === cat);
+      });
+      renderizarBeneficios();
+    }
+
     function renderizarBeneficios() {
       const container = document.getElementById('lista-beneficios');
-      if (!beneficiosGlobais.length) {
-        container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:20px;">Nenhum benefício disponível no momento.</p>';
+      if (!container) return;
+
+      let lista = beneficiosGlobais;
+      if (categoriaLojaAtiva !== 'Todos') {
+        lista = lista.filter(b => (b.categoria || '').toLowerCase() === categoriaLojaAtiva.toLowerCase());
+      }
+
+      if (!lista.length) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:32px 16px; color:var(--text-muted);">
+            <i class="ph ph-gift" style="font-size:42px; opacity:0.4; display:block; margin-bottom:8px;"></i>
+            <p style="font-weight:700;">Nenhum benefício nesta categoria no momento.</p>
+          </div>
+        `;
         return;
       }
-      container.innerHTML = beneficiosGlobais.map(b => {
-        const podeResgatar = clienteAtual.pontos >= b.pontos;
-        const imgHtml = b.imagem_url ? `<img src="${b.imagem_url}" class="beneficio-img">` : `<div class="beneficio-img"><i class="ph ph-gift"></i></div>`;
+
+      const saldo = (clienteAtual && clienteAtual.pontos) || 0;
+
+      container.innerHTML = lista.map(b => {
+        const podeResgatar = saldo >= b.pontos;
+        const faltam = b.pontos - saldo;
+        const pctProgresso = Math.min(100, Math.round((saldo / b.pontos) * 100));
+        const imgHtml = b.imagem_url 
+          ? `<img src="${b.imagem_url}" class="reward-img" alt="${b.nome}" onerror="this.outerHTML='<div class=\\'reward-emoji-fallback\\'>🎁</div>'">`
+          : `<div class="reward-emoji-fallback">${getEmojiPorCategoria(b.categoria)}</div>`;
+
         return `
-          <div class="beneficio-item" style="opacity: ${podeResgatar ? '1' : '0.5'}">
-            ${imgHtml}
-            <div class="beneficio-info">
-              <h4>${b.nome}</h4>
-              <p>${b.pontos} pontos</p>
+          <div class="reward-card ${podeResgatar ? 'can-redeem' : ''}">
+            <div class="reward-img-wrap">
+              ${imgHtml}
             </div>
-            <button class="resgatar-btn" ${!podeResgatar ? 'disabled' : ''} onclick="resgatar(${b.id})">
-              ${podeResgatar ? 'Resgatar' : 'Faltam ' + (b.pontos - clienteAtual.pontos)}
+            <div class="reward-info">
+              <div class="reward-top-row">
+                <span class="reward-cat-tag">${b.categoria || 'Recompensa'}</span>
+                <span class="reward-pts-pill"><i class="ph-fill ph-star"></i> ${b.pontos} pts</span>
+              </div>
+              <h4 class="reward-title">${b.nome}</h4>
+              <p class="reward-desc">${b.descricao || 'Troque seus pontos de fidelidade e saboreie este benefício especial.'}</p>
+              
+              <div class="reward-progress-mini">
+                <div class="reward-progress-fill" style="width: ${pctProgresso}%; background:${podeResgatar ? '#10b981' : 'var(--primary)'};"></div>
+              </div>
+              <span class="reward-status-label">
+                ${podeResgatar ? '✅ Você pode resgatar agora!' : `Faltam ${faltam} pontos (${pctProgresso}%)`}
+              </span>
+            </div>
+
+            <button class="btn-resgatar-card" ${!podeResgatar ? 'disabled' : ''} onclick="resgatarBeneficio(${b.id}, '${b.nome.replace(/'/g, "\\'")}', ${b.pontos})">
+              <span>${podeResgatar ? 'Resgatar' : 'Bloqueado'}</span>
+              <i class="ph-bold ${podeResgatar ? 'ph-gift' : 'ph-lock'}"></i>
             </button>
           </div>
         `;
       }).join('');
     }
 
-    function resgatar(id) {
-      if (confirm('Deseja realmente trocar seus pontos por este benefício?')) {
+    function getEmojiPorCategoria(cat) {
+      if (!cat) return '🎁';
+      const c = cat.toLowerCase();
+      if (c.includes('bebida') || c.includes('chopp') || c.includes('café')) return '🍺';
+      if (c.includes('sobremesa') || c.includes('doce')) return '🍰';
+      if (c.includes('petisco') || c.includes('fritas') || c.includes('porção')) return '🍟';
+      if (c.includes('burger') || c.includes('lanche')) return '🍔';
+      if (c.includes('desconto')) return '🏷️';
+      return '🎁';
+    }
+
+    function resgatarBeneficio(id, nome, custo) {
+      if (confirm(`Deseja resgatar "${nome}" por ${custo} pontos?`)) {
         socket.emit('resgatar_beneficio', { cliente_id: clienteAtual.id, beneficio_id: id });
       }
     }
@@ -1081,44 +1850,218 @@
         atualizarNivel(res.novoSaldo);
         renderizarBeneficios();
         socket.emit('get_resgates_cliente', clienteAtual.id);
+        
         document.getElementById('codigo-gerado').innerText = res.codigo;
+        desenharQrSimples(res.codigo);
         document.getElementById('modal-sucesso').style.display = 'flex';
       }
     });
+
+    function desenharQrSimples(texto) {
+      const cv = document.getElementById('qr-code-canvas');
+      if (!cv) return;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 12px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // Simulação gráfica limpa de voucher token
+      ctx.strokeStyle = '#fc4b15';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(10, 10, cv.width - 20, cv.height - 20);
+      ctx.fillText('VOUCHER ID', cv.width / 2, 45);
+      ctx.font = '900 24px Outfit, sans-serif';
+      ctx.fillStyle = '#fc4b15';
+      ctx.fillText(texto, cv.width / 2, 75);
+      ctx.font = '10px sans-serif';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('CHEF COZINHA VIP', cv.width / 2, 105);
+    }
+
+    function copiarCodigoResgate() {
+      const cod = document.getElementById('codigo-gerado').innerText;
+      navigator.clipboard.writeText(cod).then(() => {
+        showToast('Código copiado com sucesso!', 'ph-copy');
+      });
+    }
 
     function fecharModal() {
       document.getElementById('modal-sucesso').style.display = 'none';
     }
 
+    // ── VOUCHERS / RESGATES REALIZADOS ──
     socket.on('resgates_cliente_lista', (lista) => {
       const container = document.getElementById('lista-resgates');
-      if (!lista.length) {
-        container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:20px;">Você ainda não fez nenhum resgate.</p>';
+      if (!lista || !lista.length) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:32px 16px; color:var(--text-muted);">
+            <i class="ph ph-ticket" style="font-size:42px; opacity:0.4; display:block; margin-bottom:8px;"></i>
+            <p style="font-weight:700;">Você ainda não resgatou nenhum benefício.</p>
+            <button onclick="showSection('beneficios')" style="margin-top:12px; background:var(--primary); color:white; border:none; padding:8px 16px; border-radius:10px; font-weight:700; cursor:pointer;">
+              Explorar Loja de Pontos
+            </button>
+          </div>
+        `;
         return;
       }
       container.innerHTML = lista.map(r => {
+        const isDisponivel = !r.usado;
         return `
-          <div class="beneficio-item">
-            <div class="beneficio-img" style="font-size:20px; color:${r.usado ? '#94a3b8' : '#10b981'}">
-              <i class="ph-fill ${r.usado ? 'ph-check-circle' : 'ph-ticket'}"></i>
+          <div class="reward-card" style="border-left: 4px solid ${isDisponivel ? '#10b981' : '#64748b'};">
+            <div class="reward-img-wrap" style="color: ${isDisponivel ? '#10b981' : '#94a3b8'}; font-size: 28px;">
+              <i class="ph-fill ${isDisponivel ? 'ph-ticket' : 'ph-check-circle'}"></i>
             </div>
-            <div class="beneficio-info">
-              <h4>${r.beneficio_nome}</h4>
-              <p style="color:#94a3b8; font-weight:normal; font-size:12px;">Código: <strong style="color:white; letter-spacing:1px;">${r.codigo}</strong></p>
+            <div class="reward-info">
+              <span class="reward-cat-tag" style="background:${isDisponivel ? 'rgba(16,185,129,0.15)' : 'var(--badge-bg)'}; color:${isDisponivel ? '#10b981' : 'var(--text-muted)'};">
+                ${isDisponivel ? 'Disponível para Uso' : 'Já Utilizado'}
+              </span>
+              <h4 class="reward-title" style="margin-top:4px;">${r.beneficio_nome}</h4>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Código: <strong style="color:var(--text); letter-spacing:1.5px; font-size:14px;">${r.codigo}</strong></p>
+              <span style="font-size:11px; color:var(--text-muted);">${r.data || ''}</span>
             </div>
-            <span style="font-size:12px; font-weight:bold; color: ${r.usado ? '#94a3b8' : '#10b981'}">
-              ${r.usado ? 'Usado' : 'Disponível'}
-            </span>
+            ${isDisponivel ? `
+              <button class="btn-copiar-cupom" onclick="copiarTexto('${r.codigo}')" title="Copiar código">
+                <i class="ph-bold ph-copy"></i> Copiar
+              </button>
+            ` : ''}
           </div>
         `;
       }).join('');
     });
 
+    // ── CUPONS DE DESCONTO & PROMOÇÕES ──
+    function carregarCupons() {
+      // 1. Tentar via Socket
+      socket.emit('get_cupons_ativos', (lista) => {
+        cuponsGlobais = lista || [];
+        renderizarCupons();
+      });
+      // 2. Fallback via REST
+      fetch('/api/cupons/disponiveis')
+        .then(r => r.json())
+        .then(d => {
+          if (d && d.cupons && d.cupons.length > 0) {
+            cuponsGlobais = d.cupons;
+            renderizarCupons();
+          }
+        })
+        .catch(() => {});
+    }
+
+    socket.on('cupons_ativos_lista', (lista) => {
+      cuponsGlobais = lista || [];
+      renderizarCupons();
+    });
+
+    function renderizarCupons() {
+      const container = document.getElementById('lista-cupons');
+      const badgeCount = document.getElementById('badge-cupons-count');
+      if (badgeCount) badgeCount.innerText = cuponsGlobais.length;
+
+      if (!container) return;
+
+      if (!cuponsGlobais.length) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:32px 16px; color:var(--text-muted);">
+            <i class="ph ph-ticket" style="font-size:42px; opacity:0.4; display:block; margin-bottom:8px;"></i>
+            <p style="font-weight:700;">Nenhum cupom ativo no momento.</p>
+            <p style="font-size:12px; margin-top:4px;">Fique ligado em nossas redes e no cardápio para novas promoções!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = cuponsGlobais.map(c => {
+        let valorTag = 'PROMO';
+        let subTag = 'OFF';
+        if (c.valor_tipo === 'desconto_porcentagem' || c.valor_tipo === 'porcentagem') {
+          valorTag = `${c.valor}%`;
+          subTag = 'OFF';
+        } else if (c.valor_tipo === 'desconto_fixo') {
+          if (c.valor > 0) {
+            valorTag = `R$ ${Math.round(c.valor)}`;
+            subTag = 'OFF';
+          } else {
+            valorTag = 'BRINDE';
+            subTag = 'GRÁTIS';
+          }
+        }
+
+        const minimoText = c.valor_minimo > 0 ? `• Pedido mín: R$ ${Number(c.valor_minimo).toFixed(2).replace('.', ',')}` : '';
+        const validadeText = c.validade ? `Válido até ${formatarDataBr(c.validade)}` : 'Válido por tempo limitado';
+
+        return `
+          <div class="coupon-ticket">
+            <div class="coupon-badge-left">
+              <span class="coupon-badge-val">${valorTag}</span>
+              <span class="coupon-badge-sub">${subTag}</span>
+            </div>
+            <div class="coupon-ticket-body">
+              <span class="coupon-code-pill"><i class="ph-fill ph-ticket"></i> ${c.codigo}</span>
+              <h4 class="coupon-ticket-title">${c.titulo || c.codigo}</h4>
+              <p class="coupon-ticket-desc">${c.descricao || 'Desconto exclusivo aplicável diretamente no carrinho ou na sua mesa.'}</p>
+              <div class="coupon-meta">
+                <span><i class="ph ph-clock"></i> ${validadeText}</span>
+                <span>${minimoText}</span>
+              </div>
+            </div>
+            <div class="coupon-actions-col">
+              <button class="btn-usar-cupom" onclick="irParaCardapio('${c.codigo}')">
+                <i class="ph-bold ph-shopping-bag-open"></i> Usar
+              </button>
+              <button class="btn-copiar-cupom" onclick="copiarTexto('${c.codigo}')">
+                <i class="ph-bold ph-copy"></i> Copiar
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function formatarDataBr(dStr) {
+      if (!dStr) return '';
+      const p = dStr.split('-');
+      if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
+      return dStr;
+    }
+
+    function copiarTexto(txt) {
+      navigator.clipboard.writeText(txt).then(() => {
+        showToast(`Código ${txt} copiado!`, 'ph-copy');
+      });
+    }
+
+    function ativarCupomManual() {
+      const input = document.getElementById('input-ativar-cupom');
+      const cod = (input && input.value ? input.value : '').trim().toUpperCase();
+      if (!cod) return alert('Digite um código de cupom.');
+
+      socket.emit('consultar_cupom', { codigo: cod, valor_total: 100 }, (res) => {
+        if (res && res.valido) {
+          showToast(`Cupom ${cod} válido e disponível!`, 'ph-sparkle');
+          irParaCardapio(cod);
+        } else {
+          alert((res && res.error) || 'Cupom inválido ou expirado.');
+        }
+      });
+    }
+
+    // ── HISTÓRICO DE PEDIDOS ──
     socket.on('cliente_pedidos_response', (pedidos) => {
       const container = document.getElementById('lista-pedidos');
       const lista = pedidos || [];
       if (!lista.length) {
-        container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:20px;">Nenhum pedido encontrado ainda.</p>';
+        container.innerHTML = `
+          <div style="text-align:center; padding:32px 16px; color:var(--text-muted);">
+            <i class="ph ph-receipt" style="font-size:42px; opacity:0.4; display:block; margin-bottom:8px;"></i>
+            <p style="font-weight:700;">Nenhum pedido encontrado ainda.</p>
+            <button onclick="irParaCardapio()" style="margin-top:12px; background:var(--primary); color:white; border:none; padding:8px 16px; border-radius:10px; font-weight:700; cursor:pointer;">
+              Fazer Pedido no Cardápio
+            </button>
+          </div>
+        `;
         return;
       }
       const grupos = {};
@@ -1148,105 +2091,214 @@
       }).join('');
     });
 
+    // ── VISITAS ──
     socket.on('cliente_visitas_response', (visitas) => {
       const container = document.getElementById('lista-visitas');
       if (!visitas || !visitas.length) {
-        container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:20px;">Nenhuma visita registrada ainda.</p>';
+        container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:24px;">Nenhuma visita registrada ainda.</p>';
         return;
       }
       container.innerHTML = visitas.map(v => `
         <div class="visita-card">
-          <div class="visita-icon"><i class="ph ph-storefront"></i></div>
+          <div class="visita-icon"><i class="ph-fill ph-storefront"></i></div>
           <div class="visita-info">
             <h4>${v.mesa || 'Balcão'}</h4>
             <p>${v.data || ''}</p>
           </div>
-          <div class="visita-pontos" style="text-align:right;">
-            ${v.contabilizado ? '<span style="color:#10b981;font-size:12px;">+' + (v.pontos_ganhos || 0) + ' pts</span>' : '<span style="color:#f59e0b;font-size:11px;">Aguardando fechamento</span>'}
+          <div style="text-align:right;">
+            ${v.contabilizado ? '<span style="color:#10b981;font-size:13px;font-weight:800;">+' + (v.pontos_ganhos || 0) + ' pts</span>' : '<span style="color:#f59e0b;font-size:11.5px;font-weight:700;">Aguardando fechamento</span>'}
           </div>
         </div>
       `).join('');
     });
 
-    setTimeout(() => {
-      const pedidosEl = document.getElementById('lista-pedidos');
-      const visitasEl = document.getElementById('lista-visitas');
-      if (pedidosEl && pedidosEl.innerText === 'Carregando...') {
-        pedidosEl.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:20px;">Nenhum pedido encontrado ainda.</p>';
-      }
-      if (visitasEl && visitasEl.innerText === 'Carregando...') {
-        visitasEl.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:20px;">Nenhuma visita registrada ainda.</p>';
-      }
-    }, 6000);
+    // ── AVALIAÇÃO ──
+    let notaSelecionada = 5;
+    const sentimentos = ['Péssimo', 'Ruim', 'Regular', 'Muito Bom', 'Sensacional!'];
 
-    function atualizarNivel(pontos) {
-      const niveis = [
-        { nome: 'Bronze', min: 0, proximo: 100 },
-        { nome: 'Prata', min: 100, proximo: 300 },
-        { nome: 'Ouro', min: 300, proximo: 800 },
-        { nome: 'Diamante', min: 800, proximo: null }
-      ];
-      let atual = niveis[0];
-      for (const n of niveis) { if (pontos >= n.min) atual = n; }
-      const badge = document.getElementById('cliente-nivel-badge');
-      if (badge) {
-        badge.className = 'nivel-badge ' + atual.nome.toLowerCase();
-        badge.innerHTML = '<i class="ph-fill ph-crown"></i> ' + atual.nome;
+    function montarEstrelasAvaliacao() {
+      window.__chefAvaliacaoPronta = true;
+      notaSelecionada = 5;
+      const box = document.getElementById('estrelas-avaliacao');
+      if (!box) return;
+      box.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const b = document.createElement('button');
+        b.setAttribute('data-nota', i);
+        b.innerHTML = '<i class="ph-fill ph-star" style="font-size:36px;"></i>';
+        b.style.cssText = 'background:none;border:none;cursor:pointer;padding:4px;transition:transform .15s;';
+        b.addEventListener('click', () => { notaSelecionada = i; pintarEstrelas(); });
+        b.addEventListener('mouseenter', () => pintarEstrelas(i));
+        box.appendChild(b);
       }
-      const bar = document.getElementById('cliente-nivel-progress');
-      const label = document.getElementById('cliente-nivel-progress-label');
-      if (bar && label) {
-        if (atual.proximo != null) {
-          const pct = Math.min(100, Math.round(((pontos - atual.min) / (atual.proximo - atual.min)) * 100));
-          bar.style.width = pct + '%';
-          label.innerText = pontos + '/' + atual.proximo + ' pts para o próximo nível';
-        } else {
-          bar.style.width = '100%';
-          label.innerText = 'Nível máximo alcançado!';
-        }
+      box.addEventListener('mouseleave', () => pintarEstrelas());
+      pintarEstrelas();
+    }
+
+    function pintarEstrelas(hover) {
+      const box = document.getElementById('estrelas-avaliacao');
+      if (!box) return;
+      const val = hover || notaSelecionada;
+      Array.prototype.forEach.call(box.children, (b) => {
+        const n = parseInt(b.getAttribute('data-nota'), 10);
+        const ativa = n <= val;
+        const cor = ativa ? (val <= 2 ? '#ef4444' : (val === 3 ? '#f59e0b' : '#10b981')) : 'rgba(148,163,184,0.3)';
+        b.querySelector('i').style.color = cor;
+      });
+      const sentEl = document.getElementById('avaliacao-sentimento');
+      if (sentEl) {
+        sentEl.innerText = sentimentos[val - 1] || '';
+        sentEl.style.color = val <= 2 ? '#ef4444' : (val === 3 ? '#f59e0b' : '#10b981');
       }
     }
 
-    function animarPontos(start, end) {
-      let current = start;
-      const el = document.getElementById('cliente-pontos');
-      const increment = Math.ceil((end - start) / 30);
-      const timer = setInterval(() => {
-        current += increment;
-        if (current >= end) {
-          current = end;
-          clearInterval(timer);
+    function enviarAvaliacao() {
+      if (!notaSelecionada) return alert('Escolha uma nota de 1 a 5.');
+      const btn = document.getElementById('btn-enviar-avaliacao');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph ph-spinner-gap ph-spin"></i> Enviando...';
+      const nome = (clienteAtual && clienteAtual.nome) || 'Cliente';
+      fetch('/api/avaliacoes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cliente_nome: nome,
+          mesa: mesaUrl || '',
+          nota: notaSelecionada,
+          comentario: (document.getElementById('comentario-avaliacao') || {}).value || ''
+        })
+      }).then(r => r.json()).then(data => {
+        const fb = document.getElementById('avaliacao-feedback');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph-bold ph-paper-plane-tilt"></i> Enviar Avaliação (+10 pts)';
+        if (fb) {
+          fb.textContent = data.mensagem || data.error || 'Obrigado pela sua avaliação!';
+          fb.style.color = data.success ? '#10b981' : '#f87171';
+          fb.style.display = 'block';
         }
-        el.innerText = current;
-      }, 30);
+        if (data.success) {
+          showToast('Obrigado! Avaliação enviada com sucesso.', 'ph-star');
+          document.getElementById('comentario-avaliacao').value = '';
+          if (data.mensagem && data.mensagem.includes('Google')) setTimeout(abrirConviteGoogle, 1000);
+        }
+      }).catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph-bold ph-paper-plane-tilt"></i> Enviar Avaliação (+10 pts)';
+      });
     }
-</script>
 
-<script src="/jogos-cliente.js"></script>
-<script>
-  // ── Check-in de reserva na área do cliente ──
-  function fazerCheckinAreaCliente() {
-    var input = document.getElementById('checkin-res-telefone');
-    var box = document.getElementById('checkin-res-resultado');
-    var tel = (input && input.value ? input.value : '').replace(/\D/g, '');
-    if (!tel) tel = String(localStorage.getItem('fidelidade_telefone') || '').replace(/\D/g, '');
-    if (!tel) { box.style.display = 'block'; box.textContent = 'Digite o telefone usado na reserva.'; return; }
-    var rid = new URLSearchParams(location.search).get('restaurante_id') || localStorage.getItem('restaurante_id') || '1';
-    fetch('/api/reservas/checkin?restaurante_id=' + rid, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telefone: tel })
-    }).then(function (r) { return r.json(); }).then(function (d) {
-      box.style.display = 'block';
-      box.textContent = d.mensagem || d.erro || '';
-    }).catch(function () {
-      box.style.display = 'block'; box.textContent = 'Erro de conexão.';
-    });
-  }
-</script>
-<script>
-  // Service Worker: habilita o PWA (instalação + notificações)
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () { });
-</script>
-<script src="/device-adapters.js"></script>
+    function abrirConviteGoogle() {
+      const place = urlParams.get('place_id') || localStorage.getItem('chef_google_place_id') || '';
+      const url = place
+        ? 'https://search.google.com/local/writereview?placeid=' + encodeURIComponent(place)
+        : 'https://www.google.com/maps';
+      window.open(url, '_blank');
+    }
+
+    // ── PARCEIROS MAPA ──
+    let pcMapa = { cx: -46.63, cy: -23.55, pxDeg: 60 };
+    let parceirosCliente = [];
+
+    function pcProj(lng, lat, w, h) { return { x: w / 2 + (lng - pcMapa.cx) * pcMapa.pxDeg, y: h / 2 - (lat - pcMapa.cy) * pcMapa.pxDeg }; }
+    function pcUnproj(px, py, w, h) { return { lng: pcMapa.cx + (px - w / 2) / pcMapa.pxDeg, lat: pcMapa.cy - (py - h / 2) / pcMapa.pxDeg }; }
+
+    function carregarParceirosCliente() {
+      fetch('/api/fidelidade/parceiros')
+        .then(r => r.json())
+        .then(data => {
+          parceirosCliente = (data.parceiros || []).filter(p => p.ativo);
+          renderListaParceiros();
+          desenharMapaCliente();
+        }).catch(() => {});
+    }
+
+    function renderListaParceiros() {
+      const box = document.getElementById('lista-parceiros-cliente');
+      if (!box) return;
+      if (!parceirosCliente.length) {
+        box.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:16px;">Nenhum parceiro cadastrado ainda.</p>';
+        return;
+      }
+      box.innerHTML = parceirosCliente.map(p => {
+        const geo = (p.latitude != null && p.longitude != null)
+          ? `<a href="https://www.google.com/maps?q=${p.latitude},${p.longitude}" target="_blank" rel="noopener" style="color:#38bdf8; font-size:12px; text-decoration:none;"><i class="ph ph-navigation-arrow"></i> Ver no mapa</a>` : '';
+        return `
+          <div class="reward-card" style="align-items:center;">
+            <div style="flex:1;">
+              <h4 style="font-size:14.5px; font-weight:800; color:var(--text);">${p.nome || ''}</h4>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">${[p.categoria, p.bairro, p.cidade].filter(Boolean).join(' · ')}</p>
+              ${p.pontos_minimos > 0 ? `<span style="font-size:11px; font-weight:800; color:#f59e0b;">A partir de ${p.pontos_minimos} pts</span>` : ''}
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+              ${geo}
+              <span style="background:rgba(34,197,94,0.15); color:#22c55e; font-size:11px; font-weight:800; padding:2px 8px; border-radius:99px;">Aceita pontos</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function desenharMapaCliente() {
+      const cv = document.getElementById('mapa-parceiros-cliente');
+      if (!cv) return;
+      const ctx = cv.getContext('2d');
+      const w = cv.width, h = cv.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#0b1220'; ctx.fillRect(0, 0, w, h);
+      
+      const locais = parceirosCliente.filter(p => p.latitude != null);
+      locais.forEach(p => {
+        const pt = pcProj(parseFloat(p.longitude), parseFloat(p.latitude), w, h);
+        ctx.fillStyle = '#22c55e';
+        ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.font = 'bold 11px sans-serif'; ctx.fillStyle = '#e2e8f0';
+        ctx.fillText(p.nome, pt.x + 11, pt.y + 4);
+      });
+      const vazio = document.getElementById('parceiros-vazio');
+      if (vazio) vazio.style.display = locais.length === 0 ? 'flex' : 'none';
+    }
+
+    // Check-in de Reserva
+    function fazerCheckinAreaCliente() {
+      const input = document.getElementById('checkin-res-telefone');
+      const box = document.getElementById('checkin-res-resultado');
+      let tel = (input && input.value ? input.value : '').replace(/\D/g, '');
+      if (!tel) tel = String(localStorage.getItem('fidelidade_telefone') || '').replace(/\D/g, '');
+      if (!tel) { box.style.display = 'block'; box.textContent = 'Digite o telefone usado na reserva.'; return; }
+      const rid = new URLSearchParams(location.search).get('restaurante_id') || localStorage.getItem('restaurante_id') || '1';
+      fetch('/api/reservas/checkin?restaurante_id=' + rid, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telefone: tel })
+      }).then(r => r.json()).then(d => {
+        box.style.display = 'block';
+        box.textContent = d.mensagem || d.erro || '';
+      }).catch(() => {
+        box.style.display = 'block'; box.textContent = 'Erro de conexão.';
+      });
+    }
+
+    // Inicialização ao carregar página
+    window.onload = () => {
+      const cardapioProfile = localStorage.getItem('cliente_perfil');
+      if (cardapioProfile && fromCardapio) {
+        try {
+          const perfil = JSON.parse(cardapioProfile);
+          if (perfil && perfil.telefone) {
+            localStorage.setItem('fidelidade_telefone', perfil.telefone);
+          }
+        } catch (e) {}
+      }
+      const salvo = localStorage.getItem('fidelidade_telefone');
+      if (salvo) {
+        socket.emit('cliente_login', salvo);
+      }
+    };
+  </script>
+
+  <script src="/jogos-cliente.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  </script>
+  <script src="/device-adapters.js"></script>
 </body>
 </html>
-

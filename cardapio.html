@@ -1713,6 +1713,10 @@
           <i class="ph-bold ph-receipt"></i>
           <span>Racha-Conta</span>
         </button>
+        <button id="btn-header-fidelidade" onclick="window.abrirPerfilCliente()" style="background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.2)); border: 1.5px solid rgba(245,158,11,0.4); color: #d97706; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(245,158,11,0.12);" title="Clube de Fidelidade, Loja de Pontos e Cupons">
+          <i class="ph-fill ph-crown"></i>
+          <span id="btn-header-pontos-txt">Clube VIP</span>
+        </button>
         <button id="btn-cardapio-theme" onclick="if(window.ChefTheme && window.ChefTheme.toggle) window.ChefTheme.toggle(); else document.body.classList.toggle('dark-mode');" style="background: transparent; border: 1px solid var(--border); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted);" title="Alternar Tema Claro / Escuro">
           <i id="cardapio-theme-icon" class="ph ph-moon"></i>
         </button>
@@ -2188,6 +2192,21 @@
       <button class="btn-submit" onclick="window.enviarPedido()" id="btn-submit-order" style="margin-top: 8px;">
         Enviar Pedido
       </button>
+    </div>
+  </div>
+
+  
+  <!-- MODAL: CUPONS DISPONÍVEIS -->
+  <div class="modal-overlay" id="modal-cupons-disponiveis" style="display:none; z-index:10008;">
+    <div class="modal-content" style="max-width:440px; padding:24px;">
+      <button class="modal-close" onclick="document.getElementById('modal-cupons-disponiveis').style.display='none'">&times;</button>
+      <div class="modal-title" style="margin-bottom:12px;">
+        <i class="ph-fill ph-ticket" style="color:#059669;"></i> Cupons Disponíveis
+      </div>
+      <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:14px;">Toque no cupom desejado para aplicar o desconto no seu pedido:</p>
+      <div id="lista-cupons-disponiveis-modal" style="display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto; padding-right:4px;">
+        <p style="color:var(--text-muted); text-align:center; padding:16px;">Buscando cupons...</p>
+      </div>
     </div>
   </div>
 
@@ -3937,6 +3956,217 @@
 
       submitPendingOrder(name, total, true, pixKey);
     };
+
+    
+    // ══════════════════════════════════════════════════════
+    // GESTÃO DE CUPONS DE DESCONTO & CLUBE DE FIDELIDADE
+    // ══════════════════════════════════════════════════════
+    let cupomAplicado = null;
+    let cupomDescontoCalculado = 0;
+    let cuponsDisponiveisLista = [];
+
+    window.recalcularTotaisCarrinho = function() {
+      const subtotal = CART.reduce((acc, c) => acc + c.total, 0);
+      const subtotalEl = document.getElementById('cart-subtotal-value');
+      if (subtotalEl) subtotalEl.innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+
+      // Recalcular Cupom
+      const rowCupom = document.getElementById('cart-row-desconto-cupom');
+      const valCupomEl = document.getElementById('cart-val-cupom');
+      const lblCupomEl = document.getElementById('cart-lbl-cupom');
+      
+      cupomDescontoCalculado = 0;
+      if (cupomAplicado) {
+        if (cupomAplicado.valor_minimo > 0 && subtotal < cupomAplicado.valor_minimo) {
+          window.removerCupomCarrinho(true);
+          alert(`O cupom ${cupomAplicado.codigo} requer pedido mínimo de R$ ${Number(cupomAplicado.valor_minimo).toFixed(2).replace('.', ',')}.`);
+        } else {
+          if (cupomAplicado.valor_tipo === 'desconto_fixo') {
+            cupomDescontoCalculado = Math.min(subtotal, parseFloat(cupomAplicado.valor) || 0);
+          } else if (cupomAplicado.valor_tipo === 'desconto_porcentagem' || cupomAplicado.valor_tipo === 'porcentagem') {
+            cupomDescontoCalculado = Math.round((subtotal * ((parseFloat(cupomAplicado.valor) || 0) / 100)) * 100) / 100;
+          }
+          if (rowCupom && valCupomEl && lblCupomEl) {
+            lblCupomEl.innerText = `Cupom (${cupomAplicado.codigo}):`;
+            valCupomEl.innerText = `- R$ ${cupomDescontoCalculado.toFixed(2).replace('.', ',')}`;
+            rowCupom.style.display = cupomDescontoCalculado > 0 ? 'flex' : 'none';
+          }
+        }
+      } else if (rowCupom) {
+        rowCupom.style.display = 'none';
+      }
+
+      // Recalcular Cashback
+      const rowCashback = document.getElementById('cart-row-desconto-cashback');
+      const valCashbackEl = document.getElementById('cart-val-cashback');
+      if (rowCashback && valCashbackEl) {
+        rowCashback.style.display = cashbackDescontoAplicado > 0 ? 'flex' : 'none';
+        valCashbackEl.innerText = `- R$ ${cashbackDescontoAplicado.toFixed(2).replace('.', ',')}`;
+      }
+
+      const totalFinal = Math.max(0, subtotal - cupomDescontoCalculado - cashbackDescontoAplicado);
+      const totalVal = document.getElementById('cart-total-value');
+      if (totalVal) totalVal.innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
+    };
+
+    window.aplicarCupomCarrinho = function(codigoManual) {
+      const input = document.getElementById('input-cart-cupom');
+      const codigo = (codigoManual || (input ? input.value : '')).trim().toUpperCase();
+      if (!codigo) return alert('Por favor, digite o código do cupom.');
+
+      const subtotal = CART.reduce((acc, c) => acc + c.total, 0);
+      if (subtotal <= 0) return alert('Adicione itens ao carrinho antes de aplicar o cupom.');
+
+      const btn = document.getElementById('btn-aplicar-cupom');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = '...';
+      }
+
+      fetch('/api/cupons/consultar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo, valor_total: subtotal })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = 'Aplicar';
+        }
+        if (data && data.valido && data.cupom) {
+          cupomAplicado = data.cupom;
+          
+          // Badge visual do cupom no carrinho
+          const badgeBox = document.getElementById('cupom-aplicado-badge');
+          const inputGroup = document.getElementById('cupom-input-group');
+          const titEl = document.getElementById('cupom-aplicado-titulo');
+          const descEl = document.getElementById('cupom-aplicado-desc');
+          
+          if (badgeBox && titEl && descEl) {
+            titEl.innerText = `CUPOM: ${cupomAplicado.codigo} (${cupomAplicado.titulo || 'Desconto'})`;
+            descEl.innerText = cupomAplicado.descricao || (data.cupom.desconto > 0 ? `Economia de R$ ${data.cupom.desconto.toFixed(2).replace('.', ',')}` : 'Brinde adicionado ao seu pedido!');
+            badgeBox.style.display = 'flex';
+          }
+          if (inputGroup) inputGroup.style.display = 'none';
+
+          // Fechar modal de cupons se estava aberto
+          const mDisponiveis = document.getElementById('modal-cupons-disponiveis');
+          if (mDisponiveis) mDisponiveis.style.display = 'none';
+
+          window.recalcularTotaisCarrinho();
+          if (typeof showToast === 'function') {
+            showToast(`🎉 Cupom ${cupomAplicado.codigo} aplicado com sucesso!`, 'success');
+          } else {
+            alert(`🎉 Cupom ${cupomAplicado.codigo} aplicado com sucesso!`);
+          }
+        } else {
+          alert((data && data.error) || 'Cupom inválido ou expirado.');
+        }
+      })
+      .catch(() => {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = 'Aplicar';
+        }
+        alert('Erro ao validar cupom. Verifique a conexão.');
+      });
+    };
+
+    window.removerCupomCarrinho = function(silencioso = false) {
+      cupomAplicado = null;
+      cupomDescontoCalculado = 0;
+      
+      const badgeBox = document.getElementById('cupom-aplicado-badge');
+      const inputGroup = document.getElementById('cupom-input-group');
+      const input = document.getElementById('input-cart-cupom');
+      
+      if (badgeBox) badgeBox.style.display = 'none';
+      if (inputGroup) inputGroup.style.display = 'flex';
+      if (input) input.value = '';
+
+      window.recalcularTotaisCarrinho();
+      if (!silencioso && typeof showToast === 'function') {
+        showToast('Cupom removido.', 'info');
+      }
+    };
+
+    window.abrirModalCuponsDisponiveis = function() {
+      const modal = document.getElementById('modal-cupons-disponiveis');
+      const listaEl = document.getElementById('lista-cupons-disponiveis-modal');
+      if (!modal || !listaEl) return;
+
+      modal.style.display = 'flex';
+      listaEl.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:16px;">Carregando cupons...</p>';
+
+      fetch('/api/cupons/disponiveis')
+        .then(r => r.json())
+        .then(data => {
+          const cupons = (data && data.cupons) ? data.cupons : [];
+          cuponsDisponiveisLista = cupons;
+          if (!cupons.length) {
+            listaEl.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:16px;">Nenhum cupom ativo no momento.</p>';
+            return;
+          }
+          listaEl.innerHTML = cupons.map(c => {
+            let labelDesconto = 'PROMO';
+            if (c.valor_tipo === 'desconto_porcentagem' || c.valor_tipo === 'porcentagem') labelDesconto = `${c.valor}% OFF`;
+            else if (c.valor_tipo === 'desconto_fixo' && c.valor > 0) labelDesconto = `R$ ${Number(c.valor).toFixed(2).replace('.', ',')} OFF`;
+            else labelDesconto = 'BRINDE GRÁTIS';
+
+            return `
+              <div onclick="window.aplicarCupomCarrinho('${c.codigo}')" style="cursor:pointer; background:var(--surface-sub, #f8fafc); border:1.5px dashed rgba(16,185,129,0.5); border-radius:12px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; transition:all 0.2s;" onmouseover="this.style.borderColor='#059669';this.style.background='rgba(16,185,129,0.06)'" onmouseout="this.style.borderColor='rgba(16,185,129,0.5)';this.style.background='var(--surface-sub, #f8fafc)'">
+                <div>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="background:#059669; color:white; font-size:11px; font-weight:800; padding:2px 7px; border-radius:6px;">${labelDesconto}</span>
+                    <strong style="font-size:13px; color:var(--text);">${c.codigo}</strong>
+                  </div>
+                  <div style="font-size:12px; font-weight:700; color:var(--text); margin-top:3px;">${c.titulo || c.codigo}</div>
+                  ${c.valor_minimo > 0 ? `<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Pedido mín: R$ ${Number(c.valor_minimo).toFixed(2).replace('.', ',')}</div>` : ''}
+                </div>
+                <button type="button" style="background:#059669; color:white; border:none; padding:6px 12px; border-radius:8px; font-size:11.5px; font-weight:800; cursor:pointer;">
+                  Aplicar
+                </button>
+              </div>
+            `;
+          }).join('');
+        })
+        .catch(() => {
+          listaEl.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:16px;">Erro ao buscar cupons.</p>';
+        });
+    };
+
+    window.atualizarHeaderFidelidade = function() {
+      const tel = localStorage.getItem('fidelidade_telefone');
+      const badge = document.getElementById('btn-header-fidelidade');
+      const txt = document.getElementById('btn-header-pontos-txt');
+      if (tel && badge && txt) {
+        socket.emit('cliente_login', tel);
+      }
+    };
+
+    socket.on('cliente_login_response', (res) => {
+      if (res && res.cliente) {
+        const txt = document.getElementById('btn-header-pontos-txt');
+        if (txt) {
+          txt.innerText = `${res.cliente.pontos || 0} pts (${res.cliente.nivel || 'Bronze'})`;
+        }
+      }
+    });
+
+    // Detectar cupom na URL ao carregar
+    (function verificarCupomUrl() {
+      const cupomUrl = new URLSearchParams(window.location.search).get('cupom');
+      if (cupomUrl) {
+        setTimeout(() => {
+          const inp = document.getElementById('input-cart-cupom');
+          if (inp) inp.value = cupomUrl.trim().toUpperCase();
+          if (typeof showToast === 'function') {
+            showToast(`🎟️ Cupom ${cupomUrl.toUpperCase()} carregado! Ele será aplicado no carrinho.`, 'info');
+          }
+        }, 1200);
+      }
+    })();
 
     function submitPendingOrder(name, total, paidViaPix, pixKey = '') {
       const emitItens = CART.map(item => ({

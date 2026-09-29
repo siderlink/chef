@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/fila.css?v=20260921">
+  <link rel="stylesheet" href="/device-adapters.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
@@ -91,7 +92,26 @@
       70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
       100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
     }
+    @keyframes slaPulseBorder {
+      0%   { border-left-color: #ef4444; box-shadow: -2px 0 10px rgba(239,68,68,0.4); }
+      50%  { border-left-color: #fca5a5; box-shadow: -2px 0 0px rgba(239,68,68,0); }
+      100% { border-left-color: #ef4444; box-shadow: -2px 0 10px rgba(239,68,68,0.4); }
+    }
+    @keyframes pulseManobra {
+      0%   { box-shadow: 0 0 0 0 rgba(252,75,21,0.5); }
+      70%  { box-shadow: 0 0 0 8px rgba(252,75,21,0); }
+      100% { box-shadow: 0 0 0 0 rgba(252,75,21,0); }
+    }
+    @keyframes pulseBadge {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.05); }
+    }
+    /* KDS SLA legend no topo */
+    .kds-sla-legend { display: flex; gap: 12px; align-items: center; font-size: 11px; font-weight: 700; padding: 0 8px; }
+    .kds-sla-legend span { display: flex; align-items: center; gap: 4px; }
+    .kds-sla-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   </style>
+
   <script src="fila.js?v=20260921"></script>
 </head>
 
@@ -134,6 +154,15 @@
           <span>Prontos</span>
           <span class="kds-badge-count badge-pronto" id="kds-badge-pronto">0</span>
         </button>
+      </div>
+
+      <div class="kds-nav-separator"></div>
+
+      <!-- SLA Legend -->
+      <div class="kds-sla-legend" title="SLA de Tempo por Pedido">
+        <span><span class="kds-sla-dot" style="background:#22c55e;"></span>&lt;12m</span>
+        <span><span class="kds-sla-dot" style="background:#f59e0b;"></span>12-20m</span>
+        <span><span class="kds-sla-dot" style="background:#ef4444;"></span>&gt;20m</span>
       </div>
 
       <div class="kds-nav-separator"></div>
@@ -195,6 +224,23 @@
       <button type="button" id="btn-toggle-layout-drawer" onclick="window.toggleLayoutDrawer()" class="kds-nav-btn" style="background: rgba(252,75,21,0.12); color: #fc4b15; border: 1.5px solid rgba(252,75,21,0.3); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px;" title="Configurar Layout, Largura de Seções e Posições">
         <i class="ph-bold ph-sliders-horizontal" style="font-size: 16px;"></i>
         <span>Layout</span>
+      </button>
+
+      <!-- Botão Modo TV / Telão (Letras GG, Alto Contraste, Fullscreen) -->
+      <button type="button" id="btn-toggle-modo-tv" onclick="window.alternarModoTv()" class="kds-nav-btn" style="background: rgba(34,197,94,0.12); color: #22c55e; border: 1.5px solid rgba(34,197,94,0.35); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px;" title="Ativar Modo TV / Telão (Letras GG, Alto Contraste, Tela Cheia) [Tecla T]">
+        <i class="ph-bold ph-television" style="font-size: 16px;"></i>
+        <span>Modo TV</span>
+      </button>
+
+      <!-- Botão Alerta Sonoro / Mudo -->
+      <button type="button" id="btn-toggle-sound" onclick="window.toggleKdsSound()" class="kds-nav-btn" style="height: 34px; padding: 0 10px; border-radius: 10px; font-size: 12px; font-weight: 700; border: 1.5px solid rgba(16,185,129,0.35); color: #10b981;" title="Alternar Alertas Sonoros da Cozinha">
+        <i class="ph-bold ph-speaker-high" style="font-size: 16px;"></i>
+        <span>Som: ON</span>
+      </button>
+
+      <!-- Botão Tela Cheia (Fullscreen) -->
+      <button type="button" id="btn-toggle-fullscreen" onclick="window.toggleKdsFullscreen()" class="kds-icon-btn" title="Alternar Tela Cheia (F11 ou tecla F)">
+        <i class="ph-bold ph-arrows-out" id="icon-kds-fullscreen"></i>
       </button>
 
       <!-- Status de Conexão em Tempo Real -->
@@ -294,7 +340,7 @@
         <div class="kds-control-section" style="margin-top: 10px; border-top: 1px solid var(--kds-card-border); padding-top: 10px;">
           <span class="kds-control-title">Versão do Sistema KDS</span>
           <div style="display: flex; gap: 8px;">
-            <button type="button" class="kds-pill-btn active" style="flex:1;">
+            <button type="button" class="kds-pill-btn active" style="flex:1; cursor:default; pointer-events:none;">
               <i class="ph-bold ph-sparkle"></i> <span>Moderna (v2 Ativa)</span>
             </button>
             <button type="button" class="kds-pill-btn" onclick="window.trocarVersaoFila('classica')" style="flex:1; border-color: #6366f1; color: #6366f1;">
@@ -534,7 +580,7 @@
         <div class="fila-settings-group">
           <span class="fila-settings-label">Versão da Cozinha (V1 / V2)</span>
           <div class="fila-settings-grid" style="grid-template-columns: 1fr 1fr;">
-            <button type="button" class="fila-settings-btn active" style="border-color: #fc4b15; background: rgba(252,75,21,0.1); color: #fc4b15;" title="Design Moderno v2 Ativo">
+            <button type="button" class="fila-settings-btn active" style="border-color: #fc4b15; background: rgba(252,75,21,0.1); color: #fc4b15; cursor:default; pointer-events:none;" title="Design Moderno v2 Ativo">
               <i class="ph-fill ph-sparkle" style="color: #fc4b15;"></i><span>Moderna (v2)</span>
             </button>
             <button type="button" class="fila-settings-btn" onclick="window.trocarVersaoFila('classica')" style="cursor:pointer;" title="Usar visual clássico da versão 1.0">
@@ -594,6 +640,19 @@
             <span style="font-size: 12px; color: #64748b; font-weight: 600;">seg. piscando</span>
           </div>
         </div>
+
+        <!-- SEÇÃO ATALHOS DE TECLADO & BUMP BAR -->
+        <div class="fila-settings-group">
+          <span class="fila-settings-label">Atalhos de Teclado & Bump Bar (KDS Dedicado)</span>
+          <div style="background: var(--kds-btn-bg, #f1f5f9); border: 1px solid var(--kds-card-border, #cbd5e1); border-radius: 12px; padding: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 7px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span><kbd style="background:var(--kds-card-bg); padding:2px 6px; border-radius:4px; border:1px solid var(--kds-card-border); font-weight:800;">1 a 9</kbd></span> <span>Avançar pedido 1 ao 9</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span><kbd style="background:var(--kds-card-bg); padding:2px 6px; border-radius:4px; border:1px solid var(--kds-card-border); font-weight:800;">Enter / Espaço</kbd></span> <span>Avançar 1º pedido</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span><kbd style="background:var(--kds-card-bg); padding:2px 6px; border-radius:4px; border:1px solid var(--kds-card-border); font-weight:800;">Shift + 1 a 9</kbd></span> <span>Voltar pedido de status</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span><kbd style="background:var(--kds-card-bg); padding:2px 6px; border-radius:4px; border:1px solid var(--kds-card-border); font-weight:800;">U ou Ctrl+Z</kbd></span> <span>Desfazer última ação</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span><kbd style="background:var(--kds-card-bg); padding:2px 6px; border-radius:4px; border:1px solid var(--kds-card-border); font-weight:800;">T</kbd></span> <span>Alternar Modo TV / Telão</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span><kbd style="background:var(--kds-card-bg); padding:2px 6px; border-radius:4px; border:1px solid var(--kds-card-border); font-weight:800;">F</kbd></span> <span>Alternar Tela Cheia</span></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -617,13 +676,16 @@
       <!-- Filtros de Nicho -->
       <div class="kds-store-filters" id="kds-store-filter-bar">
         <button type="button" class="kds-store-filter-chip active" data-cat="todos" onclick="window.filtrarLojaPresets('todos')">
-          <i class="ph-bold ph-squares-four"></i> <span>Todos os Nichos (8)</span>
+          <i class="ph-bold ph-squares-four"></i> <span>Todos os Nichos (9)</span>
         </button>
         <button type="button" class="kds-store-filter-chip" data-cat="buffet" onclick="window.filtrarLojaPresets('buffet')">
           <i class="ph-bold ph-cooking-pot"></i> <span>Buffet & A Quilo</span>
         </button>
         <button type="button" class="kds-store-filter-chip" data-cat="pizzaria" onclick="window.filtrarLojaPresets('pizzaria')">
           <i class="ph-bold ph-pizza"></i> <span>Pizzarias</span>
+        </button>
+        <button type="button" class="kds-store-filter-chip" data-cat="churrascaria" onclick="window.filtrarLojaPresets('churrascaria')">
+          <i class="ph-bold ph-fire"></i> <span>Churrascaria & Rodízio</span>
         </button>
         <button type="button" class="kds-store-filter-chip" data-cat="sushi" onclick="window.filtrarLojaPresets('sushi')">
           <i class="ph-bold ph-fish"></i> <span>Sushis & Rodízio</span>
@@ -680,6 +742,7 @@
   <script src="/fullscreen.js"></script>
   <script>window.PUSH_ROLE = 'cozinha';</script>
   <script src="/push-client.js"></script>
+  <script src="/device-adapters.js"></script>
   <script src="/chef-colaborador-dock.js"></script>
   <script src="/chef-layout-injetor.js"></script>
 

@@ -7,6 +7,40 @@ module.exports = function({ app, db, io, options, log }) {
 
   const ORDEM_NIVEIS = { 'Bronze': 0, 'Prata': 1, 'Ouro': 2, 'Diamante': 3 };
 
+  // Migrações e schema de fidelidade & avaliações
+  try {
+    db.run(`CREATE TABLE IF NOT EXISTS parceiros_fidelidade (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT NOT NULL,
+      categoria TEXT,
+      telefone TEXT,
+      endereco TEXT,
+      bairro TEXT,
+      cidade TEXT,
+      latitude REAL,
+      longitude REAL,
+      pontos_minimos INTEGER DEFAULT 0,
+      descricao TEXT,
+      logo_url TEXT,
+      ativo INTEGER DEFAULT 1,
+      criado_em DATETIME DEFAULT (datetime('now', 'localtime'))
+    )`, () => {});
+
+    db.run(`CREATE TABLE IF NOT EXISTS avaliacoes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      cliente_nome TEXT,
+      mesa TEXT,
+      nota INTEGER NOT NULL,
+      comentario TEXT,
+      origem TEXT DEFAULT 'interno',
+      criado_em DATETIME DEFAULT (datetime('now', 'localtime'))
+    )`, () => {});
+    db.run(`ALTER TABLE beneficios ADD COLUMN categoria TEXT`, () => {});
+    db.run(`ALTER TABLE beneficios ADD COLUMN descricao TEXT`, () => {});
+  } catch (e) {
+    if (typeof log === 'function') log('Erro ao inicializar tabelas de fidelidade: ' + e.message);
+  }
+
   // ── HTTP Routes ──
   log('Registering routes...');
 

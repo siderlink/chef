@@ -36,7 +36,7 @@
       window.dispatchEvent(new CustomEvent('chef_sidebar_mode_changed', { detail: { side: 'left', mode: 'mini' } }));
     } else {
       // Modo expandido com títulos
-      const clampedW = Math.max(160, Math.min(newWidth, 600));
+      const clampedW = Math.max(220, Math.min(newWidth, 600));
       leftPanel.classList.remove('mode-mini', 'sidebar-mini', 'dock-icon-only', 'mode-hidden', 'sidebar-hidden');
       leftPanel.classList.add('mode-expanded', 'sidebar-expanded');
       leftPanel.style.display = '';
@@ -430,13 +430,17 @@
         panel.style.width = w;
         panel.style.minWidth = w;
         panel.style.maxWidth = w;
+        document.documentElement.style.setProperty('--' + side + '-sidebar-width', w);
       } else {
         panel.style.display = '';
         const stored = localStorage.getItem('chef_sidebar_' + side + '_width');
-        const w = stored ? stored + 'px' : (right ? '320px' : '220px');
+        const num = parseInt(stored, 10);
+        const w = (num && num >= 200) ? num + 'px' : (right ? '320px' : '230px');
         panel.style.width = w;
         panel.style.minWidth = w;
         panel.style.maxWidth = w;
+        document.documentElement.style.setProperty('--' + side + '-sidebar-width', w);
+        document.documentElement.style.setProperty('--' + side + '-expanded-width', w);
       }
     } else {
       panel.style.display = (mode === 'hidden') ? 'none' : '';

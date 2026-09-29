@@ -46,6 +46,48 @@ try {
 } catch(e) { cart = []; }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Sincronização do status de conexão e fila offline no cabeçalho
+  function atualizarStatusOfflineHeader(count) {
+    const badge = document.getElementById('garcom-offline-badge');
+    if (!badge) return;
+    const isOffline = !navigator.onLine;
+    const pendingCount = (typeof count === 'number') ? count : (window.ChefOfflineQueue ? null : 0);
+
+    if (pendingCount && pendingCount > 0) {
+      badge.style.display = 'inline-flex';
+      badge.style.background = '#f59e0b';
+      badge.innerHTML = `<i class="ph-bold ph-cloud-arrow-up"></i> ${pendingCount} pendente${pendingCount > 1 ? 's' : ''}`;
+    } else if (isOffline) {
+      badge.style.display = 'inline-flex';
+      badge.style.background = '#ef4444';
+      badge.innerHTML = `<i class="ph-bold ph-wifi-slash"></i> Offline`;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  window.addEventListener('online', () => {
+    atualizarStatusOfflineHeader();
+    if (typeof showToast === 'function') showToast('Conexão restabelecida! Sincronizando...', '#10b981');
+    if (window.ChefOfflineQueue && typeof window.ChefOfflineQueue.flush === 'function') {
+      window.ChefOfflineQueue.flush();
+    }
+  });
+
+  window.addEventListener('offline', () => {
+    atualizarStatusOfflineHeader();
+    if (typeof showToast === 'function') showToast('Você está offline. Os pedidos serão guardados no aparelho.', '#f59e0b');
+  });
+
+  if (window.ChefOfflineQueue && typeof window.ChefOfflineQueue.onChange === 'function') {
+    window.ChefOfflineQueue.onChange(atualizarStatusOfflineHeader);
+    if (typeof window.ChefOfflineQueue.count === 'function') {
+      window.ChefOfflineQueue.count().then(atualizarStatusOfflineHeader).catch(() => {});
+    }
+  } else {
+    atualizarStatusOfflineHeader();
+  }
+
   const btnHome = document.getElementById('btn-home');
   if (btnHome) {
     const handleHomeStart = (e) => {
@@ -365,6 +407,29 @@ socket.on("ia_manobra_executada", (data) => {
   showToast(data.mensagem, "#22c55e");
 });
 
+// --- IA & Hub Marketing: Sentinela VIP no Salão ---
+socket.on("alerta_vip_chegou", (data) => {
+  var mesa = data.mesa || "Mesa", nome = data.nome || "Cliente VIP", totalGasto = Number(data.total_gasto) || 0, obs = data.observacao || "";
+  var msg = "👑 VIP na Mesa " + mesa + ": " + nome + " (Gasto: R$ " + totalGasto.toFixed(2) + ")";
+  showToast(msg, "#f59e0b");
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("👑 Cliente VIP na Mesa " + mesa, { body: msg, icon: "/favicon.ico" });
+  }
+  if (typeof queueIaNotif === "function" && typeof createIaOverlay === "function") {
+    queueIaNotif(function() {
+      createIaOverlay(
+        '<div style="font-weight:800;font-size:15px;margin-bottom:6px;color:#fbbf24;">👑 CLIENTE VIP DETECTADO!</div>' +
+        '<div style="font-size:13px;margin-bottom:4px;"><strong>Mesa ' + escHtml(mesa) + ':</strong> ' + escHtml(nome) + '</div>' +
+        '<div style="font-size:12px;color:#94a3b8;">Consumo Acumulado: <span style="color:#22c55e;font-weight:700;">R$ ' + totalGasto.toFixed(2) + '</span></div>' +
+        (obs ? '<div style="font-size:12px;margin-top:4px;color:#cbd5e1;">💡 Preferência: <em>' + escHtml(obs) + '</em></div>' : ''),
+        "#d97706",
+        '<button data-action="dismiss" style="flex:1;padding:10px;background:#22c55e;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">Entendido, atendimento VIP</button>',
+        25000
+      );
+    });
+  }
+});
+
 // --- IA: Event delegation for popup buttons (fixes zoom/touch issues) ---
 document.addEventListener("click", function(e) {
   var btn = e.target.closest("[data-action]");
@@ -439,6 +504,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // --- Data Fetching ---
 socket.on('mesas_atualizadas', (mesas) => {
   MESAS = mesas;
+  if (typeof atualizarPillsSetoresMesas === 'function') atualizarPillsSetoresMesas();
   renderTables();
 });
 
@@ -448,6 +514,7 @@ socket.on('mesa_delta', (mesa) => {
   const idx = MESAS.findIndex(m => m.id === mesa.id || m.nome === mesa.nome);
   if (idx === -1) { socket.emit('get_mesas'); return; }
   MESAS[idx] = { ...MESAS[idx], ...mesa };
+  if (typeof atualizarPillsSetoresMesas === 'function') atualizarPillsSetoresMesas();
   renderTables();
 });
 
@@ -458,38 +525,74 @@ async function fetchConfigs() {
     const res = await fetch('/api/config?restaurante_id=' + encodeURIComponent(localStorage.getItem('restaurante_id') || '1'));
     CONFIGS = await res.json();
     if (MENU.length > 0) reorderTabs();
+    aplicarModoOperacaoGarcom();
   } catch (e) {
     console.error(e);
   }
 }
 fetchConfigs();
 
+function aplicarModoOperacaoGarcom() {
+  const localModo = localStorage.getItem('garcom_modo');
+  const modo = (localModo || (CONFIGS && CONFIGS.garcom_modo) || 'pro').toLowerCase();
+  const isClassico = (modo === 'classico' || modo === 'essencial');
+
+  const navAtalhos = document.getElementById('nav-atalhos');
+  if (navAtalhos) {
+    navAtalhos.style.display = isClassico ? 'none' : '';
+  }
+
+  const atalhosGrid = document.getElementById('atalhos-grid-container');
+  if (atalhosGrid) {
+    atalhosGrid.style.display = isClassico ? 'none' : 'grid';
+  }
+
+  if (isClassico && typeof currentViewId !== 'undefined' && currentViewId === 'view-atalhos') {
+    if (typeof showView === 'function') showView('tables', 'Mesas');
+  }
+
+  let badgeEl = document.getElementById('garcom-modo-badge');
+  if (!badgeEl) {
+    const topBar = document.querySelector('.top-nav') || document.querySelector('.header') || document.querySelector('.logo');
+    if (topBar) {
+      badgeEl = document.createElement('span');
+      badgeEl.id = 'garcom-modo-badge';
+      badgeEl.style.cssText = 'font-size:10px; font-weight:800; padding:3px 8px; border-radius:12px; margin-left:8px; cursor:pointer; vertical-align:middle; display:inline-flex; align-items:center; gap:4px;';
+      topBar.appendChild(badgeEl);
+      badgeEl.onclick = function() {
+        const novo = (localStorage.getItem('garcom_modo') === 'classico') ? 'pro' : 'classico';
+        localStorage.setItem('garcom_modo', novo);
+        aplicarModoOperacaoGarcom();
+        showToast(novo === 'classico' ? 'Modo Essencial (Clássico) ativado' : 'Modo Pro ativado');
+      };
+    }
+  }
+  if (badgeEl) {
+    badgeEl.innerHTML = isClassico ? '<i class="ph-bold ph-clock-counter-clockwise"></i> Clássico' : '<i class="ph-bold ph-sparkle"></i> Pro';
+    badgeEl.style.background = isClassico ? '#f1f5f9' : '#dcfce7';
+    badgeEl.style.color = isClassico ? '#475569' : '#15803d';
+    badgeEl.title = 'Alternar entre Modo Clássico (Simples) e Modo Pro';
+  }
+}
+
 function reorderTabs() {
-  let rawTabs = [...new Set(MENU.map(m => m.category))];
+  let rawTabs = [...new Set(MENU.map(m => m.category).filter(Boolean))];
   
   if (CONFIGS && CONFIGS.ordem_categorias) {
     try {
       const order = JSON.parse(CONFIGS.ordem_categorias);
-      TABS = rawTabs.sort((a, b) => {
+      rawTabs = rawTabs.sort((a, b) => {
         let idxA = order.indexOf(a);
         let idxB = order.indexOf(b);
         if (idxA === -1) idxA = 999;
         if (idxB === -1) idxB = 999;
         return idxA - idxB;
       });
-      // Forçar "Mais Pedidos" para primeiro se existir
-      if (TABS.includes('Mais Pedidos')) {
-        TABS = ['Mais Pedidos', ...TABS.filter(t => t !== 'Mais Pedidos')];
-      }
-    } catch(e) {
-      TABS = rawTabs;
-    }
-  } else {
-    TABS = rawTabs;
-    if (TABS.includes('Mais Pedidos')) {
-      TABS = ['Mais Pedidos', ...TABS.filter(t => t !== 'Mais Pedidos')];
-    }
+    } catch(e) {}
   }
+
+  // Aba inteligente de Mais Pedidos sempre disponível na primeira posição
+  TABS = ['⭐ Mais Pedidos', ...rawTabs.filter(t => t !== '⭐ Mais Pedidos' && t !== 'Mais Pedidos')];
 
   if (TABS.length > 0 && !TABS.includes(currentTab)) {
     currentTab = TABS[0];
@@ -952,7 +1055,88 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// --- Tables Logic ---
+// --- Tables Logic & Fast Search/Sector Filters ---
+window.mesaSearchTerm = '';
+window.mesaCurrentSector = 'todas';
+
+window.filtrarMesasPorTermo = function(termo) {
+  window.mesaSearchTerm = (termo || '').toLowerCase().trim();
+  const btnLimpar = document.getElementById('btn-limpar-busca-mesas');
+  if (btnLimpar) btnLimpar.style.display = window.mesaSearchTerm ? 'block' : 'none';
+  renderTables();
+};
+
+window.limparBuscaMesas = function() {
+  window.mesaSearchTerm = '';
+  const input = document.getElementById('input-busca-mesas');
+  if (input) input.value = '';
+  const btnLimpar = document.getElementById('btn-limpar-busca-mesas');
+  if (btnLimpar) btnLimpar.style.display = 'none';
+  renderTables();
+};
+
+window.filtrarSetorMesa = function(setor) {
+  window.mesaCurrentSector = setor || 'todas';
+  document.querySelectorAll('#garcom-sector-pills .sector-pill').forEach(btn => {
+    if (btn.getAttribute('data-sector') === window.mesaCurrentSector) {
+      btn.classList.add('active');
+      btn.style.background = '#fc4b15';
+      btn.style.color = '#ffffff';
+      btn.style.borderColor = '#fc4b15';
+    } else {
+      btn.classList.remove('active');
+      btn.style.background = 'var(--g-card-bg, #ffffff)';
+      btn.style.color = 'var(--g-text, #475569)';
+      btn.style.borderColor = 'var(--g-border, #e2e8f0)';
+    }
+  });
+  renderTables();
+};
+
+function atualizarPillsSetoresMesas() {
+  const container = document.getElementById('garcom-sector-pills');
+  if (!container || !Array.isArray(MESAS)) return;
+  
+  const salasSet = new Set();
+  MESAS.forEach(m => {
+    if (m.sala && m.sala.trim() && m.sala.trim() !== 'Salão principal') {
+      salasSet.add(m.sala.trim());
+    }
+  });
+
+  const totalMesas = MESAS.length;
+  const totalOcupadas = MESAS.filter(m => m.status === 'Ocupada').length;
+  const totalLivres = MESAS.filter(m => m.status === 'Disponível' || m.status === 'Livre').length;
+
+  let html = `
+    <button type="button" class="sector-pill ${window.mesaCurrentSector === 'todas' ? 'active' : ''}" onclick="window.filtrarSetorMesa('todas')" data-sector="todas"
+      style="white-space:nowrap; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; border:1.5px solid ${window.mesaCurrentSector === 'todas' ? '#fc4b15' : 'var(--g-border, #e2e8f0)'}; background:${window.mesaCurrentSector === 'todas' ? '#fc4b15' : 'var(--g-card-bg, #ffffff)'}; color:${window.mesaCurrentSector === 'todas' ? '#ffffff' : 'var(--g-text, #475569)'}; cursor:pointer;">
+      Todas (${totalMesas})
+    </button>
+    <button type="button" class="sector-pill ${window.mesaCurrentSector === 'ocupadas' ? 'active' : ''}" onclick="window.filtrarSetorMesa('ocupadas')" data-sector="ocupadas"
+      style="white-space:nowrap; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; border:1.5px solid ${window.mesaCurrentSector === 'ocupadas' ? '#fc4b15' : 'var(--g-border, #e2e8f0)'}; background:${window.mesaCurrentSector === 'ocupadas' ? '#fc4b15' : 'var(--g-card-bg, #ffffff)'}; color:${window.mesaCurrentSector === 'ocupadas' ? '#ffffff' : 'var(--g-text, #475569)'}; cursor:pointer;">
+      Ocupadas (${totalOcupadas})
+    </button>
+    <button type="button" class="sector-pill ${window.mesaCurrentSector === 'livres' ? 'active' : ''}" onclick="window.filtrarSetorMesa('livres')" data-sector="livres"
+      style="white-space:nowrap; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; border:1.5px solid ${window.mesaCurrentSector === 'livres' ? '#fc4b15' : 'var(--g-border, #e2e8f0)'}; background:${window.mesaCurrentSector === 'livres' ? '#fc4b15' : 'var(--g-card-bg, #ffffff)'}; color:${window.mesaCurrentSector === 'livres' ? '#ffffff' : 'var(--g-text, #475569)'}; cursor:pointer;">
+      Livres (${totalLivres})
+    </button>
+  `;
+
+  salasSet.forEach(sala => {
+    const isAct = window.mesaCurrentSector === sala;
+    const countSala = MESAS.filter(m => m.sala === sala).length;
+    html += `
+      <button type="button" class="sector-pill ${isAct ? 'active' : ''}" onclick="window.filtrarSetorMesa('${escHtml(sala)}')" data-sector="${escHtml(sala)}"
+        style="white-space:nowrap; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; border:1.5px solid ${isAct ? '#fc4b15' : 'var(--g-border, #e2e8f0)'}; background:${isAct ? '#fc4b15' : 'var(--g-card-bg, #ffffff)'}; color:${isAct ? '#ffffff' : 'var(--g-text, #475569)'}; cursor:pointer;">
+        ${escHtml(sala)} (${countSala})
+      </button>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
 function renderTables() {
   const grid = document.getElementById('tables-grid');
   const empty = document.getElementById('tables-empty');
@@ -966,22 +1150,62 @@ function renderTables() {
   grid.style.display = '';
   if (empty) empty.style.display = 'none';
 
+  // ─── FILTRO POR BUSCA E SETOR/SALA ───
+  let mesasFiltradas = [...MESAS];
+  
+  if (window.mesaSearchTerm) {
+    mesasFiltradas = mesasFiltradas.filter(m => {
+      const nomeMatch = (m.nome || '').toLowerCase().includes(window.mesaSearchTerm);
+      const obsMatch = (m.observacao || '').toLowerCase().includes(window.mesaSearchTerm);
+      const salaMatch = (m.sala || '').toLowerCase().includes(window.mesaSearchTerm);
+      return nomeMatch || obsMatch || salaMatch;
+    });
+  }
+
+  if (window.mesaCurrentSector && window.mesaCurrentSector !== 'todas') {
+    if (window.mesaCurrentSector === 'ocupadas') {
+      mesasFiltradas = mesasFiltradas.filter(m => m.status === 'Ocupada');
+    } else if (window.mesaCurrentSector === 'livres') {
+      mesasFiltradas = mesasFiltradas.filter(m => m.status === 'Disponível' || m.status === 'Livre');
+    } else {
+      mesasFiltradas = mesasFiltradas.filter(m => (m.sala || 'Salão principal') === window.mesaCurrentSector);
+    }
+  }
+
   // ─── APLICAR ORDENAÇÃO SALVA ───
-  let mesasOrdenadas = [...MESAS];
-  const sortType = (function() { try { return localStorage.getItem('garcom_mesa_sort') || 'nome'; } catch(e) { return 'nome'; } })();
-  if (sortType === 'status') {
+  let mesasOrdenadas = mesasFiltradas;
+  const sortType = (function() { try { return localStorage.getItem('garcom_mesa_sort') || 'num_asc'; } catch(e) { return 'num_asc'; } })();
+  
+  if (sortType === 'status_ocupadas' || sortType === 'status') {
     const ordem = { 'Ocupada': 0, 'Reservada': 1, 'Disponível': 2, 'Livre': 2 };
     mesasOrdenadas.sort((a, b) => (ordem[a.status] ?? 9) - (ordem[b.status] ?? 9));
-  } else if (sortType === 'valor') {
+  } else if (sortType === 'status_livres') {
+    const ordem = { 'Disponível': 0, 'Livre': 0, 'Reservada': 1, 'Ocupada': 2 };
+    mesasOrdenadas.sort((a, b) => (ordem[a.status] ?? 9) - (ordem[b.status] ?? 9));
+  } else if (sortType === 'valor_desc' || sortType === 'valor') {
     mesasOrdenadas.sort((a, b) => (b._total || 0) - (a._total || 0));
+  } else if (sortType === 'num_desc') {
+    mesasOrdenadas.sort((a, b) => {
+      const na = parseInt((a.nome || '').replace(/\D/g, '')) || 0;
+      const nb = parseInt((b.nome || '').replace(/\D/g, '')) || 0;
+      return na !== nb ? nb - na : (b.nome || '').localeCompare(a.nome || '');
+    });
+  } else if (sortType === 'nome_asc') {
+    mesasOrdenadas.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
   } else {
-    // padrão: nome numérico
+    // num_asc (padrão)
     mesasOrdenadas.sort((a, b) => {
       const na = parseInt((a.nome || '').replace(/\D/g, '')) || 0;
       const nb = parseInt((b.nome || '').replace(/\D/g, '')) || 0;
       return na !== nb ? na - nb : (a.nome || '').localeCompare(b.nome || '');
     });
   }
+
+  if (mesasOrdenadas.length === 0) {
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 30px 10px; font-weight: 600;"><i class="ph ph-magnifying-glass" style="font-size: 32px; display: block; margin-bottom: 6px;"></i>Nenhuma mesa encontrada com o filtro atual.</div>';
+    return;
+  }
+
   // Aplicar layout salvo
   const layout = (function() { try { return localStorage.getItem('garcom_mesa_layout') || 'auto'; } catch(e) { return 'auto'; } })();
   if (layout === 'list') grid.style.gridTemplateColumns = '1fr';
@@ -1173,8 +1397,8 @@ window.renderBillView = () => {
   const grandTotal = Math.max(0, consumedSubtotal + serviceFee - totalPayments);
   const totalDaMesa = grossSubtotal * multiplier;
 
-  document.getElementById('bill-subtotal').innerText = `R$ ${totalDaMesa.toFixed(2).replace('.',',')}`;
-  document.getElementById('bill-grand-total').innerText = `R$ ${grandTotal.toFixed(2).replace('.',',')}`;
+  document.getElementById('bill-subtotal').innerText = `R$ ${Math.max(0, totalDaMesa).toFixed(2).replace('.',',')}`;
+  document.getElementById('bill-grand-total').innerText = `R$ ${Math.max(0, grandTotal).toFixed(2).replace('.',',')}`;
 
   if (billCurrentMode === 'pessoas') {
     billActionValue = grandTotal / billSplitCount;
@@ -1245,7 +1469,10 @@ function renderBillPessoasItems() {
             <span style="font-weight: 600;">${item.quantity}x</span> ${item.productEmoji || '🍽️'} ${item.productName}
             ${isPaid ? '<span style="color:#3ab55b; font-size:12px; margin-left:4px;">(Pago)</span>' : ''}
           </div>
-          <div style="font-size: 14px; font-weight: 600; color: #666;">R$ ${finalVal.toFixed(2).replace('.', ',')}</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="font-size: 14px; font-weight: 600; color: #666;">R$ ${finalVal.toFixed(2).replace('.', ',')}</div>
+            ${!isPaid ? `<button type="button" title="Pedir +1x igual" onclick="event.stopPropagation(); window.repetirItemComanda(${item.id})" style="padding: 3px 8px; border-radius: 8px; border: 1px solid #fed7aa; background: #fff7ed; color: #ea580c; font-weight: 800; font-size: 11px; cursor: pointer;">+1x</button>` : ''}
+          </div>
         </div>
       `;
     }).join('');
@@ -1324,9 +1551,18 @@ function renderBillItemsList() {
             <div style="font-weight:600; color:#333;">${item.quantity}x ${item.productEmoji || '🍽️'} ${item.productName} ${isPaid ? '<span style="color:#3ab55b; font-size:12px; margin-left:8px;">(Pago)</span>' : ''}</div>
             <div style="font-size:14px; color:#666;">Total: R$ ${finalVal.toFixed(2).replace('.',',')}</div>
           </div>
-          ${!isPaid ? `<button class="btn-split-item" title="Dividir / Fracionar em Comandas" onclick="event.stopPropagation(); window.abrirModalFracionarItem(${item.id})"><i class="ph-bold ph-scissors"></i> Dividir</button> <button style="display:none;" class="btn-split-item-old ${fraction === 0.5 ? 'active' : ''}" onclick="event.stopPropagation(); splitItemFraction(${item.id})">
-            ${fraction === 0.5 ? 'Metade' : 'Rachar Meio'}
-          </button>` : ''}
+          ${!isPaid ? `
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button type="button" title="Pedir +1x igual" onclick="event.stopPropagation(); window.repetirItemComanda(${item.id})" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #fed7aa; background: #fff7ed; color: #ea580c; font-weight: 800; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                <i class="ph-bold ph-plus"></i> 1x
+              </button>
+              <button class="btn-split-item" title="Dividir / Fracionar em Comandas" onclick="event.stopPropagation(); window.abrirModalFracionarItem(${item.id})">
+                <i class="ph-bold ph-scissors"></i> Dividir
+              </button>
+            </div>
+            <button style="display:none;" class="btn-split-item-old ${fraction === 0.5 ? 'active' : ''}" onclick="event.stopPropagation(); splitItemFraction(${item.id})">
+              ${fraction === 0.5 ? 'Metade' : 'Rachar Meio'}
+            </button>` : ''}
         </div>
       `;
     }).join('');
@@ -1381,11 +1617,19 @@ window.switchBillTab = (tab) => {
     t.classList.remove('active');
     t.style.background = 'transparent'; t.style.color = '#666';
   });
-  document.getElementById(`tab-bill-${tab}`).classList.add('active');
-  document.getElementById(`tab-bill-${tab}`).style.color = '#fc4b15';
+  const tabEl = document.getElementById(`tab-bill-${tab}`);
+  if (tabEl) {
+    tabEl.classList.add('active');
+    tabEl.style.color = '#fc4b15';
+  }
   
   document.querySelectorAll('.bill-content').forEach(c => c.style.display = 'none');
-  document.getElementById(`bill-content-${tab}`).style.display = 'block';
+  const contentEl = document.getElementById(`bill-content-${tab}`);
+  if (contentEl) contentEl.style.display = 'block';
+  
+  if (tab === 'assentos' && typeof window.carregarAssentosMesaGarcom === 'function') {
+    window.carregarAssentosMesaGarcom();
+  }
   
   renderBillView();
 };
@@ -1421,6 +1665,123 @@ window.updateCustomPaymentValue = (val) => {
   if (!isNaN(num) && num >= 0) billActionValue = num;
 };
 
+// --- Modal de Pagamento em Dinheiro & Calculadora de Troco ---
+window.abrirModalDinheiroTroco = function(valorCobrar) {
+  const modal = document.getElementById('modal-garcom-dinheiro-troco');
+  if (!modal) return;
+  window._valorCobrarDinheiro = (typeof valorCobrar === 'number' && valorCobrar > 0) ? valorCobrar : (billActionValue || 0);
+
+  const displayCobrar = document.getElementById('dinheiro-valor-cobrar-display');
+  if (displayCobrar) displayCobrar.innerText = 'R$ ' + window._valorCobrarDinheiro.toFixed(2).replace('.', ',');
+
+  const btnConfVal = document.getElementById('btn-dinheiro-confirmar-val');
+  if (btnConfVal) btnConfVal.innerText = window._valorCobrarDinheiro.toFixed(2).replace('.', ',');
+
+  const inputRecebido = document.getElementById('dinheiro-input-recebido');
+  if (inputRecebido) inputRecebido.value = '';
+
+  const chkCaixinha = document.getElementById('dinheiro-chk-caixinha');
+  if (chkCaixinha) chkCaixinha.checked = false;
+
+  window.calcularTrocoDinheiro();
+  modal.style.display = 'flex';
+  setTimeout(() => { if (inputRecebido) inputRecebido.focus(); }, 150);
+};
+
+window.fecharModalDinheiroTroco = function() {
+  const modal = document.getElementById('modal-garcom-dinheiro-troco');
+  if (modal) modal.style.display = 'none';
+};
+
+window.setDinheiroValorRecebido = function(val) {
+  const input = document.getElementById('dinheiro-input-recebido');
+  if (!input) return;
+  if (val === 'exato') {
+    input.value = (window._valorCobrarDinheiro || 0).toFixed(2).replace('.', ',');
+  } else {
+    input.value = Number(val).toFixed(2).replace('.', ',');
+  }
+  window.calcularTrocoDinheiro();
+};
+
+window.calcularTrocoDinheiro = function() {
+  const total = window._valorCobrarDinheiro || 0;
+  const input = document.getElementById('dinheiro-input-recebido');
+  const card = document.getElementById('dinheiro-card-troco');
+  const label = document.getElementById('dinheiro-troco-label');
+  const valor = document.getElementById('dinheiro-troco-valor');
+  const boxCaixinha = document.getElementById('dinheiro-box-caixinha');
+  const btnConfirmar = document.getElementById('btn-dinheiro-confirmar');
+
+  let recebidoStr = input ? input.value.trim().replace(',', '.') : '';
+  let recebido = parseFloat(recebidoStr);
+
+  if (isNaN(recebido) || recebidoStr === '') {
+    if (label) label.innerText = 'Valor Exato';
+    if (valor) { valor.innerText = 'Sem troco'; valor.style.color = '#15803d'; }
+    if (card) { card.style.background = '#f0fdf4'; card.style.borderColor = '#86efac'; }
+    if (boxCaixinha) boxCaixinha.style.display = 'none';
+    if (btnConfirmar) { btnConfirmar.disabled = false; btnConfirmar.style.opacity = '1'; }
+    return;
+  }
+
+  const troco = recebido - total;
+
+  if (troco < -0.01) {
+    const falta = Math.abs(troco);
+    if (label) label.innerText = 'Valor insuficiente';
+    if (valor) { valor.innerText = 'Falta R$ ' + falta.toFixed(2).replace('.', ','); valor.style.color = '#dc2626'; }
+    if (card) { card.style.background = '#fef2f2'; card.style.borderColor = '#fca5a5'; }
+    if (boxCaixinha) boxCaixinha.style.display = 'none';
+    if (btnConfirmar) { btnConfirmar.disabled = true; btnConfirmar.style.opacity = '0.5'; }
+  } else if (Math.abs(troco) <= 0.01) {
+    if (label) label.innerText = 'Valor Exato';
+    if (valor) { valor.innerText = 'Sem troco'; valor.style.color = '#15803d'; }
+    if (card) { card.style.background = '#f0fdf4'; card.style.borderColor = '#86efac'; }
+    if (boxCaixinha) boxCaixinha.style.display = 'none';
+    if (btnConfirmar) { btnConfirmar.disabled = false; btnConfirmar.style.opacity = '1'; }
+  } else {
+    if (label) label.innerText = 'Troco a Devolver';
+    if (valor) { valor.innerText = 'R$ ' + troco.toFixed(2).replace('.', ','); valor.style.color = '#15803d'; }
+    if (card) { card.style.background = '#f0fdf4'; card.style.borderColor = '#86efac'; }
+    if (boxCaixinha) boxCaixinha.style.display = 'block';
+    if (btnConfirmar) { btnConfirmar.disabled = false; btnConfirmar.style.opacity = '1'; }
+  }
+};
+
+window.confirmarPagamentoDinheiro = function() {
+  const total = window._valorCobrarDinheiro || 0;
+  const input = document.getElementById('dinheiro-input-recebido');
+  let recebido = parseFloat(input ? input.value.trim().replace(',', '.') : '');
+  if (isNaN(recebido)) recebido = total;
+
+  if (recebido < total - 0.01) {
+    alert('O valor entregue é menor que o valor a cobrar!');
+    return;
+  }
+
+  const troco = Math.max(0, recebido - total);
+  const chkCaixinha = document.getElementById('dinheiro-chk-caixinha');
+  const isCaixinha = chkCaixinha ? chkCaixinha.checked : false;
+
+  if (troco > 0 && isCaixinha) {
+    socket.emit('movimentacao_caixa', {
+      tipo: 'Entrada',
+      valor: troco,
+      forma_pagamento: 'Dinheiro',
+      descricao: `Caixinha / Gorjeta: ${currentTable}`
+    });
+    if (typeof trackInsertion === 'function') trackInsertion();
+    showToast(`Caixinha de R$ ${troco.toFixed(2).replace('.', ',')} registrada no caixa!`, '#10b981');
+  } else if (troco > 0) {
+    showToast(`Lembrete: Devolver R$ ${troco.toFixed(2).replace('.', ',')} de troco ao cliente.`, '#0284c7');
+  }
+
+  window.fecharModalDinheiroTroco();
+  window._dinheiroConfirmado = true;
+  window.processPayment('Dinheiro');
+};
+
 // --- Payment Modal ---
 window.openPaymentModal = () => {
   const inputEl = document.getElementById('payment-input-value');
@@ -1439,7 +1800,7 @@ window.openPaymentModal = () => {
   const grandTotal = Math.max(0, consumedSubtotal + serviceFee - totalPayments);
   
   if (billActionValue > grandTotal + 0.05) {
-    alert(`Atenção: O saldo restante da mesa é apenas R$ ${grandTotal.toFixed(2).replace('.',',')}. O valor a pagar será ajustado para o restante da conta.`);
+    alert(`Atenção: O saldo restante da mesa é apenas R$ ${Math.max(0, grandTotal).toFixed(2).replace('.',',')}. O valor a pagar será ajustado para o restante da conta.`);
     billActionValue = grandTotal;
   }
   
@@ -1463,38 +1824,11 @@ window.processPayment = (method) => {
   }
 
   if (method === 'Dinheiro') {
-    const mod10 = billActionValue % 10;
-    const mod5 = billActionValue % 5;
-    let ajudaText = '';
-    if (mod5 > 0 && mod5 < 5) ajudaText += `\n- Dar +R$ ${mod5.toFixed(2).replace('.',',')} -> troco arredonda!`;
-    if (mod10 !== mod5 && mod10 > 0) ajudaText += `\n- Dar +R$ ${mod10.toFixed(2).replace('.',',')} -> troco arredonda!`;
-
-    const inputVal = prompt(`O valor a cobrar é R$ ${billActionValue.toFixed(2).replace('.', ',')}.${ajudaText}\n\nQuanto o cliente entregou em dinheiro? (Deixe em branco se foi o valor exato)`);
-    if (inputVal === null) return; // Cancelou
-    
-    if (inputVal.trim() !== '') {
-      const valorRecebido = parseFloat(inputVal.replace(',', '.'));
-      if (isNaN(valorRecebido) || valorRecebido < billActionValue) {
-         alert('Atenção: O valor entregue pelo cliente é menor que o valor a ser cobrado!');
-         return;
-      }
-      
-      const troco = valorRecebido - billActionValue;
-      if (troco > 0) {
-         if (confirm(`TROCO: R$ ${troco.toFixed(2).replace('.', ',')}\n\nO cliente deseja deixar esse troco como Caixinha / Gorjeta para os funcionários?`)) {
-            socket.emit('movimentacao_caixa', {
-               tipo: 'Entrada',
-               valor: troco,
-               forma_pagamento: method,
-               descricao: `Caixinha / Gorjeta: ${currentTable}`
-            });
-            if (typeof trackInsertion === 'function') trackInsertion();
-            alert(`✅ Caixinha de R$ ${troco.toFixed(2).replace('.',',')} registrada no caixa! Processando o pagamento principal...`);
-         } else {
-            alert(`✅ COBRANÇA APROVADA!\n\nDEVOLVA DE TROCO: R$ ${troco.toFixed(2).replace('.', ',')}`);
-         }
-      }
+    if (!window._dinheiroConfirmado) {
+      window.abrirModalDinheiroTroco(billActionValue);
+      return;
     }
+    window._dinheiroConfirmado = false;
   } else {
     if (!confirm(`Confirmar recebimento de R$ ${billActionValue.toFixed(2).replace('.', ',')} no ${method}?`)) return;
   }
@@ -1585,6 +1919,11 @@ window.renderMenu = function renderMenu() {
   let filtered = [];
   if (query.trim() !== '') {
     filtered = window.FuzzySearch.filter(MENU, query.trim(), (m) => [m.name, m.category || '']);
+  } else if (currentTab === '⭐ Mais Pedidos' || currentTab === 'Mais Pedidos') {
+    filtered = MENU.filter(m => m.destaque || m.popular || m.favorito || m.mais_vendido);
+    if (filtered.length === 0) {
+      filtered = MENU.slice(0, 15);
+    }
   } else {
     filtered = MENU.filter(m => m.category === currentTab);
   }
@@ -1597,15 +1936,35 @@ window.renderMenu = function renderMenu() {
   if (emptyMenu) emptyMenu.style.display = 'none';
   
   listContainer.innerHTML = filtered.map(item => `
-    <div class="menu-item" data-menu-id="${item.id}" onclick="if(!garcomWasLongPress()) openDetails(${item.id})">
-      <div class="img-box">${escHtml(item.emoji)}</div>
-      <div class="menu-item-info">
-        <div class="menu-item-name">${escHtml(item.name)}</div>
-        <div class="menu-item-price">R$ ${item.price.toFixed(2).replace('.', ',')}</div>
+    <div class="menu-item" data-menu-id="${item.id}" onclick="if(!garcomWasLongPress()) openDetails(${item.id})" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+        <div class="img-box">${escHtml(item.emoji)}</div>
+        <div class="menu-item-info" style="flex:1; min-width:0;">
+          <div class="menu-item-name" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(item.name)}</div>
+          <div class="menu-item-price">R$ ${item.price.toFixed(2).replace('.', ',')}</div>
+        </div>
       </div>
+      <button type="button" onclick="event.stopPropagation(); window.adicionarDiretoOuDetalhes(${item.id})" 
+        style="width:38px; height:38px; border-radius:12px; background:#fff7ed; border:1.5px solid #fdba74; color:#ea580c; font-size:18px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; box-shadow:0 1px 4px rgba(234,88,12,0.1);"
+        title="Adicionar 1x ao pedido">
+        <i class="ph-bold ph-plus"></i>
+      </button>
     </div>
   `).join('');
-}
+};
+
+window.adicionarDiretoOuDetalhes = function(id) {
+  const prod = MENU.find(m => m.id === id);
+  if (!prod) return;
+  if (prod.tipo === 'montavel' || prod.has_composicoes) {
+    window.openDetails(id);
+  } else {
+    window.addDirectToCart(id);
+    try {
+      if ('vibrate' in navigator) navigator.vibrate(60);
+    } catch(e) {}
+  }
+};
 
 window.selectTab = (tab) => {
   currentTab = tab;
@@ -1660,33 +2019,83 @@ window.addDirectToCart = (id) => {
   showToast(`${prod.name} adicionado ao carrinho!`, '#3ab55b');
 };
 
+function obterHarmonizacaoSommelier(product) {
+  if (!product || !product.name) return null;
+  const nomeLower = (product.name + ' ' + (product.category || '')).toLowerCase();
+  
+  const bebidas = MENU.filter(m => {
+    const cat = (m.category || '').toLowerCase();
+    return cat.includes('bebida') || cat.includes('vinho') || cat.includes('cerveja') || cat.includes('drink') || cat.includes('bar');
+  });
+  if (bebidas.length === 0) return null;
+
+  let termoBusca = [];
+  let motivo = '';
+
+  if (nomeLower.includes('carne') || nomeLower.includes('bife') || nomeLower.includes('picanha') || nomeLower.includes('costela') || nomeLower.includes('burguer') || nomeLower.includes('hamburguer') || nomeLower.includes('churrasco')) {
+    termoBusca = ['malbec', 'cabernet', 'tinto', 'ipa', 'chopp', 'preta', 'cerveja'];
+    motivo = 'Harmonização Encorpada: taninos e lúpulo que quebram a gordura do corte e exaltam o sabor grelhado.';
+  } else if (nomeLower.includes('peixe') || nomeLower.includes('salm') || nomeLower.includes('camar') || nomeLower.includes('frutos') || nomeLower.includes('salada') || nomeLower.includes('tilapia')) {
+    termoBusca = ['branco', 'sauvignon', 'chardonnay', 'pilsen', 'gin', 'limonada', 'suco'];
+    motivo = 'Harmonização Cítrica & Fresca: frescor límpido ideal para realçar notas marinhas e texturas delicadas.';
+  } else if (nomeLower.includes('massa') || nomeLower.includes('pizza') || nomeLower.includes('lasanha') || nomeLower.includes('risoto')) {
+    termoBusca = ['tinto', 'merlot', 'chianti', 'chopp', 'refrigerante'];
+    motivo = 'Harmonização Clássica: acidez equilibrada que casa perfeitamente com molhos de tomate e queijos gratinados.';
+  } else if (nomeLower.includes('sobremesa') || nomeLower.includes('torta') || nomeLower.includes('petit') || nomeLower.includes('pudim') || nomeLower.includes('brownie')) {
+    termoBusca = ['porto', 'espresso', 'cafe', 'licor', 'doce'];
+    motivo = 'Harmonização de Fechamento: notas tostadas aromáticas que complementam o cacau e a calda de açúcar.';
+  } else {
+    termoBusca = ['chopp', 'cerveja', 'suco', 'refrigerante', 'agua'];
+    motivo = 'Sugestão do Chef: acompanhamento refrescante ideal para complementar este prato.';
+  }
+
+  let bebidaEncontrada = null;
+  for (const t of termoBusca) {
+    bebidaEncontrada = bebidas.find(b => b.name.toLowerCase().includes(t));
+    if (bebidaEncontrada) break;
+  }
+  if (!bebidaEncontrada) bebidaEncontrada = bebidas[0];
+
+  return { bebida: bebidaEncontrada, motivo: motivo };
+}
+
 function renderSuggestions(product) {
   const sugSection = document.getElementById('detail-suggestions');
   const sugList = document.getElementById('sugestoes-list');
-  
-  let pool = MENU.filter(m => m.category !== product.category);
-  
-  if (!product.category.toLowerCase().includes('bebida')) {
-     const bebidas = pool.filter(m => m.category.toLowerCase().includes('bebida'));
-     if (bebidas.length > 0) pool = bebidas;
+  if (!sugSection || !sugList) return;
+
+  const sommelier = obterHarmonizacaoSommelier(product);
+  let pool = MENU.filter(m => m.category !== product.category && (!sommelier || m.id !== sommelier.bebida.id));
+  pool = pool.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+  let html = '';
+  if (sommelier && sommelier.bebida) {
+    const b = sommelier.bebida;
+    html += `
+      <div class="suggestion-card sommelier-card" style="border: 2px solid #a855f7; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); min-width: 170px; position: relative;">
+        <span style="position: absolute; top: 4px; right: 6px; font-size: 9px; font-weight: 800; background: #9333ea; color: white; padding: 2px 6px; border-radius: 6px;">🍷 Sommelier IA</span>
+        <div class="sug-img">${b.emoji}</div>
+        <div class="sug-name" style="font-weight: 800; color: #581c87;" title="${b.name}">${b.name}</div>
+        <div class="sug-price" style="color: #7e22ce;">R$ ${b.price.toFixed(2).replace('.', ',')}</div>
+        <div style="font-size: 9.5px; color: #6b21a8; margin: 4px 0 6px; line-height: 1.25;">${sommelier.motivo}</div>
+        <button onclick="addDirectToCart(${b.id})" style="width:100%; padding:6px; background:#9333ea; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">+ Harmonizar</button>
+      </div>
+    `;
   }
-  
-  pool = pool.sort(() => 0.5 - Math.random()).slice(0, 4); // Show up to 4 items
-  
-  if (pool.length === 0) {
-    sugSection.style.display = 'none';
-    return;
-  }
-  
+
+  pool.forEach(item => {
+    html += `
+      <div class="suggestion-card">
+        <div class="sug-img">${item.emoji}</div>
+        <div class="sug-name" title="${item.name}">${item.name}</div>
+        <div class="sug-price">R$ ${item.price.toFixed(2).replace('.', ',')}</div>
+        <button onclick="addDirectToCart(${item.id})" style="margin-top:8px; width:100%; padding:6px; background:#eaf8ef; color:#3ab55b; border:1px solid #3ab55b; border-radius:6px; font-weight:bold; cursor:pointer;">+ Adicionar</button>
+      </div>
+    `;
+  });
+
   sugSection.style.display = 'block';
-  sugList.innerHTML = pool.map(item => `
-    <div class="suggestion-card">
-      <div class="sug-img">${item.emoji}</div>
-      <div class="sug-name" title="${item.name}">${item.name}</div>
-      <div class="sug-price">R$ ${item.price.toFixed(2).replace('.', ',')}</div>
-      <button onclick="addDirectToCart(${item.id})" style="margin-top:8px; width:100%; padding:6px; background:#eaf8ef; color:#3ab55b; border:1px solid #3ab55b; border-radius:6px; font-weight:bold; cursor:pointer;">+ Adicionar</button>
-    </div>
-  `).join('');
+  sugList.innerHTML = html;
 }
 
 document.getElementById('btn-plus').onclick = () => { selectedQty++; document.getElementById('detail-qty').innerText = selectedQty; updateDetailPrice(); };
@@ -1789,6 +2198,15 @@ document.getElementById('btn-add-to-cart').onclick = () => {
     composicoes = rawComps;
   }
 
+  const btnEtapaAtiva = document.querySelector('#etapas-selector .btn-etapa.active');
+  const catLower = (selectedProduct.category || '').toLowerCase();
+  const etapa = btnEtapaAtiva ? btnEtapaAtiva.dataset.etapa : (
+    catLower.includes('entrada') || catLower.includes('aperitivo') || catLower.includes('porç') || catLower.includes('porc') ? 'Entrada' :
+    catLower.includes('sobremesa') || catLower.includes('doce') ? 'Sobremesa' :
+    catLower.includes('bebida') || catLower.includes('bar') || catLower.includes('drink') || catLower.includes('suco') ? 'Bebida' : 'Principal'
+  );
+  const aguardarMarcha = document.getElementById('check-aguardar-marcha') ? document.getElementById('check-aguardar-marcha').checked : false;
+
   cart.push({
     productName: selectedProduct.name,
     productEmoji: selectedProduct.emoji,
@@ -1801,7 +2219,10 @@ document.getElementById('btn-add-to-cart').onclick = () => {
     localName: currentTable,
     userName: loggedUser.nome,
     time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-    addons: []
+    addons: [],
+    etapa: etapa,
+    marcha_status: aguardarMarcha ? 'aguardando_marcha' : 'marchado',
+    aguardar_marcha: aguardarMarcha
   });
   _compsAtuais = [];
   _garcomMontavelConfig = null;
@@ -1830,6 +2251,32 @@ document.getElementById('fab-cart').onclick = () => {
   showView('cart', 'Revisar Pedido');
 };
 
+window.alterarQtdItemCarrinho = function(idx, delta) {
+  if (!cart[idx]) return;
+  const unitPrice = cart[idx].quantity > 0 ? (cart[idx].total / cart[idx].quantity) : (cart[idx].price || 0);
+  const newQty = cart[idx].quantity + delta;
+  if (newQty <= 0) {
+    window.removeFromCart(idx);
+    return;
+  }
+  cart[idx].quantity = newQty;
+  cart[idx].total = unitPrice * newQty;
+  saveCart(currentTable);
+  updateCartBadge();
+  renderCart();
+};
+
+window.editarObsItemCarrinho = function(idx) {
+  if (!cart[idx]) return;
+  const atual = cart[idx].obs || '';
+  const nova = prompt('Observação para ' + cart[idx].productName + ':', atual);
+  if (nova !== null) {
+    cart[idx].obs = nova.trim();
+    saveCart(currentTable);
+    renderCart();
+  }
+};
+
 function renderCart() {
   const list = document.getElementById('cart-list');
   let total = 0;
@@ -1841,30 +2288,42 @@ function renderCart() {
     ])];
     
     return `
-      <div class="cart-item" style="padding: 16px; background: #fff; border: 1px solid #eee; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-        <div style="display:flex; justify-content:space-between; margin-bottom: 6px; align-items: center;">
-          <strong style="font-size: 16px; color: #333;">${item.quantity}x ${item.productName}</strong>
-          <strong style="color: #fc4b15; font-size: 16px;">R$ ${item.total.toFixed(2).replace('.',',')}</strong>
+      <div class="cart-item" style="padding: 14px 16px; background: #fff; border: 1.5px solid #e2e8f0; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+        <div style="display:flex; justify-content:space-between; margin-bottom: 8px; align-items: center; gap: 8px;">
+          <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
+            <div style="display:inline-flex; align-items:center; background:#f1f5f9; border-radius:10px; padding:2px; gap:2px; flex-shrink:0;">
+              <button onclick="window.alterarQtdItemCarrinho(${idx}, -1)" style="width:28px; height:28px; border-radius:8px; border:none; background:#ffffff; font-weight:800; font-size:15px; color:#475569; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,0.08);">-</button>
+              <span style="font-size:14px; font-weight:800; color:#0f172a; min-width:22px; text-align:center;">${item.quantity}</span>
+              <button onclick="window.alterarQtdItemCarrinho(${idx}, 1)" style="width:28px; height:28px; border-radius:8px; border:none; background:#ffffff; font-weight:800; font-size:15px; color:#475569; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,0.08);">+</button>
+            </div>
+            <strong style="font-size: 15px; color: #1e293b; line-height: 1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.productName}</strong>
+          </div>
+          <strong style="color: #fc4b15; font-size: 16px; white-space:nowrap;">R$ ${Math.max(0, item.total).toFixed(2).replace('.',',')}</strong>
         </div>
-        ${item.obs ? `<div style="font-size: 13px; color: #777; margin-bottom: 8px; background: #f9f9f9; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #ddd;">Obs: ${item.obs}</div>` : ''}
+        ${item.obs ? `<div style="font-size: 12.5px; color: #b45309; margin-bottom: 8px; background: #fffbeb; padding: 6px 10px; border-radius: 8px; border-left: 3px solid #f59e0b; display:flex; justify-content:space-between; align-items:center;"><span><strong>Obs:</strong> ${item.obs}</span><button onclick="window.editarObsItemCarrinho(${idx})" style="background:none; border:none; color:#d97706; cursor:pointer; font-size:12px; font-weight:700;"><i class="ph ph-pencil"></i></button></div>` : ''}
         ${item.composicoes && item.composicoes.length > 0 ? `<div style="font-size: 12px; color: #1e40af; margin-bottom: 8px; background: #dbeafe; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #3b82f6; font-weight: 600;">Monte: ${item.composicoes.map(c => typeof c === 'object' ? c.categoria + ': ' + c.opcao : c).join(' | ')}</div>` : ''}
         
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee;">
-          <span style="font-size: 13px; color: #666; font-weight: 500;">Comanda/Cliente:</span>
-          <select onchange="window.changeItemComanda(${idx}, this.value)" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; outline: none; background: #fff; color: #333; font-weight: 500; max-width: 180px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0; gap: 8px;">
+          <span style="font-size: 12.5px; color: #64748b; font-weight: 600;">Comanda/Pessoa:</span>
+          <select onchange="window.changeItemComanda(${idx}, this.value)" style="padding: 7px 10px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 12.5px; outline: none; background: #fff; color: #333; font-weight: 600; max-width: 170px;">
             <option value="">Mesa (Compartilhado)</option>
             ${allComandas.map(c => `<option value="${c}" ${item.mesa_comanda === c ? 'selected' : ''}>${c}</option>`).join('')}
             <option value="__NEW__" style="color: #fc4b15; font-weight: bold;">+ Nova Comanda...</option>
           </select>
         </div>
         
-        <div style="text-align: right; margin-top: 10px;">
-          <button onclick="removeFromCart(${idx})" style="background: none; border: none; color: #999; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;"><i class="ph ph-trash"></i> Remover</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 6px;">
+          <button onclick="window.editarObsItemCarrinho(${idx})" style="background: none; border: none; color: #64748b; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+            <i class="ph ph-chat-text"></i> ${item.obs ? 'Alterar Obs' : '+ Obs / Ponto'}
+          </button>
+          <button onclick="removeFromCart(${idx})" style="background: none; border: none; color: #ef4444; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+            <i class="ph ph-trash"></i> Remover
+          </button>
         </div>
       </div>
     `;
   }).join('');
-  document.getElementById('cart-total-value').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+  document.getElementById('cart-total-value').innerText = `R$ ${Math.max(0, total).toFixed(2).replace('.', ',')}`;
 }
 
 window.removeFromCart = (idx) => {
@@ -1887,9 +2346,12 @@ document.getElementById('btn-send-order').onclick = () => {
       ...item,
       observations: item.obs || item.observations || '',
       composicoes: item.composicoes || [],
-      total: item.total.toFixed(2).replace('.', ','),
+      total: Math.max(0, item.total).toFixed(2).replace('.', ','),
       mesa_comanda: comandaName,
-      cliente_telefone: phone || ''
+      cliente_telefone: phone || '',
+      etapa: item.etapa || 'Principal',
+      marcha_status: item.marcha_status || 'marchado',
+      aguardar_marcha: item.aguardar_marcha || false
     };
     /* Offline-first (upsell): sem internet, grava no dispositivo e sincroniza depois */
     if (window.ChefOfflineQueue && window.ChefOfflineQueue.habilitado() && !navigator.onLine) {
@@ -1913,6 +2375,20 @@ document.getElementById('btn-send-order').onclick = () => {
   showView('tables', 'Comanda Mobile');
 };
 
+// ── MARCHA DE PRATOS DO SALÃO (DISPARO DE ETAPAS) ──
+window.marcharEtapaMesa = function(etapa) {
+  const etapaAlvo = etapa || 'Principal';
+  if (!currentTable) return alert('Selecione uma mesa ocupada primeiro.');
+  if (confirm(`Confirmar marcha dos ${etapaAlvo}s da mesa ${currentTable} para início imediato na cozinha?`)) {
+    socket.emit('marchar_etapa_mesa', {
+      mesa: currentTable,
+      etapa: etapaAlvo,
+      userName: loggedUser ? loggedUser.nome : 'Garçom'
+    });
+    showToast(`🔥 ${etapaAlvo}s da mesa ${currentTable} marchados! Cozinha notificada.`);
+  }
+};
+
 // --- Esteira ---
 let prontosAnterioresIds = [];
 const chamadasReclamadas = new Map();
@@ -1934,6 +2410,30 @@ socket.on('esteira_atualizada', (pedidos) => {
   const badge = document.getElementById('esteira-badge');
   if (badge) {
     badge.style.display = (prontos.length > 0) ? 'block' : 'none';
+  }
+
+  // Atualizar banner de alerta da cozinha na tela de mesas
+  const passBanner = document.getElementById('garcom-pass-alert-banner');
+  const passText = document.getElementById('garcom-pass-alert-text');
+  if (passBanner) {
+    if (prontos.length > 0) {
+      passBanner.style.display = 'flex';
+      if (passText) passText.innerText = `${prontos.length} pedido${prontos.length > 1 ? 's' : ''} pronto${prontos.length > 1 ? 's' : ''} na cozinha!`;
+    } else {
+      passBanner.style.display = 'none';
+    }
+  }
+
+  // Notificar garçom com som e vibração se novos pratos ficaram prontos
+  if (idsNovos.length > 0) {
+    if (typeof playDing === 'function') playDing();
+    if (typeof playChamarGarcom === 'function') playChamarGarcom();
+    try {
+      if ('vibrate' in navigator) navigator.vibrate([250, 100, 250]);
+    } catch(e) {}
+    if (typeof showToast === 'function') {
+      showToast(`🔔 ${idsNovos.length} pedido(s) pronto(s) na cozinha!`, '#22c55e');
+    }
   }
 
   var pendentes = [];
@@ -2062,7 +2562,11 @@ socket.on('esteira_atualizada', (pedidos) => {
 
 window.marcarEntregue = (id) => {
   if(!loggedUser) return;
+  try {
+    if ('vibrate' in navigator) navigator.vibrate(60);
+  } catch(e) {}
   socket.emit('marcar_entregue', { id, userName: loggedUser.nome });
+  showToast('✅ Pedido entregue à mesa!', '#16a34a');
 };
 
 window.aceitarChamadoPdv = (localName) => {
@@ -2586,21 +3090,20 @@ window.submitNewComanda = () => {
   const phone = document.getElementById('new-comanda-phone').value.trim();
   
   if (!name) {
-    alert('Por favor, digite o nome do cliente.');
+    alert('Por favor, digite o nome do cliente ou identificador da comanda.');
     return;
   }
-  if (!phone) {
-    alert('Por favor, digite o telefone (necessário para remarketing).');
-    return;
-  }
-  const digits = phone.replace(/\D/g, '');
-  if (digits.length < 8) {
-    alert('Por favor, digite um telefone válido.');
-    return;
+  // Telefone opcional para rapidez no salão; valida apenas se preenchido
+  if (phone) {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 8) {
+      alert('Por favor, digite um telefone válido ou deixe o campo em branco.');
+      return;
+    }
   }
   
   window.newComandasMap = window.newComandasMap || new Map();
-  window.newComandasMap.set(name, phone);
+  window.newComandasMap.set(name, phone || '');
   
   if (window.pendingComandaItemIdx !== null && window.pendingComandaItemIdx !== undefined) {
     cart[window.pendingComandaItemIdx].mesa_comanda = name;
@@ -2763,7 +3266,20 @@ window.applyAtalhosConfig = function() {
     consulta_preco: true,
     nova_comanda: true,
     chamar_gerente: true,
-    minhas_vendas: true
+    minhas_vendas: true,
+    transferir_mesa: true,
+    juntar_mesas: true,
+    pedir_preconta: true,
+    dividir_conta: true,
+    limpar_mesa: true,
+    alergenos: true,
+    ler_qr_mesa: true,
+    ranking_garcom: true,
+    alternar_tema: true,
+    pizza_meio_a_meio: true,
+    rodizio_carnes: true,
+    marchar_prato: true,
+    sommelier_ia: true
   };
 
   try {
@@ -2782,7 +3298,20 @@ window.applyAtalhosConfig = function() {
     'consulta_preco': 'card-atalho-consulta-preco',
     'nova_comanda': 'card-atalho-nova-comanda',
     'chamar_gerente': 'card-atalho-chamar-gerente',
-    'minhas_vendas': 'card-atalho-minhas-vendas'
+    'minhas_vendas': 'card-atalho-minhas-vendas',
+    'transferir_mesa': 'card-atalho-transferir-mesa',
+    'juntar_mesas': 'card-atalho-juntar-mesas',
+    'pedir_preconta': 'card-atalho-pedir-preconta',
+    'dividir_conta': 'card-atalho-dividir-conta',
+    'limpar_mesa': 'card-atalho-limpar-mesa',
+    'alergenos': 'card-atalho-alergenos',
+    'ler_qr_mesa': 'card-atalho-ler-qr-mesa',
+    'ranking_garcom': 'card-atalho-ranking-garcom',
+    'alternar_tema': 'card-atalho-alternar-tema',
+    'pizza_meio_a_meio': 'card-atalho-pizza-meio-a-meio',
+    'rodizio_carnes': 'card-atalho-rodizio-carnes',
+    'marchar_prato': 'card-atalho-marchar-prato',
+    'sommelier_ia': 'card-atalho-sommelier-ia'
   };
 
   Object.keys(mapCards).forEach(key => {
@@ -3204,7 +3733,7 @@ window.abrirMinhasVendasGarcom = function() {
   const comissao = totalVendido * 0.10;
 
   if (document.getElementById('garcom-stat-total-vendido')) {
-    document.getElementById('garcom-stat-total-vendido').innerText = `R$ ${totalVendido.toFixed(2).replace('.', ',')}`;
+    document.getElementById('garcom-stat-total-vendido').innerText = `R$ ${Math.max(0, totalVendido).toFixed(2).replace('.', ',')}`;
   }
   if (document.getElementById('garcom-stat-comissao')) {
     document.getElementById('garcom-stat-comissao').innerText = `R$ ${comissao.toFixed(2).replace('.', ',')}`;
@@ -3494,7 +4023,7 @@ window.abrirModalFracionarItem = function (itemId) {
           </div>
           <div>
             <h4 style="margin:0; font-size:16px; font-weight:800; color:#0f172a;">Dividir / Fracionar Item</h4>
-            <span style="font-size:12px; color:#64748b;">${item.productEmoji || '🍽️'} ${item.productName} (R$ ${valorTotal.toFixed(2).replace('.', ',')})</span>
+            <span style="font-size:12px; color:#64748b;">${item.productEmoji || '🍽️'} ${item.productName} (R$ ${Math.max(0, valorTotal).toFixed(2).replace('.', ',')})</span>
           </div>
         </div>
         <button onclick="document.getElementById('modal-fracionar-item-mobile').style.display='none'" style="background:#f1f5f9; border:none; width:32px; height:32px; border-radius:50%; color:#64748b; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
@@ -3697,3 +4226,1001 @@ window.abrirLinkClienteDireto = function () {
     window.open(window._clienteUrlAtual, '_blank');
   }
 };
+
+
+window.selecionarEtapaPrato = function(btn, etapa) {
+  document.querySelectorAll('#etapas-selector .btn-etapa').forEach(b => {
+    b.classList.remove('active');
+    b.style.borderColor = '#cbd5e1';
+    b.style.background = 'white';
+    b.style.color = '#334155';
+    b.style.fontWeight = '700';
+  });
+  if (btn) {
+    btn.classList.add('active');
+    btn.style.borderColor = '#6366f1';
+    btn.style.background = '#eef2ff';
+    btn.style.color = '#4338ca';
+    btn.style.fontWeight = '800';
+  }
+  const check = document.getElementById('check-aguardar-marcha');
+  if (check) {
+    check.checked = (etapa === 'Principal' || etapa === 'Sobremesa');
+  }
+};
+
+/* =========================================================================
+   MÓDULOS OPERACIONAIS POR NICHO NO SALÃO (GARÇOM MOBILE)
+   ========================================================================= */
+
+// 1. Pizza Meio a Meio no Salão
+window.abrirModalPizzaGarcom = function() {
+  const m = document.getElementById('modal-garcom-pizza');
+  if (!m) return;
+  m.style.display = 'flex';
+  const inpMesa = document.getElementById('garcom-pizza-mesa');
+  if (inpMesa && window.currentTableNumber) {
+    inpMesa.value = 'Mesa ' + window.currentTableNumber;
+  }
+};
+
+window.confirmarPizzaGarcom = async function() {
+  const mesa = document.getElementById('garcom-pizza-mesa')?.value || 'Mesa Balcão';
+  const sab1Raw = document.getElementById('garcom-pizza-sabor1')?.value || 'Calabresa Especial|54';
+  const sab2Raw = document.getElementById('garcom-pizza-sabor2')?.value || 'Quatro Queijos Nobre|68';
+  const bordaRaw = document.getElementById('garcom-pizza-borda')?.value || 'Sem borda|0';
+  const obs = document.getElementById('garcom-pizza-obs')?.value || '';
+
+  const [nome1, p1] = sab1Raw.split('|');
+  const [nome2, p2] = sab2Raw.split('|');
+  const [bordaNome, bordaPreco] = bordaRaw.split('|');
+
+  try {
+    const res = await fetch('/api/nichos/pizzaria/fracionar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sabores: [
+          { nome: nome1, preco_inteira: parseFloat(p1) || 54 },
+          { nome: nome2, preco_inteira: parseFloat(p2) || 68 }
+        ],
+        borda: { nome: bordaNome, preco: parseFloat(bordaPreco) || 0 },
+        regra_cobranca: 'maior_valor'
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      // Lança também no Forno KDS
+      await fetch('/api/nichos/pizzaria/forno/lancar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pedido_id: Math.floor(100 + Math.random() * 900),
+          pizza_nome: `Pizza Meio ${nome1} / Meio ${nome2}`,
+          sabores: [nome1, nome2],
+          borda: bordaNome,
+          tempo_coccao_min: 8
+        })
+      });
+
+      document.getElementById('modal-garcom-pizza').style.display = 'none';
+      if (typeof showToast === 'function') {
+        showToast(`🍕 Pizza Meio a Meio (R$ ${d.valor_total_calculado.toFixed(2)}) lançada para ${mesa}!`, 'ph-pizza', 'success');
+      } else {
+        alert(`Pizza Meio a Meio lançada com sucesso!\nValor: R$ ${d.valor_total_calculado.toFixed(2)}\nKDS Forneiro notificado.`);
+      }
+    }
+  } catch(e) {
+    alert('Erro ao lançar pizza meio a meio.');
+  }
+};
+
+// 2. Rodízio & Passadores
+window._sinalRodizioSelecionado = 'quero_carne';
+
+window.abrirModalRodizioGarcom = function() {
+  const m = document.getElementById('modal-garcom-rodizio');
+  if (!m) return;
+  m.style.display = 'flex';
+  const inpMesa = document.getElementById('garcom-rodizio-mesa');
+  if (inpMesa && window.currentTableNumber) {
+    inpMesa.value = 'Mesa ' + window.currentTableNumber;
+  }
+};
+
+window.setSinalRodizioGarcom = function(sinal) {
+  window._sinalRodizioSelecionado = sinal;
+  const btnVerde = document.getElementById('btn-sinal-verde');
+  const btnVermelho = document.getElementById('btn-sinal-vermelho');
+  if (btnVerde && btnVermelho) {
+    if (sinal === 'quero_carne') {
+      btnVerde.style.border = '2px solid #10b981';
+      btnVerde.style.background = '#f0fdf4';
+      btnVerde.style.color = '#15803d';
+      btnVermelho.style.border = '1.5px solid #cbd5e1';
+      btnVermelho.style.background = '#ffffff';
+      btnVermelho.style.color = '#64748b';
+    } else {
+      btnVermelho.style.border = '2px solid #ef4444';
+      btnVermelho.style.background = '#fef2f2';
+      btnVermelho.style.color = '#b91c1c';
+      btnVerde.style.border = '1.5px solid #cbd5e1';
+      btnVerde.style.background = '#ffffff';
+      btnVerde.style.color = '#64748b';
+    }
+  }
+};
+
+window.confirmarRodizioGarcom = async function() {
+  const mesa = document.getElementById('garcom-rodizio-mesa')?.value || 'Mesa 12';
+  const cortes = (document.getElementById('garcom-rodizio-cortes')?.value || '').split(',').map(c => c.trim());
+  const sinal = window._sinalRodizioSelecionado || 'quero_carne';
+
+  try {
+    const res = await fetch('/api/nichos/churrascaria/sinalizar-mesa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mesa_num: mesa,
+        estado_sinal: sinal,
+        cortes_preferidos: cortes
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      document.getElementById('modal-garcom-rodizio').style.display = 'none';
+      if (typeof showToast === 'function') {
+        showToast(`🥩 ${mesa}: ${d.mensagem}`, 'ph-broadcast', 'success');
+      } else {
+        alert(d.mensagem);
+      }
+    }
+  } catch(e) {
+    alert('Erro ao atualizar sinal do rodízio.');
+  }
+};
+
+// 3. Marchar Pratos (À La Carte)
+window.abrirModalMarcharGarcom = function() {
+  const m = document.getElementById('modal-garcom-marchar');
+  if (!m) return;
+  m.style.display = 'flex';
+  const inpMesa = document.getElementById('garcom-marchar-mesa');
+  if (inpMesa && window.currentTableNumber) {
+    inpMesa.value = 'Mesa ' + window.currentTableNumber;
+  }
+};
+
+window.confirmarMarchaGarcom = async function() {
+  const mesa = document.getElementById('garcom-marchar-mesa')?.value || 'Mesa 07';
+  const etapa = document.getElementById('garcom-marchar-etapa')?.value || 'prato_principal';
+
+  try {
+    const res = await fetch('/api/nichos/alacarte/marchar-etapa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pedido_id: Math.floor(500 + Math.random() * 500),
+        mesa_num: mesa,
+        etapa_a_marchar: etapa
+      })
+    });
+    const d = await res.json();
+    if (d && d.ok) {
+      document.getElementById('modal-garcom-marchar').style.display = 'none';
+      if (typeof showToast === 'function') {
+        showToast(`🔔 Marcha autorizada: ${d.mesa} (${d.etapa_marchada})!`, 'ph-bell', 'info');
+      } else {
+        alert(`Comando de marcha enviado para a cozinha!\n${d.alerta_kds_chef}`);
+      }
+    }
+  } catch(e) {
+    alert('Erro ao enviar marcha de prato.');
+  }
+};
+
+// 4. Sommelier IA
+window.abrirModalSommelierGarcom = function() {
+  const m = document.getElementById('modal-garcom-sommelier');
+  if (!m) return;
+  m.style.display = 'flex';
+};
+
+window.consultarSommelierGarcom = async function() {
+  const box = document.getElementById('garcom-sommelier-resultado');
+  const pratoId = document.getElementById('garcom-sommelier-prato')?.value || '1';
+  if (box) box.innerHTML = 'Consultando Sommelier IA...';
+
+  try {
+    const res = await fetch(`/api/nichos/alacarte/harmonizar/${pratoId}`);
+    const d = await res.json();
+    if (d && d.ok && box) {
+      box.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#9d174d; font-size:13px;">🍷 ${d.sommelier_ia.rotulo_recomendado} (${d.sommelier_ia.safra})</strong>
+            <span style="background:#fbcfe8; color:#9d174d; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">R$ ${d.sommelier_ia.preco_garrafa.toFixed(2)}</span>
+          </div>
+          <div style="font-size:11.5px; color:#475569; line-height:1.4;">${d.sommelier_ia.justificativa_harmonizacao}</div>
+          <div style="font-size:11px; color:#059669; font-weight:700; margin-top:2px;">💡 ${d.upsell_garcom}</div>
+        </div>
+      `;
+    }
+  } catch(e) {
+    if (box) box.innerHTML = '<span style="color:#ef4444;">Erro ao consultar Sommelier IA.</span>';
+  }
+};
+
+/* =========================================================================
+   NOVOS ATALHOS OPERACIONAIS DO SALÃO (GARÇOM MOBILE)
+   ========================================================================= */
+
+// ── 1. TRANSFERIR MESA OU ITENS ──
+window._modoTransferencia = 'total';
+
+window.setModoTransferencia = function(modo) {
+  window._modoTransferencia = modo;
+  const btnTotal = document.getElementById('btn-modo-transf-total');
+  const btnItens = document.getElementById('btn-modo-transf-itens');
+  if (btnTotal && btnItens) {
+    if (modo === 'total') {
+      btnTotal.style.border = '2px solid #ea580c';
+      btnTotal.style.background = '#fff7ed';
+      btnTotal.style.color = '#c2410c';
+      btnItens.style.border = '1.5px solid #cbd5e1';
+      btnItens.style.background = '#ffffff';
+      btnItens.style.color = '#64748b';
+    } else {
+      btnItens.style.border = '2px solid #ea580c';
+      btnItens.style.background = '#fff7ed';
+      btnItens.style.color = '#c2410c';
+      btnTotal.style.border = '1.5px solid #cbd5e1';
+      btnTotal.style.background = '#ffffff';
+      btnTotal.style.color = '#64748b';
+    }
+  }
+};
+
+window.abrirModalTransferirMesaGarcom = function() {
+  const modal = document.getElementById('modal-garcom-transferir');
+  const selOrigem = document.getElementById('garcom-transferir-origem');
+  const selDestino = document.getElementById('garcom-transferir-destino');
+  if (!modal || !selOrigem || !selDestino) return;
+
+  const mesas = Array.isArray(MESAS) ? MESAS : [];
+  if (mesas.length === 0) {
+    if (typeof showToast === 'function') showToast('Nenhuma mesa cadastrada.', '#ef4444');
+    return;
+  }
+
+  // Preenche opções de origem (preferindo ocupadas)
+  selOrigem.innerHTML = mesas.map(m => {
+    const isCur = (currentTable && currentTable === m.nome);
+    const statusTxt = m.status === 'Ocupada' ? ' (Ocupada)' : (m.status === 'Reservada' ? ' (Reservada)' : ' (Livre)');
+    return `<option value="${escHtml(m.nome)}"${isCur ? ' selected' : ''}>${escHtml(m.nome)}${statusTxt}</option>`;
+  }).join('');
+
+  // Preenche opções de destino
+  selDestino.innerHTML = mesas.map((m, idx) => {
+    const isSecond = (!currentTable && idx === 1) || (currentTable && currentTable !== m.nome && idx === 1);
+    const statusTxt = m.status === 'Ocupada' ? ' (Ocupada)' : (m.status === 'Reservada' ? ' (Reservada)' : ' (Livre)');
+    return `<option value="${escHtml(m.nome)}"${isSecond ? ' selected' : ''}>${escHtml(m.nome)}${statusTxt}</option>`;
+  }).join('');
+
+  window.setModoTransferencia('total');
+  modal.style.display = 'flex';
+};
+
+window.confirmarTransferirMesaGarcom = function() {
+  const origem = document.getElementById('garcom-transferir-origem')?.value;
+  const destino = document.getElementById('garcom-transferir-destino')?.value;
+
+  if (!origem || !destino) {
+    if (typeof showToast === 'function') showToast('Selecione as mesas de origem e destino.', '#ef4444');
+    return;
+  }
+  if (origem === destino) {
+    if (typeof showToast === 'function') showToast('A mesa de destino deve ser diferente da origem.', '#ef4444');
+    return;
+  }
+
+  const operadorNome = (typeof loggedUser !== 'undefined' && loggedUser && loggedUser.nome) ? loggedUser.nome : 'Garçom';
+
+  if (window._modoTransferencia === 'itens') {
+    if (typeof socket !== 'undefined' && socket) {
+      socket.emit('transferir_mesas_itens', {
+        mesaA: origem,
+        mesaB: destino,
+        operador: operadorNome
+      });
+    }
+    if (typeof showToast === 'function') showToast(`📦 Itens transferidos de ${origem} para ${destino}!`, '#ea580c');
+  } else {
+    if (typeof socket !== 'undefined' && socket) {
+      socket.emit('transferir_mesa', {
+        mesaAtual: origem,
+        novaMesa: destino,
+        operador: operadorNome
+      });
+    }
+    if (typeof showToast === 'function') showToast(`🔄 Mesa ${origem} transferida para ${destino}!`, '#ea580c');
+  }
+
+  document.getElementById('modal-garcom-transferir').style.display = 'none';
+  if (typeof socket !== 'undefined' && socket) {
+    setTimeout(() => socket.emit('get_mesas'), 300);
+  }
+};
+
+// ── 2. JUNTAR MESAS EM GRUPO ──
+window.abrirModalJuntarMesasGarcom = function() {
+  const modal = document.getElementById('modal-garcom-juntar');
+  const selA = document.getElementById('garcom-juntar-mesa-a');
+  const selB = document.getElementById('garcom-juntar-mesa-b');
+  if (!modal || !selA || !selB) return;
+
+  const mesas = Array.isArray(MESAS) ? MESAS : [];
+  if (mesas.length < 2) {
+    if (typeof showToast === 'function') showToast('É necessário ter ao menos 2 mesas cadastradas.', '#ef4444');
+    return;
+  }
+
+  selA.innerHTML = mesas.map((m, idx) => {
+    const isCur = (currentTable && currentTable === m.nome) || (!currentTable && idx === 0);
+    return `<option value="${escHtml(m.nome)}"${isCur ? ' selected' : ''}>${escHtml(m.nome)} (${m.status || 'Livre'})</option>`;
+  }).join('');
+
+  selB.innerHTML = mesas.map((m, idx) => {
+    const isSecond = (!currentTable && idx === 1) || (currentTable && currentTable !== m.nome && idx === 1);
+    return `<option value="${escHtml(m.nome)}"${isSecond ? ' selected' : ''}>${escHtml(m.nome)} (${m.status || 'Livre'})</option>`;
+  }).join('');
+
+  modal.style.display = 'flex';
+};
+
+window.confirmarJuntarMesasGarcom = function() {
+  const mesaA = document.getElementById('garcom-juntar-mesa-a')?.value;
+  const mesaB = document.getElementById('garcom-juntar-mesa-b')?.value;
+
+  if (!mesaA || !mesaB) {
+    if (typeof showToast === 'function') showToast('Selecione as duas mesas para unir.', '#ef4444');
+    return;
+  }
+  if (mesaA === mesaB) {
+    if (typeof showToast === 'function') showToast('Selecione mesas diferentes para agrupar.', '#ef4444');
+    return;
+  }
+
+  const operadorNome = (typeof loggedUser !== 'undefined' && loggedUser && loggedUser.nome) ? loggedUser.nome : 'Garçom';
+
+  if (typeof socket !== 'undefined' && socket) {
+    socket.emit('juntar_mesas', {
+      mesaA: mesaA,
+      mesaB: mesaB,
+      operador: operadorNome
+    });
+  }
+
+  document.getElementById('modal-garcom-juntar').style.display = 'none';
+  if (typeof showToast === 'function') showToast(`🔗 Mesas ${mesaA} e ${mesaB} unidas em grupo!`, '#8b5cf6');
+  if (typeof socket !== 'undefined' && socket) {
+    setTimeout(() => socket.emit('get_mesas'), 300);
+  }
+};
+
+// ── 3. PEDIR PRÉ-CONTA & IMPRIMIR PARCIAL ──
+window.abrirModalPedirContaGarcom = function() {
+  const modal = document.getElementById('modal-garcom-preconta');
+  const selMesa = document.getElementById('garcom-preconta-mesa');
+  if (!modal || !selMesa) return;
+
+  const mesas = Array.isArray(MESAS) ? MESAS : [];
+  if (mesas.length === 0) {
+    if (typeof showToast === 'function') showToast('Nenhuma mesa cadastrada.', '#ef4444');
+    return;
+  }
+
+  selMesa.innerHTML = mesas.map(m => {
+    const isCur = (currentTable && currentTable === m.nome);
+    const statusTxt = m.status === 'Ocupada' ? ' • R$ ' + ((m._total || 0).toFixed(2)) : ' • Livre';
+    return `<option value="${escHtml(m.nome)}"${isCur ? ' selected' : ''}>${escHtml(m.nome)}${statusTxt}</option>`;
+  }).join('');
+
+  window.atualizarResumoPreContaGarcom();
+  modal.style.display = 'flex';
+};
+
+window.atualizarResumoPreContaGarcom = function() {
+  const selMesa = document.getElementById('garcom-preconta-mesa');
+  const mesaNome = selMesa ? selMesa.value : (currentTable || '');
+  const elSubtotal = document.getElementById('garcom-preconta-subtotal');
+  const elTaxa = document.getElementById('garcom-preconta-taxa');
+  const elTotal = document.getElementById('garcom-preconta-total');
+  const elItens = document.getElementById('garcom-preconta-itens-count');
+
+  let subtotal = 0;
+  let countItens = 0;
+
+  const mesaObj = (Array.isArray(MESAS) ? MESAS : []).find(m => m.nome === mesaNome);
+  if (mesaObj && typeof mesaObj._total === 'number' && mesaObj._total > 0) {
+    subtotal = mesaObj._total;
+  } else if (mesaNome === currentTable && Array.isArray(billItems) && billItems.length > 0) {
+    subtotal = billItems.reduce((acc, it) => acc + (parseFloat(String(it.total).replace(',', '.')) || 0), 0);
+    countItens = billItems.reduce((acc, it) => acc + (it.quantity || 1), 0);
+  }
+
+  const taxa = subtotal * 0.10;
+  const total = subtotal + taxa;
+
+  if (elSubtotal) elSubtotal.innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+  if (elTaxa) elTaxa.innerText = `R$ ${taxa.toFixed(2).replace('.', ',')}`;
+  if (elTotal) elTotal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+  if (elItens) {
+    elItens.innerText = countItens > 0 ? `${countItens} itens registrados nesta mesa` : 'Consumo registrado no sistema';
+  }
+};
+
+window.confirmarPedirContaGarcom = function() {
+  const selMesa = document.getElementById('garcom-preconta-mesa');
+  const mesaNome = selMesa ? selMesa.value : currentTable;
+
+  if (!mesaNome) {
+    if (typeof showToast === 'function') showToast('Selecione uma mesa.', '#ef4444');
+    return;
+  }
+
+  if (typeof socket !== 'undefined' && socket) {
+    socket.emit('alerta_pedir_conta', mesaNome);
+  }
+
+  document.getElementById('modal-garcom-preconta').style.display = 'none';
+  if (typeof showToast === 'function') {
+    showToast(`🔔 Chamado de conta enviado ao Caixa para ${mesaNome}!`, '#0284c7');
+  } else {
+    alert(`Chamado de conta enviado ao Caixa para ${mesaNome}!`);
+  }
+};
+
+window.imprimirPreContaGarcom = async function() {
+  const selMesa = document.getElementById('garcom-preconta-mesa');
+  const mesaNome = selMesa ? selMesa.value : currentTable;
+  if (!mesaNome) return;
+
+  try {
+    const res = await fetch('/api/pedidos/imprimir-preconta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mesaName: mesaNome, operador: (loggedUser && loggedUser.nome) || 'Garçom' })
+    });
+    const d = await res.json().catch(() => ({}));
+    if (d && d.ok) {
+      if (typeof showToast === 'function') showToast(`🖨️ Pré-conta enviada para a impressora!`, '#10b981');
+    } else {
+      window.open(`/api/imprimir-resumo-mesa?mesa=${encodeURIComponent(mesaNome)}`, '_blank');
+    }
+  } catch(e) {
+    window.open(`/api/imprimir-resumo-mesa?mesa=${encodeURIComponent(mesaNome)}`, '_blank');
+  }
+};
+
+// ── 4. CALCULADORA DE DIVISÃO DE CONTA ──
+window._dividirPessoas = 2;
+window._dividirComGorjeta = true;
+
+window.abrirModalDividirContaGarcom = function() {
+  const modal = document.getElementById('modal-garcom-dividir-conta');
+  const selMesa = document.getElementById('garcom-dividir-mesa');
+  const inpValor = document.getElementById('garcom-dividir-valor');
+  if (!modal) return;
+
+  const mesas = Array.isArray(MESAS) ? MESAS : [];
+  if (selMesa) {
+    selMesa.innerHTML = '<option value="">(Digitar valor manual)</option>' +
+      mesas.map(m => {
+        const isCur = (currentTable && currentTable === m.nome);
+        const valTxt = typeof m._total === 'number' && m._total > 0 ? ` (R$ ${m._total.toFixed(2)})` : '';
+        return `<option value="${escHtml(m.nome)}"${isCur ? ' selected' : ''}>${escHtml(m.nome)}${valTxt}</option>`;
+      }).join('');
+  }
+
+  window.carregarValorMesaParaDivisao();
+  modal.style.display = 'flex';
+};
+
+window.carregarValorMesaParaDivisao = function() {
+  const selMesa = document.getElementById('garcom-dividir-mesa');
+  const inpValor = document.getElementById('garcom-dividir-valor');
+  const mesaNome = selMesa ? selMesa.value : '';
+
+  if (mesaNome) {
+    const mesaObj = (Array.isArray(MESAS) ? MESAS : []).find(m => m.nome === mesaNome);
+    if (mesaObj && typeof mesaObj._total === 'number' && mesaObj._total > 0) {
+      if (inpValor) inpValor.value = mesaObj._total.toFixed(2);
+    } else if (mesaNome === currentTable && Array.isArray(billItems) && billItems.length > 0) {
+      const sub = billItems.reduce((acc, it) => acc + (parseFloat(String(it.total).replace(',', '.')) || 0), 0);
+      if (inpValor) inpValor.value = sub.toFixed(2);
+    }
+  }
+  window.calcularDivisaoConta();
+};
+
+window.alterarPessoasDivisao = function(delta) {
+  const inp = document.getElementById('garcom-dividir-pessoas');
+  let val = parseInt(inp ? inp.value : '2', 10) || 2;
+  val = Math.max(1, Math.min(99, val + delta));
+  if (inp) inp.value = val;
+  window.calcularDivisaoConta();
+};
+
+window.setPessoasDivisao = function(qtd) {
+  const inp = document.getElementById('garcom-dividir-pessoas');
+  if (inp) inp.value = qtd;
+  window.calcularDivisaoConta();
+};
+
+window.toggleGorjetaDivisao = function(comGorjeta) {
+  window._dividirComGorjeta = !!comGorjeta;
+  const btnCom = document.getElementById('btn-dividir-com-10');
+  const btnSem = document.getElementById('btn-dividir-sem-10');
+
+  if (btnCom && btnSem) {
+    if (window._dividirComGorjeta) {
+      btnCom.style.border = '2px solid #10b981';
+      btnCom.style.background = '#f0fdf4';
+      btnCom.style.color = '#166534';
+      btnSem.style.border = '1.5px solid #cbd5e1';
+      btnSem.style.background = '#fff';
+      btnSem.style.color = '#64748b';
+    } else {
+      btnSem.style.border = '2px solid #64748b';
+      btnSem.style.background = '#f1f5f9';
+      btnSem.style.color = '#1e293b';
+      btnCom.style.border = '1.5px solid #cbd5e1';
+      btnCom.style.background = '#fff';
+      btnCom.style.color = '#64748b';
+    }
+  }
+  window.calcularDivisaoConta();
+};
+
+window.calcularDivisaoConta = function() {
+  const inpValor = document.getElementById('garcom-dividir-valor');
+  const inpPessoas = document.getElementById('garcom-dividir-pessoas');
+  const elRes = document.getElementById('garcom-dividir-resultado');
+  const elDet = document.getElementById('garcom-dividir-detalhe');
+
+  const valorBase = parseFloat(inpValor ? inpValor.value : '0') || 0;
+  const pessoas = parseInt(inpPessoas ? inpPessoas.value : '2', 10) || 1;
+  const total = window._dividirComGorjeta ? (valorBase * 1.10) : valorBase;
+  const porPessoa = pessoas > 0 ? (total / pessoas) : 0;
+
+  if (elRes) elRes.innerText = `R$ ${porPessoa.toFixed(2).replace('.', ',')}`;
+  if (elDet) {
+    const gorjTxt = window._dividirComGorjeta ? ' (com 10% serviço)' : ' (sem taxa)';
+    elDet.innerText = `Total R$ ${total.toFixed(2).replace('.', ',')}${gorjTxt} ÷ ${pessoas} pessoa${pessoas === 1 ? '' : 's'}`;
+  }
+};
+
+window.copiarResumoDivisao = function() {
+  const inpValor = document.getElementById('garcom-dividir-valor');
+  const inpPessoas = document.getElementById('garcom-dividir-pessoas');
+  const selMesa = document.getElementById('garcom-dividir-mesa');
+  const mesaNome = selMesa?.value || currentTable || 'Mesa';
+
+  const valorBase = parseFloat(inpValor ? inpValor.value : '0') || 0;
+  const pessoas = parseInt(inpPessoas ? inpPessoas.value : '2', 10) || 1;
+  const total = window._dividirComGorjeta ? (valorBase * 1.10) : valorBase;
+  const porPessoa = pessoas > 0 ? (total / pessoas) : 0;
+
+  const msg = `🍽️ *Chef Cozinha - Divisão de Conta (${mesaNome})*\n` +
+    `• Subtotal: R$ ${valorBase.toFixed(2).replace('.', ',')}\n` +
+    (window._dividirComGorjeta ? `• Taxa de Serviço (10%): R$ ${(valorBase * 0.10).toFixed(2).replace('.', ',')}\n` : '') +
+    `• *Total Geral:* R$ ${total.toFixed(2).replace('.', ',')}\n` +
+    `👥 *Divisão:* ${pessoas} pessoas\n` +
+    `👉 *Valor por Pessoa: R$ ${porPessoa.toFixed(2).replace('.', ',')}*\n` +
+    `Obrigado pela preferência!`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg).then(() => {
+      if (typeof showToast === 'function') showToast('📋 Resumo da divisão copiado!', '#10b981');
+    }).catch(() => {
+      prompt('Copie o resumo abaixo:', msg);
+    });
+  } else {
+    prompt('Copie o resumo abaixo:', msg);
+  }
+};
+
+window.compartilharWhatsappDivisao = function() {
+  const inpValor = document.getElementById('garcom-dividir-valor');
+  const inpPessoas = document.getElementById('garcom-dividir-pessoas');
+  const selMesa = document.getElementById('garcom-dividir-mesa');
+  const mesaNome = selMesa?.value || currentTable || 'Mesa';
+
+  const valorBase = parseFloat(inpValor ? inpValor.value : '0') || 0;
+  const pessoas = parseInt(inpPessoas ? inpPessoas.value : '2', 10) || 1;
+  const total = window._dividirComGorjeta ? (valorBase * 1.10) : valorBase;
+  const porPessoa = pessoas > 0 ? (total / pessoas) : 0;
+
+  const msg = `🍽️ *Chef Cozinha - Divisão de Conta (${mesaNome})*\n` +
+    `• Subtotal: R$ ${valorBase.toFixed(2).replace('.', ',')}\n` +
+    (window._dividirComGorjeta ? `• Taxa de Serviço (10%): R$ ${(valorBase * 0.10).toFixed(2).replace('.', ',')}\n` : '') +
+    `• *Total Geral:* R$ ${total.toFixed(2).replace('.', ',')}\n` +
+    `👥 *Divisão:* ${pessoas} pessoas\n` +
+    `👉 *Valor por Pessoa: R$ ${porPessoa.toFixed(2).replace('.', ',')}*`;
+
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+// ── 5. AVISO DE LIMPEZA / HIGIENIZAÇÃO ──
+window._estadoLimpeza = 'suja';
+
+window.setEstadoLimpeza = function(estado) {
+  window._estadoLimpeza = estado;
+  const btnSuja = document.getElementById('btn-limpeza-suja');
+  const btnUrgente = document.getElementById('btn-limpeza-urgente');
+  const btnPronta = document.getElementById('btn-limpeza-pronta');
+
+  const resets = [
+    { el: btnSuja, border: '#cbd5e1', bg: '#fff', color: '#64748b' },
+    { el: btnUrgente, border: '#cbd5e1', bg: '#fff', color: '#64748b' },
+    { el: btnPronta, border: '#cbd5e1', bg: '#fff', color: '#64748b' }
+  ];
+  resets.forEach(r => {
+    if (r.el) {
+      r.el.style.border = '1.5px solid ' + r.border;
+      r.el.style.background = r.bg;
+      r.el.style.color = r.color;
+      r.el.style.fontWeight = '700';
+    }
+  });
+
+  if (estado === 'suja' && btnSuja) {
+    btnSuja.style.border = '2px solid #0891b2';
+    btnSuja.style.background = '#ecfeff';
+    btnSuja.style.color = '#0e7490';
+    btnSuja.style.fontWeight = '800';
+  } else if (estado === 'urgente' && btnUrgente) {
+    btnUrgente.style.border = '2px solid #ef4444';
+    btnUrgente.style.background = '#fef2f2';
+    btnUrgente.style.color = '#b91c1c';
+    btnUrgente.style.fontWeight = '800';
+  } else if (estado === 'pronta' && btnPronta) {
+    btnPronta.style.border = '2px solid #10b981';
+    btnPronta.style.background = '#f0fdf4';
+    btnPronta.style.color = '#15803d';
+    btnPronta.style.fontWeight = '800';
+  }
+};
+
+window.abrirModalLimpezaMesaGarcom = function() {
+  const modal = document.getElementById('modal-garcom-limpeza');
+  const selMesa = document.getElementById('garcom-limpeza-mesa');
+  if (!modal || !selMesa) return;
+
+  const mesas = Array.isArray(MESAS) ? MESAS : [];
+  selMesa.innerHTML = mesas.map(m => {
+    const isCur = (currentTable && currentTable === m.nome);
+    return `<option value="${escHtml(m.nome)}"${isCur ? ' selected' : ''}>${escHtml(m.nome)} (${m.status || 'Livre'})</option>`;
+  }).join('');
+
+  window.setEstadoLimpeza('suja');
+  modal.style.display = 'flex';
+};
+
+window.confirmarLimpezaMesaGarcom = function() {
+  const selMesa = document.getElementById('garcom-limpeza-mesa');
+  const mesaNome = selMesa ? selMesa.value : currentTable;
+  const obs = document.getElementById('garcom-limpeza-obs')?.value || '';
+  const operadorNome = (typeof loggedUser !== 'undefined' && loggedUser && loggedUser.nome) ? loggedUser.nome : 'Garçom';
+
+  if (!mesaNome) {
+    if (typeof showToast === 'function') showToast('Selecione uma mesa.', '#ef4444');
+    return;
+  }
+
+  const estadoTxt = window._estadoLimpeza === 'urgente' ? '🚨 LIMPEZA URGENTE' : (window._estadoLimpeza === 'pronta' ? '✨ MESA HIGIENIZADA E PRONTA' : '🧹 MESA AGUARDANDO LIMPEZA');
+
+  if (typeof socket !== 'undefined' && socket) {
+    socket.emit('chamar_garcom_salao', {
+      tipo: 'limpeza',
+      origem: 'app_garcom',
+      mesa: mesaNome,
+      solicitante: operadorNome,
+      mensagem: `${estadoTxt} na ${mesaNome}${obs ? ' (' + obs + ')' : ''} solicitada por ${operadorNome}`
+    });
+  }
+
+  document.getElementById('modal-garcom-limpeza').style.display = 'none';
+  if (typeof showToast === 'function') {
+    showToast(`🧹 Alerta de ${mesaNome} disparado para a equipe!`, '#0891b2');
+  }
+};
+
+// ── 6. GUIA RÁPIDO DE ALÉRGENOS & RESTRIÇÕES ──
+window._filtroAlergenoAtivo = 'todos';
+
+window.setFiltroAlergeno = function(filtro, btn) {
+  window._filtroAlergenoAtivo = filtro;
+  document.querySelectorAll('.btn-filtro-alergeno').forEach(b => {
+    b.classList.remove('active');
+    b.style.background = '#fff';
+    b.style.color = '#334155';
+    b.style.borderColor = '#cbd5e1';
+  });
+  if (btn) {
+    btn.classList.add('active');
+    btn.style.background = '#e11d48';
+    btn.style.color = '#fff';
+    btn.style.borderColor = '#e11d48';
+  }
+  window.filtrarAlergenosGarcom();
+};
+
+window.abrirModalAlergenosGarcom = function() {
+  const modal = document.getElementById('modal-garcom-alergenos');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  window.filtrarAlergenosGarcom();
+};
+
+window.filtrarAlergenosGarcom = function() {
+  const container = document.getElementById('garcom-alergenos-lista');
+  const inputBusca = document.getElementById('garcom-alergenos-busca');
+  if (!container) return;
+
+  const query = (inputBusca?.value || '').trim().toLowerCase();
+  const filtro = window._filtroAlergenoAtivo || 'todos';
+
+  const produtos = Array.isArray(MENU) ? MENU : [];
+
+  const itensFiltrados = produtos.filter(p => {
+    const nome = (p.name || '').toLowerCase();
+    const cat = (p.category || '').toLowerCase();
+    const desc = (p.description || p.descricao || '').toLowerCase();
+
+    if (query && !nome.includes(query) && !cat.includes(query) && !desc.includes(query)) {
+      return false;
+    }
+
+    if (filtro === 'gluten_free') {
+      const temGluten = nome.includes('trigo') || nome.includes('pão') || nome.includes('pao') || nome.includes('massa') || nome.includes('pizza') || nome.includes('hambúrguer') || nome.includes('cerveja');
+      return !temGluten;
+    } else if (filtro === 'lactose_free') {
+      const temLactose = nome.includes('queijo') || nome.includes('leite') || nome.includes('creme') || nome.includes('catupiry') || nome.includes('manteiga') || nome.includes('cheddar');
+      return !temLactose;
+    } else if (filtro === 'vegano') {
+      const temOrigemAnimal = nome.includes('carne') || nome.includes('frango') || nome.includes('peixe') || nome.includes('camarão') || nome.includes('bacon') || nome.includes('queijo') || nome.includes('ovo') || cat.includes('carnes');
+      return !temOrigemAnimal;
+    } else if (filtro === 'vegetariano') {
+      const temCarne = nome.includes('carne') || nome.includes('frango') || nome.includes('peixe') || nome.includes('camarão') || nome.includes('bacon') || nome.includes('costela') || cat.includes('carnes');
+      return !temCarne;
+    } else if (filtro === 'seafood_free') {
+      const temFrutos = nome.includes('peixe') || nome.includes('camarão') || nome.includes('camarao') || nome.includes('lula') || nome.includes('polvo') || nome.includes('salmão') || nome.includes('atum') || cat.includes('peixes');
+      return !temFrutos;
+    }
+
+    return true;
+  });
+
+  if (itensFiltrados.length === 0) {
+    container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 30px 10px; font-size: 13.5px;"><i class="ph ph-magnifying-glass" style="font-size: 32px; display: block; margin-bottom: 6px;"></i>Nenhum prato compatível com os filtros.</div>';
+    return;
+  }
+
+  container.innerHTML = itensFiltrados.map(p => {
+    const nome = p.name || 'Produto';
+    const cat = p.category || 'Geral';
+    const preco = typeof p.price === 'number' ? p.price.toFixed(2).replace('.', ',') : '0,00';
+    const emoji = p.emoji || '🍽️';
+
+    // Gera badges de alérgenos baseados em ingredientes comuns
+    const n = nome.toLowerCase();
+    const badges = [];
+    if (!n.includes('trigo') && !n.includes('massa') && !n.includes('pizza') && !n.includes('pão')) {
+      badges.push('<span style="background:#dcfce7; color:#166534; font-size:10.5px; font-weight:800; padding:2px 6px; border-radius:6px;">🌾 Sem Glúten</span>');
+    }
+    if (!n.includes('queijo') && !n.includes('leite') && !n.includes('catupiry') && !n.includes('cheddar')) {
+      badges.push('<span style="background:#e0f2fe; color:#0369a1; font-size:10.5px; font-weight:800; padding:2px 6px; border-radius:6px;">🥛 Sem Lactose</span>');
+    }
+    if (n.includes('camarão') || n.includes('peixe') || n.includes('lula') || n.includes('polvo')) {
+      badges.push('<span style="background:#fee2e2; color:#b91c1c; font-size:10.5px; font-weight:800; padding:2px 6px; border-radius:6px;">🦐 Frutos do Mar</span>');
+    }
+
+    return `
+      <div style="background: var(--g-app-bg, #f8fafc); border: 1px solid var(--g-border, #e2e8f0); border-radius: 14px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+          <span style="font-size: 22px; flex-shrink: 0;">${emoji}</span>
+          <div style="min-width: 0; flex: 1;">
+            <strong style="font-size: 13.5px; color: var(--g-text, #0f172a); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escHtml(nome)}</strong>
+            <span style="font-size: 11px; color: var(--g-text-muted, #64748b);">${escHtml(cat)} • R$ ${preco}</span>
+            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px;">
+              ${badges.join(' ')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+// ── 7. BIPAR QR DA MESA & ABERTURA DIRETA ──
+window._garcomCameraScanner = null;
+
+window.escanearQrMesaGarcom = function() {
+  const modal = document.getElementById('modal-garcom-escanear-qr');
+  const viewport = document.getElementById('garcom-qr-camera-viewport');
+  const loading = document.getElementById('garcom-qr-camera-loading');
+  if (!modal) return;
+
+  modal.style.display = 'flex';
+  if (loading) loading.style.display = 'block';
+
+  if (typeof Html5Qrcode === 'undefined') {
+    if (loading) loading.innerHTML = '<span style="color:#ef4444;">Leitor de câmera indisponível no dispositivo. Digite o número da mesa abaixo.</span>';
+    return;
+  }
+
+  if (window._garcomCameraScanner) {
+    try { window._garcomCameraScanner.clear(); } catch(e){}
+    window._garcomCameraScanner = null;
+  }
+
+  setTimeout(() => {
+    try {
+      window._garcomCameraScanner = new Html5Qrcode("garcom-qr-camera-viewport");
+      window._garcomCameraScanner.start(
+        { facingMode: "environment" },
+        { fps: 15, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
+        (decodedText) => {
+          window.fecharModalEscanearQr();
+          window.abrirMesaDiretaPorNumero(decodedText);
+        },
+        () => {}
+      ).then(() => {
+        if (loading) loading.style.display = 'none';
+      }).catch(err => {
+        if (loading) loading.innerHTML = '<span style="color:#f59e0b;">Permissão de câmera não concedida. Use a busca manual abaixo.</span>';
+      });
+    } catch(e) {
+      if (loading) loading.innerHTML = '<span style="color:#ef4444;">Erro ao iniciar leitor.</span>';
+    }
+  }, 200);
+};
+
+window.fecharModalEscanearQr = function() {
+  if (window._garcomCameraScanner) {
+    try {
+      window._garcomCameraScanner.stop().then(() => {
+        try { window._garcomCameraScanner.clear(); } catch(e){}
+        window._garcomCameraScanner = null;
+      }).catch(() => {
+        window._garcomCameraScanner = null;
+      });
+    } catch(e) {
+      window._garcomCameraScanner = null;
+    }
+  }
+  const modal = document.getElementById('modal-garcom-escanear-qr');
+  if (modal) modal.style.display = 'none';
+};
+
+window.abrirMesaDiretaPorNumero = function(texto) {
+  if (!texto) {
+    if (typeof showToast === 'function') showToast('Digite o número da mesa.', '#ef4444');
+    return;
+  }
+
+  let mesaAlvo = String(texto).trim();
+  try {
+    if (mesaAlvo.includes('mesa=')) {
+      const match = mesaAlvo.match(/mesa=([^&]+)/);
+      if (match && match[1]) mesaAlvo = decodeURIComponent(match[1]);
+    }
+  } catch(e){}
+
+  const mesas = Array.isArray(MESAS) ? MESAS : [];
+  const mesaEncontrada = mesas.find(m => {
+    const nomeNormal = (m.nome || '').toLowerCase().trim();
+    const buscaNormal = mesaAlvo.toLowerCase().trim();
+    if (nomeNormal === buscaNormal) return true;
+    const numMesa = nomeNormal.replace(/\D/g, '');
+    const numBusca = buscaNormal.replace(/\D/g, '');
+    return numMesa && numBusca && numMesa === numBusca;
+  });
+
+  if (mesaEncontrada) {
+    window.fecharModalEscanearQr();
+    if (typeof window.openTableOptions === 'function') {
+      window.openTableOptions(mesaEncontrada);
+    } else {
+      currentTable = mesaEncontrada.nome;
+      if (typeof showView === 'function') showView('tables', `Mesa ${mesaEncontrada.nome}`);
+    }
+    if (typeof showToast === 'function') showToast(`✓ ${mesaEncontrada.nome} selecionada!`, '#10b981');
+  } else {
+    if (typeof showToast === 'function') showToast(`Mesa "${mesaAlvo}" não encontrada.`, '#ef4444');
+    else alert(`Mesa "${mesaAlvo}" não encontrada.`);
+  }
+};
+
+// ── 8. ALTERNAR TEMA GARÇOM ──
+window.alternarTemaGarcom = function() {
+  if (window.ChefTheme && typeof window.ChefTheme.toggle === 'function') {
+    window.ChefTheme.toggle();
+    const atual = window.ChefTheme.get ? window.ChefTheme.get() : '';
+    if (typeof showToast === 'function') {
+      showToast(`🌓 Modo ${atual === 'dark' ? 'Escuro' : 'Claro'} ativado!`, '#6366f1');
+    }
+  } else {
+    const btn = document.getElementById('btn-theme-toggle');
+    if (btn) btn.click();
+  }
+};
+
+// ── 9. QUANTIDADE RÁPIDA NO ITEM (VIEW-DETAILS) ──
+window.setDetalheQtd = function(qtd) {
+  selectedQty = parseInt(qtd, 10) || 1;
+  const el = document.getElementById('detail-qty');
+  if (el) el.innerText = selectedQty;
+  if (typeof updateDetailPrice === 'function') updateDetailPrice();
+  try { if (navigator.vibrate) navigator.vibrate(30); } catch(e){}
+};
+
+// ── 10. OBSERVAÇÕES RÁPIDAS EM PÍLULAS (1 TOQUE) ──
+window.adicionarObsRapida = function(tag) {
+  const textarea = document.getElementById('detail-obs');
+  if (!textarea) return;
+  let val = textarea.value.trim();
+  if (val.includes(tag)) {
+    val = val.replace(tag, '').replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, '').trim();
+  } else {
+    val = val ? `${val}, ${tag}` : tag;
+  }
+  textarea.value = val;
+  try { if (navigator.vibrate) navigator.vibrate(30); } catch(e){}
+};
+
+// ── 11. REPETIR ITEM NA COMANDA (+1X RÁPIDO) ──
+window.repetirItemComanda = function(itemId) {
+  const item = Array.isArray(billItems) ? billItems.find(i => i.id === itemId) : null;
+  if (!item) return;
+
+  const nomeMesa = currentTable || item.localName;
+  if (!nomeMesa) {
+    if (typeof showToast === 'function') showToast('Mesa não definida.', '#ef4444');
+    return;
+  }
+
+  const precoUnitario = (item.totalVal && item.quantity) ? (item.totalVal / item.quantity) : (parseFloat(String(item.total).replace(',', '.')) || 0);
+
+  const emitItem = {
+    productName: item.productName,
+    productEmoji: item.productEmoji || '🍽️',
+    sector: item.sector || 'Cozinha 1',
+    quantity: 1,
+    observations: item.observations ? `${item.observations} (Repetição)` : 'Pedido repetido',
+    composicoes: item.composicoes || [],
+    total: precoUnitario.toFixed(2).replace('.', ','),
+    mesa_comanda: item.mesa_comanda || '',
+    localName: nomeMesa,
+    userName: (typeof loggedUser !== 'undefined' && loggedUser && loggedUser.nome) ? loggedUser.nome : 'Garçom',
+    status: 'Pendente',
+    time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    createdAt: Date.now()
+  };
+
+  if (typeof socket !== 'undefined' && socket) {
+    socket.emit('novo_pedido', emitItem);
+    try { if (navigator.vibrate) navigator.vibrate([60, 40, 60]); } catch(e){}
+    if (typeof showToast === 'function') {
+      showToast(`✓ +1x ${item.productName} lançado na ${nomeMesa}!`, '#10b981');
+    }
+    setTimeout(() => {
+      socket.emit('get_itens_mesa', nomeMesa);
+    }, 250);
+  }
+};
+
+
+

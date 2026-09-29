@@ -7,10 +7,12 @@ window.alternarSubtabProdutos = function(subtab) {
     const content = document.getElementById('subtab-content-' + st);
     if (btn) {
       if (st === subtab) {
+        btn.classList.add('active');
         btn.style.background = '#fc4b15';
         btn.style.color = '#ffffff';
         btn.style.fontWeight = '800';
       } else {
+        btn.classList.remove('active');
         btn.style.background = 'var(--cfg-subtle-bg, #f1f5f9)';
         btn.style.color = 'var(--cfg-text, #0f172a)';
         btn.style.fontWeight = '700';
@@ -29,9 +31,24 @@ window.alternarSubtabProdutos = function(subtab) {
 
   window.toggleConfigSidebar = function() {
     const sidebar = document.querySelector('.config-sidebar');
+    const backdrop = document.getElementById('sidebar-mobile-backdrop');
     if (!sidebar) return;
-    sidebar.classList.toggle('collapsed');
-    localStorage.setItem('configSidebarCollapsed', sidebar.classList.contains('collapsed'));
+    if (window.innerWidth <= 768) {
+      const isOpen = sidebar.classList.toggle('mobile-open');
+      if (backdrop) backdrop.classList.toggle('active', isOpen);
+      document.body.classList.toggle('sidebar-drawer-open', isOpen);
+    } else {
+      sidebar.classList.toggle('collapsed');
+      localStorage.setItem('configSidebarCollapsed', sidebar.classList.contains('collapsed'));
+    }
+  };
+
+  window.closeConfigMobileSidebar = function() {
+    const sidebar = document.querySelector('.config-sidebar');
+    const backdrop = document.getElementById('sidebar-mobile-backdrop');
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.classList.remove('sidebar-drawer-open');
   };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -890,13 +907,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebar = document.querySelector('.config-sidebar');
   if (btnToggleSidebar && sidebar) {
     const collapsed = localStorage.getItem('configSidebarCollapsed') === 'true';
-    if (collapsed) {
+    if (collapsed && window.innerWidth > 768) {
       sidebar.classList.add('collapsed');
     }
-    btnToggleSidebar.addEventListener('click', () => {
-      sidebar.classList.toggle('collapsed');
-      localStorage.setItem('configSidebarCollapsed', sidebar.classList.contains('collapsed'));
-    });
+
   }
 
   // ── BUSCA RÁPIDA DE CONFIGURAÇÕES NA SIDEBAR ──
@@ -942,6 +956,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (grupoTemMatch) {
         grp.style.display = 'block';
         grp.classList.remove('collapsed');
+        grp.classList.add('aberta');
       } else {
         grp.style.display = 'none';
       }
@@ -1140,8 +1155,30 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const pTitle    = document.getElementById('panel-title');
     const pSubtitle = document.getElementById('panel-subtitle');
+    const pBreadcrumb = document.getElementById('panel-category-breadcrumb');
+    const brandIcon = document.getElementById('header-brand-icon') || document.querySelector('.header-branding .brand-badge i');
+
     if (pTitle)    pTitle.textContent    = info.title;
     if (pSubtitle) pSubtitle.textContent = info.subtitle;
+    if (brandIcon && info.icon) {
+      brandIcon.className = 'ph-bold ' + info.icon;
+      brandIcon.style.color = info.color || '#fc4b15';
+    }
+
+    // Identificar a categoria atual pelo botão ativo e sincronizar breadcrumb
+    const activeBtn = document.querySelector('.admin-tab-btn[data-tab="' + tabId + '"]');
+    if (activeBtn) {
+      const parentCat = activeBtn.closest('.menu-categoria');
+      document.querySelectorAll('.menu-categoria').forEach(cat => cat.classList.remove('has-active-tab'));
+      if (parentCat) {
+        parentCat.classList.add('has-active-tab');
+        const catName = parentCat.querySelector('.cat-header span');
+        if (pBreadcrumb && catName) {
+          pBreadcrumb.textContent = catName.textContent.trim();
+        }
+      }
+    }
+
     if (!contentEl) return;
     let banner = contentEl.querySelector(':scope > .info-banner');
     if (!banner) {
@@ -1158,10 +1195,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tabId === 'montaveis') {
       activateTab('produtos', skipSave);
       setTimeout(() => {
-        if (typeof window.trocarSubTabProdutos === 'function') {
+        if (typeof window.alternarSubtabProdutos === 'function') {
+          window.alternarSubtabProdutos('montaveis');
+        } else if (typeof window.trocarSubTabProdutos === 'function') {
           window.trocarSubTabProdutos('montaveis');
         }
       }, 50);
+      document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+      const montBtn = document.querySelector('.admin-tab-btn[data-tab="montaveis"]');
+      if (montBtn) {
+        montBtn.classList.add('active');
+        const grp = montBtn.closest('.menu-categoria, .action-group');
+        if (grp) { grp.classList.add('aberta'); grp.classList.remove('collapsed'); }
+      }
       return;
     }
 
@@ -1198,6 +1244,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Atualiza cabeçalho dinâmico e injeta .info-banner na aba
     atualizarCabecalhoEBannerConfig(tabId, content);
+
+    // Fechar drawer no mobile ao selecionar aba
+    if (typeof window.closeConfigMobileSidebar === 'function') {
+      window.closeConfigMobileSidebar();
+    }
+
+    // Sincronizar pills de navegação rápida mobile
+    document.querySelectorAll('.mobile-quick-pill[data-tab]').forEach(pill => {
+      if (pill.getAttribute('data-tab') === tabId) {
+        pill.classList.add('active');
+        try { pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch(e) {}
+      } else {
+        pill.classList.remove('active');
+      }
+    });
 
     // Auto-scroll sidebar button into view (mobile horizontal scroll)
     try { btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch(e) {}
@@ -1262,6 +1323,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabId === 'auditoria' && typeof window.carregarLogsAuditoria === 'function') window.carregarLogsAuditoria();
       if (tabId === 'backup' && typeof window.carregarHistoricoBackups === 'function') window.carregarHistoricoBackups();
       if (tabId === 'funcoes' && typeof carregarFuncoesSistema === 'function') carregarFuncoesSistema();
+      if (tabId === 'funcionalidades' && typeof initFuncionalidadesTab === 'function') initFuncionalidadesTab();
+      if (tabId === 'inicio' && typeof window.renderizarConfiguracaoModulosHome === 'function') window.renderizarConfiguracaoModulosHome();
     } catch (errLazy) {
       console.warn('[config tab lazy-load error]', tabId, errLazy);
     }
@@ -1279,7 +1342,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = e.target && e.target.closest ? e.target.closest('.admin-tab-btn') : null;
     if (btn) {
       const tab = btn.getAttribute('data-tab');
-      if (tab) activateTab(tab);
+      if (tab) {
+        activateTab(tab);
+        if (typeof window.closeConfigMobileSidebar === 'function') {
+          window.closeConfigMobileSidebar();
+        }
+      }
     }
   });
 
@@ -3196,11 +3264,16 @@ socket.on('zerar_concluido', (data) => {
 });
 
 socket.on('ia_config_atual', (config) => {
-  if (config.minutosRefillCerveja) document.getElementById('ia-minutos-refill').value = config.minutosRefillCerveja;
-  if (config.minutosAlertaEspera) document.getElementById('ia-minutos-alerta').value = config.minutosAlertaEspera;
-  if (config.minutosCriticoEspera) document.getElementById('ia-minutos-critico').value = config.minutosCriticoEspera;
-  if (config.minutosManobra) document.getElementById('ia-minutos-manobra').value = config.minutosManobra;
-  if (config.minutosAtencao) document.getElementById('ia-minutos-atencao').value = config.minutosAtencao;
+  if (!config) return;
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val !== undefined && val !== null) el.value = val;
+  };
+  setVal('ia-minutos-refill', config.minutosRefillCerveja);
+  setVal('ia-minutos-alerta', config.minutosAlertaEspera);
+  setVal('ia-minutos-critico', config.minutosCriticoEspera);
+  setVal('ia-minutos-manobra', config.minutosManobra);
+  setVal('ia-minutos-atencao', config.minutosAtencao);
   var chk = document.getElementById('ia-toggle-switch');
   if (chk) chk.checked = config.iaEnabled !== false;
   var track = document.getElementById('ia-toggle-track');

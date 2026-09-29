@@ -5,6 +5,40 @@
 module.exports = function({ app, db, io, options, log }) {
   const { verificarToken } = options;
 
+  // Migrações e schema de reservas
+  try {
+    db.run(`CREATE TABLE IF NOT EXISTS reservas_futuras (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      mesa_nome TEXT,
+      cliente_nome TEXT,
+      cliente_telefone TEXT,
+      cliente_id INTEGER,
+      data_reserva TEXT,
+      horario TEXT,
+      pessoas INTEGER DEFAULT 2,
+      observacao TEXT,
+      status TEXT DEFAULT 'pendente_aprovacao',
+      origem TEXT DEFAULT 'cliente',
+      motivo_pendente TEXT,
+      validada_qr INTEGER DEFAULT 0,
+      checked_in_at DATETIME,
+      criado_em DATETIME DEFAULT (datetime('now', 'localtime'))
+    )`, () => {});
+
+    db.all(`PRAGMA table_info(mesas)`, [], (errPragma, cols) => {
+      if (!errPragma && Array.isArray(cols)) {
+        if (!cols.some(c => c.name === 'lugares')) {
+          db.run(`ALTER TABLE mesas ADD COLUMN lugares INTEGER DEFAULT 4`, () => {});
+        }
+        if (!cols.some(c => c.name === 'grupo_juncao')) {
+          db.run(`ALTER TABLE mesas ADD COLUMN grupo_juncao TEXT`, () => {});
+        }
+      }
+    });
+  } catch (e) {
+    if (typeof log === 'function') log('Erro na migracao de reservas: ' + e.message);
+  }
+
   function getReservasPrazoMaxDias(cb) {
     db.get(`SELECT valor FROM configuracoes WHERE chave = 'reservas_prazo_max_dias'`, [], (err, row) => {
       const dias = parseInt((row && row.valor), 10);
@@ -138,6 +172,15 @@ module.exports = function({ app, db, io, options, log }) {
         try { io.emit('reservas_atualizadas'); } catch (e) { }
         res.json({ ok: true, mensagem: 'Recusada.' });
       });
+  });
+
+  app.delete('/api/reservas/:id', verificarToken, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    db.run(`DELETE FROM reservas_futuras WHERE id = ?`, [id], function (err) {
+      if (err) return res.status(500).json({ ok: false, erro: err.message });
+      try { io.emit('reservas_atualizadas'); } catch (e) {}
+      res.json({ ok: true, mensagem: 'Reserva excluída com sucesso.' });
+    });
   });
 
   app.post('/api/reservas/checkin', (req, res) => {

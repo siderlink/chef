@@ -568,10 +568,13 @@ body.device-ipad-pro-landscape #queue-list:not(.modo-lista):not(.modo-kanban) {
 
 /* ── SAFE AREA INSETS PARA FABs E BARRAS FIXAS ── */
 .chef-drawer-fab,
-#btn-qr-pedidos-pendentes,
+#btn-qr-pedidos-pendentes {
+  bottom: calc(16px + var(--safe-bottom)) !important;
+}
+
 .mobile-bottom-nav,
 #kds-mobile-bottom-nav {
-  bottom: calc(16px + var(--safe-bottom)) !important;
+  bottom: 0 !important;
 }
 
 /* ═════════════════════════════════════════════════════════════════════════

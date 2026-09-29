@@ -1,5 +1,1265 @@
 [
   {
+    "data": "2026-09-27T23:03:44.997Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/addons/anvisa-validades/gerar-queima-estoque",
+    "motivo": "Rate Limit Excedido (480/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.990Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/addons/anvisa-validades/registrar-abertura",
+    "motivo": "Rate Limit Excedido (479/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.981Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/addons/anvisa-validades/painel",
+    "motivo": "Rate Limit Excedido (478/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.964Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/planos/upgrades/1/cancelar",
+    "motivo": "Rate Limit Excedido (477/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.956Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/planos/upgrades/1/aprovar",
+    "motivo": "Rate Limit Excedido (476/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.941Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/financeiro/custodia/1/estornar",
+    "motivo": "Rate Limit Excedido (475/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.926Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/financeiro/custodia/1/resolver-contestacao",
+    "motivo": "Rate Limit Excedido (474/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.909Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/financeiro/custodia/1/contestar",
+    "motivo": "Rate Limit Excedido (473/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.896Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/financeiro/custodia/1/liberar",
+    "motivo": "Rate Limit Excedido (472/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.881Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/suporte/1/metas-comissao",
+    "motivo": "Rate Limit Excedido (471/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.869Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/licencas/1/revogar",
+    "motivo": "Rate Limit Excedido (470/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.841Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/restaurantes/1/alternar-arquitetura",
+    "motivo": "Rate Limit Excedido (469/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.831Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/chaves/1/revogar",
+    "motivo": "Rate Limit Excedido (468/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.822Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/status-modulos",
+    "motivo": "Rate Limit Excedido (467/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.809Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/auditor/processar",
+    "motivo": "Rate Limit Excedido (466/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.791Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/radar/escanear",
+    "motivo": "Rate Limit Excedido (465/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.780Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/modulos/toggle",
+    "motivo": "Rate Limit Excedido (464/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.772Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/lan-mesh/heartbeat",
+    "motivo": "Rate Limit Excedido (463/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.763Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/lan-mesh/status",
+    "motivo": "Rate Limit Excedido (462/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.746Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/estoque/danfe-historico",
+    "motivo": "Rate Limit Excedido (461/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.720Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/estoque/danfe-xml",
+    "motivo": "Rate Limit Excedido (460/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.709Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/entregas/otimizar-rota",
+    "motivo": "Rate Limit Excedido (459/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.706Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/backup/listar",
+    "motivo": "Rate Limit Excedido (458/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.702Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/backup/executar",
+    "motivo": "Rate Limit Excedido (457/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.699Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/bi/historico",
+    "motivo": "Rate Limit Excedido (456/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.697Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/bi/processar-fechamento",
+    "motivo": "Rate Limit Excedido (455/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.694Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/balanca/tara",
+    "motivo": "Rate Limit Excedido (454/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.685Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/balanca/peso",
+    "motivo": "Rate Limit Excedido (453/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.675Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/impressao/historico",
+    "motivo": "Rate Limit Excedido (452/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.665Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/local/impressao/imprimir",
+    "motivo": "Rate Limit Excedido (451/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.661Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/implementacoes/acao",
+    "motivo": "Rate Limit Excedido (450/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.647Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/contador/enviar-parecer",
+    "motivo": "Rate Limit Excedido (449/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.607Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/contador/salvar-combo-sugerido",
+    "motivo": "Rate Limit Excedido (448/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.536Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/contador/concluir-demanda",
+    "motivo": "Rate Limit Excedido (447/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.515Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/dev/scaffold",
+    "motivo": "Rate Limit Excedido (446/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.503Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/dev/templates",
+    "motivo": "Rate Limit Excedido (445/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.496Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/dev/execute-test",
+    "motivo": "Rate Limit Excedido (444/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.483Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/pix/gerar",
+    "motivo": "Rate Limit Excedido (443/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.479Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/caixa/status",
+    "motivo": "Rate Limit Excedido (442/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.474Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/injetar-layout",
+    "motivo": "Rate Limit Excedido (441/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.459Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/restaurantes-list",
+    "motivo": "Rate Limit Excedido (440/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.448Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/modulos/salvar",
+    "motivo": "Rate Limit Excedido (439/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.426Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/modulos/toggle",
+    "motivo": "Rate Limit Excedido (438/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.416Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/modulos/listar",
+    "motivo": "Rate Limit Excedido (437/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.394Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/cadastro",
+    "motivo": "Rate Limit Excedido (436/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.390Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/adiantamentos",
+    "motivo": "Rate Limit Excedido (435/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.370Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/vendas",
+    "motivo": "Rate Limit Excedido (434/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.365Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/afiliado/resgatar-bonus",
+    "motivo": "Rate Limit Excedido (433/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.342Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/implementacoes/1",
+    "motivo": "Rate Limit Excedido (432/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.336Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/site-vendas/historico/restaurar/1",
+    "motivo": "Rate Limit Excedido (431/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.309Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/site-vendas/modulos/1",
+    "motivo": "Rate Limit Excedido (430/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.302Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/modulo/meu-id/dados",
+    "motivo": "Rate Limit Excedido (429/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.281Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/dev/catalog",
+    "motivo": "Rate Limit Excedido (428/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.261Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/sql/executar",
+    "motivo": "Rate Limit Excedido (427/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.253Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/emergency/resolver-solicitacao",
+    "motivo": "Rate Limit Excedido (426/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.233Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/tuneis/toggle-auto-start",
+    "motivo": "Rate Limit Excedido (425/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.227Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/servers/ping-all",
+    "motivo": "Rate Limit Excedido (424/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.220Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/tuneis/quick-connect",
+    "motivo": "Rate Limit Excedido (423/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:44.210Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/tuneis/stop-all",
+    "motivo": "Rate Limit Excedido (422/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.495Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/financeiro/saas/mrr-addons",
+    "motivo": "Rate Limit Excedido (421/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.484Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/planos/upgrades/1",
+    "motivo": "Rate Limit Excedido (420/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.476Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/planos/upgrades",
+    "motivo": "Rate Limit Excedido (419/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.468Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/plano/otimizar-recursos",
+    "motivo": "Rate Limit Excedido (418/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.460Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/financeiro/gateways/testar",
+    "motivo": "Rate Limit Excedido (417/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.448Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/financeiro/assinaturas/1",
+    "motivo": "Rate Limit Excedido (416/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.431Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/financeiro/custodia/1",
+    "motivo": "Rate Limit Excedido (415/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.422Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/financeiro/custodia/processar-liberacoes",
+    "motivo": "Rate Limit Excedido (414/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.408Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/contador/pagar-bonificacao",
+    "motivo": "Rate Limit Excedido (413/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.398Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/contador/criar-demanda",
+    "motivo": "Rate Limit Excedido (412/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.382Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/contador/atribuir-demanda",
+    "motivo": "Rate Limit Excedido (411/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.342Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/synccheff/redefinir-status",
+    "motivo": "Rate Limit Excedido (410/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.333Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/synccheff/gerar-script",
+    "motivo": "Rate Limit Excedido (409/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.323Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/synccheff/validar-script",
+    "motivo": "Rate Limit Excedido (408/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.308Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/tarefas/1",
+    "motivo": "Rate Limit Excedido (407/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.298Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/tarefas/stats",
+    "motivo": "Rate Limit Excedido (406/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.287Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/tarefas",
+    "motivo": "Rate Limit Excedido (405/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.276Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/image-providers/test/1",
+    "motivo": "Rate Limit Excedido (404/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.258Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/tuneis/stop/1",
+    "motivo": "Rate Limit Excedido (403/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.250Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/tuneis/start/1",
+    "motivo": "Rate Limit Excedido (402/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:42.240Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/tuneis/config/1",
+    "motivo": "Rate Limit Excedido (401/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.452Z",
+    "ip": "127.0.0.1",
+    "metodo": "POST",
+    "endpoint": "/api/super/backup/download/1",
+    "motivo": "Rate Limit Excedido (400/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.419Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/notificacoes/broadcast",
+    "motivo": "Rate Limit Excedido (399/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.409Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/notificacoes/marcar-todas-lidas",
+    "motivo": "Rate Limit Excedido (398/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.398Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/notificacoes/marcar-lida/1",
+    "motivo": "Rate Limit Excedido (397/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.383Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/delegar-suporte",
+    "motivo": "Rate Limit Excedido (396/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.378Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/temas/1",
+    "motivo": "Rate Limit Excedido (395/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.365Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/restaurant-features",
+    "motivo": "Rate Limit Excedido (394/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.345Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/suporte/1",
+    "motivo": "Rate Limit Excedido (393/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.327Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/afiliados/1",
+    "motivo": "Rate Limit Excedido (392/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.318Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/afiliados/bonificacoes/pagar",
+    "motivo": "Rate Limit Excedido (391/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.305Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/afiliados/metas/1",
+    "motivo": "Rate Limit Excedido (390/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.287Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/anuncios/gerar-copy",
+    "motivo": "Rate Limit Excedido (389/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.277Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/tracking-config",
+    "motivo": "Rate Limit Excedido (388/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.257Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/push-config",
+    "motivo": "Rate Limit Excedido (387/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.246Z",
+    "ip": "127.0.0.1",
+    "metodo": "POST",
+    "endpoint": "/api/super/instances/1",
+    "motivo": "Rate Limit Excedido (386/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.219Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/remote-command",
+    "motivo": "Rate Limit Excedido (385/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.216Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/distribution/revoke-key",
+    "motivo": "Rate Limit Excedido (384/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.212Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/distribution/generate-key",
+    "motivo": "Rate Limit Excedido (383/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.177Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/servers/strategy",
+    "motivo": "Rate Limit Excedido (382/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.173Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/servers/test",
+    "motivo": "Rate Limit Excedido (381/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.161Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/load-control/tenant",
+    "motivo": "Rate Limit Excedido (380/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.151Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/solicitacoes-features/1",
+    "motivo": "Rate Limit Excedido (379/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.145Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/solicitacoes-features/implementar",
+    "motivo": "Rate Limit Excedido (378/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.125Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/solicitacoes-features/delegar",
+    "motivo": "Rate Limit Excedido (377/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.107Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/licencas/1",
+    "motivo": "Rate Limit Excedido (376/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.084Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/tuneis/config-global",
+    "motivo": "Rate Limit Excedido (375/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.070Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/infra-cloud/crash-alerts/test",
+    "motivo": "Rate Limit Excedido (374/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.061Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/infra-cloud/crash-alerts",
+    "motivo": "Rate Limit Excedido (373/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.042Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/infra-cloud/backup-schedule",
+    "motivo": "Rate Limit Excedido (372/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.019Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/infra-cloud/redis/test",
+    "motivo": "Rate Limit Excedido (371/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:40.011Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/infra-cloud/redis",
+    "motivo": "Rate Limit Excedido (370/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.995Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/infra-cloud/r2/backup",
+    "motivo": "Rate Limit Excedido (369/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.988Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/infra-cloud/r2/test",
+    "motivo": "Rate Limit Excedido (368/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.975Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/infra-cloud/r2",
+    "motivo": "Rate Limit Excedido (367/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.964Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/equipe/1",
+    "motivo": "Rate Limit Excedido (366/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.955Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/certs/1",
+    "motivo": "Rate Limit Excedido (365/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.951Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/config",
+    "motivo": "Rate Limit Excedido (364/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.947Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/mensagens/1",
+    "motivo": "Rate Limit Excedido (363/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.940Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/usuario/1",
+    "motivo": "Rate Limit Excedido (362/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.924Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/restaurante/1",
+    "motivo": "Rate Limit Excedido (361/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.901Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/restaurantes/1",
+    "motivo": "Rate Limit Excedido (360/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.886Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/backup/export-tenant/1",
+    "motivo": "Rate Limit Excedido (359/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.875Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/impersonate/1",
+    "motivo": "Rate Limit Excedido (358/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.860Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/modulos",
+    "motivo": "Rate Limit Excedido (357/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.848Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/modulos/tenant",
+    "motivo": "Rate Limit Excedido (356/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.836Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/modulos/global",
+    "motivo": "Rate Limit Excedido (355/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.829Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/git/deploy-parcial",
+    "motivo": "Rate Limit Excedido (354/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.815Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/git/auto-deploy",
+    "motivo": "Rate Limit Excedido (353/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.805Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/git/pull",
+    "motivo": "Rate Limit Excedido (352/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.786Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/git/fetch",
+    "motivo": "Rate Limit Excedido (351/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.778Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/git/conectar",
+    "motivo": "Rate Limit Excedido (350/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.624Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/supabase-sync-now",
+    "motivo": "Rate Limit Excedido (349/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.613Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/supabase-test",
+    "motivo": "Rate Limit Excedido (348/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.603Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/chaves/1",
+    "motivo": "Rate Limit Excedido (347/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.596Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/chaves",
+    "motivo": "Rate Limit Excedido (346/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.591Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/clientes/1",
+    "motivo": "Rate Limit Excedido (345/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.584Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/internal/emit",
+    "motivo": "Rate Limit Excedido (344/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.579Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/internal/metrics",
+    "motivo": "Rate Limit Excedido (343/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.559Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/check-auth",
+    "motivo": "Rate Limit Excedido (342/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.553Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/logout",
+    "motivo": "Rate Limit Excedido (341/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.546Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/deploy-commit",
+    "motivo": "Rate Limit Excedido (340/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.537Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/concluir-tarefa",
+    "motivo": "Rate Limit Excedido (339/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.530Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/assumir-relato",
+    "motivo": "Rate Limit Excedido (338/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.518Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/alterar-senha",
+    "motivo": "Rate Limit Excedido (337/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.509Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/commits/meta",
+    "motivo": "Rate Limit Excedido (336/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.424Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/auth/notificar-impostor",
+    "motivo": "Rate Limit Excedido (335/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.389Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/vite/control",
+    "motivo": "Rate Limit Excedido (334/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.367Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/equipe/avisos",
+    "motivo": "Rate Limit Excedido (333/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.360Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/equipe/tasks",
+    "motivo": "Rate Limit Excedido (332/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.345Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/certs/ativar",
+    "motivo": "Rate Limit Excedido (331/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.336Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/certs/upload",
+    "motivo": "Rate Limit Excedido (330/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.319Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/theme-custom",
+    "motivo": "Rate Limit Excedido (329/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.257Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/nfce/emitir",
+    "motivo": "Rate Limit Excedido (328/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.241Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/atualizar-status",
+    "motivo": "Rate Limit Excedido (327/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.230Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/criar-restaurante-completo",
+    "motivo": "Rate Limit Excedido (326/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.215Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/exec",
+    "motivo": "Rate Limit Excedido (325/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.100Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/login-local",
+    "motivo": "Rate Limit Excedido (324/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.091Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/mensagens",
+    "motivo": "Rate Limit Excedido (323/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.078Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/backup",
+    "motivo": "Rate Limit Excedido (322/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.025Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/metricas/garcons",
+    "motivo": "Rate Limit Excedido (321/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:39.009Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/licenca/estado",
+    "motivo": "Rate Limit Excedido (320/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.982Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/licencas/gerar",
+    "motivo": "Rate Limit Excedido (319/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.640Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/atualizar-restaurante",
+    "motivo": "Rate Limit Excedido (318/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.636Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/criar-restaurante",
+    "motivo": "Rate Limit Excedido (317/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.546Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/criar-usuario",
+    "motivo": "Rate Limit Excedido (316/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.536Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/super/reset-credenciais",
+    "motivo": "Rate Limit Excedido (315/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.524Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/emergency-state",
+    "motivo": "Rate Limit Excedido (314/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.516Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/addons/reputacao-ia/dashboard",
+    "motivo": "Rate Limit Excedido (313/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.509Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/auth/equipe-onboarding",
+    "motivo": "Rate Limit Excedido (312/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.501Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/auth/registro",
+    "motivo": "Rate Limit Excedido (311/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.458Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/radar/escanear",
+    "motivo": "Rate Limit Excedido (310/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.451Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/radar/gaps-estrategicos",
+    "motivo": "Rate Limit Excedido (309/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.441Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/monitor/cadastro-progresso",
+    "motivo": "Rate Limit Excedido (308/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.311Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/ia/pesquisar-estabelecimento-geo",
+    "motivo": "Rate Limit Excedido (307/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.268Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/public/geo-hit",
+    "motivo": "Rate Limit Excedido (306/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.218Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/suporte/restaurantes/1",
+    "motivo": "Rate Limit Excedido (305/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.207Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/log-error",
+    "motivo": "Rate Limit Excedido (304/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.197Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/pwa/telemetria",
+    "motivo": "Rate Limit Excedido (303/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.171Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/modulos",
+    "motivo": "Rate Limit Excedido (302/300 reqs/min)"
+  },
+  {
+    "data": "2026-09-27T23:03:38.161Z",
+    "ip": "127.0.0.1",
+    "metodo": "GET",
+    "endpoint": "/api/pedidos/offline-sync",
+    "motivo": "Rate Limit Excedido (301/300 reqs/min)"
+  },
+  {
     "data": "2026-09-27T17:49:45.967Z",
     "ip": "127.0.0.1",
     "metodo": "POST",

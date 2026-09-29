@@ -905,7 +905,7 @@
               </select>
               <input type="text" inputmode="decimal" id="valor-pagamento" placeholder="R$ 0,00"
                 style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;">
-              <button id="btn-add-pagamento"
+              <button id="btn-add-pagamento" onclick="window.adicionarPagamentoClassico && window.adicionarPagamentoClassico()" title="Adicionar Pagamento"
                 style="padding: 8px; background: #3ab55b; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">+</button>
             </div>
             <div id="lista-pagamentos-parciais"
@@ -916,7 +916,7 @@
               <span style="font-size: 11.5px; color: #666; white-space: nowrap;">Dividir em:</span>
               <input type="number" id="split-equal-parts" min="2" max="50" placeholder="Pessoas"
                 style="width: 55px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
-              <button id="btn-split-equal"
+              <button id="btn-split-equal" onclick="window.calcularSplitClassico && window.calcularSplitClassico()" title="Calcular Divisão Igual"
                 style="padding: 4px 8px; background: #2f80ed; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11.5px; font-weight: bold; flex: 1;">Calcular</button>
             </div>
           </div>
@@ -1165,7 +1165,7 @@
       style="background: white; padding: 30px; border-radius: 12px; width: 800px; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin:0;"><i class="ph ph-chart-bar"></i> Relatórios do Turno Atual</h2>
-        <button id="btn-fechar-relatorios" style="background:none; border:none; cursor:pointer;"><i class="ph ph-x"
+        <button id="btn-fechar-relatorios" onclick="document.getElementById('relatorios-overlay').style.display='none'" style="background:none; border:none; cursor:pointer;" title="Fechar"><i class="ph ph-x"
             style="font-size: 24px;"></i></button>
       </div>
 
@@ -1214,7 +1214,7 @@
       style="background: white; padding: 30px; border-radius: 12px; width: 800px; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin:0;"><i class="ph ph-currency-circle-dollar"></i> Fluxo de Caixa (Turno Atual)</h2>
-        <button id="btn-fechar-financeiro" style="background:none; border:none; cursor:pointer;"><i class="ph ph-x"
+        <button id="btn-fechar-financeiro" onclick="document.getElementById('financeiro-overlay').style.display='none'" style="background:none; border:none; cursor:pointer;" title="Fechar"><i class="ph ph-x"
             style="font-size: 24px;"></i></button>
       </div>
 
@@ -1257,7 +1257,7 @@
       style="background: white; padding: 30px; border-radius: 12px; width: 500px; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin:0;"><i class="ph ph-question"></i> Ajuda e Atalhos</h2>
-        <button id="btn-fechar-ajuda" style="background:none; border:none; cursor:pointer;"><i class="ph ph-x"
+        <button id="btn-fechar-ajuda" onclick="document.getElementById('ajuda-overlay').style.display='none'" style="background:none; border:none; cursor:pointer;" title="Fechar"><i class="ph ph-x"
             style="font-size: 24px;"></i></button>
       </div>
       <div style="margin-bottom: 20px;">

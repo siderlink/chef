@@ -86,6 +86,16 @@ body.theme-dark {
     box-sizing: border-box !important;
   }
 
+  .left-actions.mode-expanded,
+  .left-actions.sidebar-expanded,
+  #left-panel.mode-expanded,
+  #left-panel.sidebar-expanded,
+  .workspace.active-tab-mesas #left-panel.mode-expanded,
+  .workspace.active-tab-mesas #left-panel.sidebar-expanded {
+    width: var(--left-sidebar-width, 230px) !important;
+    min-width: 220px !important;
+  }
+
   .left-actions .panel-content-inner,
   #inner-left-panel {
     display: flex !important;
@@ -1659,14 +1669,39 @@ body.dark-mode .mesa-item {
 }
 
 /* MODO MINI (ÍCONES COMPACTOS) */
-.left-actions.sidebar-mini .btn-action span,
-.left-actions.sidebar-mini .group-title {
+.left-actions.sidebar-mini .group-title,
+.left-actions.mode-mini .group-title,
+.left-actions.dock-icon-only .group-title {
   display: none !important;
 }
 
-.left-actions.sidebar-mini .btn-action {
+.left-actions.sidebar-mini .btn-action,
+.left-actions.mode-mini .btn-action,
+.left-actions.dock-icon-only .btn-action {
+  font-size: 0 !important;
   justify-content: center !important;
-  padding: 8px !important;
+  padding: 8px 4px !important;
+  width: 44px !important;
+  height: 40px !important;
+  margin: 0 auto 6px auto !important;
+  gap: 0 !important;
+}
+
+.left-actions.sidebar-mini .btn-action i,
+.left-actions.mode-mini .btn-action i,
+.left-actions.dock-icon-only .btn-action i {
+  font-size: 20px !important;
+  margin: 0 !important;
+}
+
+.left-actions.sidebar-mini .btn-grid-2,
+.left-actions.mode-mini .btn-grid-2,
+.left-actions.dock-icon-only .btn-grid-2 {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 4px !important;
 }
 
 
@@ -2571,6 +2606,13 @@ body.force-mobile .btn-setor-tab {
 }
 
 /* ── Busca de Mesa/Comanda no TOP MENUBAR (presente em todas as visualizações) ── */
+/* Em desktop, reservar espaço à direita para o card QR Ponto sempre visível (~220px) */
+@media (min-width: 768px) {
+  .top-menubar {
+    padding-right: 220px !important;
+  }
+}
+
 .top-menubar #caixa-ux-search-box-topbar {
   width: 250px !important;
   max-width: 30vw !important;

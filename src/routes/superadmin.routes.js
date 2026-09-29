@@ -444,7 +444,36 @@ const CMD_BLOCKLIST = [
   /\bcipher\s+\/w/i               // wipe de disco
 ];
 // POST /api/super/exec centralizado em controllers/super-admin.js (evita conflito e duplicação)
-router.get('/api/super/afiliados', superAdminAuth, (req, res) => {
+  const initAfiliadosTables = (targetDb) => {
+    if (!targetDb || typeof targetDb.run !== 'function') return;
+    targetDb.run(`CREATE TABLE IF NOT EXISTS afiliados (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      telefone TEXT,
+      codigo_ref TEXT NOT NULL UNIQUE,
+      comissao_percentual REAL DEFAULT 10,
+      chave_pix TEXT,
+      password_hash TEXT,
+      status TEXT DEFAULT 'ativo',
+      criado_em DATETIME DEFAULT (datetime('now','localtime'))
+    )`, () => {});
+    targetDb.run(`CREATE TABLE IF NOT EXISTS afiliado_vendas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      afiliado_id INTEGER NOT NULL,
+      restaurante_id INTEGER,
+      restaurante_nome TEXT,
+      plano TEXT,
+      valor_venda REAL DEFAULT 0,
+      comissao_valor REAL DEFAULT 0,
+      data_venda DATETIME DEFAULT (datetime('now','localtime')),
+      status TEXT DEFAULT 'aprovado'
+    )`, () => {});
+  };
+  initAfiliadosTables(db);
+  initAfiliadosTables(masterDb);
+
+  router.get('/api/super/afiliados', superAdminAuth, (req, res) => {
   db.all(`
     SELECT a.*, 
            COUNT(DISTINCT v.id) as total_vendas,
