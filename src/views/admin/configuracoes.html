@@ -8336,6 +8336,70 @@ ChefModules.registerNavbarAction({ id: 'btn_acao', label: 'Meu Botão', onClick:
             </button>
           </div>
         </div>
+
+        <!-- CARD 4: MÓDULO FISCAL SAT SP (CF-e-SAT MODELO 59) -->
+        <div class="cfg-card">
+          <h3 style="margin:0 0 16px 0; color:var(--cfg-heading); font-size: 16px; font-weight:800; display:flex; align-items:center; gap:8px; border-bottom: 1px dashed var(--cfg-border); padding-bottom: 12px;">
+            <i class="ph-bold ph-hard-drive" style="color:#f59e0b; font-size:20px;"></i> SAT Fiscal SP — Aparelho CF-e-SAT (São Paulo)
+          </h3>
+          <p style="font-size:13px; color:var(--cfg-text-muted); margin-bottom:16px;">
+            Compatível com todos os equipamentos físicos homologados pela SEFAZ-SP (Dimep, Elgin, Bematech, Gertec, Control iD, Tanca, Sweda) e Emulador Oficial.
+          </p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom:18px;">
+            <div>
+              <label style="display:block; font-size: 12px; font-weight: 700; color:var(--cfg-text-muted); margin-bottom:5px;">Modelo Fiscal Ativo no Caixa</label>
+              <select id="cfg-modelo-fiscal-ativo" class="cfg-input" style="width:100%;">
+                <option value="nfce">NFC-e (Nota Fiscal de Consumidor Eletrônica - Brasil)</option>
+                <option value="sat">SAT Fiscal (CF-e-SAT Modelo 59 - Obrigatório em SP)</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size: 12px; font-weight: 700; color:var(--cfg-text-muted); margin-bottom:5px;">Número de Série do Equipamento SAT</label>
+              <input type="text" id="cfg-sat-serie" placeholder="Ex: 900001234" class="cfg-input" style="width:100%;">
+            </div>
+            <div>
+              <label style="display:block; font-size: 12px; font-weight: 700; color:var(--cfg-text-muted); margin-bottom:5px;">Código de Ativação do SAT</label>
+              <input type="password" id="cfg-sat-codigo-ativacao" placeholder="Senha cadastrada no aparelho" class="cfg-input" style="width:100%;">
+            </div>
+            <div>
+              <label style="display:block; font-size: 12px; font-weight: 700; color:var(--cfg-text-muted); margin-bottom:5px;">CNPJ da Software House</label>
+              <input type="text" id="cfg-sat-cnpj-sh" placeholder="11.111.111/0001-91" class="cfg-input" style="width:100%;">
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <label style="display:block; font-size: 12px; font-weight: 700; color:var(--cfg-text-muted); margin-bottom:5px;">Assinatura Digital de Vinculação (SignAC - Base64)</label>
+              <input type="text" id="cfg-sat-signac" placeholder="Código de vinculação gerado com o certificado digital" class="cfg-input" style="width:100%;">
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <button onclick="window.testarComunicacaoSAT()" class="cfg-btn"
+              style="padding: 10px 20px; background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); display: flex; align-items: center; gap: 8px;">
+              <i class="ph-bold ph-plugs-connected"></i> Testar Comunicação com Aparelho SAT
+            </button>
+            <button onclick="window.salvarConfiguracoesSAT()" class="cfg-btn"
+              style="padding: 12px 28px; background: #f59e0b; color: white; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(245,158,11,0.3);">
+              <i class="ph-bold ph-floppy-disk"></i> Salvar Parâmetros do SAT Fiscal SP
+            </button>
+          </div>
+        </div>
+
+        <!-- CARD 5: IMPORTADOR AUTOMÁTICO DE XML (DF-e SEFAZ & ESTOQUE) -->
+        <div class="cfg-card" style="border-left: 4px solid #10b981;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h3 style="margin:0 0 6px 0; color:var(--cfg-heading); font-size: 16px; font-weight:800; display:flex; align-items:center; gap:8px;">
+                <i class="ph-bold ph-file-arrow-up" style="color:#10b981; font-size:22px;"></i> Importador de XML de Compras & DF-e SEFAZ
+              </h3>
+              <p style="font-size:13px; color:var(--cfg-text-muted); margin:0; max-width:650px;">
+                Dê entrada de matérias-primas e insumos em segundos, converta unidades de fardos/caixas automaticamente, detecte inflação nos custos e alimente o Contas a Pagar sem digitação manual.
+              </p>
+            </div>
+            <a href="/importar-xml.html" target="_blank" class="cfg-btn"
+              style="padding: 12px 24px; background: #10b981; color: white; text-decoration:none; display: flex; align-items: center; gap: 8px; font-weight:700; border-radius:10px; box-shadow: 0 4px 14px rgba(16,185,129,0.3);">
+              <i class="ph-bold ph-arrow-square-out"></i> Abrir Importador de XML
+            </a>
+          </div>
+        </div>
+
       </div>
 
 <div class="admin-tab-content" id="admin-tab-gerenciar-notas"

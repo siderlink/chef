@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cheff.pro Quantum — O Futuro Imersivo da Gastronomia Autônoma</title>
-  <meta name="description" content="A experiência 3D definitiva para restaurantes: Da chegada com QR Code ao KDS na cozinha, divisão de comanda Pix, cancela liberada e fidelização gamificada.">
+  <title>Cheff.pro — Gestão de Alta Performance para Restaurantes</title>
+  <meta name="description" content="A plataforma completa para restaurantes: Da chegada com QR Code ao painel na cozinha, divisão de comanda integrada, controle de catraca e fidelização orgânica.">
   <link rel="icon" href="/icons/icon.ico" type="image/x-icon">
 
   <!-- Fontes de Alta Performance: Space Grotesk, Outfit & Plus Jakarta Sans -->
@@ -18,24 +18,24 @@
 
   <style>
     :root {
-      --bg-void: #030712;
-      --bg-deep: #050b18;
-      --gold: #f59e0b;
-      --gold-light: #fbbf24;
-      --gold-glow: rgba(245, 158, 11, 0.45);
-      --cyan-neon: #06b6d4;
-      --cyan-glow: rgba(6, 182, 212, 0.4);
-      --emerald-neon: #10b981;
-      --emerald-glow: rgba(16, 185, 129, 0.4);
-      --orange-neon: #fc4b15;
-      --orange-glow: rgba(252, 75, 21, 0.45);
-      --purple-neon: #8b5cf6;
-      --card-glass: rgba(10, 15, 29, 0.82);
-      --card-border: rgba(255, 255, 255, 0.09);
-      --card-border-glow: rgba(245, 158, 11, 0.35);
+      --bg-void: #030303;
+      --bg-deep: #0a0a0a;
+      --gold: #d4af37;
+      --gold-light: #f3e5ab;
+      --gold-glow: rgba(212, 175, 55, 0.15);
+      --cyan-neon: #cbd5e1;
+      --cyan-glow: rgba(203, 213, 225, 0.1);
+      --emerald-neon: #e2e8f0;
+      --emerald-glow: rgba(226, 232, 240, 0.1);
+      --orange-neon: #d4af37;
+      --orange-glow: rgba(212, 175, 55, 0.15);
+      --purple-neon: #94a3b8;
+      --card-glass: rgba(20, 20, 20, 0.65);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-glow: rgba(255, 255, 255, 0.12);
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
-      --text-dim: #64748b;
+      --text-dim: #475569;
       --font-display: 'Outfit', sans-serif;
       --font-mono: 'Space Grotesk', monospace;
       --font-body: 'Plus Jakarta Sans', sans-serif;
@@ -65,6 +65,17 @@
       height: 100vh;
       z-index: 1;
       pointer-events: none;
+      opacity: 0.65; /* Dimmer effect for high contrast text overlay */
+      transition: opacity 0.5s ease;
+    }
+    
+    @media (max-width: 768px) {
+      #webgl-canvas {
+        display: none; /* Optimize mobile performance */
+      }
+      body {
+        background: radial-gradient(circle at top right, #111, #000) !important;
+      }
     }
 
     /* ═══ PRELOADER HOLOGRÁFICO ═══ */
@@ -82,9 +93,9 @@
     .preloader-core {
       width: 80px;
       height: 80px;
-      border: 2px solid rgba(245, 158, 11, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.05);
       border-top: 2px solid var(--gold);
-      border-right: 2px solid var(--cyan-neon);
+      border-right: 2px solid var(--gold-light);
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-bottom: 24px;
@@ -168,16 +179,26 @@
       position: sticky;
       top: 72px;
       z-index: 90;
-      background: rgba(5, 11, 24, 0.92);
+      background: rgba(10, 10, 10, 0.95);
       backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--card-border);
       display: flex;
       overflow-x: auto;
-      scrollbar-width: none;
-      padding: 10px clamp(1rem, 3vw, 4rem);
+      scrollbar-width: thin;
+      scrollbar-color: var(--gold) rgba(255, 255, 255, 0.05);
+      padding: 10px clamp(1rem, 3vw, 4rem) 14px;
       gap: 10px;
     }
-    .journey-tracker::-webkit-scrollbar { display: none; }
+    .journey-tracker::-webkit-scrollbar { 
+      height: 4px;
+    }
+    .journey-tracker::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .journey-tracker::-webkit-scrollbar-thumb {
+      background: var(--gold);
+      border-radius: 4px;
+    }
 
     .step-btn {
       display: inline-flex;
@@ -225,7 +246,7 @@
       flex-direction: column;
       justify-content: center;
       padding: 100px 0 60px;
-      max-width: 58%;
+      max-width: 600px;
     }
     .hero-badge {
       display: inline-flex;
@@ -254,9 +275,7 @@
       margin-bottom: 24px;
     }
     .hero-title .gradient-text {
-      background: linear-gradient(135deg, #ffffff 0%, #f59e0b 50%, #fc4b15 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--gold);
     }
     .hero-subtitle {
       font-size: clamp(16px, 1.4vw, 20px);
@@ -316,21 +335,21 @@
       align-items: center;
     }
     .station-card {
-      background: var(--card-glass);
+      background: rgba(15, 15, 15, 0.85); /* Increased opacity for readability */
       border: 1px solid var(--card-border);
       border-radius: 28px;
       padding: clamp(32px, 4vw, 48px);
       max-width: 54%;
       position: relative;
       overflow: hidden;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6); /* Quieter shadow */
       transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
     }
     .station-card:hover {
-      border-color: var(--card-border-glow);
-      box-shadow: 0 30px 60px -15px rgba(245, 158, 11, 0.2);
+      border-color: rgba(255, 255, 255, 0.15); /* Sleek white border instead of loud gold glow */
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
     }
 
     .station-badge {
@@ -483,7 +502,7 @@
   <div id="preloader">
     <div class="preloader-core"></div>
     <div id="preloader-text" style="font-family:var(--font-mono); font-size:14px; color:var(--gold); letter-spacing:1px;">
-      INICIALIZANDO MOTOR 3D HOLOGRÁFICO...
+      PREPARANDO AMBIENTE DE DEMONSTRAÇÃO...
     </div>
   </div>
 
@@ -500,15 +519,15 @@
     <div class="header-telemetry">
       <div class="telemetry-pill">
         <span class="dot"></span>
-        <span>REDE 3D QUANTUM ATIVA</span>
+        <span>SISTEMA 100% OPERACIONAL</span>
       </div>
-      <span>LATÊNCIA: 0.8ms</span>
+      <span>SINC: 0.5s</span>
       <span>OFFLINE-FIRST ATIVO</span>
     </div>
 
     <div>
       <a href="/site.html" style="color:var(--text-muted); text-decoration:none; font-size:13px; font-weight:600; font-family:var(--font-mono);">
-        [ VERSÃO TRADICIONAL ]
+        [ FALAR COM ESPECIALISTA ]
       </a>
     </div>
   </header>
@@ -537,17 +556,17 @@
       </div>
 
       <h1 class="hero-title">
-        A Próxima Dimensão da <span class="gradient-text">Gastronomia.</span>
+        A Nova Era da <span class="gradient-text">Gestão de Restaurantes.</span>
       </h1>
 
       <p class="hero-subtitle">
-        Uma experiência imersiva e autônoma para o seu restaurante. Do QR Code na mesa e comanda mobile ao KDS na cozinha, divisão de conta instantânea, cancela liberada e estrelas de fidelidade.
+        Uma plataforma completa e intuitiva que transforma o caos do salão em uma operação eficiente. Do autoatendimento na mesa à organização da cozinha, você no controle total do seu negócio.
       </p>
 
       <div class="hero-cta-group">
         <a href="#station-1" class="btn-cta-gold">
           <i class="ph-bold ph-play-circle"></i>
-          <span>Explorar Jornada Operacional</span>
+          <span>Conhecer o Sistema</span>
         </a>
         <a href="#planos" class="btn-cta-glass">
           <i class="ph-bold ph-tag"></i>
@@ -578,7 +597,7 @@
         <div class="interactive-widget">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <strong style="color:var(--gold);"><i class="ph-bold ph-chair"></i> MESA 08 // CARDÁPIO DIGITAL</strong>
-            <span style="background:rgba(16,185,129,0.2); color:#34d399; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px;">CONECTADO</span>
+            <span style="background:rgba(16,185,129,0.2); color:#34d399; padding:2px 8px; border-radius:10px; font-weight:700; font-size:12px;">CONECTADO</span>
           </div>
           <div style="color:#94a3b8; font-size:12.5px;">Totem acrílico com leitor laser ativo • Pedidos enviados diretamente à cozinha.</div>
         </div>
@@ -759,7 +778,7 @@
         <div class="interactive-widget" style="border-left: 3px solid #10b981;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <strong style="color:#34d399;"><i class="ph-bold ph-check-circle"></i> CANCELA LIBERADA</strong>
-            <span style="color:#f59e0b; font-weight:700; font-size:11px;">18 MIN TOLERÂNCIA</span>
+            <span style="color:#f59e0b; font-weight:700; font-size:12px;">18 MIN TOLERÂNCIA</span>
           </div>
           <div style="color:#cbd5e1; font-size:12px; margin-top:4px;">Leitor ótico autorizou abertura imediata do braço mecânico.</div>
         </div>
@@ -823,7 +842,7 @@
         <!-- PLANO 2 (DESTAQUE) -->
         <div class="plan-box featured">
           <div>
-            <div style="display:inline-block; background:var(--gold); color:#000; font-weight:800; font-size:10px; padding:4px 10px; border-radius:4px; margin-bottom:8px; font-family:var(--font-mono);">
+            <div style="display:inline-block; background:var(--gold); color:#000; font-weight:800; font-size:12px; padding:4px 10px; border-radius:4px; margin-bottom:8px; font-family:var(--font-mono);">
               MAIS ESCOLHIDO // OPERAÇÃO COMPLETA
             </div>
             <h3 style="font-size: 26px; font-weight: 700;">Gourmet Pro</h3>
@@ -931,265 +950,258 @@
     window.addEventListener('resize', handleResize);
     handleResize();
 
-    // 3. ILUMINAÇÃO TOTALMENTE INFALÍVEL (3-POINT CAMERA RIG)
-    // As luzes são vinculadas diretamente à câmera: iluminam com intensidade máxima sempre a face visível!
-    const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
-    keyLight.position.set(4, 5, 8);
+    // 3. ILUMINAÇÃO DE ESTÚDIO PREMIUM
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    keyLight.position.set(4, 6, 6);
     camera.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0x06b6d4, 1.6);
-    fillLight.position.set(-5, -2, 6);
+    const fillLight = new THREE.DirectionalLight(0xe2e8f0, 1.2);
+    fillLight.position.set(-5, -2, 4);
     camera.add(fillLight);
 
-    const warmLight = new THREE.DirectionalLight(0xf59e0b, 1.8);
-    warmLight.position.set(2, -4, 5);
-    camera.add(warmLight);
+    const rimLight = new THREE.DirectionalLight(0xd4af37, 1.5);
+    rimLight.position.set(0, 5, -8);
+    camera.add(rimLight);
 
     scene.add(camera);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.1);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
 
-    const hemiLight = new THREE.HemisphereLight(0xfff7ed, 0x1e293b, 1.4);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x0a0a0a, 0.6);
     scene.add(hemiLight);
 
-    // 4. PARTÍCULAS CYBERNETIC NO FUNDO (1400 PONTOS NEON)
-    const particleCount = 1400;
+    // 4. PARTÍCULAS SUTIS (POEIRO DE VIDRO/LUZ)
+    const particleCount = 600;
     const particleGeo = new THREE.BufferGeometry();
     const particlePos = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i += 3) {
-      particlePos[i] = (Math.random() - 0.5) * 50;
-      particlePos[i + 1] = (Math.random() - 0.5) * 50;
-      particlePos[i + 2] = (Math.random() - 0.5) * 40;
+      particlePos[i] = (Math.random() - 0.5) * 40;
+      particlePos[i + 1] = (Math.random() - 0.5) * 40;
+      particlePos[i + 2] = (Math.random() - 0.5) * 30;
     }
     particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
     const particleMat = new THREE.PointsMaterial({
-      color: 0x38bdf8,
-      size: 0.14,
+      color: 0xffffff,
+      size: 0.08,
       transparent: true,
-      opacity: 0.6
+      opacity: 0.3
     });
     const starField = new THREE.Points(particleGeo, particleMat);
     scene.add(starField);
 
-    // 5. O NÚCLEO HOLOGRÁFICO 3D DO RESTAURANTE (EXPLODING CORE)
+    // MATERIAIS PREMIUM
+    const glassMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      metalness: 0.1,
+      roughness: 0.15,
+      transmission: 0.9,
+      thickness: 1.5,
+      ior: 1.5,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1
+    });
+
+    const goldMaterial = new THREE.MeshStandardMaterial({
+      color: 0xd4af37,
+      metalness: 1.0,
+      roughness: 0.15
+    });
+
+    const darkMetalMaterial = new THREE.MeshStandardMaterial({
+      color: 0x111111,
+      metalness: 0.9,
+      roughness: 0.4
+    });
+
+    // 5. O NÚCLEO HOLOGRÁFICO 3D (ABSTRACT PREMIUM CORE)
     const core3D = new THREE.Group();
     scene.add(core3D);
     core3D.position.set(3.4, 0, 0);
 
-    // A. Base Tecnológica / Mesa Inteligente
-    const baseGeo = new THREE.BoxGeometry(4.8, 0.35, 3.4);
-    const baseMat = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
-      metalness: 0.8,
-      roughness: 0.2,
-      emissive: 0x0f172a,
-      emissiveIntensity: 0.3
-    });
-    const layerBase = new THREE.Mesh(baseGeo, baseMat);
+    // A. Base Tecnológica (Pedestal minimalista)
+    const baseGeo = new THREE.CylinderGeometry(2.4, 2.6, 0.2, 64);
+    const layerBase = new THREE.Mesh(baseGeo, darkMetalMaterial);
     core3D.add(layerBase);
 
-    // Wireframe Neon Ciano na Base
-    const baseWire = new THREE.LineSegments(
-      new THREE.EdgesGeometry(baseGeo),
-      new THREE.LineBasicMaterial({ color: 0x06b6d4, linewidth: 2 })
+    const baseRing = new THREE.Mesh(
+      new THREE.TorusGeometry(2.5, 0.03, 16, 64),
+      goldMaterial
     );
-    layerBase.add(baseWire);
+    baseRing.rotation.x = Math.PI / 2;
+    layerBase.add(baseRing);
 
-    // B. Núcleo Holográfico Central (Octaedro Quântico)
-    const coreGeo = new THREE.OctahedronGeometry(1.3, 1);
-    const coreMat = new THREE.MeshStandardMaterial({
-      color: 0xf59e0b,
-      emissive: 0xd97706,
-      emissiveIntensity: 0.75,
-      wireframe: true
-    });
-    const layerCore = new THREE.Mesh(coreGeo, coreMat);
-    layerCore.position.y = 1.2;
+    // B. Núcleo Central (Torus Knot Metálico)
+    const coreGeo = new THREE.TorusKnotGeometry(0.8, 0.25, 128, 32);
+    const layerCore = new THREE.Mesh(coreGeo, goldMaterial);
+    layerCore.position.y = 1.4;
     core3D.add(layerCore);
 
-    // Anéis Quânticos Rotatórios em torno do Núcleo
-    const ringGeo1 = new THREE.TorusGeometry(2.0, 0.045, 16, 80);
-    const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.9 });
-    const ringMesh1 = new THREE.Mesh(ringGeo1, ringMat1);
+    // Anéis de Vidro Rotatórios
+    const ringGeo1 = new THREE.TorusGeometry(1.8, 0.08, 16, 100);
+    const ringMesh1 = new THREE.Mesh(ringGeo1, glassMaterial);
     ringMesh1.rotation.x = Math.PI / 2.3;
     layerCore.add(ringMesh1);
 
-    const ringGeo2 = new THREE.TorusGeometry(2.1, 0.045, 16, 80);
-    const ringMat2 = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.9 });
-    const ringMesh2 = new THREE.Mesh(ringGeo2, ringMat2);
+    const ringGeo2 = new THREE.TorusGeometry(2.0, 0.05, 16, 100);
+    const ringMesh2 = new THREE.Mesh(ringGeo2, glassMaterial);
     ringMesh2.rotation.y = Math.PI / 3;
     layerCore.add(ringMesh2);
 
-    // C. Prato de Alta Gastronomia e Cloche Flutuante
+    // C. Prato e Cloche (Abstratos em Vidro e Metal)
     const dishGroup = new THREE.Group();
     dishGroup.position.y = 2.4;
     core3D.add(dishGroup);
 
-    const plateGeo = new THREE.CylinderGeometry(2.2, 1.8, 0.15, 48);
-    const plateMat = new THREE.MeshStandardMaterial({
-      color: 0xf8fafc,
-      roughness: 0.2,
-      metalness: 0.2,
-      emissive: 0x334155,
-      emissiveIntensity: 0.2
-    });
-    const plateMesh = new THREE.Mesh(plateGeo, plateMat);
+    const plateGeo = new THREE.CylinderGeometry(2.0, 1.8, 0.1, 64);
+    const plateMesh = new THREE.Mesh(plateGeo, darkMetalMaterial);
     dishGroup.add(plateMesh);
 
-    // Filete de Ouro no Prato
     const goldRim = new THREE.Mesh(
-      new THREE.TorusGeometry(2.2, 0.06, 16, 48),
-      new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.1, emissive: 0xb45309, emissiveIntensity: 0.4 })
+      new THREE.TorusGeometry(2.0, 0.04, 16, 64),
+      goldMaterial
     );
     goldRim.rotation.x = Math.PI / 2;
     dishGroup.add(goldRim);
 
-    // Cloche de Prata com Puxador
+    // Cloche de Vidro
     const clocheGroup = new THREE.Group();
     dishGroup.add(clocheGroup);
 
     const clocheDome = new THREE.Mesh(
-      new THREE.SphereGeometry(1.9, 36, 18, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshStandardMaterial({
-        color: 0xe2e8f0,
-        metalness: 0.85,
-        roughness: 0.15,
-        emissive: 0x475569,
-        emissiveIntensity: 0.3
-      })
+      new THREE.SphereGeometry(1.9, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2),
+      glassMaterial
     );
     clocheGroup.add(clocheDome);
 
     const clocheHandle = new THREE.Mesh(
-      new THREE.TorusGeometry(0.32, 0.08, 14, 28),
-      new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.95, roughness: 0.1, emissive: 0xb45309, emissiveIntensity: 0.5 })
+      new THREE.CylinderGeometry(0.15, 0.15, 0.3, 32),
+      goldMaterial
     );
     clocheHandle.position.y = 2.05;
     clocheGroup.add(clocheHandle);
 
-    // D. Hambúrguer Gourmet Explodido dentro do Prato
+    // D. "Hambúrguer" Abstrato (Camadas de dados / UI Flutuante)
     const burgerGroup = new THREE.Group();
     dishGroup.add(burgerGroup);
 
-    const bunMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4, emissive: 0x78350f, emissiveIntensity: 0.25 });
-    const bunBottom = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 0.95, 0.25, 24), bunMat);
-    bunBottom.position.y = 0.2;
-    burgerGroup.add(bunBottom);
+    const layer1 = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.15, 64), glassMaterial);
+    layer1.position.y = 0.3;
+    burgerGroup.add(layer1);
 
-    const patty = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.05, 1.05, 0.3, 24),
-      new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.7, emissive: 0x271003, emissiveIntensity: 0.3 })
-    );
-    patty.position.y = 0.5;
-    burgerGroup.add(patty);
+    const layer2 = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.2, 64), goldMaterial);
+    layer2.position.y = 0.6;
+    burgerGroup.add(layer2);
 
-    const cheese = new THREE.Mesh(
-      new THREE.BoxGeometry(1.4, 0.05, 1.4),
-      new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.25, emissive: 0xd97706, emissiveIntensity: 0.35 })
-    );
-    cheese.position.y = 0.7;
-    cheese.rotation.y = Math.PI / 4;
-    burgerGroup.add(cheese);
+    const layer3 = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.1, 64), glassMaterial);
+    layer3.position.y = 0.85;
+    burgerGroup.add(layer3);
 
-    const lettuce = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.2, 1.15, 0.06, 24),
-      new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.6, emissive: 0x15803d, emissiveIntensity: 0.3 })
-    );
-    lettuce.position.y = 0.85;
-    burgerGroup.add(lettuce);
-
-    const bunTop = new THREE.Mesh(new THREE.SphereGeometry(1.05, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), bunMat);
-    bunTop.position.y = 0.95;
+    const bunTop = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2.5), darkMetalMaterial);
+    bunTop.position.y = 1.0;
     burgerGroup.add(bunTop);
 
-    // E. Ticket Térmico Flutuante com QR Code
+    // Referências animadas nas timelines (preservando nomes para não quebrar GSAP)
+    const bunBottom = layer1;
+    const patty = layer2;
+    const cheese = layer3;
+    const lettuce = layer3; // reutilizado para a timeline
+
+    // E. Ticket Térmico Flutuante (Card UI Premium)
     const ticketCanvas = document.createElement('canvas');
     ticketCanvas.width = 320;
     ticketCanvas.height = 440;
     const tctx = ticketCanvas.getContext('2d');
-    tctx.fillStyle = '#ffffff';
+    
+    // Fundo Gradiente Escuro
+    const grad = tctx.createLinearGradient(0, 0, 0, 440);
+    grad.addColorStop(0, '#111111');
+    grad.addColorStop(1, '#0a0a0a');
+    tctx.fillStyle = grad;
     tctx.fillRect(0, 0, 320, 440);
-    tctx.fillStyle = '#0f172a';
-    tctx.font = 'bold 22px monospace';
+    
+    // Borda Ouro
+    tctx.strokeStyle = '#d4af37';
+    tctx.lineWidth = 4;
+    tctx.strokeRect(2, 2, 316, 436);
+
+    tctx.fillStyle = '#ffffff';
+    tctx.font = '500 20px "Plus Jakarta Sans", sans-serif';
     tctx.textAlign = 'center';
-    tctx.fillText('*** CHEFF.PRO ***', 160, 42);
-    tctx.font = 'bold 18px monospace';
-    tctx.fillText('MESA 08 • 19:42', 160, 78);
-    tctx.fillText('--------------------', 160, 105);
+    tctx.fillText('CHEFF.PRO PREMIUM', 160, 50);
+    
+    tctx.fillStyle = '#d4af37';
+    tctx.font = '400 16px "Space Grotesk", monospace';
+    tctx.fillText('MESA 08 • 19:42', 160, 80);
+    
+    tctx.fillStyle = '#333333';
+    tctx.fillRect(40, 100, 240, 1);
+    
     tctx.textAlign = 'left';
-    tctx.font = '15px monospace';
-    tctx.fillText('1x BURGER TRUFADO', 28, 145);
-    tctx.fillText('1x BATATA RÚSTICA', 28, 180);
-    tctx.fillText('2x CHOPP ARTESANAL', 28, 215);
-    tctx.fillText('--------------------', 28, 250);
-    tctx.font = 'bold 20px monospace';
-    tctx.fillText('TOTAL: R$ 136,00', 28, 288);
-    tctx.fillStyle = '#16a34a';
-    tctx.font = 'bold 17px monospace';
-    tctx.fillText('✓ CONTA SINCRONIZADA', 28, 330);
+    tctx.fillStyle = '#e2e8f0';
+    tctx.font = '300 15px "Space Grotesk", monospace';
+    tctx.fillText('1x MENU DEGUSTAÇÃO', 30, 145);
+    tctx.fillText('1x VINHO RESERVA', 30, 180);
+    tctx.fillText('2x ÁGUA PANNA', 30, 215);
+    
+    tctx.fillStyle = '#333333';
+    tctx.fillRect(40, 250, 240, 1);
+    
+    tctx.fillStyle = '#ffffff';
+    tctx.font = '600 20px "Space Grotesk", monospace';
+    tctx.fillText('TOTAL: R$ 420,00', 30, 295);
+    
+    tctx.fillStyle = '#d4af37';
+    tctx.font = '500 16px "Space Grotesk", monospace';
+    tctx.fillText('✓ CONTA SINCRONIZADA', 30, 340);
 
     const ticketTex = new THREE.CanvasTexture(ticketCanvas);
+    ticketTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    
     const ticketGroup = new THREE.Group();
     ticketGroup.position.set(2.4, 1.3, 0.4);
-    ticketGroup.scale.set(0.001, 0.001, 0.001); // Oculto inicialmente, aparece nas estações certas
+    ticketGroup.scale.set(0.001, 0.001, 0.001);
     core3D.add(ticketGroup);
 
     const ticketMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(1.8, 2.4),
       new THREE.MeshStandardMaterial({
         map: ticketTex,
-        roughness: 0.5,
-        side: THREE.DoubleSide,
-        emissive: 0xffffff,
-        emissiveIntensity: 0.15
+        roughness: 0.2,
+        metalness: 0.8,
+        side: THREE.DoubleSide
       })
     );
     ticketMesh.rotation.set(-0.1, -0.3, 0.08);
     ticketGroup.add(ticketMesh);
 
-    // F. Grupo de Fidelidade & Estrelas (Exclusivo da Etapa 8)
+    // F. Grupo de Fidelidade & Estrelas (Minimalista Dourado)
     const starsGroup = new THREE.Group();
     starsGroup.position.set(0, 1.2, 0);
-    starsGroup.scale.set(0.001, 0.001, 0.001); // Oculto inicialmente, explode em glória na Etapa 8
+    starsGroup.scale.set(0.001, 0.001, 0.001);
     core3D.add(starsGroup);
 
-    // Troféu Estrela Central Dourada Quântica
     const centerStar = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(1.3, 0),
-      new THREE.MeshStandardMaterial({
-        color: 0xf59e0b,
-        emissive: 0xd97706,
-        emissiveIntensity: 0.95,
-        metalness: 0.95,
-        roughness: 0.1
-      })
+      new THREE.IcosahedronGeometry(1.0, 0),
+      goldMaterial
     );
     starsGroup.add(centerStar);
 
-    // Halo de Glória Dourado
     const haloGold = new THREE.Mesh(
-      new THREE.TorusGeometry(2.4, 0.06, 16, 64),
-      new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.95, roughness: 0.1, emissive: 0xb45309, emissiveIntensity: 0.6 })
+      new THREE.TorusGeometry(2.0, 0.03, 32, 100),
+      goldMaterial
     );
     haloGold.rotation.x = Math.PI / 2.2;
     starsGroup.add(haloGold);
 
-    // 6 Moedas/Gemas Douradas Orbitando
     const starMeshes = [];
     for (let s = 0; s < 6; s++) {
       const star = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.38, 0),
-        new THREE.MeshStandardMaterial({
-          color: 0xfbbf24,
-          emissive: 0xf59e0b,
-          emissiveIntensity: 0.95,
-          metalness: 0.95,
-          roughness: 0.1
-        })
+        new THREE.OctahedronGeometry(0.25, 0),
+        goldMaterial
       );
       const angle = (s / 6) * Math.PI * 2;
-      star.position.set(Math.cos(angle) * 2.8, Math.sin(s * 1.5) * 0.4, Math.sin(angle) * 2.8);
+      star.position.set(Math.cos(angle) * 2.4, Math.sin(s * 1.5) * 0.4, Math.sin(angle) * 2.4);
       starsGroup.add(star);
       starMeshes.push(star);
     }

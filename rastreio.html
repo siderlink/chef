@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Acompanhe seu Pedido ao Vivo - Cheff Delivery</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Phosphor Icons -->
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  
+  <script src="/socket.io.min.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <style>
+    :root {
+      --bg-page: #0f172a;
+      --bg-card: #1e293b;
+      --border-card: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #f97316;
+      --primary-glow: rgba(249, 115, 22, 0.25);
+      --success: #22c55e;
+      --accent: #38bdf8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    body {
+      background: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* MAPA FULLSCREEN / RESPONSIVO */
+    #mapa-container {
+      position: relative;
+      width: 100%;
+      height: 48vh;
+      min-height: 280px;
+      background: #1e293b;
+      z-index: 1;
+    }
+    #mapa {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* HEADER FLUTUANTE SOBRE O MAPA */
+    .tracking-header {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--primary);
+    }
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(34, 197, 94, 0.18);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: var(--success);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 10px var(--success);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    /* CARD DE STATUS & DETALHES */
+    .tracking-body {
+      flex: 1;
+      background: var(--bg-page);
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      margin-top: -20px;
+      position: relative;
+      z-index: 10;
+      padding: 20px 16px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.3);
+    }
+
+    /* CARD DE STATUS PRINCIPAL */
+    .status-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .eta-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding-bottom: 12px;
+    }
+    .eta-title {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .eta-val {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--primary);
+    }
+
+    /* BARRA DE PROGRESSO COM 4 ETAPAS */
+    .stepper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      margin: 8px 0;
+    }
+    .stepper::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 20px;
+      right: 20px;
+      height: 3px;
+      background: var(--border-card);
+      z-index: 1;
+    }
+    .stepper-progress {
+      position: absolute;
+      top: 14px;
+      left: 20px;
+      height: 3px;
+      background: linear-gradient(90deg, #f97316, #22c55e);
+      z-index: 2;
+      transition: width 0.6s ease;
+      width: 66%;
+    }
+    .step-item {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 25%;
+      text-align: center;
+    }
+    .step-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid var(--border-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: var(--text-muted);
+      transition: all 0.3s;
+    }
+    .step-item.active .step-circle {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+      box-shadow: 0 0 14px var(--primary-glow);
+    }
+    .step-item.completed .step-circle {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+    .step-label {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .step-item.active .step-label {
+      color: var(--text-main);
+    }
+
+    /* CARD DO ENTREGADOR */
+    .motoboy-profile {
+      background: rgba(249, 115, 22, 0.08);
+      border: 1px solid rgba(249, 115, 22, 0.25);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .motoboy-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: white;
+      flex-shrink: 0;
+    }
+    .btn-contact {
+      background: rgba(34, 197, 94, 0.16);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: var(--success);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-contact:hover {
+      background: var(--success);
+      color: white;
+    }
+
+    /* DETALHES DO PEDIDO */
+    .order-details-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .detail-row b {
+      color: var(--text-main);
+    }
+
+    /* ÍCONE CUSTOMIZADO DA MOTO NO LEAFLET */
+    .moto-marker-icon {
+      background: none;
+      border: none;
+    }
+    .moto-pin-bubble {
+      width: 46px;
+      height: 46px;
+      background: #f97316;
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 4px 18px rgba(249, 115, 22, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: white;
+      transition: transform 0.4s ease;
+    }
+    .client-pin-bubble {
+      width: 40px;
+      height: 40px;
+      background: #3b82f6;
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      color: white;
+    }
+    .rest-pin-bubble {
+      width: 40px;
+      height: 40px;
+      background: #10b981;
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      color: white;
+    }
+
+    /* ESTADO VAZIO / ERRO */
+    .state-overlay {
+      display: none;
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MAPA AO VIVO -->
+  <div id="mapa-container">
+    <div class="tracking-header">
+      <div class="header-logo">
+        <i class="ph-bold ph-moped" style="font-size: 22px;"></i>
+        <span id="nome-restaurante-header">Cheff Delivery</span>
+      </div>
+      <div class="live-badge" id="badge-gps-live">
+        <span class="pulse-dot"></span>
+        <span id="txt-gps-live">Rastreio Ao Vivo</span>
+      </div>
+    </div>
+    <div id="mapa"></div>
+  </div>
+
+  <!-- CONTEÚDO E STATUS DO PEDIDO -->
+  <div class="tracking-body" id="tracking-body">
+
+    <!-- CARD PRINCIPAL DE STATUS -->
+    <div class="status-card">
+      <div class="eta-box">
+        <div>
+          <div class="eta-title">Previsão de Chegada</div>
+          <div class="eta-val" id="eta-tempo">15 a 25 min</div>
+        </div>
+        <div style="text-align: right;">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Pedido</span>
+          <div style="font-size: 16px; font-weight: 900; color: var(--text-main);" id="pedido-numero">#---</div>
+        </div>
+      </div>
+
+      <!-- PROGRESS TRACKER (4 ETAPAS) -->
+      <div class="stepper">
+        <div class="stepper-progress" id="stepper-bar" style="width: 66%;"></div>
+        
+        <div class="step-item completed" id="step-1">
+          <div class="step-circle"><i class="ph-bold ph-check"></i></div>
+          <span class="step-label">Confirmado</span>
+        </div>
+        <div class="step-item completed" id="step-2">
+          <div class="step-circle"><i class="ph-bold ph-cooking-pot"></i></div>
+          <span class="step-label">Na Cozinha</span>
+        </div>
+        <div class="step-item active" id="step-3">
+          <div class="step-circle"><i class="ph-bold ph-moped"></i></div>
+          <span class="step-label">A Caminho</span>
+        </div>
+        <div class="step-item" id="step-4">
+          <div class="step-circle"><i class="ph-bold ph-house"></i></div>
+          <span class="step-label">Entregue</span>
+        </div>
+      </div>
+
+      <!-- STATUS MENSAGEM DINÂMICA -->
+      <div id="status-alerta" style="background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.25); border-radius: 12px; padding: 10px 12px; font-size: 12.5px; color: #fdba74; display: flex; align-items: center; gap: 8px;">
+        <i class="ph-bold ph-info" style="font-size: 18px; flex-shrink: 0;"></i>
+        <span id="status-texto-desc">O entregador já está em rota e se aproximando do seu endereço.</span>
+      </div>
+    </div>
+
+    <!-- CARD DO ENTREGADOR -->
+    <div class="motoboy-profile" id="card-motoboy">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="motoboy-avatar">🛵</div>
+        <div>
+          <h4 style="margin: 0; font-size: 14.5px; font-weight: 800; color: var(--text-main);" id="motoboy-nome">Entregador Cheff</h4>
+          <span style="font-size: 12px; color: var(--text-muted);" id="motoboy-placa">Placa: BRA-2E19</span>
+        </div>
+      </div>
+      <a href="#" id="btn-contatar-restaurante" target="_blank" class="btn-contact">
+        <i class="ph-bold ph-whatsapp-logo" style="font-size: 16px;"></i> Contatar
+      </a>
+    </div>
+
+    <!-- DETALHES DO PEDIDO -->
+    <div class="order-details-card">
+      <h4 style="font-size: 13.5px; font-weight: 800; color: var(--text-main); margin-bottom: 2px;">
+        <i class="ph-bold ph-receipt"></i> Detalhes da Entrega
+      </h4>
+
+      <div class="detail-row">
+        <span>Destinatário:</span>
+        <b id="cliente-nome">---</b>
+      </div>
+      <div class="detail-row">
+        <span>Endereço de Entrega:</span>
+        <b id="cliente-endereco" style="text-align: right; max-width: 65%;">---</b>
+      </div>
+      <div class="detail-row">
+        <span>Forma de Pagamento:</span>
+        <b id="pedido-pagamento">---</b>
+      </div>
+      <div class="detail-row" style="border-top: 1px dashed var(--border-card); padding-top: 8px;">
+        <span>Total a Pagar:</span>
+        <b style="color: var(--success); font-size: 16px;" id="pedido-total">R$ 0,00</b>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SCRIPT DE RASTREAMENTO LEAFLET + SOCKET -->
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token') || urlParams.get('t') || '';
+
+    let mapa = null;
+    let motoMarker = null;
+    let clientMarker = null;
+    let restMarker = null;
+    let rotaPolyline = null;
+    let socket = null;
+
+    // Inicializa Mapa
+    function initMap(lat, lng) {
+      if (mapa) return;
+      mapa = L.map('mapa', {
+        zoomControl: false,
+        attributionControl: false
+      }).setView([lat, lng], 15);
+
+      // Tiles Dark Modern (CartoDB DarkMatter)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        subdomains: 'abcd'
+      }).addTo(mapa);
+    }
+
+    // Cria ícone personalizado
+    function createCustomIcon(className, innerHtml) {
+      return L.divIcon({
+        className: className,
+        html: innerHtml,
+        iconSize: [46, 46],
+        iconAnchor: [23, 23]
+      });
+    }
+
+    // Carrega dados iniciais do rastreamento
+    async function carregarRastreio() {
+      if (!token) {
+        alert('Código de rastreamento não informado na URL.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/public/rastreio/' + token);
+        const data = await res.json();
+
+        if (!data || !data.ok) {
+          document.getElementById('tracking-body').innerHTML = `
+            <div style="padding: 60px 20px; text-align: center; color: var(--text-muted);">
+              <i class="ph-bold ph-warning-circle" style="font-size: 48px; color: #ef4444; margin-bottom: 12px;"></i>
+              <h3 style="color: var(--text-main); margin-bottom: 6px;">Entrega não encontrada</h3>
+              <p style="font-size: 13.5px;">Este link de rastreamento expirou ou já foi finalizado com sucesso.</p>
+            </div>
+          `;
+          return;
+        }
+
+        renderDados(data);
+      } catch (err) {
+        console.error('Erro ao buscar rastreio:', err);
+      }
+    }
+
+    function renderDados(data) {
+      const { cliente, pedido, motoboy, restaurante, status_entrega } = data;
+
+      // Textos e Labels
+      document.getElementById('nome-restaurante-header').innerText = restaurante.nome || 'Cheff Delivery';
+      document.getElementById('pedido-numero').innerText = '#' + pedido.id;
+      document.getElementById('cliente-nome').innerText = cliente.nome || 'Cliente';
+      document.getElementById('cliente-endereco').innerText = `${cliente.endereco || ''} (${cliente.bairro || ''})`;
+      document.getElementById('pedido-pagamento').innerText = pedido.forma_pagamento || 'Combinado';
+      document.getElementById('pedido-total').innerText = 'R$ ' + (parseFloat(pedido.total) || 0).toFixed(2).replace('.', ',');
+      document.getElementById('motoboy-nome').innerText = motoboy.nome || 'Entregador Cheff';
+      document.getElementById('motoboy-placa').innerText = motoboy.placa ? `Placa: ${motoboy.placa}` : 'Entregador Cheff Oficial';
+
+      // Link WhatsApp do Restaurante
+      if (restaurante.telefone) {
+        const tel = restaurante.telefone.replace(/\D/g, '');
+        document.getElementById('btn-contatar-restaurante').href = `https://api.whatsapp.com/send?phone=55${tel}&text=Olá! Estou acompanhando meu pedido #${pedido.id}`;
+      } else {
+        document.getElementById('btn-contatar-restaurante').style.display = 'none';
+      }
+
+      // Atualiza Etapas
+      if (status_entrega === 'entregue') {
+        setStep(4);
+      } else {
+        setStep(3);
+      }
+
+      // Posição padrão caso motoboy não tenha GPS ainda
+      const defaultLat = motoboy.lat || restaurante.lat || -23.5505;
+      const defaultLng = motoboy.lng || restaurante.lng || -46.6333;
+
+      initMap(defaultLat, defaultLng);
+
+      // Adiciona Marcador da Loja
+      if (restaurante.lat && restaurante.lng) {
+        restMarker = L.marker([restaurante.lat, restaurante.lng], {
+          icon: createCustomIcon('moto-marker-icon', '<div class="rest-pin-bubble">🏪</div>')
+        }).addTo(mapa).bindPopup(`<b>${restaurante.nome}</b><br>Ponto de Partida`);
+      }
+
+      // Adiciona Marcador do Motoboy
+      const motoLat = motoboy.lat || defaultLat;
+      const motoLng = motoboy.lng || defaultLng;
+
+      if (!motoMarker) {
+        motoMarker = L.marker([motoLat, motoLng], {
+          icon: createCustomIcon('moto-marker-icon', '<div class="moto-pin-bubble" id="moto-pin">🛵</div>')
+        }).addTo(mapa).bindPopup(`<b>${motoboy.nome}</b><br>Em rota de entrega`);
+      } else {
+        motoMarker.setLatLng([motoLat, motoLng]);
+      }
+
+      mapa.setView([motoLat, motoLng], 15);
+    }
+
+    function setStep(step) {
+      const s1 = document.getElementById('step-1');
+      const s2 = document.getElementById('step-2');
+      const s3 = document.getElementById('step-3');
+      const s4 = document.getElementById('step-4');
+      const bar = document.getElementById('stepper-bar');
+      const txt = document.getElementById('status-texto-desc');
+      const eta = document.getElementById('eta-tempo');
+
+      if (step === 3) {
+        s1.className = 'step-item completed';
+        s2.className = 'step-item completed';
+        s3.className = 'step-item active';
+        s4.className = 'step-item';
+        bar.style.width = '66%';
+        txt.innerText = 'O motoboy está em rota e se aproximando do seu endereço!';
+        eta.innerText = '10 a 20 min';
+      } else if (step === 4) {
+        s1.className = 'step-item completed';
+        s2.className = 'step-item completed';
+        s3.className = 'step-item completed';
+        s4.className = 'step-item completed';
+        bar.style.width = '100%';
+        txt.innerText = '✅ Pedido entregue com sucesso! Bom apetite!';
+        eta.innerText = 'Entregue!';
+        document.getElementById('badge-gps-live').style.display = 'none';
+      }
+    }
+
+    // ─── SOCKET.IO AO VIVO ──────────────────────────────────────────
+    if (typeof io !== 'undefined') {
+      socket = io();
+
+      // Escuta posição do motoboy em tempo real
+      socket.on('rastreio_gps_live_' + token, (data) => {
+        const { lat, lng, heading, velocidade } = data;
+        if (!lat || !lng) return;
+
+        if (motoMarker) {
+          motoMarker.setLatLng([lat, lng]);
+          const pin = document.getElementById('moto-pin');
+          if (pin && heading) {
+            pin.style.transform = `rotate(${heading}deg)`;
+          }
+        } else if (mapa) {
+          motoMarker = L.marker([lat, lng], {
+            icon: createCustomIcon('moto-marker-icon', '<div class="moto-pin-bubble" id="moto-pin">🛵</div>')
+          }).addTo(mapa);
+        }
+
+        // Suave pan no mapa mantendo o motoboy visível
+        if (mapa) {
+          mapa.panTo([lat, lng], { animate: true, duration: 1.0 });
+        }
+      });
+
+      // Escuta mudança de status do pedido (ex: quando o motoboy confirma entrega)
+      socket.on('rastreio_status_' + token, (data) => {
+        if (data.status === 'entregue') {
+          setStep(4);
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', carregarRastreio);
+  </script>
+</body>
+</html>

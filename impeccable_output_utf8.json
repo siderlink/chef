@@ -1,0 +1,353 @@
+﻿[
+  {
+    "antipattern": "side-tab",
+    "name": "Side-tab accent border",
+    "description": "Thick colored border on one side of a card ÔÇö the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "border-left: 3px + border-radius: 18px"
+  },
+  {
+    "antipattern": "side-tab",
+    "name": "Side-tab accent border",
+    "description": "Thick colored border on one side of a card ÔÇö the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "border-left: 3px + border-radius: 18px"
+  },
+  {
+    "antipattern": "side-tab",
+    "name": "Side-tab accent border",
+    "description": "Thick colored border on one side of a card ÔÇö the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "border-left: 3px + border-radius: 18px"
+  },
+  {
+    "antipattern": "low-contrast",
+    "name": "Low contrast text",
+    "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "2.7:1 (need 4.5:1) ÔÇö text #475569 on #030303"
+  },
+  {
+    "antipattern": "dark-glow",
+    "name": "Glowing shadow accents",
+    "description": "Colored glow shadows ÔÇö a zero-offset chromatic halo (box- or text-shadow) on any background, or any colored blurred shadow on a dark background ÔÇö are the default \"cool\" look of AI-generated UIs. Use neutral elevation shadows and subtle, purposeful lighting instead.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Zero-offset box-shadow glow (#d4af37)"
+  },
+  {
+    "antipattern": "dark-glow",
+    "name": "Glowing shadow accents",
+    "description": "Colored glow shadows ÔÇö a zero-offset chromatic halo (box- or text-shadow) on any background, or any colored blurred shadow on a dark background ÔÇö are the default \"cool\" look of AI-generated UIs. Use neutral elevation shadows and subtle, purposeful lighting instead.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Zero-offset box-shadow glow (#d4af37)"
+  },
+  {
+    "antipattern": "dark-glow",
+    "name": "Glowing shadow accents",
+    "description": "Colored glow shadows ÔÇö a zero-offset chromatic halo (box- or text-shadow) on any background, or any colored blurred shadow on a dark background ÔÇö are the default \"cool\" look of AI-generated UIs. Use neutral elevation shadows and subtle, purposeful lighting instead.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Zero-offset box-shadow glow (#10b981)"
+  },
+  {
+    "antipattern": "dark-glow",
+    "name": "Glowing shadow accents",
+    "description": "Colored glow shadows ÔÇö a zero-offset chromatic halo (box- or text-shadow) on any background, or any colored blurred shadow on a dark background ÔÇö are the default \"cool\" look of AI-generated UIs. Use neutral elevation shadows and subtle, purposeful lighting instead.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Zero-offset box-shadow glow (#d4af37)"
+  },
+  {
+    "antipattern": "dark-glow",
+    "name": "Glowing shadow accents",
+    "description": "Colored glow shadows ÔÇö a zero-offset chromatic halo (box- or text-shadow) on any background, or any colored blurred shadow on a dark background ÔÇö are the default \"cool\" look of AI-generated UIs. Use neutral elevation shadows and subtle, purposeful lighting instead.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Zero-offset box-shadow glow (#f59e0b)"
+  },
+  {
+    "antipattern": "dark-glow",
+    "name": "Glowing shadow accents",
+    "description": "Colored glow shadows ÔÇö a zero-offset chromatic halo (box- or text-shadow) on any background, or any colored blurred shadow on a dark background ÔÇö are the default \"cool\" look of AI-generated UIs. Use neutral elevation shadows and subtle, purposeful lighting instead.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Colored box-shadow glow (#d4af37) on dark background"
+  },
+  {
+    "antipattern": "dark-glow",
+    "name": "Glowing shadow accents",
+    "description": "Colored glow shadows ÔÇö a zero-offset chromatic halo (box- or text-shadow) on any background, or any colored blurred shadow on a dark background ÔÇö are the default \"cool\" look of AI-generated UIs. Use neutral elevation shadows and subtle, purposeful lighting instead.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Zero-offset box-shadow glow (#d4af37)"
+  },
+  {
+    "antipattern": "dark-glow",
+    "name": "Glowing shadow accents",
+    "description": "Colored glow shadows ÔÇö a zero-offset chromatic halo (box- or text-shadow) on any background, or any colored blurred shadow on a dark background ÔÇö are the default \"cool\" look of AI-generated UIs. Use neutral elevation shadows and subtle, purposeful lighting instead.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Colored box-shadow glow (#d4af37) on dark background"
+  },
+  {
+    "antipattern": "hero-eyebrow-chip",
+    "name": "Hero eyebrow / pill chip",
+    "description": "A tiny uppercase letter-spaced label sitting immediately above an oversized hero headline ÔÇö or the same shape rendered as a pill chip ÔÇö is now the default AI SaaS hero. Drop the eyebrow, integrate the kicker into the headline, or run it as a navigation breadcrumb instead.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "eyebrow chip (accent-bold) \"ALTA GASTRONOMIA // CONTROLE TOTAL\" above h1 \"A Nova Era da Gest├úo de Restaurantes.\""
+  },
+  {
+    "antipattern": "wide-tracking",
+    "name": "Wide letter spacing on body text",
+    "description": "Letter spacing above 0.05em on body text disrupts natural character groupings and slows reading. Reserve wide tracking for short uppercase labels only.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "letter-spacing: 0.07em on body text"
+  },
+  {
+    "antipattern": "all-caps-body",
+    "name": "All-caps body text",
+    "description": "Long passages in uppercase are hard to read. We recognize words by shape (ascenders and descenders), which all-caps removes. Reserve uppercase for short labels and headings.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "text-transform: uppercase on 34 chars of body text"
+  },
+  {
+    "antipattern": "all-caps-body",
+    "name": "All-caps body text",
+    "description": "Long passages in uppercase are hard to read. We recognize words by shape (ascenders and descenders), which all-caps removes. Reserve uppercase for short labels and headings.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "text-transform: uppercase on 31 chars of body text"
+  },
+  {
+    "antipattern": "all-caps-body",
+    "name": "All-caps body text",
+    "description": "Long passages in uppercase are hard to read. We recognize words by shape (ascenders and descenders), which all-caps removes. Reserve uppercase for short labels and headings.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "text-transform: uppercase on 31 chars of body text"
+  },
+  {
+    "antipattern": "all-caps-body",
+    "name": "All-caps body text",
+    "description": "Long passages in uppercase are hard to read. We recognize words by shape (ascenders and descenders), which all-caps removes. Reserve uppercase for short labels and headings.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "text-transform: uppercase on 35 chars of body text"
+  },
+  {
+    "antipattern": "all-caps-body",
+    "name": "All-caps body text",
+    "description": "Long passages in uppercase are hard to read. We recognize words by shape (ascenders and descenders), which all-caps removes. Reserve uppercase for short labels and headings.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "text-transform: uppercase on 35 chars of body text"
+  },
+  {
+    "antipattern": "tiny-text",
+    "name": "Tiny body text",
+    "description": "Body text below 12px is hard to read, especially on high-DPI screens. Use at least 14px for body content, 16px is ideal.",
+    "severity": "warning",
+    "category": "quality",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "10px body text"
+  },
+  {
+    "antipattern": "gpt-thin-border-wide-shadow",
+    "name": "Hairline border with wide shadow",
+    "description": "A hairline border paired with a wide, diffuse shadow is a recurring generated-UI signature. Commit to one ÔÇö a defined edge or a soft elevation ÔÇö rather than both at once.",
+    "severity": "advisory",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "1px border + 25px shadow blur",
+    "advisory": true
+  },
+  {
+    "antipattern": "overused-font",
+    "name": "Overused font",
+    "description": "Inter, Roboto, Fraunces, Geist, Plus Jakarta Sans, and Space Grotesk are used on so many sites they no longer feel distinctive. Each new wave of AI-generated UIs converges on the same handful of faces. Choose a face that gives your interface personality.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Primary font: space grotesk"
+  },
+  {
+    "antipattern": "overused-font",
+    "name": "Overused font",
+    "description": "Inter, Roboto, Fraunces, Geist, Plus Jakarta Sans, and Space Grotesk are used on so many sites they no longer feel distinctive. Each new wave of AI-generated UIs converges on the same handful of faces. Choose a face that gives your interface personality.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Primary font: plus jakarta sans"
+  },
+  {
+    "antipattern": "kicker-above-heading",
+    "name": "Kicker / eyebrow label above heading",
+    "description": "A tiny tracked uppercase or small-caps label sitting as its own block directly above a heading is banned outright, repeated or not. Generated kickers never earn their place: the heading carries its own weight. Delete the label and let the heading speak; if the words matter, work them into the heading or the body.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "kicker \"// ESSENCIAL\" above h3 \"Bistr├┤ ├ügil\""
+  },
+  {
+    "antipattern": "kicker-above-heading",
+    "name": "Kicker / eyebrow label above heading",
+    "description": "A tiny tracked uppercase or small-caps label sitting as its own block directly above a heading is banned outright, repeated or not. Generated kickers never earn their place: the heading carries its own weight. Delete the label and let the heading speak; if the words matter, work them into the heading or the body.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "kicker \"// REDES & FRANQUIAS\" above h3 \"Grand Cru\""
+  },
+  {
+    "antipattern": "nested-cards",
+    "name": "Nested cards",
+    "description": "Cards inside cards create visual noise and excessive depth. Flatten the hierarchy ÔÇö use spacing, typography, and dividers instead of nesting containers.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Card inside card (div)"
+  },
+  {
+    "antipattern": "nested-cards",
+    "name": "Nested cards",
+    "description": "Cards inside cards create visual noise and excessive depth. Flatten the hierarchy ÔÇö use spacing, typography, and dividers instead of nesting containers.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Card inside card (div)"
+  },
+  {
+    "antipattern": "nested-cards",
+    "name": "Nested cards",
+    "description": "Cards inside cards create visual noise and excessive depth. Flatten the hierarchy ÔÇö use spacing, typography, and dividers instead of nesting containers.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Card inside card (div)"
+  },
+  {
+    "antipattern": "nested-cards",
+    "name": "Nested cards",
+    "description": "Cards inside cards create visual noise and excessive depth. Flatten the hierarchy ÔÇö use spacing, typography, and dividers instead of nesting containers.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Card inside card (div)"
+  },
+  {
+    "antipattern": "nested-cards",
+    "name": "Nested cards",
+    "description": "Cards inside cards create visual noise and excessive depth. Flatten the hierarchy ÔÇö use spacing, typography, and dividers instead of nesting containers.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Card inside card (div)"
+  },
+  {
+    "antipattern": "nested-cards",
+    "name": "Nested cards",
+    "description": "Cards inside cards create visual noise and excessive depth. Flatten the hierarchy ÔÇö use spacing, typography, and dividers instead of nesting containers.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Card inside card (div)"
+  },
+  {
+    "antipattern": "nested-cards",
+    "name": "Nested cards",
+    "description": "Cards inside cards create visual noise and excessive depth. Flatten the hierarchy ÔÇö use spacing, typography, and dividers instead of nesting containers.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Card inside card (div)"
+  },
+  {
+    "antipattern": "nested-cards",
+    "name": "Nested cards",
+    "description": "Cards inside cards create visual noise and excessive depth. Flatten the hierarchy ÔÇö use spacing, typography, and dividers instead of nesting containers.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Card inside card (div)"
+  },
+  {
+    "antipattern": "pulsing-dot",
+    "name": "Pulsing status dot",
+    "description": "Small pulsing status dots simulate liveness decoratively. Reserve pulse animation for indicators tied to genuinely live, changing data; a static indicator with clear labeling is honest and calmer.",
+    "severity": "error",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": ".telemetry-pill .dot ÔÇö 7x7px dot with infinite \"pulse-dot\" animation in header/nav"
+  },
+  {
+    "antipattern": "dark-glow",
+    "name": "Glowing shadow accents",
+    "description": "Colored glow shadows ÔÇö a zero-offset chromatic halo (box- or text-shadow) on any background, or any colored blurred shadow on a dark background ÔÇö are the default \"cool\" look of AI-generated UIs. Use neutral elevation shadows and subtle, purposeful lighting instead.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "C:\\Users\\computer\\Desktop\\chef cozinha\\pagina-vendas-3d.html",
+    "line": 0,
+    "snippet": "Zero-offset box-shadow glow (#d4af37)"
+  }
+]

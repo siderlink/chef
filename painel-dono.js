@@ -3198,12 +3198,19 @@ window.abrirModalReordenarSeccoes = function() {
   const cfg = window.getDonoModularConfig();
   const fontScale = cfg.fontScale || 1.0;
 
-  let htmlSeccoes = DONO_SECOES_DEF.map((def) => {
+    const sortedSecoes = [...DONO_SECOES_DEF].sort((a, b) => {
+    const itemA = cfg.secoes.find(s => s.id === a.id) || { ordem: 99 };
+    const itemB = cfg.secoes.find(s => s.id === b.id) || { ordem: 99 };
+    return itemA.ordem - itemB.ordem;
+  });
+
+  let htmlSeccoes = sortedSecoes.map((def) => {
     const item = cfg.secoes.find(s => s.id === def.id) || { visivel: true, largura: 'medium', ordem: 99 };
     return `
       <div class="mod-item-card" data-sec-id="${def.id}" style="background:var(--card2); border:1px solid var(--border); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <strong style="font-size:15px; color:var(--text); display:flex; align-items:center; gap:8px;">
+            <span class="drag-handle" style="cursor:grab; padding: 4px; display:inline-flex; opacity:0.5;" title="Arraste para reordenar"><i class="ph-bold ph-dots-six-vertical"></i></span>
             <i class="ph-bold ${def.icon}" style="color:var(--primary);"></i> ${def.nome}
           </strong>
           <div style="display:flex; gap:6px;">
@@ -3286,7 +3293,7 @@ window.abrirModalReordenarSeccoes = function() {
         Ajuste Card a Card (Ordem & Dimensão)
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto; padding-right:4px;">
+      <div id="dono-modal-sortable-list" style="display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto; padding-right:4px; padding-left:4px; padding-bottom: 20px;">
         ${htmlSeccoes}
       </div>
 

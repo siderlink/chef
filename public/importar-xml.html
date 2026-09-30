@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Importador de XML & DF-e SEFAZ - Cheff Estoque</title>
+
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/theme-manager.js"></script>
+
+  <style>
+    :root {
+      --bg-page: #0f172a;
+      --bg-card: #1e293b;
+      --border-card: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #f97316;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --accent: #38bdf8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
+    body {
+      background: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* HEADER */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      padding: 18px 24px;
+      border-radius: 16px;
+    }
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-title h1 {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--text-main);
+    }
+    .header-title p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* DROPZONE */
+    .dropzone-box {
+      border: 2px dashed #f97316;
+      background: rgba(249, 115, 22, 0.04);
+      border-radius: 18px;
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .dropzone-box:hover, .dropzone-box.dragover {
+      background: rgba(249, 115, 22, 0.12);
+      border-color: #fb923c;
+      transform: translateY(-2px);
+    }
+
+    /* SEÇÃO DE AÇÕES RÁPIDAS */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .action-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .btn-action {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-action:hover { opacity: 0.9; }
+
+    /* TABELA DE PRÉ-VISUALIZAÇÃO DE ITENS */
+    .preview-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 18px;
+      padding: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      text-align: left;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--text-muted);
+      font-size: 11.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border-card);
+    }
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      vertical-align: middle;
+    }
+    input.table-input, select.table-select {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-card);
+      color: var(--text-main);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      width: 100%;
+    }
+    .badge-inflacao {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .badge-inflacao.alta {
+      background: rgba(239, 68, 68, 0.18);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .badge-inflacao.normal {
+      background: rgba(34, 197, 94, 0.18);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    /* DUPLICATAS */
+    .duplicatas-grid {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .dup-card {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-card);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 160px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- CABEÇALHO -->
+    <header class="page-header">
+      <div class="header-title">
+        <span style="font-size: 32px;">📦</span>
+        <div>
+          <h1>Entrada de Compras & DF-e SEFAZ</h1>
+          <p>Importe notas fiscais (NF-e Modelo 55), atualize o estoque com fator de embalagem e lance o contas a pagar automaticamente.</p>
+        </div>
+      </div>
+      <div>
+        <a href="/index.html" style="color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 700;">
+          <i class="ph-bold ph-arrow-left"></i> Voltar ao Painel
+        </a>
+      </div>
+    </header>
+
+    <!-- CARDS DE OPÇÃO -->
+    <div class="actions-grid">
+      <!-- OPÇÃO 1: DF-E SEFAZ AUTOMÁTICO -->
+      <div class="action-card">
+        <div>
+          <b style="font-size: 14.5px; color: var(--accent); display: block; margin-bottom: 2px;">
+            <i class="ph-bold ph-cloud-arrow-down"></i> Consulta SEFAZ (DF-e)
+          </b>
+          <span style="font-size: 12px; color: var(--text-muted);">Buscar notas emitidas contra seu CNPJ automaticamente</span>
+        </div>
+        <button class="btn-action" style="background: #0284c7;" onclick="consultarSefazDFe()">
+          Consultar
+        </button>
+      </div>
+
+      <!-- OPÇÃO 2: RADAR DE INFLAÇÃO -->
+      <div class="action-card">
+        <div>
+          <b style="font-size: 14.5px; color: #f59e0b; display: block; margin-bottom: 2px;">
+            <i class="ph-bold ph-chart-line-up"></i> Radar de Inflação
+          </b>
+          <span style="font-size: 12px; color: var(--text-muted);">Histórico de aumentos de preço de matérias-primas</span>
+        </div>
+        <button class="btn-action" style="background: #d97706;" onclick="carregarRadarInflacao()">
+          Ver Histórico
+        </button>
+      </div>
+    </div>
+
+    <!-- DROPZONE DE ARQUIVO XML -->
+    <div class="dropzone-box" id="dropzone" onclick="document.getElementById('file-input').click()">
+      <input type="file" id="file-input" accept=".xml" style="display: none;" onchange="handleFileSelect(event)">
+      <i class="ph-bold ph-file-arrow-up" style="font-size: 42px; color: var(--primary);"></i>
+      <h3 style="font-size: 17px; font-weight: 800; color: var(--text-main); margin: 0;">Arraste seu arquivo XML de compra aqui</h3>
+      <p style="font-size: 12.5px; color: var(--text-muted); margin: 0;">Ou clique para selecionar o arquivo XML da NF-e emitida pelo fornecedor</p>
+    </div>
+
+    <!-- PAINEL DE PRÉ-VISUALIZAÇÃO E DE/PARA -->
+    <div class="preview-card" id="preview-card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-card); padding-bottom: 14px;">
+        <div>
+          <span style="font-size: 11px; background: rgba(34, 197, 94, 0.16); color: var(--success); padding: 3px 8px; border-radius: 6px; font-weight: 800;">
+            NF-e Válida Detectada
+          </span>
+          <h2 style="font-size: 18px; font-weight: 900; margin: 6px 0 2px;" id="lbl-fornecedor">Fornecedor</h2>
+          <span style="font-size: 12px; color: var(--text-muted);" id="lbl-info-nota">Nota #000 • CNPJ 00.000.000/0000-00</span>
+        </div>
+        <div style="text-align: right;">
+          <span style="font-size: 12px; color: var(--text-muted);">Valor Total da Nota</span>
+          <div style="font-size: 22px; font-weight: 900; color: var(--success);" id="lbl-valor-total">R$ 0,00</div>
+        </div>
+      </div>
+
+      <!-- DUPLICATAS / PARCELAS ENCONTRADAS -->
+      <div id="secao-duplicatas" style="display: none;">
+        <span style="font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">
+          💳 Duplicatas / Parcelas a Pagar Detectadas:
+        </span>
+        <div class="duplicatas-grid" id="duplicatas-container" style="margin-top: 6px;"></div>
+      </div>
+
+      <!-- TABELA DE ITENS COM DE/PARA E FATOR DE CONVERSÃO -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 style="font-size: 14px; font-weight: 800; color: var(--text-main);">
+            📦 Itens da Nota & Conversão de Medidas
+          </h3>
+          <span style="font-size: 12px; color: var(--text-muted);">
+            Dica: Se comprou em Caixa (CX) ou Fardo (FD), informe o fator para dividir o custo unitário.
+          </span>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Produto na Nota</th>
+                <th style="width: 80px;">Qtd Nota</th>
+                <th style="width: 70px;">Un.</th>
+                <th>Insumo Vinculado no Cheff</th>
+                <th style="width: 110px;">Fator Conversão</th>
+                <th style="width: 90px;">Qtd Estoque</th>
+                <th style="width: 110px;">Custo Un. Final</th>
+                <th style="width: 120px;">Inflação</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-itens-corpo">
+              <!-- Injetado dinamicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BOTÃO DE CONFIRMAR ENTRADA -->
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; border-top: 1px solid var(--border-card); padding-top: 14px;">
+        <button class="btn-action" style="background: rgba(255,255,255,0.08); color: var(--text-muted);" onclick="cancelarPreview()">
+          Cancelar
+        </button>
+        <button class="btn-action" style="background: var(--success); font-size: 14px; padding: 12px 24px;" onclick="confirmarImportacaoFinal()">
+          <i class="ph-bold ph-check-circle"></i> Confirmar Entrada no Estoque & Financeiro
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL / CONTAINER DO RADAR DE INFLAÇÃO -->
+    <div class="preview-card" id="radar-card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 16px; font-weight: 800; color: #f59e0b;">
+          📈 Radar de Inflação dos Insumos (Últimas Variações)
+        </h3>
+        <button onclick="document.getElementById('radar-card').style.display = 'none'" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px;">&times;</button>
+      </div>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Insumo</th>
+              <th>Fornecedor</th>
+              <th>Nota</th>
+              <th>Custo Anterior</th>
+              <th>Novo Custo</th>
+              <th>Variação</th>
+            </tr>
+          </thead>
+          <tbody id="radar-corpo"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let xmlContentAtual = '';
+    let previewDataAtual = null;
+
+    // Configura Drag and Drop
+    const dropzone = document.getElementById('dropzone');
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        processarArquivo(e.dataTransfer.files[0]);
+      }
+    });
+
+    function handleFileSelect(e) {
+      if (e.target.files && e.target.files[0]) {
+        processarArquivo(e.target.files[0]);
+      }
+    }
+
+    function processarArquivo(file) {
+      if (!file.name.toLowerCase().endsWith('.xml')) {
+        alert('Por favor, selecione um arquivo com extensão .xml');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        xmlContentAtual = event.target.result;
+        carregarPreviewXml(xmlContentAtual);
+      };
+      reader.readAsText(file);
+    }
+
+    async function carregarPreviewXml(xmlString) {
+      try {
+        const token = localStorage.getItem('token') || '';
+        const res = await fetch('/api/addons/compras/pre-visualizar-xml', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ xmlString })
+        });
+        const data = await res.json();
+
+        if (!data || !data.ok) {
+          alert('Erro ao processar XML: ' + (data.erro || 'Verifique o formato do arquivo'));
+          return;
+        }
+
+        previewDataAtual = data;
+        renderizarPreview(data);
+      } catch (err) {
+        console.error(err);
+        alert('Erro de comunicação ao pré-visualizar a nota fiscal.');
+      }
+    }
+
+    function renderizarPreview(data) {
+      const { nota, duplicatas, itens, insumos_cadastrados } = data;
+
+      document.getElementById('lbl-fornecedor').innerText = nota.emitente_nome || 'Fornecedor';
+      document.getElementById('lbl-info-nota').innerText = `NF-e #${nota.numero_nota} (Série ${nota.serie}) • CNPJ: ${nota.emitente_cnpj} • Data: ${nota.data_emissao}`;
+      document.getElementById('lbl-valor-total').innerText = 'R$ ' + (nota.valor_total || 0).toFixed(2).replace('.', ',');
+
+      // Renderiza Duplicatas
+      const dupSec = document.getElementById('secao-duplicatas');
+      const dupContainer = document.getElementById('duplicatas-container');
+      if (duplicatas && duplicatas.length > 0) {
+        dupSec.style.display = 'block';
+        dupContainer.innerHTML = duplicatas.map(d => `
+          <div class="dup-card">
+            <span style="font-size: 11px; color: var(--text-muted); font-weight: 700;">Parcela ${d.numero}</span>
+            <b style="font-size: 14px; color: var(--success);">R$ ${(d.valor || 0).toFixed(2).replace('.', ',')}</b>
+            <span style="font-size: 11px; color: var(--text-main);">Vencimento: ${d.vencimento.split('-').reverse().join('/')}</span>
+          </div>
+        `).join('');
+      } else {
+        dupSec.style.display = 'none';
+      }
+
+      // Renderiza Itens da Nota
+      const tbody = document.getElementById('tabela-itens-corpo');
+      tbody.innerHTML = itens.map((it, idx) => {
+        const optionsInsumos = (insumos_cadastrados || []).map(ins => `
+          <option value="${ins.id}" ${ins.id === it.insumo_id ? 'selected' : ''}>${ins.nome} (${ins.unidade || 'un'})</option>
+        `).join('');
+
+        const inflacaoHtml = it.custo_anterior > 0 
+          ? `<span class="badge-inflacao ${it.variacao_pct > 5 ? 'alta' : 'normal'}">
+               ${it.variacao_pct > 0 ? '+' : ''}${it.variacao_pct}%
+             </span>`
+          : `<span style="font-size: 11px; color: var(--text-muted);">Novo</span>`;
+
+        return `
+          <tr id="row-item-${idx}">
+            <td>
+              <b>${it.nome}</b>
+              <div style="font-size: 11px; color: var(--text-muted);">NCM: ${it.ncm} • CFOP: ${it.cfop}</div>
+            </td>
+            <td><b>${it.quantidade}</b></td>
+            <td><span style="font-size: 11px; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px;">${it.unidade}</span></td>
+            <td>
+              <select class="table-select" id="sel-insumo-${idx}">
+                <option value="">+ Criar novo insumo: "${it.nome}"</option>
+                ${optionsInsumos}
+              </select>
+            </td>
+            <td>
+              <input type="number" min="1" step="1" class="table-input" id="fator-${idx}" value="${it.fator_conversao || 1}" oninput="recalcularLinha(${idx})">
+            </td>
+            <td id="qtd-final-${idx}"><b>${it.quantidade}</b></td>
+            <td id="custo-final-${idx}"><b>R$ ${it.valor_unitario.toFixed(2)}</b></td>
+            <td>${inflacaoHtml}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('dropzone').style.display = 'none';
+      document.getElementById('preview-card').style.display = 'flex';
+    }
+
+    function recalcularLinha(idx) {
+      if (!previewDataAtual || !previewDataAtual.itens[idx]) return;
+      const it = previewDataAtual.itens[idx];
+      const fatorInput = document.getElementById('fator-' + idx);
+      const fator = Math.max(1, parseFloat(fatorInput ? fatorInput.value : 1) || 1);
+
+      const qtdFinal = it.quantidade * fator;
+      const custoFinal = it.valor_unitario / fator;
+
+      document.getElementById('qtd-final-' + idx).innerHTML = `<b>${qtdFinal}</b>`;
+      document.getElementById('custo-final-' + idx).innerHTML = `<b>R$ ${custoFinal.toFixed(2)}</b>`;
+    }
+
+    async function confirmarImportacaoFinal() {
+      if (!xmlContentAtual || !previewDataAtual) return;
+
+      const itensCustomizados = previewDataAtual.itens.map((it, idx) => {
+        const selInsumo = document.getElementById('sel-insumo-' + idx);
+        const fatorInput = document.getElementById('fator-' + idx);
+        const fator = Math.max(1, parseFloat(fatorInput ? fatorInput.value : 1) || 1);
+
+        return {
+          ...it,
+          insumo_id: (selInsumo && selInsumo.value) ? parseInt(selInsumo.value) : null,
+          fator_conversao: fator
+        };
+      });
+
+      try {
+        const token = localStorage.getItem('token') || '';
+        const res = await fetch('/api/addons/compras/importar-xml', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            xmlString: xmlContentAtual,
+            itensCustomizados
+          })
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+          alert(data.mensagem || 'Nota fiscal importada com sucesso!');
+          cancelarPreview();
+        } else {
+          alert('Erro ao confirmar importação: ' + (data.erro || 'Tente novamente'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao salvar importação da nota fiscal.');
+      }
+    }
+
+    function cancelarPreview() {
+      xmlContentAtual = '';
+      previewDataAtual = null;
+      document.getElementById('dropzone').style.display = 'flex';
+      document.getElementById('preview-card').style.display = 'none';
+      document.getElementById('file-input').value = '';
+    }
+
+    async function consultarSefazDFe() {
+      try {
+        const token = localStorage.getItem('token') || '';
+        const res = await fetch('/api/addons/compras/consultar-sefaz-dfe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        });
+        const data = await res.json();
+        if (data.ok) {
+          alert(`✅ ${data.mensagem}\nCNPJ Consultado: ${data.cnpj_consultado}\nAmbiente: ${data.ambiente}`);
+        } else {
+          alert('Erro na consulta SEFAZ: ' + (data.erro || 'Falha de comunicação'));
+        }
+      } catch (e) {
+        alert('Erro ao conectar com a SEFAZ.');
+      }
+    }
+
+    async function carregarRadarInflacao() {
+      try {
+        const token = localStorage.getItem('token') || '';
+        const res = await fetch('/api/addons/compras/radar-inflacao', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        const card = document.getElementById('radar-card');
+        const corpo = document.getElementById('radar-corpo');
+
+        if (data && data.alertas && data.alertas.length > 0) {
+          corpo.innerHTML = data.alertas.map(a => `
+            <tr>
+              <td><b>${a.insumo}</b></td>
+              <td>${a.fornecedor}</td>
+              <td>#${a.numero_nota}</td>
+              <td>R$ ${(a.custo_anterior || 0).toFixed(2)}</td>
+              <td>R$ ${(a.custo_atual || 0).toFixed(2)}</td>
+              <td><span class="badge-inflacao alta">+${a.variacao_preco_pct}%</span></td>
+            </tr>
+          `).join('');
+        } else {
+          corpo.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Nenhum alerta de inflação recente registrado.</td></tr>`;
+        }
+
+        card.style.display = 'flex';
+      } catch (e) {
+        alert('Erro ao carregar radar de inflação.');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -277,6 +277,29 @@ async function handleRemoteCommand(cmdData, config, instanceId, ackCallback) {
 
   try {
     switch (command) {
+      case 'seo_ping': {
+        const { dominio, titulo, engines, rpc } = params || {};
+        log(`📡 [SEO Distributed] Iniciando pings de reforço para: ${dominio}`, 'INFO');
+        
+        // Pings simples para Search Engines
+        const engineList = (engines || 'http://www.google.com/ping?sitemap=\nhttp://www.bing.com/ping?sitemap=').split('\n').map(s=>s.trim()).filter(Boolean);
+        const sitemapUrl = (dominio || 'https://cheff.pro').replace(/\/+$/, '') + '/sitemap.xml';
+        engineList.forEach(e => {
+          makeRequest(e + encodeURIComponent(sitemapUrl), 'GET').catch(()=>{}); // Fogo e esquece
+        });
+
+        // Pings RPC (Diretórios)
+        const rpcList = (rpc || 'http://rpc.pingomatic.com\nhttp://ping.feedburner.com').split('\n').map(s=>s.trim()).filter(Boolean);
+        const xmlPayload = `<?xml version="1.0"?><methodCall><methodName>weblogUpdates.ping</methodName><params><param><value><string>${titulo || 'Sistema Chef Cozinha'}</string></value></param><param><value><string>${dominio || 'https://cheff.pro'}</string></value></param></params></methodCall>`;
+        rpcList.forEach(rpcUrl => {
+           makeRequest(rpcUrl, 'POST', xmlPayload, { 'Content-Type': 'text/xml' }).catch(()=>{});
+        });
+
+        result.status = 'dispatched';
+        result.message = 'Pings de SEO distribuídos enviados pelas máquinas do restaurante.';
+        break;
+      }
+
       case 'deactivate': {
         const reason = (params && params.reason) || 'Acesso suspenso pelo administrador central.';
         const contact = (params && params.contact) || 'Entre em contato com o suporte.';

@@ -2412,7 +2412,7 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="/vendor/qrcode/qrcode-generator.js"></script>
   <script src="/vendor/qrcode/qr-helper.js"></script>
-  <script src="super-admin.js?v=20260927mobile"></script>
+  <script src="super-admin.js?v=20260929fixed"></script>
   <script src="/anti-tamper.js" defer></script>
   <script>
     if ('serviceWorker' in navigator) {
@@ -2443,11 +2443,11 @@
 
     <!-- Abas de modo de login -->
     <div class="login-tabs">
-      <button class="login-tab active" id="tab-local">
+      <button class="login-tab active" id="tab-local" onclick="setLoginMode('local')">
         <i class="fa-solid fa-server"></i>
         Acesso Local
       </button>
-      <button class="login-tab" id="tab-cloud">
+      <button class="login-tab" id="tab-cloud" onclick="setLoginMode('cloud')">
         <i class="fa-brands fa-google"></i>
         Apps Script
       </button>
@@ -2466,7 +2466,7 @@
           <input type="password" id="local-senha" placeholder="Sua senha de admin" autocomplete="current-password">
         </div>
       </div>
-      <button class="btn-login" id="btn-entrar-local">
+      <button class="btn-login" id="btn-entrar-local" onclick="loginLocal()">
         <span>Entrar no Painel</span>
         <i class="fa-solid fa-arrow-right-to-bracket"></i>
       </button>

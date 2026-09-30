@@ -133,7 +133,7 @@
                 <span>Instâncias On-Premise</span>
                 <span class="menu-badge" id="offline-count-badge" style="display:none;">0</span>
               </div>
-              <div class="menu-item" data-target="sec-suporte-remoto" id="menu-item-suporte-remoto" onclick="abrirSecaoSuporteRemoto()">
+              <div class="menu-item" data-target="sec-suporte-remoto" id="menu-item-suporte-remoto" onclick="switchTab('sec-suporte-remoto')">
                 <i class="fa-solid fa-headset" style="color:#22c55e;"></i>
                 <span>Suporte Remoto 1-Clique</span>
                 <span class="menu-badge" id="suporte-remoto-active-badge" style="background:#22c55e;color:#fff;display:none;">0</span>
@@ -217,7 +217,7 @@
               <div class="menu-item" data-target="sec-synccheff" id="menu-item-synccheff">
                 <i class="fa-solid fa-shield-virus" style="color:#10b981;"></i>
                 <span>SyncCheff &amp; Root Shield</span>
-                <span class="menu-badge" style="background:#10b981;color:#fff;">ROOT</span>
+                <span class="menu-badge" id="synccheff-shield-badge" style="background:#10b981;color:#fff;">ROOT</span>
               </div>
             </div>
           </div>
@@ -509,7 +509,7 @@
               </div>
             </div>
             <!-- NOVOS CARDS PREMIUM -->
-            <div class="stat-card sales-card" id="card-local-sales" style="display: none;">
+            <div class="stat-card sales-card" id="card-local-sales">
               <div class="stat-icon"
                 style="background: rgba(139, 92, 246, 0.15); color: #c084fc; box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);">
                 <i class="fa-solid fa-money-bill-trend-up"></i></div>
@@ -518,7 +518,7 @@
                 <h3 id="stat-vendas-locais">R$ 0,00</h3>
               </div>
             </div>
-            <div class="stat-card users-card" id="card-local-users" style="display: none;">
+            <div class="stat-card users-card" id="card-local-users">
               <div class="stat-icon"
                 style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);">
                 <i class="fa-solid fa-users-gear"></i></div>
@@ -1142,6 +1142,9 @@
               <button type="button" id="btn-subtab-mapa-restaurantes" class="btn-action" onclick="window.alternarSubtabMapa('restaurantes')" style="border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;">
                 <i class="fa-solid fa-store" style="color:var(--primary);"></i> Rede de Lojas Cadastradas
               </button>
+              <button type="button" id="btn-subtab-mapa-heatmap" class="btn-action" onclick="window.alternarSubtabMapa('heatmap')" style="border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;">
+                <i class="fa-solid fa-fire" style="color:#ef4444;"></i> Heatmap de Cliques &amp; Telemetria
+              </button>
             </div>
             <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
               <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;display:inline-block;"></span>
@@ -1228,6 +1231,83 @@
               <button class="btn-action btn-primary-action" id="btn-refresh-mapa" onclick="renderMapa()">
                 <i class="fa-solid fa-rotate"></i><span>Atualizar</span>
               </button>
+            </div>
+          </div>
+
+          <!-- SUB-ABA 3: HEATMAP DE CLIQUES & TELEMETRIA DO OPERADOR -->
+          <div id="subtab-mapa-heatmap-container" style="display:none;">
+            <!-- Filters & Controls -->
+            <div class="card" style="padding:1rem 1.25rem; margin-bottom:1.25rem; border:1px solid var(--border-color); border-radius:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                  <div>
+                    <label style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Restaurante</label>
+                    <select id="filtro-heatmap-restaurante" onchange="window.carregarMetricasHeatmap()" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-tertiary); color:inherit; font-size:12px;">
+                      <option value="todos">Todos os Restaurantes</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Colaborador</label>
+                    <select id="filtro-heatmap-colaborador" onchange="window.carregarMetricasHeatmap()" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-tertiary); color:inherit; font-size:12px;">
+                      <option value="todos">Todos os Colaboradores</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; display:block; margin-bottom:4px;">Período</label>
+                    <select id="filtro-heatmap-periodo" onchange="window.carregarMetricasHeatmap()" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-tertiary); color:inherit; font-size:12px;">
+                      <option value="24h">Últimas 24 Horas</option>
+                      <option value="7dias" selected>Últimos 7 Dias</option>
+                      <option value="30dias">Últimos 30 Dias</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <button class="btn-action btn-primary-action" onclick="window.carregarMetricasHeatmap()" style="padding:8px 16px; font-size:12px; font-weight:700;">
+                    <i class="fa-solid fa-rotate"></i> Atualizar Mapa de Calor
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Heatmap KPIs -->
+            <div class="stats-grid" style="margin-bottom:1.5rem;">
+              <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(239,68,68,0.15); color:#ef4444;"><i class="fa-solid fa-arrow-pointer"></i></div>
+                <div class="stat-meta"><span>Total de Cliques</span><h3 id="kpi-total-cliques">0</h3></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(245,158,11,0.15); color:#f59e0b;"><i class="fa-solid fa-stopwatch"></i></div>
+                <div class="stat-meta"><span>Tempo Médio Operação</span><h3 id="kpi-tempo-medio">0.0s</h3></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(59,130,246,0.15); color:#3b82f6;"><i class="fa-solid fa-user-group"></i></div>
+                <div class="stat-meta"><span>Colaboradores Mapeados</span><h3 id="kpi-total-colaboradores">0</h3></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(16,185,129,0.15); color:#10b981;"><i class="fa-solid fa-store"></i></div>
+                <div class="stat-meta"><span>Lojas Analisadas</span><h3 id="kpi-total-restaurantes">0</h3></div>
+              </div>
+            </div>
+
+            <!-- Heatmap Grid: Visual Canvas on left, Top Functions Ranking on right -->
+            <div style="display:grid; grid-template-columns:1fr 360px; gap:1.5rem; align-items:start;">
+              <div class="card" style="padding:1.25rem; border:1px solid var(--border-color); border-radius:14px; min-height:450px; position:relative; overflow:hidden;">
+                <h4 style="margin:0 0 12px 0; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> Densidade Visual de Cliques no PDV
+                </h4>
+                <div style="position:relative; width:100%; height:380px; background:#0b0f19; border-radius:8px; border:1px solid var(--border-color); overflow:hidden;">
+                  <div id="heatmap-points-layer" style="position:absolute; inset:0;"></div>
+                </div>
+              </div>
+
+              <div class="card" style="padding:1.25rem; border:1px solid var(--border-color); border-radius:14px;">
+                <h4 style="margin:0 0 12px 0; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-chart-simple" style="color:#f59e0b;"></i> Funções Mais Acionadas
+                </h4>
+                <div id="ranking-funcoes-lista" style="display:flex; flex-direction:column; gap:8px; max-height:400px; overflow-y:auto;">
+                  <div style="text-align:center; color:var(--text-muted); font-size:12px; padding:20px;">Carregando ranking...</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2606,16 +2686,59 @@
         </div>
         <!-- ════ FIM SEÇÃO 5 ════ -->
 
-        <!-- ════ SEÇÃO: HUB MARKETING ════ -->
+        <!-- ════ SEÇÃO: HUB MARKETING & CRM ════ -->
         <div class="content-section" id="sec-hub-marketing">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-            <button class="btn-action btn-primary-action" onclick="window.open('/hub-marketing.html','_blank')" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;font-weight:600;">
-              <i class="fa-solid fa-arrow-up-right-from-square"></i><span>Abrir Hub Marketing em Tela Cheia</span>
-            </button>
-            <span style="color:var(--text-muted,#888);font-size:0.85rem;">Plataforma completa de CRM, segmentação, campanhas e analytics</span>
+          <!-- Header e Ações Rápidas -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:12px;">
+            <div>
+              <h2 style="margin:0 0 4px 0;display:flex;align-items:center;gap:10px;font-size:1.35rem;">
+                <i class="fa-solid fa-bullhorn" style="color:#6366f1;"></i> Hub Marketing &amp; Automação de CRM
+                <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.3);">
+                  WhatsApp &amp; Retenção
+                </span>
+              </h2>
+              <p style="color:var(--text-muted);font-size:0.85rem;margin:0;">Campanhas automáticas, segmentação RFM inteligente, cupons de desconto e disparos via WhatsApp.</p>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <button class="btn-action" onclick="window.open('/hub-marketing.html','_blank')" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;font-weight:600;padding:8px 16px;border-radius:8px;box-shadow:0 4px 14px rgba(99,102,241,0.3);display:flex;align-items:center;gap:8px;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i><span>Abrir em Tela Cheia</span>
+              </button>
+              <button class="btn-action" onclick="recarregarHubMarketing()" style="padding:8px 14px;border-radius:8px;display:flex;align-items:center;gap:6px;">
+                <i class="fa-solid fa-rotate"></i><span>Recarregar</span>
+              </button>
+              <button class="btn-action" onclick="switchTab('sec-clientes')" style="padding:8px 14px;border-radius:8px;display:flex;align-items:center;gap:6px;">
+                <i class="fa-solid fa-users"></i><span>Ver Clientes</span>
+              </button>
+            </div>
           </div>
-          <div style="border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);height:calc(100vh - 200px);">
-            <iframe id="hub-marketing-iframe" src="" style="width:100%;height:100%;border:none;background:#0a0a0a;" title="Hub Marketing"></iframe>
+
+          <!-- KPI Cards do Marketing -->
+          <div class="stats-grid" style="margin-bottom:1.25rem;">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(99,102,241,0.15);color:#818cf8;"><i class="fa-solid fa-users"></i></div>
+              <div class="stat-meta"><span>Base de Clientes</span><h3 id="hub-mkt-kpi-clientes">--</h3></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(16,185,129,0.15);color:#10b981;"><i class="fa-solid fa-paper-plane"></i></div>
+              <div class="stat-meta"><span>Campanhas Ativas</span><h3 id="hub-mkt-kpi-campanhas">8 Ativas</h3></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b;"><i class="fa-solid fa-comments"></i></div>
+              <div class="stat-meta"><span>Mensagens Enviadas</span><h3 id="hub-mkt-kpi-disparos">4.890</h3></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(236,72,153,0.15);color:#f472b6;"><i class="fa-solid fa-chart-line"></i></div>
+              <div class="stat-meta"><span>Taxa de Conversão</span><h3 id="hub-mkt-kpi-conversao">34.2%</h3></div>
+            </div>
+          </div>
+
+          <!-- Container do Iframe com Spinner de Carregamento Seguro -->
+          <div style="border-radius:12px;overflow:hidden;border:1px solid var(--border-color);height:calc(100vh - 290px);min-height:550px;position:relative;background:#0f172a;">
+            <div id="hub-mkt-spinner" style="position:absolute;inset:0;background:rgba(15,23,42,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;gap:12px;">
+              <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem;color:#6366f1;"></i>
+              <span style="color:#94a3b8;font-size:13px;font-weight:600;">Inicializando Hub de Marketing &amp; CRM...</span>
+            </div>
+            <iframe id="hub-marketing-iframe" src="/hub-marketing.html" onload="document.getElementById('hub-mkt-spinner').style.display='none'" style="width:100%;height:100%;border:none;" title="Hub Marketing"></iframe>
           </div>
         </div>
 
@@ -3030,8 +3153,30 @@
               </div>
             </div>
 
-            <!-- SUB-ABA 5: SUPORTE REMOTO 1-CLIQUE & TELEPRESENÇA -->
+            <!-- SUB-ABA 5: SUPORTE REMOTO 1-CLIQUE & TELEPRESENÇA (ATALHO) -->
             <div id="subaba-view-remoto" class="subaba-view-content" style="display:none;">
+              <div class="card" style="padding:2.5rem 1.5rem; text-align:center; border:1px solid var(--border-color); border-radius:12px; background:linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(15,23,42,0.6) 100%);">
+                <i class="fa-solid fa-headset" style="font-size:3rem; color:#22c55e; margin-bottom:14px; display:inline-block;"></i>
+                <h3 style="margin:0 0 8px 0; color:#f8fafc; font-size:1.35rem;">Central de Suporte Remoto 1-Clique &amp; Telepresença</h3>
+                <p style="color:#94a3b8; font-size:13.5px; max-width:640px; margin:0 auto 22px auto; line-height:1.5;">
+                  Acesse instantaneamente a tela do cliente via WebRTC, aponte comandos com o laser pointer interativo, execute correções automáticas de 1-clique e repare bancos de dados sem que o cliente precise entender nada de informática.
+                </p>
+                <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+                  <button class="btn-action" onclick="switchTab('sec-suporte-remoto')" style="background:#22c55e; color:#fff; font-weight:700; padding:11px 26px; border-radius:8px; font-size:1rem; box-shadow:0 4px 14px rgba(34,197,94,0.3); display:inline-flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-headset"></i> Abrir Central de Suporte Remoto
+                  </button>
+                  <button class="btn-action" onclick="abrirModalGerarLinkSuporte()" style="padding:11px 20px; border-radius:8px; font-size:0.95rem; font-weight:600; display:inline-flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-plus"></i> + Gerar Link WhatsApp
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════ SEÇÃO: SUPORTE REMOTO 1-CLIQUE & TELEPRESENÇA (TOP-LEVEL) ════ -->
+        <div class="content-section" id="sec-suporte-remoto">
+          <div style="padding: 20px;">
               
               <!-- Card de Apresentação e Geração de Link -->
               <div class="card" style="padding:1.25rem 1.5rem; border:1px solid var(--border-color); border-radius:12px; margin-bottom:1.5rem; background:linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(15,23,42,0.6) 100%);">
@@ -3217,7 +3362,6 @@
 
             </div>
           </div>
-        </div>
 
         <!-- ════ MODAL: AUTO-INSTALADOR MULTIPLATAFORMA DO SYNC ════ -->
         <div class="modal-overlay" id="modal-instalador-sync" style="display:none;">
@@ -3557,10 +3701,13 @@
           </div>
         </div>
 
+      </div>
+    </div>
 
 
-        <!-- ════ SEÇÃO: INFRAESTRUTURA CLOUD ════ -->
-        <div class="content-section" id="sec-infra-cloud">
+
+    <!-- ════ SEÇÃO: INFRAESTRUTURA CLOUD ════ -->
+    <div class="content-section" id="sec-infra-cloud">
           <div class="info-banner">
             <i class="fa-solid fa-cloud"></i>
             <div class="info-banner-content">
@@ -4206,6 +4353,10 @@
               <div>
                 <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Título *</label>
                 <input type="text" id="tarefa-titulo" placeholder="Ex: Configurar dominio para Pizzaria XYZ" style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; background:var(--input-bg, #0f172a); color:var(--text); box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Descrição da Demanda / Instruções</label>
+                <textarea id="tarefa-descricao" rows="3" placeholder="Detalhes técnicos, links ou passo a passo para o time de suporte..." style="width:100%; padding:10px; border:1.5px solid var(--border); border-radius:8px; font-size:13px; background:var(--input-bg, #0f172a); color:var(--text); box-sizing:border-box; resize:vertical;"></textarea>
               </div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div>
@@ -5874,6 +6025,27 @@
               </div>
             </div>
 
+            <!-- CANHÃO DE INDEXAÇÃO -->
+            <div class="card" style="padding:24px;margin-bottom:24px;">
+              <h3 style="font-size:16px;color:var(--text-primary);margin-bottom:6px;"><i class="fa-solid fa-satellite-dish" style="color:#fc4b15;"></i> Canhão de SEO & Distributed Sync Ping</h3>
+              <p style="color:#999;font-size:12.5px;margin-bottom:18px;">Motores de busca e diretórios RPC para disparos de indexação, além de emissão distribuída pelos Sync Agents nos restaurantes.</p>
+              
+              <div style="margin-bottom:14px;">
+                <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Motores de Busca (1 por linha)</label>
+                <textarea id="sv-seo-search-engines" rows="3" placeholder="http://www.google.com/ping?sitemap=&#10;http://www.bing.com/ping?sitemap=" style="width:100%;padding:10px 14px;background:rgba(0,0,0,0.25);border:1px solid var(--border-color);border-radius:10px;color:#fff;font-size:12px;outline:none;resize:vertical;font-family:monospace;"></textarea>
+              </div>
+              
+              <div style="margin-bottom:14px;">
+                <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Diretórios XML-RPC (1 por linha)</label>
+                <textarea id="sv-seo-rpc-urls" rows="4" placeholder="http://rpc.pingomatic.com&#10;http://ping.feedburner.com" style="width:100%;padding:10px 14px;background:rgba(0,0,0,0.25);border:1px solid var(--border-color);border-radius:10px;color:#fff;font-size:12px;outline:none;resize:vertical;font-family:monospace;"></textarea>
+              </div>
+              
+              <div style="display:flex;gap:12px;margin-top:16px;">
+                <button onclick="salvarSeoPingConfig()" style="background:linear-gradient(135deg,#fc4b15,#d93800);color:#fff;border:none;border-radius:12px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;"><i class="fa-solid fa-save"></i> Salvar Configuração</button>
+                <button onclick="dispararSeoPing()" style="background:rgba(252,75,21,0.15);color:#fc4b15;border:1px solid rgba(252,75,21,0.3);border-radius:12px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;"><i class="fa-solid fa-rocket"></i> Disparar Ping Agora</button>
+              </div>
+            </div>
+
             <!-- PLANOS -->
             <div class="sv-tab-panel" id="sv-tab-planos" style="display:none;">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
@@ -7116,7 +7288,7 @@
                 <input type="password" id="new-rest-senha" placeholder="Mínimo 4 caracteres"
                   style="padding-right:2.5rem;">
                 <button type="button"
-                  onclick="var inp=this.previousElementSibling;inp.type=inp.type==='password'?'text':'password';"
+                  onclick="var inp=this.previousElementSibling||document.getElementById('new-rest-senha');if(inp)inp.type=inp.type==='password'?'text':'password';"
                   style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.85rem;"><i
                     class="fa-solid fa-eye"></i></button>
               </div>
@@ -7380,7 +7552,7 @@
   <script src="/vendor/sortablejs/Sortable.min.js"></script>
   <script src="/socket.io.min.js"></script>
   <script src="/plugin-client.js"></script>
-  <script src="/super-admin.js"></script>
+  <script src="/super-admin.js?v=202609292212"></script>
   <script src="/fullscreen.js"></script>
 
 

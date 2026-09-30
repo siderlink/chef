@@ -16,11 +16,10 @@ function runWithRetry(fn, maxRetries = 6, baseDelay = 25) {
       if (isSqliteBusyError(err) && attempt < maxRetries) {
         attempt++;
         const jitter = Math.floor(Math.random() * 20);
-        const delay = Math.floor(baseDelay * Math.pow(1.7, attempt)) + jitter;
-        const until = Date.now() + delay;
-        while (Date.now() < until) {
-          // Micro-sleep síncrono para liberar a trava do SQLite no processo
-        }
+        const delay = (baseDelay * Math.pow(2, attempt - 1)) + jitter;
+        const sab = new SharedArrayBuffer(4);
+        const int32 = new Int32Array(sab);
+        Atomics.wait(int32, 0, 0, delay);
         continue;
       }
       throw err;

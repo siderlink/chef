@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "max_reqs_per_minute": 300,
+  "block_sqli_xss": true,
+  "headers_enabled": true,
+  "blacklist_ips": [],
+  "id": 1,
+  "test": true
+}

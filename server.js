@@ -245,9 +245,22 @@ function broadcastPedidos() {
   if (pedidosDebounceTimeout) clearTimeout(pedidosDebounceTimeout);
   pedidosDebounceTimeout = setTimeout(() => {
     db.all(`SELECT * FROM pedidos WHERE status != 'Finalizado'`, (e, r) => {
-      if(!e) io.emit('pedidos_atualizados', r || []);
+      if(!e && typeof io !== 'undefined') io.emit('pedidos_atualizados', r || []);
     });
   }, 300);
+}
+
+function liberarMesaSeVazia(mesaName) {
+  if (!mesaName) return;
+  db.get(`SELECT COUNT(*) as cnt FROM pedidos WHERE localName = ? AND status NOT IN ('Finalizado','Pago','Cancelado')`, [mesaName], (err, row) => {
+    if (!err && row && row.cnt === 0) {
+      db.run(`UPDATE mesas SET status = 'Disponível' WHERE nome = ? AND status != 'Disponível'`, [mesaName], () => {
+        db.all(`SELECT * FROM mesas`, (e, rows) => {
+          if (typeof io !== 'undefined') io.emit('mesas_atualizadas', rows || []);
+        });
+      });
+    }
+  });
 }
 
 function broadcastFormasPagamento(targetSocket = null) {
@@ -313,6 +326,7 @@ let lastConfig = null;
 const pendingRegistrations = new Map();
 
 const express = require('express');
+const seoIndexer = require('./seo-indexer');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
@@ -368,6 +382,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const nfceService = require('./nfce-service');
+const satService = require('./sat-service');
 const iaService = require('./ia-service');
 const synccheffSecurity = require('./synccheff-security');
 const redeLocalController = require('./controllers/rede-local-controller');
@@ -2414,6 +2429,55 @@ db.serialize(() => {
       data_fechamento DATETIME
     )
   `);
+
+  // Migrações seguras de colunas em turnos_caixa (Fechamento Cego & Relatórios X/Z)
+  db.all(`PRAGMA table_info(turnos_caixa)`, [], (errTurnoCols, cols) => {
+    if (!errTurnoCols && cols) {
+      const names = cols.map(c => c.name);
+      const colsToAdd = [
+        { name: 'operador_abertura', type: 'TEXT' },
+        { name: 'operador_fechamento', type: 'TEXT' },
+        { name: 'total_vendas', type: 'REAL DEFAULT 0.00' },
+        { name: 'total_dinheiro', type: 'REAL DEFAULT 0.00' },
+        { name: 'total_credito', type: 'REAL DEFAULT 0.00' },
+        { name: 'total_debito', type: 'REAL DEFAULT 0.00' },
+        { name: 'total_pix', type: 'REAL DEFAULT 0.00' },
+        { name: 'total_outros', type: 'REAL DEFAULT 0.00' },
+        { name: 'total_sangrias', type: 'REAL DEFAULT 0.00' },
+        { name: 'total_suprimentos', type: 'REAL DEFAULT 0.00' },
+        { name: 'saldo_esperado_dinheiro', type: 'REAL DEFAULT 0.00' },
+        { name: 'dinheiro_declarado', type: 'REAL DEFAULT 0.00' },
+        { name: 'diferenca_quebra', type: 'REAL DEFAULT 0.00' },
+        { name: 'observacao', type: 'TEXT' }
+      ];
+      colsToAdd.forEach(c => {
+        if (!names.includes(c.name)) {
+          db.run(`ALTER TABLE turnos_caixa ADD COLUMN ${c.name} ${c.type}`, () => {});
+        }
+      });
+    }
+  });
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS auditoria_cancelamentos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tipo TEXT,
+      identificador TEXT,
+      valor REAL,
+      motivo TEXT,
+      operador TEXT,
+      autorizado_por TEXT,
+      data DATETIME DEFAULT (datetime('now', 'localtime'))
+    )
+  `);
+
+  db.all(`PRAGMA table_info(clientes)`, [], (errCliCols, cols) => {
+    if (!errCliCols && cols) {
+      const names = cols.map(c => c.name);
+      if (!names.includes('cpf')) db.run(`ALTER TABLE clientes ADD COLUMN cpf TEXT`, () => {});
+      if (!names.includes('saldo_cashback')) db.run(`ALTER TABLE clientes ADD COLUMN saldo_cashback REAL DEFAULT 0.00`, () => {});
+    }
+  });
 
   db.run(`
     CREATE TABLE IF NOT EXISTS movimentacoes (
@@ -9064,6 +9128,124 @@ app.post('/api/nfce/emitir', async (req, res) => {
   });
 });
 
+// --- SAT FISCAL SP (CF-e-SAT MODELO 59) ---
+app.post('/api/fiscal/sat/emitir', async (req, res) => {
+  try {
+    withTenant(req, () => {
+      db.all(`SELECT * FROM configuracoes`, async (errConfig, configRows) => {
+        const config = {};
+        if (configRows) configRows.forEach(r => config[r.chave] = r.valor);
+        if (req.body.sat_serie) config.numero_serie_sat = req.body.sat_serie;
+        if (req.body.sat_codigo_ativacao) config.codigo_ativacao = req.body.sat_codigo_ativacao;
+        if (req.body.sat_cnpj_sh) config.cnpj_software_house = req.body.sat_cnpj_sh;
+        if (req.body.sat_signac) config.sign_ac = req.body.sat_signac;
+
+        const result = await satService.emitirSAT({
+          db,
+          orderId: req.body.pedido_id || req.body.orderId,
+          items: req.body.itens || req.body.items || [],
+          paymentMethod: req.body.forma_pagamento || req.body.paymentMethod || 'Dinheiro',
+          changeFor: req.body.troco_para || req.body.changeFor || 0,
+          cpf_cnpj: req.body.cpf_destinatario || req.body.cpf_cnpj || null,
+          config
+        });
+
+        res.json({
+          success: result.ok,
+          ok: result.ok,
+          chave: result.chave_acesso,
+          chave_acesso: result.chave_acesso,
+          xml: (satService.gerarXMLCFe({ items: req.body.itens || [], numero_cupom: result.numero_cupom }, config)).xml,
+          extrato_url: result.extrato_url,
+          extrato_html: result.extrato_html,
+          numero_cupom: result.numero_cupom,
+          status: result.status,
+          mensagem: result.mensagem,
+          error: result.erro
+        });
+      });
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, ok: false, error: err.message });
+  }
+});
+
+app.get('/api/fiscal/sat/extrato/:chave', (req, res) => {
+  const chave = req.params.chave;
+  withTenant(req, () => {
+    db.get(`SELECT * FROM sat_cupons WHERE chave_acesso = ?`, [chave], (err, cupom) => {
+      if (err || !cupom) {
+        return res.status(404).send('Extrato SAT não encontrado para a chave informada.');
+      }
+      db.all(`SELECT * FROM configuracoes`, (errConfig, configRows) => {
+        const config = {};
+        if (configRows) configRows.forEach(r => config[r.chave] = r.valor);
+        const html = satService.gerarExtratoSATHTML({
+          id: cupom.id,
+          numero_cupom: cupom.numero_cupom,
+          chave_acesso: cupom.chave_acesso,
+          items: [],
+          paymentMethod: cupom.forma_pagamento,
+          cpf_cnpj: cupom.cpf_cnpj,
+          created_at: cupom.created_at
+        }, config);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+      });
+    });
+  });
+});
+
+app.get('/api/fiscal/sat/cupons', (req, res) => {
+  withTenant(req, () => {
+    db.run(`
+      CREATE TABLE IF NOT EXISTS sat_cupons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pedido_id INTEGER,
+        numero_cupom INTEGER,
+        numero_serie_sat TEXT,
+        chave_acesso TEXT UNIQUE,
+        xml_envio TEXT,
+        xml_retorno TEXT,
+        valor_total REAL,
+        forma_pagamento TEXT,
+        cpf_cnpj TEXT,
+        status TEXT DEFAULT 'Autorizado',
+        sessao_sat INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `, () => {
+      db.all(`SELECT * FROM sat_cupons ORDER BY id DESC LIMIT 100`, [], (err, rows) => {
+        if (err) return res.status(500).json({ success: false, error: err.message });
+        const cuponsFormatados = (rows || []).map(r => ({
+          ...r,
+          chave: r.chave_acesso
+        }));
+        res.json({ success: true, cupons: cuponsFormatados });
+      });
+    });
+  });
+});
+
+app.post('/api/fiscal/sat/cancelar', async (req, res) => {
+  try {
+    const { chave, motivo } = req.body;
+    if (!chave) return res.status(400).json({ success: false, error: 'Chave do cupom SAT é obrigatória.' });
+    withTenant(req, async () => {
+      const result = await satService.cancelarSAT(db, chave, motivo);
+      res.json({
+        success: result.ok,
+        ok: result.ok,
+        status: result.ok ? 'CANCELADO' : 'ERRO',
+        mensagem: result.mensagem,
+        error: result.erro
+      });
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // --- CONFIGS API ---
 app.get('/api/server-status', (req, res) => {
   const remoteIp = req.socket.remoteAddress;
@@ -9597,6 +9779,47 @@ app.get('/api/config', (req, res) => {
     });
   });
 });
+
+// SEO: Canhão Automático (Dispara o sitemap e pinga diretórios RPC)
+app.post('/api/seo/disparar-pinger', verificarToken, (req, res) => {
+  readGlobalConfig((config) => {
+    try {
+      const dominio = config.site_seo_dominio || 'https://cheff.pro';
+      const titulo = config.site_seo_titulo || 'Sistema Chef Cozinha';
+      const engines = config.site_seo_search_engines || '';
+      const rpc = config.site_seo_rpc_urls || '';
+      seoIndexer.runAutoIndexer(dominio, titulo, engines, rpc);
+      
+      // Distributed Sync Ping
+      io.of('/sync').emit('server:command', {
+        payload: { command_id: Date.now().toString(), command: 'seo_ping', params: { dominio, titulo, engines, rpc } }
+      });
+
+      res.json({ ok: true, msg: 'Canhão de SEO (Indexação e Ping RPC) disparado com sucesso!' });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+});
+
+// SEO: Disparo diário automático (A cada 24 horas)
+setInterval(() => {
+  readGlobalConfig((config) => {
+    try {
+      const dominio = config.site_seo_dominio || 'https://cheff.pro';
+      const titulo = config.site_seo_titulo || 'Sistema Chef Cozinha';
+      const engines = config.site_seo_search_engines || '';
+      const rpc = config.site_seo_rpc_urls || '';
+      console.log('[Cron] Iniciando ciclo diário de Pinging SEO...');
+      seoIndexer.runAutoIndexer(dominio, titulo, engines, rpc);
+      
+      // Distributed Sync Ping
+      io.of('/sync').emit('server:command', {
+        payload: { command_id: Date.now().toString(), command: 'seo_ping', params: { dominio, titulo, engines, rpc } }
+      });
+    } catch (e) {}
+  });
+}, 1000 * 60 * 60 * 24);
 
 app.post('/api/config', verificarToken, (req, res) => {
   withTenant(req, () => {
@@ -12880,6 +13103,1030 @@ app.post('/api/caixa/abrir', express.json(), (req, res) => {
         res.json({ success: true, turno: newTurno });
       }
     );
+  });
+});
+
+// ── Funções Auxiliares de Fechamento de Caixa & Relatório X/Z ──
+function calcularTotaisTurno(targetDb, turno, callback) {
+  if (!turno) return callback(new Error('Turno não fornecido'));
+  const dataAbertura = turno.data_abertura || '1970-01-01 00:00:00';
+  const dataFechamento = turno.data_fechamento || null;
+
+  // 1. Vendas por forma de pagamento
+  const queryPedidos = dataFechamento
+    ? `SELECT LOWER(COALESCE(paymentMethod, 'outros')) as forma, COUNT(id) as qtd, SUM(COALESCE(total, 0)) as total
+       FROM pedidos
+       WHERE (turno_id = ? OR (createdAt >= ? AND createdAt <= ?))
+       GROUP BY LOWER(COALESCE(paymentMethod, 'outros'))`
+    : `SELECT LOWER(COALESCE(paymentMethod, 'outros')) as forma, COUNT(id) as qtd, SUM(COALESCE(total, 0)) as total
+       FROM pedidos
+       WHERE (turno_id = ? OR createdAt >= ?)
+       GROUP BY LOWER(COALESCE(paymentMethod, 'outros'))`;
+
+  const paramsPedidos = dataFechamento
+    ? [turno.id, dataAbertura, dataFechamento]
+    : [turno.id, dataAbertura];
+
+  targetDb.all(queryPedidos, paramsPedidos, (errPed, rowsPed) => {
+    let totalDinheiro = 0;
+    let totalCredito = 0;
+    let totalDebito = 0;
+    let totalPix = 0;
+    let totalOutros = 0;
+    let totalVendas = 0;
+    let totalItensPedidos = 0;
+
+    (rowsPed || []).forEach(r => {
+      const f = (r.forma || '').toLowerCase();
+      const val = parseFloat(r.total) || 0;
+      totalVendas += val;
+      totalItensPedidos += r.qtd;
+      if (f.includes('dinheiro')) totalDinheiro += val;
+      else if (f.includes('credito') || f.includes('crédito')) totalCredito += val;
+      else if (f.includes('debito') || f.includes('débito')) totalDebito += val;
+      else if (f.includes('pix')) totalPix += val;
+      else totalOutros += val;
+    });
+
+    // 2. Sangrias e Suprimentos
+    const queryMov = dataFechamento
+      ? `SELECT tipo, SUM(valor) as total, COUNT(id) as qtd
+         FROM movimentacoes
+         WHERE (turno_id = ? OR (data >= ? AND data <= ?))
+         GROUP BY tipo`
+      : `SELECT tipo, SUM(valor) as total, COUNT(id) as qtd
+         FROM movimentacoes
+         WHERE (turno_id = ? OR data >= ?)
+         GROUP BY tipo`;
+
+    const paramsMov = dataFechamento
+      ? [turno.id, dataAbertura, dataFechamento]
+      : [turno.id, dataAbertura];
+
+    targetDb.all(queryMov, paramsMov, (errMov, rowsMov) => {
+      let totalSangrias = 0;
+      let totalSuprimentos = 0;
+
+      (rowsMov || []).forEach(m => {
+        const t = (m.tipo || '').toLowerCase();
+        const v = parseFloat(m.total) || 0;
+        if (t === 'sangria' || t === 'saida') totalSangrias += v;
+        if (t === 'suprimento' || t === 'aporte' || t === 'reforco') totalSuprimentos += v;
+      });
+
+      const fundoTroco = parseFloat(turno.fundo_troco) || 0;
+      const saldoEsperadoDinheiro = parseFloat((fundoTroco + totalDinheiro + totalSuprimentos - totalSangrias).toFixed(2));
+
+      callback(null, {
+        turno_id: turno.id,
+        fundo_troco: fundoTroco,
+        total_vendas: parseFloat(totalVendas.toFixed(2)),
+        total_dinheiro: parseFloat(totalDinheiro.toFixed(2)),
+        total_credito: parseFloat(totalCredito.toFixed(2)),
+        total_debito: parseFloat(totalDebito.toFixed(2)),
+        total_pix: parseFloat(totalPix.toFixed(2)),
+        total_outros: parseFloat(totalOutros.toFixed(2)),
+        total_sangrias: parseFloat(totalSangrias.toFixed(2)),
+        total_suprimentos: parseFloat(totalSuprimentos.toFixed(2)),
+        saldo_esperado_dinheiro: saldoEsperadoDinheiro,
+        pedidos_atendidos: totalItensPedidos
+      });
+    });
+  });
+}
+
+function gerarExtratoFechamentoHTML(turno, totais, tipoRelatorio = 'Z') {
+  const agora = new Date().toLocaleString('pt-BR');
+  const quebra = parseFloat(turno.diferenca_quebra || 0);
+  const statusQuebra = Math.abs(quebra) < 0.01 
+    ? '✅ EXATO (R$ 0,00)' 
+    : (quebra > 0 ? `🟢 SOBRA (+R$ ${quebra.toFixed(2)})` : `🔴 FALTA (-R$ ${Math.abs(quebra).toFixed(2)})`);
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Relatório ${tipoRelatorio} - ${tipoRelatorio === 'Z' ? 'Fechamento de Caixa' : 'Leitura X'}</title>
+  <style>
+    body { font-family: 'Courier New', monospace; font-size: 12px; width: 310px; margin: 0 auto; padding: 12px; color: #000; }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .bold { font-weight: bold; }
+    .divider { border-bottom: 1px dashed #000; margin: 8px 0; }
+    .double-divider { border-bottom: 2px solid #000; margin: 8px 0; }
+    .flex { display: flex; justify-content: space-between; }
+    @media print { body { width: 100%; margin: 0; padding: 0; } .no-print { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="center bold" style="font-size: 15px;">CHEF COZINHA GOURMET</div>
+  <div class="center">SISTEMA INTELIGENTE DE GESTÃO</div>
+  <div class="divider"></div>
+  <div class="center bold" style="font-size: 13px;">RELATÓRIO ${tipoRelatorio} — ${tipoRelatorio === 'Z' ? 'FECHAMENTO DE TURNO' : 'LEITURA X (PARCIAL)'}</div>
+  <div class="center">Turno #${turno.id} • Status: ${turno.status || 'Fechado'}</div>
+  <div class="divider"></div>
+  <div><strong>Abertura:</strong> ${turno.data_abertura || '--'}</div>
+  <div><strong>Fechamento:</strong> ${turno.data_fechamento || agora}</div>
+  <div><strong>Operador Abertura:</strong> ${turno.operador_abertura || 'Caixa'}</div>
+  <div><strong>Operador Fechamento:</strong> ${turno.operador_fechamento || 'Caixa'}</div>
+  <div class="double-divider"></div>
+  <div class="bold" style="margin-bottom: 4px;">RESUMO DE VENDAS NO TURNO:</div>
+  <div class="flex"><span>Fundo de Troco (Abertura):</span> <span>R$ ${(totais.fundo_troco || 0).toFixed(2)}</span></div>
+  <div class="flex"><span>Vendas Dinheiro:</span> <span>R$ ${(totais.total_dinheiro || 0).toFixed(2)}</span></div>
+  <div class="flex"><span>Vendas Cartão Crédito:</span> <span>R$ ${(totais.total_credito || 0).toFixed(2)}</span></div>
+  <div class="flex"><span>Vendas Cartão Débito:</span> <span>R$ ${(totais.total_debito || 0).toFixed(2)}</span></div>
+  <div class="flex"><span>Vendas PIX:</span> <span>R$ ${(totais.total_pix || 0).toFixed(2)}</span></div>
+  <div class="flex"><span>Outros Meios:</span> <span>R$ ${(totais.total_outros || 0).toFixed(2)}</span></div>
+  <div class="divider"></div>
+  <div class="flex bold" style="font-size: 13px;"><span>TOTAL VENDIDO:</span> <span>R$ ${(totais.total_vendas || 0).toFixed(2)}</span></div>
+  <div class="divider"></div>
+  <div class="bold" style="margin-bottom: 4px;">MOVIMENTAÇÕES DE GAVETA:</div>
+  <div class="flex"><span>(+) Suprimentos (Aportes):</span> <span>R$ ${(totais.total_suprimentos || 0).toFixed(2)}</span></div>
+  <div class="flex"><span>(-) Sangrias (Retiradas):</span> <span>R$ ${(totais.total_sangrias || 0).toFixed(2)}</span></div>
+  <div class="double-divider"></div>
+  <div class="flex bold"><span>SALDO ESPERADO EM DINHEIRO:</span> <span>R$ ${(totais.saldo_esperado_dinheiro || 0).toFixed(2)}</span></div>
+  ${tipoRelatorio === 'Z' ? `
+  <div class="flex bold"><span>DINHEIRO DECLARADO (CONTAGEM):</span> <span>R$ ${(parseFloat(turno.dinheiro_declarado) || 0).toFixed(2)}</span></div>
+  <div class="divider"></div>
+  <div class="flex bold" style="font-size: 13px;"><span>DIFERENÇA / QUEBRA:</span> <span>${statusQuebra}</span></div>
+  ${turno.observacao ? `<div><strong>Obs:</strong> ${turno.observacao}</div>` : ''}
+  ` : ''}
+  <div class="double-divider"></div>
+  <div class="center" style="font-size: 10px; margin-top: 15px;">
+    Emissão: ${agora}<br>
+    Chef Cozinha SaaS Kernel v1.0.0
+  </div>
+  <br><br>
+  <div style="border-top: 1px solid #000; text-align: center; margin-top: 25px;">
+    Assinatura do Operador de Caixa
+  </div>
+  <br><br>
+  <div style="border-top: 1px solid #000; text-align: center; margin-top: 15px;">
+    Visto do Gerente / Responsável
+  </div>
+  <div class="no-print" style="margin-top: 20px; text-align: center;">
+    <button onclick="window.print()" style="padding: 10px 20px; font-weight: bold; background: #10b981; color: #fff; border: none; border-radius: 6px; cursor: pointer;">
+      🖨️ Imprimir Cupom
+    </button>
+  </div>
+</body>
+</html>`;
+}
+
+// ── FECHAMENTO CEGO DE CAIXA ──
+app.post('/api/caixa/fechar', express.json(), (req, res) => {
+  withTenant(req, () => {
+    db.get("SELECT * FROM turnos_caixa WHERE status = 'Aberto' ORDER BY id DESC LIMIT 1", [], (err, turno) => {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+      if (!turno) return res.status(400).json({ success: false, error: 'Não há turno de caixa aberto para fechar.' });
+
+      calcularTotaisTurno(db, turno, (errCalc, totais) => {
+        if (errCalc) return res.status(500).json({ success: false, error: errCalc.message });
+
+        const operador = req.body.operador || 'Caixa';
+        const dinheiroDeclarado = parseFloat(req.body.dinheiro_declarado) || 0;
+        const diferencaQuebra = parseFloat((dinheiroDeclarado - totais.saldo_esperado_dinheiro).toFixed(2));
+        const observacao = req.body.observacao || '';
+
+        db.run(`
+          UPDATE turnos_caixa SET
+            status = 'Fechado',
+            data_fechamento = datetime('now', 'localtime'),
+            operador_fechamento = ?,
+            total_vendas = ?,
+            total_dinheiro = ?,
+            total_credito = ?,
+            total_debito = ?,
+            total_pix = ?,
+            total_outros = ?,
+            total_sangrias = ?,
+            total_suprimentos = ?,
+            saldo_esperado_dinheiro = ?,
+            dinheiro_declarado = ?,
+            diferenca_quebra = ?,
+            observacao = ?
+          WHERE id = ?
+        `, [
+          operador,
+          totais.total_vendas,
+          totais.total_dinheiro,
+          totais.total_credito,
+          totais.total_debito,
+          totais.total_pix,
+          totais.total_outros,
+          totais.total_sangrias,
+          totais.total_suprimentos,
+          totais.saldo_esperado_dinheiro,
+          dinheiroDeclarado,
+          diferencaQuebra,
+          observacao,
+          turno.id
+        ], function (errUpdate) {
+          if (errUpdate) return res.status(500).json({ success: false, error: errUpdate.message });
+
+          const turnoFechado = {
+            ...turno,
+            status: 'Fechado',
+            data_fechamento: new Date().toLocaleString('pt-BR'),
+            operador_fechamento: operador,
+            dinheiro_declarado: dinheiroDeclarado,
+            diferenca_quebra: diferencaQuebra,
+            observacao
+          };
+
+          const extratoHtml = gerarExtratoFechamentoHTML(turnoFechado, totais, 'Z');
+
+          if (typeof io !== 'undefined') {
+            io.emit('estado_caixa', { status: 'Fechado', turno_id: turno.id });
+            io.emit('caixa_fechado_sucesso', turnoFechado);
+          }
+
+          res.json({
+            success: true,
+            ok: true,
+            turno_id: turno.id,
+            totais,
+            dinheiro_declarado: dinheiroDeclarado,
+            diferenca_quebra: diferencaQuebra,
+            quebra_status: Math.abs(diferencaQuebra) < 0.01 ? 'exato' : (diferencaQuebra > 0 ? 'sobra' : 'falta'),
+            extrato_html: extratoHtml,
+            mensagem: `Turno de caixa #${turno.id} encerrado com sucesso! Diferença de gaveta: R$ ${diferencaQuebra.toFixed(2)}`
+          });
+        });
+      });
+    });
+  });
+});
+
+// ── LEITURA X (CONFERÊNCIA EM TEMPO REAL SEM FECHAR) ──
+app.get('/api/caixa/leitura-x', (req, res) => {
+  withTenant(req, () => {
+    db.get("SELECT * FROM turnos_caixa WHERE status = 'Aberto' ORDER BY id DESC LIMIT 1", [], (err, turno) => {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+      if (!turno) return res.status(404).json({ success: false, error: 'Não há turno de caixa aberto no momento.' });
+
+      calcularTotaisTurno(db, turno, (errCalc, totais) => {
+        if (errCalc) return res.status(500).json({ success: false, error: errCalc.message });
+
+        const extratoHtml = gerarExtratoFechamentoHTML(turno, totais, 'X');
+        res.json({
+          success: true,
+          ok: true,
+          turno,
+          totais,
+          extrato_html: extratoHtml
+        });
+      });
+    });
+  });
+});
+
+// ── EXTRATO TÉRMICO DO FECHAMENTO (RELATÓRIO Z) ──
+app.get('/api/caixa/extrato-fechamento/:id', (req, res) => {
+  const turnoId = req.params.id;
+  withTenant(req, () => {
+    db.get("SELECT * FROM turnos_caixa WHERE id = ?", [turnoId], (err, turno) => {
+      if (err || !turno) return res.status(404).send('Turno de caixa não localizado.');
+
+      calcularTotaisTurno(db, turno, (errCalc, totais) => {
+        const t = totais || {
+          fundo_troco: turno.fundo_troco,
+          total_vendas: turno.total_vendas,
+          total_dinheiro: turno.total_dinheiro,
+          total_credito: turno.total_credito,
+          total_debito: turno.total_debito,
+          total_pix: turno.total_pix,
+          total_outros: turno.total_outros,
+          total_sangrias: turno.total_sangrias,
+          total_suprimentos: turno.total_suprimentos,
+          saldo_esperado_dinheiro: turno.saldo_esperado_dinheiro
+        };
+
+        const html = gerarExtratoFechamentoHTML(turno, t, turno.status === 'Fechado' ? 'Z' : 'X');
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+      });
+    });
+  });
+});
+
+// ── SANGRIA & SUPRIMENTO DE CAIXA VIA REST ──
+app.post('/api/caixa/sangria', express.json(), (req, res) => {
+  const valor = parseFloat(req.body.valor) || 0;
+  const motivo = req.body.motivo || 'Sangria de Caixa / Recolhimento para cofre';
+  const operador = req.body.operador || 'Caixa';
+
+  if (valor <= 0) return res.status(400).json({ success: false, error: 'O valor da sangria deve ser maior que zero.' });
+
+  withTenant(req, () => {
+    db.get("SELECT id FROM turnos_caixa WHERE status = 'Aberto' ORDER BY id DESC LIMIT 1", [], (err, turno) => {
+      const turnoId = turno ? turno.id : null;
+      db.run(
+        `INSERT INTO movimentacoes (turno_id, tipo, valor, forma_pagamento, descricao, data) 
+         VALUES (?, 'Sangria', ?, 'Dinheiro', ?, datetime('now', 'localtime'))`,
+        [turnoId, valor, `Sangria (${operador}): ${motivo}`],
+        function (errIns) {
+          if (errIns) return res.status(500).json({ success: false, error: errIns.message });
+          if (typeof io !== 'undefined') io.emit('movimentacoes_atualizadas');
+          res.json({
+            success: true,
+            ok: true,
+            movimentacao_id: this.lastID,
+            tipo: 'Sangria',
+            valor,
+            operador,
+            mensagem: `Sangria de R$ ${valor.toFixed(2)} registrada com sucesso!`
+          });
+        }
+      );
+    });
+  });
+});
+
+app.post('/api/caixa/suprimento', express.json(), (req, res) => {
+  const valor = parseFloat(req.body.valor) || 0;
+  const motivo = req.body.motivo || 'Suprimento / Aporte de Troco';
+  const operador = req.body.operador || 'Caixa';
+
+  if (valor <= 0) return res.status(400).json({ success: false, error: 'O valor do suprimento deve ser maior que zero.' });
+
+  withTenant(req, () => {
+    db.get("SELECT id FROM turnos_caixa WHERE status = 'Aberto' ORDER BY id DESC LIMIT 1", [], (err, turno) => {
+      const turnoId = turno ? turno.id : null;
+      db.run(
+        `INSERT INTO movimentacoes (turno_id, tipo, valor, forma_pagamento, descricao, data) 
+         VALUES (?, 'Suprimento', ?, 'Dinheiro', ?, datetime('now', 'localtime'))`,
+        [turnoId, valor, `Suprimento (${operador}): ${motivo}`],
+        function (errIns) {
+          if (errIns) return res.status(500).json({ success: false, error: errIns.message });
+          if (typeof io !== 'undefined') io.emit('movimentacoes_atualizadas');
+          res.json({
+            success: true,
+            ok: true,
+            movimentacao_id: this.lastID,
+            tipo: 'Suprimento',
+            valor,
+            operador,
+            mensagem: `Suprimento de R$ ${valor.toFixed(2)} registrado com sucesso!`
+          });
+        }
+      );
+    });
+  });
+});
+
+// ── HISTÓRICO DE TURNOS DE CAIXA ──
+app.get('/api/caixa/turnos', (req, res) => {
+  withTenant(req, () => {
+    db.all("SELECT * FROM turnos_caixa ORDER BY id DESC LIMIT 50", [], (err, rows) => {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+      res.json({ success: true, ok: true, turnos: rows || [] });
+    });
+  });
+});
+
+// ── KDS MULTI-ESTAÇÕES & CONTROLE DE PRODUÇÃO ──
+function determinarEstacaoItem(nome, categoria) {
+  const texto = `${nome || ''} ${categoria || ''}`.toLowerCase();
+  if (texto.match(/bebida|suco|refrigerante|cerveja|chopp|drink|água|agua|vinho|whisky|gin|coquetel|dose/)) return 'bar';
+  if (texto.match(/pizza|calzone|esfiha|forno|fornada/)) return 'forno';
+  if (texto.match(/sobremesa|doce|sorvete|torta|pudim|petit|brownie|açai|acai|café|cafe/)) return 'sobremesas';
+  return 'cozinha'; // Padrão: Cozinha / Chapa / Grelhados / Saladas
+}
+
+app.get('/api/kds/pedidos-ativos', (req, res) => {
+  const pracaFiltro = (req.query.praca || 'todas').toLowerCase();
+
+  withTenant(req, () => {
+    db.all(`
+      SELECT p.*, strftime('%s', 'now') - strftime('%s', COALESCE(p.createdAt, 'now')) as segundos_decorridos
+      FROM pedidos p
+      WHERE LOWER(COALESCE(p.status, '')) IN ('pendente', 'em preparo', 'aguardando', 'cozinha', 'em espera')
+      ORDER BY p.id ASC
+    `, [], (err, rows) => {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+
+      const pedidosFormatados = (rows || []).map(p => {
+        const estacao = determinarEstacaoItem(p.productName, p.sector);
+        const decorridoMinutos = Math.max(0, Math.floor((p.segundos_decorridos || 0) / 60));
+        let nivelSla = 'verde';
+        if (decorridoMinutos >= 20) nivelSla = 'vermelho';
+        else if (decorridoMinutos >= 10) nivelSla = 'amarelo';
+
+        return {
+          id: p.id,
+          mesa: p.localName || 'Balcão',
+          cliente: p.userName || 'Cliente',
+          produto: p.productName,
+          quantidade: p.quantity || 1,
+          observacoes: p.observations || '',
+          opcoes: p.options || '',
+          estacao,
+          status: p.status || 'Pendente',
+          criado_em: p.createdAt || p.time,
+          segundos_decorridos: p.segundos_decorridos || 0,
+          minutos_decorridos: decorridoMinutos,
+          sla_nivel: nivelSla
+        };
+      });
+
+      const filtrados = (pracaFiltro === 'todas' || pracaFiltro === 'expedicao')
+        ? pedidosFormatados
+        : pedidosFormatados.filter(p => p.estacao === pracaFiltro);
+
+      res.json({
+        success: true,
+        ok: true,
+        praca: pracaFiltro,
+        total: filtrados.length,
+        pedidos: filtrados
+      });
+    });
+  });
+});
+
+app.post('/api/kds/concluir-pedido', express.json(), (req, res) => {
+  const { id, chamar_tv } = req.body || {};
+  if (!id) return res.status(400).json({ success: false, error: 'ID do pedido obrigatório.' });
+
+  withTenant(req, () => {
+    db.get(`SELECT * FROM pedidos WHERE id = ?`, [id], (err, p) => {
+      if (err || !p) return res.status(404).json({ success: false, error: 'Pedido não encontrado.' });
+
+      db.run(`UPDATE pedidos SET status = 'Pronto', prontoEm = datetime('now', 'localtime') WHERE id = ?`, [id], function(errUp) {
+        if (errUp) return res.status(500).json({ success: false, error: errUp.message });
+
+        if (typeof io !== 'undefined') {
+          io.emit('pedidos_atualizados');
+          io.emit('pedido_status_alterado', { id, status: 'Pronto' });
+
+          if (chamar_tv || !p.localName || p.localName.toLowerCase().includes('balc')) {
+            const senhaNum = String(p.id).slice(-3);
+            io.emit('senha_chamada_tv', {
+              senha: senhaNum,
+              senha_numero: senhaNum,
+              status: 'PRONTO',
+              cliente: p.userName || 'Cliente',
+              texto_fala: `Senha ${senhaNum}, favor retirar no balcão.`
+            });
+          }
+        }
+
+        res.json({
+          success: true,
+          ok: true,
+          id,
+          status: 'Pronto',
+          mensagem: `Pedido #${id} marcado como Pronto!`
+        });
+      });
+    });
+  });
+});
+
+// ── DISPARO DE CHAMADA NA TV DE SENHAS (BALCÃO / KDS / CAIXA) ──
+app.post('/api/painel-tv/chamar', express.json(), (req, res) => {
+  const { senha, cliente, tipo, texto_fala } = req.body || {};
+  const senhaStr = String(senha || '001');
+  const clienteStr = cliente || 'Cliente';
+  const fala = texto_fala || `Senha ${senhaStr}, ${clienteStr}, favor retirar no balcão.`;
+
+  if (typeof io !== 'undefined') {
+    io.emit('senha_chamada_tv', {
+      senha: senhaStr,
+      senha_numero: senhaStr,
+      status: 'PRONTO',
+      cliente_nome: clienteStr,
+      tipo: tipo || 'Retirada Balcão',
+      texto_fala: fala,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  res.json({
+    success: true,
+    ok: true,
+    senha: senhaStr,
+    cliente: clienteStr,
+    fala,
+    mensagem: `Senha #${senhaStr} chamada com sucesso no Painel de TV!`
+  });
+});
+
+// ── GARÇOM VOICE IA: PARSER DE PEDIDOS POR VOZ ──
+app.post('/api/ia/interpretar-comando-voz', express.json(), (req, res) => {
+  const { texto, audio_transcrito } = req.body || {};
+  const fala = (texto || audio_transcrito || '').trim();
+
+  if (!fala) {
+    return res.status(400).json({ success: false, error: 'Texto de voz não informado.' });
+  }
+
+  const matchMesa = fala.match(/mesa\s*(?:número|numero|n[ºo])?\s*(\d+)/i);
+  const mesaIdentificada = matchMesa ? `Mesa ${matchMesa[1]}` : 'Balcão';
+
+  withTenant(req, () => {
+    db.all(`SELECT id, nome, preco, categoria FROM produtos`, [], (err, produtos) => {
+      const produtosDb = produtos || [];
+      const itensDetectados = [];
+      const numMap = { 'um': 1, 'uma': 1, 'dois': 2, 'duas': 2, 'tres': 3, 'três': 3, 'quatro': 4, 'cinco': 5, 'seis': 6 };
+
+      produtosDb.forEach(prod => {
+        const prodNomeLower = prod.nome.toLowerCase();
+        if (fala.toLowerCase().includes(prodNomeLower)) {
+          let qtd = 1;
+          const regQtd = new RegExp(`(?:(\\d+)|(um|uma|dois|duas|três|tres|quatro|cinco|seis))\\s*(?:x\\s*)?${prodNomeLower.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}`, 'i');
+          const mQtd = fala.match(regQtd);
+          if (mQtd) {
+            if (mQtd[1]) qtd = parseInt(mQtd[1], 10);
+            else if (mQtd[2] && numMap[mQtd[2].toLowerCase()]) qtd = numMap[mQtd[2].toLowerCase()];
+          }
+
+          let obs = '';
+          const matchObs = fala.match(/(sem\s+[a-zA-Záàâãéèêíïóôõöúçñ]+|com\s+[a-zA-Záàâãéèêíïóôõöúçñ]+|ponto\s+[a-zA-Záàâãéèêíïóôõöúçñ]+|bem\s+passad[oa]|mal\s+passad[oa])/gi);
+          if (matchObs) obs = matchObs.join(', ');
+
+          itensDetectados.push({
+            produto_id: prod.id,
+            nome: prod.nome,
+            quantidade: qtd,
+            preco_unitario: prod.preco,
+            subtotal: parseFloat((qtd * prod.preco).toFixed(2)),
+            observacoes: obs
+          });
+        }
+      });
+
+      const totalCalculado = itensDetectados.reduce((acc, it) => acc + it.subtotal, 0);
+
+      res.json({
+        success: true,
+        ok: true,
+        fala_original: fala,
+        mesa: mesaIdentificada,
+        itens: itensDetectados,
+        total_estimado: parseFloat(totalCalculado.toFixed(2)),
+        itens_detectados_qtd: itensDetectados.length,
+        confianca: itensDetectados.length > 0 ? 'ALTA' : 'BAIXA',
+        sugestao: itensDetectados.length === 0 ? 'Fale o nome do produto conforme cadastrado no cardápio.' : 'Itens identificados com sucesso pelo motor de IA!'
+      });
+    });
+  });
+});
+
+// ── DIVISÃO DE CONTA INTELIGENTE & CONFERÊNCIA DE MESA (SPLIT BILL) ──
+app.post('/api/mesas/dividir-conta', express.json(), (req, res) => {
+  const { mesa, pessoas = 1, incluir_servico = true, desconto = 0, couvert_unitario = 0 } = req.body || {};
+  const numPessoas = Math.max(1, parseInt(pessoas, 10) || 1);
+  const mesaNome = mesa || 'Mesa 01';
+
+  withTenant(req, () => {
+    db.all(`
+      SELECT * FROM pedidos 
+      WHERE (localName = ? OR mesa_grupo = ?) AND LOWER(COALESCE(status, '')) NOT IN ('finalizado', 'pago', 'cancelado')
+      ORDER BY id ASC
+    `, [mesaNome, mesaNome], (err, itens) => {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+      if (!itens || itens.length === 0) {
+        return res.status(404).json({ success: false, error: `Não há itens abertos para a mesa ${mesaNome}.` });
+      }
+
+      let subtotalConsumo = 0;
+      const itensFormatados = itens.map(item => {
+        const precoNum = Math.abs(parseFloat(String(item.total || 0).replace(',', '.')) || 0);
+        subtotalConsumo += precoNum;
+        return {
+          id: item.id,
+          produto: item.productName,
+          quantidade: item.quantity || 1,
+          total: precoNum,
+          observacoes: item.observations || ''
+        };
+      });
+
+      const taxaServico = incluir_servico ? parseFloat((subtotalConsumo * 0.10).toFixed(2)) : 0;
+      const couvertTotal = parseFloat(((parseFloat(couvert_unitario) || 0) * numPessoas).toFixed(2));
+      const descontoValor = Math.min(subtotalConsumo, parseFloat(desconto) || 0);
+      const totalGeral = parseFloat((subtotalConsumo + taxaServico + couvertTotal - descontoValor).toFixed(2));
+      const valorPorPessoa = parseFloat((totalGeral / numPessoas).toFixed(2));
+
+      const dataHora = new Date().toLocaleString('pt-BR');
+      const extratoConferenciaHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Conferência de Mesa - ${mesaNome}</title>
+  <style>
+    body { font-family: 'Courier New', monospace; width: 300px; margin: 0 auto; padding: 10px; font-size: 12px; color: #000; }
+    .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+    .linha { display: flex; justify-content: space-between; margin: 3px 0; }
+    .bold { font-weight: bold; }
+    .destaque { font-size: 14px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 6px 0; margin: 8px 0; }
+    .rateio { background: #f4f4f4; border: 1px solid #ddd; border-radius: 6px; padding: 8px; margin: 10px 0; text-align: center; }
+    .rateio .valor-pessoa { font-size: 16px; font-weight: bold; color: #000; margin-top: 4px; }
+    .no-print { text-align: center; margin-top: 15px; }
+    @media print { .no-print { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div style="font-size: 15px; font-weight: bold;">CHEF COZINHA RESTAURANTE</div>
+    <div>CONFERÊNCIA DE CONTA (NÃO É FISCAL)</div>
+    <div style="font-size: 14px; font-weight: bold; margin-top: 4px;">${mesaNome.toUpperCase()}</div>
+    <div style="font-size: 11px;">Data/Hora: ${dataHora}</div>
+  </div>
+
+  <div style="margin-bottom: 8px;">
+    ${itensFormatados.map(it => `
+      <div class="linha">
+        <span>${it.quantidade}x ${it.produto}</span>
+        <span>R$ ${it.total.toFixed(2)}</span>
+      </div>
+      ${it.observacoes ? `<div style="font-size:10px; color:#555; padding-left:12px;">Obs: ${it.observacoes}</div>` : ''}
+    `).join('')}
+  </div>
+
+  <div class="linha">
+    <span>Subtotal Consumo:</span>
+    <span>R$ ${subtotalConsumo.toFixed(2)}</span>
+  </div>
+  ${taxaServico > 0 ? `
+  <div class="linha">
+    <span>Serviço Sugerido (10%):</span>
+    <span>R$ ${taxaServico.toFixed(2)}</span>
+  </div>` : ''}
+  ${couvertTotal > 0 ? `
+  <div class="linha">
+    <span>Couvert Artístico (${numPessoas}x):</span>
+    <span>R$ ${couvertTotal.toFixed(2)}</span>
+  </div>` : ''}
+  ${descontoValor > 0 ? `
+  <div class="linha" style="color: #b91c1c;">
+    <span>Desconto Promocional:</span>
+    <span>- R$ ${descontoValor.toFixed(2)}</span>
+  </div>` : ''}
+
+  <div class="linha destaque">
+    <span>TOTAL DA CONTA:</span>
+    <span>R$ ${totalGeral.toFixed(2)}</span>
+  </div>
+
+  <div class="rateio">
+    <div>DIVIDIDO POR <strong>${numPessoas} PESSOA(S)</strong>:</div>
+    <div class="valor-pessoa">R$ ${valorPorPessoa.toFixed(2)} / pessoa</div>
+  </div>
+
+  <div style="text-align: center; font-size: 10px; margin-top: 15px; color: #555;">
+    Agradecemos a sua preferência!<br>
+    Chef Cozinha SaaS Kernel
+  </div>
+
+  <div class="no-print">
+    <button onclick="window.print()" style="padding: 8px 16px; font-weight: bold; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer;">
+      🖨️ Imprimir Conferência
+    </button>
+  </div>
+</body>
+</html>`;
+
+      if (typeof io !== 'undefined') {
+        io.emit('mesa_conferencia_solicitada', {
+          mesa: mesaNome,
+          pessoas: numPessoas,
+          total: totalGeral,
+          valor_por_pessoa: valorPorPessoa
+        });
+      }
+
+      res.json({
+        success: true,
+        ok: true,
+        mesa: mesaNome,
+        pessoas: numPessoas,
+        itens_qtd: itensFormatados.length,
+        itens: itensFormatados,
+        subtotal_consumo: subtotalConsumo,
+        taxa_servico: taxaServico,
+        couvert_total: couvertTotal,
+        desconto_valor: descontoValor,
+        total_geral: totalGeral,
+        valor_por_pessoa: valorPorPessoa,
+        extrato_conferencia_html: extratoConferenciaHtml
+      });
+    });
+  });
+});
+
+// ── TRANSFERIR ITEM INDIVIDUAL DE MESA ──
+app.post('/api/mesas/transferir-item', express.json(), (req, res) => {
+  const { itemId, mesaOrigem, mesaDestino, operador = 'Garçom' } = req.body || {};
+  if (!itemId || !mesaDestino) {
+    return res.status(400).json({ success: false, error: 'Item ID e Mesa de Destino são obrigatórios.' });
+  }
+
+  withTenant(req, () => {
+    db.get('SELECT * FROM pedidos WHERE id = ?', [itemId], (err, item) => {
+      if (err || !item) {
+        return res.status(404).json({ success: false, error: 'Item não localizado no banco de dados.' });
+      }
+
+      const origemEfetiva = mesaOrigem || item.localName;
+
+      db.run('UPDATE pedidos SET localName = ?, mesa_grupo = ? WHERE id = ?', [mesaDestino, mesaDestino, itemId], function(errUp) {
+        if (errUp) return res.status(500).json({ success: false, error: errUp.message });
+
+        if (typeof global.registrarAuditoria === 'function') {
+          global.registrarAuditoria(
+            operador,
+            'TRANSFERENCIA_ITEM_MESA',
+            `Item #${itemId} (${item.quantity}x ${item.productName}) transferido de ${origemEfetiva} para ${mesaDestino}`,
+            'Operação de Salão',
+            'MEDIO'
+          );
+        }
+
+        broadcastPedidos();
+        liberarMesaSeVazia(origemEfetiva);
+
+        if (typeof io !== 'undefined') {
+          io.emit('item_transferido', {
+            itemId,
+            produto: item.productName,
+            origem: origemEfetiva,
+            destino: mesaDestino,
+            operador
+          });
+        }
+
+        res.json({
+          success: true,
+          ok: true,
+          itemId,
+          produto: item.productName,
+          origem: origemEfetiva,
+          destino: mesaDestino,
+          mensagem: `Item "${item.productName}" transferido com sucesso para ${mesaDestino}!`
+        });
+      });
+    });
+  });
+});
+
+// ── FIDELIDADE & CASHBACK NO CHECKOUT ──
+app.get('/api/fidelidade/saldo/:identificador', (req, res) => {
+  const idOrCpf = (req.params.identificador || '').replace(/\D/g, '');
+  const rawId = req.params.identificador || '';
+
+  withTenant(req, () => {
+    db.get(`
+      SELECT * FROM clientes 
+      WHERE (REPLACE(REPLACE(telefone, '-', ''), ' ', '') LIKE '%' || ? || '%' AND length(?) >= 8)
+         OR (REPLACE(REPLACE(REPLACE(COALESCE(cpf, ''), '.', ''), '-', ''), '/', '') = ? AND length(?) >= 11)
+         OR id = ?
+      LIMIT 1
+    `, [idOrCpf, idOrCpf, idOrCpf, idOrCpf, parseInt(rawId, 10) || 0], (err, cliente) => {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+      if (!cliente) {
+        return res.status(404).json({ success: false, error: 'Cliente não encontrado no programa de fidelidade.' });
+      }
+
+      const saldoCashback = parseFloat(cliente.saldo_cashback || 0);
+      const pontos = parseInt(cliente.pontos || 0, 10);
+      const nivel = cliente.nivel || 'Bronze';
+
+      res.json({
+        success: true,
+        ok: true,
+        cliente: {
+          id: cliente.id,
+          nome: cliente.nome,
+          telefone: cliente.telefone,
+          cpf: cliente.cpf || '',
+          pontos,
+          saldo_cashback: saldoCashback,
+          nivel,
+          total_gasto: parseFloat(cliente.total_gasto || 0)
+        }
+      });
+    });
+  });
+});
+
+app.post('/api/fidelidade/resgatar-cashback', express.json(), (req, res) => {
+  const { clienteId, valor_resgate, mesa, operador = 'Caixa' } = req.body || {};
+  const valor = parseFloat(valor_resgate) || 0;
+
+  if (!clienteId || valor <= 0) {
+    return res.status(400).json({ success: false, error: 'Cliente e valor positivo de resgate são obrigatórios.' });
+  }
+
+  withTenant(req, () => {
+    db.get('SELECT * FROM clientes WHERE id = ?', [clienteId], (err, cliente) => {
+      if (err || !cliente) return res.status(404).json({ success: false, error: 'Cliente não localizado.' });
+
+      const saldoAtual = parseFloat(cliente.saldo_cashback || 0);
+      if (valor > saldoAtual) {
+        return res.status(400).json({
+          success: false,
+          error: `Saldo insuficiente de cashback. Saldo disponível: R$ ${saldoAtual.toFixed(2)}, tentou resgatar: R$ ${valor.toFixed(2)}.`
+        });
+      }
+
+      const novoSaldo = parseFloat((saldoAtual - valor).toFixed(2));
+      db.run('UPDATE clientes SET saldo_cashback = ? WHERE id = ?', [novoSaldo, clienteId], function(errUp) {
+        if (errUp) return res.status(500).json({ success: false, error: errUp.message });
+
+        if (typeof global.registrarAuditoria === 'function') {
+          global.registrarAuditoria(
+            operador,
+            'RESGATE_CASHBACK_FIDELIDADE',
+            `Resgate de R$ ${valor.toFixed(2)} de cashback por ${cliente.nome} (${mesa || 'Balcão'}). Saldo restante: R$ ${novoSaldo.toFixed(2)}`,
+            'Fidelidade',
+            'BAIXO'
+          );
+        }
+
+        res.json({
+          success: true,
+          ok: true,
+          cliente_id: clienteId,
+          cliente_nome: cliente.nome,
+          valor_resgatado: valor,
+          saldo_anterior: saldoAtual,
+          saldo_restante: novoSaldo,
+          mensagem: `Cashback de R$ ${valor.toFixed(2)} resgatado com sucesso para ${cliente.nome}!`
+        });
+      });
+    });
+  });
+});
+
+// ── CURVA ABC DE PRODUTOS & DRE GERENCIAL CONSOLIDADO ──
+app.get('/api/relatorios/curva-abc', (req, res) => {
+  withTenant(req, () => {
+    db.all(`
+      SELECT 
+        p.productName as nome,
+        SUM(p.quantity) as quantidade_total,
+        SUM(CAST(REPLACE(REPLACE(p.total, 'R$', ''), ',', '.') AS REAL)) as receita_total
+      FROM pedidos p
+      WHERE LOWER(COALESCE(p.status, '')) IN ('finalizado', 'pago', 'entregue')
+      GROUP BY p.productName
+      ORDER BY receita_total DESC
+    `, [], (err, rows) => {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+
+      const produtos = (rows || []).map(r => ({
+        nome: r.nome,
+        quantidade_total: r.quantidade_total || 0,
+        receita_total: parseFloat(Number(r.receita_total || 0).toFixed(2))
+      }));
+
+      const faturamentoTotal = produtos.reduce((acc, p) => acc + p.receita_total, 0);
+
+      let acumulado = 0;
+      const classificados = produtos.map(prod => {
+        acumulado += prod.receita_total;
+        const pctAcumulado = faturamentoTotal > 0 ? (acumulado / faturamentoTotal) * 100 : 0;
+        let classe = 'C';
+        if (pctAcumulado <= 80) classe = 'A';
+        else if (pctAcumulado <= 95) classe = 'B';
+
+        return {
+          ...prod,
+          participacao_pct: faturamentoTotal > 0 ? parseFloat(((prod.receita_total / faturamentoTotal) * 100).toFixed(2)) : 0,
+          acumulado_pct: parseFloat(pctAcumulado.toFixed(2)),
+          classe
+        };
+      });
+
+      const totalA = classificados.filter(c => c.classe === 'A').length;
+      const totalB = classificados.filter(c => c.classe === 'B').length;
+      const totalC = classificados.filter(c => c.classe === 'C').length;
+
+      res.json({
+        success: true,
+        ok: true,
+        faturamento_total: parseFloat(faturamentoTotal.toFixed(2)),
+        total_itens: classificados.length,
+        resumo_classes: {
+          classe_a: { qtd: totalA, descricao: 'Carro-chefe (até 80% do faturamento)' },
+          classe_b: { qtd: totalB, descricao: 'Intermediários (próximos 15%)' },
+          classe_c: { qtd: totalC, descricao: 'Cauda longa (últimos 5%)' }
+        },
+        produtos: classificados
+      });
+    });
+  });
+});
+
+app.get('/api/relatorios/dre-gerencial', (req, res) => {
+  withTenant(req, () => {
+    db.get(`
+      SELECT 
+        COUNT(id) as total_pedidos,
+        COALESCE(SUM(CAST(REPLACE(REPLACE(total, 'R$', ''), ',', '.') AS REAL)), 0) as receita_bruta
+      FROM pedidos
+      WHERE LOWER(COALESCE(status, '')) IN ('finalizado', 'pago', 'entregue')
+    `, [], (errPed, rowPed) => {
+      if (errPed) return res.status(500).json({ success: false, error: errPed.message });
+
+      const receitaBruta = parseFloat(Number(rowPed?.receita_bruta || 0).toFixed(2));
+      const totalPedidos = rowPed?.total_pedidos || 0;
+
+      db.all(`SELECT tipo, valor, forma_pagamento FROM movimentacoes`, [], (errMov, movs) => {
+        const movimentacoes = movs || [];
+        let totalSangrias = 0;
+        let totalSuprimentos = 0;
+
+        movimentacoes.forEach(m => {
+          const val = parseFloat(m.valor) || 0;
+          if (m.tipo === 'Sangria') totalSangrias += val;
+          if (m.tipo === 'Suprimento') totalSuprimentos += val;
+        });
+
+        const cmvEstimado = parseFloat((receitaBruta * 0.32).toFixed(2));
+        const lucroBruto = parseFloat((receitaBruta - cmvEstimado).toFixed(2));
+        const taxasCartaoEstimadas = parseFloat((receitaBruta * 0.022).toFixed(2));
+        const lucroOperacional = parseFloat((lucroBruto - totalSangrias - taxasCartaoEstimadas).toFixed(2));
+        const margemOperacionalPct = receitaBruta > 0 ? parseFloat(((lucroOperacional / receitaBruta) * 100).toFixed(2)) : 0;
+
+        res.json({
+          success: true,
+          ok: true,
+          periodo: 'Consolidado Geral',
+          total_pedidos: totalPedidos,
+          dre: {
+            receita_bruta: receitaBruta,
+            impostos_e_deducoes_estimados: 0.00,
+            receita_liquida: receitaBruta,
+            cmv_custo_mercadorias: cmvEstimado,
+            cmv_percentual: 32.0,
+            lucro_bruto: lucroBruto,
+            margem_bruta_pct: receitaBruta > 0 ? parseFloat(((lucroBruto / receitaBruta) * 100).toFixed(2)) : 0,
+            despesas_operacionais_sangrias: parseFloat(totalSangrias.toFixed(2)),
+            taxas_meios_pagamento_estimadas: taxasCartaoEstimadas,
+            lucro_operacional_liquido: lucroOperacional,
+            margem_operacional_liquida_pct: margemOperacionalPct
+          }
+        });
+      });
+    });
+  });
+});
+
+// ── AUDITORIA DE CANCELAMENTOS COM MOTIVO OBRIGATÓRIO ──
+app.post('/api/auditoria/cancelamento', express.json(), (req, res) => {
+  const { tipo = 'ITEM', identificador, valor = 0, motivo, operador = 'Operador', autorizado_por = 'Gerente' } = req.body || {};
+
+  if (!motivo || !motivo.trim()) {
+    return res.status(400).json({ success: false, error: 'O motivo do cancelamento é estritamente obrigatório para auditoria.' });
+  }
+
+  withTenant(req, () => {
+    db.run(`
+      INSERT INTO auditoria_cancelamentos (tipo, identificador, valor, motivo, operador, autorizado_por, data)
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+    `, [tipo, identificador || 'Mesa/Item', parseFloat(valor) || 0, motivo.trim(), operador, autorizado_por], function(err) {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+
+      if (typeof io !== 'undefined') {
+        io.emit('alerta_cancelamento_seguranca', {
+          id: this.lastID,
+          tipo,
+          identificador,
+          valor,
+          motivo,
+          operador,
+          autorizado_por,
+          data: new Date().toISOString()
+        });
+      }
+
+      res.json({
+        success: true,
+        ok: true,
+        registro_id: this.lastID,
+        tipo,
+        motivo,
+        mensagem: 'Cancelamento registrado com sucesso na auditoria de segurança!'
+      });
+    });
+  });
+});
+
+app.get('/api/auditoria/cancelamentos', (req, res) => {
+  withTenant(req, () => {
+    db.all(`SELECT * FROM auditoria_cancelamentos ORDER BY id DESC LIMIT 50`, [], (err, rows) => {
+      if (err) return res.status(500).json({ success: false, error: err.message });
+      res.json({
+        success: true,
+        ok: true,
+        total: (rows || []).length,
+        cancelamentos: rows || []
+      });
+    });
   });
 });
 
