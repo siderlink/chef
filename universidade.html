@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universidade Cheff.pro | Central de Ajuda e Tutoriais</title>
+  <meta name="description" content="Aprenda a usar todas as funções do Cheff.pro: PDV, Cardápio Digital, KDS, Gestão Financeira, Inteligência Artificial, CRM e muito mais. Domine a gestão do seu restaurante.">
+  <meta name="keywords" content="tutorial sistema restaurante, como usar pdv, cardapio digital tutorial, kds cozinha, gestao financeira restaurante, cheff.pro ajuda, suporte cheff cozinha">
+  
+  <link rel="icon" href="/icon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card: #1e293b;
+      --border: rgba(255, 255, 255, 0.08);
+      --primary: #fc4b15;
+      --primary-glow: rgba(252, 75, 21, 0.15);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --sidebar-w: 280px;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+    
+    /* Navbar */
+    .navbar {
+      height: 70px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      position: sticky;
+      top: 0;
+      background: rgba(11, 17, 32, 0.8);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      justify-content: space-between;
+    }
+    .navbar-brand { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 22px; color: #fff; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .navbar-brand i { color: var(--primary); }
+    
+    /* Layout Main */
+    .layout-main {
+      display: flex;
+      flex: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-w);
+      border-right: 1px solid var(--border);
+      padding: 32px 24px;
+      position: sticky;
+      top: 70px;
+      height: calc(100vh - 70px);
+      overflow-y: auto;
+    }
+    .sidebar-group { margin-bottom: 24px; }
+    .sidebar-group h4 { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 12px; }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.2s;
+      margin-bottom: 4px;
+      cursor: pointer;
+    }
+    .sidebar-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .sidebar-link.active { background: var(--primary-glow); color: var(--primary); font-weight: 700; }
+    
+    /* Content Area */
+    .content-area {
+      flex: 1;
+      padding: 48px 64px;
+      max-width: 900px;
+    }
+    
+    .article-section { display: none; animation: fadeIn 0.3s ease-out forwards; }
+    .article-section.active { display: block; }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .article-header { margin-bottom: 40px; }
+    .article-header h1 { font-family: 'Outfit', sans-serif; font-size: 36px; font-weight: 900; color: #fff; margin-bottom: 16px; line-height: 1.1; }
+    .article-header p { font-size: 16px; color: var(--text-muted); line-height: 1.6; }
+    
+    .article-body h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; color: #fff; margin: 40px 0 16px 0; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .article-body p { font-size: 15px; color: #cbd5e1; line-height: 1.7; margin-bottom: 16px; }
+    .article-body ul { margin-bottom: 16px; padding-left: 20px; color: #cbd5e1; font-size: 15px; line-height: 1.7; }
+    .article-body li { margin-bottom: 8px; }
+    
+    .feature-box {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+    .feature-box h3 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .feature-box h3 i { color: var(--primary); font-size: 20px; }
+    
+    .seo-footer { border-top: 1px solid var(--border); padding: 40px 0; margin-top: 60px; text-align: center; color: var(--text-muted); font-size: 14px; }
+    
+    @media (max-width: 900px) {
+      .layout-main { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); padding: 24px; display: flex; overflow-x: auto; white-space: nowrap; gap: 24px; }
+      .sidebar-group { margin-bottom: 0; min-width: 200px; }
+      .content-area { padding: 32px 24px; }
+      .article-header h1 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/" class="navbar-brand">
+      <i class="ph-fill ph-graduation-cap"></i> Universidade Cheff.pro
+    </a>
+    <a href="/" style="color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 600;">Voltar ao Sistema</a>
+  </nav>
+
+  <div class="layout-main">
+    <aside class="sidebar">
+      <div class="sidebar-group">
+        <h4>Primeiros Passos</h4>
+        <a class="sidebar-link active" onclick="showArticle('art-intro')"><i class="ph-bold ph-rocket-launch"></i> Introdução ao Sistema</a>
+        <a class="sidebar-link" onclick="showArticle('art-config')"><i class="ph-bold ph-gear"></i> Configurações Iniciais</a>
+      </div>
+      
+      <div class="sidebar-group">
+        <h4>Operação & Vendas</h4>
+        <a class="sidebar-link" onclick="showArticle('art-pdv')"><i class="ph-bold ph-desktop"></i> PDV (Frente de Caixa)</a>
+        <a class="sidebar-link" onclick="showArticle('art-cardapio')"><i class="ph-bold ph-device-mobile"></i> Cardápio Digital 3D</a>
+        <a class="sidebar-link" onclick="showArticle('art-kds')"><i class="ph-bold ph-cooking-pot"></i> Fila de Pedidos (KDS)</a>
+        <a class="sidebar-link" onclick="showArticle('art-mesas')"><i class="ph-bold ph-armchair"></i> Gestão de Mesas e Fila</a>
+      </div>
+      
+      <div class="sidebar-group">
+        <h4>Crescimento & Marketing</h4>
+        <a class="sidebar-link" onclick="showArticle('art-crm')"><i class="ph-bold ph-megaphone"></i> CRM Marketing Turbo</a>
+        <a class="sidebar-link" onclick="showArticle('art-google')"><i class="ph-bold ph-star"></i> Automação de Avaliações 5★</a>
+        <a class="sidebar-link" onclick="showArticle('art-indicacao')"><i class="ph-bold ph-gift"></i> Programa Indique e Ganhe</a>
+      </div>
+      
+      <div class="sidebar-group">
+        <h4>Gestão & IA</h4>
+        <a class="sidebar-link" onclick="showArticle('art-financeiro')"><i class="ph-bold ph-chart-line-up"></i> Gestão Financeira & DRE</a>
+        <a class="sidebar-link" onclick="showArticle('art-ia')"><i class="ph-bold ph-robot"></i> Inteligência Artificial Cheff</a>
+        <a class="sidebar-link" onclick="showArticle('art-contador')"><i class="ph-bold ph-calculator"></i> Hub do Contador</a>
+      </div>
+    </aside>
+
+    <main class="content-area">
+      <!-- INTRO -->
+      <article id="art-intro" class="article-section active">
+        <div class="article-header">
+          <h1>Bem-vindo à Universidade Cheff.pro</h1>
+          <p>Aprenda a dominar o sistema de gestão gastronômica mais avançado do mercado. Nossa missão é colocar a tecnologia a favor do seu lucro.</p>
+        </div>
+        <div class="article-body">
+          <p>O <strong>Cheff.pro</strong> não é apenas um frente de caixa. É um ecossistema completo desenhado para acabar com o desperdício, encantar clientes, automatizar o marketing e fornecer precisão contábil.</p>
+          
+          <div class="feature-box">
+            <h3><i class="ph-bold ph-lightbulb"></i> Como usar esta central?</h3>
+            <p>Navegue pelo menu lateral para explorar as funcionalidades do sistema. Cada artigo contém o "O que é", "Por que usar" e um "Passo a passo" prático de como configurar no seu restaurante.</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- PDV -->
+      <article id="art-pdv" class="article-section">
+        <div class="article-header">
+          <h1>Frente de Caixa (PDV) de Alta Performance</h1>
+          <p>Como processar pedidos, fechar mesas e operar o caixa na velocidade da luz sem quedas de conexão.</p>
+        </div>
+        <div class="article-body">
+          <h2>Visão Geral</h2>
+          <p>O PDV do Cheff.pro foi arquitetado para não travar, mesmo em dias de pico. Ele suporta fechamento de contas complexas (Split-conta), pagamento misto e integração nativa com o Sync Edge Hub (que mantém o sistema funcionando mesmo se a internet do restaurante cair).</p>
+          
+          <h2>Passo a Passo: Fechando um Pedido</h2>
+          <ul>
+            <li><strong>Passo 1:</strong> Acesse a tela principal do Caixa e clique no botão verde "Novo Pedido".</li>
+            <li><strong>Passo 2:</strong> Digite o nome do produto ou bipe o código de barras. O PDV possui busca ultrarrápida.</li>
+            <li><strong>Passo 3:</strong> Selecione o método de pagamento (Pix, Cartão, Dinheiro). Se for Pix, o QR Code dinâmico será gerado na tela.</li>
+            <li><strong>Passo 4:</strong> Clique em "Concluir". O pedido é enviado automaticamente para as impressoras da cozinha e para o KDS.</li>
+          </ul>
+
+          <div class="feature-box">
+            <h3><i class="ph-bold ph-split-vertical"></i> Dividindo a Conta (Split Conta)</h3>
+            <p>Se uma mesa de 10 pessoas quiser dividir a conta por item ou por valor igual, clique no botão "Dividir Conta". O sistema calculará instantaneamente a fração de cada cliente, já adicionando os 10% do garçom de forma proporcional.</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- CARDÁPIO DIGITAL -->
+      <article id="art-cardapio" class="article-section">
+        <div class="article-header">
+          <h1>Cardápio Digital Inteligente</h1>
+          <p>Substitua o papel por uma experiência interativa que aumenta o ticket médio em até 25%.</p>
+        </div>
+        <div class="article-body">
+          <h2>Experiência do Consumidor</h2>
+          <p>O consumidor acessa o cardápio escaneando o QR Code na mesa. Ele não precisa baixar nenhum aplicativo. A interface foi desenhada com conceitos de neurociência para dar destaque aos produtos de maior margem de lucro (CMV otimizado).</p>
+          
+          <h2>Como configurar produtos e upsell</h2>
+          <ul>
+            <li><strong>Cadastro de Fotos:</strong> Suba fotos reais e nítidas no painel de administração. O Cheff.pro suporta WebP para carregamento rápido.</li>
+            <li><strong>Upsell Automático:</strong> No cadastro do produto, vá na aba "Sugestões". Se o cliente pedir um Hambúrguer, configure para o sistema sugerir "Adicionar Bacon" ou "Batata Frita" na hora do checkout.</li>
+            <li><strong>Tour Imersivo:</strong> Ative o modo "História do Prato" para contar a jornada dos ingredientes, gerando valor percebido e justificando um preço premium.</li>
+          </ul>
+
+          <div class="feature-box">
+            <h3><i class="ph-bold ph-lightning"></i> Vantagem de SEO (Machine Learning)</h3>
+            <p>O rodapé do seu cardápio digital possui a assinatura da tecnologia Cheff.pro. Isso cria uma teia de relevância local no Google, impulsionando tanto o seu restaurante quanto a plataforma orgânica nas buscas!</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- KDS -->
+      <article id="art-kds" class="article-section">
+        <div class="article-header">
+          <h1>Fila de Pedidos na Cozinha (KDS)</h1>
+          <p>A central de comando dos seus chefs. Sem papel perdido, sem gritaria, apenas eficiência.</p>
+        </div>
+        <div class="article-body">
+          <h2>Por que usar telas na cozinha?</h2>
+          <p>O Kitchen Display System (KDS) organiza a linha de produção por tempo de espera, prioridade e mesa. O Cheff.pro conta com a versão Clássica e a versão Moderna (V2).</p>
+          
+          <h2>Funcionalidades Chave</h2>
+          <ul>
+            <li><strong>Temporizadores de Alerta:</strong> Pedidos com mais de 15 minutos mudam para a cor Laranja, e acima de 30 minutos ficam Vermelhos, alertando o Chef da praça.</li>
+            <li><strong>Sincronização em Tempo Real:</strong> Quando o Chef clica em "Pronto", o garçom recebe uma notificação no relógio ou celular, e o painel de senhas do salão (se houver) chama o cliente.</li>
+            <li><strong>Avisos da IA:</strong> A inteligência artificial detecta automaticamente gargalos na grelha e sugere ao gerente redirecionar os preparos.</li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- AVALIAÇÕES GOOGLE -->
+      <article id="art-google" class="article-section">
+        <div class="article-header">
+          <h1>Máquina de Avaliações 5 Estrelas</h1>
+          <p>Use seus clientes satisfeitos como exército de marketing para dominar o Google Maps.</p>
+        </div>
+        <div class="article-body">
+          <h2>O Segredo do SEO Local</h2>
+          <p>O algoritmo do Google prioriza restaurantes que recebem avaliações recentes, frequentes e positivas. Mas a maioria dos clientes esquece de avaliar se você não pedir.</p>
+          
+          <h2>Como funciona a Automação</h2>
+          <p>Através do Painel do Dono, na aba <strong>Reputação Google / Máquina 5 Estrelas</strong>, o sistema varre todos os pedidos concluídos nas últimas 2 horas. Com um clique, ele dispara uma mensagem amigável no WhatsApp do cliente:</p>
+          
+          <blockquote style="border-left: 4px solid var(--primary); padding-left: 16px; margin: 16px 0; font-style: italic; color: #cbd5e1; background: rgba(255,255,255,0.02); padding: 16px;">
+            "Oi! Como foi sua experiência hoje? Se gostou, nos avalie com 5 estrelas aqui: [LINK]. Se algo não foi perfeito, nos responda aqui para resolvermos! ⚡"
+          </blockquote>
+
+          <p>Isso blinda sua reputação: problemas são resolvidos no particular (WhatsApp), e os elogios vão para o público (Google Maps).</p>
+        </div>
+      </article>
+
+      <!-- INDICACAO -->
+      <article id="art-indicacao" class="article-section">
+        <div class="article-header">
+          <h1>Programa Indique e Ganhe</h1>
+          <p>Ajude a comunidade gastronômica e não pague mais mensalidade.</p>
+        </div>
+        <div class="article-body">
+          <h2>Como Funciona</h2>
+          <p>No Painel do Dono, criamos a aba "Indique e Ganhe". O sistema gera um link exclusivo para o seu restaurante. Você pode compartilhar este link com seus amigos que também são donos de bares, pizzarias ou restaurantes.</p>
+          
+          <h2>Suas Recompensas</h2>
+          <ul>
+            <li><strong>Mensalidade Grátis:</strong> A cada amigo que se cadastrar com o seu link e assinar um plano pago, você ganha 1 mês inteiro de isenção na sua própria mensalidade.</li>
+            <li><strong>Sem Limites:</strong> Se você indicar 12 amigos em um ano, você passará o ano inteiro sem pagar 1 centavo pela tecnologia do Cheff.pro.</li>
+          </ul>
+        </div>
+      </article>
+
+      <footer class="seo-footer">
+        <p>&copy; 2026 Cheff Cozinha ERP - Universidade e Central de Treinamento. <br>Todos os direitos reservados. Melhorando a gestão gastronômica e o SEO de restaurantes em todo o Brasil.</p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    function showArticle(id) {
+      // Remover active de todos os links e artigos
+      document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.article-section').forEach(el => el.classList.remove('active'));
+      
+      // Adicionar active no link clicado
+      event.currentTarget.classList.add('active');
+      
+      // Mostrar artigo
+      document.getElementById(id).classList.add('active');
+      
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>

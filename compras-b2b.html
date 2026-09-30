@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hub de Compras B2B - Cotação Automática</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --border: #e2e8f0;
+      --primary: #fc4b15;
+      --primary-hover: #ea580c;
+      --whatsapp: #25D366;
+      --text: #0f172a;
+      --muted: #64748b;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    
+    body { background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+    
+    .header { background: #1e293b; color: #fff; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .header h1 { font-family: 'Outfit'; font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 12px; margin: 0; }
+    .header h1 i { color: var(--primary); font-size: 28px; }
+    .header p { color: #cbd5e1; font-size: 14px; margin-top: 4px; }
+
+    .main-grid { display: grid; grid-template-columns: 350px 1fr; gap: 24px; padding: 32px; flex: 1; overflow: hidden; max-width: 1400px; margin: 0 auto; width: 100%; }
+    
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .panel-header { padding: 20px; border-bottom: 1px solid var(--border); font-family: 'Outfit'; font-weight: 700; font-size: 16px; color: var(--text); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+    .panel-body { padding: 20px; flex: 1; overflow-y: auto; }
+
+    /* Forms */
+    .input-group { margin-bottom: 16px; }
+    .input-group label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; }
+    .input-group input, .input-group select { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; outline: none; transition: border 0.2s; }
+    .input-group input:focus, .input-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(252, 75, 21, 0.1); }
+
+    .btn-add { width: 100%; background: var(--primary); color: #fff; border: none; padding: 14px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+    .btn-add:hover { background: var(--primary-hover); }
+
+    /* Fornecedores List */
+    .forn-card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; background: #fff; transition: box-shadow 0.2s; }
+    .forn-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-color: #cbd5e1; }
+    .forn-info h4 { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .forn-info p { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+    .btn-zap { background: var(--whatsapp); color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; transition: transform 0.2s; display: flex; align-items: center; gap: 6px; text-decoration: none; }
+    .btn-zap:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3); }
+
+    /* Lista de Compras */
+    .table-compras { width: 100%; border-collapse: collapse; }
+    .table-compras th { text-align: left; padding: 12px 16px; border-bottom: 2px solid var(--border); color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    .table-compras td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); font-weight: 500; }
+    .table-compras tr:hover td { background: #f8fafc; }
+    .btn-icon { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 4px; border-radius: 4px; transition: background 0.2s; }
+    .btn-icon:hover { background: rgba(239, 68, 68, 0.1); }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty-state i { font-size: 48px; color: #cbd5e1; margin-bottom: 16px; }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div>
+      <h1><i class="ph-fill ph-shopping-cart"></i> Central de Compras B2B</h1>
+      <p>Gere pedidos de cotação automáticos para seus fornecedores via WhatsApp.</p>
+    </div>
+  </header>
+
+  <main class="main-grid">
+    
+    <!-- Painel 1: Adicionar Itens -->
+    <section class="panel">
+      <div class="panel-header">Adicionar Insumo <i class="ph-bold ph-plus-circle"></i></div>
+      <div class="panel-body">
+        <form id="form-insumo" onsubmit="addInsumo(event)">
+          <div class="input-group">
+            <label>Categoria de Compra</label>
+            <select id="inp-cat">
+              <option value="Hortifruti">Hortifruti</option>
+              <option value="Açougue">Açougue & Frios</option>
+              <option value="Bebidas">Bebidas</option>
+              <option value="Secos">Mercearia (Secos)</option>
+              <option value="Embalagens">Embalagens</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Nome do Produto</label>
+            <input type="text" id="inp-nome" placeholder="Ex: Queijo Mussarela" required autocomplete="off">
+          </div>
+          <div class="input-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label>Quantidade</label>
+              <input type="number" id="inp-qtd" placeholder="10" required min="0.1" step="0.1">
+            </div>
+            <div>
+              <label>Unidade</label>
+              <select id="inp-uni">
+                <option value="KG">Quilos (KG)</option>
+                <option value="UN">Unidades (UN)</option>
+                <option value="CX">Caixas (CX)</option>
+                <option value="L">Litros (L)</option>
+                <option value="PCT">Pacotes (PCT)</option>
+              </select>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Marca / Observação (Opcional)</label>
+            <input type="text" id="inp-obs" placeholder="Ex: Fatiado fino ou Marca Tirol">
+          </div>
+          
+          <button type="submit" class="btn-add"><i class="ph-bold ph-list-plus"></i> Inserir na Lista</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Painel 2: Lista e Disparo -->
+    <section class="panel">
+      <div class="panel-header">
+        Sua Lista de Cotação
+        <span style="font-size: 13px; font-weight: 500; color: var(--muted); background: #e2e8f0; padding: 4px 10px; border-radius: 20px;" id="contador-itens">0 Itens</span>
+      </div>
+      <div class="panel-body" style="display: flex; flex-direction: column;">
+        
+        <div style="flex: 1; overflow-y: auto; margin-bottom: 24px;">
+          <table class="table-compras" id="table-compras">
+            <thead>
+              <tr>
+                <th>Categoria</th>
+                <th>Insumo</th>
+                <th>Quantidade</th>
+                <th>Observação</th>
+                <th style="width: 50px;"></th>
+              </tr>
+            </thead>
+            <tbody id="lista-tbody">
+              <!-- Itens injetados via JS -->
+            </tbody>
+          </table>
+          <div id="empty-state" class="empty-state">
+            <i class="ph-fill ph-clipboard-text"></i>
+            <h3>Sua lista está vazia</h3>
+            <p style="font-size: 14px; margin-top: 8px;">Adicione itens no painel ao lado para começar sua cotação.</p>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 24px;">
+          <h3 style="font-family: 'Outfit'; font-size: 16px; margin-bottom: 16px; color: var(--text);">Disparar Cotação (Fornecedores Cadastrados)</h3>
+          
+          <div class="forn-card">
+            <div class="forn-info">
+              <h4>Atacadão das Carnes</h4>
+              <p><i class="ph-fill ph-tag"></i> Especialidade: Açougue</p>
+            </div>
+            <a href="#" class="btn-zap" onclick="dispararPara('Atacadão das Carnes', 'Açougue', '5511999999999')"><i class="ph-bold ph-whatsapp-logo"></i> Cotar Carnes</a>
+          </div>
+
+          <div class="forn-card">
+            <div class="forn-info">
+              <h4>Distribuidora de Bebidas Geladão</h4>
+              <p><i class="ph-fill ph-tag"></i> Especialidade: Bebidas</p>
+            </div>
+            <a href="#" class="btn-zap" onclick="dispararPara('Geladão', 'Bebidas', '5511999999998')"><i class="ph-bold ph-whatsapp-logo"></i> Cotar Bebidas</a>
+          </div>
+
+          <div class="forn-card">
+            <div class="forn-info">
+              <h4>Geral (Mandar Lista Completa)</h4>
+              <p><i class="ph-fill ph-tag"></i> Dispara todos os itens da lista</p>
+            </div>
+            <a href="#" class="btn-zap" onclick="dispararPara('Fornecedor', 'Tudo', '')" style="background: var(--text);"><i class="ph-bold ph-share-network"></i> Gerar Link Livre</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    let listaCompras = [];
+
+    function addInsumo(e) {
+      e.preventDefault();
+      const cat = document.getElementById('inp-cat').value;
+      const nome = document.getElementById('inp-nome').value.trim();
+      const qtd = document.getElementById('inp-qtd').value;
+      const uni = document.getElementById('inp-uni').value;
+      const obs = document.getElementById('inp-obs').value.trim();
+
+      const id = Date.now().toString();
+      listaCompras.push({ id, cat, nome, qtd, uni, obs });
+
+      document.getElementById('form-insumo').reset();
+      document.getElementById('inp-nome').focus();
+      renderLista();
+    }
+
+    function removerInsumo(id) {
+      listaCompras = listaCompras.filter(i => i.id !== id);
+      renderLista();
+    }
+
+    function renderLista() {
+      const tbody = document.getElementById('lista-tbody');
+      const emptyState = document.getElementById('empty-state');
+      const table = document.getElementById('table-compras');
+
+      document.getElementById('contador-itens').innerText = `${listaCompras.length} Itens`;
+
+      if (listaCompras.length === 0) {
+        emptyState.style.display = 'block';
+        table.style.display = 'none';
+        tbody.innerHTML = '';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      table.style.display = 'table';
+
+      let html = '';
+      listaCompras.forEach(item => {
+        let catBadge = '';
+        if(item.cat === 'Açougue') catBadge = '<span style="color:#ef4444; background:rgba(239,68,68,0.1); padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;">Açougue</span>';
+        else if(item.cat === 'Hortifruti') catBadge = '<span style="color:#10b981; background:rgba(16,185,129,0.1); padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;">Horti</span>';
+        else if(item.cat === 'Bebidas') catBadge = '<span style="color:#3b82f6; background:rgba(59,130,246,0.1); padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;">Bebidas</span>';
+        else catBadge = `<span style="color:#64748b; background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;">${item.cat}</span>`;
+
+        html += `
+          <tr>
+            <td>${catBadge}</td>
+            <td style="font-weight: 700;">${item.nome}</td>
+            <td>${item.qtd} ${item.uni}</td>
+            <td style="color: var(--muted); font-size: 13px;">${item.obs ? '('+item.obs+')' : '-'}</td>
+            <td><button class="btn-icon" onclick="removerInsumo('${item.id}')"><i class="ph-bold ph-trash"></i></button></td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function dispararPara(nomeFornecedor, categoriaFiltro, telefone) {
+      if(listaCompras.length === 0) {
+        alert("Sua lista está vazia!");
+        return;
+      }
+
+      let itensAlvo = listaCompras;
+      if(categoriaFiltro !== 'Tudo') {
+        itensAlvo = listaCompras.filter(i => i.cat === categoriaFiltro);
+      }
+
+      if(itensAlvo.length === 0) {
+        alert(`Você não tem itens da categoria ${categoriaFiltro} na sua lista.`);
+        return;
+      }
+
+      let msg = `Olá *${nomeFornecedor}*, bom dia!\n\nPoderia me passar a cotação/preço atualizado dos seguintes insumos para o nosso restaurante?\n\n`;
+
+      itensAlvo.forEach((item, idx) => {
+        msg += `🔸 *${item.qtd} ${item.uni}* de ${item.nome}`;
+        if(item.obs) msg += ` _(${item.obs})_`;
+        msg += `\n`;
+      });
+
+      msg += `\nAguardo o orçamento! Obrigado. ⚡ _(Enviado via Cheff.pro ERP)_`;
+
+      const encodedMsg = encodeURIComponent(msg);
+      
+      let url = '';
+      if(telefone) {
+        url = `https://wa.me/${telefone}?text=${encodedMsg}`;
+      } else {
+        url = `https://wa.me/?text=${encodedMsg}`; // Abre a lista de contatos para o usuario escolher
+      }
+
+      window.open(url, '_blank');
+    }
+
+    // Inicializa Vazio
+    renderLista();
+  </script>
+</body>
+</html>

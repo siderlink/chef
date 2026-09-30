@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Caixa v1.1.1 Lite</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* CSS Super Leve - Zero Dependências */
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    
+    body { background-color: #f3f4f6; color: #1f2937; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Header */
+    .header { background: #fc4b15; color: #fff; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .header h1 { font-size: 18px; font-weight: bold; margin: 0; }
+    .header .status-bar { display: flex; gap: 12px; font-size: 13px; font-weight: 500; }
+    .pill { background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 20px; }
+    
+    /* Main Grid */
+    .main-area { flex: 1; padding: 16px; overflow-y: auto; background: #f3f4f6; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; grid-auto-flow: dense; }
+    
+    /* Widget Card */
+    .widget { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e5e7eb; }
+    .widget.sz-l { grid-column: span 2; }
+    @media(max-width: 768px){ .widget.sz-l { grid-column: span 1; } }
+    
+    .w-header { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; background: #fafafa; font-weight: 600; color: #374151; font-size: 14px; display: flex; justify-content: space-between; }
+    .w-body { padding: 16px; flex: 1; overflow-y: auto; }
+    
+    /* Resumo / KPIs */
+    .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .kpi-card { background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .kpi-card small { display: block; color: #6b7280; font-size: 11px; margin-bottom: 4px; text-transform: uppercase; font-weight: 600; }
+    .kpi-card strong { font-size: 20px; color: #111827; }
+    .kpi-card.green strong { color: #059669; }
+    .kpi-card.orange strong { color: #d97706; }
+    
+    /* Lists */
+    .list { list-style: none; }
+    .list-item { padding: 10px 0; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; font-size: 13px; align-items: center; }
+    .list-item:last-child { border-bottom: none; }
+    .empty-msg { color: #9ca3af; font-size: 13px; font-style: italic; text-align: center; padding: 20px 0; }
+    
+    /* Mesas Grid */
+    .mesas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; }
+    .mesa-box { background: #10b981; color: #fff; padding: 12px 4px; text-align: center; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; }
+    .mesa-box.ocupada { background: #ef4444; }
+    .mesa-box.conta { background: #f59e0b; }
+    
+    /* Action Button */
+    .w-footer { padding: 10px 16px; background: #f9fafb; border-top: 1px solid #e5e7eb; text-align: right; }
+    .btn-link { color: #fc4b15; text-decoration: none; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+    /* Atalhos */
+    .atalhos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .btn-atalho { background: #f3f4f6; border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px; text-align: center; color: #374151; font-weight: 600; font-size: 12px; cursor: pointer; }
+    .btn-atalho:hover { background: #e5e7eb; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <h1>Cheff Cozinha | Painel Lite v1.1.1</h1>
+    <div class="status-bar">
+      <span class="pill" id="caixa-status">Caixa Aberto</span>
+      <span class="pill">Modo Otimizado</span>
+    </div>
+  </header>
+
+  <main class="main-area">
+    <div class="grid">
+      
+      <!-- Resumo Financeiro -->
+      <div class="widget sz-l">
+        <div class="w-header">Resumo Operacional</div>
+        <div class="w-body">
+          <div class="kpi-grid">
+            <div class="kpi-card green">
+              <small>Faturamento (Hoje)</small>
+              <strong id="kpi-fat">R$ 0,00</strong>
+            </div>
+            <div class="kpi-card">
+              <small>Mesas Ocupadas</small>
+              <strong id="kpi-mesas">0</strong>
+            </div>
+            <div class="kpi-card orange">
+              <small>Contas Pedidas</small>
+              <strong id="kpi-contas">0</strong>
+            </div>
+            <div class="kpi-card">
+              <small>Pedidos Cozinha</small>
+              <strong id="kpi-cozinha">0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mesas -->
+      <div class="widget sz-l">
+        <div class="w-header">Visão de Mesas</div>
+        <div class="w-body">
+          <div class="mesas-grid" id="mesas-grid">
+            <div class="empty-msg">Carregando mesas...</div>
+          </div>
+        </div>
+        <div class="w-footer"><a class="btn-link" onclick="window.open('/index.html', '_blank')">Abrir Gestão Completa →</a></div>
+      </div>
+
+      <!-- Chamados de Garçom -->
+      <div class="widget">
+        <div class="w-header">Chamados / Contas</div>
+        <div class="w-body">
+          <ul class="list" id="chamados-list"><li class="empty-msg">Nenhum chamado no momento.</li></ul>
+        </div>
+      </div>
+
+      <!-- Atalhos Rápidos -->
+      <div class="widget">
+        <div class="w-header">Acesso Rápido</div>
+        <div class="w-body">
+          <div class="atalhos-grid">
+            <button class="btn-atalho" onclick="window.open('/pdv-mobile.html', '_blank')">PDV Balcão</button>
+            <button class="btn-atalho" onclick="window.open('/kds-nano.html', '_blank')">KDS Cozinha</button>
+            <button class="btn-atalho" onclick="window.open('/financeiro.html', '_blank')">Financeiro</button>
+            <button class="btn-atalho" onclick="window.open('/cardapio.html', '_blank')">Cardápio 3D</button>
+            <button class="btn-atalho" onclick="window.open('/caixa-ultra.html', '_blank')">PDV Ultra</button>
+            <button class="btn-atalho" onclick="window.open('/painel-dono.html', '_blank')">Painel Dono</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const token = localStorage.getItem('chef_token') || '';
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    const socket = io({ query: { token, restaurante_id: restId } });
+
+    // Fetch Initial Data
+    async function fetchResumo() {
+      try {
+        const res = await fetch('/api/dashboard/kpis?restaurante_id=' + restId, { headers: { 'Authorization': 'Bearer ' + token }});
+        if(res.ok) {
+          const data = await res.json();
+          if(data.faturamentoHoje) document.getElementById('kpi-fat').innerText = 'R$ ' + parseFloat(data.faturamentoHoje).toFixed(2).replace('.', ',');
+        }
+      } catch(e) {}
+    }
+
+    // Websocket Listeners
+    socket.on('connect', () => {
+      socket.emit('get_mesas');
+      socket.emit('get_pedidos');
+      fetchResumo();
+    });
+
+    socket.on('mesas_atualizadas', (mesas) => {
+      let html = '';
+      let ocupadas = 0;
+      let contas = 0;
+      
+      (mesas || []).forEach(m => {
+        let cls = '';
+        if(m.status === 'Ocupada') { cls = 'ocupada'; ocupadas++; }
+        else if(m.status === 'Conta Pedida') { cls = 'conta'; contas++; }
+        html += `<div class="mesa-box ${cls}">${m.nome}</div>`;
+      });
+      
+      if(html === '') html = '<div class="empty-msg">Nenhuma mesa cadastrada.</div>';
+      document.getElementById('mesas-grid').innerHTML = html;
+      document.getElementById('kpi-mesas').innerText = ocupadas;
+      document.getElementById('kpi-contas').innerText = contas;
+    });
+
+    socket.on('pedidos_atualizados', (pedidos) => {
+      let cozinha = 0;
+      (pedidos || []).forEach(p => {
+        if(p.status === 'Em espera' || p.status === 'Em preparo') cozinha++;
+      });
+      document.getElementById('kpi-cozinha').innerText = cozinha;
+    });
+
+    socket.on('chamado_garcom', (data) => {
+      const list = document.getElementById('chamados-list');
+      if(list.innerHTML.includes('empty-msg')) list.innerHTML = '';
+      list.innerHTML += `<li class="list-item"><strong>${data.mesa}</strong> <span>Chamou Garçom</span></li>`;
+    });
+    
+    socket.on('conta_pedida', (data) => {
+      const list = document.getElementById('chamados-list');
+      if(list.innerHTML.includes('empty-msg')) list.innerHTML = '';
+      list.innerHTML += `<li class="list-item"><strong>${data.mesa}</strong> <span>Pediu a Conta</span></li>`;
+    });
+
+    // Auto-refresh Kpis
+    setInterval(fetchResumo, 60000);
+  </script>
+</body>
+</html>

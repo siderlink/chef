@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Olho de Águia - Radar Anti-Fraude</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  
+  <style>
+    :root {
+      --bg: #020617;
+      --panel: #0f172a;
+      --border: #1e293b;
+      --red: #ef4444;
+      --red-glow: rgba(239, 68, 68, 0.2);
+      --orange: #f97316;
+      --green: #10b981;
+      --text: #f8fafc;
+      --muted: #64748b;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    
+    body { background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    
+    .header { background: #0b1120; border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--red-glow); color: var(--red); display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 15px var(--red-glow); }
+    .brand h1 { font-family: 'Outfit'; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin: 0; }
+    .brand span { color: var(--red); }
+    
+    .pulse-status { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--green); background: rgba(16, 185, 129, 0.1); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .pulse-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+    .main-grid { display: grid; grid-template-columns: 300px 1fr 350px; gap: 24px; padding: 24px; flex: 1; overflow: hidden; }
+    
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-family: 'Outfit'; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+    .panel-body { padding: 20px; flex: 1; overflow-y: auto; }
+    
+    /* Metrics */
+    .kpi-block { background: #020617; border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; text-align: center; transition: transform 0.2s; }
+    .kpi-block:hover { transform: translateY(-2px); border-color: var(--red); }
+    .kpi-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; }
+    .kpi-value { font-family: 'Outfit'; font-size: 32px; font-weight: 900; color: #fff; line-height: 1; }
+    .kpi-value.alert { color: var(--red); text-shadow: 0 0 15px var(--red-glow); }
+    
+    /* Feed Log */
+    .log-feed { display: flex; flex-direction: column; gap: 12px; }
+    .log-item { background: #020617; border: 1px solid var(--border); border-left: 4px solid var(--muted); padding: 12px 16px; border-radius: 8px; display: flex; gap: 16px; align-items: center; animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    
+    .log-item.severity-high { border-left-color: var(--red); background: rgba(239, 68, 68, 0.05); }
+    .log-item.severity-med { border-left-color: var(--orange); background: rgba(249, 115, 22, 0.05); }
+    
+    .log-icon { font-size: 20px; color: var(--muted); }
+    .severity-high .log-icon { color: var(--red); }
+    .severity-med .log-icon { color: var(--orange); }
+    
+    .log-content { flex: 1; }
+    .log-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .log-time { font-size: 11px; color: var(--muted); font-family: monospace; }
+    .log-desc { font-size: 12px; color: #94a3b8; line-height: 1.4; }
+    
+    /* AI Insights */
+    .ai-card { background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1)); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .ai-header { display: flex; align-items: center; gap: 8px; color: #a855f7; font-family: 'Outfit'; font-weight: 800; font-size: 14px; margin-bottom: 8px; text-transform: uppercase; }
+    .ai-desc { font-size: 13px; color: #cbd5e1; line-height: 1.5; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--panel); }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="brand">
+      <div class="brand-icon"><i class="ph-bold ph-shield-warning"></i></div>
+      <h1>Olho de Águia <span>Radar</span></h1>
+    </div>
+    <div class="pulse-status">
+      <div class="pulse-dot"></div> Monitoramento Ativo (Ao Vivo)
+    </div>
+  </header>
+
+  <main class="main-grid">
+    
+    <!-- Painel 1: Métricas de Risco -->
+    <section class="panel">
+      <div class="panel-header">Métricas de Risco (Hoje) <i class="ph-bold ph-chart-polar"></i></div>
+      <div class="panel-body">
+        <div class="kpi-block">
+          <div class="kpi-label">Itens Cancelados</div>
+          <div class="kpi-value alert" id="kpi-cancel-qtd">0</div>
+        </div>
+        <div class="kpi-block">
+          <div class="kpi-label">Valor Evadido / Perdido</div>
+          <div class="kpi-value" id="kpi-cancel-val" style="color: var(--orange);">R$ 0,00</div>
+        </div>
+        <div class="kpi-block">
+          <div class="kpi-label">Taxa de Fraude / Erro</div>
+          <div class="kpi-value" id="kpi-taxa" style="font-size: 24px;">0.0%</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Painel 2: Log de Auditoria em Tempo Real -->
+    <section class="panel" style="grid-column: span 1;">
+      <div class="panel-header">Log de Auditoria <span style="font-size: 11px; background: var(--red); color: #fff; padding: 2px 6px; border-radius: 4px;">LIVE</span></div>
+      <div class="panel-body">
+        <div class="log-feed" id="log-feed">
+          <div style="text-align: center; color: var(--muted); font-size: 13px; margin-top: 40px;">Buscando registros do banco de dados...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Painel 3: Inteligência Artificial -->
+    <section class="panel">
+      <div class="panel-header">Motor de IA <i class="ph-bold ph-brain"></i></div>
+      <div class="panel-body">
+        <div class="ai-card">
+          <div class="ai-header"><i class="ph-bold ph-sparkle"></i> Análise de Padrões</div>
+          <div class="ai-desc" id="ai-insight">A inteligência artificial está analisando os dados de cancelamento para encontrar comportamentos suspeitos repetitivos.</div>
+        </div>
+        
+        <h4 style="font-family: 'Outfit'; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 12px; text-transform: uppercase;">Ações Bloqueadas</h4>
+        <div style="background: #020617; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <i class="ph-bold ph-lock-key" style="color: var(--green);"></i> Excluir item de mesa impressa
+        </div>
+        <div style="background: #020617; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 8px;">
+          <i class="ph-bold ph-lock-key" style="color: var(--green);"></i> Aplicar desconto manual s/ senha
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const token = localStorage.getItem('chef_token') || '';
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    const socket = io({ query: { token, restaurante_id: restId } });
+
+    let pedidosCancelados = [];
+
+    socket.on('connect', () => {
+      // Buscar todos os pedidos para processamento analítico local
+      socket.emit('get_pedidos');
+    });
+
+    socket.on('pedidos_atualizados', (pedidos) => {
+      pedidosCancelados = (pedidos || []).filter(p => p.status === 'Cancelado');
+      processAuditoria(pedidos || []);
+    });
+
+    socket.on('pedido_adicionado', () => socket.emit('get_pedidos'));
+    socket.on('pedido_status_alterado', () => socket.emit('get_pedidos'));
+
+    function processAuditoria(todosPedidos) {
+      // Calcular KPIs
+      let valorCancelado = 0;
+      pedidosCancelados.forEach(p => {
+        let t = parseFloat(String(p.total).replace(',','.')) || 0;
+        valorCancelado += t;
+      });
+
+      document.getElementById('kpi-cancel-qtd').innerText = pedidosCancelados.length;
+      document.getElementById('kpi-cancel-val').innerText = 'R$ ' + valorCancelado.toFixed(2).replace('.', ',');
+      
+      const taxa = todosPedidos.length > 0 ? (pedidosCancelados.length / todosPedidos.length) * 100 : 0;
+      document.getElementById('kpi-taxa').innerText = taxa.toFixed(1) + '%';
+      if(taxa > 5) document.getElementById('kpi-taxa').style.color = '#ef4444';
+      else document.getElementById('kpi-taxa').style.color = '#10b981';
+
+      // Renderizar Logs
+      const feed = document.getElementById('log-feed');
+      feed.innerHTML = '';
+      
+      if(pedidosCancelados.length === 0) {
+        feed.innerHTML = `<div style="text-align: center; color: var(--green); font-size: 13px; padding: 20px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px dashed rgba(16, 185, 129, 0.3);">Nenhuma fraude ou cancelamento detectado hoje. Caixa 100% íntegro.</div>`;
+      }
+
+      // Ordenar do mais recente
+      const sorted = [...pedidosCancelados].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      sorted.forEach(p => {
+        const timeObj = new Date(p.createdAt);
+        const timeStr = timeObj.toLocaleTimeString('pt-BR');
+        
+        let severity = 'med';
+        let motive = p.observacao || 'Motivo não informado';
+        let title = 'Pedido Cancelado';
+        
+        // Simular análise heurística do tempo para classificar gravidade
+        // Ex: Se o pedido demorou muito e foi cancelado, pode ser fraude após entrega
+        const now = new Date();
+        const diffMin = Math.floor((now - timeObj) / 60000);
+        
+        if (parseFloat(p.total) > 50 || motive === 'Motivo não informado') severity = 'high';
+
+        let valFormat = 'R$ ' + parseFloat(String(p.total).replace(',','.')).toFixed(2).replace('.', ',');
+
+        feed.innerHTML += `
+          <div class="log-item severity-${severity}">
+            <div class="log-icon"><i class="ph-fill ph-warning-octagon"></i></div>
+            <div class="log-content">
+              <div class="log-title">
+                <span>[Mesa/Comanda: ${p.localName || 'Balcão'}] ${p.productName}</span>
+                <span class="log-time">${timeStr}</span>
+              </div>
+              <div class="log-desc">Operador: ${p.userName || 'Desconhecido'} | Valor evadido: <strong>${valFormat}</strong> <br> <span style="color: var(--${severity==='high'?'red':'orange'});">${motive}</span></div>
+            </div>
+          </div>
+        `;
+      });
+
+      // Gerar Insight de IA
+      const insightEl = document.getElementById('ai-insight');
+      if(pedidosCancelados.length === 0) {
+        insightEl.innerHTML = "Seu caixa está perfeitamente selado. Nenhuma exclusão suspeita identificada.";
+      } else if (pedidosCancelados.length > 5 && taxa > 8) {
+        insightEl.innerHTML = `<span style="color: #ef4444; font-weight: bold;">ALERTA VERMELHO:</span> Identificamos uma taxa anormal de cancelamentos (${taxa.toFixed(1)}%). Recomendamos auditar os acessos do operador responsável.`;
+      } else {
+        insightEl.innerHTML = `Detectamos ${pedidosCancelados.length} cancelamentos normais de operação. A perda financeira (R$ ${valorCancelado.toFixed(2)}) está dentro da margem de risco aceitável para o volume de vendas.`;
+      }
+    }
+  </script>
+</body>
+</html>

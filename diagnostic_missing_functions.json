@@ -1,0 +1,174 @@
+[
+  {
+    "file": "caixa-classico.html",
+    "function": "window.confirmarAplicarDesconto"
+  },
+  {
+    "file": "cardapio.html",
+    "function": "window.rbConfirmarDigitos"
+  },
+  {
+    "file": "configuracoes.html",
+    "function": "abrirSolicitarTemaLoja"
+  },
+  {
+    "file": "configuracoes.html",
+    "function": "window.salvarConfigIA"
+  },
+  {
+    "file": "configuracoes.html",
+    "function": "window.testarChaveIA"
+  },
+  {
+    "file": "configuracoes.html",
+    "function": "window.gerarPromocoesIAComGemini"
+  },
+  {
+    "file": "configuracoes.html",
+    "function": "window.gerarCopyVendasIA"
+  },
+  {
+    "file": "configuracoes.html",
+    "function": "window.salvarParceiro"
+  },
+  {
+    "file": "configuracoes.html",
+    "function": "window.salvarGoogleSync"
+  },
+  {
+    "file": "configuracoes.html",
+    "function": "window.solicitarNovaFuncao"
+  },
+  {
+    "file": "configuracoes.html",
+    "function": "window.testarLeituraBalanca"
+  },
+  {
+    "file": "configuracoes.html",
+    "function": "window.restaurarTodosModosClassicos"
+  },
+  {
+    "file": "configuracoes.html",
+    "function": "window.ativarTodosModosModernos"
+  },
+  {
+    "file": "garcom.html",
+    "function": "window.confirmarPizzaGarcom"
+  },
+  {
+    "file": "garcom.html",
+    "function": "window.confirmarRodizioGarcom"
+  },
+  {
+    "file": "garcom.html",
+    "function": "window.confirmarMarchaGarcom"
+  },
+  {
+    "file": "garcom.html",
+    "function": "window.consultarSommelierGarcom"
+  },
+  {
+    "file": "index - Copia.html",
+    "function": "finalizarPagamento"
+  },
+  {
+    "file": "motoboy.html",
+    "function": "window.confirmarCobrancaEEntrega"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "enviarRelato"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "window.calcularFracaoPizzaDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "window.lancarPizzaFornoDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "window.rotearBurgerKDSDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "window.sinalizarMesaChurrascariaDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "window.registrarLoteSushiDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "window.lancarDoseBarDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "window.pesarBalancaBuffetDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "window.dispararFornadaPadariaDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "window.criarEncomendaPadariaDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "window.marcharPratoAlacarteDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "window.consultarSommelierDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "autorizarTerminalPorCodigoDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "salvarPoliticasAcessoDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "abrirModalGamificacao"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "salvarNovoCupom"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "salvarConfigGamificacao"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "ativarModuloImediatoDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "enviarSolicitacaoModuloDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "autorizarTerminalPorCodigoDonoModal"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "gerarLinkWhatsAppEquipeDono"
+  },
+  {
+    "file": "painel-dono.html",
+    "function": "window.confirmarAtivacaoAddon"
+  },
+  {
+    "file": "suporte.html",
+    "function": "executarChamadaSandbox"
+  },
+  {
+    "file": "suporte.html",
+    "function": "salvarScaffoldNoDisco"
+  }
+]

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>KDS v2 - Arena Culinária</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;600;800;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+
+  <style>
+    :root {
+      --bg: #09090b;
+      --panel: #18181b;
+      --neon-blue: #0ea5e9;
+      --neon-green: #22c55e;
+      --neon-red: #ef4444;
+      --neon-yellow: #eab308;
+      --neon-purple: #a855f7;
+      --text: #f8fafc;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* HUD (Heads Up Display) */
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: linear-gradient(180deg, rgba(24, 24, 27, 0.9) 0%, rgba(9, 9, 11, 0) 100%);
+      border-bottom: 2px solid rgba(255,255,255,0.05);
+      z-index: 10;
+    }
+
+    .hud-left { display: flex; align-items: center; gap: 24px; }
+    
+    .player-profile { display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 50px; height: 50px; background: var(--neon-purple); border-radius: 12px; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 0 15px var(--neon-purple); }
+    .player-info h1 { font-family: 'Outfit'; font-weight: 900; font-size: 18px; margin: 0; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    .player-title { font-size: 11px; color: var(--neon-blue); font-weight: 800; font-family: 'Press Start 2P', cursive; text-shadow: 0 0 5px var(--neon-blue); margin-top: 4px; }
+
+    .xp-bar-container { width: 300px; background: rgba(0,0,0,0.5); border: 2px solid #3f3f46; border-radius: 20px; height: 18px; position: relative; overflow: hidden; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); }
+    .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, var(--neon-blue)); width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px var(--neon-blue); }
+    .xp-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: 'Press Start 2P', cursive; font-size: 8px; color: #fff; text-shadow: 1px 1px 0 #000; }
+
+    .hud-right { display: flex; align-items: center; gap: 32px; }
+    .combo-meter { text-align: right; }
+    .combo-text { font-family: 'Press Start 2P', cursive; font-size: 10px; color: #71717a; margin-bottom: 4px; }
+    .combo-value { font-family: 'Outfit'; font-weight: 900; font-size: 32px; color: #71717a; line-height: 1; transition: all 0.3s; }
+    .combo-active .combo-text { color: var(--neon-yellow); text-shadow: 0 0 5px var(--neon-yellow); }
+    .combo-active .combo-value { color: #fff; text-shadow: 0 0 15px var(--neon-yellow), 0 0 30px var(--neon-yellow); transform: scale(1.1); }
+
+    .score-box { text-align: right; }
+    .score-label { font-family: 'Press Start 2P', cursive; font-size: 9px; color: var(--neon-green); margin-bottom: 4px; }
+    .score-value { font-family: 'Outfit'; font-weight: 900; font-size: 28px; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+
+    /* Arena (Board) */
+    .arena { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 24px; overflow: hidden; }
+    
+    .zone { background: rgba(24, 24, 27, 0.4); border: 2px dashed rgba(255,255,255,0.05); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .zone-header { padding: 16px; text-align: center; border-bottom: 2px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.3); }
+    .zone-title { font-family: 'Press Start 2P', cursive; font-size: 12px; color: #fff; letter-spacing: 1px; }
+    
+    .zone-1 .zone-header { border-bottom-color: var(--neon-purple); box-shadow: 0 4px 15px rgba(168, 85, 247, 0.1); }
+    .zone-2 .zone-header { border-bottom-color: var(--neon-yellow); box-shadow: 0 4px 15px rgba(234, 179, 8, 0.1); }
+    .zone-3 .zone-header { border-bottom-color: var(--neon-green); box-shadow: 0 4px 15px rgba(34, 197, 94, 0.1); }
+
+    .zone-content { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+    /* Order Card (Mission) */
+    .mission-card { background: var(--panel); border: 1px solid #3f3f46; border-radius: 16px; padding: 16px; position: relative; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.5); cursor: pointer; animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .mission-card:hover { transform: translateY(-2px) scale(1.02); border-color: rgba(255,255,255,0.2); }
+    
+    @keyframes slideIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes popOut { 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.5); opacity: 0; } }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px) rotate(-1deg); } 75% { transform: translateX(4px) rotate(1deg); } }
+    
+    .mc-bg-glow { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0) 70%); pointer-events: none; }
+    
+    .mission-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .m-id { font-family: 'Press Start 2P', cursive; font-size: 10px; color: var(--neon-blue); }
+    .m-time { font-family: 'Outfit'; font-weight: 800; font-size: 14px; background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 6px; border: 1px solid #3f3f46; }
+    
+    .mission-body { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .m-qty { font-family: 'Outfit'; font-weight: 900; font-size: 24px; color: #fff; background: rgba(255,255,255,0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+    .m-name { font-family: 'Outfit'; font-weight: 700; font-size: 18px; color: #fff; line-height: 1.2; flex: 1; }
+    .m-local { font-size: 13px; color: var(--neon-purple); font-weight: 800; background: rgba(168, 85, 247, 0.15); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+    .mission-obs { font-size: 12px; color: var(--neon-yellow); background: rgba(234, 179, 8, 0.1); padding: 8px; border-radius: 8px; margin-bottom: 16px; font-weight: 600; border-left: 3px solid var(--neon-yellow); }
+
+    .mission-action { width: 100%; padding: 12px; font-family: 'Outfit'; font-weight: 900; font-size: 16px; text-transform: uppercase; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+    .mission-action::before { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transform: skewX(-20deg); transition: 0.5s; }
+    .mission-action:hover::before { left: 150%; }
+    .mission-action:active { transform: scale(0.95); }
+    
+    .btn-start { background: linear-gradient(135deg, #eab308, #ca8a04); color: #fff; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3); }
+    .btn-finish { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3); }
+    
+    /* Status Colors */
+    .status-critical { border-color: var(--neon-red); box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); animation: shake 0.5s infinite; }
+    .status-critical .m-time { color: var(--neon-red); border-color: var(--neon-red); }
+    
+    .status-warning { border-color: var(--neon-yellow); }
+    .status-warning .m-time { color: var(--neon-yellow); }
+
+    /* Floating Text Animation for XP */
+    .floating-xp { position: fixed; font-family: 'Press Start 2P', cursive; font-size: 14px; color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green); pointer-events: none; animation: floatUp 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; z-index: 100; }
+    @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-50px) scale(1.5); } }
+    
+    /* Overlay Level Up */
+    .lvl-up-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    .lvl-up-overlay.active { opacity: 1; pointer-events: all; }
+    .lvl-up-title { font-family: 'Press Start 2P', cursive; font-size: 40px; color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow), 0 0 40px var(--neon-red); margin-bottom: 20px; animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    @keyframes pop { 0% { transform: scale(0.5); } 100% { transform: scale(1); } }
+    .lvl-up-btn { background: var(--neon-blue); color: #fff; border: none; padding: 16px 32px; font-family: 'Outfit'; font-weight: 900; font-size: 20px; border-radius: 12px; cursor: pointer; margin-top: 30px; box-shadow: 0 0 20px var(--neon-blue); }
+
+  </style>
+</head>
+<body>
+
+  <!-- Audio Effects -->
+  <audio id="sfx-start" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=coin-drop-39914.mp3" preload="auto"></audio>
+  <audio id="sfx-finish" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_e6ea4d2c88.mp3?filename=success-1-6297.mp3" preload="auto"></audio>
+  <audio id="sfx-levelup" src="https://cdn.pixabay.com/download/audio/2021/08/09/audio_82c2de0cc7.mp3?filename=level-up-191997.mp3" preload="auto"></audio>
+
+  <div class="hud">
+    <div class="hud-left">
+      <div class="player-profile">
+        <div class="avatar"><i class="ph-bold ph-cooking-pot"></i></div>
+        <div class="player-info">
+          <h1>Master Chef</h1>
+          <div class="player-title" id="player-title">Nvl 1: Aprendiz</div>
+        </div>
+      </div>
+      <div class="xp-bar-container">
+        <div class="xp-bar-fill" id="xp-bar"></div>
+        <div class="xp-text" id="xp-text">0 / 500 XP</div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <div class="combo-meter" id="combo-meter">
+        <div class="combo-text">COMBO STREAK</div>
+        <div class="combo-value">x<span id="combo-val">0</span></div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">SCORE TOTAL</div>
+        <div class="score-value" id="score-total">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arena">
+    <!-- ZONE 1: Em Espera -->
+    <div class="zone zone-1">
+      <div class="zone-header"><div class="zone-title">NOVA MISSÃO</div></div>
+      <div class="zone-content" id="col-espera"></div>
+    </div>
+
+    <!-- ZONE 2: Em Preparo -->
+    <div class="zone zone-2">
+      <div class="zone-header"><div class="zone-title">EM COMBATE</div></div>
+      <div class="zone-content" id="col-preparo"></div>
+    </div>
+
+    <!-- ZONE 3: Pronto -->
+    <div class="zone zone-3">
+      <div class="zone-header"><div class="zone-title">CONCLUÍDO</div></div>
+      <div class="zone-content" id="col-pronto"></div>
+    </div>
+  </div>
+
+  <div class="lvl-up-overlay" id="lvl-up-modal">
+    <div class="lvl-up-title">LEVEL UP!</div>
+    <div style="font-size: 20px; color: #fff;">Você atingiu o <strong style="color: var(--neon-blue);" id="new-level-text">Nvl 2: Cozinheiro</strong></div>
+    <button class="lvl-up-btn" onclick="fecharLevelUp()">CONTINUAR O SERVIÇO</button>
+  </div>
+
+  <script>
+    // Game State
+    let xp = 0;
+    let level = 1;
+    let maxXp = 500;
+    let combo = 0;
+    let score = 0;
+    let lastFinishTime = 0;
+    
+    const titles = ["Aprendiz", "Cozinheiro", "Sub-Chef", "Chef de Partie", "Sous-Chef", "Chef Executivo", "Mestre Supremo"];
+
+    // Socket Connection
+    const token = localStorage.getItem('chef_token') || '';
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    const socket = io({ query: { token, restaurante_id: restId } });
+
+    let pedidosData = [];
+
+    socket.on('connect', () => { socket.emit('get_pedidos'); });
+    
+    socket.on('pedidos_atualizados', (data) => {
+      pedidosData = data || [];
+      renderArena();
+    });
+
+    socket.on('pedido_adicionado', () => { socket.emit('get_pedidos'); });
+    socket.on('pedido_status_alterado', () => { socket.emit('get_pedidos'); });
+
+    function playSound(id) {
+      try {
+        const a = document.getElementById(id);
+        a.currentTime = 0;
+        a.play().catch(e=>{});
+      } catch(e){}
+    }
+
+    function addXP(amount, x, y) {
+      xp += amount;
+      score += (amount * (combo > 0 ? combo : 1));
+      
+      // Floating text
+      const f = document.createElement('div');
+      f.className = 'floating-xp';
+      f.innerText = '+' + amount + ' XP';
+      f.style.left = (x || window.innerWidth/2) + 'px';
+      f.style.top = (y || window.innerHeight/2) + 'px';
+      document.body.appendChild(f);
+      setTimeout(() => f.remove(), 1000);
+
+      checkLevelUp();
+      updateHUD();
+    }
+
+    function checkLevelUp() {
+      if (xp >= maxXp) {
+        xp = xp - maxXp;
+        level++;
+        maxXp = Math.floor(maxXp * 1.5);
+        playSound('sfx-levelup');
+        
+        document.getElementById('new-level-text').innerText = 'Nvl ' + level + ': ' + (titles[level-1] || 'Lenda Viva');
+        document.getElementById('lvl-up-modal').classList.add('active');
+      }
+    }
+
+    function fecharLevelUp() {
+      document.getElementById('lvl-up-modal').classList.remove('active');
+      updateHUD();
+    }
+
+    function updateHUD() {
+      document.getElementById('player-title').innerText = 'Nvl ' + level + ': ' + (titles[level-1] || 'Lenda Viva');
+      const pct = Math.min(100, (xp / maxXp) * 100);
+      document.getElementById('xp-bar').style.width = pct + '%';
+      document.getElementById('xp-text').innerText = xp + ' / ' + maxXp + ' XP';
+      
+      document.getElementById('score-total').innerText = score;
+      
+      document.getElementById('combo-val').innerText = combo;
+      const meter = document.getElementById('combo-meter');
+      if (combo >= 2) meter.classList.add('combo-active');
+      else meter.classList.remove('combo-active');
+    }
+
+    function moveOrder(id, status, btnElement) {
+      if(status === 'Em preparo') {
+        playSound('sfx-start');
+        socket.emit('atualizar_status', { id, status });
+      } else if (status === 'Pronto') {
+        playSound('sfx-finish');
+        
+        // Combo logic: se terminou em menos de 5 min desde o ltimo, ganha combo
+        const now = Date.now();
+        if (lastFinishTime > 0 && (now - lastFinishTime) < 300000) {
+          combo++;
+        } else {
+          combo = 1;
+        }
+        lastFinishTime = now;
+        
+        const rect = btnElement.getBoundingClientRect();
+        addXP(50, rect.left + rect.width/2, rect.top);
+        
+        // Anim out
+        const card = btnElement.closest('.mission-card');
+        card.style.animation = 'popOut 0.4s forwards';
+        setTimeout(() => { socket.emit('atualizar_status', { id, status }); }, 350);
+      }
+    }
+
+    function renderArena() {
+      const colE = document.getElementById('col-espera');
+      const colP = document.getElementById('col-preparo');
+      const colR = document.getElementById('col-pronto');
+      
+      colE.innerHTML = ''; colP.innerHTML = ''; colR.innerHTML = '';
+
+      pedidosData.forEach(p => {
+        // Ignorar finalizados no jogo para nǜo poluir
+        if(p.status === 'Finalizado' || p.status === 'Pago') return;
+
+        const timeDiff = Math.floor((new Date() - new Date(p.createdAt)) / 60000);
+        let statusClass = '';
+        if(timeDiff > 25) statusClass = 'status-critical';
+        else if(timeDiff > 15) statusClass = 'status-warning';
+
+        const card = document.createElement('div');
+        card.className = 'mission-card ' + statusClass;
+        
+        let actionBtn = '';
+        if(p.status === 'Em espera' || p.status === 'Pendente') {
+          actionBtn = `<button class="mission-action btn-start" onclick="moveOrder(${p.id}, 'Em preparo', this)"><i class="ph-bold ph-play"></i> INICIAR MISSÃO</button>`;
+        } else if (p.status === 'Em preparo') {
+          actionBtn = `<button class="mission-action btn-finish" onclick="moveOrder(${p.id}, 'Pronto', this)"><i class="ph-bold ph-check-circle"></i> CONCLUIR MISSÃO!</button>`;
+        } else {
+          actionBtn = `<div style="text-align:center; color: var(--neon-green); font-family: 'Outfit'; font-weight: 800;"><i class="ph-bold ph-check"></i> MISSÃO CUMPRIDA</div>`;
+        }
+
+        const obsHtml = p.observacao ? `<div class="mission-obs"><i class="ph-bold ph-warning"></i> ${p.observacao}</div>` : '';
+
+        card.innerHTML = `
+          <div class="mc-bg-glow"></div>
+          <div class="mission-header">
+            <span class="m-id">#${p.id}</span>
+            <span class="m-time"><i class="ph-bold ph-clock"></i> ${timeDiff}m</span>
+          </div>
+          <div class="mission-body">
+            <div class="m-qty">${p.quantity}x</div>
+            <div class="m-name">${p.productName}</div>
+          </div>
+          ${obsHtml}
+          <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px;">
+            <span class="m-local">${p.localName || 'Balcão'}</span>
+          </div>
+          ${actionBtn}
+        `;
+
+        if(p.status === 'Em espera' || p.status === 'Pendente') colE.appendChild(card);
+        else if(p.status === 'Em preparo') colP.appendChild(card);
+        else colR.appendChild(card);
+      });
+    }
+
+    // Refresh timer a cada 1 minuto
+    setInterval(renderArena, 60000);
+    updateHUD();
+
+  </script>
+</body>
+</html>

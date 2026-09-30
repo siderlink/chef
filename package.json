@@ -35,6 +35,7 @@
         "vite": "^8.0.16"
     },
     "dependencies": {
+        "@google/genai": "^2.24.0",
         "acorn": "^8.17.0",
         "bcrypt": "^6.0.0",
         "better-sqlite3": "^13.0.3",

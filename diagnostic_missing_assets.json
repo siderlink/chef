@@ -1,0 +1,70 @@
+[
+  {
+    "file": "area-cliente.html",
+    "asset": "${b.imagem_url}"
+  },
+  {
+    "file": "cardapio.html",
+    "asset": "${fotoSegura}"
+  },
+  {
+    "file": "configuracoes.html",
+    "asset": "about:blank"
+  },
+  {
+    "file": "configuracoes.html",
+    "asset": "/api/template-produtos"
+  },
+  {
+    "file": "crm-marketing.html",
+    "asset": "${c.link_whatsapp}"
+  },
+  {
+    "file": "crm-marketing.html",
+    "asset": "${a.link_whatsapp}"
+  },
+  {
+    "file": "crm-marketing.html",
+    "asset": "${c.link_whatsapp}"
+  },
+  {
+    "file": "downloaded_login.html",
+    "asset": "/assets/login-BjuZFTlq.js"
+  },
+  {
+    "file": "downloaded_login.html",
+    "asset": "/assets/polyfills-legacy-BdBBEH7o.js"
+  },
+  {
+    "file": "downloaded_login.html",
+    "asset": "/assets/login-legacy-Bgfi8dEm.js"
+  },
+  {
+    "file": "hub-delivery.html",
+    "asset": "tel:"
+  },
+  {
+    "file": "hub-marketing.html",
+    "asset": "/super-admin"
+  },
+  {
+    "file": "hub-marketing.html",
+    "asset": "${waLink}"
+  },
+  {
+    "file": "hub-marketing.html",
+    "asset": "${p.url}"
+  },
+  {
+    "file": "motoboy.html",
+    "asset": "${dataUrl}"
+  },
+  {
+    "file": "suporte.html",
+    "asset": "javascript:void(0)"
+  },
+  {
+    "file": "totem.html",
+    "asset": "/plugins/pesagem-selfservice/totem"
+  }
+]

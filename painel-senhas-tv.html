@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TV - Painel de Senhas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
+    body { background-color: #0f172a; color: #fff; height: 100vh; display: flex; overflow: hidden; }
+
+    /* Lado Esquerdo: Senhas */
+    .board-container { width: 65%; display: flex; flex-direction: column; }
+    
+    .header { background: #1e293b; padding: 24px; text-align: center; border-bottom: 4px solid #334155; }
+    .header h1 { font-size: 32px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
+
+    .board { display: flex; flex: 1; }
+    .col { flex: 1; display: flex; flex-direction: column; border-right: 4px solid #1e293b; }
+    .col:last-child { border-right: none; }
+    
+    .col-title { font-size: 36px; font-weight: 900; text-align: center; padding: 24px; text-transform: uppercase; }
+    .col-title.prep { background: #f59e0b; color: #fff; }
+    .col-title.ready { background: #10b981; color: #fff; }
+
+    .senha-list { flex: 1; padding: 24px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; align-content: start; overflow: hidden; }
+    .senha-card { font-size: 64px; font-weight: 900; background: #1e293b; border-radius: 20px; text-align: center; padding: 20px 0; border: 4px solid transparent; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    
+    /* Piscar senha nova pronta */
+    @keyframes blink-ready { 0%, 100% { border-color: #10b981; background: #1e293b; color: #fff; transform: scale(1); } 50% { border-color: #10b981; background: #10b981; color: #fff; transform: scale(1.05); } }
+    .senha-card.new-ready { animation: blink-ready 0.6s ease-in-out 5; border-color: #10b981; }
+
+    /* Lado Direito: Mídia / Promoção */
+    .media-container { width: 35%; background: #000; position: relative; display: flex; flex-direction: column; }
+    .media-content { flex: 1; background-size: cover; background-position: center; transition: background-image 1s ease-in-out; }
+    
+    /* Rodapé do Marketing */
+    .marketing-footer { background: #fc4b15; padding: 24px; text-align: center; }
+    .marketing-footer h2 { font-size: 28px; font-weight: 900; margin-bottom: 8px; }
+    .marketing-footer p { font-size: 18px; font-weight: 600; opacity: 0.9; }
+
+    /* Overlay Chamada */
+    .call-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(16, 185, 129, 0.95); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    .call-overlay.active { opacity: 1; }
+    .call-overlay h1 { font-size: 80px; font-weight: 900; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .call-number { font-size: 250px; font-weight: 900; line-height: 1; text-shadow: 0 15px 40px rgba(0,0,0,0.4); }
+
+  </style>
+</head>
+<body>
+
+  <!-- Audio de Chamada (Ding-Dong) -->
+  <audio id="audio-call" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_c6ccf3232f.mp3?filename=airport-chime-99486.mp3" preload="auto"></audio>
+
+  <div class="board-container">
+    <div class="header">
+      <h1>Acompanhe seu Pedido</h1>
+    </div>
+    
+    <div class="board">
+      <div class="col">
+        <div class="col-title prep">Preparando</div>
+        <div class="senha-list" id="list-prep"></div>
+      </div>
+      <div class="col">
+        <div class="col-title ready">Pronto!</div>
+        <div class="senha-list" id="list-ready"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="media-container">
+    <!-- Imagens rotativas para upselling -->
+    <div class="media-content" id="media-slider" style="background-image: url('https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1000&auto=format&fit=crop');"></div>
+    
+    <div class="marketing-footer">
+      <h2>Peça também pelo Cardápio Digital!</h2>
+      <p>Aponte a câmera para o QR Code na mesa e ganhe 10% OFF na primeira compra.</p>
+    </div>
+  </div>
+
+  <div class="call-overlay" id="call-overlay">
+    <h1>Pedido Pronto</h1>
+    <div class="call-number" id="call-overlay-number">000</div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('chef_token') || '';
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    const socket = io({ query: { token, restaurante_id: restId } });
+
+    let lastProntos = [];
+
+    // Marketing Slider
+    const banners = [
+      'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1000',
+      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1000',
+      'https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?q=80&w=1000'
+    ];
+    let bIdx = 0;
+    setInterval(() => {
+      bIdx = (bIdx + 1) % banners.length;
+      document.getElementById('media-slider').style.backgroundImage = `url('${banners[bIdx]}')`;
+    }, 10000); // Rota a cada 10 seg
+
+    socket.on('connect', () => socket.emit('get_pedidos'));
+
+    socket.on('pedidos_atualizados', (pedidos) => {
+      const pPrep = [];
+      const pReady = [];
+
+      (pedidos || []).forEach(p => {
+        // Ignorar pedidos que nǜo sǜo para balcǜo/retirada, a menos que o rest queira todas as mesas
+        // Mas geralmente senha  = id
+        const num = String(p.id).padStart(3, '0');
+        
+        if(p.status === 'Em espera' || p.status === 'Em preparo') {
+          pPrep.push(num);
+        } else if (p.status === 'Pronto') {
+          pReady.push(num);
+        }
+      });
+
+      // Pegar s os 10 mais recentes
+      const showPrep = pPrep.slice(-10);
+      const showReady = pReady.slice(-10);
+
+      document.getElementById('list-prep').innerHTML = showPrep.map(n => `<div class="senha-card">${n}</div>`).join('');
+      
+      // Detectar nova senha pronta para tocar sino
+      let chamouSino = false;
+      let novaSenha = null;
+
+      const readyHtml = showReady.map(n => {
+        let isNew = !lastProntos.includes(n);
+        if(isNew && !chamouSino) {
+          chamouSino = true;
+          novaSenha = n;
+        }
+        return `<div class="senha-card ${isNew ? 'new-ready' : ''}">${n}</div>`;
+      }).join('');
+
+      document.getElementById('list-ready').innerHTML = readyHtml;
+
+      if(chamouSino && novaSenha) {
+        chamarSenha(novaSenha);
+      }
+
+      lastProntos = showReady;
+    });
+
+    socket.on('pedido_adicionado', () => socket.emit('get_pedidos'));
+    socket.on('pedido_status_alterado', () => socket.emit('get_pedidos'));
+
+    function chamarSenha(numero) {
+      try {
+        const audio = document.getElementById('audio-call');
+        audio.currentTime = 0;
+        audio.play().catch(e => {});
+      } catch(e) {}
+
+      // Mostrar overlay
+      const over = document.getElementById('call-overlay');
+      document.getElementById('call-overlay-number').innerText = numero;
+      over.classList.add('active');
+      
+      setTimeout(() => { over.classList.remove('active'); }, 5000);
+    }
+  </script>
+</body>
+</html>

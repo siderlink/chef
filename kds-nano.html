@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>KDS Nano - Super Leve</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* CSS Puro, sem frameworks, sem fontes web, sem box-shadows (alto desempenho) */
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #000;
+      color: #fff;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      background-color: #222;
+      border-bottom: 2px solid #444;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 50px;
+    }
+
+    .topbar h1 { font-size: 20px; color: #fff; margin: 0; }
+    .status { font-size: 14px; color: #0f0; font-weight: bold; }
+    .status.offline { color: #f00; }
+
+    .grid {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 2px solid #333;
+    }
+    .col:last-child { border-right: none; }
+
+    .col-title {
+      background-color: #333;
+      padding: 10px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      text-transform: uppercase;
+      border-bottom: 2px solid #555;
+    }
+
+    .col-content {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Scrollbar simples e rǭpida */
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: #111; }
+    ::-webkit-scrollbar-thumb { background: #555; }
+
+    /* Card Ultra Simples */
+    .card {
+      background-color: #1a1a1a;
+      border: 1px solid #444;
+      border-left: 8px solid #555;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card.alert { border-left-color: #f90; background-color: #3a2a00; }
+    .card.critical { border-left-color: #f00; background-color: #3a0000; }
+
+    .c-header { display: flex; justify-content: space-between; font-size: 14px; color: #aaa; }
+    .c-id { font-weight: bold; color: #fff; }
+    .c-time { font-weight: bold; }
+
+    .c-body { display: flex; gap: 10px; align-items: center; }
+    .c-qty { font-size: 24px; font-weight: bold; color: #0f0; min-width: 40px; text-align: center; }
+    .c-name { font-size: 20px; font-weight: bold; line-height: 1.2; flex: 1; }
+
+    .c-obs { font-size: 14px; color: #ff0; padding: 5px; background: rgba(255,255,0,0.1); border: 1px solid #aa0; }
+    .c-local { font-size: 16px; font-weight: bold; color: #0ff; }
+
+    .btn {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    .btn-start { background-color: #0055ff; border: 2px solid #0077ff; }
+    .btn-finish { background-color: #00aa00; border: 2px solid #00cc00; }
+    .btn-done { background-color: transparent; color: #0aa; text-align: center; padding: 10px; }
+
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <h1>KDS NANO - SUPER LEVE</h1>
+    <div id="conn-status" class="status">CONECTADO</div>
+  </div>
+
+  <div class="grid">
+    <div class="col">
+      <div class="col-title" style="color:#aaa;">NOVO</div>
+      <div class="col-content" id="c-new"></div>
+    </div>
+    <div class="col">
+      <div class="col-title" style="color:#09f;">PREPARANDO</div>
+      <div class="col-content" id="c-prep"></div>
+    </div>
+    <div class="col">
+      <div class="col-title" style="color:#0f0;">PRONTO</div>
+      <div class="col-content" id="c-done"></div>
+    </div>
+  </div>
+
+  <script>
+    // Configuraǜo de conexǜo
+    var token = localStorage.getItem('chef_token') || '';
+    var restId = localStorage.getItem('restaurante_id') || '1';
+    var socket = io({ query: { token: token, restaurante_id: restId }, reconnectionAttempts: Infinity });
+    
+    var pedidos = [];
+    var stLabel = document.getElementById('conn-status');
+
+    socket.on('connect', function() {
+      stLabel.className = 'status';
+      stLabel.innerHTML = 'CONECTADO';
+      socket.emit('get_pedidos');
+    });
+
+    socket.on('disconnect', function() {
+      stLabel.className = 'status offline';
+      stLabel.innerHTML = 'OFFLINE';
+    });
+
+    socket.on('pedidos_atualizados', function(data) {
+      pedidos = data || [];
+      render();
+    });
+
+    socket.on('pedido_adicionado', function() { socket.emit('get_pedidos'); });
+    socket.on('pedido_status_alterado', function() { socket.emit('get_pedidos'); });
+
+    function changeStatus(id, st) {
+      // Otimizaǜo: atualizao otimista na UI antes da resposta do servidor
+      var btn = document.getElementById('btn-' + id);
+      if(btn) btn.innerHTML = '...';
+      socket.emit('atualizar_status', { id: id, status: st });
+    }
+
+    function render() {
+      var cNew = document.getElementById('c-new');
+      var cPrep = document.getElementById('c-prep');
+      var cDone = document.getElementById('c-done');
+      
+      var hNew = '', hPrep = '', hDone = '';
+
+      var now = new Date().getTime();
+
+      for(var i=0; i<pedidos.length; i++) {
+        var p = pedidos[i];
+        if (p.status === 'Finalizado' || p.status === 'Pago') continue;
+
+        var ms = now - new Date(p.createdAt).getTime();
+        var mins = Math.floor(ms / 60000);
+        
+        var alertClass = '';
+        if(mins > 25) alertClass = 'critical';
+        else if(mins > 15) alertClass = 'alert';
+
+        var btnHtml = '';
+        if (p.status === 'Em espera' || p.status === 'Pendente') {
+          btnHtml = '<button id="btn-'+p.id+'" class="btn btn-start" onclick="changeStatus('+p.id+', \\'Em preparo\\')">INICIAR PREPARO</button>';
+        } else if (p.status === 'Em preparo') {
+          btnHtml = '<button id="btn-'+p.id+'" class="btn btn-finish" onclick="changeStatus('+p.id+', \\'Pronto\\')">PRONTO!</button>';
+        } else {
+          btnHtml = '<div class="btn-done">ENTREGUE AO BALCÃO</div>';
+        }
+
+        var obsHtml = p.observacao ? '<div class="c-obs">! ' + p.observacao + '</div>' : '';
+
+        var html = '<div class="card '+alertClass+'">' +
+          '<div class="c-header"><span class="c-id">#'+p.id+'</span><span class="c-time">'+mins+' min</span></div>' +
+          '<div class="c-body"><div class="c-qty">'+p.quantity+'x</div><div class="c-name">'+p.productName+'</div></div>' +
+          obsHtml +
+          '<div class="c-local">'+(p.localName || 'Balcão')+'</div>' +
+          btnHtml +
+        '</div>';
+
+        if(p.status === 'Em espera' || p.status === 'Pendente') hNew += html;
+        else if(p.status === 'Em preparo') hPrep += html;
+        else hDone += html;
+      }
+
+      cNew.innerHTML = hNew;
+      cPrep.innerHTML = hPrep;
+      cDone.innerHTML = hDone;
+    }
+
+    // Timer de atualizaǜo local sem usar rede a cada 1 minuto (para atualizar o contador de tempo)
+    setInterval(render, 60000);
+  </script>
+</body>
+</html>

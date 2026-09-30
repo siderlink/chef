@@ -11,7 +11,7 @@ const http = require('http');
 
 const crypto = require('crypto');
 
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const DEFAULT_MODEL = 'gemini-3.7-flash';
 
 // --- CAMADA DE DESEMPENHO E ECONOMIA DE TOKENS (LRU/TTL CACHE) ---
 const iaCache = new Map();

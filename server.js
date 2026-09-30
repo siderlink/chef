@@ -3682,7 +3682,23 @@ io.on('connection', (socket) => {
 
   // Tenants sem token (ex.: cliente que escaneou o QR do cardápio) usam o
   // restaurante_id informado na própria URL/query do socket.
-  
+  if (!socket.auth) {
+    const qrid = parseInt(socket.handshake.query.restaurante_id, 10);
+    if (Number.isFinite(qrid) && qrid > 0) socketTenantId = qrid;
+  }
+  socket.restaurante_id = socketTenantId;
+  socket.join(`restaurante_${socketTenantId}`);
+
+  // Wrap all socket events in tenant context
+  const originalOn = socket.on.bind(socket);
+  socket.on = function (eventName, callback) {
+    originalOn(eventName, (...args) => {
+      tenantContext.run(socketTenantId, () => {
+        callback(...args);
+      });
+    });
+  };
+
   // --- GAMIFICACAO / JOGOS DE MESA ---
   
   function getHandValue(cards) {

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketing & CRM Automatizado</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --border: #e2e8f0;
+      --primary: #8b5cf6;
+      --primary-hover: #7c3aed;
+      --green: #10b981;
+      --text: #0f172a;
+      --muted: #64748b;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    
+    body { background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+    
+    .header { background: #1e1b4b; color: #fff; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--primary); }
+    .header h1 { font-family: 'Outfit'; font-size: 24px; font-weight: 900; display: flex; align-items: center; gap: 12px; margin: 0; }
+    .header h1 i { color: var(--primary); }
+    .header p { color: #a5b4fc; font-size: 14px; margin-top: 4px; }
+
+    .main-grid { display: grid; grid-template-columns: 1fr 350px; gap: 24px; padding: 32px; flex: 1; overflow: hidden; max-width: 1400px; margin: 0 auto; width: 100%; }
+    
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .panel-header { padding: 20px; border-bottom: 1px solid var(--border); font-family: 'Outfit'; font-weight: 700; font-size: 16px; color: var(--text); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+    .panel-body { padding: 20px; flex: 1; overflow-y: auto; }
+
+    /* Top Cards */
+    .metrics-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .metric-card { background: #fff; border: 1px solid var(--border); padding: 20px; border-radius: 12px; display: flex; align-items: center; gap: 16px; }
+    .m-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .m-blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+    .m-green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .m-purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+    .m-info h3 { font-size: 13px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+    .m-info p { font-family: 'Outfit'; font-size: 28px; font-weight: 900; line-height: 1; }
+
+    /* Tabela CRM */
+    .table-crm { width: 100%; border-collapse: collapse; }
+    .table-crm th { text-align: left; padding: 12px 16px; border-bottom: 2px solid var(--border); color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    .table-crm td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); }
+    .table-crm tr:hover td { background: #f8fafc; }
+    
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .b-vip { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+    .b-novo { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .b-sumido { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+    /* Builder de Disparo */
+    .input-group { margin-bottom: 16px; }
+    .input-group label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; }
+    .input-group select, .input-group textarea { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; outline: none; transition: border 0.2s; font-family: 'Inter'; }
+    .input-group textarea { resize: vertical; min-height: 120px; }
+    .input-group select:focus, .input-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1); }
+
+    .btn-blast { width: 100%; background: #25D366; color: #fff; border: none; padding: 16px; border-radius: 10px; font-family: 'Outfit'; font-weight: 800; font-size: 16px; cursor: pointer; transition: transform 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); }
+    .btn-blast:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4); }
+
+    .tag-var { display: inline-block; background: #e2e8f0; color: #475569; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px; margin-right: 4px; margin-bottom: 8px; cursor: pointer; }
+    .tag-var:hover { background: #cbd5e1; }
+
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div>
+      <h1><i class="ph-fill ph-megaphone"></i> CRM & Marketing de Retenção</h1>
+      <p>Transforme dados de clientes em vendas recorrentes automáticas.</p>
+    </div>
+  </header>
+
+  <main class="main-grid">
+    
+    <!-- Painel 1: Base de Clientes -->
+    <div style="display: flex; flex-direction: column;">
+      
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="m-icon m-blue"><i class="ph-fill ph-users"></i></div>
+          <div class="m-info"><h3>Total de Leads</h3><p id="kpi-leads">0</p></div>
+        </div>
+        <div class="metric-card">
+          <div class="m-icon m-purple"><i class="ph-fill ph-star"></i></div>
+          <div class="m-info"><h3>Clientes VIPs</h3><p id="kpi-vips">0</p></div>
+        </div>
+        <div class="metric-card">
+          <div class="m-icon m-green"><i class="ph-fill ph-ticket"></i></div>
+          <div class="m-info"><h3>ROI Campanhas</h3><p>+32%</p></div>
+        </div>
+      </div>
+
+      <section class="panel" style="flex: 1;">
+        <div class="panel-header">Sua Base de Clientes (Automática)</div>
+        <div class="panel-body" style="padding: 0;">
+          <table class="table-crm">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Telefone</th>
+                <th>LTV (Gasto)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="lista-clientes">
+              <tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--muted);">Carregando leads da base...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Painel 2: Criador de Campanhas -->
+    <section class="panel">
+      <div class="panel-header">Disparador WhatsApp <i class="ph-fill ph-whatsapp-logo" style="color: #25D366; font-size: 20px;"></i></div>
+      <div class="panel-body">
+        
+        <div style="background: rgba(139, 92, 246, 0.1); border: 1px dashed rgba(139, 92, 246, 0.4); padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #6d28d9; font-weight: 500;">
+          Selecione um segmento e digite sua mensagem. O sistema abrirá a janela de envio para cada cliente filtrado.
+        </div>
+
+        <div class="input-group">
+          <label>Público Alvo (Segmentação)</label>
+          <select id="inp-seg">
+            <option value="todos">Todos os Clientes (Aviso Geral)</option>
+            <option value="vip">Apenas VIPs (Maiores Gastos)</option>
+            <option value="sumidos">Clientes Sumidos (+30 dias sem pedir)</option>
+            <option value="roleta">Leads da Roleta (Só capturados)</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label>Mensagem</label>
+          <div style="margin-bottom: 8px;">
+            <span class="tag-var" onclick="insertVar('{NOME}')">{NOME}</span>
+            <span class="tag-var" onclick="insertVar('{NOME_LOJA}')">{NOME_LOJA}</span>
+          </div>
+          <textarea id="inp-msg" placeholder="Oi {NOME}, vimos que você não pede faz um tempo! Que tal aproveitar 15% OFF hoje?">Olá {NOME}, temos uma promoção especial pra você hoje! Peça pelo nosso cardápio digital e ganhe frete grátis.</textarea>
+        </div>
+
+        <button class="btn-blast" onclick="dispararMassa()">
+          <i class="ph-bold ph-paper-plane-tilt"></i> Iniciar Disparo
+        </button>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const token = localStorage.getItem('chef_token') || '';
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    const socket = io({ query: { token, restaurante_id: restId } });
+
+    let clientesReal = [];
+
+    socket.on('connect', () => {
+      socket.emit('get_clientes');
+    });
+
+    socket.on('clientes_atualizados', (clientes) => {
+      clientesReal = clientes || [];
+      renderTabela(clientesReal);
+    });
+
+    function renderTabela(lista) {
+      document.getElementById('kpi-leads').innerText = lista.length;
+      let vips = 0;
+
+      const tbody = document.getElementById('lista-clientes');
+      
+      if(lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--muted);">Nenhum cliente cadastrado ainda.</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      lista.slice(0, 50).forEach(c => {
+        let ltv = parseFloat(c.total_gasto) || 0;
+        let badge = '<span class="badge b-novo">Novo</span>';
+        
+        if (ltv > 500) { badge = '<span class="badge b-vip">VIP</span>'; vips++; }
+        else if (ltv == 0) badge = '<span class="badge b-sumido">Frio</span>';
+
+        // Mock telefone pra visualização
+        let tel = c.telefone || c.celular || '(11) 9XXXX-XXXX';
+        if(tel.length < 5) tel = '(11) 9XXXX-XXXX';
+
+        html += `
+          <tr>
+            <td style="font-weight: 600;">${c.nome || 'Cliente'}</td>
+            <td style="font-family: monospace;">${tel}</td>
+            <td style="color: var(--green); font-weight: bold;">R$ ${ltv.toFixed(2).replace('.',',')}</td>
+            <td>${badge}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+      document.getElementById('kpi-vips').innerText = vips;
+    }
+
+    function insertVar(v) {
+      const txt = document.getElementById('inp-msg');
+      txt.value += v;
+      txt.focus();
+    }
+
+    function dispararMassa() {
+      const seg = document.getElementById('inp-seg').value;
+      let msgTemplate = document.getElementById('inp-msg').value;
+      
+      let alvos = clientesReal.filter(c => {
+        let tel = (c.telefone || c.celular || '').replace(/\D/g, '');
+        return tel.length >= 10;
+      });
+
+      if(seg === 'vip') {
+        alvos = alvos.filter(c => (parseFloat(c.total_gasto) || 0) > 300);
+      } else if (seg === 'sumidos') {
+        alvos = alvos.filter(c => (parseFloat(c.total_gasto) || 0) < 50); // mock
+      }
+
+      if(alvos.length === 0) {
+        alert("Nenhum cliente válido (com telefone) encontrado neste segmento.");
+        return;
+      }
+
+      if(!confirm(`Iniciar disparo para ${alvos.length} clientes?`)) return;
+
+      // Abre aba do zap para o primeiro para simular
+      let c1 = alvos[0];
+      let tel = (c1.telefone || c1.celular).replace(/\D/g, '');
+      if(!tel.startsWith('55')) tel = '55' + tel;
+      
+      let finalMsg = msgTemplate.replace(/{NOME}/g, c1.nome || 'Cliente').replace(/{NOME_LOJA}/g, 'Cheff.pro');
+      
+      window.open(`https://wa.me/${tel}?text=${encodeURIComponent(finalMsg)}`, '_blank');
+      alert(`Janela do WhatsApp Web aberta para o 1º cliente da lista (${c1.nome}).`);
+    }
+
+  </script>
+</body>
+</html>

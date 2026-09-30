@@ -154,7 +154,19 @@ export default defineConfig({
         'pagina-vendas-3d': resolve(__dirname, 'pagina-vendas-3d.html'),
         'site-vendas-nichos': resolve(__dirname, 'site-vendas-nichos.html'),
         'vendas-nichos': resolve(__dirname, 'vendas-nichos.html'),
-        'hub-marketing': resolve(__dirname, 'hub-marketing.html')
+        'hub-marketing': resolve(__dirname, 'hub-marketing.html'),
+        'universidade': resolve(__dirname, 'universidade.html'),
+        'kds-v2': resolve(__dirname, 'kds-v2.html'),
+        'kds-nano': resolve(__dirname, 'kds-nano.html'),
+        'caixa-v11-lite': resolve(__dirname, 'caixa-v11-lite.html'),
+        'pwa-colaborador': resolve(__dirname, 'pwa-colaborador.html'),
+        'radar-antifraude': resolve(__dirname, 'radar-antifraude.html'),
+        'painel-senhas-tv': resolve(__dirname, 'painel-senhas-tv.html'),
+        'mapa-mesas-3d': resolve(__dirname, 'mapa-mesas-3d.html'),
+        'compras-b2b': resolve(__dirname, 'compras-b2b.html'),
+        'roleta-premiada': resolve(__dirname, 'roleta-premiada.html'),
+        'pwa-motoboy': resolve(__dirname, 'pwa-motoboy.html'),
+        'painel-crm': resolve(__dirname, 'painel-crm.html')
       }
     }
   }

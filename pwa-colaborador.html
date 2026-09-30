@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>App do Colaborador</title>
+  <meta name="theme-color" content="#6366f1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQXBwIENvbGFib3JhZG9yIiwic2hvcnRfbmFtZSI6IkNvbGFib3JhZG9yIiwic3RhcnRfdXJsIjoiL3B3YS1jb2xhYm9yYWRvci5odG1sIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzBmMTcyYSIsInRoZW1lX2NvbG9yIjoiIzYzNjZmMSIsImljb25zIjpbeyJzcmMiOiIvaWNvbnMvaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyJ9LHsic3JjIjoiL2ljb25zL2ljb24tMjU2LnBuZyIsInNpemVzIjoiMjU2eDI1NiIsInR5cGUiOiJpbWFnZS9wbmcifV19">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+
+  <style>
+    :root { --bg: #0f172a; --panel: #1e293b; --primary: #6366f1; --primary-hover: #4f46e5; --text: #f8fafc; --text-muted: #94a3b8; --border: #334155; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, system-ui, sans-serif; user-select: none; }
+    
+    body { background-color: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* App Header */
+    .header { background: var(--panel); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-top: env(safe-area-inset-top, 20px); }
+    .header h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .header h1 i { color: var(--primary); font-size: 24px; }
+    
+    .rest-badge { background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid rgba(99, 102, 241, 0.3); }
+
+    /* Login Screen */
+    #login-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+    #login-screen h2 { font-size: 24px; margin-bottom: 8px; }
+    #login-screen p { color: var(--text-muted); font-size: 14px; margin-bottom: 32px; }
+    
+    .input-group { width: 100%; max-width: 320px; margin-bottom: 16px; text-align: left; }
+    .input-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
+    .input-group input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: #fff; padding: 14px 16px; border-radius: 12px; font-size: 16px; outline: none; transition: border-color 0.2s; }
+    .input-group input:focus { border-color: var(--primary); }
+    
+    .btn-main { width: 100%; max-width: 320px; background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+    .btn-main:active { transform: scale(0.98); }
+
+    /* Dashboard Screen */
+    #dashboard-screen { flex: 1; display: none; flex-direction: column; padding: 20px; overflow-y: auto; padding-bottom: 100px; }
+    
+    .profile-card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .avatar { width: 60px; height: 60px; border-radius: 16px; background: var(--bg); border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--primary); }
+    .p-info h3 { font-size: 18px; margin-bottom: 4px; }
+    .p-info span { font-size: 14px; color: var(--primary); font-weight: 600; background: rgba(99, 102, 241, 0.1); padding: 2px 8px; border-radius: 6px; }
+
+    /* Ponto Card */
+    .ponto-card { background: linear-gradient(135deg, #059669, #10b981); border-radius: 16px; padding: 20px; margin-bottom: 24px; color: #fff; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); position: relative; overflow: hidden; }
+    .ponto-status { font-size: 14px; font-weight: 600; margin-bottom: 8px; opacity: 0.9; }
+    .ponto-time { font-size: 36px; font-weight: 800; font-family: 'Courier New', Courier, monospace; letter-spacing: -1px; }
+    .btn-ponto { background: rgba(0,0,0,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 12px; width: 100%; border-radius: 10px; font-size: 16px; font-weight: 700; margin-top: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    
+    /* Modules Grid */
+    .section-title { font-size: 14px; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .modules-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .module-btn { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; color: var(--text); text-decoration: none; transition: transform 0.2s; }
+    .module-btn:active { transform: scale(0.95); }
+    .module-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .module-btn span { font-size: 13px; font-weight: 600; }
+
+    /* Colors for modules */
+    .m-blue .module-icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .m-orange .module-icon { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+    .m-green .module-icon { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .m-purple .module-icon { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+    .m-red .module-icon { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+    /* Toast */
+    #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #22c55e; color: #fff; padding: 12px 24px; border-radius: 30px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000; }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.error { background: #ef4444; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1><i class="ph-fill ph-users-three"></i> Portal Operador</h1>
+    <div class="rest-badge" id="rest-badge">Local X</div>
+  </div>
+
+  <!-- TELA DE LOGIN -->
+  <div id="login-screen">
+    <div class="avatar" style="width:80px;height:80px;margin-bottom:24px;font-size:40px;"><i class="ph-bold ph-identification-card"></i></div>
+    <h2>Identifique-se</h2>
+    <p>Acesse suas ferramentas e registre seu ponto.</p>
+    
+    <div class="input-group">
+      <label>Usuário (ou Nome)</label>
+      <input type="text" id="inp-user" placeholder="João Silva" autocomplete="off" autocorrect="off">
+    </div>
+    <div class="input-group">
+      <label>Senha / PIN</label>
+      <input type="password" id="inp-pass" placeholder="••••" inputmode="numeric">
+    </div>
+    
+    <button class="btn-main" onclick="doLogin()">ACESSAR</button>
+  </div>
+
+  <!-- TELA DASHBOARD -->
+  <div id="dashboard-screen">
+    
+    <div class="profile-card">
+      <div class="avatar"><i class="ph-bold ph-user"></i></div>
+      <div class="p-info">
+        <h3 id="colab-name">Colaborador</h3>
+        <span id="colab-role">Cargo</span>
+      </div>
+      <div style="margin-left: auto;">
+        <button onclick="doLogout()" style="background:rgba(255,255,255,0.1); border:none; padding:10px; border-radius:10px; color:#fff; cursor:pointer;"><i class="ph-bold ph-sign-out" style="font-size: 20px;"></i></button>
+      </div>
+    </div>
+
+    <div class="ponto-card" id="ponto-card">
+      <div class="ponto-status"><i class="ph-bold ph-fingerprint"></i> RELÓGIO DE PONTO</div>
+      <div class="ponto-time" id="clock-display">00:00:00</div>
+      <button class="btn-ponto" onclick="baterPontoManual()"><i class="ph-bold ph-check-circle"></i> BATER PONTO AGORA</button>
+    </div>
+
+    <h3 class="section-title">Suas Ferramentas</h3>
+    <div class="modules-grid" id="modules-grid">
+      <!-- Injetado via JS -->
+    </div>
+
+  </div>
+
+  <div id="toast">Sucesso!</div>
+
+  <script>
+    // Gerenciamento de Multi-Restaurantes / PWA Instalável
+    const urlParams = new URLSearchParams(window.location.search);
+    let targetRestId = urlParams.get('rest_id') || localStorage.getItem('last_rest_id') || '1';
+    localStorage.setItem('last_rest_id', targetRestId);
+
+    document.getElementById('rest-badge').innerText = 'Unidade #' + targetRestId;
+
+    let socket;
+    let colabData = null;
+
+    // Conectar ao websocket usando o rest_id
+    function initSocket() {
+      socket = io({ query: { restaurante_id: targetRestId }, reconnectionAttempts: Infinity });
+      
+      socket.on('connect', () => {
+        const savedToken = localStorage.getItem('colab_token_' + targetRestId);
+        if (savedToken) {
+          socket.emit('login_funcionario_token', savedToken);
+        }
+      });
+
+      socket.on('login_success', (data) => {
+        localStorage.setItem('colab_token_' + targetRestId, data.token);
+        colabData = data.usuario;
+        showDashboard();
+        checkAutoPonto();
+      });
+
+      socket.on('login_error', (msg) => {
+        showToast(msg, true);
+        localStorage.removeItem('colab_token_' + targetRestId);
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('dashboard-screen').style.display = 'none';
+      });
+
+      socket.on('ponto_registrado', (data) => {
+        showToast('Ponto registrado com sucesso!');
+        const card = document.getElementById('ponto-card');
+        card.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)'; // Muda pra azul
+        card.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.3)';
+        document.querySelector('.btn-ponto').innerHTML = '<i class="ph-bold ph-check"></i> REGISTRADO PARA HOJE';
+      });
+    }
+
+    function doLogin() {
+      const u = document.getElementById('inp-user').value.trim();
+      const p = document.getElementById('inp-pass').value.trim();
+      if(!u || !p) return showToast('Preencha os campos', true);
+      
+      // Emitir login pro server. O server.js lida com 'login_funcionario' e checa a tabela.
+      socket.emit('login_funcionario', { usuario: u, senha: p });
+    }
+
+    function doLogout() {
+      localStorage.removeItem('colab_token_' + targetRestId);
+      window.location.reload();
+    }
+
+    function showDashboard() {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('dashboard-screen').style.display = 'flex';
+      
+      document.getElementById('colab-name').innerText = colabData.nome;
+      document.getElementById('colab-role').innerText = colabData.cargo || 'Operador';
+
+      renderModules(colabData.cargo);
+    }
+
+    function renderModules(cargo) {
+      const grid = document.getElementById('modules-grid');
+      let html = '';
+      const c = (cargo || '').toLowerCase();
+
+      // Módulos Universais
+      html += `<a href="/painel-funcionario.html?rest_id=${targetRestId}" class="module-btn m-blue"><div class="module-icon"><i class="ph-fill ph-chart-bar"></i></div><span>Minhas Metas</span></a>`;
+
+      // Módulos Garçom / Atendente
+      if (c.includes('gar') || c.includes('atend') || c.includes('gerent') || c.includes('admin')) {
+        html += `<a href="/garcom-lite.html?rest_id=${targetRestId}" class="module-btn m-orange"><div class="module-icon"><i class="ph-fill ph-device-mobile"></i></div><span>Comanda Mobile</span></a>`;
+        html += `<a href="/cardapio.html?rest_id=${targetRestId}" class="module-btn m-purple"><div class="module-icon"><i class="ph-fill ph-book-open"></i></div><span>Cardápio Digital</span></a>`;
+      }
+
+      // Módulos Cozinha / Chef
+      if (c.includes('cozinh') || c.includes('chef') || c.includes('gerent') || c.includes('admin') || c.includes('pizzaiolo')) {
+        html += `<a href="/kds-v2.html?rest_id=${targetRestId}" class="module-btn m-red"><div class="module-icon"><i class="ph-fill ph-game-controller"></i></div><span>KDS V2 Arena</span></a>`;
+        html += `<a href="/kds-nano.html?rest_id=${targetRestId}" class="module-btn m-green"><div class="module-icon"><i class="ph-fill ph-monitor"></i></div><span>KDS Nano</span></a>`;
+      }
+
+      // Gerente
+      if (c.includes('gerent') || c.includes('admin')) {
+        html += `<a href="/caixa-ultra.html?rest_id=${targetRestId}" class="module-btn m-blue"><div class="module-icon"><i class="ph-fill ph-desktop"></i></div><span>Abrir Caixa</span></a>`;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    // Auto Ponto se for o primeiro login do dia
+    function checkAutoPonto() {
+      const today = new Date().toLocaleDateString('pt-BR');
+      const lastPonto = localStorage.getItem('last_auto_ponto_' + targetRestId);
+      
+      if (lastPonto !== today) {
+        localStorage.setItem('last_auto_ponto_' + targetRestId, today);
+        socket.emit('bater_ponto', { funcionario_id: colabData.id, acao: 'entrada', token: localStorage.getItem('colab_token_' + targetRestId) });
+      } else {
+        // Já bateu
+        const card = document.getElementById('ponto-card');
+        card.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+        document.querySelector('.btn-ponto').innerHTML = '<i class="ph-bold ph-check"></i> PONTO BATEU HOJE';
+      }
+    }
+
+    function baterPontoManual() {
+      socket.emit('bater_ponto', { funcionario_id: colabData.id, acao: 'entrada', token: localStorage.getItem('colab_token_' + targetRestId) });
+    }
+
+    // Relógio
+    setInterval(() => {
+      document.getElementById('clock-display').innerText = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+    }, 1000);
+
+    // Util
+    function showToast(msg, isError=false) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      if(isError) t.classList.add('error'); else t.classList.remove('error');
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    initSocket();
+  </script>
+</body>
+</html>

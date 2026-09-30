@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Roleta Premiada - Cheff.pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; user-select: none; }
+    body { background: radial-gradient(circle at center, #6366f1 0%, #312e81 100%); color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+    .brand { position: absolute; top: 20px; text-align: center; width: 100%; }
+    .brand h1 { font-size: 24px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+    .wheel-container { position: relative; width: 320px; height: 320px; margin-top: -20px; }
+    
+    .pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 40px; height: 40px; background: #fc4b15; clip-path: polygon(50% 100%, 0 0, 100% 0); z-index: 10; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+
+    .wheel { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.3); position: relative; overflow: hidden; transition: transform cubic-bezier(0.175, 0.885, 0.32, 1.275); transform: rotate(0deg); }
+    
+    /* Segmentos desenhados com CSS conic-gradient */
+    .wheel-bg { width: 100%; height: 100%; border-radius: 50%; position: absolute; top: 0; left: 0; background: conic-gradient(
+      #ef4444 0deg 60deg, 
+      #f59e0b 60deg 120deg, 
+      #10b981 120deg 180deg, 
+      #3b82f6 180deg 240deg, 
+      #8b5cf6 240deg 300deg, 
+      #ec4899 300deg 360deg
+    ); }
+
+    .wheel-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; background: #fff; border-radius: 50%; z-index: 20; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 4px solid #1e1b4b; display: flex; align-items: center; justify-content: center; }
+    .wheel-center i { color: #1e1b4b; font-size: 24px; }
+
+    /* Textos (Fixo por div absolute com rotação) */
+    .segment-text { position: absolute; width: 150px; height: 20px; top: 50%; left: 50%; transform-origin: 0 50%; font-weight: 900; font-size: 14px; text-transform: uppercase; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: flex-end; padding-right: 15px; margin-top: -10px; }
+    
+    .action-area { margin-top: 40px; text-align: center; width: 100%; max-width: 350px; padding: 0 20px; }
+    .action-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    .action-desc { font-size: 14px; color: #e0e7ff; margin-bottom: 20px; }
+    
+    .input-box { width: 100%; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); color: #fff; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 700; text-align: center; outline: none; margin-bottom: 16px; transition: border 0.2s; }
+    .input-box::placeholder { color: rgba(255,255,255,0.5); font-weight: 400; }
+    .input-box:focus { border-color: #fff; background: rgba(255,255,255,0.2); }
+
+    .btn-spin { width: 100%; background: #fc4b15; color: #fff; border: none; padding: 18px; border-radius: 12px; font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; box-shadow: 0 10px 20px rgba(252, 75, 21, 0.4); transition: transform 0.2s; }
+    .btn-spin:active { transform: scale(0.95); }
+    .btn-spin:disabled { background: #64748b; box-shadow: none; cursor: not-allowed; opacity: 0.7; }
+
+    /* Modal de Vitória */
+    .win-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 20px; text-align: center; }
+    .win-modal.active { opacity: 1; pointer-events: all; }
+    .win-icon { font-size: 80px; color: #f59e0b; margin-bottom: 20px; animation: bounce 1s infinite; text-shadow: 0 0 40px rgba(245, 158, 11, 0.5); }
+    .win-title { font-size: 32px; font-weight: 900; margin-bottom: 12px; color: #fff; text-transform: uppercase; }
+    .win-prize { font-size: 40px; font-weight: 900; color: #10b981; margin-bottom: 24px; text-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
+    .win-code { background: #1e293b; padding: 16px 32px; border-radius: 16px; border: 2px dashed #3b82f6; font-size: 24px; font-weight: 900; letter-spacing: 4px; margin-bottom: 24px; }
+    .btn-close { background: #3b82f6; color: #fff; border: none; padding: 16px 32px; border-radius: 12px; font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; width: 100%; max-width: 300px; }
+
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+  </style>
+</head>
+<body>
+
+  <!-- Audio -->
+  <audio id="sfx-spin" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_73e72175a6.mp3?filename=wheel-spin-99276.mp3" preload="auto"></audio>
+  <audio id="sfx-win" src="https://cdn.pixabay.com/download/audio/2021/08/09/audio_82c2de0cc7.mp3?filename=level-up-191997.mp3" preload="auto"></audio>
+
+  <div class="brand">
+    <h1><i class="ph-bold ph-ticket"></i> Roleta de Prêmios</h1>
+  </div>
+
+  <div class="wheel-container">
+    <div class="pointer"></div>
+    <div class="wheel" id="wheel">
+      <div class="wheel-bg"></div>
+      <!-- Textos a cada 60 graus. Como são 6 fatias (360/6 = 60), o meio da fatia i é i*60 + 30 -->
+      <div class="segment-text" style="transform: rotate(30deg);">10% OFF</div>
+      <div class="segment-text" style="transform: rotate(90deg);">Coca Cola</div>
+      <div class="segment-text" style="transform: rotate(150deg);">Frete Grátis</div>
+      <div class="segment-text" style="transform: rotate(210deg);">Pudim</div>
+      <div class="segment-text" style="transform: rotate(270deg);">Batata Frita</div>
+      <div class="segment-text" style="transform: rotate(330deg);">Tente Dnv</div>
+    </div>
+    <div class="wheel-center"><i class="ph-bold ph-star"></i></div>
+  </div>
+
+  <div class="action-area">
+    <div class="action-title">Gire e Ganhe Agora!</div>
+    <div class="action-desc">Insira seu WhatsApp para liberar o giro. O cupom será atrelado ao seu número.</div>
+    <input type="tel" id="inp-zap" class="input-box" placeholder="(11) 99999-9999" maxlength="15">
+    <button class="btn-spin" id="btn-spin" onclick="spinWheel()">GIRAR A ROLETA</button>
+  </div>
+
+  <!-- Modal -->
+  <div class="win-modal" id="win-modal">
+    <i class="ph-fill ph-confetti win-icon"></i>
+    <div class="win-title">PARABÉNS!</div>
+    <p style="color: #cbd5e1; font-size: 16px; margin-bottom: 8px;">Você acabou de ganhar:</p>
+    <div class="win-prize" id="win-prize-text">Batata Frita</div>
+    <div class="win-code" id="win-code-text">BATATA50</div>
+    <p style="color: #cbd5e1; font-size: 14px; margin-bottom: 24px; padding: 0 20px;">Apresente este código no Caixa ou use no final do pedido no Cardápio Digital.</p>
+    <button class="btn-close" onclick="fecharModal()">Resgatar Agora</button>
+  </div>
+
+  <script>
+    // Formatação de Telefone
+    document.getElementById('inp-zap').addEventListener('input', function(e) {
+      let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+      e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+    });
+
+    const prizes = [
+      { name: "10% OFF", code: "PROMO10" },
+      { name: "Coca Cola", code: "COCAFRIENDS" },
+      { name: "Frete Grátis", code: "FRETEZERO" },
+      { name: "Pudim", code: "PUDIMDOCE" },
+      { name: "Batata Frita", code: "BATATAEXTRA" },
+      { name: "Tente Novamente", code: "" }
+    ];
+
+    let isSpinning = false;
+
+    function spinWheel() {
+      const zap = document.getElementById('inp-zap').value;
+      if(zap.length < 14) { alert('Por favor, insira um WhatsApp válido primeiro!'); return; }
+      if(isSpinning) return;
+
+      isSpinning = true;
+      document.getElementById('btn-spin').disabled = true;
+
+      // Mock save lead to CRM via API (silent)
+      console.log('Lead capturado:', zap);
+
+      try {
+        const audio = document.getElementById('sfx-spin');
+        audio.currentTime = 0; audio.play().catch(()=>{});
+      } catch(e){}
+
+      // Sortear um prêmio (Evitando cair sempre no "Tente Novamente" para ser generoso)
+      // Fatia 0 = 330deg-30deg (10%), Fatia 1 = 30-90 (Coca)...
+      // Posição no array (0 a 5)
+      // 0: 10% (angle 0)
+      // 1: Tente (angle 60)
+      // 2: Batata (angle 120)
+      // 3: Pudim (angle 180)
+      // 4: Frete (angle 240)
+      // 5: Coca (angle 300)
+      // Para o CSS transform girar no sentido horário, subtrair angulo.
+      
+      const prizeIndex = Math.floor(Math.random() * 5); // Exclui 5 (Tente novamente) na maioria das vezes, let's keep it 0-4
+      const prizeObj = [
+        prizes[0], // 10%
+        prizes[5], // Tente
+        prizes[4], // Batata
+        prizes[3], // Pudim
+        prizes[2], // Frete
+        prizes[1]  // Coca
+      ][prizeIndex]; // Map to angles
+
+      // Angulos onde a fatia fica no topo:
+      // Index 0 (10% OFF) = 0deg (360)
+      // Index 1 (Tente Dnv) = 60deg (ou 300deg pra trás)
+      // Index 2 (Batata Frita) = 120deg
+      const targetAngleList = [360, 300, 240, 180, 120, 60];
+      
+      const baseSpins = 5 * 360; // Gira 5 vezes completas
+      const targetAngle = targetAngleList[prizeIndex];
+      const offset = Math.floor(Math.random() * 40) - 20; // Variação pra não parar exato no centro
+
+      const finalRotation = baseSpins + targetAngle + offset;
+
+      const wheel = document.getElementById('wheel');
+      wheel.style.transition = 'transform 4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+      wheel.style.transform = `rotate(${finalRotation}deg)`;
+
+      setTimeout(() => {
+        try { document.getElementById('sfx-win').play().catch(()=>{}); } catch(e){}
+        
+        if(prizeObj.code === "") {
+          alert("Poxa, quase! Tente novamente na próxima visita.");
+          isSpinning = false;
+          document.getElementById('btn-spin').disabled = false;
+          wheel.style.transition = 'none';
+          wheel.style.transform = `rotate(${finalRotation % 360}deg)`;
+        } else {
+          document.getElementById('win-prize-text').innerText = prizeObj.name;
+          document.getElementById('win-code-text').innerText = prizeObj.code;
+          document.getElementById('win-modal').classList.add('active');
+        }
+      }, 4200);
+    }
+
+    function fecharModal() {
+      // Redirecionar para o cardápio
+      window.location.href = '/cardapio.html';
+    }
+  </script>
+</body>
+</html>

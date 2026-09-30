@@ -492,3 +492,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.key === 'Enter') loginSuporte();
   });
 });
+
+// --- Geração Automática: Fallback para Botões em Breve ---
+window.showEmBreveToast = function(featureName) {
+  if (typeof showToast === 'function') {
+    showToast('🚀 O recurso "' + featureName + '" estará disponível na próxima atualização!', 'ph-rocket', 'info');
+  } else {
+    alert('🚀 O recurso "' + featureName + '" estará disponível na próxima atualização!');
+  }
+};
+
+window.executarChamadaSandbox = function() { window.showEmBreveToast('executarChamadaSandbox'); };
+
+window.salvarScaffoldNoDisco = function() { window.showEmBreveToast('salvarScaffoldNoDisco'); };
