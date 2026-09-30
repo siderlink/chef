@@ -350,8 +350,15 @@ function aplicarTamanhosCSS(sizes) {
   if (queueList) {
     queueList.style.setProperty('--kds-grid-columns', colCss);
     queueList.style.setProperty('--kds-card-gap', (sizes.gap !== undefined ? sizes.gap : 12) + 'px');
+    queueList.style.gap = (sizes.gap !== undefined ? sizes.gap : 12) + 'px';
     queueList.style.setProperty('--kds-card-grid-padding', gridPad);
     queueList.style.setProperty('--kds-card-grid-min-height', gridMinH);
+    queueList.style.setProperty('--kds-card-height', (sizes.height || 76) + 'px');
+    queueList.style.setProperty('--kds-font-size', (sizes.fontSize || 15) + 'px');
+    queueList.style.setProperty('--kds-col-header-width', (sizes.header || 260) + 'px');
+    queueList.style.setProperty('--kds-col-qty-width', (sizes.qty || 54) + 'px');
+    queueList.style.setProperty('--kds-col-action-width', (sizes.action || 230) + 'px');
+
 
     queueList.classList.remove('grade-2col', 'grade-3col', 'grade-4col', 'grade-5col');
     if (sizes.gridCols && sizes.gridCols !== 'auto') {

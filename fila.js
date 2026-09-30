@@ -455,15 +455,23 @@ window.alterarTamanhoCard = function(tam) {
   if (tam === 'p') {
     kdsSectionSizes.fontSize = 13;
     kdsSectionSizes.gap = 8;
+    kdsSectionSizes.height = 60;
+    kdsSectionSizes.qty = 46;
   } else if (tam === 'm') {
     kdsSectionSizes.fontSize = 15;
     kdsSectionSizes.gap = 12;
+    kdsSectionSizes.height = 76;
+    kdsSectionSizes.qty = 54;
   } else if (tam === 'g') {
     kdsSectionSizes.fontSize = 18;
     kdsSectionSizes.gap = 16;
+    kdsSectionSizes.height = 92;
+    kdsSectionSizes.qty = 64;
   } else if (tam === 'gg') {
     kdsSectionSizes.fontSize = 22;
     kdsSectionSizes.gap = 20;
+    kdsSectionSizes.height = 110;
+    kdsSectionSizes.qty = 76;
   }
   localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
   aplicarTamanhosCSS(kdsSectionSizes);
@@ -606,7 +614,7 @@ function renderizarListaApelidosDrawer() {
         <span style="color:var(--kds-text-secondary);">${escHtml(k)}:</span>
         <strong style="color:var(--kds-primary, #fc4b15); margin-left:4px;">${escHtml(kdsColabApelidos[k])}</strong>
       </div>
-      <button type="button" onclick="window.removerApelidoColaborador('${escJs(k)}')" style="border:none; background:transparent; color:#ef4444; cursor:pointer; font-weight:bold; font-size:14px;" title="Remover apelido">&times;</button>
+      <button type="button" onclick="window.removerApelidoColaborador(${escJs(k)})" style="border:none; background:transparent; color:#ef4444; cursor:pointer; font-weight:bold; font-size:14px;" title="Remover apelido">&times;</button>
     </div>
   `).join('');
 }
@@ -632,6 +640,9 @@ window.trocarAbaLayoutDrawer = function(aba) {
   document.querySelectorAll('.kds-drawer-tab-content').forEach(c => {
     c.style.display = (c.getAttribute('data-tab') === aba) ? 'flex' : 'none';
   });
+  if (aba === 'posicao') {
+    renderizarCamposCardList('kds-card-fields-drawer');
+  }
   if (aba === 'apelidos') {
     renderizarListaApelidosDrawer();
   }
@@ -642,9 +653,9 @@ window.trocarAbaLayoutDrawer = function(aba) {
 
 // ── CAMPOS DO CARD (ORDEM E VISIBILIDADE) ──
 const CARD_FIELDS = [
-  { key: 'cabecalho', label: 'Mesa / Comanda e Tempo' },
   { key: 'quantidade', label: 'Badge Quantidade' },
   { key: 'produto', label: 'Produto (Nome, Obs, Adicionais)' },
+  { key: 'cabecalho', label: 'Mesa / Comanda e Tempo' },
   { key: 'acao', label: 'Botões de Ação (Pronto / Chamar)' }
 ];
 let kdsCardOrder = [];
@@ -718,66 +729,102 @@ window.alternarCampoCard = function(key) {
   renderQueue(true);
   kdsAgendarSalvarNoServidor();
 };
+window.resetarOrdemCampos = function() {
+  kdsCardOrder = CARD_FIELDS.map(f => f.key);
+  localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
+  kdsCardHidden = new Set();
+  localStorage.setItem('chef_kds_card_hidden', JSON.stringify([]));
+  renderizarCamposCardModal();
+  renderQueue(true);
+  kdsAgendarSalvarNoServidor();
+};
+
+
+// ── APLICAR PRESET DE ORDEM (1 CLIQUE) ──
+window.aplicarPresetOrdem = function(ordemArray) {
+  kdsCardOrder = ordemArray.slice();
+  localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
+  renderizarCamposCardModal();
+  renderQueue(true);
+  kdsAgendarSalvarNoServidor();
+};
+
+// ── PRESETS DE ORDEM PARA O DRAWER ──
+const ORDER_PRESETS = [
+  {
+    nome: '\u26a1 Opera\u00e7\u00e3o R\u00e1pida (Recomendado)',
+    desc: 'Quantidade \u2192 Produto \u2192 Mesa \u2192 Bot\u00f5es',
+    ordem: ['quantidade', 'produto', 'cabecalho', 'acao'],
+    cor: '#22c55e'
+  },
+  {
+    nome: '\ud83c\udf7d\ufe0f Mesa Primeiro',
+    desc: 'Mesa \u2192 Quantidade \u2192 Produto \u2192 Bot\u00f5es',
+    ordem: ['cabecalho', 'quantidade', 'produto', 'acao'],
+    cor: '#3b82f6'
+  },
+  {
+    nome: '\ud83d\udce6 Produto Destaque',
+    desc: 'Produto \u2192 Quantidade \u2192 Mesa \u2192 Bot\u00f5es',
+    ordem: ['produto', 'quantidade', 'cabecalho', 'acao'],
+    cor: '#f59e0b'
+  },
+  {
+    nome: '\ud83c\udfaf A\u00e7\u00e3o Imediata',
+    desc: 'Bot\u00f5es \u2192 Quantidade \u2192 Produto \u2192 Mesa',
+    ordem: ['acao', 'quantidade', 'produto', 'cabecalho'],
+    cor: '#ef4444'
+  }
+];
 
 function renderizarCamposCardList(containerId) {
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
-  const ordem = obterCardOrder();
+  const ordemAtual = obterCardOrder();
   const hidden = window.obterCardHidden();
-  wrap.innerHTML = ordem.map(k => {
-    const oculto = hidden.has(k);
-    return `
-      <div class="kds-field-item" data-key="${k}">
-        <div class="kds-drag-handle" title="Segure e arraste para reordenar">
-          <i class="ph-bold ph-dots-six-vertical"></i>
-        </div>
-        <div class="kds-field-title">
-          <span>${window.cardFieldLabel(k)}</span>
-          <span style="font-size: 11px; padding: 2px 7px; border-radius: 6px; font-weight: 800; ${oculto ? 'background: rgba(239,68,68,0.15); color: #ef4444;' : 'background: rgba(34,197,94,0.15); color: #22c55e;'}">
-            ${oculto ? 'Oculto' : 'Visível'}
-          </span>
-        </div>
-        <div class="kds-field-actions">
-          <button type="button" class="kds-field-btn" onclick="window.moverCampoCard('${k}',-1)" title="Mover para cima / esquerda">
-            <i class="ph-bold ph-arrow-up"></i>
-          </button>
-          <button type="button" class="kds-field-btn" onclick="window.moverCampoCard('${k}',1)" title="Mover para baixo / direita">
-            <i class="ph-bold ph-arrow-down"></i>
-          </button>
-          <button type="button" class="kds-field-btn" onclick="window.alternarCampoCard('${k}')" title="${oculto ? 'Mostrar' : 'Ocultar'}" style="${oculto ? 'color: #22c55e;' : 'color: #ef4444;'}">
-            <i class="ph-bold ${oculto ? 'ph-eye' : 'ph-eye-slash'}"></i>
-          </button>
-        </div>
-      </div>`;
-  }).join('');
+  const ordemStr = JSON.stringify(ordemAtual);
 
-  if (typeof Sortable !== 'undefined') {
-    if (wrap._sortableInstance) {
-      wrap._sortableInstance.destroy();
-    }
-    wrap._sortableInstance = Sortable.create(wrap, {
-      handle: '.kds-drag-handle',
-      animation: 160,
-      ghostClass: 'sortable-ghost',
-      chosenClass: 'sortable-chosen',
-      onEnd: () => {
-        const novaOrdem = Array.from(wrap.children).map(c => c.getAttribute('data-key')).filter(Boolean);
-        if (novaOrdem.length === CARD_FIELDS.length) {
-          kdsCardOrder = novaOrdem.slice();
-          localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
-          if (containerId === 'kds-card-fields-drawer') {
-            const outro = document.getElementById('kds-card-fields-config');
-            if (outro) renderizarCamposCardList('kds-card-fields-config');
-          } else {
-            const outro = document.getElementById('kds-card-fields-drawer');
-            if (outro) renderizarCamposCardList('kds-card-fields-drawer');
-          }
-          renderQueue(true);
-          kdsAgendarSalvarNoServidor();
-        }
-      }
-    });
-  }
+  const fieldIcons = { quantidade: '\ud83d\udd22', produto: '\ud83c\udf54', cabecalho: '\ud83d\udccd', acao: '\u25b6\ufe0f' };
+  const fieldShortLabels = { quantidade: 'QTD', produto: 'PRODUTO', cabecalho: 'MESA', acao: 'BOT\u00d5ES' };
+
+  let html = '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">';
+  html += '<span style="font-size:12px;font-weight:800;color:var(--kds-text-primary);margin-bottom:2px;">Escolha a Ordem (1 clique):</span>';
+  ORDER_PRESETS.forEach(p => {
+    const isActive = JSON.stringify(p.ordem) === ordemStr;
+    const activeBorder = isActive ? `border: 2.5px solid ${p.cor}; box-shadow: 0 0 12px ${p.cor}44;` : `border: 1.5px solid var(--kds-card-border);`;
+    const activeLabel = isActive ? `<span style="font-size:10px;font-weight:900;color:${p.cor};background:${p.cor}18;padding:1px 6px;border-radius:4px;margin-left:auto;">ATIVO</span>` : '';
+    html += `
+      <button type="button" onclick="window.aplicarPresetOrdem(${JSON.stringify(p.ordem).replace(/"/g, '&quot;')})"
+        style="display:flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:10px;${activeBorder};background:var(--kds-card-bg);cursor:pointer;text-align:left;transition:all 0.15s ease;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:13px;font-weight:800;color:var(--kds-text-primary);">${p.nome}</span>
+          ${activeLabel}
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:2px;">
+          ${p.ordem.map(k => `<span style="font-size:11px;font-weight:700;color:var(--kds-text-muted);background:var(--kds-btn-bg);padding:2px 6px;border-radius:4px;">${fieldIcons[k]} ${fieldShortLabels[k]}</span>`).join('<span style="color:var(--kds-text-muted);font-size:10px;">\u2192</span>')}
+        </div>
+      </button>`;
+  });
+  html += '</div>';
+
+  html += '<div style="border-top:1px solid var(--kds-card-border);padding-top:10px;margin-top:4px;">';
+  html += '<span style="font-size:12px;font-weight:800;color:var(--kds-text-primary);margin-bottom:6px;display:block;">Mostrar / Ocultar Se\u00e7\u00f5es:</span>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+  CARD_FIELDS.forEach(f => {
+    const oculto = hidden.has(f.key);
+    const btnStyle = oculto
+      ? 'background:rgba(239,68,68,0.1);color:#ef4444;border:1.5px solid rgba(239,68,68,0.3);'
+      : 'background:rgba(34,197,94,0.1);color:#22c55e;border:1.5px solid rgba(34,197,94,0.3);';
+    html += `
+      <button type="button" onclick="window.alternarCampoCard('${f.key}')"
+        style="${btnStyle}padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:800;display:flex;align-items:center;gap:4px;transition:all 0.15s ease;">
+        <i class="ph-bold ${oculto ? 'ph-eye-slash' : 'ph-eye'}" style="font-size:14px;"></i>
+        ${fieldIcons[f.key]} ${fieldShortLabels[f.key]}
+      </button>`;
+  });
+  html += '</div></div>';
+
+  wrap.innerHTML = html;
 }
 
 function renderizarCamposCardModal() {
@@ -2118,7 +2165,10 @@ function renderizarCardIndividual(item, itemIndex = 0) {
   const isNewClass = newOrderIds.has(id) ? ' new-order-entry-pulse' : '';
 
   const statusEsc = escHtml(status);
-  const nomeEsc = escHtml(item.productName || item.nome || 'Produto');
+  let rawNome = item.productName || item.nome || 'Produto';
+  const regexQty = new RegExp(`^${qty}\\s*x\\s*`, 'i');
+  rawNome = rawNome.replace(regexQty, '');
+  const nomeEsc = escHtml(rawNome);
   const emojiEsc = escHtml(item.productEmoji || '🍽️');
   const localEsc = escHtml(item.localName || 'Mesa');
   const userEsc = escHtml(item.userName || '');
@@ -2168,7 +2218,7 @@ function renderizarCardIndividual(item, itemIndex = 0) {
         <div class="kds-card-mesa-badge">
           <i class="ph-bold ph-table" style="color: ${localColor}; font-size: 19px; flex-shrink: 0;"></i>
           <div class="kds-card-mesa-info">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:6px;white-space:nowrap;">
               <strong class="kds-mesa-title">${localEsc}</strong>
               ${bumpKeyBadge}
               ${badgeIfood}
@@ -2183,7 +2233,7 @@ function renderizarCardIndividual(item, itemIndex = 0) {
               `}
             </div>
             ${rawUser ? `
-              <span class="kds-card-garcom" onclick="event.stopPropagation(); window.cadastrarApelidoColaborador('${escJs(rawUser)}')" title="Colaborador: ${escHtml(rawUser)}${apelidoColab ? ` (Apelido: ${escHtml(apelidoColab)})` : ''}. Clique para alterar apelido.">
+              <span class="kds-card-garcom" onclick="event.stopPropagation(); window.cadastrarApelidoColaborador(${escJs(rawUser)})" title="Colaborador: ${escHtml(rawUser)}${apelidoColab ? ` (Apelido: ${escHtml(apelidoColab)})` : ''}. Clique para alterar apelido.">
                 <i class="ph-bold ph-user"></i>
                 <span>${escHtml(displayUser)}</span>
                 ${apelidoColab ? '<i class="ph-fill ph-tag" style="color:#fc4b15;font-size:9px;"></i>' : '<i class="ph ph-pencil-simple" style="font-size:9px;opacity:0.6;"></i>'}
@@ -2197,8 +2247,9 @@ function renderizarCardIndividual(item, itemIndex = 0) {
         </div>
       </div>`;
 
+  const multipleClass = qty > 1 ? ' qty-high' : '';
   const ptQtd = `
-      <div class="kds-qty-badge" data-field-key="quantidade">${qty}x</div>`;
+      <div class="kds-qty-badge${multipleClass}" data-field-key="quantidade">${qty}x</div>`;
 
   const smartSyncInfo = calcularSmartSyncInfo(item, queueData);
   let smartSyncHtml = '';
@@ -2250,7 +2301,7 @@ function renderizarCardIndividual(item, itemIndex = 0) {
   const ptProduto = `
       <div class="item-produto" data-field-key="produto">
         <div class="item-produto-title-line">
-          <span class="kds-card-qty-inline">${qty}x</span>
+          <span class="kds-card-qty-inline${multipleClass}">${qty}x</span>
           <span class="item-emoji" style="font-size:20px;">${emojiEsc}</span>
           <span class="kds-product-name">${nomeEsc}</span>
           ${badgeEspecial}
@@ -3504,12 +3555,24 @@ window.toggleModoEdicaoKds = function(forcar) {
   }
 };
 
+window.kdsActiveSortables = window.kdsActiveSortables || [];
+
 window.initSortableNosCards = function() {
   if (typeof Sortable === 'undefined') return;
+  
+  // Anti-Memory Leak: Destruir instancias antigas antes de inicializar novas
+  if (window.kdsActiveSortables) {
+    window.kdsActiveSortables.forEach(s => {
+      try { s.destroy(); } catch (e) {}
+    });
+  }
+  window.kdsActiveSortables = [];
+
   const cards = document.querySelectorAll('#queue-list .queue-item');
   cards.forEach(card => {
     if (card._kdsSortable) card._kdsSortable.destroy();
-    card._kdsSortable = Sortable.create(card, {
+    const sortableInst = Sortable.create(card, {
+
       animation: 150,
       draggable: '[data-field-key]',
       group: { name: 'kds-cards', pull: false, put: false },
@@ -3543,6 +3606,8 @@ window.initSortableNosCards = function() {
         }
       }
     });
+    window.kdsActiveSortables.push(sortableInst);
+    card._kdsSortable = sortableInst;
   });
 };
 
