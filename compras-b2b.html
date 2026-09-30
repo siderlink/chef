@@ -189,107 +189,39 @@
   </main>
 
   <script>
-    let listaCompras = [];
-
-    function addInsumo(e) {
-      e.preventDefault();
-      const cat = document.getElementById('inp-cat').value;
-      const nome = document.getElementById('inp-nome').value.trim();
-      const qtd = document.getElementById('inp-qtd').value;
-      const uni = document.getElementById('inp-uni').value;
-      const obs = document.getElementById('inp-obs').value.trim();
-
-      const id = Date.now().toString();
-      listaCompras.push({ id, cat, nome, qtd, uni, obs });
-
-      document.getElementById('form-insumo').reset();
-      document.getElementById('inp-nome').focus();
-      renderLista();
+    const token = localStorage.getItem('chef_token') || '';
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    
+    async function carregarFornecedores() {
+      try {
+        const res = await fetch(`/api/b2b/fornecedores?restaurante_id=${restId}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        const container = document.getElementById('lista-fornecedores');
+        if(container && Array.isArray(data)) {
+          container.innerHTML = '';
+          data.forEach(f => {
+             container.innerHTML += `
+               <div class="card-fornecedor">
+                  <div class="nome">${f.nome}</div>
+                  <div class="categoria">${f.categoria}</div>
+                  <div class="status">${f.status}</div>
+               </div>
+             `;
+          });
+        }
+      } catch(e) {}
     }
 
-    function removerInsumo(id) {
-      listaCompras = listaCompras.filter(i => i.id !== id);
-      renderLista();
+    // Initialize UI
+    function playClick() {
+      try {
+        if(navigator.vibrate) navigator.vibrate(15);
+      } catch(e){}
     }
-
-    function renderLista() {
-      const tbody = document.getElementById('lista-tbody');
-      const emptyState = document.getElementById('empty-state');
-      const table = document.getElementById('table-compras');
-
-      document.getElementById('contador-itens').innerText = `${listaCompras.length} Itens`;
-
-      if (listaCompras.length === 0) {
-        emptyState.style.display = 'block';
-        table.style.display = 'none';
-        tbody.innerHTML = '';
-        return;
-      }
-
-      emptyState.style.display = 'none';
-      table.style.display = 'table';
-
-      let html = '';
-      listaCompras.forEach(item => {
-        let catBadge = '';
-        if(item.cat === 'Açougue') catBadge = '<span style="color:#ef4444; background:rgba(239,68,68,0.1); padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;">Açougue</span>';
-        else if(item.cat === 'Hortifruti') catBadge = '<span style="color:#10b981; background:rgba(16,185,129,0.1); padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;">Horti</span>';
-        else if(item.cat === 'Bebidas') catBadge = '<span style="color:#3b82f6; background:rgba(59,130,246,0.1); padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;">Bebidas</span>';
-        else catBadge = `<span style="color:#64748b; background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;">${item.cat}</span>`;
-
-        html += `
-          <tr>
-            <td>${catBadge}</td>
-            <td style="font-weight: 700;">${item.nome}</td>
-            <td>${item.qtd} ${item.uni}</td>
-            <td style="color: var(--muted); font-size: 13px;">${item.obs ? '('+item.obs+')' : '-'}</td>
-            <td><button class="btn-icon" onclick="removerInsumo('${item.id}')"><i class="ph-bold ph-trash"></i></button></td>
-          </tr>
-        `;
-      });
-      tbody.innerHTML = html;
-    }
-
-    function dispararPara(nomeFornecedor, categoriaFiltro, telefone) {
-      if(listaCompras.length === 0) {
-        alert("Sua lista está vazia!");
-        return;
-      }
-
-      let itensAlvo = listaCompras;
-      if(categoriaFiltro !== 'Tudo') {
-        itensAlvo = listaCompras.filter(i => i.cat === categoriaFiltro);
-      }
-
-      if(itensAlvo.length === 0) {
-        alert(`Você não tem itens da categoria ${categoriaFiltro} na sua lista.`);
-        return;
-      }
-
-      let msg = `Olá *${nomeFornecedor}*, bom dia!\n\nPoderia me passar a cotação/preço atualizado dos seguintes insumos para o nosso restaurante?\n\n`;
-
-      itensAlvo.forEach((item, idx) => {
-        msg += `🔸 *${item.qtd} ${item.uni}* de ${item.nome}`;
-        if(item.obs) msg += ` _(${item.obs})_`;
-        msg += `\n`;
-      });
-
-      msg += `\nAguardo o orçamento! Obrigado. ⚡ _(Enviado via Cheff.pro ERP)_`;
-
-      const encodedMsg = encodeURIComponent(msg);
-      
-      let url = '';
-      if(telefone) {
-        url = `https://wa.me/${telefone}?text=${encodedMsg}`;
-      } else {
-        url = `https://wa.me/?text=${encodedMsg}`; // Abre a lista de contatos para o usuario escolher
-      }
-
-      window.open(url, '_blank');
-    }
-
-    // Inicializa Vazio
-    renderLista();
+    carregarFornecedores();
   </script>
 </body>
 </html>

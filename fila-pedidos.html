@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/fila.css?v=20260921">
+  <link rel="stylesheet" href="/fila.css?v=1790806265418_3">
   <link rel="stylesheet" href="/device-adapters.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
@@ -112,7 +112,7 @@
     .kds-sla-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   </style>
 
-  <script src="fila.js?v=20260921"></script>
+  <script src="fila.js?v=1790806951093_4"></script>
 </head>
 
 <body class="kds-body">
@@ -126,7 +126,7 @@
         <i class="ph-bold ph-house"></i>
         <span>Caixa</span>
       </button>
-      <div class="kds-brand-badge">
+      <div class="kds-brand-badge" style="cursor:pointer;" onclick="window.abrirModalSetor()" title="Mudar Setor">
         <i class="ph-fill ph-chef-hat" style="color: #fc4b15; font-size: 24px;"></i>
         <div class="kds-brand-texts">
           <strong class="kds-brand-name">KDS Cozinha</strong>
@@ -169,7 +169,11 @@
 
       <!-- Setores (Chips com Scroll Horizontal) -->
       <div class="kds-chips-scroll" id="kds-sectors-scroll-wrap">
-        <button class="kds-chip-item active sector-modal-btn" data-sector="Todos" onclick="filtrarSetor('Todos')">
+        <button class="kds-chip-item active sector-modal-btn" data-sector="Todos" onclick="window.abrirModalSetor()">
+            <i class="ph-bold ph-storefront"></i> <span>Todos os Setores</span>
+            <i class="ph-bold ph-caret-down" style="margin-left: 5px;"></i>
+          </button>
+          <!-- 
           <i class="ph-bold ph-storefront"></i> <span>Todos os Setores</span>
         </button>
         <button class="kds-chip-item" id="kds-filter-ifood" onclick="window.filtrarCanal('ifood')" title="Filtrar apenas pedidos de Delivery iFood">
@@ -218,6 +222,12 @@
         <i class="ph-bold ph-storefront"></i>
         <span>Loja de Presets</span>
         <span class="kds-badge-pulse-store">Nichos</span>
+      </button>
+
+      <!-- Botão Modo Edição Direta -->
+      <button type="button" id="btn-toggle-modo-edicao" onclick="window.toggleModoEdicaoKds()" class="kds-nav-btn" style="background: rgba(59,130,246,0.12); color: #3b82f6; border: 1.5px solid rgba(59,130,246,0.3); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px; margin-right: 8px;" title="Arraste os itens direto nos cards e clique com botão direito para redimensionar">
+        <i class="ph-bold ph-pencil-simple" style="font-size: 16px;"></i>
+        <span>Ajuste Direto</span>
       </button>
 
       <!-- Botão Ajustar Layout & Tamanhos -->
@@ -400,6 +410,10 @@
             <input type="range" id="kds-slider-font" class="kds-slider-input" min="10" max="24" step="1" value="15" oninput="window.alterarTamanhoSecao('fontSize', this.value)">
           </div>
 
+          <div style="font-size: 11px; color: var(--kds-text-muted); margin: 15px 0 10px 0; line-height: 1.3; border-top: 1px solid var(--kds-card-border); padding-top: 10px;">
+            <i class="ph-bold ph-info"></i> Nota: As larguras (Cabeçalho, Qtd, Ações) aplicam-se aos formatos <strong>Linhas</strong> e <strong>Kanban</strong>. No formato <strong>Grade</strong>, o card ignora larguras fixas.
+          </div>
+
           <!-- Slider Mesa/Comanda (Cabeçalho) -->
           <div class="kds-slider-row">
             <div class="kds-slider-label">
@@ -528,6 +542,14 @@
         <button type="button" onclick="window.fecharModalFilaSettings()" class="fila-settings-close" title="Fechar">&times;</button>
       </div>
       <div class="fila-settings-body">
+        <div class="fila-settings-group">
+          <span class="fila-settings-label">Usuário Ativo</span>
+          <button type="button" class="fila-settings-btn" onclick="window.abrirAreaColaboradorModal && window.abrirAreaColaboradorModal()" style="display:flex; justify-content:flex-start; gap:10px; border-color:var(--border-color); color:var(--text); background:transparent;">
+            <i class="ph-bold ph-user" style="color:var(--primary);"></i>
+            <span style="font-weight:700;">Trocar Usuário (Área do Colaborador)</span>
+          </button>
+        </div>
+        
         
         <!-- SEÇÃO FILTRAR POR SETOR / COZINHA -->
         <div class="fila-settings-group">
@@ -605,7 +627,40 @@
           <span style="font-size:11px;color:#94a3b8;font-weight:600;margin-top:4px;">Arraste com os botões para reordenar. Alterações valem para todos os colaboradores (salvo no servidor).</span>
         </div>
 
-        <!-- SEÇÃO TAMANHO DA LETRA -->
+        
+          <div class="fila-settings-group">
+            <span class="fila-settings-label">Tamanhos Individuais dos Campos</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span style="font-size:12px;font-weight:700;">Nome do Produto</span>
+              <div class="fila-settings-row" style="width:auto;gap:4px;">
+                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('nome',-1)">A-</button>
+                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('nome',1)">A+</button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span style="font-size:12px;font-weight:700;">Quantidade</span>
+              <div class="fila-settings-row" style="width:auto;gap:4px;">
+                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('qtd',-1)">A-</button>
+                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('qtd',1)">A+</button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span style="font-size:12px;font-weight:700;">Observações</span>
+              <div class="fila-settings-row" style="width:auto;gap:4px;">
+                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('obs',-1)">A-</button>
+                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('obs',1)">A+</button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:12px;font-weight:700;">Adicionais</span>
+              <div class="fila-settings-row" style="width:auto;gap:4px;">
+                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('comps',-1)">A-</button>
+                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('comps',1)">A+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEÇÃO TAMANHO DA LETRA -->
         <div class="fila-settings-group">
           <span class="fila-settings-label">Tamanho da Letra</span>
           <div class="fila-settings-row">
@@ -740,7 +795,7 @@
   <div id="kds-undo-container" class="kds-undo-container"></div>
 
   <script src="/fullscreen.js"></script>
-  <script>window.PUSH_ROLE = 'cozinha';</script>
+  <script>window.PUSH_ROLE = 'cozinha'; window.HIDE_COLAB_DOCK_BTN = true;</script>
   <script src="/push-client.js"></script>
   <script src="/device-adapters.js"></script>
   <script src="/chef-colaborador-dock.js"></script>
@@ -757,6 +812,45 @@
     window.addEventListener('chef_theme_changed', updateThemeIcon);
     document.addEventListener('DOMContentLoaded', updateThemeIcon);
   </script>
+  <!-- MODAL DE SETORES (MOBILE E FALLBACK) -->
+  <div id="modal-setor" class="modal-setor-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.8); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px);" onclick="if(event.target===this) window.fecharModalSetor()">
+    <div class="modal-setor-content" style="background: var(--kds-card-bg, #fff); width: 90%; max-width: 400px; border-radius: 20px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 16px;">
+      <div class="modal-setor-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--kds-card-border, #e2e8f0); padding-bottom: 12px;">
+        <h3 style="font-size: 18px; font-weight: 800; color: var(--kds-text, #1e293b); margin: 0;">Filtrar Setor</h3>
+        <button onclick="window.fecharModalSetor()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--kds-text-muted, #94a3b8);"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <div class="modal-setor-body" style="display: flex; flex-direction: column; gap: 10px;">
+        <button class="fila-settings-btn" data-sector="Todos" style="justify-content:flex-start; padding: 14px; border-radius: 12px; border: 1px solid var(--kds-card-border, #e2e8f0); background: transparent; font-weight: 700; color: var(--kds-text, #1e293b); cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 16px;" onclick="window.selecionarSetorModal('Todos')">
+          <i class="ph-bold ph-storefront"></i> Todos os Setores
+        </button>
+        <div id="modal-setor-dinamicos" style="display:contents;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEXT MENU (AJUSTE DIRETO) -->
+  <div id="kds-context-menu" class="kds-context-menu hidden">
+    <div class="kds-ctx-header">
+      Ajustar: <strong id="kds-ctx-title">Seção</strong>
+      <button type="button" onclick="window.fecharContextMenuKds()" class="kds-ctx-close"><i class="ph-bold ph-x"></i></button>
+    </div>
+    <div class="kds-ctx-body">
+      <div class="kds-ctx-row">
+        <button type="button" class="kds-ctx-btn kds-ctx-hide-btn" onclick="window.ocultarSecaoPeloContexto()">
+          <i class="ph-bold ph-eye-slash"></i> Ocultar Seção
+        </button>
+      </div>
+      <div class="kds-ctx-row" id="kds-ctx-row-width">
+        <label>Largura (<span id="kds-ctx-val-width"></span>)</label>
+        <input type="range" id="kds-ctx-width" min="30" max="500" step="5" oninput="window.aplicarTamanhoDoContexto('width', this.value)">
+      </div>
+      <div class="kds-ctx-row" id="kds-ctx-row-font">
+        <label>Tamanho da Fonte (<span id="kds-ctx-val-font"></span>)</label>
+        <input type="range" id="kds-ctx-font" min="10" max="30" step="1" oninput="window.aplicarTamanhoDoContexto('fontSize', this.value)">
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>
+

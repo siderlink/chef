@@ -38,14 +38,6 @@ const mesasFechando = new Set();
 let pedidosDebounceTimeout = null;
 let mpCurrentIntentId = null;
 let mpCurrentDeviceId = null;
-function broadcastPedidos() {
-  if (pedidosDebounceTimeout) clearTimeout(pedidosDebounceTimeout);
-  pedidosDebounceTimeout = setTimeout(() => {
-    db.all(`SELECT * FROM pedidos WHERE status != 'Finalizado'`, (e, r) => {
-      if(!e) io.emit('pedidos_atualizados', r || []);
-    });
-  }, 300);
-}
 
 function broadcastFormasPagamento(targetSocket = null) {
   db.all(`SELECT * FROM formas_pagamento ORDER BY ordem ASC, id ASC`, [], (err, rows) => {
@@ -1282,14 +1274,7 @@ const tenantFeatures = new Map();
 const tenantSocketCounts = new Map();
 const TENANT_FEATURES_REFRESH_MS = 30000;
 
-function getTenantDbPath(tenantId) {
-  const tid = parseInt(tenantId, 10) || 1;
-  const estPath = path.join(APP_DATA_DIR, 'estabelecimentos', String(tid), 'database.sqlite');
-  if (fsSync.existsSync(estPath)) return estPath;
-  const legacy = path.join(__dirname, 'database_' + tid + '.sqlite');
-  if (fsSync.existsSync(legacy)) return legacy;
-  return estPath;
-}
+
 
 function listarBancosTenant() {
   try {
@@ -1300,7 +1285,6 @@ function listarBancosTenant() {
   } catch (e) { return []; }
 }
 
-function safeInt(v, min = 0, max = 2147483647) { const n = parseInt(v, 10); return isNaN(n) ? min : Math.max(min, Math.min(max, n)); }
 
 // Recarrega o snapshot de features de todos os tenants (sincrono depois disso)
 function loadAllTenantFeatures() {

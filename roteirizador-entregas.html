@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roteirizador Lógico de Entregas</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  
+  <style>
+    :root {
+      --bg: #f8fafc; --panel: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --muted: #64748b;
+      --primary: #3b82f6; --primary-hover: #2563eb;
+      --success: #10b981; --warning: #f59e0b;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    .header { background: #1e293b; color: white; padding: 15px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-family: 'Outfit', sans-serif; font-size: 1.4rem; display: flex; align-items: center; gap: 8px; }
+    
+    .container { display: flex; flex: 1; overflow: hidden; }
+    
+    .col-pedidos { width: 400px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .col-header { padding: 16px; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+    .btn-agrupar { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .btn-agrupar:hover { background: var(--primary-hover); }
+    .btn-agrupar:active { transform: scale(0.95); }
+    
+    .lista-pedidos { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    
+    .card-pedido { border: 1px solid var(--border); border-radius: 8px; padding: 12px; cursor: pointer; transition: 0.2s; position: relative; }
+    .card-pedido:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(59,130,246,0.1); }
+    .card-pedido.selected { border-color: var(--primary); background: #eff6ff; }
+    
+    .bairro-tag { display: inline-block; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+    .pedido-id { font-weight: 700; font-size: 1.1rem; }
+    .pedido-cliente { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+    
+    .col-mapa { flex: 1; background: #e2e8f0; position: relative; display: flex; align-items: center; justify-content: center; flex-direction: column; color: var(--muted); }
+    .col-mapa i { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
+    
+    .col-rotas { width: 450px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+    .lista-rotas { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+    
+    .card-rota { border: 2px dashed var(--border); border-radius: 8px; padding: 16px; }
+    .rota-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .rota-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.1rem; }
+    .rota-motoboy { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .rota-motoboy select { padding: 6px; border-radius: 4px; border: 1px solid var(--border); flex: 1; }
+    
+    .rota-itens { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .rota-item { background: #f8fafc; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; display: flex; justify-content: space-between; }
+    
+    .btn-despachar { width: 100%; background: var(--success); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+    .btn-despachar:hover { filter: brightness(1.1); }
+    .btn-despachar:active { transform: scale(0.98); }
+
+    /* Checkbox customizado */
+    .chk-container { position: absolute; top: 12px; right: 12px; }
+    .chk-container input { width: 18px; height: 18px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1><i class="ph-bold ph-map-trifold"></i> Roteirizador & Expedição</h1>
+    <div style="font-size: 0.9rem; color: #cbd5e1;"><i class="ph-bold ph-clock"></i> Atualizado agora</div>
+  </div>
+
+  <div class="container">
+    
+    <!-- COLUNA 1: Pedidos Prontos para Entrega -->
+    <div class="col-pedidos">
+      <div class="col-header">
+        <span>Pedidos Prontos (5)</span>
+        <button class="btn-agrupar" onclick="agruparSelecionados()"><i class="ph-bold ph-corners-in"></i> Criar Rota</button>
+      </div>
+      <div class="lista-pedidos" id="lista-pedidos">
+        <!-- Renderizado via JS -->
+      </div>
+    </div>
+
+    <!-- COLUNA 2: Mapa Visual -->
+    <div class="col-mapa">
+      <i class="ph-bold ph-map-pin-line"></i>
+      <h3>Mapa de Otimização</h3>
+      <p style="text-align: center; max-width: 300px; margin-top: 8px; font-size: 0.9rem;">
+        Selecione os pedidos na lista à esquerda para visualizar a rota otimizada por IA.
+      </p>
+    </div>
+
+    <!-- COLUNA 3: Rotas Montadas -->
+    <div class="col-rotas">
+      <div class="col-header">
+        <span>Rotas em Separação</span>
+      </div>
+      <div class="lista-rotas" id="lista-rotas">
+        <!-- Rotas vão aqui -->
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const token = localStorage.getItem('chef_token') || '';
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    const socket = io({ query: { token, restaurante_id: restId } });
+
+    let pedidosProntos = [];
+    let rotas = [];
+
+    socket.on('connect', () => {
+      socket.emit('get_pedidos');
+      socket.emit('get_rotas');
+    });
+
+    socket.on('pedidos_atualizados', (pedidos) => {
+      // Filtra pedidos Prontos para entrega
+      pedidosProntos = pedidos.filter(p => p.status === 'Pronto' && p.localName && p.localName.toLowerCase().includes('entrega'));
+      renderPedidos();
+    });
+    
+    socket.on('pedidos_atualizados_trigger', () => socket.emit('get_pedidos'));
+    socket.on('rotas_atualizadas_trigger', () => socket.emit('get_rotas'));
+
+    socket.on('rotas_atualizadas', (data) => {
+      rotas = data;
+      renderRotas();
+    });
+
+    function playClick() {
+      try {
+        if(navigator.vibrate) navigator.vibrate(15);
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine'; osc.frequency.setValueAtTime(600, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+        osc.start(); osc.stop(ctx.currentTime + 0.05);
+      } catch(e){}
+    }
+
+    function renderPedidos() {
+      const container = document.getElementById('lista-pedidos');
+      container.innerHTML = '';
+      
+      document.querySelector('.col-header span').textContent = `Pedidos Prontos (${pedidosProntos.length})`;
+
+      pedidosProntos.forEach(p => {
+        container.innerHTML += `
+          <div class="card-pedido" onclick="toggleSelect('${p.id}')" id="card-${p.id}">
+            <div class="chk-container">
+              <input type="checkbox" id="chk-${p.id}" onclick="event.stopPropagation(); toggleSelect('${p.id}')">
+            </div>
+            <div class="bairro-tag"><i class="ph-bold ph-map-pin"></i> ${p.bairro || 'Sem Bairro'}</div>
+            <div class="pedido-id">Pedido #${p.id}</div>
+            <div class="pedido-cliente"><i class="ph-bold ph-user"></i> ${p.userName || 'Cliente'} • <b>R$ ${parseFloat(p.total).toFixed(2)}</b></div>
+          </div>
+        `;
+      });
+    }
+
+    function toggleSelect(id) {
+      playClick();
+      const card = document.getElementById(`card-${id}`);
+      const chk = document.getElementById(`chk-${id}`);
+      if(card.classList.contains('selected')) {
+        card.classList.remove('selected');
+        chk.checked = false;
+      } else {
+        card.classList.add('selected');
+        chk.checked = true;
+      }
+    }
+
+    let rotasDraft = [];
+    function agruparSelecionados() {
+      playClick();
+      const selecionados = Array.from(document.querySelectorAll('.card-pedido.selected'));
+      if(selecionados.length === 0) return alert('Selecione pelo menos 1 pedido para criar uma rota.');
+
+      const rotaPedidos = selecionados.map(card => {
+        const id = card.id.replace('card-', '');
+        return pedidosProntos.find(x => String(x.id) === id);
+      });
+
+      rotasDraft.push({ id: 'draft_' + Date.now(), pedidos: rotaPedidos });
+      
+      // Remover visualmente
+      selecionados.forEach(c => {
+        const id = c.id.replace('card-', '');
+        const idx = pedidosProntos.findIndex(x => String(x.id) === id);
+        if(idx > -1) pedidosProntos.splice(idx, 1);
+      });
+
+      renderPedidos();
+      renderRotasDraft();
+    }
+
+    function renderRotasDraft() {
+      const container = document.getElementById('lista-rotas');
+      container.innerHTML = '';
+      
+      rotasDraft.forEach((r, i) => {
+        let itensHtml = r.pedidos.map(p => `
+          <div class="rota-item">
+            <span><b>#${p.id}</b> - ${p.bairro || 'Sem Bairro'}</span>
+            <span style="color:var(--muted)">${p.userName || 'Cliente'}</span>
+          </div>
+        `).join('');
+
+        container.innerHTML += `
+          <div class="card-rota">
+            <div class="rota-header">
+              <span class="rota-title">Nova Rota (${r.pedidos.length} entregas)</span>
+              <button class="btn-agrupar" style="background:#ef4444" onclick="desfazerRotaDraft('${r.id}')"><i class="ph-bold ph-trash"></i></button>
+            </div>
+            <div class="rota-motoboy">
+              <i class="ph-bold ph-motorcycle"></i>
+              <select id="entregador-${r.id}">
+                <option value="">Atribuir Entregador...</option>
+                <option value="1">Carlos (Moto)</option>
+                <option value="2">Roberto (Bike)</option>
+                <option value="3">Marcos (Moto)</option>
+              </select>
+            </div>
+            <div class="rota-itens">
+              ${itensHtml}
+            </div>
+            <button class="btn-despachar" onclick="despacharRota('${r.id}', this)">
+              <i class="ph-bold ph-paper-plane-right"></i> DESPACHAR ROTA
+            </button>
+          </div>
+        `;
+      });
+      
+      // Renderizar rotas já despachadas abaixo (apenas read-only)
+      rotas.forEach(r => {
+        let pids = JSON.parse(r.pedidos_ids || '[]');
+        container.innerHTML += `
+          <div class="card-rota" style="opacity: 0.6; pointer-events: none; border-color: var(--success);">
+            <div class="rota-header">
+              <span class="rota-title" style="color: var(--success)"><i class="ph-bold ph-check-circle"></i> Rota Despachada</span>
+            </div>
+            <div class="rota-motoboy">Entregador ID: ${r.entregador_id}</div>
+            <div class="rota-itens"><div class="rota-item">Pedidos: ${pids.join(', ')}</div></div>
+          </div>
+        `;
+      });
+    }
+
+    function desfazerRotaDraft(id) {
+      playClick();
+      const idx = rotasDraft.findIndex(r => r.id === id);
+      if(idx > -1) {
+        pedidosProntos.push(...rotasDraft[idx].pedidos);
+        rotasDraft.splice(idx, 1);
+        renderPedidos();
+        renderRotasDraft();
+      }
+    }
+
+    function despacharRota(id, btn) {
+      playClick();
+      const select = document.getElementById('entregador-' + id);
+      if(!select.value) return alert('Selecione um entregador para esta rota!');
+
+      const idx = rotasDraft.findIndex(r => r.id === id);
+      if(idx === -1) return;
+      
+      const payload = {
+         entregador_id: parseInt(select.value),
+         pedidos: rotasDraft[idx].pedidos
+      };
+
+      btn.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> Despachando...';
+      btn.style.opacity = '0.7';
+      
+      socket.emit('despachar_rota', payload);
+      rotasDraft.splice(idx, 1);
+    }
+  </script>
+</body>
+</html>

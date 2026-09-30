@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Fichas Técnicas | Chef Cozinha</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --bg: #0f111a; --card: #1e2130; --text: #e2e8f0; --primary: #fc4b15; --green: #10b981; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 30px; margin: 0; }
+        .container { display: flex; gap: 30px; }
+        .panel { background: var(--card); border-radius: 12px; padding: 25px; flex: 1; }
+        h2 { margin-top: 0; color: var(--primary); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+        input, select, button { width: 100%; padding: 12px; margin-bottom: 15px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 8px; }
+        button { background: var(--primary); font-weight: bold; cursor: pointer; border: none; }
+        .ingrediente-item { display: flex; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+        .summary { margin-top: 20px; padding: 20px; background: rgba(16, 185, 129, 0.1); border: 1px dashed var(--green); border-radius: 8px; }
+        .big-val { font-size: 24px; font-weight: 900; color: var(--green); }
+    </style>
+</head>
+<body>
+    <h1><i class="ph-bold ph-notebook"></i> Fichas Técnicas (Receituário)</h1>
+    <div class="container">
+        <div class="panel">
+            <h2>1. Dados do Prato</h2>
+            <label>Nome do Prato</label>
+            <input type="text" value="Hambúrguer Classic">
+            <label>Preço de Venda Praticado (R$)</label>
+            <input type="number" value="35.00">
+            <label>Modo de Preparo</label>
+            <textarea style="width:100%; height:100px; padding:10px; border-radius:8px; background:rgba(0,0,0,0.2); color:#fff; border:1px solid rgba(255,255,255,0.1);">1. Grelhar a carne por 4 min de cada lado.
+2. Tostar o pão na manteiga.</textarea>
+        </div>
+
+        <div class="panel">
+            <h2>2. Insumos (Gramaturas)</h2>
+            <div style="display:flex; gap:10px;">
+                <select><option>Blend de Carne (Kg)</option><option>Pão Brioche (Un)</option><option>Queijo Cheddar (Kg)</option></select>
+                <input type="number" placeholder="Qtd (Ex: 0.15)" style="width:120px;">
+                <button style="width:auto;"><i class="ph-bold ph-plus"></i></button>
+            </div>
+            <div class="ingrediente-item">
+                <span>Blend de Carne</span>
+                <span>0.160 kg (R$ 5,60) <i class="ph-bold ph-trash" style="color:#ef4444; cursor:pointer;"></i></span>
+            </div>
+            <div class="ingrediente-item">
+                <span>Pão Brioche</span>
+                <span>1 un (R$ 1,50) <i class="ph-bold ph-trash" style="color:#ef4444; cursor:pointer;"></i></span>
+            </div>
+            <div class="ingrediente-item">
+                <span>Queijo Cheddar Fatiado</span>
+                <span>0.040 kg (R$ 1,20) <i class="ph-bold ph-trash" style="color:#ef4444; cursor:pointer;"></i></span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>3. Análise de Custos</h2>
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>Custo dos Insumos (CMV)</span> <strong>R$ 8,30</strong></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>Custo Fixo Estimado (15%)</span> <strong>R$ 5,25</strong></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>Impostos (Simples - 6%)</span> <strong>R$ 2,10</strong></div>
+            <hr style="border-color:rgba(255,255,255,0.05); margin:20px 0;">
+            <div class="summary">
+                <div>Lucro Líquido Unitário</div>
+                <div class="big-val">R$ 19,35</div>
+                <div style="font-size:14px; color:#94a3b8; margin-top:5px;">Sua margem livre é de 55.2%. Este prato é altamente lucrativo.</div>
+            </div>
+            <button style="margin-top:20px;"><i class="ph-bold ph-floppy-disk"></i> Salvar Ficha Técnica</button>
+        </div>
+    </div>
+</body>
+</html>

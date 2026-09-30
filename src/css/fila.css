@@ -280,7 +280,7 @@ body.kds-body, .kds-body {
   gap: 8px !important;
 }
 #queue-list.card-tam-p .kds-product-name {
-  font-size: 13.5px !important;
+  font-size: var(--kds-font-nome, 13.5px) !important;
 }
 #queue-list.card-tam-m:not(.modo-lista):not(.modo-kanban) .queue-item,
 #queue-list.card-tam-m .queue-item,
@@ -291,7 +291,7 @@ body.kds-body, .kds-body {
   gap: 12px !important;
 }
 #queue-list.card-tam-m .kds-product-name {
-  font-size: var(--kds-font-size, 16px) !important;
+  font-size: var(--kds-font-nome, var(--kds-font-size, 16px)) !important;
 }
 #queue-list.card-tam-g:not(.modo-lista):not(.modo-kanban) .queue-item,
 #queue-list.card-tam-g .queue-item,
@@ -302,7 +302,7 @@ body.kds-body, .kds-body {
   gap: 16px !important;
 }
 #queue-list.card-tam-g .kds-product-name {
-  font-size: 19px !important;
+  font-size: var(--kds-font-nome, 19px) !important;
 }
 #queue-list.card-tam-gg:not(.modo-lista):not(.modo-kanban) .queue-item,
 #queue-list.card-tam-gg .queue-item,
@@ -313,7 +313,7 @@ body.kds-body, .kds-body {
   gap: 20px !important;
 }
 #queue-list.card-tam-gg .kds-product-name {
-  font-size: 22px !important;
+  font-size: var(--kds-font-nome, 22px) !important;
 }
 
 #queue-list:not(.modo-lista):not(.modo-kanban) .queue-item,
@@ -348,7 +348,7 @@ body.kds-body, .kds-body {
   justify-content: center !important;
   background: #fc4b15 !important;
   color: #ffffff !important;
-  font-size: 15px !important;
+  font-size: var(--kds-font-qtd, 15px) !important;
   font-weight: 900 !important;
   padding: 2px 8px !important;
   border-radius: 8px !important;
@@ -452,13 +452,13 @@ body.kds-body, .kds-body {
 }
 
 #queue-list.modo-lista .item-emoji {
-  font-size: 22px !important;
+  font-size: calc(var(--kds-font-nome, 22px) * 1.3) !important;
   line-height: 1 !important;
   flex-shrink: 0 !important;
 }
 
 #queue-list.modo-lista .kds-product-name {
-  font-size: var(--kds-font-size, 17px) !important;
+  font-size: var(--kds-font-nome, var(--kds-font-size, 17px)) !important;
   font-weight: 800 !important;
   color: var(--kds-text-primary) !important;
   white-space: normal !important;
@@ -1170,14 +1170,14 @@ body.kds-modo-tv .kds-mesa-title {
 
 body.kds-modo-tv #queue-list .kds-product-name,
 body.kds-modo-tv .kds-product-name {
-  font-size: 22px !important;
+  font-size: var(--kds-font-nome, 22px) !important;
   font-weight: 900 !important;
   line-height: 1.25 !important;
 }
 
 body.kds-modo-tv .kds-qty-badge,
 body.kds-modo-tv .kds-card-qty-inline {
-  font-size: 22px !important;
+  font-size: var(--kds-font-qtd, 22px) !important;
   font-weight: 900 !important;
   padding: 3px 12px !important;
 }
@@ -1296,7 +1296,7 @@ body.kds-modo-tv .item-pronto button {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 19px !important;
+  font-size: var(--kds-font-qtd, 19px) !important;
   font-weight: 900 !important;
   background: #fc4b15 !important;
   color: #ffffff !important;
@@ -1383,7 +1383,7 @@ body.kds-modo-tv .item-pronto button {
 }
 
 .kds-product-name {
-  font-size: var(--kds-font-size, 16.5px) !important;
+  font-size: var(--kds-font-nome, var(--kds-font-size, 16.5px)) !important;
   font-weight: 800 !important;
   color: var(--kds-text-primary) !important;
   line-height: 1.25 !important;
@@ -1763,7 +1763,7 @@ body.kds-modo-tv .item-pronto button {
 
 /* Escala e Tamanhos de Textos */
 .kds-product-name {
-  font-size: var(--kds-font-size, 15px) !important;
+  font-size: var(--kds-font-nome, var(--kds-font-size, 15px)) !important;
   font-weight: 800 !important;
   line-height: 1.25 !important;
   color: var(--kds-text-primary) !important;
@@ -1775,7 +1775,7 @@ body.kds-modo-tv .item-pronto button {
 }
 
 .kds-card-garcom {
-  font-size: calc(var(--kds-font-size, 15px) * 0.8) !important;
+  font-size: var(--kds-font-obs, calc(var(--kds-font-size, 15px) * 0.8)) !important;
   font-weight: 700 !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -1799,15 +1799,15 @@ body.kds-modo-tv .item-pronto button {
 }
 
 .kds-card-time-badge {
-  font-size: calc(var(--kds-font-size, 15px) * 0.8) !important;
+  font-size: var(--kds-font-obs, calc(var(--kds-font-size, 15px) * 0.8)) !important;
 }
 
 .item-observacao {
-  font-size: calc(var(--kds-font-size, 15px) * 0.8) !important;
+  font-size: var(--kds-font-obs, calc(var(--kds-font-size, 15px) * 0.8)) !important;
 }
 
 .item-composicoes, .comp-item {
-  font-size: calc(var(--kds-font-size, 15px) * 0.78) !important;
+  font-size: var(--kds-font-comps, calc(var(--kds-font-size, 15px) * 0.78)) !important;
 }
 
 /* Modo Caixa Alta (TODOS MAIÚSCULOS) */
@@ -1833,7 +1833,7 @@ body.kds-modo-tv .item-pronto button {
   border-radius: 6px !important;
   background: rgba(245, 158, 11, 0.15) !important;
   color: #d97706 !important;
-  font-size: calc(var(--kds-font-size, 15px) * 0.78) !important;
+  font-size: var(--kds-font-comps, calc(var(--kds-font-size, 15px) * 0.78)) !important;
   font-weight: 800 !important;
   cursor: pointer !important;
   border: 1px solid rgba(245, 158, 11, 0.3) !important;
@@ -2414,3 +2414,5 @@ body.dark-mode .kds-pizza-retiradas,
   justify-content: space-between;
   box-shadow: 0 2px 10px rgba(234, 88, 12, 0.25);
 }
+
+

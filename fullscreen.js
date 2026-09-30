@@ -41,7 +41,7 @@
   var SVG_FS_OUT = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path></svg>';
 
   // ─── FULLSCREEN BUTTON ──────────────────────────────────────────────────────
-  const btn = document.createElement('button');
+  var btn = document.createElement('button');
   btn.id = 'btn-global-fullscreen';
   btn.innerHTML = SVG_FS_IN;
   btn.title = 'Tela Cheia';
@@ -167,8 +167,24 @@
   }
 
   // ─── INJECT BUTTONS ──────────────────────────────────────────────────────────
+  function bindFs() {
+    if(btn) {
+      btn.removeEventListener('click', toggleFullScreen);
+      btn.addEventListener('click', toggleFullScreen);
+    }
+  }
+
   function injectButton() {
-    if (document.getElementById('btn-global-fullscreen')) return;
+    // Evita duplicar se a tela já tiver o botão nativo do KDS
+    if (document.getElementById('btn-toggle-fullscreen')) return;
+
+    var extBtn = document.getElementById('btn-global-fullscreen');
+    if (extBtn) {
+      btn = extBtn; // Usa o botão que já está no HTML
+      bindFs();
+      updateFsIcon();
+      return;
+    }
 
     // Se estiver no KDS Fila de Pedidos, não duplicar botões de tema ou engrenagem já existentes nativamente
     if (location.pathname.includes('fila-pedidos') || document.querySelector('.kds-navbar')) {
@@ -347,10 +363,7 @@
     }
   }
 
-  btn.addEventListener('click', toggleFullScreen);
-  btn.addEventListener('touchend', function(e) {
-    toggleFullScreen(e);
-  });
+  bindFs();
 
   // Keep icon in sync when fullscreen status changes (via ESC or gestures)
   ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(function(evt) {

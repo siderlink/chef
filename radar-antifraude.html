@@ -142,94 +142,35 @@
 
   </main>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script>
     const token = localStorage.getItem('chef_token') || '';
     const restId = localStorage.getItem('restaurante_id') || '1';
-    const socket = io({ query: { token, restaurante_id: restId } });
-
-    let pedidosCancelados = [];
-
-    socket.on('connect', () => {
-      // Buscar todos os pedidos para processamento analítico local
-      socket.emit('get_pedidos');
-    });
-
-    socket.on('pedidos_atualizados', (pedidos) => {
-      pedidosCancelados = (pedidos || []).filter(p => p.status === 'Cancelado');
-      processAuditoria(pedidos || []);
-    });
-
-    socket.on('pedido_adicionado', () => socket.emit('get_pedidos'));
-    socket.on('pedido_status_alterado', () => socket.emit('get_pedidos'));
-
-    function processAuditoria(todosPedidos) {
-      // Calcular KPIs
-      let valorCancelado = 0;
-      pedidosCancelados.forEach(p => {
-        let t = parseFloat(String(p.total).replace(',','.')) || 0;
-        valorCancelado += t;
-      });
-
-      document.getElementById('kpi-cancel-qtd').innerText = pedidosCancelados.length;
-      document.getElementById('kpi-cancel-val').innerText = 'R$ ' + valorCancelado.toFixed(2).replace('.', ',');
-      
-      const taxa = todosPedidos.length > 0 ? (pedidosCancelados.length / todosPedidos.length) * 100 : 0;
-      document.getElementById('kpi-taxa').innerText = taxa.toFixed(1) + '%';
-      if(taxa > 5) document.getElementById('kpi-taxa').style.color = '#ef4444';
-      else document.getElementById('kpi-taxa').style.color = '#10b981';
-
-      // Renderizar Logs
-      const feed = document.getElementById('log-feed');
-      feed.innerHTML = '';
-      
-      if(pedidosCancelados.length === 0) {
-        feed.innerHTML = `<div style="text-align: center; color: var(--green); font-size: 13px; padding: 20px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px dashed rgba(16, 185, 129, 0.3);">Nenhuma fraude ou cancelamento detectado hoje. Caixa 100% íntegro.</div>`;
-      }
-
-      // Ordenar do mais recente
-      const sorted = [...pedidosCancelados].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-      
-      sorted.forEach(p => {
-        const timeObj = new Date(p.createdAt);
-        const timeStr = timeObj.toLocaleTimeString('pt-BR');
+    
+    async function carregarLogs() {
+      try {
+        const res = await fetch(`/api/antifraude/logs?restaurante_id=${restId}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
         
-        let severity = 'med';
-        let motive = p.observacao || 'Motivo não informado';
-        let title = 'Pedido Cancelado';
-        
-        // Simular análise heurística do tempo para classificar gravidade
-        // Ex: Se o pedido demorou muito e foi cancelado, pode ser fraude após entrega
-        const now = new Date();
-        const diffMin = Math.floor((now - timeObj) / 60000);
-        
-        if (parseFloat(p.total) > 50 || motive === 'Motivo não informado') severity = 'high';
-
-        let valFormat = 'R$ ' + parseFloat(String(p.total).replace(',','.')).toFixed(2).replace('.', ',');
-
-        feed.innerHTML += `
-          <div class="log-item severity-${severity}">
-            <div class="log-icon"><i class="ph-fill ph-warning-octagon"></i></div>
-            <div class="log-content">
-              <div class="log-title">
-                <span>[Mesa/Comanda: ${p.localName || 'Balcão'}] ${p.productName}</span>
-                <span class="log-time">${timeStr}</span>
-              </div>
-              <div class="log-desc">Operador: ${p.userName || 'Desconhecido'} | Valor evadido: <strong>${valFormat}</strong> <br> <span style="color: var(--${severity==='high'?'red':'orange'});">${motive}</span></div>
-            </div>
-          </div>
-        `;
-      });
-
-      // Gerar Insight de IA
-      const insightEl = document.getElementById('ai-insight');
-      if(pedidosCancelados.length === 0) {
-        insightEl.innerHTML = "Seu caixa está perfeitamente selado. Nenhuma exclusão suspeita identificada.";
-      } else if (pedidosCancelados.length > 5 && taxa > 8) {
-        insightEl.innerHTML = `<span style="color: #ef4444; font-weight: bold;">ALERTA VERMELHO:</span> Identificamos uma taxa anormal de cancelamentos (${taxa.toFixed(1)}%). Recomendamos auditar os acessos do operador responsável.`;
-      } else {
-        insightEl.innerHTML = `Detectamos ${pedidosCancelados.length} cancelamentos normais de operação. A perda financeira (R$ ${valorCancelado.toFixed(2)}) está dentro da margem de risco aceitável para o volume de vendas.`;
-      }
+        const container = document.getElementById('lista-logs');
+        if(container && Array.isArray(data)) {
+          container.innerHTML = '';
+          data.forEach(l => {
+             container.innerHTML += `
+               <div class="log-item" style="border-left: 4px solid ${l.risco === 'CRÍTICO' ? 'var(--red)' : (l.risco === 'ALTO' ? 'var(--orange)' : 'var(--green)')}; padding: 10px; margin-bottom: 10px; background: #1e293b; border-radius: 4px;">
+                  <div style="font-weight:bold; color: #f8fafc;">${l.tipo} <span style="font-size:0.8em; color:var(--muted)">${new Date(l.data).toLocaleTimeString()}</span></div>
+                  <div style="color:var(--muted); font-size:0.9em;">${l.detalhe}</div>
+               </div>
+             `;
+          });
+        }
+      } catch(e) {}
     }
+
+    carregarLogs();
+    setInterval(carregarLogs, 15000);
   </script>
 </body>
 </html>

@@ -162,8 +162,13 @@
         // Emite atualização de status
         socket.emit('update_pedido_status', { id, status: 'Entregue' });
         
-        // Remove otimista da tela
-        setTimeout(() => socket.emit('get_pedidos'), 300);
+        // Remove otimista da tela com feedback
+        const eventCard = document.querySelector(`button[onclick="marcarEntregue(${id})"]`).closest('.d-card');
+        if(eventCard) {
+          eventCard.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--green);"><i class="ph-bold ph-check-circle" style="font-size: 32px; display:block; margin-bottom:10px;"></i> Entrega Confirmada!</div>`;
+        }
+
+        setTimeout(() => socket.emit('get_pedidos'), 1500);
       }
     }
 

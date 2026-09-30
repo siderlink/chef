@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>KDS Pro - Omnichannel | Chef Cozinha</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        :root { --bg: #0f111a; --card: #1e2130; --text: #e2e8f0; --primary: #fc4b15; --green: #10b981; --red: #ef4444; --yellow: #f59e0b; --ifood: #ea1d2c; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { background: var(--card); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .stats { display: flex; gap: 20px; }
+        .stat-badge { background: rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 20px; height: calc(100vh - 80px); overflow-y: auto; }
+        .column { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .col-header { font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 10px; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between;}
+        .col-header.ifood { border-color: var(--ifood); }
+        .ticket { background: var(--card); border-radius: 10px; padding: 15px; position: relative; border-left: 5px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s; }
+        .ticket:hover { transform: scale(1.02); }
+        .ticket.ifood { border-color: var(--ifood); }
+        .ticket.delayed { border-color: var(--red); animation: pulse 2s infinite; }
+        .t-head { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #94a3b8; }
+        .t-title { font-size: 20px; font-weight: 900; margin: 0 0 10px 0; }
+        .items { list-style: none; padding: 0; margin: 0; font-size: 16px; font-weight: 500; }
+        .items li { padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; }
+        .obs { color: var(--yellow); font-size: 13px; font-style: italic; display: block; }
+        .btn-ready { background: var(--green); color: #000; border: none; padding: 10px; border-radius: 8px; width: 100%; margin-top: 15px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 16px; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 70% { box-shadow: 0 0 0 15px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
+    </style>
+</head>
+<body>
+    <header>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <i class="ph-bold ph-cooking-pot" style="font-size:32px; color:var(--primary);"></i>
+            <h1 style="margin:0; font-size:24px;">KDS Pro Omnichannel</h1>
+        </div>
+        <div class="stats">
+            <div class="stat-badge"><i class="ph-bold ph-bell-ringing"></i> Fila: <span id="tot-fila">0</span></div>
+            <div class="stat-badge" style="color:var(--yellow);"><i class="ph-bold ph-clock"></i> Tempo Médio: <span id="tmp-medio">12m</span></div>
+        </div>
+    </header>
+    <div class="board">
+        <div class="column" id="col-salao">
+            <div class="col-header"><span>🍽️ Salão / Mesas</span> <span class="count">0</span></div>
+        </div>
+        <div class="column" id="col-ifood">
+            <div class="col-header ifood"><span>🔴 iFood</span> <span class="count">0</span></div>
+        </div>
+        <div class="column" id="col-delivery">
+            <div class="col-header" style="border-color:var(--yellow);"><span>🛵 Delivery Próprio</span> <span class="count">0</span></div>
+        </div>
+    </div>
+    <script>
+        const socket = io();
+        let pedidos = [];
+        
+        socket.on('connect', () => console.log('KDS Conectado'));
+        socket.on('novoPedido', (p) => {
+            pedidos.push(p);
+            render();
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            audio.play().catch(e=>{});
+        });
+        
+        function finalizar(id) {
+            const btn = document.getElementById('btn-'+id);
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
+            setTimeout(() => {
+                pedidos = pedidos.filter(p => p.id !== id);
+                render();
+            }, 500);
+        }
+        
+        function criarTicket(p) {
+            const isIfood = p.origem === 'ifood';
+            const tempo = Math.floor(Math.random() * 15) + 1; // mock visual
+            const classeAdd = tempo > 12 ? 'delayed' : '';
+            return `
+                <div class="ticket ${isIfood ? 'ifood' : ''} ${classeAdd}">
+                    <div class="t-head">
+                        <span>${new Date().toLocaleTimeString().slice(0,5)}</span>
+                        <span style="color:${tempo > 12 ? 'var(--red)' : 'var(--green)'}"><i class="ph-bold ph-timer"></i> ${tempo}m</span>
+                    </div>
+                    <h2 class="t-title">${p.mesa ? 'Mesa ' + p.mesa : 'Pedido #' + p.id.toString().slice(-4)} ${isIfood ? '📲' : ''}</h2>
+                    <ul class="items">
+                        ${p.itens ? p.itens.map(i => `
+                            <li>
+                                <div>${i.quantidade}x ${i.nome} <span class="obs">${i.observacoes ? 'obs: '+i.observacoes : ''}</span></div>
+                            </li>
+                        `).join('') : ''}
+                    </ul>
+                    <button id="btn-${p.id}" class="btn-ready" onclick="finalizar('${p.id}')"><i class="ph-bold ph-check-circle"></i> Pronto</button>
+                </div>
+            `;
+        }
+        
+        function render() {
+            const salao = pedidos.filter(p => p.mesa);
+            const ifood = pedidos.filter(p => p.origem === 'ifood');
+            const delivery = pedidos.filter(p => !p.mesa && p.origem !== 'ifood');
+            
+            document.getElementById('col-salao').innerHTML = '<div class="col-header"><span>🍽️ Salão / Mesas</span> <span class="count">'+salao.length+'</span></div>' + salao.map(criarTicket).join('');
+            document.getElementById('col-ifood').innerHTML = '<div class="col-header ifood"><span>🔴 iFood</span> <span class="count">'+ifood.length+'</span></div>' + ifood.map(criarTicket).join('');
+            document.getElementById('col-delivery').innerHTML = '<div class="col-header" style="border-color:var(--yellow);"><span>🛵 Delivery Próprio</span> <span class="count">'+delivery.length+'</span></div>' + delivery.map(criarTicket).join('');
+            
+            document.getElementById('tot-fila').innerText = pedidos.length;
+        }
+        
+        setTimeout(() => {
+            if(pedidos.length===0){
+                pedidos.push({id: '123', mesa: '04', itens: [{quantidade:2, nome:'Hambúrguer Artesanal', observacoes:'Sem cebola'}, {quantidade:1, nome:'Coca-Cola'}]});
+                pedidos.push({id: '124', origem: 'ifood', itens: [{quantidade:1, nome:'Pizza Calabresa 8 Pedaços'}]});
+                render();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

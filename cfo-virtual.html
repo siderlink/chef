@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CFO Virtual - Inteligência Financeira</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+
+  <style>
+    :root { --bg: #0f172a; --panel: #1e293b; --border: #334155; --primary: #38bdf8; --green: #10b981; --orange: #f59e0b; --text: #f8fafc; --muted: #94a3b8; }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    .header { background: #020617; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+    .header h1 { font-family: 'Outfit'; font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 12px; }
+    .header h1 i { color: var(--primary); font-size: 28px; }
+    
+    .pulse-ai { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--primary); background: rgba(56, 189, 248, 0.1); padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(56, 189, 248, 0.2); }
+    .pulse-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(56, 189, 248, 0); } 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); } }
+
+    .main-grid { display: grid; grid-template-columns: 1fr 400px; gap: 24px; padding: 24px; flex: 1; overflow: hidden; }
+    
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
+    .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-family: 'Outfit'; font-weight: 700; font-size: 15px; color: var(--text); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); text-transform: uppercase; letter-spacing: 1px; }
+    .panel-body { padding: 20px; flex: 1; overflow-y: auto; }
+
+    /* DRE Inteligente */
+    .dre-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .dre-row.total { font-weight: 800; font-size: 18px; color: #fff; border-top: 2px solid var(--border); margin-top: 12px; border-bottom: none; }
+    .dre-label { color: var(--muted); display: flex; align-items: center; gap: 8px; }
+    .dre-val { font-family: 'Outfit'; font-weight: 700; }
+    .val-pos { color: var(--green); }
+    .val-neg { color: #ef4444; }
+
+    /* Cards Superiores */
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .kpi-card { background: #020617; border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+    .kpi-card h3 { font-size: 12px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+    .kpi-card p { font-family: 'Outfit'; font-size: 32px; font-weight: 900; line-height: 1; color: #fff; }
+
+    /* Chat IA */
+    .ai-feed { display: flex; flex-direction: column; gap: 16px; }
+    .insight-card { background: linear-gradient(135deg, rgba(56, 189, 248, 0.05), rgba(99, 102, 241, 0.1)); border: 1px solid rgba(99, 102, 241, 0.3); border-left: 4px solid var(--primary); padding: 16px; border-radius: 12px; animation: slideUp 0.4s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .i-header { display: flex; gap: 8px; align-items: center; font-family: 'Outfit'; font-weight: 800; font-size: 14px; margin-bottom: 8px; color: var(--primary); text-transform: uppercase; }
+    .i-body { font-size: 14px; line-height: 1.5; color: #cbd5e1; }
+    .i-action { margin-top: 12px; background: rgba(56, 189, 248, 0.1); color: var(--primary); border: 1px solid rgba(56, 189, 248, 0.2); padding: 8px 12px; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; display: inline-block; transition: background 0.2s; }
+    .i-action:hover { background: rgba(56, 189, 248, 0.2); }
+
+    /* Gráfico Mock */
+    .chart-area { height: 150px; display: flex; align-items: flex-end; gap: 8px; margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--border); }
+    .c-bar { flex: 1; background: var(--primary); border-radius: 4px 4px 0 0; min-height: 10px; position: relative; transition: height 1s ease-out; }
+    .c-bar span { position: absolute; top: -20px; width: 100%; text-align: center; font-size: 10px; color: var(--muted); }
+    
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <h1><i class="ph-fill ph-robot"></i> CFO Virtual (IA Financeira)</h1>
+    <div class="pulse-ai"><div class="pulse-dot"></div> Analisando Dados da Operação</div>
+  </header>
+
+  <main class="main-grid">
+    
+    <!-- Lado Esquerdo: DRE e KPIs -->
+    <div style="display: flex; flex-direction: column;">
+      
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <h3>Faturamento (Hoje)</h3>
+          <p id="kpi-fat">R$ 0</p>
+        </div>
+        <div class="kpi-card">
+          <h3>Ticket Médio</h3>
+          <p id="kpi-tm">R$ 0</p>
+        </div>
+        <div class="kpi-card" style="border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.05);">
+          <h3 style="color: var(--green);">Margem Bruta (Est.)</h3>
+          <p id="kpi-margem" style="color: var(--green);">0%</p>
+        </div>
+      </div>
+
+      <section class="panel" style="flex: 1;">
+        <div class="panel-header"><i class="ph-bold ph-file-text"></i> DRE Dinâmico (Projeção do Mês)</div>
+        <div class="panel-body">
+          <div class="dre-row">
+            <div class="dre-label"><i class="ph-bold ph-trend-up"></i> Receita Bruta (Vendas)</div>
+            <div class="dre-val" id="dre-rec">R$ 45.200,00</div>
+          </div>
+          <div class="dre-row">
+            <div class="dre-label"><i class="ph-bold ph-trend-down"></i> (-) Impostos Estimados (Simples)</div>
+            <div class="dre-val val-neg" id="dre-imp">- R$ 2.712,00</div>
+          </div>
+          <div class="dre-row" style="margin-top: 8px;">
+            <div class="dre-label"><i class="ph-bold ph-package"></i> (-) CMV (Custo da Mercadoria)</div>
+            <div class="dre-val val-neg" id="dre-cmv">- R$ 13.560,00</div>
+          </div>
+          <div class="dre-row">
+            <div class="dre-label"><i class="ph-bold ph-moped"></i> (-) Taxas Delivery / Cartão</div>
+            <div class="dre-val val-neg" id="dre-tax">- R$ 3.842,00</div>
+          </div>
+          <div class="dre-row" style="margin-top: 8px;">
+            <div class="dre-label"><i class="ph-bold ph-users"></i> (-) Custos Fixos (Folha/Aluguel)</div>
+            <div class="dre-val val-neg" id="dre-fixo">- R$ 12.000,00</div>
+          </div>
+
+          <div class="dre-row total">
+            <div>(=) Lucro Líquido Projetado</div>
+            <div class="val-pos" id="dre-lucro">R$ 13.086,00</div>
+          </div>
+
+          <div class="chart-area" id="chart-bars">
+            <!-- Bars injetadas via JS -->
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Lado Direito: IA Insights -->
+    <section class="panel">
+      <div class="panel-header"><i class="ph-bold ph-sparkle"></i> Insights Estratégicos</div>
+      <div class="panel-body ai-feed" id="ai-feed">
+        <div style="text-align: center; color: var(--muted); padding: 40px;"><i class="ph-fill ph-spinner" style="font-size:32px; animation:spin 1s linear infinite;"></i><br>Processando heurísticas...</div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const token = localStorage.getItem('chef_token') || '';
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    
+    // Conecta via HTTP API criada no servidor
+    async function carregarMetricas() {
+      try {
+        const res = await fetch(`/api/cfo/metricas?restaurante_id=${restId}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        document.getElementById('receita-bruta').textContent = 'R$ ' + (data.receita_bruta || 0).toFixed(2).replace('.',',');
+        document.getElementById('lucro-liquido').textContent = 'R$ ' + (data.lucro_liquido || 0).toFixed(2).replace('.',',');
+        document.getElementById('ticket-medio').textContent = 'R$ ' + (data.ticket_medio || 0).toFixed(2).replace('.',',');
+        document.getElementById('burn-rate').textContent = 'R$ ' + (data.burn_rate || 0).toFixed(2).replace('.',',');
+      } catch(e) {
+        console.error('Erro ao carregar metricas CFO', e);
+      }
+    }
+
+    carregarMetricas();
+    setInterval(carregarMetricas, 30000);
+  </script>
+</body>
+</html>

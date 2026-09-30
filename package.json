@@ -50,7 +50,7 @@
         "nanospinner": "^1.2.2",
         "promise-polyfill": "^8.3.0",
         "socket.io": "^4.8.3",
-        "socket.io-client": "^4.8.3",
+        "socket.io-client": "^4.8.4",
         "web-push": "^3.6.7",
         "whatwg-fetch": "^3.6.20",
         "xlsx": "^0.18.5"

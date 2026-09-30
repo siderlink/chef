@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Hub do Entregador | Chef Cozinha</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --primary: #fc4b15; --green: #10b981; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 80px; }
+        .header { background: var(--primary); color: #fff; padding: 20px; text-align: center; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 4px 10px rgba(252,75,21,0.3); }
+        .profile { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+        .stats { display: flex; gap: 10px; margin-top: 20px; }
+        .stat-box { background: rgba(255,255,255,0.2); flex: 1; padding: 15px; border-radius: 12px; text-align: left; }
+        .stat-val { font-size: 24px; font-weight: 900; }
+        .section-title { padding: 20px 20px 10px 20px; font-size: 18px; font-weight: 800; color: #334155; }
+        .order-list { padding: 0 20px; display: flex; flex-direction: column; gap: 15px; }
+        .order-card { background: var(--card); border-radius: 16px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 4px solid var(--primary); }
+        .order-card.ready { border-color: var(--green); }
+        .o-head { display: flex; justify-content: space-between; font-weight: 800; margin-bottom: 10px; font-size: 18px; }
+        .o-address { font-size: 14px; color: #64748b; margin-bottom: 15px; display: flex; gap: 8px; align-items: flex-start; }
+        .btn-action { width: 100%; background: var(--green); color: #fff; border: none; padding: 15px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .btn-action.nav { background: #f1f5f9; color: var(--primary); margin-bottom: 10px; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 15px; display: flex; justify-content: space-around; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); border-top-left-radius: 20px; border-top-right-radius: 20px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 12px; font-weight: 600; gap: 5px; }
+        .nav-item.active { color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2 style="margin:0; font-size:18px;">Chef Cozinha Logística</h2>
+        <div class="profile">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <img src="https://ui-avatars.com/api/?name=Carlos+Silva&background=fff&color=fc4b15" style="width:40px; border-radius:20px;">
+                <div style="text-align:left;">
+                    <div style="font-weight:bold;">Carlos Silva</div>
+                    <div style="font-size:12px; opacity:0.8;">🟢 Online e Disponível</div>
+                </div>
+            </div>
+            <i class="ph-bold ph-bell" style="font-size:24px;"></i>
+        </div>
+        <div class="stats">
+            <div class="stat-box">
+                <div style="font-size:12px; opacity:0.8;">Entregas Hoje</div>
+                <div class="stat-val">12</div>
+            </div>
+            <div class="stat-box">
+                <div style="font-size:12px; opacity:0.8;">Taxas (R$)</div>
+                <div class="stat-val">R$ 85,00</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title">Aguardando Retirada (1)</div>
+    <div class="order-list">
+        <div class="order-card ready">
+            <div class="o-head">
+                <span>Pedido #1042</span>
+                <span style="color:var(--green);"><i class="ph-bold ph-check-circle"></i> Pronto</span>
+            </div>
+            <div class="o-address">
+                <i class="ph-bold ph-map-pin" style="color:var(--primary); font-size:18px;"></i>
+                <span>Av. Paulista, 1578 - Bela Vista<br>Apto 42 (Interfone 420)</span>
+            </div>
+            <button class="btn-action nav"><i class="ph-bold ph-navigation-arrow"></i> Abrir no Waze</button>
+            <button class="btn-action"><i class="ph-bold ph-motorcycle"></i> Iniciar Rota</button>
+        </div>
+    </div>
+
+    <div class="section-title">Em Rota (1)</div>
+    <div class="order-list">
+        <div class="order-card" style="border-color:var(--yellow);">
+            <div class="o-head">
+                <span>Pedido #1039</span>
+                <span style="color:var(--yellow);"><i class="ph-bold ph-clock"></i> 5 min</span>
+            </div>
+            <div class="o-address">
+                <i class="ph-bold ph-map-pin" style="color:var(--primary); font-size:18px;"></i>
+                <span>Rua Augusta, 500 - Consolação<br>Deixar na portaria</span>
+            </div>
+            <button class="btn-action" style="background:var(--primary);"><i class="ph-bold ph-check-square"></i> Marcar como Entregue</button>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active"><i class="ph-bold ph-motorcycle" style="font-size:24px;"></i> Entregas</div>
+        <div class="nav-item"><i class="ph-bold ph-wallet" style="font-size:24px;"></i> Repasses</div>
+        <div class="nav-item"><i class="ph-bold ph-user" style="font-size:24px;"></i> Perfil</div>
+    </div>
+</body>
+</html>

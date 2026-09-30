@@ -166,7 +166,13 @@ export default defineConfig({
         'compras-b2b': resolve(__dirname, 'compras-b2b.html'),
         'roleta-premiada': resolve(__dirname, 'roleta-premiada.html'),
         'pwa-motoboy': resolve(__dirname, 'pwa-motoboy.html'),
-        'painel-crm': resolve(__dirname, 'painel-crm.html')
+        'painel-crm': resolve(__dirname, 'painel-crm.html'),
+        'expedicao': resolve(__dirname, 'expedicao.html'),
+        'esteira-kanban': resolve(__dirname, 'esteira-kanban.html'),
+        'cfo-virtual': resolve(__dirname, 'cfo-virtual.html'),
+        'tablet-mesa': resolve(__dirname, 'tablet-mesa.html'),
+        'host-fila-espera': resolve(__dirname, 'host-fila-espera.html'),
+        'totem-kiosk': resolve(__dirname, 'totem-kiosk.html')
       }
     }
   }

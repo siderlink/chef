@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Recepção & Fila de Espera | Chef Cozinha</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --bg: #0f111a; --card: #1e2130; --text: #e2e8f0; --primary: #fc4b15; --green: #10b981; --yellow: #f59e0b; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 30px; margin: 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px; margin-bottom: 20px; }
+        .btn-add { background: var(--primary); color: #fff; padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .panel { background: var(--card); padding: 25px; border-radius: 12px; height: calc(100vh - 150px); overflow-y: auto; }
+        h2 { margin-top: 0; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; }
+        .badge { background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px; font-size: 14px; color: #fff; }
+        .fila-item { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; border-left: 4px solid var(--yellow); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .fila-item.reserva { border-left-color: var(--primary); }
+        .client-info h3 { margin: 0 0 5px 0; font-size: 18px; }
+        .client-info p { margin: 0; font-size: 14px; color: #94a3b8; }
+        .actions button { border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; }
+        .btn-wpp { background: #25D366; color: #fff; }
+        .btn-mesa { background: var(--green); color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1 style="margin:0; color:var(--primary);"><i class="ph-bold ph-users-three"></i> Hostess & Fila de Espera</h1>
+            <p style="margin:5px 0 0 0; color:#94a3b8;">Gerenciamento de recepção e salão.</p>
+        </div>
+        <button class="btn-add"><i class="ph-bold ph-plus"></i> Novo Cliente na Fila</button>
+    </div>
+
+    <div class="panels">
+        <div class="panel">
+            <h2>Fila de Espera Atual <span class="badge">4 pessoas</span></h2>
+            <div class="fila-item">
+                <div class="client-info">
+                    <h3>Família Silva <span style="font-size:12px; background:var(--card); padding:2px 8px; border-radius:10px;">4 Lugares</span></h3>
+                    <p><i class="ph-bold ph-clock"></i> Esperando há 25 min (Chegou às 19:30)</p>
+                </div>
+                <div class="actions">
+                    <button class="btn-wpp"><i class="ph-bold ph-whatsapp-logo"></i> Avisar</button>
+                    <button class="btn-mesa"><i class="ph-bold ph-chair"></i> Alocar Mesa</button>
+                </div>
+            </div>
+            <div class="fila-item">
+                <div class="client-info">
+                    <h3>Roberto Carlos <span style="font-size:12px; background:var(--card); padding:2px 8px; border-radius:10px;">2 Lugares</span></h3>
+                    <p><i class="ph-bold ph-clock"></i> Esperando há 10 min (Chegou às 19:45)</p>
+                </div>
+                <div class="actions">
+                    <button class="btn-wpp"><i class="ph-bold ph-whatsapp-logo"></i> Avisar</button>
+                    <button class="btn-mesa"><i class="ph-bold ph-chair"></i> Alocar Mesa</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Reservas de Hoje (20:00) <span class="badge">2 reservas</span></h2>
+            <div class="fila-item reserva">
+                <div class="client-info">
+                    <h3>Aniversário Juliana <span style="font-size:12px; background:var(--card); padding:2px 8px; border-radius:10px;">12 Lugares</span></h3>
+                    <p><i class="ph-bold ph-calendar"></i> Agendado para 20:30 • <i class="ph-bold ph-star" style="color:var(--yellow)"></i> VIP</p>
+                </div>
+                <div class="actions">
+                    <button style="background:var(--card); color:#fff; border:1px solid #475569;">Ver Detalhes</button>
+                    <button class="btn-mesa">Check-in</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -3944,19 +3944,7 @@ io.on('connection', (socket) => {
     const roomSockets = io.sockets.adapter.rooms.get(`restaurante_${socketTenantId}`);
     const activeCount = roomSockets ? roomSockets.size : 1;
     ifoodApi.notifyTenantSessionState(socketTenantId, activeCount, { io, masterDb, tenantContext, getTenantDb, isFeatureEnabled: isTenantFeatureEnabled });
-  } catch (e) {}
-
-  // Wrap all socket events in tenant context!
-  const originalOn = socket.on.bind(socket);
-  socket.on = function (eventName, callback) {
-    originalOn(eventName, (...args) => {
-      tenantContext.run(socketTenantId, () => {
-        callback(...args);
-      });
-    });
-  };
-
-  // --- PROPAGAÇÃO DE TEMA DO RESTAURANTE (LOJA / STUDIO) ---
+  } catch (e) {}// --- PROPAGAÇÃO DE TEMA DO RESTAURANTE (LOJA / STUDIO) ---
   socket.on('tema_restaurante_aplicar', (data) => {
     if (!data) return;
     const tid = data.restaurante_id || socketTenantId || 1;
@@ -11834,19 +11822,7 @@ io.on('connection', (socket) => {
 
   // Contagem de sockets por tenant (o guard evita dupla contagem com o bloco principal)
   metricAddSocket(socket);
-  if (!socket.features) socket.features = getTenantFeaturesSync(socketTenantId);
-
-  // Wrap all socket events in tenant context!
-  const originalOn = socket.on.bind(socket);
-  socket.on = function (eventName, callback) {
-    originalOn(eventName, (...args) => {
-      tenantContext.run(socketTenantId, () => {
-        callback(...args);
-      });
-    });
-  };
-
-  socket.on('ia_resposta_sugestao', (data) => {
+  if (!socket.features) socket.features = getTenantFeaturesSync(socketTenantId);socket.on('ia_resposta_sugestao', (data) => {
     const { tipo, mesa, produto, resposta, pedidoId } = data || {};
 
     if (tipo === 'refill_bebida' && resposta === 'sim') {
@@ -14934,6 +14910,16 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
       console.log('🚀 Controller Tier S (Hub Marketplace, Link Pagamento, Ficha Visual, Dashboard Dono, SPED Fiscal) carregado com sucesso.');
     } catch (eTierS) {
       console.error('Erro ao carregar o Controller Tier S:', eTierS);
+    }
+
+    try {
+      require('./controllers/operacional-custom')(app, {
+        io,
+        getTenantDb
+      });
+      console.log('📦 Controller Operacional Custom carregado com sucesso.');
+    } catch (eC) {
+      console.error('Erro ao carregar o Controller Operacional Custom:', eC);
     }
 
     try {

@@ -192,9 +192,9 @@
 
         var btnHtml = '';
         if (p.status === 'Em espera' || p.status === 'Pendente') {
-          btnHtml = '<button id="btn-'+p.id+'" class="btn btn-start" onclick="changeStatus('+p.id+', \\'Em preparo\\')">INICIAR PREPARO</button>';
+          btnHtml = '<button id="btn-'+p.id+'" class="btn btn-start" onclick="changeStatus('+p.id+', \'Em preparo\')">INICIAR PREPARO</button>';
         } else if (p.status === 'Em preparo') {
-          btnHtml = '<button id="btn-'+p.id+'" class="btn btn-finish" onclick="changeStatus('+p.id+', \\'Pronto\\')">PRONTO!</button>';
+          btnHtml = '<button id="btn-'+p.id+'" class="btn btn-finish" onclick="changeStatus('+p.id+', \'Pronto\')">PRONTO!</button>';
         } else {
           btnHtml = '<div class="btn-done">ENTREGUE AO BALCÃO</div>';
         }

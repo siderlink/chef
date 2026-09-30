@@ -323,13 +323,13 @@ function aplicarTamanhosCSS(sizes) {
   const root = document.documentElement;
   const queueList = document.getElementById('queue-list');
 
-  root.style.setProperty('--kds-col-header-width', (sizes.header || 260) + 'px');
-  root.style.setProperty('--kds-col-qty-width', (sizes.qty || 54) + 'px');
-  root.style.setProperty('--kds-col-action-width', (sizes.action || 230) + 'px');
-  root.style.setProperty('--kds-card-height', (sizes.height || 76) + 'px');
+  root.style.setProperty('--kds-col-header-width', Math.max(140, sizes.header || 260) + 'px');
+  root.style.setProperty('--kds-col-qty-width', Math.max(38, sizes.qty || 54) + 'px');
+  root.style.setProperty('--kds-col-action-width', Math.max(140, sizes.action || 230) + 'px');
+  root.style.setProperty('--kds-card-height', Math.max(32, sizes.height || 76) + 'px');
   root.style.setProperty('--kds-card-gap', (sizes.gap !== undefined ? sizes.gap : 12) + 'px');
-  root.style.setProperty('--kds-card-min-width', (sizes.cardMin || 290) + 'px');
-  root.style.setProperty('--kds-font-size', (sizes.fontSize || 15) + 'px');
+  root.style.setProperty('--kds-card-min-width', Math.max(200, sizes.cardMin || 290) + 'px');
+  root.style.setProperty('--kds-font-size', Math.max(10, sizes.fontSize || 15) + 'px');
 
   // Ajustes dinâmicos de Grid Columns
   const colCss = (sizes.gridCols && sizes.gridCols !== 'auto')
@@ -673,6 +673,13 @@ function obterCardOrder() {
   }
   if (kdsCardOrder.length === 0) kdsCardOrder = CARD_FIELDS.map(f => f.key);
   kdsCardOrder.forEach(k => { if (!CARD_FIELDS.some(f => f.key === k)) kdsCardOrder = kdsCardOrder.filter(x => x !== k); });
+  
+  // Anti-burros forçado antes de retornar:
+  kdsCardOrder = Array.from(new Set(kdsCardOrder));
+  if (kdsCardOrder.length !== CARD_FIELDS.length) {
+    kdsCardOrder = CARD_FIELDS.map(f => f.key);
+    localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
+  }
   return kdsCardOrder;
 }
 window.obterCardHidden = function() {
@@ -744,9 +751,11 @@ function renderizarCamposCardList(containerId) {
       </div>`;
   }).join('');
 
-  if (typeof Sortable !== 'undefined' && !wrap._sortableInited) {
-    wrap._sortableInited = true;
-    Sortable.create(wrap, {
+  if (typeof Sortable !== 'undefined') {
+    if (wrap._sortableInstance) {
+      wrap._sortableInstance.destroy();
+    }
+    wrap._sortableInstance = Sortable.create(wrap, {
       handle: '.kds-drag-handle',
       animation: 160,
       ghostClass: 'sortable-ghost',
@@ -1133,16 +1142,29 @@ document.addEventListener('DOMContentLoaded', () => {
 window.filtrarSetor = function(sectorName) {
   currentSector = sectorName;
   localStorage.setItem('filaCurrentSector', sectorName);
+  
   document.querySelectorAll('.sidebar-sectors .sector-btn, .sector-modal-btn').forEach(btn => {
     btn.classList.remove('active');
     if (btn.getAttribute('data-sector') === sectorName) {
       btn.classList.add('active');
     }
   });
+
   const label = document.getElementById('current-sector-label');
   if (label) label.textContent = sectorName;
   const labelSidebar = document.getElementById('current-sector-label-sidebar');
   if (labelSidebar) labelSidebar.textContent = sectorName;
+  const labelMobile = document.getElementById('current-sector-label-mobile');
+  if (labelMobile) labelMobile.textContent = sectorName;
+  
+  // New labels from V2
+  const labelSub = document.getElementById('current-sector-label-sub');
+  if (labelSub) labelSub.textContent = (sectorName === 'Todos' ? 'Todos os Setores' : sectorName);
+  
+  // Center navbar chip in V2
+  const navChip = document.querySelector('.kds-navbar-center .sector-modal-btn span');
+  if (navChip) navChip.textContent = (sectorName === 'Todos' ? 'Todos os Setores' : sectorName);
+
   renderQueue();
 };
 
@@ -2501,7 +2523,7 @@ window.setSidebarDisplayMode = function(mode) {
 };
 
 document.addEventListener('mousemove', (e) => {
-  const mode = localStorage.getItem('chef_kds_sidebar_mode') || 'oculta';
+  const mode = localStorage.getItem('chef_kds_sidebar_mode') || 'fixa';
   if (mode !== 'hover') return;
 
   const leftSidebar = document.querySelector('.sidebar-sectors');
@@ -2527,7 +2549,7 @@ document.addEventListener('mousemove', (e) => {
 // LÓGICA COMPLETA DE REDIMENSIONAMENTO DE BARRAS LATERAIS E COLUNAS
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidos();
-  window.setSidebarDisplayMode(localStorage.getItem('chef_kds_sidebar_mode') || 'oculta');
+  window.setSidebarDisplayMode(localStorage.getItem('chef_kds_sidebar_mode') || 'fixa');
 
   // 1. REDIMENSIONAR BARRA LATERAL ESQUERDA (SETORES)
   const leftSidebar = document.querySelector('.sidebar-sectors');
@@ -2754,6 +2776,41 @@ window.currentLayoutMode = localStorage.getItem('chef_kds_layout_mode') || 'list
 
 // Ajuste de tamanho da fonte da fila (botões A- / A+ do popup de configurações)
 window.filaFontScale = parseFloat(localStorage.getItem('chef_kds_font_scale')) || 1;
+
+window.alterarTamanhoCampo = function(campo, delta) {
+  const cssVar = '--kds-font-' + campo;
+  const storageKey = 'chef_kds_font_' + campo;
+  
+  // Define tamanhos padrao
+  const defaultSizes = { nome: 16.5, qtd: 15, obs: 12, comps: 11.7 };
+  
+  // Pega o atual do estilo root ou do cache
+  let currentRaw = document.documentElement.style.getPropertyValue(cssVar) || localStorage.getItem(storageKey);
+  let size = parseFloat(currentRaw);
+  if (isNaN(size) || !size) size = defaultSizes[campo];
+  
+  // Incremento/Decremento
+  size += (delta * 1.5);
+  
+  // Limites
+  if (size < 8) size = 8;
+  if (size > 40) size = 40;
+  
+  document.documentElement.style.setProperty(cssVar, size + 'px');
+  localStorage.setItem(storageKey, size);
+};
+
+// Ao inicializar, aplicar tamanhos salvos
+function aplicarTamanhosCamposSalvos() {
+  ['nome', 'qtd', 'obs', 'comps'].forEach(campo => {
+    const val = localStorage.getItem('chef_kds_font_' + campo);
+    if (val) {
+      document.documentElement.style.setProperty('--kds-font-' + campo, val + 'px');
+    }
+  });
+}
+aplicarTamanhosCamposSalvos();
+
 window.alterarTamanhoFonte = function(delta) {
   window.filaFontScale = Math.max(0.7, Math.min(1.6, window.filaFontScale + (delta || 0) * 0.1));
   localStorage.setItem('chef_kds_font_scale', String(window.filaFontScale));
@@ -3411,3 +3468,208 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
+
+// ══════════════════════════════════════════════════════════════════
+// 🛠 MODO DE EDIÇÃO DIRETA NOS CARDS (LAYOUT BUILDER)
+// ══════════════════════════════════════════════════════════════════
+
+window.kdsModoEdicaoAtivo = false;
+
+window.toggleModoEdicaoKds = function(forcar) {
+  window.kdsModoEdicaoAtivo = typeof forcar === 'boolean' ? forcar : !window.kdsModoEdicaoAtivo;
+  const body = document.body;
+  if (window.kdsModoEdicaoAtivo) {
+    body.classList.add('kds-modo-edicao');
+    if (typeof window.toggleLayoutDrawer === 'function') window.toggleLayoutDrawer(false);
+    
+    let btnSair = document.getElementById('kds-btn-sair-edicao');
+    if (!btnSair) {
+      btnSair = document.createElement('div');
+      btnSair.id = 'kds-btn-sair-edicao';
+      btnSair.className = 'kds-edit-badge';
+      btnSair.innerHTML = '<i class="ph-bold ph-check-circle"></i> Sair do Modo de Ajuste';
+      btnSair.onclick = () => window.toggleModoEdicaoKds(false);
+      document.body.appendChild(btnSair);
+    }
+    btnSair.style.display = 'flex';
+    window.initSortableNosCards();
+  } else {
+    body.classList.remove('kds-modo-edicao');
+    const btnSair = document.getElementById('kds-btn-sair-edicao');
+    if (btnSair) btnSair.style.display = 'none';
+    window.destroySortableNosCards();
+    window.fecharContextMenuKds();
+  }
+};
+
+window.initSortableNosCards = function() {
+  if (typeof Sortable === 'undefined') return;
+  const cards = document.querySelectorAll('#queue-list .queue-item');
+  cards.forEach(card => {
+    if (card._kdsSortable) card._kdsSortable.destroy();
+    card._kdsSortable = Sortable.create(card, {
+      animation: 150,
+      draggable: '[data-field-key]',
+      group: { name: 'kds-cards', pull: false, put: false },
+      onEnd: (evt) => {
+        const chavesNodes = Array.from(card.children)
+          .map(c => c.getAttribute('data-field-key'))
+          .filter(Boolean);
+        
+        // Remove duplicadas caso o Sortable deixe algum clone
+        const novaOrdem = Array.from(new Set(chavesNodes));
+        
+        let finalOrder = [];
+        const ocultos = window.obterCardOrder().filter(k => window.obterCardHidden().has(k));
+        novaOrdem.forEach(k => finalOrder.push(k));
+        ocultos.forEach(k => {
+          if (!finalOrder.includes(k)) finalOrder.push(k);
+        });
+        
+        // Trava Anti-Burros: Garante que só salva se for válido (ter todas as chaves e sem duplicatas)
+        const temTodasAsChaves = CARD_FIELDS.every(f => finalOrder.includes(f.key));
+        if (finalOrder.length === CARD_FIELDS.length && temTodasAsChaves) {
+          kdsCardOrder = finalOrder.slice();
+          localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
+          renderQueue(true);
+          kdsAgendarSalvarNoServidor();
+          setTimeout(window.initSortableNosCards, 100);
+        } else {
+          // Se algo quebrou (ex: arrastou fora), reseta visualmente
+          renderQueue(true);
+          setTimeout(window.initSortableNosCards, 100);
+        }
+      }
+    });
+  });
+};
+
+window.destroySortableNosCards = function() {
+  const cards = document.querySelectorAll('#queue-list .queue-item');
+  cards.forEach(card => {
+    if (card._kdsSortable) {
+      card._kdsSortable.destroy();
+      card._kdsSortable = null;
+    }
+  });
+};
+
+window.abrirContextMenuKds = function(sectionEl, x, y) {
+  const fieldKey = sectionEl.getAttribute('data-field-key');
+  if (!fieldKey) return;
+  const menu = document.getElementById('kds-context-menu');
+  if (!menu) return;
+  
+  menu.setAttribute('data-current-field', fieldKey);
+  
+  const title = document.getElementById('kds-ctx-title');
+  if (title && typeof window.cardFieldLabel === 'function') {
+    title.innerText = window.cardFieldLabel(fieldKey);
+  }
+  
+  const widthInput = document.getElementById('kds-ctx-width');
+  const fontInput = document.getElementById('kds-ctx-font');
+  const widthVal = document.getElementById('kds-ctx-val-width');
+  const fontVal = document.getElementById('kds-ctx-val-font');
+  
+  const mapKeyToCss = {
+    'cabecalho': 'header',
+    'quantidade': 'qty',
+    'acao': 'action'
+  };
+  
+  const isWidthApplicable = ['cabecalho', 'quantidade', 'acao'].includes(fieldKey);
+  const rowWidth = document.getElementById('kds-ctx-row-width');
+  if (rowWidth) rowWidth.style.display = isWidthApplicable ? 'flex' : 'none';
+  
+  if (isWidthApplicable && widthInput && widthVal) {
+    const cssKey = mapKeyToCss[fieldKey];
+    widthInput.value = kdsSectionSizes[cssKey] || (cssKey === 'header' ? 260 : cssKey === 'qty' ? 54 : 230);
+    widthVal.innerText = widthInput.value + 'px';
+  }
+  
+  if (fontInput && fontVal) {
+    fontInput.value = kdsSectionSizes.fontSize || 15;
+    fontVal.innerText = fontInput.value + 'px';
+  }
+  
+  menu.classList.remove('hidden');
+  
+  let pX = x;
+  let pY = y;
+  if (pX + 270 > window.innerWidth) pX = window.innerWidth - 280;
+  if (pY + 200 > window.innerHeight) pY = window.innerHeight - 210;
+  
+  menu.style.left = pX + 'px';
+  menu.style.top = pY + 'px';
+};
+
+window.fecharContextMenuKds = function() {
+  const menu = document.getElementById('kds-context-menu');
+  if (menu) menu.classList.add('hidden');
+};
+
+window.ocultarSecaoPeloContexto = function() {
+  const menu = document.getElementById('kds-context-menu');
+  if (!menu) return;
+  const fieldKey = menu.getAttribute('data-current-field');
+  if (fieldKey && typeof window.alternarCampoCard === 'function') {
+    window.alternarCampoCard(fieldKey); 
+  }
+  window.fecharContextMenuKds();
+  setTimeout(window.initSortableNosCards, 100);
+};
+
+window.aplicarTamanhoDoContexto = function(type, val) {
+  const menu = document.getElementById('kds-context-menu');
+  if (!menu) return;
+  const fieldKey = menu.getAttribute('data-current-field');
+  
+  if (type === 'fontSize') {
+    const valEl = document.getElementById('kds-ctx-val-font');
+    if (valEl) valEl.innerText = val + 'px';
+    if (typeof window.alterarTamanhoSecao === 'function') window.alterarTamanhoSecao('fontSize', val);
+  } else if (type === 'width') {
+    const valEl = document.getElementById('kds-ctx-val-width');
+    if (valEl) valEl.innerText = val + 'px';
+    const mapKeyToCss = {
+      'cabecalho': 'header',
+      'quantidade': 'qty',
+      'acao': 'action'
+    };
+    const cssKey = mapKeyToCss[fieldKey];
+    if (cssKey && typeof window.alterarTamanhoSecao === 'function') {
+      window.alterarTamanhoSecao(cssKey, val);
+    }
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  let kdsLongPressTimer = null;
+  const qList = document.getElementById('queue-list');
+  if (qList) {
+    qList.addEventListener('contextmenu', (e) => {
+      if (!window.kdsModoEdicaoAtivo) return;
+      const sec = e.target.closest('.queue-item > div[data-field-key]');
+      if (sec) {
+        e.preventDefault();
+        window.abrirContextMenuKds(sec, e.clientX, e.clientY);
+      }
+    });
+    
+    qList.addEventListener('touchstart', (e) => {
+      if (!window.kdsModoEdicaoAtivo) return;
+      const sec = e.target.closest('.queue-item > div[data-field-key]');
+      if (sec) {
+        kdsLongPressTimer = setTimeout(() => {
+          const touch = e.touches[0];
+          window.abrirContextMenuKds(sec, touch.clientX, touch.clientY);
+        }, 600);
+      }
+    });
+    qList.addEventListener('touchend', () => clearTimeout(kdsLongPressTimer));
+    qList.addEventListener('touchmove', () => clearTimeout(kdsLongPressTimer));
+  }
+});

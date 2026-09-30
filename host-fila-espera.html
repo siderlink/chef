@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hostess - Fila de Espera</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --green: #10b981;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: rgba(255,255,255,0.1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+    body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    
+    header {
+      padding: 20px; background: var(--card); border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .kpi-row { display: flex; gap: 15px; }
+    .kpi { background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 12px; text-align: center; }
+    .kpi span { display: block; font-size: 24px; font-weight: 800; color: var(--primary); }
+    .kpi small { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+
+    main { flex: 1; display: grid; grid-template-columns: 350px 1fr; gap: 20px; padding: 20px; overflow: hidden; }
+    
+    .add-panel { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px; }
+    .add-panel h3 { font-size: 18px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    input, select { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: #fff; font-size: 16px; outline: none; }
+    input:focus { border-color: var(--primary); }
+    .btn-add { background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+    .btn-add:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+    .list-panel { background: var(--card); border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+    .list-header { padding: 15px 20px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border); font-weight: 700; }
+    .list-body { flex: 1; overflow-y: auto; padding: 15px; }
+    
+    .wait-card { background: rgba(0,0,0,0.15); border: 1px solid var(--border); padding: 15px; border-radius: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+    .wait-card:hover { border-color: var(--primary); }
+    .w-info h4 { font-size: 18px; margin-bottom: 4px; }
+    .w-info p { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .w-time { background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #f59e0b; }
+    
+    .w-actions { display: flex; gap: 8px; }
+    .btn-icon { width: 44px; height: 44px; border-radius: 12px; border: none; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; color: #fff; }
+    .btn-call { background: #22c55e; }
+    .btn-call:hover { background: #16a34a; transform: scale(1.05); }
+    .btn-seat { background: var(--primary); }
+    .btn-seat:hover { background: var(--primary-hover); transform: scale(1.05); }
+    .btn-remove { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .btn-remove:hover { background: #ef4444; color: #fff; }
+
+    @media (max-width: 768px) {
+      main { grid-template-columns: 1fr; overflow-y: auto; }
+      .list-body { max-height: 500px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h2><i class="ph-bold ph-users-three"></i> Hostess & Fila</h2>
+    <div class="kpi-row">
+      <div class="kpi">
+        <span id="kpi-wait">0</span>
+        <small>Na Fila</small>
+      </div>
+      <div class="kpi">
+        <span id="kpi-time">0m</span>
+        <small>Espera Média</small>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="add-panel">
+      <h3><i class="ph-bold ph-plus-circle"></i> Adicionar Cliente</h3>
+      <input type="text" id="inp-nome" placeholder="Nome do Cliente" autocomplete="off">
+      <input type="number" id="inp-pax" placeholder="Nº de Pessoas (Ex: 4)" autocomplete="off">
+      <input type="tel" id="inp-tel" placeholder="WhatsApp (Ex: 11999999999)" autocomplete="off">
+      <button class="btn-add" onclick="addFila()"><i class="ph-bold ph-user-plus"></i> Inserir na Fila</button>
+    </div>
+
+    <div class="list-panel">
+      <div class="list-header">Fila de Espera Atual</div>
+      <div class="list-body" id="fila-container">
+        <!-- JS -->
+      </div>
+    </div>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const token = localStorage.getItem('chef_token') || '';
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    const socket = io({ query: { token, restaurante_id: restId } });
+
+    let fila = [];
+    
+    socket.on('connect', () => {
+      socket.emit('get_fila');
+    });
+
+    socket.on('fila_atualizada_trigger', () => {
+      socket.emit('get_fila');
+    });
+
+    socket.on('fila_atualizada', (data) => {
+      fila = data;
+      renderFila();
+    });
+
+    function playClick() {
+      try {
+        if(navigator.vibrate) navigator.vibrate(15);
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+        osc.start(); osc.stop(ctx.currentTime + 0.05);
+      } catch(e){}
+    }
+
+    function addFila() {
+      playClick();
+      const nome = document.getElementById('inp-nome').value;
+      const pax = document.getElementById('inp-pax').value;
+      const tel = document.getElementById('inp-tel').value;
+
+      if(!nome || !pax) return alert('Preencha Nome e Número de Pessoas');
+
+      socket.emit('add_fila', { nome, pax, tel });
+      
+      document.getElementById('inp-nome').value = '';
+      document.getElementById('inp-pax').value = '';
+      document.getElementById('inp-tel').value = '';
+      
+      // Feedback visual
+      const btn = document.querySelector('.btn-add');
+      const oldHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="ph-bold ph-check"></i> Adicionado!';
+      btn.style.background = 'var(--c-pronto)';
+      setTimeout(() => {
+        btn.innerHTML = oldHtml;
+        btn.style.background = 'var(--c-novo)';
+      }, 1000);
+    }
+
+    function removeFila(id) {
+      playClick();
+      if(confirm('Remover cliente da fila?')) {
+        socket.emit('remove_fila', id);
+      }
+    }
+
+    function assentarCliente(id) {
+      playClick();
+      socket.emit('assentar_fila', id);
+    }
+
+    function chamarWhatsApp(tel, nome) {
+      playClick();
+      if(!tel) return alert('Cliente não informou WhatsApp.');
+      const msg = encodeURIComponent(`Olá ${nome}! Sua mesa no Chef Cozinha está pronta. Por favor, dirija-se à recepção.`);
+      window.open(`https://wa.me/55${tel.replace(/\D/g, '')}?text=${msg}`, '_blank');
+    }
+
+    function renderFila() {
+      const lista = document.getElementById('lista-fila');
+      document.getElementById('contador-fila').textContent = fila.length;
+      
+      if(fila.length === 0) {
+        lista.innerHTML = '<div style="color:var(--muted); text-align:center; padding: 40px 0;">Fila Vazia</div>';
+        return;
+      }
+
+      lista.innerHTML = '';
+      fila.forEach((f, index) => {
+        const timeWait = Math.floor((Date.now() - new Date(f.timestamp).getTime()) / 60000);
+        let statusClass = timeWait > 20 ? 'status-red' : (timeWait > 10 ? 'status-orange' : 'status-green');
+        
+        lista.innerHTML += `
+          <div class="card-fila">
+            <div class="fila-pos">#${index + 1}</div>
+            <div class="fila-info">
+              <div class="fila-nome">${f.nome} <span class="badge ${statusClass}">${timeWait} min aguardando</span></div>
+              <div class="fila-meta">
+                <span><i class="ph-bold ph-users"></i> ${f.pax} pessoas</span>
+                ${f.telefone ? `<span><i class="ph-bold ph-phone"></i> ${f.telefone}</span>` : ''}
+              </div>
+            </div>
+            <div class="fila-actions">
+              <button class="btn-icon btn-call" onclick="chamarWhatsApp('${f.telefone}', '${f.nome}')" title="Avisar no WhatsApp"><i class="ph-bold ph-whatsapp-logo"></i></button>
+              <button class="btn-icon btn-seat" onclick="assentarCliente(${f.id})" title="Assentar Cliente"><i class="ph-bold ph-chair"></i></button>
+              <button class="btn-icon btn-remove" onclick="removeFila(${f.id})" title="Desistiu"><i class="ph-bold ph-x"></i></button>
+            </div>
+          </div>
+        `;
+      });
+    }
+  </script>
+</body>
+</html>

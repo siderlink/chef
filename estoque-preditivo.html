@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Estoque Preditivo IA | Chef Cozinha</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --bg: #0f111a; --card: #1e2130; --text: #e2e8f0; --primary: #fc4b15; --green: #10b981; --red: #ef4444; --yellow: #f59e0b; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 30px; margin: 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+        .card { background: var(--card); border-radius: 12px; padding: 20px; position: relative; }
+        .alert { position: absolute; top: -10px; right: -10px; background: var(--red); color: #fff; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; animation: pulse 2s infinite; }
+        .progress-bg { background: rgba(255,255,255,0.1); height: 10px; border-radius: 5px; margin: 15px 0; overflow: hidden; }
+        .progress-bar { height: 100%; border-radius: 5px; }
+        .title { font-size: 18px; font-weight: 700; margin: 0 0 5px 0; }
+        .info { font-size: 14px; color: #94a3b8; display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .ai-insight { background: rgba(252, 75, 21, 0.1); border-left: 3px solid var(--primary); padding: 10px; border-radius: 4px; font-size: 13px; margin-top: 15px; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1 style="margin:0; color:var(--primary);"><i class="ph-bold ph-brain"></i> Estoque Preditivo (IA)</h1>
+            <p style="margin:5px 0 0 0; color:#94a3b8;">A IA analisou as vendas dos últimos 30 dias para prever o fim do seu estoque.</p>
+        </div>
+        <button style="background:var(--primary); color:#fff; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; cursor:pointer;"><i class="ph-bold ph-shopping-cart"></i> Gerar Lista de Compras</button>
+    </div>
+
+    <div class="grid">
+        <div class="card" style="border: 1px solid var(--red);">
+            <div class="alert">Acaba em 2 dias!</div>
+            <h3 class="title">Tomate Carmem</h3>
+            <div class="info"><span>Estoque Atual: 4.2 kg</span><span>Gasto Médio: 1.8 kg/dia</span></div>
+            <div class="progress-bg"><div class="progress-bar" style="width: 15%; background: var(--red);"></div></div>
+            <div class="ai-insight"><strong>Insight Gemini:</strong> Final de semana chegando. Sugiro comprar 15kg para garantir as pizzas de sexta e sábado.</div>
+        </div>
+
+        <div class="card">
+            <h3 class="title">Carne Moída (Blend Acém)</h3>
+            <div class="info"><span>Estoque Atual: 22 kg</span><span>Gasto Médio: 3.5 kg/dia</span></div>
+            <div class="progress-bg"><div class="progress-bar" style="width: 45%; background: var(--yellow);"></div></div>
+            <div class="ai-insight"><strong>Insight Gemini:</strong> Estoque seguro por aprox. 6 dias. Fique atento a promoções nos frigoríficos locais na quarta-feira.</div>
+        </div>
+
+        <div class="card">
+            <h3 class="title">Cerveja Heineken 600ml</h3>
+            <div class="info"><span>Estoque Atual: 180 un</span><span>Gasto Médio: 12 un/dia</span></div>
+            <div class="progress-bg"><div class="progress-bar" style="width: 80%; background: var(--green);"></div></div>
+            <div class="ai-insight"><strong>Insight Gemini:</strong> Nível excelente. A proporção de saída está estável comparada ao mês anterior.</div>
+        </div>
+    </div>
+</body>
+</html>

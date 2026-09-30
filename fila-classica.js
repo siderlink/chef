@@ -1242,7 +1242,7 @@ window.setSidebarDisplayMode = function(mode) {
 };
 
 document.addEventListener('mousemove', (e) => {
-  const mode = localStorage.getItem('chef_kds_sidebar_mode') || 'oculta';
+  const mode = localStorage.getItem('chef_kds_sidebar_mode') || 'fixa';
   if (mode !== 'hover') return;
 
   const leftSidebar = document.querySelector('.sidebar-sectors');
@@ -1268,7 +1268,7 @@ document.addEventListener('mousemove', (e) => {
 // L├ôGICA COMPLETA DE REDIMENSIONAMENTO DE BARRAS LATERAIS E COLUNAS
 document.addEventListener('DOMContentLoaded', () => {
   carregarPedidos();
-  window.setSidebarDisplayMode(localStorage.getItem('chef_kds_sidebar_mode') || 'oculta');
+  window.setSidebarDisplayMode(localStorage.getItem('chef_kds_sidebar_mode') || 'fixa');
 
   // 1. REDIMENSIONAR BARRA LATERAL ESQUERDA (SETORES)
   const leftSidebar = document.querySelector('.sidebar-sectors');

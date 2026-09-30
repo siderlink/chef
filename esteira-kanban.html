@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Esteira Kanban - Visão Global</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+
+  <style>
+    :root { --bg: #0f172a; --col-bg: #1e293b; --card: #ffffff; --text: #0f172a; --muted: #64748b; 
+      --c-novo: #3b82f6; --c-cozinha: #f59e0b; --c-pronto: #10b981; --c-rota: #8b5cf6; 
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; user-select: none; }
+    body { background-color: var(--bg); color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    .header { background: #020617; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; }
+    .header h1 { font-family: 'Outfit'; font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 12px; }
+    .header h1 i { color: #f43f5e; }
+    
+    /* Kanban Board */
+    .board { flex: 1; display: flex; gap: 20px; padding: 24px; overflow-x: auto; align-items: flex-start; }
+    
+    .column { background: var(--col-bg); border-radius: 16px; width: 320px; min-width: 320px; max-height: 100%; display: flex; flex-direction: column; border: 1px solid #334155; }
+    .col-header { padding: 16px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+    .col-title { font-family: 'Outfit'; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+    .col-count { background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    
+    /* Cores das Colunas */
+    #col-novo .col-title { color: var(--c-novo); }
+    #col-cozinha .col-title { color: var(--c-cozinha); }
+    #col-pronto .col-title { color: var(--c-pronto); }
+    #col-rota .col-title { color: var(--c-rota); }
+
+    .col-body { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+    /* Cards */
+    .k-card { background: var(--card); border-radius: 12px; padding: 16px; color: var(--text); box-shadow: 0 4px 6px rgba(0,0,0,0.2); border-left: 6px solid transparent; cursor: grab; transition: transform 0.2s; position: relative; }
+    .k-card:active { cursor: grabbing; transform: scale(0.98); }
+    
+    .k-card.novo { border-left-color: var(--c-novo); }
+    .k-card.preparo { border-left-color: var(--c-cozinha); }
+    .k-card.pronto { border-left-color: var(--c-pronto); }
+    .k-card.rota { border-left-color: var(--c-rota); }
+
+    .kc-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
+    .kc-id { font-family: 'Outfit'; font-size: 18px; font-weight: 900; }
+    .kc-time { font-size: 11px; font-weight: 600; color: var(--muted); background: #f1f5f9; padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px; }
+    
+    .kc-client { font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 12px; }
+    
+    .kc-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 8px; border-radius: 4px; }
+    .tag-deliv { background: #fee2e2; color: #b91c1c; }
+    .tag-local { background: #e0e7ff; color: #4338ca; }
+    .tag-items { background: #f1f5f9; color: #475569; }
+
+    /* Empty State in Column */
+    .empty-col { text-align: center; padding: 20px; color: #64748b; font-size: 13px; font-weight: 500; border: 2px dashed #334155; border-radius: 12px; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <h1><i class="ph-fill ph-kanban"></i> Pipeline Operacional</h1>
+    <div style="font-size: 13px; color: #94a3b8;"><i class="ph-bold ph-broadcast"></i> Sincronizado ao Vivo</div>
+  </header>
+
+  <div class="board">
+    
+    <!-- Coluna 1 -->
+    <div class="column" id="col-novo">
+      <div class="col-header">
+        <div class="col-title"><i class="ph-bold ph-receipt"></i> 1. Novos / Fila</div>
+        <div class="col-count" id="count-novo">0</div>
+      </div>
+      <div class="col-body" id="body-novo"></div>
+    </div>
+
+    <!-- Coluna 2 -->
+    <div class="column" id="col-cozinha">
+      <div class="col-header">
+        <div class="col-title"><i class="ph-bold ph-fire"></i> 2. Na Cozinha</div>
+        <div class="col-count" id="count-cozinha">0</div>
+      </div>
+      <div class="col-body" id="body-cozinha"></div>
+    </div>
+
+    <!-- Coluna 3 -->
+    <div class="column" id="col-pronto">
+      <div class="col-header">
+        <div class="col-title"><i class="ph-bold ph-package"></i> 3. Expedição (Pronto)</div>
+        <div class="col-count" id="count-pronto">0</div>
+      </div>
+      <div class="col-body" id="body-pronto"></div>
+    </div>
+
+    <!-- Coluna 4 -->
+    <div class="column" id="col-rota">
+      <div class="col-header">
+        <div class="col-title"><i class="ph-bold ph-moped"></i> 4. Em Rota / Servindo</div>
+        <div class="col-count" id="count-rota">0</div>
+      </div>
+      <div class="col-body" id="body-rota"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const token = localStorage.getItem('chef_token') || '';
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    const socket = io({ query: { token, restaurante_id: restId } });
+
+    socket.on('connect', () => socket.emit('get_pedidos'));
+    socket.on('pedido_adicionado', () => socket.emit('get_pedidos'));
+    socket.on('pedido_status_alterado', () => socket.emit('get_pedidos'));
+
+    socket.on('pedidos_atualizados', (pedidos) => {
+      let lNovo = [], lCoz = [], lPron = [], lRota = [];
+
+      (pedidos || []).forEach(p => {
+        let s = p.status || '';
+        if(s === 'Em espera' || s === 'Novo') lNovo.push(p);
+        else if(s === 'Em preparo') lCoz.push(p);
+        else if(s === 'Pronto') lPron.push(p);
+        else if(s === 'Em Rota' || s === 'Saiu para Entrega') lRota.push(p);
+        // Ignora 'Entregue', 'Finalizado', 'Cancelado' para não poluir o board
+      });
+
+      renderCol('novo', lNovo, 'novo');
+      renderCol('cozinha', lCoz, 'preparo');
+      renderCol('pronto', lPron, 'pronto');
+      renderCol('rota', lRota, 'rota');
+    });
+
+    function renderCol(colId, list, colorClass) {
+      document.getElementById('count-' + colId).innerText = list.length;
+      const body = document.getElementById('body-' + colId);
+      
+      if(list.length === 0) {
+        body.innerHTML = `<div class="empty-col">Nenhum pedido aqui.</div>`;
+        return;
+      }
+
+      body.innerHTML = list.map(p => {
+        let isDeliv = (p.sector === 'Delivery' || (p.localName||'').toLowerCase().includes('delivery'));
+        let tagD = isDeliv ? `<span class="tag tag-deliv">Delivery</span>` : `<span class="tag tag-local">Mesa/Balcão</span>`;
+        
+        let tempoEspera = '-';
+        if(p.createdAt) {
+          let mins = Math.floor((new Date() - new Date(p.createdAt)) / 60000);
+          tempoEspera = mins + 'm atrás';
+        }
+
+        let qtdItens = 1;
+        try {
+          if(typeof p.produtos_envolvidos === 'string') qtdItens = JSON.parse(p.produtos_envolvidos).length;
+          else if(Array.isArray(p.produtos_envolvidos)) qtdItens = p.produtos_envolvidos.length;
+        } catch(e) {}
+
+        return `
+          <div class="k-card ${colorClass}" draggable="false" ondblclick="openActions(${p.id}, '${p.status}')">
+            <div class="kc-header">
+              <span class="kc-id">#${p.id}</span>
+              <span class="kc-time"><i class="ph-bold ph-clock"></i> ${tempoEspera}</span>
+            </div>
+            <div class="kc-client">${p.userName || p.localName || 'Cliente'}</div>
+            <div class="kc-tags">
+              ${tagD}
+              <span class="tag tag-items">${qtdItens} Item(s)</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Ações Rápidas via Duplo Clique para o Gerente Forçar Status
+    function openActions(id, currentStatus) {
+      if(confirm(`Deseja avançar o Pedido #${id} manualmente? (Status atual: ${currentStatus})`)) {
+        let next = 'Em espera';
+        if(currentStatus === 'Em espera' || currentStatus === 'Novo') next = 'Em preparo';
+        else if(currentStatus === 'Em preparo') next = 'Pronto';
+        else if(currentStatus === 'Pronto') next = 'Em Rota';
+        else if(currentStatus === 'Em Rota' || currentStatus === 'Saiu para Entrega') next = 'Entregue';
+
+        socket.emit('update_pedido_status', { id: id, status: next });
+      }
+    }
+
+    // Opcional: Auto-refresh do relógio (tempoEspera) a cada minuto
+    setInterval(() => {
+      socket.emit('get_pedidos'); // Força re-render para atualizar os "minutos atrás"
+    }, 60000);
+
+  </script>
+</body>
+</html>

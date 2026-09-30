@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Totem Autoatendimento | Chef Cozinha</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --primary: #fc4b15; --green: #10b981; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 250px; background: var(--card); border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; }
+        .logo { padding: 30px; font-size: 24px; font-weight: 900; color: var(--primary); text-align: center; border-bottom: 1px solid #e2e8f0; }
+        .cat-btn { padding: 25px; font-size: 20px; font-weight: 700; color: #64748b; border-bottom: 1px solid #e2e8f0; cursor: pointer; display: flex; align-items: center; gap: 15px; }
+        .cat-btn.active { color: var(--primary); background: rgba(252, 75, 21, 0.05); border-left: 6px solid var(--primary); }
+        .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+        .products { flex: 1; padding: 30px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; overflow-y: auto; }
+        .product-card { background: var(--card); border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .product-img { width: 150px; height: 150px; border-radius: 75px; object-fit: cover; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .p-title { font-size: 22px; font-weight: 800; margin: 0 0 10px 0; }
+        .p-desc { font-size: 14px; color: #64748b; margin-bottom: 20px; height: 40px; overflow: hidden; }
+        .p-price { font-size: 26px; font-weight: 900; color: var(--green); margin-bottom: 20px; }
+        .btn-add { background: var(--primary); color: #fff; width: 100%; border: none; padding: 15px; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .bottom-bar { background: var(--card); border-top: 1px solid #e2e8f0; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.05); z-index: 10; }
+        .total-info { font-size: 20px; color: #64748b; font-weight: 600; }
+        .total-val { font-size: 42px; font-weight: 900; color: var(--text); }
+        .btn-finish { background: var(--green); color: #fff; font-size: 24px; font-weight: 900; border: none; padding: 20px 50px; border-radius: 16px; display: flex; align-items: center; gap: 15px; cursor: pointer; text-transform: uppercase; box-shadow: 0 10px 25px rgba(16,185,129,0.3); }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo"><i class="ph-fill ph-cooking-pot" style="font-size:48px; display:block; margin:0 auto 10px;"></i> Chef Cozinha</div>
+        <div class="cat-btn active"><i class="ph-bold ph-hamburger"></i> Lanches</div>
+        <div class="cat-btn"><i class="ph-bold ph-pizza"></i> Pizzas</div>
+        <div class="cat-btn"><i class="ph-bold ph-beer-bottle"></i> Bebidas</div>
+        <div class="cat-btn"><i class="ph-bold ph-ice-cream"></i> Sobremesas</div>
+    </div>
+    <div class="main">
+        <div class="products">
+            <div class="product-card">
+                <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=300&q=80" class="product-img">
+                <h3 class="p-title">Chef Burger Duplo</h3>
+                <p class="p-desc">Pão brioche, 2 blends 150g, muito cheddar e bacon.</p>
+                <div class="p-price">R$ 38,00</div>
+                <button class="btn-add">Adicionar</button>
+            </div>
+            <div class="product-card">
+                <img src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=300&q=80" class="product-img">
+                <h3 class="p-title">Smash Tradicional</h3>
+                <p class="p-desc">Blend 90g esmagado na chapa com crosta de queijo.</p>
+                <div class="p-price">R$ 22,00</div>
+                <button class="btn-add">Adicionar</button>
+            </div>
+            <div class="product-card">
+                <img src="https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=300&q=80" class="product-img">
+                <h3 class="p-title">Batata Rústica</h3>
+                <p class="p-desc">Acompanha maionese verde artesanal.</p>
+                <div class="p-price">R$ 18,00</div>
+                <button class="btn-add">Adicionar</button>
+            </div>
+        </div>
+        <div class="bottom-bar">
+            <div>
+                <div class="total-info">Total do Pedido (3 itens):</div>
+                <div class="total-val">R$ 78,00</div>
+            </div>
+            <button class="btn-finish">Finalizar Pedido <i class="ph-bold ph-arrow-right"></i></button>
+        </div>
+    </div>
+</body>
+</html>

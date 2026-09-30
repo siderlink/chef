@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Totem de Autoatendimento</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <style>
+    :root {
+      --primary: #fc4b15;
+      --primary-dark: #e03e0d;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --border: #e2e8f0;
+      --green: #10b981;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; user-select: none; }
+    
+    /* Simula a tela 1080x1920 portrait de um Totem físico real */
+    body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+    
+    #app {
+      width: 100%; max-width: 1080px; height: 100%; max-height: 1920px;
+      background: var(--bg); position: relative; overflow: hidden; display: flex; flex-direction: column;
+    }
+
+    /* Tela de Descanso (Screensaver) */
+    #screensaver {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--primary) url('https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1080&auto=format&fit=crop') center/cover;
+      display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 100px;
+      z-index: 100; cursor: pointer; color: #fff;
+    }
+    #screensaver::before { content: ''; position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%); z-index: -1; }
+    #screensaver h1 { font-size: 80px; font-weight: 900; text-align: center; line-height: 1.1; margin-bottom: 20px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    .pulse-btn {
+      background: #fff; color: var(--primary); font-size: 40px; font-weight: 900; padding: 30px 80px; border-radius: 100px;
+      animation: pulse 2s infinite; text-transform: uppercase; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+    /* Header e Navegação */
+    header { background: var(--card); padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.05); z-index: 10; }
+    .logo { font-size: 40px; font-weight: 900; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+    .btn-back { font-size: 28px; background: #f1f5f9; border: none; padding: 20px 30px; border-radius: 20px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+    
+    /* Grid de Categorias e Produtos */
+    .content { flex: 1; display: flex; overflow: hidden; }
+    
+    .sidebar { width: 280px; background: var(--card); border-right: 2px solid var(--border); overflow-y: auto; padding: 20px; }
+    .cat-btn { width: 100%; text-align: left; padding: 30px 20px; font-size: 26px; font-weight: 800; border-radius: 20px; border: none; background: transparent; cursor: pointer; margin-bottom: 10px; transition: 0.2s; color: var(--text); }
+    .cat-btn.active { background: var(--primary); color: #fff; }
+
+    .main-grid { flex: 1; padding: 30px; overflow-y: auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; align-content: start; }
+    
+    .prod-card { background: var(--card); border-radius: 30px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.06); display: flex; flex-direction: column; cursor: pointer; border: 3px solid transparent; transition: 0.2s; }
+    .prod-card:active { transform: scale(0.96); border-color: var(--primary); }
+    .p-img { width: 100%; height: 280px; background: #cbd5e1; object-fit: cover; }
+    .p-info { padding: 25px; flex: 1; display: flex; flex-direction: column; }
+    .p-name { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 10px; }
+    .p-desc { font-size: 18px; color: #64748b; flex: 1; margin-bottom: 20px; }
+    .p-price { font-size: 32px; font-weight: 900; color: var(--green); }
+
+    /* Carrinho Fixo Inferior */
+    .cart-bar { background: var(--card); border-top: 2px solid var(--border); padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.05); z-index: 10; }
+    .c-totals h3 { font-size: 24px; color: #64748b; margin-bottom: 5px; }
+    .c-totals .val { font-size: 46px; font-weight: 900; color: var(--primary); }
+    .btn-finish { background: var(--primary); color: #fff; border: none; padding: 25px 60px; border-radius: 100px; font-size: 34px; font-weight: 900; cursor: pointer; box-shadow: 0 10px 30px rgba(252, 75, 21, 0.4); display: flex; align-items: center; gap: 15px; }
+    .btn-finish:active { transform: scale(0.95); }
+
+    /* Modal Checkout */
+    #modal-checkout { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(15,23,42,0.95); z-index: 200; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 40px; }
+    .checkout-box { background: var(--card); width: 100%; max-width: 800px; border-radius: 40px; padding: 60px; text-align: center; }
+    .checkout-box h2 { font-size: 48px; font-weight: 900; margin-bottom: 20px; }
+    .checkout-box p { font-size: 24px; color: #64748b; margin-bottom: 40px; }
+    .qr-mock { width: 300px; height: 300px; background: #fff; margin: 0 auto 40px; display: flex; justify-content: center; align-items: center; border-radius: 20px; border: 4px dashed #cbd5e1; font-size: 80px; color: #cbd5e1; }
+    
+    .btn-cancel { background: #f1f5f9; color: #64748b; border: none; padding: 20px 40px; border-radius: 100px; font-size: 26px; font-weight: 800; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  
+  <div id="app">
+    <!-- Descanso de Tela -->
+    <div id="screensaver" onclick="iniciarTotem()">
+      <h1>BATEU A FOME?<br>FAÇA SEU PEDIDO AQUI!</h1>
+      <div class="pulse-btn">TOCAR NA TELA</div>
+    </div>
+
+    <header>
+      <div class="logo"><i class="ph-fill ph-hamburger"></i> CHEFF TOTEM</div>
+      <button class="btn-back" onclick="voltarAoInicio()"><i class="ph-bold ph-arrow-left"></i> Cancelar Pedido</button>
+    </header>
+
+    <div class="content">
+      <div class="sidebar">
+        <button class="cat-btn active">🍔 Lanches</button>
+        <button class="cat-btn">🍟 Porções</button>
+        <button class="cat-btn">🥤 Bebidas</button>
+        <button class="cat-btn">🍦 Sobremesas</button>
+      </div>
+      
+      <div class="main-grid">
+        <div class="prod-card" onclick="addCarrinho(1, 'Cheff Burger Duplo', 38.90)">
+          <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600&auto=format&fit=crop" class="p-img">
+          <div class="p-info">
+            <div class="p-name">Cheff Burger Duplo</div>
+            <div class="p-desc">2 blends 150g, muito cheddar, bacon e cebola caramelizada.</div>
+            <div class="p-price">R$ 38,90</div>
+          </div>
+        </div>
+
+        <div class="prod-card" onclick="addCarrinho(2, 'Chicken Crispy', 32.50)">
+          <img src="https://images.unsplash.com/photo-1615865427387-a25e64843b1c?q=80&w=600&auto=format&fit=crop" class="p-img">
+          <div class="p-info">
+            <div class="p-name">Chicken Crispy</div>
+            <div class="p-desc">Frango empanado super crocante, alface americana e maionese verde.</div>
+            <div class="p-price">R$ 32,50</div>
+          </div>
+        </div>
+
+        <div class="prod-card" onclick="addCarrinho(3, 'Batata Frita G', 18.00)">
+          <div class="p-img" style="background: url('https://images.unsplash.com/photo-1576107232684-1279f3908581?q=80&w=600&auto=format&fit=crop') center/cover;"></div>
+          <div class="p-info">
+            <div class="p-name">Batata Frita Grande</div>
+            <div class="p-desc">Porção generosa de batatas onduladas com sal temperado.</div>
+            <div class="p-price">R$ 18,00</div>
+          </div>
+        </div>
+
+        <div class="prod-card" onclick="addCarrinho(4, 'Refrigerante Lata', 7.00)">
+          <div class="p-img" style="background: url('https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=600&auto=format&fit=crop') center/cover;"></div>
+          <div class="p-info">
+            <div class="p-name">Refrigerante Lata</div>
+            <div class="p-desc">Coca-Cola, Guaraná, Sprite ou Fanta. 350ml.</div>
+            <div class="p-price">R$ 7,00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cart-bar">
+      <div class="c-totals">
+        <h3>TOTAL DO PEDIDO (<span id="c-qtd">0</span> itens)</h3>
+        <div class="val" id="c-total">R$ 0,00</div>
+      </div>
+      <button class="btn-finish" onclick="abrirCheckout()">FINALIZAR <i class="ph-bold ph-arrow-right"></i></button>
+    </div>
+
+    <!-- Modal Pagamento -->
+    <div id="modal-checkout">
+      <div class="checkout-box">
+        <h2>Escaneie o QR Code para Pagar</h2>
+        <p>Aponte a câmera do celular para o código PIX abaixo. O pedido será impresso automaticamente após a aprovação.</p>
+        
+        <div class="qr-mock"><i class="ph-bold ph-qr-code"></i></div>
+        
+        <button class="btn-finish" style="width:100%; justify-content:center; margin-bottom:15px;" onclick="simularPagamentoAprovado()">SIMULAR PAGAMENTO (TESTE)</button>
+        <button class="btn-cancel" onclick="document.getElementById('modal-checkout').style.display='none'">Voltar</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const token = localStorage.getItem('chef_token') || '';
+    const restId = localStorage.getItem('restaurante_id') || '1';
+    const socket = io({ query: { token, restaurante_id: restId } });
+
+    let cart = [];
+    let timeoutScreensaver = null;
+
+    function resetTimer() {
+      clearTimeout(timeoutScreensaver);
+      timeoutScreensaver = setTimeout(voltarAoInicio, 60000); // 60s ocioso volta pro inicio
+    }
+    document.addEventListener('click', resetTimer);
+
+    function iniciarTotem() {
+      document.getElementById('screensaver').style.display = 'none';
+      cart = [];
+      updateCartUI();
+      resetTimer();
+    }
+
+    function voltarAoInicio() {
+      document.getElementById('screensaver').style.display = 'flex';
+      document.getElementById('modal-checkout').style.display = 'none';
+      cart = [];
+    }
+
+    function addCarrinho(id, nome, preco) {
+      let ext = cart.find(x => x.id === id);
+      if(ext) ext.qtd++;
+      else cart.push({ id, nome, preco, qtd: 1 });
+      
+      updateCartUI();
+      
+      // Feedback
+      try {
+        const btn = window.event.currentTarget;
+        btn.style.borderColor = 'var(--primary)';
+        setTimeout(() => btn.style.borderColor = 'transparent', 200);
+        const a = new Audio('/sounds/click.mp3'); a.play();
+      }catch(e){}
+    }
+
+    function updateCartUI() {
+      let qtd = cart.reduce((a, b) => a + b.qtd, 0);
+      let tot = cart.reduce((a, b) => a + (b.preco * b.qtd), 0);
+      
+      document.getElementById('c-qtd').innerText = qtd;
+      document.getElementById('c-total').innerText = 'R$ ' + tot.toFixed(2).replace('.',',');
+      
+      const btn = document.querySelector('.btn-finish');
+      if(qtd === 0) {
+        btn.style.opacity = '0.5';
+        btn.style.pointerEvents = 'none';
+      } else {
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+      }
+    }
+
+    function abrirCheckout() {
+      if(cart.length === 0) return;
+      document.getElementById('modal-checkout').style.display = 'flex';
+    }
+
+    function simularPagamentoAprovado() {
+      let total = cart.reduce((acc, c) => acc + (c.preco * c.qtd), 0);
+      let payloadItems = cart.map(c => ({ id: c.id, name: c.nome, qty: c.qtd, price: c.preco, obs: '' }));
+      let nomeExibicao = cart.map(c => `${c.qtd}x ${c.nome}`).join(', ');
+
+      // Envia para o Back-end
+      socket.emit('novo_pedido', {
+        productName: nomeExibicao,
+        total: total,
+        userName: 'Totem #01',
+        localName: 'Salão (Totem)',
+        sector: 'Cozinha',
+        status: 'Novo',
+        produtos_envolvidos: JSON.stringify(payloadItems)
+      });
+
+      // Feedback Visual
+      const box = document.querySelector('.checkout-box');
+      box.innerHTML = `
+        <i class="ph-fill ph-check-circle" style="font-size:120px; color:var(--green); margin-bottom:20px;"></i>
+        <h2 style="color:var(--green);">Pagamento Aprovado!</h2>
+        <p style="font-size:32px;">Sua senha é: <b>T-${Math.floor(Math.random()*90)+10}</b></p>
+        <p>Acompanhe no painel de senhas.</p>
+      `;
+
+      try {
+        const audio = new Audio('/sounds/bell.mp3');
+        audio.play();
+      } catch(e) {}
+
+      setTimeout(voltarAoInicio, 8000);
+    }
+  </script>
+</body>
+</html>

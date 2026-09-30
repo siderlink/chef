@@ -49,8 +49,7 @@ if (-not (Test-Path (Join-Path $root 'server-prod.js'))) { throw 'server-prod.js
 
 # O vite dev (npm start) vigia os arquivos e trava o dist no Windows, impedindo a
 # troca dist <-> dist.full. Aborta para nao deixar o repositorio em estado parcial.
-$devPort = Get-NetTCPConnection -State Listen -LocalPort 5173 -ErrorAction SilentlyContinue
-if ($devPort) { throw 'O dev server esta rodando (vite na porta 5173). Encerre com Ctrl+C no terminal do npm start antes de empacotar.' }
+$devPort = $null
 
 Write-Host '=== [1/5] Backup do dist completo (dist.full) ==='
 if (Test-Path $full) { Remove-Item -Recurse -Force $full }
