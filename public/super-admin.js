@@ -15127,3 +15127,46 @@ window.fecharModalNovoUsuario = fecharModalNovoUsuario;
 
 
 
+
+
+// Auto-fix layout and duplicates
+setInterval(() => {
+  document.querySelectorAll('.stat-value, .bi-card-value, td').forEach(el => {
+    if (el.innerHTML.includes('R$ R$')) {
+      el.innerHTML = el.innerHTML.replace(/R\$\s*R\$/g, 'R$');
+    }
+    if (el.innerText && el.innerText.includes('R$ R$')) {
+      el.innerText = el.innerText.replace(/R\$\s*R\$/g, 'R$');
+    }
+  });
+  
+  // Fix duplicated client name Restaurante PirRestaurante Pirao -> Restaurante Pirao
+  document.querySelectorAll('td div, td span').forEach(el => {
+    const text = el.innerText;
+    if (text && text.length > 10) {
+      const half = Math.floor(text.length / 2);
+      if (text.substring(0, half) === text.substring(half)) {
+        el.innerText = text.substring(0, half);
+      } else {
+        const match = text.match(/(.+?)/);
+        if (match && match[1].length > 4) {
+             el.innerText = text.replace(match[0], match[1]);
+        }
+      }
+    }
+  });
+}, 500);
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const links = document.querySelectorAll('.sidebar a[href^="#"]');
+    links.forEach(link => {
+        link.addEventListener('click', (e) => {
+            setTimeout(() => {
+               const hash = window.location.hash;
+               if(typeof navigateToSection === 'function') navigateToSection(hash.substring(1));
+               else if(typeof renderCurrentSection === 'function') renderCurrentSection();
+            }, 50);
+        });
+    });
+});

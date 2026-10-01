@@ -2483,6 +2483,30 @@
       });
     }
   </script>
+
+<style>
+/* FIXES FOR OVERLAPPING AND ALIGNMENT */
+.header-actions button, .btn, .btn-primary, .btn-secondary {
+    white-space: nowrap !important;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 100%;
+}
+table th, table td {
+    padding: 12px 15px !important;
+    text-align: left;
+    white-space: nowrap;
+}
+.user-action-btn, button i {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+}
+.sidebar a {
+    transition: all 0.1s ease;
+}
+</style>
+
 </head>
 
 <body>

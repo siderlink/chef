@@ -57,6 +57,23 @@ module.exports = function (app, masterDb, sqlite3, options) {
   app.get('/suporte-remoto', rotaAjuda);
   app.get('/assistencia', rotaAjuda);
 
+  // ── 0. ROTAS DE DOWNLOAD DE INSTALADORES (USADO PELO 1-CLIQUE) ──────
+  app.get('/api/sync/installers/windows.bat', (req, res) => {
+    const p = path.join(__dirname, '..', 'installer', 'Instalador-ChefSync.bat');
+    if (fs.existsSync(p)) res.download(p, 'Instalador-ChefSync.bat');
+    else res.status(404).send('Instalador não encontrado.');
+  });
+  app.get('/api/sync/installers/install.ps1', (req, res) => {
+    const p = path.join(__dirname, '..', 'installer', 'install-sync.ps1');
+    if (fs.existsSync(p)) res.download(p, 'install-sync.ps1');
+    else res.status(404).send('Instalador não encontrado.');
+  });
+  app.get('/api/sync/installers/install.sh', (req, res) => {
+    const p = path.join(__dirname, '..', 'installer', 'install-sync.sh');
+    if (fs.existsSync(p)) res.download(p, 'install-sync.sh');
+    else res.status(404).send('Instalador não encontrado.');
+  });
+
   // ── 1. CRIAR SESSÃO DE SUPORTE REMOTO (SUPORTE / SUPER ADMIN) ───────
   app.post('/api/support/sessions/create', (req, res) => {
     try {

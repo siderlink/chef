@@ -56,12 +56,12 @@ function escHtml(v) {
     const restNome = sessionStorage.getItem('chef_impersonate_rest') || 'Restaurante';
     const b = document.createElement('div');
     b.id = 'banner-ghost-support';
-    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999999;background:linear-gradient(90deg,#ea580c,#c2410c);color:#fff;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.5);font-family:sans-serif;font-size:13px;font-weight:700;letter-spacing:0.3px;';
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999999;background:linear-gradient(90deg,#ea580c,#c2410c);color:#fff;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.5);font-family:sans-serif;font-size: 16px;font-weight:700;letter-spacing:0.3px;';
     b.innerHTML = '<div style="display:flex;align-items:center;gap:10px;">'
-      + '<span style="background:rgba(255,255,255,0.2);padding:3px 8px;border-radius:6px;font-size:11px;text-transform:uppercase;">Modo Suporte Remoto</span>'
+      + '<span style="background:rgba(255,255,255,0.2);padding:3px 8px;border-radius:6px;font-size: 14px;text-transform:uppercase;">Modo Suporte Remoto</span>'
       + '<span>Acessando <strong>' + restNome + '</strong> como Super Admin (<strong>' + admin + '</strong>)</span>'
       + '</div>'
-      + '<button type="button" onclick="window.sairSessaoSuporte()" style="background:#fff;color:#c2410c;border:none;padding:5px 12px;border-radius:6px;font-weight:800;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">'
+      + '<button type="button" onclick="window.sairSessaoSuporte()" style="background:#fff;color:#c2410c;border:none;padding:5px 12px;border-radius:6px;font-weight:800;font-size: 15px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">'
       + '<span>✕ Sair do Acesso e Voltar</span>'
       + '</button>';
     document.body.prepend(b);
@@ -523,7 +523,7 @@ function renderizarEquipePerformance(perf) {
               </div>
               <div style="min-width: 0;">
                 <div style="font-size: 14px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;">${escHtml(c.nome)}</div>
-                <div style="font-size: 11.5px; color: var(--text-sub); display: flex; align-items: center; gap: 6px;">
+                <div style="font-size: 14px; color: var(--text-sub); display: flex; align-items: center; gap: 6px;">
                   <span>${c.atendimentos} atendimentos</span>
                   <span>•</span>
                   <span>Ticket: ${formatCurrency(c.ticketMedio)}</span>
@@ -533,15 +533,15 @@ function renderizarEquipePerformance(perf) {
 
             <div style="display: flex; align-items: center; gap: 18px; text-align: right; flex-wrap: wrap;">
               <div>
-                <div style="font-size: 11px; font-weight: 700; color: var(--text-sub); text-transform: uppercase;">Total Vendido</div>
+                <div style="font-size: 14px; font-weight: 700; color: var(--text-sub); text-transform: uppercase;">Total Vendido</div>
                 <div style="font-size: 14.5px; font-weight: 800; color: var(--text);">${formatCurrency(c.totalVendido)}</div>
               </div>
               <div>
-                <div style="font-size: 11px; font-weight: 700; color: #10b981; text-transform: uppercase;">Lucro Gerado</div>
+                <div style="font-size: 14px; font-weight: 700; color: #10b981; text-transform: uppercase;">Lucro Gerado</div>
                 <div style="font-size: 14.5px; font-weight: 900; color: #10b981;">${formatCurrency(c.lucroGerado)}</div>
               </div>
               <div>
-                <div style="font-size: 11px; font-weight: 700; color: #f59e0b; text-transform: uppercase;">Comissão Est.</div>
+                <div style="font-size: 14px; font-weight: 700; color: #f59e0b; text-transform: uppercase;">Comissão Est.</div>
                 <div style="font-size: 14.5px; font-weight: 800; color: #f59e0b;">${formatCurrency(c.comissao)}</div>
               </div>
             </div>
@@ -549,7 +549,7 @@ function renderizarEquipePerformance(perf) {
         `;
       }).join('');
     } else {
-      containerRanking.innerHTML = '<div style="text-align:center; color:var(--text-sub); padding:24px; font-size:13px;">Nenhum atendimento finalizado pela equipe no período selecionado.</div>';
+      containerRanking.innerHTML = '<div style="text-align:center; color:var(--text-sub); padding:24px; font-size: 16px;">Nenhum atendimento finalizado pela equipe no período selecionado.</div>';
     }
   }
 }
@@ -750,19 +750,19 @@ function renderizarDispositivosTotem(lista, statusTotem) {
       <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:var(--bg);">
         <i class="ph-bold ${icone}" style="font-size:20px; color:${ehTotem ? '#0ea5e9' : 'var(--text-sub)'};"></i>
         <div style="flex:1; min-width:0;">
-          <div style="font-weight:800; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${apelido ? escHtml(apelido) + tipoBadge + ` <span style="font-weight:400; color:var(--text-sub); font-size:10.5px;">(${escHtml(d.model || d.browser || '')})</span>` : escHtml(d.model || d.browser || 'Dispositivo')}${ehTotem ? ' <span style="font-size:9px; background:#e0f2fe; color:#0369a1; padding:1px 7px; border-radius:10px; font-weight:800;">TOTEM</span>' : ''}</div>
-          <div style="font-size:10.5px; color:var(--text-sub);">${escHtml(d.user || 'Visitante')} • ${escHtml(d.os || '')} • ${escHtml(d.tempoConectadoStr || '')}${d.serial ? ` • <span title="Serial do terminal">${escHtml(d.serial)}</span>` : ''}</div>
+          <div style="font-weight:800; font-size: 15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${apelido ? escHtml(apelido) + tipoBadge + ` <span style="font-weight:400; color:var(--text-sub); font-size: 16px;">(${escHtml(d.model || d.browser || '')})</span>` : escHtml(d.model || d.browser || 'Dispositivo')}${ehTotem ? ' <span style="font-size:9px; background:#e0f2fe; color:#0369a1; padding:1px 7px; border-radius:10px; font-weight:800;">TOTEM</span>' : ''}</div>
+          <div style="font-size: 16px; color:var(--text-sub);">${escHtml(d.user || 'Visitante')} • ${escHtml(d.os || '')} • ${escHtml(d.tempoConectadoStr || '')}${d.serial ? ` • <span title="Serial do terminal">${escHtml(d.serial)}</span>` : ''}</div>
         </div>
         ${ehTotem
-          ? `<button onclick="donoRotacionarTotem('${d.id}')" title="Alternar retrato/paisagem remotamente" style="padding:8px 10px; border:none; border-radius:10px; background:#6366f1; color:#fff; font-weight:800; font-size:11px; cursor:pointer; display:flex; align-items:center; gap:5px;"><i class="ph-bold ph-frame-corners"></i> Girar</button>
-             <button onclick="donoLiberarTotem('${d.id}')" style="padding:8px 12px; border:none; border-radius:10px; background:#f59e0b; color:#fff; font-weight:800; font-size:11px; cursor:pointer; display:flex; align-items:center; gap:5px;"><i class="ph-bold ph-lock-open"></i> Liberar</button>`
-          : `<button onclick="donoAtivarTotem('${d.id}')" ${featureAtiva ? '' : 'disabled style="opacity:0.5;"'} style="padding:8px 12px; border:none; border-radius:10px; background:#0ea5e9; color:#fff; font-weight:800; font-size:11px; cursor:pointer; display:flex; align-items:center; gap:5px;"><i class="ph-bold ph-monitor-play"></i> Virar Totem</button>`}
+          ? `<button onclick="donoRotacionarTotem('${d.id}')" title="Alternar retrato/paisagem remotamente" style="padding:8px 10px; border:none; border-radius:10px; background:#6366f1; color:#fff; font-weight:800; font-size: 14px; cursor:pointer; display:flex; align-items:center; gap:5px;"><i class="ph-bold ph-frame-corners"></i> Girar</button>
+             <button onclick="donoLiberarTotem('${d.id}')" style="padding:8px 12px; border:none; border-radius:10px; background:#f59e0b; color:#fff; font-weight:800; font-size: 14px; cursor:pointer; display:flex; align-items:center; gap:5px;"><i class="ph-bold ph-lock-open"></i> Liberar</button>`
+          : `<button onclick="donoAtivarTotem('${d.id}')" ${featureAtiva ? '' : 'disabled style="opacity:0.5;"'} style="padding:8px 12px; border:none; border-radius:10px; background:#0ea5e9; color:#fff; font-weight:800; font-size: 14px; cursor:pointer; display:flex; align-items:center; gap:5px;"><i class="ph-bold ph-monitor-play"></i> Virar Totem</button>`}
       </div>`;
   }).join('');
 
   if (!featureAtiva) {
     container.insertAdjacentHTML('beforeend',
-      `<div id="aviso-upsell-totem" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35); color:#ef4444; padding:10px 12px; border-radius:12px; font-size:11.5px; line-height:1.5; margin-top:4px;">
+      `<div id="aviso-upsell-totem" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35); color:#ef4444; padding:10px 12px; border-radius:12px; font-size: 14px; line-height:1.5; margin-top:4px;">
         <strong>Upsell não contratado:</strong> o módulo Totem de Autoatendimento não está ativo neste plano.
         Fale com o suporte Chef Cozinha para contratar.
       </div>`);
@@ -824,14 +824,14 @@ window.renderizarListaFuncionariosRemoto = function(funcs) {
                 </div>
                 <div>
                   <strong style="font-size: 13.5px; color: var(--text); display: block;">${nome}</strong>
-                  <span style="font-size: 11.5px; color: var(--text-sub);">Usuário: <code>@${usuario}</code> • Pretendido: <b>${cargoPretendido}</b> ${tel ? `• Tel: ${tel}` : ''}</span>
+                  <span style="font-size: 14px; color: var(--text-sub);">Usuário: <code>@${usuario}</code> • Pretendido: <b>${cargoPretendido}</b> ${tel ? `• Tel: ${tel}` : ''}</span>
                 </div>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <button type="button" class="btn-primary" onclick="abrirModalAprovarColaboradorDono(${f.id})" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; gap: 4px; background: #10b981; border-color: #10b981;">
+                <button type="button" class="btn-primary" onclick="abrirModalAprovarColaboradorDono(${f.id})" style="padding: 6px 14px; font-size: 15px; border-radius: 8px; gap: 4px; background: #10b981; border-color: #10b981;">
                   <i class="ph-bold ph-check"></i> Aprovar
                 </button>
-                <button type="button" class="btn-cancel" onclick="recusarColaboradorDono(${f.id})" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; gap: 4px; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+                <button type="button" class="btn-cancel" onclick="recusarColaboradorDono(${f.id})" style="padding: 6px 12px; font-size: 15px; border-radius: 8px; gap: 4px; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
                   <i class="ph-bold ph-x"></i> Recusar
                 </button>
               </div>
@@ -1860,9 +1860,9 @@ window.carregarCuponsDono = async function() {
         if (new Date() > valDate) expirado = true;
       }
 
-      let statusBadge = `<span style="background:rgba(16,185,129,0.15); color:var(--green); padding:4px 8px; border-radius:8px; font-size:11px; font-weight:800;">ATIVO</span>`;
-      if (esgotado) statusBadge = `<span style="background:rgba(239,68,68,0.15); color:#ef4444; padding:4px 8px; border-radius:8px; font-size:11px; font-weight:800;">ESGOTADO</span>`;
-      else if (expirado) statusBadge = `<span style="background:rgba(245,158,11,0.15); color:#f59e0b; padding:4px 8px; border-radius:8px; font-size:11px; font-weight:800;">EXPIRADO</span>`;
+      let statusBadge = `<span style="background:rgba(16,185,129,0.15); color:var(--green); padding:4px 8px; border-radius:8px; font-size: 14px; font-weight:800;">ATIVO</span>`;
+      if (esgotado) statusBadge = `<span style="background:rgba(239,68,68,0.15); color:#ef4444; padding:4px 8px; border-radius:8px; font-size: 14px; font-weight:800;">ESGOTADO</span>`;
+      else if (expirado) statusBadge = `<span style="background:rgba(245,158,11,0.15); color:#f59e0b; padding:4px 8px; border-radius:8px; font-size: 14px; font-weight:800;">EXPIRADO</span>`;
 
       const valorTxt = (c.valor_tipo === 'desconto_fixo')
         ? `R$ ${parseFloat(c.valor || 0).toFixed(2).replace('.', ',')} OFF`
@@ -1889,12 +1889,12 @@ window.carregarCuponsDono = async function() {
               </div>
 
               <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                <span style="background:rgba(252,75,21,0.12); color:var(--primary); font-weight:900; font-size:12.5px; padding:2px 8px; border-radius:6px; letter-spacing:0.5px;">${escHtml(c.codigo)}</span>
-                <span style="font-weight:800; font-size:12px; color:var(--green);">${valorTxt}</span>
+                <span style="background:rgba(252,75,21,0.12); color:var(--primary); font-weight:900; font-size: 15px; padding:2px 8px; border-radius:6px; letter-spacing:0.5px;">${escHtml(c.codigo)}</span>
+                <span style="font-weight:800; font-size: 15px; color:var(--green);">${valorTxt}</span>
               </div>
 
               <!-- Barra de Progresso de Usos -->
-              <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-sub); margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; font-size: 14px; color:var(--text-sub); margin-bottom:4px;">
                 <span>${limiteTxt}</span>
                 ${c.validade ? `<span>Val: ${c.validade.split('-').reverse().join('/')}</span>` : `<span>Sem validade</span>`}
               </div>
@@ -1908,11 +1908,11 @@ window.carregarCuponsDono = async function() {
           <div style="display:grid; grid-template-columns: 2fr 2fr 1fr; gap:8px; border-top:1px solid var(--border); padding-top:10px; margin-top:2px;">
             <button class="colab-action-btn" onclick='window.abrirModalExportarQr(${JSON.stringify(c).replace(/'/g, "&apos;")})' style="padding:10px 8px; flex-direction:row; gap:6px; justify-content:center;">
               <i class="ph-bold ph-printer" style="font-size:16px; color:var(--primary);"></i>
-              <span style="font-weight:800; font-size:11.5px;">Plaquinha / QR</span>
+              <span style="font-weight:800; font-size: 14px;">Plaquinha / QR</span>
             </button>
             <button class="colab-action-btn" onclick="window.abrirModalDesempenhoCupom('${escHtml(c.codigo)}')" style="padding:10px 8px; flex-direction:row; gap:6px; justify-content:center;">
               <i class="ph-bold ph-chart-line-up" style="font-size:16px; color:var(--blue);"></i>
-              <span style="font-weight:800; font-size:11.5px;">Desempenho</span>
+              <span style="font-weight:800; font-size: 14px;">Desempenho</span>
             </button>
             <button class="colab-action-btn" onclick="window.excluirCupomDono('${escHtml(c.codigo)}')" style="padding:10px 8px; flex-direction:row; gap:6px; justify-content:center; color:#ef4444;" title="Excluir cupom">
               <i class="ph-bold ph-trash" style="font-size:16px; color:#ef4444;"></i>
@@ -2046,12 +2046,12 @@ window.imprimirFlyerMesa = function() {
         .sub { font-size: 14px; color: #475569; margin-bottom: 20px; }
         .qr-box { padding: 16px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 16px; display: inline-block; margin-bottom: 20px; }
         .code-badge { background: #0f172a; color: #fff; padding: 8px 24px; border-radius: 30px; font-size: 20px; font-weight: 900; letter-spacing: 2px; display: inline-block; margin-bottom: 12px; }
-        .rules { font-size: 11px; color: #94a3b8; font-weight: 600; }
+        .rules { font-size: 14px; color: #94a3b8; font-weight: 600; }
       </style>
     </head>
     <body>
       <div class="flyer-box">
-        <div style="font-size:12px; font-weight:900; letter-spacing:2px; color:#fc4b15; margin-bottom:6px;">${(localStorage.getItem('restaurante_nome') || 'CHEF RESTAURANTE').toUpperCase()}</div>
+        <div style="font-size: 15px; font-weight:900; letter-spacing:2px; color:#fc4b15; margin-bottom:6px;">${(localStorage.getItem('restaurante_nome') || 'CHEF RESTAURANTE').toUpperCase()}</div>
         <h1>${(_cupomFlyerAtual ? _cupomFlyerAtual.titulo || _cupomFlyerAtual.codigo : 'PROMOÇÃO').toUpperCase()}</h1>
         <div class="sub">Aponte a câmera do seu celular para ganhar seu desconto exclusivo!</div>
         <div class="qr-box">
@@ -2147,14 +2147,14 @@ window.abrirModalDesempenhoCupom = async function(codigo) {
       listaHistorico.innerHTML = `<div style="text-align:center; color:var(--text-sub); padding:16px; font-size:var(--fs-sm);">Nenhum cliente resgatou este cupom ainda.</div>`;
     } else {
       listaHistorico.innerHTML = usos.map(u => `
-        <div style="background:var(--bg); padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+        <div style="background:var(--bg); padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; font-size: 15px;">
           <div>
             <strong style="color:var(--text); display:block;">${escHtml(u.cliente_nome || 'Cliente na Mesa')} (${escHtml(u.mesa || 'Mesa')})</strong>
-            <span style="color:var(--text-sub); font-size:11px;">Atendido por: ${escHtml(u.garcom || 'Garçom')}</span>
+            <span style="color:var(--text-sub); font-size: 14px;">Atendido por: ${escHtml(u.garcom || 'Garçom')}</span>
           </div>
           <div style="text-align:right;">
             <span style="color:var(--green); font-weight:800; display:block;">Resgatado</span>
-            <span style="color:var(--text-sub); font-size:10px;">${chefFormatDate(u.data_uso)}</span>
+            <span style="color:var(--text-sub); font-size: 16px;">${chefFormatDate(u.data_uso)}</span>
           </div>
         </div>
       `).join('');
@@ -2354,11 +2354,11 @@ window.abrirModalDetalhesFaturamento = function() {
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
         <div style="padding:14px; background:var(--card2); border-radius:16px; border:1px solid var(--border);">
-          <span style="font-size:12px; color:var(--text-sub); display:block; margin-bottom:4px;">Total Vendas</span>
+          <span style="font-size: 15px; color:var(--text-sub); display:block; margin-bottom:4px;">Total Vendas</span>
           <strong style="font-size:20px; color:var(--text); font-weight:900;">${faturamentoTxt}</strong>
         </div>
         <div style="padding:14px; background:var(--card2); border-radius:16px; border:1px solid var(--border);">
-          <span style="font-size:12px; color:var(--text-sub); display:block; margin-bottom:4px;">Ticket Médio</span>
+          <span style="font-size: 15px; color:var(--text-sub); display:block; margin-bottom:4px;">Ticket Médio</span>
           <strong style="font-size:20px; color:var(--text); font-weight:900;">${ticketTxt}</strong>
         </div>
       </div>
@@ -2734,7 +2734,7 @@ window.renderizarListaProdutosCupom = function(filtro = '') {
   const itens = _produtosDisponiveis.filter(p => !f || p.name.toLowerCase().includes(f));
 
   if (!itens.length) {
-    lista.innerHTML = '<span style="font-size:12px; color:var(--text-sub); text-align:center; padding:8px;">Nenhum produto encontrado.</span>';
+    lista.innerHTML = '<span style="font-size: 15px; color:var(--text-sub); text-align:center; padding:8px;">Nenhum produto encontrado.</span>';
     return;
   }
 
@@ -2744,9 +2744,9 @@ window.renderizarListaProdutosCupom = function(filtro = '') {
       <label style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:var(--card); border:1px solid var(--border); border-radius:8px; cursor:pointer;">
         <div style="display:flex; align-items:center; gap:8px;">
           <input type="checkbox" ${checked ? 'checked' : ''} onchange="window.toggleProdutoCupomItem(${p.id}, this.checked)">
-          <span style="font-size:13px; font-weight:700; color:var(--text);">${p.name}</span>
+          <span style="font-size: 16px; font-weight:700; color:var(--text);">${p.name}</span>
         </div>
-        <span style="font-size:12px; color:var(--primary); font-weight:800;">R$ ${parseFloat(p.price || 0).toFixed(2).replace('.', ',')}</span>
+        <span style="font-size: 15px; color:var(--primary); font-weight:800;">R$ ${parseFloat(p.price || 0).toFixed(2).replace('.', ',')}</span>
       </label>
     `;
   }).join('');
@@ -2832,7 +2832,7 @@ window.abrirModalContratarMarketing = function() {
           <strong style="color:var(--text); font-size:15px;">Plano Ilimitado Push + WhatsApp</strong>
           <span style="color:var(--green); font-weight:900; font-size:18px;">R$ 49,90/mês</span>
         </div>
-        <ul style="font-size:12.5px; color:var(--text-sub); padding-left:18px; line-height:1.6; margin:0;">
+        <ul style="font-size: 15px; color:var(--text-sub); padding-left:18px; line-height:1.6; margin:0;">
           <li>Disparos ilimitados de Notificações Web Push (PWA)</li>
           <li>Geração e envio automático de Cupons QR com 1 clique</li>
           <li>Segmentação de clientes VIP e inativos</li>
@@ -2870,12 +2870,12 @@ window.abrirModalDisparoMassa = function() {
 
       <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
         <div>
-          <label style="font-size:12px; font-weight:700; color:var(--text-sub); display:block; margin-bottom:4px;">Mensagem Promocional</label>
+          <label style="font-size: 15px; font-weight:700; color:var(--text-sub); display:block; margin-bottom:4px;">Mensagem Promocional</label>
           <textarea id="marketing-msg-input" rows="3" class="form-input" placeholder="Ex: Olá! Hoje temos promoção especial no almoço com 15% de desconto para você!" style="width:100%; box-sizing:border-box;"></textarea>
         </div>
 
         <div>
-          <label style="font-size:12px; font-weight:700; color:var(--text-sub); display:block; margin-bottom:4px;">Anexar Cupom QR (Opcional)</label>
+          <label style="font-size: 15px; font-weight:700; color:var(--text-sub); display:block; margin-bottom:4px;">Anexar Cupom QR (Opcional)</label>
           <input type="text" id="marketing-cupom-input" class="form-input" placeholder="Ex: PROMO15" style="width:100%; text-transform:uppercase; font-weight:800; box-sizing:border-box;">
         </div>
       </div>
@@ -3219,10 +3219,10 @@ window.abrirModalReordenarSeccoes = function() {
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size: 15px;">
           <div>
             <label style="color:var(--text-sub); font-weight:700; display:block; margin-bottom:4px;">Tamanho / Largura</label>
-            <select onchange="window.alterarParametroSecao('${def.id}', 'largura', this.value)" class="form-input" style="padding:8px 10px; font-size:12px;">
+            <select onchange="window.alterarParametroSecao('${def.id}', 'largura', this.value)" class="form-input" style="padding:8px 10px; font-size: 15px;">
               <option value="small" ${item.largura === 'small' ? 'selected' : ''}>Pequeno (1 col)</option>
               <option value="medium" ${item.largura === 'medium' ? 'selected' : ''}>Médio (2 cols)</option>
               <option value="large" ${item.largura === 'large' ? 'selected' : ''}>Grande (Linha Toda)</option>
@@ -3230,7 +3230,7 @@ window.abrirModalReordenarSeccoes = function() {
           </div>
           <div>
             <label style="color:var(--text-sub); font-weight:700; display:block; margin-bottom:4px;">Visibilidade</label>
-            <select onchange="window.alterarParametroSecao('${def.id}', 'visivel', this.value === 'true')" class="form-input" style="padding:8px 10px; font-size:12px;">
+            <select onchange="window.alterarParametroSecao('${def.id}', 'visivel', this.value === 'true')" class="form-input" style="padding:8px 10px; font-size: 15px;">
               <option value="true" ${item.visivel !== false ? 'selected' : ''}>👁️ Exibir</option>
               <option value="false" ${item.visivel === false ? 'selected' : ''}>🙈 Ocultar</option>
             </select>
@@ -3254,42 +3254,42 @@ window.abrirModalReordenarSeccoes = function() {
 
       <!-- Presets de Perfil por Faixa Etária -->
       <div style="background:var(--card2); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px;">
-        <div style="font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
+        <div style="font-size: 15px; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">
           ⚡ Perfis Rápidos por Faixa Etária
         </div>
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;">
-          <button type="button" onclick="window.aplicarPerfilDono('senior')" class="btn-primary" style="padding:12px 8px; font-size:12px; flex-direction:column; gap:4px; text-align:center; background:linear-gradient(135deg, #10b981, #059669);">
+          <button type="button" onclick="window.aplicarPerfilDono('senior')" class="btn-primary" style="padding:12px 8px; font-size: 15px; flex-direction:column; gap:4px; text-align:center; background:linear-gradient(135deg, #10b981, #059669);">
             <span style="font-size:18px;">👓</span>
             <span>Sênior (60+)</span>
-            <small style="font-size:10px; opacity:0.8; font-weight:600;">Fontes & Botões Gigantes</small>
+            <small style="font-size: 16px; opacity:0.8; font-weight:600;">Fontes & Botões Gigantes</small>
           </button>
 
-          <button type="button" onclick="window.aplicarPerfilDono('jovem')" class="btn-primary" style="padding:12px 8px; font-size:12px; flex-direction:column; gap:4px; text-align:center; background:linear-gradient(135deg, #fc4b15, #ea580c);">
+          <button type="button" onclick="window.aplicarPerfilDono('jovem')" class="btn-primary" style="padding:12px 8px; font-size: 15px; flex-direction:column; gap:4px; text-align:center; background:linear-gradient(135deg, #fc4b15, #ea580c);">
             <span style="font-size:18px;">⚡</span>
             <span>Jovem / Executivo</span>
-            <small style="font-size:10px; opacity:0.8; font-weight:600;">Bento Grid Completo</small>
+            <small style="font-size: 16px; opacity:0.8; font-weight:600;">Bento Grid Completo</small>
           </button>
 
-          <button type="button" onclick="window.aplicarPerfilDono('mobile_one_hand')" class="btn-primary" style="padding:12px 8px; font-size:12px; flex-direction:column; gap:4px; text-align:center; background:linear-gradient(135deg, #3b82f6, #2563eb);">
+          <button type="button" onclick="window.aplicarPerfilDono('mobile_one_hand')" class="btn-primary" style="padding:12px 8px; font-size: 15px; flex-direction:column; gap:4px; text-align:center; background:linear-gradient(135deg, #3b82f6, #2563eb);">
             <span style="font-size:18px;">📱</span>
             <span>Mobile Mão Única</span>
-            <small style="font-size:10px; opacity:0.8; font-weight:600;">Direto no Essencial</small>
+            <small style="font-size: 16px; opacity:0.8; font-weight:600;">Direto no Essencial</small>
           </button>
         </div>
       </div>
 
       <!-- Ajuste Rápido de Fonte (Acessibilidade) -->
       <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card2); border:1px solid var(--border); border-radius:14px; padding:12px 16px; margin-bottom:16px;">
-        <span style="font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;">
+        <span style="font-size: 16px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;">
           <i class="ph-bold ph-text-aa" style="color:var(--yellow);"></i> Tamanho do Texto & Ícones:
         </span>
         <div style="display:flex; gap:6px;">
-          <button type="button" onclick="window.alterarEscalaFonteDono(1.0)" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:${fontScale === 1.0 ? 'var(--primary)' : 'var(--card)'}; color:white; font-size:12px; font-weight:800; cursor:pointer;">Padrão (100%)</button>
-          <button type="button" onclick="window.alterarEscalaFonteDono(1.25)" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:${fontScale >= 1.2 ? 'var(--green)' : 'var(--card)'}; color:white; font-size:12px; font-weight:800; cursor:pointer;">👓 Gigante (125% - 60+)</button>
+          <button type="button" onclick="window.alterarEscalaFonteDono(1.0)" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:${fontScale === 1.0 ? 'var(--primary)' : 'var(--card)'}; color:white; font-size: 15px; font-weight:800; cursor:pointer;">Padrão (100%)</button>
+          <button type="button" onclick="window.alterarEscalaFonteDono(1.25)" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:${fontScale >= 1.2 ? 'var(--green)' : 'var(--card)'}; color:white; font-size: 15px; font-weight:800; cursor:pointer;">👓 Gigante (125% - 60+)</button>
         </div>
       </div>
 
-      <div style="font-size:12px; font-weight:800; color:var(--text-sub); text-transform:uppercase; margin-bottom:10px; letter-spacing:0.5px;">
+      <div style="font-size: 15px; font-weight:800; color:var(--text-sub); text-transform:uppercase; margin-bottom:10px; letter-spacing:0.5px;">
         Ajuste Card a Card (Ordem & Dimensão)
       </div>
 
@@ -3385,7 +3385,7 @@ window.carregarModulosDono = async function(forcar = false) {
     grid.innerHTML = `
       <div style="text-align:center; color:var(--text-sub); padding:30px; grid-column:1/-1;">
         <i class="ph-bold ph-spinner-gap spin" style="font-size: 26px; color: var(--primary);"></i>
-        <div style="margin-top: 8px; font-size: 13px;">Carregando módulos disponíveis...</div>
+        <div style="margin-top: 8px; font-size: 16px;">Carregando módulos disponíveis...</div>
       </div>
     `;
   }
@@ -3444,7 +3444,7 @@ window.renderizarGridModulosDono = function() {
       <div style="text-align:center; color:var(--text-sub); padding:36px; grid-column:1/-1;">
         <i class="ph-bold ph-magnifying-glass" style="font-size: 32px; opacity: 0.5;"></i>
         <div style="font-weight: 800; font-size: 14px; margin-top: 8px; color: var(--text);">Nenhum módulo encontrado</div>
-        <div style="font-size: 12px; margin-top: 4px;">Tente remover filtros ou buscar por outros termos.</div>
+        <div style="font-size: 15px; margin-top: 4px;">Tente remover filtros ou buscar por outros termos.</div>
       </div>
     `;
     return;
@@ -3464,12 +3464,12 @@ window.renderizarGridModulosDono = function() {
 
     if (isLiberado) {
       badgeStatus = isAtivo
-        ? `<span style="font-size: 10.5px; font-weight: 900; background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;"><i class="ph-fill ph-check-circle"></i> ATIVO</span>`
-        : `<span style="font-size: 10.5px; font-weight: 800; background: var(--card); color: var(--text-sub); border: 1px solid var(--border); padding: 3px 8px; border-radius: 12px;">DESATIVADO</span>`;
+        ? `<span style="font-size: 16px; font-weight: 900; background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;"><i class="ph-fill ph-check-circle"></i> ATIVO</span>`
+        : `<span style="font-size: 16px; font-weight: 800; background: var(--card); color: var(--text-sub); border: 1px solid var(--border); padding: 3px 8px; border-radius: 12px;">DESATIVADO</span>`;
 
       acaoBotao = `
         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px;">
-          <span style="font-size: 11.5px; font-weight: 700; color: ${isAtivo ? '#10b981' : 'var(--text-sub)'};">
+          <span style="font-size: 14px; font-weight: 700; color: ${isAtivo ? '#10b981' : 'var(--text-sub)'};">
             ${isAtivo ? 'Módulo operando' : 'Módulo pausado'}
           </span>
           <label style="position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer;">
@@ -3480,34 +3480,34 @@ window.renderizarGridModulosDono = function() {
         </div>
       `;
     } else if (statusImpl === 'em_implementacao') {
-      badgeStatus = `<span style="font-size: 10.5px; font-weight: 900; background: #ede9fe; color: #7c3aed; padding: 3px 8px; border-radius: 12px;"><i class="ph-bold ph-gear spin"></i> EM IMPLANTAÇÃO</span>`;
+      badgeStatus = `<span style="font-size: 16px; font-weight: 900; background: #ede9fe; color: #7c3aed; padding: 3px 8px; border-radius: 12px;"><i class="ph-bold ph-gear spin"></i> EM IMPLANTAÇÃO</span>`;
       acaoBotao = `
         <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px; width: 100%;">
-          <div style="font-size: 11.5px; color: #7c3aed; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <div style="font-size: 14px; color: #7c3aed; font-weight: 700; display: flex; align-items: center; gap: 6px;">
             <i class="ph-bold ph-clock"></i> Nossa equipe já está configurando seu módulo.
           </div>
         </div>
       `;
     } else if (statusImpl === 'solicitada') {
-      badgeStatus = `<span style="font-size: 10.5px; font-weight: 900; background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 12px;"><i class="ph-bold ph-hourglass"></i> SOLICITADO</span>`;
+      badgeStatus = `<span style="font-size: 16px; font-weight: 900; background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 12px;"><i class="ph-bold ph-hourglass"></i> SOLICITADO</span>`;
       acaoBotao = `
         <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px; width: 100%; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 11.5px; color: #b45309; font-weight: 700;">Aguardando liberação</span>
-          <button type="button" onclick="abrirModalSolicitarModulo('${m.chave}')" style="background: none; border: none; color: var(--primary); font-size: 11px; font-weight: 800; cursor: pointer;">
+          <span style="font-size: 14px; color: #b45309; font-weight: 700;">Aguardando liberação</span>
+          <button type="button" onclick="abrirModalSolicitarModulo('${m.chave}')" style="background: none; border: none; color: var(--primary); font-size: 14px; font-weight: 800; cursor: pointer;">
             Atualizar mensagem
           </button>
         </div>
       `;
     } else {
       // Add-on contratável
-      badgeStatus = `<span style="font-size: 10.5px; font-weight: 900; background: rgba(252, 75, 21, 0.12); color: var(--primary); padding: 3px 8px; border-radius: 12px;">ADD-ON OPCIONAL</span>`;
+      badgeStatus = `<span style="font-size: 16px; font-weight: 900; background: rgba(252, 75, 21, 0.12); color: var(--primary); padding: 3px 8px; border-radius: 12px;">ADD-ON OPCIONAL</span>`;
       acaoBotao = `
         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px; gap: 8px; flex-wrap: wrap;">
           <div>
-            <div style="font-size: 10px; font-weight: 800; color: var(--text-sub); text-transform: uppercase;">Investimento</div>
+            <div style="font-size: 16px; font-weight: 800; color: var(--text-sub); text-transform: uppercase;">Investimento</div>
             <div style="font-size: 13.5px; font-weight: 900; color: #10b981;">${preco}</div>
           </div>
-          <button type="button" onclick="abrirModalSolicitarModulo('${m.chave}')" style="padding: 8px 14px; border-radius: 10px; background: linear-gradient(135deg, #fc4b15, #ff8c00); color: #fff; border: none; font-weight: 800; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(252, 75, 21, 0.25);">
+          <button type="button" onclick="abrirModalSolicitarModulo('${m.chave}')" style="padding: 8px 14px; border-radius: 10px; background: linear-gradient(135deg, #fc4b15, #ff8c00); color: #fff; border: none; font-weight: 800; font-size: 15px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(252, 75, 21, 0.25);">
             <i class="ph-bold ph-rocket-launch"></i> Quero Ativar
           </button>
         </div>
@@ -3515,7 +3515,7 @@ window.renderizarGridModulosDono = function() {
     }
 
     const roiHtml = roi
-      ? `<div style="font-size: 11px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.08); padding: 4px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; margin-top: 6px;">
+      ? `<div style="font-size: 14px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.08); padding: 4px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; margin-top: 6px;">
           <i class="ph-bold ph-lightning"></i> ${escHtml(roi)}
         </div>`
       : '';
@@ -3539,11 +3539,11 @@ window.renderizarGridModulosDono = function() {
             ${badgeDestaque}
           </div>
 
-          <div style="font-size: 11px; font-weight: 700; color: var(--text-sub); margin: 3px 0 6px 0;">
+          <div style="font-size: 14px; font-weight: 700; color: var(--text-sub); margin: 3px 0 6px 0;">
             ${(m.categorias || []).join(' • ')}
           </div>
 
-          <p style="margin: 0; font-size: 12px; color: var(--text-sub); line-height: 1.4; min-height: 34px;">
+          <p style="margin: 0; font-size: 15px; color: var(--text-sub); line-height: 1.4; min-height: 34px;">
             ${escHtml(m.desc)}
           </p>
 
@@ -3949,15 +3949,15 @@ window.renderTabelaBCG = function(itens) {
     let acaoHtml = '';
     if (item.quadrante === 'Cavalo de Carga' && item.preco_sugerido && item.preco_sugerido > item.preco_medio) {
       acaoHtml = `<div style="display:flex; align-items:center; justify-content:center; gap:6px;">
-        <span style="font-size:11px; color:#f59e0b; font-weight:700;">Reajuste p/ ${fmt(item.preco_sugerido)}</span>
-        <button onclick="window.aplicarPrecoSugerido('${escJs(item.nome)}', ${item.preco_sugerido})" style="padding:4px 8px; background:#f59e0b; color:white; border:none; border-radius:6px; font-size:10.5px; font-weight:800; cursor:pointer;">Aplicar</button>
+        <span style="font-size: 14px; color:#f59e0b; font-weight:700;">Reajuste p/ ${fmt(item.preco_sugerido)}</span>
+        <button onclick="window.aplicarPrecoSugerido('${escJs(item.nome)}', ${item.preco_sugerido})" style="padding:4px 8px; background:#f59e0b; color:white; border:none; border-radius:6px; font-size: 16px; font-weight:800; cursor:pointer;">Aplicar</button>
       </div>`;
     } else if (item.quadrante === 'Estrela') {
-      acaoHtml = `<span style="font-size:11px; color:#10b981; font-weight:700;">⭐ Manter Qualidade & Destaque</span>`;
+      acaoHtml = `<span style="font-size: 14px; color:#10b981; font-weight:700;">⭐ Manter Qualidade & Destaque</span>`;
     } else if (item.quadrante === 'Quebra-Cabeça') {
-      acaoHtml = `<span style="font-size:11px; color:#8b5cf6; font-weight:700;">🧩 Criar Combo ou Promover</span>`;
+      acaoHtml = `<span style="font-size: 14px; color:#8b5cf6; font-weight:700;">🧩 Criar Combo ou Promover</span>`;
     } else {
-      acaoHtml = `<span style="font-size:11px; color:#ef4444; font-weight:700;">🐕 Avaliar Retirada</span>`;
+      acaoHtml = `<span style="font-size: 14px; color:#ef4444; font-weight:700;">🐕 Avaliar Retirada</span>`;
     }
 
     return '<tr style="border-bottom: 1px solid var(--border);">' +
@@ -3966,7 +3966,7 @@ window.renderTabelaBCG = function(itens) {
       '<td style="padding: 8px 10px; text-align: right;">' + fmt(item.preco_medio) + '</td>' +
       '<td style="padding: 8px 10px; text-align: right; color: #10b981; font-weight: 700;">' + fmt(item.margem_unitaria) + '</td>' +
       '<td style="padding: 8px 10px; text-align: right; font-weight: 800; color: var(--primary);">' + fmt(item.faturamento) + '</td>' +
-      '<td style="padding: 8px 10px; text-align: center;"><span style="color: ' + quadCor + '; font-weight: 700; font-size: 11.5px;">' + (item.icone_quadrante || '') + ' ' + item.quadrante + '</span></td>' +
+      '<td style="padding: 8px 10px; text-align: center;"><span style="color: ' + quadCor + '; font-weight: 700; font-size: 14px;">' + (item.icone_quadrante || '') + ' ' + item.quadrante + '</span></td>' +
       '<td style="padding: 8px 10px; text-align: center;">' + acaoHtml + '</td>' +
     '</tr>';
   }).join('');
@@ -4021,7 +4021,7 @@ function renderizarPainelContadorCheff(data) {
     if (painelAtivoEl) painelAtivoEl.style.display = 'none';
     if (badgeEl) {
       badgeEl.innerHTML = `
-        <span style="background: rgba(16,185,129,0.12); color: #10b981; border: 1px solid rgba(16,185,129,0.3); font-size: 11.5px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px;">
+        <span style="background: rgba(16,185,129,0.12); color: #10b981; border: 1px solid rgba(16,185,129,0.3); font-size: 14px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px;">
           <i class="ph-bold ph-seal-percent"></i> Economize até 30% no DAS
         </span>
       `;
@@ -4036,7 +4036,7 @@ function renderizarPainelContadorCheff(data) {
   const assin = data.assinatura;
   if (badgeEl) {
     badgeEl.innerHTML = `
-      <span style="background: rgba(16,185,129,0.18); color: #10b981; border: 1.5px solid #10b981; font-size: 11.5px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px;">
+      <span style="background: rgba(16,185,129,0.18); color: #10b981; border: 1.5px solid #10b981; font-size: 14px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px;">
         <i class="ph-bold ph-check-circle"></i> Assinatura Ativa
       </span>
     `;
@@ -4080,20 +4080,20 @@ function renderizarPainelContadorCheff(data) {
       `;
     } else {
       tbody.innerHTML = demandas.map(dem => {
-        let badgeStatus = '<span style="background: rgba(245,158,11,0.15); color: #f59e0b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Na Fila</span>';
+        let badgeStatus = '<span style="background: rgba(245,158,11,0.15); color: #f59e0b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 14px;">Na Fila</span>';
         if (dem.status === 'em_andamento') {
-          badgeStatus = '<span style="background: rgba(59,130,246,0.15); color: #3b82f6; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Em Execução</span>';
+          badgeStatus = '<span style="background: rgba(59,130,246,0.15); color: #3b82f6; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 14px;">Em Execução</span>';
         } else if (dem.status === 'concluido' || dem.status === 'aprovado') {
-          badgeStatus = '<span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">✓ Concluído</span>';
+          badgeStatus = '<span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 14px;">✓ Concluído</span>';
         }
 
-        let parecerOuGuia = '<span style="color: var(--text-sub); font-size: 12px;">Aguardando retorno</span>';
+        let parecerOuGuia = '<span style="color: var(--text-sub); font-size: 15px;">Aguardando retorno</span>';
         if (dem.parecer_contador) {
           parecerOuGuia = `
-            <div style="font-size: 12px; color: var(--text); line-height: 1.4;">
+            <div style="font-size: 15px; color: var(--text); line-height: 1.4;">
               ${escHtml(dem.parecer_contador)}
               ${dem.documento_anexo_url ? `<br><a href="${escHtml(dem.documento_anexo_url)}" target="_blank" style="color: #10b981; font-weight: 700; text-decoration: underline;"><i class="ph-bold ph-download-simple"></i> Baixar Guia/Relatório</a>` : ''}
-              ${dem.codigo_barras_guia ? `<br><span style="font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.15); padding: 2px 6px; border-radius: 4px;">Linha: ${escHtml(dem.codigo_barras_guia)}</span>` : ''}
+              ${dem.codigo_barras_guia ? `<br><span style="font-family: monospace; font-size: 14px; background: rgba(0,0,0,0.15); padding: 2px 6px; border-radius: 4px;">Linha: ${escHtml(dem.codigo_barras_guia)}</span>` : ''}
             </div>
           `;
         }
@@ -4102,11 +4102,11 @@ function renderizarPainelContadorCheff(data) {
           <tr style="border-bottom: 1px solid var(--border);">
             <td style="padding: 10px 12px; font-weight: 700;">
               <div>${escHtml(dem.titulo)}</div>
-              <span style="font-size: 11px; color: var(--text-sub); font-weight: normal;">${escHtml(dem.descricao || '')}</span>
+              <span style="font-size: 14px; color: var(--text-sub); font-weight: normal;">${escHtml(dem.descricao || '')}</span>
             </td>
-            <td style="padding: 10px 12px; font-size: 12px;">${escHtml(dem.competencia || 'Atual')}</td>
+            <td style="padding: 10px 12px; font-size: 15px;">${escHtml(dem.competencia || 'Atual')}</td>
             <td style="padding: 10px 12px;">${badgeStatus}</td>
-            <td style="padding: 10px 12px; font-size: 12px;">${escHtml(dem.contador_nome || 'Equipe Contábil')}</td>
+            <td style="padding: 10px 12px; font-size: 15px;">${escHtml(dem.contador_nome || 'Equipe Contábil')}</td>
             <td style="padding: 10px 12px;">${parecerOuGuia}</td>
           </tr>
         `;
@@ -4416,28 +4416,28 @@ window.carregarResumoContratacaoSecao = async function() {
                 </div>
                 <div>
                   <strong style="font-size:14px; color:var(--text); display:block;">${escHtml(t.nome)}</strong>
-                  <span style="font-size:11.5px; color:#10b981; font-weight:700;">★ ${rating} (${t.total_avaliacoes || 18} avaliações)</span>
+                  <span style="font-size: 14px; color:#10b981; font-weight:700;">★ ${rating} (${t.total_avaliacoes || 18} avaliações)</span>
                 </div>
               </div>
-              <span style="background:rgba(59,130,246,0.15); color:#60a5fa; font-size:11px; font-weight:800; padding:2px 8px; border-radius:8px;">
+              <span style="background:rgba(59,130,246,0.15); color:#60a5fa; font-size: 14px; font-weight:800; padding:2px 8px; border-radius:8px;">
                 ${escHtml(t.cargo)}
               </span>
             </div>
             
-            <div style="font-size:12px; color:var(--text-sub); line-height:1.4;">
+            <div style="font-size: 15px; color:var(--text-sub); line-height:1.4;">
               ${escHtml((t.bio || '').substring(0, 85))}...
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px dashed var(--border);">
               <div>
-                <span style="font-size:10.5px; color:var(--text-sub); display:block;">Diária Sugerida</span>
+                <span style="font-size: 16px; color:var(--text-sub); display:block;">Diária Sugerida</span>
                 <strong style="font-size:14px; color:#10b981;">${diariaFmt}</strong>
               </div>
               <div style="display:flex; gap:6px;">
-                <button type="button" onclick="window.abrirPerfilTalento(${t.id})" style="padding:6px 10px; font-size:11.5px; border-radius:8px; border:1px solid var(--border); background:var(--card2); color:var(--text); cursor:pointer; font-weight:700;">
+                <button type="button" onclick="window.abrirPerfilTalento(${t.id})" style="padding:6px 10px; font-size: 14px; border-radius:8px; border:1px solid var(--border); background:var(--card2); color:var(--text); cursor:pointer; font-weight:700;">
                   Perfil
                 </button>
-                <button type="button" onclick="window.abrirModalEscalarTalento(${t.id}, '${escHtml(t.nome)}', '${escHtml(t.cargo)}', ${valDiaria}, '${escHtml(avatar)}')" class="btn-primary" style="padding:6px 12px; font-size:11.5px; border-radius:8px; background:linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <button type="button" onclick="window.abrirModalEscalarTalento(${t.id}, '${escHtml(t.nome)}', '${escHtml(t.cargo)}', ${valDiaria}, '${escHtml(avatar)}')" class="btn-primary" style="padding:6px 12px; font-size: 14px; border-radius:8px; background:linear-gradient(135deg, #10b981 0%, #059669 100%);">
                   Escalar
                 </button>
               </div>
@@ -4484,8 +4484,8 @@ window.carregarBancoTalentos = async function() {
         <div style="text-align:center; padding:50px 20px; color:var(--text-sub); grid-column:1/-1; background:var(--card); border-radius:16px; border:1px dashed var(--border);">
           <i class="ph-bold ph-magnifying-glass" style="font-size:36px; color:var(--text-sub); margin-bottom:8px;"></i>
           <h4 style="font-size:16px; color:var(--text); margin:0 0 6px 0;">Nenhum profissional encontrado para este filtro</h4>
-          <p style="font-size:13px; margin:0 0 14px 0;">Tente buscar por outro cargo ou publicar uma vaga para atrair novos candidatos.</p>
-          <button type="button" class="btn-primary" onclick="window.alternarAbaContratacao('publicar')" style="padding:8px 16px; font-size:13px; border-radius:10px;">
+          <p style="font-size: 16px; margin:0 0 14px 0;">Tente buscar por outro cargo ou publicar uma vaga para atrair novos candidatos.</p>
+          <button type="button" class="btn-primary" onclick="window.alternarAbaContratacao('publicar')" style="padding:8px 16px; font-size: 16px; border-radius:10px;">
             <i class="ph-bold ph-megaphone"></i> Publicar Vaga Agora
           </button>
         </div>
@@ -4501,7 +4501,7 @@ window.carregarBancoTalentos = async function() {
       const expAnos = t.experiencia_anos || t.anos_experiencia || 3;
       const especialidades = (t.especialidades || '').split(',').map(s => s.trim()).filter(Boolean);
       const espBadges = especialidades.slice(0, 3).map(e => `
-        <span style="background:rgba(255,255,255,0.06); font-size:10.5px; padding:2px 7px; border-radius:6px; color:var(--text-sub); border:1px solid var(--border);">
+        <span style="background:rgba(255,255,255,0.06); font-size: 16px; padding:2px 7px; border-radius:6px; color:var(--text-sub); border:1px solid var(--border);">
           ${escHtml(e)}
         </span>
       `).join('');
@@ -4520,16 +4520,16 @@ window.carregarBancoTalentos = async function() {
                     <strong style="font-size:15px; color:var(--text);">${escHtml(t.nome)}</strong>
                     <i class="ph-fill ph-seal-check" style="color:#10b981; font-size:16px;" title="Perfil Verificado"></i>
                   </div>
-                  <span style="font-size:12px; color:var(--text-sub); display:block;">${escHtml(t.cargo)} • ${expAnos} anos exp.</span>
+                  <span style="font-size: 15px; color:var(--text-sub); display:block;">${escHtml(t.cargo)} • ${expAnos} anos exp.</span>
                 </div>
               </div>
 
-              <span style="background:rgba(16,185,129,0.15); color:#10b981; font-size:11px; font-weight:800; padding:3px 8px; border-radius:8px;">
+              <span style="background:rgba(16,185,129,0.15); color:#10b981; font-size: 14px; font-weight:800; padding:3px 8px; border-radius:8px;">
                 ★ ${rating} (${t.total_avaliacoes || 18})
               </span>
             </div>
 
-            <p style="font-size:12.5px; color:var(--text); line-height:1.45; margin:0 0 10px 0;">
+            <p style="font-size: 15px; color:var(--text); line-height:1.45; margin:0 0 10px 0;">
               ${escHtml(t.bio || 'Profissional com sólida experiência operacional no setor gastronômico.')}
             </p>
 
@@ -4537,23 +4537,23 @@ window.carregarBancoTalentos = async function() {
               ${espBadges}
             </div>
 
-            <div style="background:var(--card2); border-radius:10px; padding:10px 12px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="background:var(--card2); border-radius:10px; padding:10px 12px; font-size: 15px; display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <span style="color:var(--text-sub); font-size:11px; display:block;">Diária Base</span>
+                <span style="color:var(--text-sub); font-size: 14px; display:block;">Diária Base</span>
                 <strong style="color:#10b981; font-size:15px;">${diariaFmt}</strong>
               </div>
               <div style="text-align:right;">
-                <span style="color:var(--text-sub); font-size:11px; display:block;">Disponibilidade</span>
+                <span style="color:var(--text-sub); font-size: 14px; display:block;">Disponibilidade</span>
                 <span style="color:#3b82f6; font-weight:700;">${escHtml(t.disponibilidade || 'Imediata')}</span>
               </div>
             </div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px;">
-            <button type="button" onclick="window.abrirPerfilTalento(${t.id})" style="padding:9px; font-size:12.5px; border-radius:10px; border:1px solid var(--border); background:var(--card2); color:var(--text); font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+            <button type="button" onclick="window.abrirPerfilTalento(${t.id})" style="padding:9px; font-size: 15px; border-radius:10px; border:1px solid var(--border); background:var(--card2); color:var(--text); font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
               <i class="ph-bold ph-identification-card"></i> Currículo
             </button>
-            <button type="button" onclick="window.abrirModalEscalarTalento(${t.id}, '${escHtml(t.nome)}', '${escHtml(t.cargo)}', ${valDiaria}, '${escHtml(avatar)}')" class="btn-primary" style="padding:9px; font-size:12.5px; border-radius:10px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); display:flex; align-items:center; justify-content:center; gap:4px;">
+            <button type="button" onclick="window.abrirModalEscalarTalento(${t.id}, '${escHtml(t.nome)}', '${escHtml(t.cargo)}', ${valDiaria}, '${escHtml(avatar)}')" class="btn-primary" style="padding:9px; font-size: 15px; border-radius:10px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); display:flex; align-items:center; justify-content:center; gap:4px;">
               <i class="ph-bold ph-calendar-plus"></i> Escalar / Chamar
             </button>
           </div>
@@ -4622,7 +4622,7 @@ window.abrirPerfilTalento = async function(id) {
     const whatsNum = t.whatsapp || t.telefone || '';
 
     const espItems = (t.especialidades || '').split(',').map(s => `
-      <span style="background:var(--card2); border:1px solid var(--border); border-radius:8px; padding:4px 10px; font-size:12px; color:var(--text); font-weight:600;">
+      <span style="background:var(--card2); border:1px solid var(--border); border-radius:8px; padding:4px 10px; font-size: 15px; color:var(--text); font-weight:600;">
         ✓ ${escHtml(s.trim())}
       </span>
     `).join('');
@@ -4640,10 +4640,10 @@ window.abrirPerfilTalento = async function(id) {
               <h3 style="font-size:18px; font-weight:900; color:var(--text); margin:0;">${escHtml(t.nome)}</h3>
               <i class="ph-fill ph-seal-check" style="color:#10b981; font-size:18px;" title="Verificado"></i>
             </div>
-            <div style="font-size:13px; color:#3b82f6; font-weight:700; margin-top:2px;">
+            <div style="font-size: 16px; color:#3b82f6; font-weight:700; margin-top:2px;">
               ${escHtml(t.cargo)} • Categoria: ${escHtml(t.categoria || 'Gastronomia')}
             </div>
-            <div style="font-size:12px; color:var(--text-sub); margin-top:4px;">
+            <div style="font-size: 15px; color:var(--text-sub); margin-top:4px;">
               📍 ${escHtml(t.cidade || 'São Paulo')} • ★ ${rating} (${t.total_avaliacoes || 18} avaliações positivas)
             </div>
           </div>
@@ -4652,7 +4652,7 @@ window.abrirPerfilTalento = async function(id) {
         <!-- Biografia e Apresentação -->
         <div>
           <strong style="font-size:13.5px; color:var(--text); display:block; margin-bottom:6px;">Sobre o Profissional:</strong>
-          <p style="font-size:13px; color:var(--text); line-height:1.55; margin:0; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:14px;">
+          <p style="font-size: 16px; color:var(--text); line-height:1.55; margin:0; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:14px;">
             ${escHtml(t.bio || 'Profissional com experiência prática e dedicação em ritmo intenso de serviço.')}
           </p>
         </div>
@@ -4668,7 +4668,7 @@ window.abrirPerfilTalento = async function(id) {
         <!-- Casas e Restaurantes Anteriores -->
         <div>
           <strong style="font-size:13.5px; color:var(--text); display:block; margin-bottom:6px;">Casas &amp; Restaurantes no Histórico:</strong>
-          <div style="background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:12px 14px; font-size:12.5px; color:var(--text);">
+          <div style="background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:12px 14px; font-size: 15px; color:var(--text);">
             <i class="ph-bold ph-storefront" style="color:#f59e0b; margin-right:6px;"></i>
             ${escHtml(t.casas_anteriores || 'Restaurantes e Bares de gastronomia contemporânea')}
           </div>
@@ -4677,21 +4677,21 @@ window.abrirPerfilTalento = async function(id) {
         <!-- Certificações e Chave PIX -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
           <div style="background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:12px;">
-            <span style="font-size:11px; color:var(--text-sub); display:block;">Certificados / Higiene</span>
-            <strong style="font-size:12.5px; color:var(--text);">${escHtml(t.certificados || 'Boas Práticas Manipulação (Anvisa)')}</strong>
+            <span style="font-size: 14px; color:var(--text-sub); display:block;">Certificados / Higiene</span>
+            <strong style="font-size: 15px; color:var(--text);">${escHtml(t.certificados || 'Boas Práticas Manipulação (Anvisa)')}</strong>
           </div>
           <div style="background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:12px;">
-            <span style="font-size:11px; color:var(--text-sub); display:block;">Chave PIX Cadastrada</span>
-            <strong style="font-size:12.5px; color:#10b981;">${escHtml(t.chave_pix || 'Chave Celular Cadastrada')}</strong>
+            <span style="font-size: 14px; color:var(--text-sub); display:block;">Chave PIX Cadastrada</span>
+            <strong style="font-size: 15px; color:#10b981;">${escHtml(t.chave_pix || 'Chave Celular Cadastrada')}</strong>
           </div>
         </div>
 
         <!-- Ações do Dono -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
-          <button type="button" onclick="window.falarTalentoWhatsApp('${whatsNum}', '${escHtml(t.nome)}', '${escHtml(t.cargo)}')" style="padding:12px; font-size:13px; font-weight:800; border-radius:12px; border:1px solid #22c55e; background:rgba(34,197,94,0.12); color:#22c55e; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <button type="button" onclick="window.falarTalentoWhatsApp('${whatsNum}', '${escHtml(t.nome)}', '${escHtml(t.cargo)}')" style="padding:12px; font-size: 16px; font-weight:800; border-radius:12px; border:1px solid #22c55e; background:rgba(34,197,94,0.12); color:#22c55e; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
             <i class="ph-bold ph-whatsapp-logo" style="font-size:18px;"></i> Chamar no WhatsApp
           </button>
-          <button type="button" onclick="window.fecharModalPerfilTalento(); window.abrirModalEscalarTalento(${t.id}, '${escHtml(t.nome)}', '${escHtml(t.cargo)}', ${valDiaria}, '${escHtml(avatar)}')" class="btn-primary" style="padding:12px; font-size:13px; font-weight:800; border-radius:12px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); display:flex; align-items:center; justify-content:center; gap:6px;">
+          <button type="button" onclick="window.fecharModalPerfilTalento(); window.abrirModalEscalarTalento(${t.id}, '${escHtml(t.nome)}', '${escHtml(t.cargo)}', ${valDiaria}, '${escHtml(avatar)}')" class="btn-primary" style="padding:12px; font-size: 16px; font-weight:800; border-radius:12px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); display:flex; align-items:center; justify-content:center; gap:6px;">
             <i class="ph-bold ph-calendar-plus" style="font-size:18px;"></i> Escalar para Meu Turno
           </button>
         </div>
@@ -4886,7 +4886,7 @@ window.carregarMinhasVagas = async function() {
       <tr>
         <td colspan="6" style="text-align:center; padding:30px; color:var(--text-sub);">
           <i class="ph ph-circle-notch" style="animation:spin 1s infinite linear; font-size:24px; color:#f59e0b;"></i>
-          <p style="margin-top:6px; font-size:12.5px;">Carregando suas vagas abertas...</p>
+          <p style="margin-top:6px; font-size: 15px;">Carregando suas vagas abertas...</p>
         </td>
       </tr>
     `;
@@ -4920,8 +4920,8 @@ window.carregarMinhasVagas = async function() {
           <div style="text-align:center; padding:50px 20px; color:var(--text-sub); background:var(--card); border-radius:16px; border:1px dashed var(--border);">
             <i class="ph-bold ph-briefcase" style="font-size:36px; color:var(--text-sub); margin-bottom:8px;"></i>
             <h4 style="font-size:16px; color:var(--text); margin:0 0 6px 0;">Nenhuma vaga publicada ainda</h4>
-            <p style="font-size:13px; margin:0 0 14px 0;">Publique oportunidades para atrair garçons, diaristas de fim de semana, cozinheiros e barman.</p>
-            <button type="button" class="btn-primary" onclick="window.alternarAbaContratacao('publicar')" style="padding:8px 16px; font-size:13px; border-radius:10px;">
+            <p style="font-size: 16px; margin:0 0 14px 0;">Publique oportunidades para atrair garçons, diaristas de fim de semana, cozinheiros e barman.</p>
+            <button type="button" class="btn-primary" onclick="window.alternarAbaContratacao('publicar')" style="padding:8px 16px; font-size: 16px; border-radius:10px;">
               <i class="ph-bold ph-plus-circle"></i> Criar Nova Vaga
             </button>
           </div>
@@ -4943,23 +4943,23 @@ window.carregarMinhasVagas = async function() {
           <tr style="border-bottom:1px solid var(--border);">
             <td style="padding:12px; font-weight:800; color:var(--text);">
               ${escHtml(v.titulo)}
-              <span style="font-size:11px; color:var(--text-sub); display:block;">Criada em ${dataCriada}</span>
+              <span style="font-size: 14px; color:var(--text-sub); display:block;">Criada em ${dataCriada}</span>
             </td>
             <td style="padding:12px; color:var(--text);">${escHtml(v.cargo)}</td>
             <td style="padding:12px; color:var(--text); font-weight:700;">${escHtml(v.tipo_vaga)}</td>
             <td style="padding:12px; color:#10b981; font-weight:800;">${escHtml(v.remuneracao || 'A combinar')}</td>
             <td style="padding:12px;">
-              <span style="background:rgba(16,185,129,0.15); color:${statusColor}; font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px;">
+              <span style="background:rgba(16,185,129,0.15); color:${statusColor}; font-size: 14px; font-weight:800; padding:3px 8px; border-radius:8px;">
                 ${statusTxt}
               </span>
             </td>
             <td style="padding:12px; text-align:right;">
               <div style="display:flex; justify-content:flex-end; gap:6px;">
-                <a href="${zapLink}" target="_blank" style="padding:6px 10px; font-size:11.5px; border-radius:8px; border:1px solid #22c55e; background:rgba(34,197,94,0.1); color:#22c55e; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:700;">
+                <a href="${zapLink}" target="_blank" style="padding:6px 10px; font-size: 14px; border-radius:8px; border:1px solid #22c55e; background:rgba(34,197,94,0.1); color:#22c55e; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:700;">
                   <i class="ph-bold ph-whatsapp-logo"></i> Compartilhar
                 </a>
                 ${v.status === 'aberta' ? `
-                  <button type="button" onclick="window.encerrarVagaDono(${v.id})" style="padding:6px 10px; font-size:11.5px; border-radius:8px; border:1px solid #ef4444; background:rgba(239,68,68,0.1); color:#ef4444; font-weight:700; cursor:pointer;">
+                  <button type="button" onclick="window.encerrarVagaDono(${v.id})" style="padding:6px 10px; font-size: 14px; border-radius:8px; border:1px solid #ef4444; background:rgba(239,68,68,0.1); color:#ef4444; font-weight:700; cursor:pointer;">
                     Encerrar
                   </button>
                 ` : ''}
@@ -4985,48 +4985,48 @@ window.carregarMinhasVagas = async function() {
               <div>
                 <div style="display:flex; align-items:center; gap:8px;">
                   <strong style="font-size:15px; color:var(--text);">${escHtml(v.titulo)}</strong>
-                  <span style="background:${statusBg}; color:${statusColor}; font-size:11px; font-weight:800; padding:2px 8px; border-radius:8px;">
+                  <span style="background:${statusBg}; color:${statusColor}; font-size: 14px; font-weight:800; padding:2px 8px; border-radius:8px;">
                     ${statusTxt}
                   </span>
                 </div>
-                <div style="font-size:12px; color:var(--text-sub); margin-top:2px;">
+                <div style="font-size: 15px; color:var(--text-sub); margin-top:2px;">
                   Cargo: <strong style="color:var(--text);">${escHtml(v.cargo)}</strong> • Publicada em ${dataCriada}
                 </div>
               </div>
 
               <div style="display:flex; align-items:center; gap:8px;">
-                <a href="${zapLink}" target="_blank" style="padding:7px 12px; font-size:12px; border-radius:10px; border:1px solid #22c55e; background:rgba(34,197,94,0.12); color:#22c55e; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-weight:700;">
+                <a href="${zapLink}" target="_blank" style="padding:7px 12px; font-size: 15px; border-radius:10px; border:1px solid #22c55e; background:rgba(34,197,94,0.12); color:#22c55e; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-weight:700;">
                   <i class="ph-bold ph-whatsapp-logo" style="font-size:15px;"></i> Divulgar no WhatsApp
                 </a>
                 ${isAberta ? `
-                  <button type="button" onclick="window.encerrarVagaDono(${v.id})" style="padding:7px 12px; font-size:12px; border-radius:10px; border:1px solid #ef4444; background:rgba(239,68,68,0.12); color:#ef4444; font-weight:700; cursor:pointer;">
+                  <button type="button" onclick="window.encerrarVagaDono(${v.id})" style="padding:7px 12px; font-size: 15px; border-radius:10px; border:1px solid #ef4444; background:rgba(239,68,68,0.12); color:#ef4444; font-weight:700; cursor:pointer;">
                     Encerrar Vaga
                   </button>
                 ` : ''}
               </div>
             </div>
 
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; background:var(--card2); border-radius:10px; padding:10px 12px; font-size:12px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; background:var(--card2); border-radius:10px; padding:10px 12px; font-size: 15px;">
               <div>
-                <span style="color:var(--text-sub); font-size:11px; display:block;">Tipo de Contrato</span>
+                <span style="color:var(--text-sub); font-size: 14px; display:block;">Tipo de Contrato</span>
                 <strong style="color:var(--text);">${escHtml(v.tipo_vaga || 'Freelancer')}</strong>
               </div>
               <div>
-                <span style="color:var(--text-sub); font-size:11px; display:block;">Remuneração</span>
-                <strong style="color:#10b981; font-size:13px;">${escHtml(v.remuneracao || 'A combinar')}</strong>
+                <span style="color:var(--text-sub); font-size: 14px; display:block;">Remuneração</span>
+                <strong style="color:#10b981; font-size: 16px;">${escHtml(v.remuneracao || 'A combinar')}</strong>
               </div>
               <div>
-                <span style="color:var(--text-sub); font-size:11px; display:block;">Turno / Horário</span>
+                <span style="color:var(--text-sub); font-size: 14px; display:block;">Turno / Horário</span>
                 <span style="color:var(--text); font-weight:600;">${escHtml(v.horario || 'Turno da Casa')}</span>
               </div>
               <div>
-                <span style="color:var(--text-sub); font-size:11px; display:block;">Candidaturas Recebidas</span>
+                <span style="color:var(--text-sub); font-size: 14px; display:block;">Candidaturas Recebidas</span>
                 <span style="color:#3b82f6; font-weight:700;">${v.total_candidaturas || 0} candidatos</span>
               </div>
             </div>
 
             ${v.requisitos ? `
-              <div style="font-size:12px; color:var(--text-sub); line-height:1.4;">
+              <div style="font-size: 15px; color:var(--text-sub); line-height:1.4;">
                 <strong>Requisitos:</strong> ${escHtml(v.requisitos)}
               </div>
             ` : ''}
@@ -5076,9 +5076,9 @@ window.carregarEscalaFreelancers = async function() {
   let tbody = document.getElementById('tabela-escala-freelancers');
   if (!tbody) {
     container.innerHTML = `
-      <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
+      <table style="width:100%; border-collapse:collapse; font-size: 16px; text-align:left;">
         <thead>
-          <tr style="background:var(--card2); border-bottom:1px solid var(--border); color:var(--text-sub); font-size:11.5px; text-transform:uppercase; letter-spacing:0.5px;">
+          <tr style="background:var(--card2); border-bottom:1px solid var(--border); color:var(--text-sub); font-size: 14px; text-transform:uppercase; letter-spacing:0.5px;">
             <th style="padding:12px;">Profissional &amp; Pix</th>
             <th style="padding:12px;">Cargo</th>
             <th style="padding:12px;">Data</th>
@@ -5092,7 +5092,7 @@ window.carregarEscalaFreelancers = async function() {
           <tr>
             <td colspan="7" style="text-align:center; padding:30px; color:var(--text-sub);">
               <i class="ph ph-circle-notch" style="animation:spin 1s infinite linear; font-size:24px; color:#3b82f6;"></i>
-              <p style="margin-top:6px; font-size:12.5px;">Carregando escala de diaristas...</p>
+              <p style="margin-top:6px; font-size: 15px;">Carregando escala de diaristas...</p>
             </td>
           </tr>
         </tbody>
@@ -5104,7 +5104,7 @@ window.carregarEscalaFreelancers = async function() {
       <tr>
         <td colspan="7" style="text-align:center; padding:30px; color:var(--text-sub);">
           <i class="ph ph-circle-notch" style="animation:spin 1s infinite linear; font-size:24px; color:#3b82f6;"></i>
-          <p style="margin-top:6px; font-size:12.5px;">Carregando escala de diaristas...</p>
+          <p style="margin-top:6px; font-size: 15px;">Carregando escala de diaristas...</p>
         </td>
       </tr>
     `;
@@ -5134,36 +5134,36 @@ window.carregarEscalaFreelancers = async function() {
       let acaoBtns = '';
 
       if (e.status === 'agendado') {
-        statusBadge = `<span style="background:rgba(59,130,246,0.15); color:#60a5fa; font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px;">Agendado</span>`;
+        statusBadge = `<span style="background:rgba(59,130,246,0.15); color:#60a5fa; font-size: 14px; font-weight:800; padding:3px 8px; border-radius:8px;">Agendado</span>`;
         acaoBtns = `
-          <button type="button" onclick="window.atualizarStatusEscala(${e.id}, 'presente')" style="padding:6px 10px; font-size:11.5px; border-radius:8px; border:1px solid #10b981; background:rgba(16,185,129,0.12); color:#10b981; font-weight:800; cursor:pointer;">
+          <button type="button" onclick="window.atualizarStatusEscala(${e.id}, 'presente')" style="padding:6px 10px; font-size: 14px; border-radius:8px; border:1px solid #10b981; background:rgba(16,185,129,0.12); color:#10b981; font-weight:800; cursor:pointer;">
             ✓ Check-in
           </button>
         `;
       } else if (e.status === 'presente') {
-        statusBadge = `<span style="background:rgba(245,158,11,0.15); color:#f59e0b; font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px;">Presente</span>`;
+        statusBadge = `<span style="background:rgba(245,158,11,0.15); color:#f59e0b; font-size: 14px; font-weight:800; padding:3px 8px; border-radius:8px;">Presente</span>`;
         acaoBtns = `
-          <button type="button" onclick="window.atualizarStatusEscala(${e.id}, 'concluido')" style="padding:6px 10px; font-size:11.5px; border-radius:8px; border:1px solid #8b5cf6; background:rgba(139,92,246,0.12); color:#a78bfa; font-weight:800; cursor:pointer;">
+          <button type="button" onclick="window.atualizarStatusEscala(${e.id}, 'concluido')" style="padding:6px 10px; font-size: 14px; border-radius:8px; border:1px solid #8b5cf6; background:rgba(139,92,246,0.12); color:#a78bfa; font-weight:800; cursor:pointer;">
             Finalizar Turno
           </button>
         `;
       } else if (e.status === 'concluido') {
-        statusBadge = `<span style="background:rgba(139,92,246,0.15); color:#a78bfa; font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px;">Turno Concluído</span>`;
+        statusBadge = `<span style="background:rgba(139,92,246,0.15); color:#a78bfa; font-size: 14px; font-weight:800; padding:3px 8px; border-radius:8px;">Turno Concluído</span>`;
         acaoBtns = `
-          <button type="button" onclick="window.pagarDiariaEscala(${e.id}, '${escHtml(e.nome_talento)}', ${e.valor_diaria || 140}, '${escHtml(e.cargo)}')" class="btn-primary" style="padding:6px 12px; font-size:11.5px; border-radius:8px; background:linear-gradient(135deg, #10b981 0%, #059669 100%);">
+          <button type="button" onclick="window.pagarDiariaEscala(${e.id}, '${escHtml(e.nome_talento)}', ${e.valor_diaria || 140}, '${escHtml(e.cargo)}')" class="btn-primary" style="padding:6px 12px; font-size: 14px; border-radius:8px; background:linear-gradient(135deg, #10b981 0%, #059669 100%);">
             💰 Pagar Diária Pix
           </button>
         `;
       } else if (e.status === 'pago') {
-        statusBadge = `<span style="background:rgba(16,185,129,0.2); color:#34d399; font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px;">✓ Pago no Caixa</span>`;
-        acaoBtns = `<span style="font-size:11px; color:#10b981; font-weight:700;">Lançado na DRE</span>`;
+        statusBadge = `<span style="background:rgba(16,185,129,0.2); color:#34d399; font-size: 14px; font-weight:800; padding:3px 8px; border-radius:8px;">✓ Pago no Caixa</span>`;
+        acaoBtns = `<span style="font-size: 14px; color:#10b981; font-weight:700;">Lançado na DRE</span>`;
       }
 
       return `
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:12px; font-weight:800; color:var(--text);">
             ${escHtml(e.nome_talento)}
-            <span style="font-size:11px; color:var(--text-sub); display:block;">${escHtml(e.chave_pix ? `Pix: ${e.chave_pix}` : 'Pix cadastrado')}</span>
+            <span style="font-size: 14px; color:var(--text-sub); display:block;">${escHtml(e.chave_pix ? `Pix: ${e.chave_pix}` : 'Pix cadastrado')}</span>
           </td>
           <td style="padding:12px; color:var(--text);">${escHtml(e.cargo)}</td>
           <td style="padding:12px; color:var(--text); font-weight:700;">${escHtml(e.data_turno)}</td>
@@ -5348,12 +5348,12 @@ window.atualizarPrevisaoClima = async function() {
     container.innerHTML = data.dias.map(d => {
       const isHoje = d.eh_hoje;
       const borderHoje = isHoje ? 'border: 2px solid #0ea5e9; box-shadow: 0 4px 14px rgba(14,165,233,0.2);' : 'border: 1px solid var(--border);';
-      const badgeHoje = isHoje ? '<span style="background:#0ea5e9; color:white; font-size:10px; padding:1px 6px; border-radius:10px; font-weight:800; margin-left:4px;">HOJE</span>' : '';
+      const badgeHoje = isHoje ? '<span style="background:#0ea5e9; color:white; font-size: 16px; padding:1px 6px; border-radius:10px; font-weight:800; margin-left:4px;">HOJE</span>' : '';
       
       const chipsHtml = (d.impactos || []).slice(0, 2).map(imp => {
         const cor = imp.impacto_pct > 0 ? '#10b981' : '#ef4444';
         const sinal = imp.impacto_pct > 0 ? '+' : '';
-        return '<div style="font-size:10.5px; background:rgba(0,0,0,0.04); padding:3px 6px; border-radius:6px; margin-top:4px; font-weight:700; color:var(--text); display:flex; justify-content:space-between;">' +
+        return '<div style="font-size: 16px; background:rgba(0,0,0,0.04); padding:3px 6px; border-radius:6px; margin-top:4px; font-weight:700; color:var(--text); display:flex; justify-content:space-between;">' +
           '<span>' + imp.categoria + '</span>' +
           '<span style="color:' + cor + ';">' + sinal + imp.impacto_pct + '%</span>' +
         '</div>';
@@ -5362,17 +5362,17 @@ window.atualizarPrevisaoClima = async function() {
       return '<div style="background:var(--card2); border-radius:14px; padding:12px; ' + borderHoje + ' display:flex; flex-direction:column; justify-content:space-between;">' +
         '<div>' +
           '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">' +
-            '<strong style="font-size:12px; color:var(--text);">' + d.dia_semana.split('-')[0] + badgeHoje + '</strong>' +
-            '<span style="font-size:11px; color:var(--text-sub);">' + d.dia_mes + '</span>' +
+            '<strong style="font-size: 15px; color:var(--text);">' + d.dia_semana.split('-')[0] + badgeHoje + '</strong>' +
+            '<span style="font-size: 14px; color:var(--text-sub);">' + d.dia_mes + '</span>' +
           '</div>' +
           '<div style="display:flex; align-items:center; gap:8px; margin:8px 0;">' +
             '<i class="ph-bold ' + d.icone + '" style="font-size:24px; color:' + d.cor_tema + ';"></i>' +
             '<div>' +
-              '<div style="font-size:13px; font-weight:800; color:var(--text);">' + d.temp_min + '°C ~ ' + d.temp_max + '°C</div>' +
-              '<div style="font-size:10.5px; color:var(--text-sub);">' + d.condicao + '</div>' +
+              '<div style="font-size: 16px; font-weight:800; color:var(--text);">' + d.temp_min + '°C ~ ' + d.temp_max + '°C</div>' +
+              '<div style="font-size: 16px; color:var(--text-sub);">' + d.condicao + '</div>' +
             '</div>' +
           '</div>' +
-          (d.chuva_mm > 0 ? '<div style="font-size:10.5px; color:#2563eb; font-weight:700; margin-bottom:4px;"><i class="ph-bold ph-drop"></i> ' + d.chuva_mm + 'mm (' + d.probabilidade_chuva_pct + '%)</div>' : '') +
+          (d.chuva_mm > 0 ? '<div style="font-size: 16px; color:#2563eb; font-weight:700; margin-bottom:4px;"><i class="ph-bold ph-drop"></i> ' + d.chuva_mm + 'mm (' + d.probabilidade_chuva_pct + '%)</div>' : '') +
         '</div>' +
         '<div>' + chipsHtml + '</div>' +
       '</div>';
@@ -5445,7 +5445,7 @@ window.carregarReservasDono = async function() {
         '<td style="padding:10px 12px; font-weight:700; color:var(--text);">' + escHtml(r.hora_reserva) + '</td>' +
         '<td style="padding:10px 12px;">' +
           '<div style="font-weight:800; color:var(--text);">' + escHtml(r.nome_cliente) + '</div>' +
-          '<a href="' + linkWhats + '" target="_blank" style="font-size:11.5px; color:#10b981; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">' +
+          '<a href="' + linkWhats + '" target="_blank" style="font-size: 14px; color:#10b981; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">' +
             '<i class="ph-bold ph-whatsapp-logo"></i> ' + escHtml(r.telefone) +
           '</a>' +
         '</td>' +
@@ -5453,20 +5453,20 @@ window.carregarReservasDono = async function() {
         '<td style="padding:10px 12px;">' + escHtml(r.turno || 'Jantar') + '</td>' +
         '<td style="padding:10px 12px; font-weight:700; color:var(--primary);">' + (r.mesa_designada ? escHtml(r.mesa_designada) : '<span style="color:var(--text-sub);">A definir</span>') + '</td>' +
         '<td style="padding:10px 12px;">' +
-          '<span style="background:' + badgeCor + '22; color:' + badgeCor + '; border:1px solid ' + badgeCor + '55; padding:3px 8px; border-radius:8px; font-size:11px; font-weight:800;">' +
+          '<span style="background:' + badgeCor + '22; color:' + badgeCor + '; border:1px solid ' + badgeCor + '55; padding:3px 8px; border-radius:8px; font-size: 14px; font-weight:800;">' +
             escHtml(r.status) +
           '</span>' +
         '</td>' +
         '<td style="padding:10px 12px; text-align:right;">' +
-          '<button onclick="window.alterarStatusReserva(' + r.id + ', \'Acomodada\')" class="btn-secondary" style="padding:4px 8px; font-size:11px; border-radius:6px; cursor:pointer;" title="Cliente chegou e sentou na mesa">Acomodar</button> ' +
-          '<button onclick="window.alterarStatusReserva(' + r.id + ', \'Cancelada\')" class="btn-secondary" style="padding:4px 8px; font-size:11px; border-radius:6px; color:#ef4444; cursor:pointer;" title="Cancelar reserva">Cancelar</button>' +
+          '<button onclick="window.alterarStatusReserva(' + r.id + ', \'Acomodada\')" class="btn-secondary" style="padding:4px 8px; font-size: 14px; border-radius:6px; cursor:pointer;" title="Cliente chegou e sentou na mesa">Acomodar</button> ' +
+          '<button onclick="window.alterarStatusReserva(' + r.id + ', \'Cancelada\')" class="btn-secondary" style="padding:4px 8px; font-size: 14px; border-radius:6px; color:#ef4444; cursor:pointer;" title="Cancelar reserva">Cancelar</button>' +
         '</td>' +
       '</tr>';
     }).join('');
 
-    container.innerHTML = '<table style="width:100%; border-collapse:collapse; font-size:12.5px; text-align:left;">' +
+    container.innerHTML = '<table style="width:100%; border-collapse:collapse; font-size: 15px; text-align:left;">' +
       '<thead>' +
-        '<tr style="border-bottom:1.5px solid var(--border); color:var(--text-sub); font-size:11.5px;">' +
+        '<tr style="border-bottom:1.5px solid var(--border); color:var(--text-sub); font-size: 14px;">' +
           '<th style="padding:8px 12px;">Horário</th>' +
           '<th style="padding:8px 12px;">Cliente & WhatsApp</th>' +
           '<th style="padding:8px 12px;">Pessoas</th>' +
@@ -5810,7 +5810,7 @@ window.carregarTerminaisPendentesDono = async function() {
 
     if (listaCard) {
       if (total === 0) {
-        listaCard.innerHTML = '<div style="font-size:12px; color:var(--text-sub);">Nenhum aparelho aguardando.</div>';
+        listaCard.innerHTML = '<div style="font-size: 15px; color:var(--text-sub);">Nenhum aparelho aguardando.</div>';
       } else {
         listaCard.innerHTML = pendentes.map(p => `
           <div style="background:var(--card); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
@@ -5819,19 +5819,19 @@ window.carregarTerminaisPendentesDono = async function() {
                 ${escHtml(p.codigo.slice(0,3))} ${escHtml(p.codigo.slice(3))}
               </span>
               <div>
-                <strong style="font-size:13px; color:var(--text); display:block;">${escHtml(p.apelido || labelEstacaoTerminal(p.estacaoSolicitada))}</strong>
-                <span style="font-size:11px; color:var(--text-sub);">${escHtml(p.dispositivoInfo || 'Aparelho na Rede')} • Solicitado há poucos instantes</span>
+                <strong style="font-size: 16px; color:var(--text); display:block;">${escHtml(p.apelido || labelEstacaoTerminal(p.estacaoSolicitada))}</strong>
+                <span style="font-size: 14px; color:var(--text-sub);">${escHtml(p.dispositivoInfo || 'Aparelho na Rede')} • Solicitado há poucos instantes</span>
               </div>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-              <select id="sel-pendente-${p.codigo}" style="padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:var(--card2); color:var(--text); font-size:12px; font-weight:700;">
+              <select id="sel-pendente-${p.codigo}" style="padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:var(--card2); color:var(--text); font-size: 15px; font-weight:700;">
                 <option value="garcom" ${p.estacaoSolicitada === 'garcom' ? 'selected' : ''}>🍽️ Salão</option>
                 <option value="caixa" ${p.estacaoSolicitada === 'caixa' ? 'selected' : ''}>🖥️ Caixa</option>
                 <option value="caixa_mobile" ${p.estacaoSolicitada === 'caixa_mobile' ? 'selected' : ''}>📱 Caixa Mobile</option>
                 <option value="cozinha" ${p.estacaoSolicitada === 'cozinha' ? 'selected' : ''}>🍳 Cozinha</option>
                 <option value="totem" ${p.estacaoSolicitada === 'totem' ? 'selected' : ''}>🤖 Totem</option>
               </select>
-              <button type="button" class="btn-primary" onclick="aprovarTerminalPendenteDono('${p.codigo}')" style="padding:6px 14px; font-size:12px; border-radius:8px; background:linear-gradient(135deg, #10b981, #059669); gap:4px;">
+              <button type="button" class="btn-primary" onclick="aprovarTerminalPendenteDono('${p.codigo}')" style="padding:6px 14px; font-size: 15px; border-radius:8px; background:linear-gradient(135deg, #10b981, #059669); gap:4px;">
                 <i class="ph-bold ph-check"></i> Liberar Acesso
               </button>
             </div>
@@ -5859,18 +5859,18 @@ window.carregarTerminaisPendentesDono = async function() {
               </span>
               <div>
                 <strong style="font-size:14px; color:var(--text); display:block;">${escHtml(p.apelido || labelEstacaoTerminal(p.estacaoSolicitada))}</strong>
-                <span style="font-size:11.5px; color:var(--text-sub);">${escHtml(p.dispositivoInfo || 'Dispositivo Solicitante')}</span>
+                <span style="font-size: 14px; color:var(--text-sub);">${escHtml(p.dispositivoInfo || 'Dispositivo Solicitante')}</span>
               </div>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-              <select id="modal-sel-pendente-${p.codigo}" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size:12px; font-weight:700;">
+              <select id="modal-sel-pendente-${p.codigo}" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); font-size: 15px; font-weight:700;">
                 <option value="garcom" ${p.estacaoSolicitada === 'garcom' ? 'selected' : ''}>🍽️ Salão & Garçom</option>
                 <option value="caixa" ${p.estacaoSolicitada === 'caixa' ? 'selected' : ''}>🖥️ Caixa PDV Principal</option>
                 <option value="caixa_mobile" ${p.estacaoSolicitada === 'caixa_mobile' ? 'selected' : ''}>📱 Caixa Mobile Touch</option>
                 <option value="cozinha" ${p.estacaoSolicitada === 'cozinha' ? 'selected' : ''}>🍳 KDS Cozinha & Bar</option>
                 <option value="totem" ${p.estacaoSolicitada === 'totem' ? 'selected' : ''}>🤖 Totem Autoatendimento</option>
               </select>
-              <button type="button" class="btn-primary" onclick="aprovarTerminalPendenteDono('${p.codigo}', true)" style="padding:8px 16px; font-size:13px; font-weight:800; border-radius:8px; background:linear-gradient(135deg, #10b981, #059669); gap:6px;">
+              <button type="button" class="btn-primary" onclick="aprovarTerminalPendenteDono('${p.codigo}', true)" style="padding:8px 16px; font-size: 16px; font-weight:800; border-radius:8px; background:linear-gradient(135deg, #10b981, #059669); gap:6px;">
                 <i class="ph-bold ph-check"></i> Liberar Agora
               </button>
             </div>
@@ -6018,23 +6018,23 @@ window.carregarTerminaisAutorizadosDono = async function() {
             <div>
               <div style="display:flex; align-items:center; gap:8px;">
                 <strong style="font-size:14px; color:var(--text);">${escHtml(d.nome_dispositivo || 'Aparelho')}</strong>
-                <span style="background:${ehAtivo ? '#10b981' : '#64748b'}; color:white; font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px;">
+                <span style="background:${ehAtivo ? '#10b981' : '#64748b'}; color:white; font-size: 16px; font-weight:800; padding:2px 6px; border-radius:6px;">
                   ${labelEstacaoTerminal(d.estacao_autorizada)}
                 </span>
-                ${!ehAtivo ? '<span style="background:#ef4444; color:white; font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px;">REVOGADO</span>' : ''}
+                ${!ehAtivo ? '<span style="background:#ef4444; color:white; font-size: 16px; font-weight:800; padding:2px 6px; border-radius:6px;">REVOGADO</span>' : ''}
               </div>
-              <div style="font-size:11.5px; color:var(--text-sub); margin-top:3px;">
+              <div style="font-size: 14px; color:var(--text-sub); margin-top:3px;">
                 Autorizado em: <strong>${dataCriacao}</strong> • Último acesso: <strong>${dataUso}</strong> • IP: ${escHtml(d.ip_criacao || 'N/A')}
               </div>
             </div>
           </div>
           <div>
             ${ehAtivo ? `
-              <button type="button" onclick="revogarAcessoTerminalDono('${d.terminal_id}', '${escHtml(d.nome_dispositivo)}')" style="padding:7px 12px; font-size:12px; font-weight:700; border-radius:8px; background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3); cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+              <button type="button" onclick="revogarAcessoTerminalDono('${d.terminal_id}', '${escHtml(d.nome_dispositivo)}')" style="padding:7px 12px; font-size: 15px; font-weight:700; border-radius:8px; background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3); cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
                 <i class="ph-bold ph-power"></i> Desconectar Remotamente
               </button>
             ` : `
-              <span style="font-size:12px; color:var(--text-sub); font-style:italic;">Acesso Bloqueado</span>
+              <span style="font-size: 15px; color:var(--text-sub); font-style:italic;">Acesso Bloqueado</span>
             `}
           </div>
         </div>
@@ -6270,13 +6270,13 @@ window.renderizarAddonsLoja = function(filtro) {
             <span style="font-size:14px; font-weight:900; color:var(--text);">${a.preco}</span>
           </div>
           <h4 style="font-size:14px; font-weight:800; color:var(--text); margin-bottom:6px;">${a.nome}</h4>
-          <p style="font-size:12px; color:var(--text-sub); line-height:1.4; margin-bottom:12px;">${a.desc}</p>
+          <p style="font-size: 15px; color:var(--text-sub); line-height:1.4; margin-bottom:12px;">${a.desc}</p>
         </div>
         <div>
-          <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); border-radius:8px; padding:6px 10px; font-size:11px; font-weight:700; color:#10b981; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); border-radius:8px; padding:6px 10px; font-size: 14px; font-weight:700; color:#10b981; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
             <i class="ph-bold ph-trend-up"></i> ${a.roi}
           </div>
-          <button onclick="window.abrirCheckoutModal('${a.nome}', '${a.preco}', '${a.id}')" style="width:100%; padding:9px; background:linear-gradient(135deg, var(--primary), #ff8c42); color:white; border:none; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer;">
+          <button onclick="window.abrirCheckoutModal('${a.nome}', '${a.preco}', '${a.id}')" style="width:100%; padding:9px; background:linear-gradient(135deg, var(--primary), #ff8c42); color:white; border:none; border-radius:8px; font-weight:800; font-size: 15px; cursor:pointer;">
             Ativar via PIX
           </button>
         </div>
@@ -6452,11 +6452,11 @@ window.calcularFracaoPizzaDono = async function() {
       box.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:4px; width:100%;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="color:var(--primary); font-size:13px;">${d.fracoes} • R$ ${d.valor_total_calculado.toFixed(2)}</strong>
-            <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">Regra: ${d.regra_aplicada}</span>
+            <strong style="color:var(--primary); font-size: 16px;">${d.fracoes} • R$ ${d.valor_total_calculado.toFixed(2)}</strong>
+            <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; font-size: 16px; padding:2px 6px; border-radius:4px;">Regra: ${d.regra_aplicada}</span>
           </div>
-          <div style="font-size:11px; color:var(--text-sub);">Base Sabores: R$ ${d.preco_sabores.toFixed(2)} | Borda: ${d.borda_adicionada} (+R$ ${d.preco_borda.toFixed(2)})</div>
-          <div style="font-size:11px; color:var(--text);">${d.detalhe_producao.join(' + ')}</div>
+          <div style="font-size: 14px; color:var(--text-sub);">Base Sabores: R$ ${d.preco_sabores.toFixed(2)} | Borda: ${d.borda_adicionada} (+R$ ${d.preco_borda.toFixed(2)})</div>
+          <div style="font-size: 14px; color:var(--text);">${d.detalhe_producao.join(' + ')}</div>
         </div>
       `;
     } else {
@@ -6511,9 +6511,9 @@ window.atualizarFornoLastroDono = async function() {
         <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
           <div>
             <strong>${p.pizza_nome}</strong>
-            <div style="font-size:10.5px; color:var(--text-sub);">Pedido #${p.pedido_id} • ${p.tipo_massa || 'tradicional'}</div>
+            <div style="font-size: 16px; color:var(--text-sub);">Pedido #${p.pedido_id} • ${p.tipo_massa || 'tradicional'}</div>
           </div>
-          <span style="background:rgba(239,68,68,0.15); color:#ef4444; font-weight:800; padding:2px 8px; border-radius:6px; font-size:10px;">
+          <span style="background:rgba(239,68,68,0.15); color:#ef4444; font-weight:800; padding:2px 8px; border-radius:6px; font-size: 16px;">
             <i class="ph-bold ph-timer"></i> ${p.tempo_coccao_min} min
           </span>
         </div>
@@ -6556,10 +6556,10 @@ window.rotearBurgerKDSDono = async function() {
     if (d && d.ok) {
       box.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:4px;">
-          <div style="font-weight:800; color:#f59e0b; font-size:12.5px;">✅ Pedido #${d.pedido_id} Distribuído nas 3 Praças:</div>
-          <div style="font-size:11px; color:var(--text-sub);">🔥 <strong>Chapa:</strong> ${d.distribuicao.chapa}</div>
-          <div style="font-size:11px; color:var(--text-sub);">🍟 <strong>Fritura:</strong> ${d.distribuicao.fritadeira}</div>
-          <div style="font-size:11px; color:var(--text-sub);">🍔 <strong>Montagem:</strong> ${d.distribuicao.montagem}</div>
+          <div style="font-weight:800; color:#f59e0b; font-size: 15px;">✅ Pedido #${d.pedido_id} Distribuído nas 3 Praças:</div>
+          <div style="font-size: 14px; color:var(--text-sub);">🔥 <strong>Chapa:</strong> ${d.distribuicao.chapa}</div>
+          <div style="font-size: 14px; color:var(--text-sub);">🍟 <strong>Fritura:</strong> ${d.distribuicao.fritadeira}</div>
+          <div style="font-size: 14px; color:var(--text-sub);">🍔 <strong>Montagem:</strong> ${d.distribuicao.montagem}</div>
         </div>
       `;
       window.verEstacaoHamburgueriaDono('chapa');
@@ -6598,9 +6598,9 @@ window.verEstacaoHamburgueriaDono = async function(estacao, btn) {
         <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
           <div>
             <strong>${item.lanche_nome}</strong>
-            <div style="font-size:10.5px; color:var(--text-sub);">Pedido #${item.pedido_id} ${item.ponto_carne ? '• ' + item.ponto_carne.replace('_', ' ') : ''}</div>
+            <div style="font-size: 16px; color:var(--text-sub);">Pedido #${item.pedido_id} ${item.ponto_carne ? '• ' + item.ponto_carne.replace('_', ' ') : ''}</div>
           </div>
-          <span style="background:rgba(245,158,11,0.15); color:#f59e0b; font-weight:800; padding:2px 8px; border-radius:6px; font-size:10px;">
+          <span style="background:rgba(245,158,11,0.15); color:#f59e0b; font-weight:800; padding:2px 8px; border-radius:6px; font-size: 16px;">
             ${item.status}
           </span>
         </div>
@@ -6665,9 +6665,9 @@ window.atualizarRadarChurrascariaDono = async function() {
         <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
           <div>
             <strong>${m.mesa_num}</strong>
-            <div style="font-size:10.5px; color:var(--text-sub);">${m.cortes_solicitados_json || 'Sem restrições'}</div>
+            <div style="font-size: 16px; color:var(--text-sub);">${m.cortes_solicitados_json || 'Sem restrições'}</div>
           </div>
-          <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; padding:2px 8px; border-radius:6px; font-size:10px;">
+          <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; padding:2px 8px; border-radius:6px; font-size: 16px;">
             🟢 Sinal Verde
           </span>
         </div>
@@ -6710,10 +6710,10 @@ window.registrarLoteSushiDono = async function() {
         <div style="display:flex; flex-direction:column; gap:3px;">
           <div style="display:flex; justify-content:space-between;">
             <strong style="color:#ec4899;">${d.peixe}</strong>
-            <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">${d.status_qualidade}</span>
+            <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; font-size: 16px; padding:2px 6px; border-radius:4px;">${d.status_qualidade}</span>
           </div>
-          <div style="font-size:11px; color:var(--text-sub);">Rendimento: <strong>${d.rendimento_calculado}</strong> | Perda em Aparas: ${d.perda_aparas}</div>
-          <div style="font-size:10.5px; color:#10b981;">✓ Lote registrado com conformidade Anvisa e rastreabilidade térmica.</div>
+          <div style="font-size: 14px; color:var(--text-sub);">Rendimento: <strong>${d.rendimento_calculado}</strong> | Perda em Aparas: ${d.perda_aparas}</div>
+          <div style="font-size: 16px; color:#10b981;">✓ Lote registrado com conformidade Anvisa e rastreabilidade térmica.</div>
         </div>
       `;
       window.atualizarLotesSushiDono();
@@ -6738,9 +6738,9 @@ window.atualizarLotesSushiDono = async function() {
         <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
           <div>
             <strong>${l.peixe_tipo}</strong>
-            <div style="font-size:10.5px; color:var(--text-sub);">${l.peso_limpo_kg}kg limpos • ${l.fornecedor || 'Fornecedor padrão'}</div>
+            <div style="font-size: 16px; color:var(--text-sub);">${l.peso_limpo_kg}kg limpos • ${l.fornecedor || 'Fornecedor padrão'}</div>
           </div>
-          <span style="background:rgba(236,72,153,0.15); color:#ec4899; font-weight:800; padding:2px 8px; border-radius:6px; font-size:10px;">
+          <span style="background:rgba(236,72,153,0.15); color:#ec4899; font-weight:800; padding:2px 8px; border-radius:6px; font-size: 16px;">
             ${l.rendimento_pct}% rendimento
           </span>
         </div>
@@ -6781,11 +6781,11 @@ window.lancarDoseBarDono = async function() {
         <div style="display:flex; flex-direction:column; gap:3px;">
           <div style="display:flex; justify-content:space-between;">
             <strong style="color:#8b5cf6;">${d.doses_lancadas}x ${d.bebida} = R$ ${d.valor_total.toFixed(2)}</strong>
-            <span style="background:${d.alerta_troca_garrafa ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; color:${d.alerta_troca_garrafa ? '#ef4444' : '#10b981'}; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">
+            <span style="background:${d.alerta_troca_garrafa ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; color:${d.alerta_troca_garrafa ? '#ef4444' : '#10b981'}; font-weight:800; font-size: 16px; padding:2px 6px; border-radius:4px;">
               ${d.doses_restantes_na_garrafa} doses restantes
             </span>
           </div>
-          <div style="font-size:11px; color:var(--text-sub);">${d.mensagem}</div>
+          <div style="font-size: 14px; color:var(--text-sub);">${d.mensagem}</div>
         </div>
       `;
       window.atualizarGarrafasBarDono();
@@ -6812,7 +6812,7 @@ window.atualizarGarrafasBarDono = async function() {
           <div style="padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
               <strong>${g.bebida_nome}</strong>
-              <span style="font-size:10.5px; color:${pct < 20 ? '#ef4444' : '#8b5cf6'}; font-weight:800;">${g.doses_totais - g.doses_vendidas}/${g.doses_totais} doses (${pct}%)</span>
+              <span style="font-size: 16px; color:${pct < 20 ? '#ef4444' : '#8b5cf6'}; font-weight:800;">${g.doses_totais - g.doses_vendidas}/${g.doses_totais} doses (${pct}%)</span>
             </div>
             <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:6px; overflow:hidden;">
               <div style="height:100%; width:${pct}%; background:${pct < 20 ? '#ef4444' : '#8b5cf6'};"></div>
@@ -6857,10 +6857,10 @@ window.pesarBalancaBuffetDono = async function() {
       box.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:3px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="color:#06b6d4; font-size:13px;">${d.comanda}: R$ ${d.valor_total.toFixed(2)}</strong>
-            <span style="background:rgba(6,182,212,0.15); color:#06b6d4; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">Peso Líquido: ${d.peso_liquido}</span>
+            <strong style="color:#06b6d4; font-size: 16px;">${d.comanda}: R$ ${d.valor_total.toFixed(2)}</strong>
+            <span style="background:rgba(6,182,212,0.15); color:#06b6d4; font-weight:800; font-size: 16px; padding:2px 6px; border-radius:4px;">Peso Líquido: ${d.peso_liquido}</span>
           </div>
-          <div style="font-size:11px; color:var(--text-sub);">Bruto: ${d.peso_bruto} | Tara Descontada: -${d.tara_descontada} | Preço/kg: R$ ${d.preco_quilo.toFixed(2)}</div>
+          <div style="font-size: 14px; color:var(--text-sub);">Bruto: ${d.peso_bruto} | Tara Descontada: -${d.tara_descontada} | Preço/kg: R$ ${d.preco_quilo.toFixed(2)}</div>
         </div>
       `;
     }
@@ -6884,9 +6884,9 @@ window.atualizarCubasBuffetDono = async function() {
         <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
           <div>
             <strong>${c.cuba_nome}</strong>
-            <div style="font-size:10.5px; color:var(--text-sub);">${c.capacidade_pct}% restante</div>
+            <div style="font-size: 16px; color:var(--text-sub);">${c.capacidade_pct}% restante</div>
           </div>
-          <span style="background:${c.capacidade_pct < 25 ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; color:${c.capacidade_pct < 25 ? '#ef4444' : '#10b981'}; font-weight:800; padding:2px 8px; border-radius:6px; font-size:10px;">
+          <span style="background:${c.capacidade_pct < 25 ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; color:${c.capacidade_pct < 25 ? '#ef4444' : '#10b981'}; font-weight:800; padding:2px 8px; border-radius:6px; font-size: 16px;">
             ${c.capacidade_pct < 25 ? '⚠️ REPOR URGENTE' : 'OK'}
           </span>
         </div>
@@ -6925,8 +6925,8 @@ window.dispararFornadaPadariaDono = async function() {
     if (d && d.ok) {
       box.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:3px;">
-          <div style="font-weight:800; color:#f59e0b; font-size:12.5px;">📢 ${d.mensagem}</div>
-          <div style="font-size:11px; color:var(--text-sub); background:rgba(0,0,0,0.15); padding:6px; border-radius:6px;">${d.alerta_whatsapp}</div>
+          <div style="font-weight:800; color:#f59e0b; font-size: 15px;">📢 ${d.mensagem}</div>
+          <div style="font-size: 14px; color:var(--text-sub); background:rgba(0,0,0,0.15); padding:6px; border-radius:6px;">${d.alerta_whatsapp}</div>
         </div>
       `;
       if (typeof showToast === 'function') showToast(`🥖 Fornada de ${item} anunciada!`, 'ph-bell-ringing', 'success');
@@ -6965,9 +6965,9 @@ window.criarEncomendaPadariaDono = async function() {
         <div style="display:flex; flex-direction:column; gap:3px;">
           <div style="display:flex; justify-content:space-between;">
             <strong style="color:#10b981;">${d.cliente}: ${d.item}</strong>
-            <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">50% Sinal Garantido</span>
+            <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; font-size: 16px; padding:2px 6px; border-radius:4px;">50% Sinal Garantido</span>
           </div>
-          <div style="font-size:11px; color:var(--text-sub);">Valor Total: R$ ${d.valor_total.toFixed(2)} | <strong>Caução Pix: R$ ${d.caucao_garantido_50pct.toFixed(2)}</strong> | Saldo: R$ ${d.saldo_a_receber_retirada.toFixed(2)}</div>
+          <div style="font-size: 14px; color:var(--text-sub);">Valor Total: R$ ${d.valor_total.toFixed(2)} | <strong>Caução Pix: R$ ${d.caucao_garantido_50pct.toFixed(2)}</strong> | Saldo: R$ ${d.saldo_a_receber_retirada.toFixed(2)}</div>
         </div>
       `;
     }
@@ -7002,7 +7002,7 @@ window.marcharPratoAlacarteDono = async function() {
       box.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:3px;">
           <strong style="color:#6366f1;">🔔 Marcha Autorizada: ${d.mesa} (${d.etapa_marchada})</strong>
-          <div style="font-size:11px; color:var(--text-sub);">${d.alerta_kds_chef}</div>
+          <div style="font-size: 14px; color:var(--text-sub);">${d.alerta_kds_chef}</div>
         </div>
       `;
       if (typeof showToast === 'function') showToast(`🔔 Marcha de ${d.etapa_marchada} despachada para o chef!`, 'ph-bell', 'info');
@@ -7027,11 +7027,11 @@ window.consultarSommelierDono = async function() {
       box.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:3px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <strong style="color:#ec4899; font-size:12.5px;">🍷 ${d.sommelier_ia.rotulo_recomendado} (${d.sommelier_ia.safra})</strong>
-            <span style="background:rgba(236,72,153,0.15); color:#ec4899; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">R$ ${d.sommelier_ia.preco_garrafa.toFixed(2)}</span>
+            <strong style="color:#ec4899; font-size: 15px;">🍷 ${d.sommelier_ia.rotulo_recomendado} (${d.sommelier_ia.safra})</strong>
+            <span style="background:rgba(236,72,153,0.15); color:#ec4899; font-weight:800; font-size: 16px; padding:2px 6px; border-radius:4px;">R$ ${d.sommelier_ia.preco_garrafa.toFixed(2)}</span>
           </div>
-          <div style="font-size:11px; color:var(--text); line-height:1.4;">${d.sommelier_ia.justificativa_harmonizacao}</div>
-          <div style="font-size:10.5px; color:#10b981; margin-top:2px;">💡 <em>Dica de Venda: ${d.upsell_garcom}</em></div>
+          <div style="font-size: 14px; color:var(--text); line-height:1.4;">${d.sommelier_ia.justificativa_harmonizacao}</div>
+          <div style="font-size: 16px; color:#10b981; margin-top:2px;">💡 <em>Dica de Venda: ${d.upsell_garcom}</em></div>
         </div>
       `;
     }
@@ -7069,10 +7069,10 @@ window.consultarGiroChurrascariaDono = async function() {
         <div style="display:flex; flex-direction:column; gap:4px;">
           <div style="display:flex; justify-content:space-between;">
             <strong style="color:#10b981;">🟢 ${d.mesas_verdes} Verdes | 🔴 ${d.mesas_vermelhas} Pausa</strong>
-            <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; font-size:10px; padding:2px 6px; border-radius:4px;">${d.taxa_consumo_ativo_pct}% Consumo Ativo</span>
+            <span style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:800; font-size: 16px; padding:2px 6px; border-radius:4px;">${d.taxa_consumo_ativo_pct}% Consumo Ativo</span>
           </div>
-          <div style="font-size:11px; color:var(--text);">${d.recomendacao_churrasqueiro}</div>
-          <div style="font-size:10.5px; color:var(--text-sub);">Previsão de consumo: <strong>${d.previsao_cortes_kg_proxima_hora} kg de carne</strong> na próxima hora.</div>
+          <div style="font-size: 14px; color:var(--text);">${d.recomendacao_churrasqueiro}</div>
+          <div style="font-size: 16px; color:var(--text-sub);">Previsão de consumo: <strong>${d.previsao_cortes_kg_proxima_hora} kg de carne</strong> na próxima hora.</div>
         </div>
       `;
     }
@@ -7170,13 +7170,13 @@ window.toggleModoEdicao = function() {
       const editBar = document.createElement('div');
       editBar.className = 'dono-edit-bar';
       editBar.innerHTML = `
-        <div class="drag-handle-main" style="cursor:grab; background:var(--card); padding:8px 12px; border-radius:8px; border:1px solid var(--border); margin-right:8px; display:inline-flex; align-items:center; font-weight:800; font-size:12px; color:var(--text);"><i class="ph-bold ph-arrows-out-cardinal" style="margin-right:6px;"></i> Mover</div>
-        <select onchange="window.alterarParametroSecao('${el.id}', 'largura', this.value); window.aplicarDonoModularConfig()" style="padding:8px; border-radius:8px; background:var(--card); border:1px solid var(--border); color:var(--text); font-size:12px; font-weight:700;">
+        <div class="drag-handle-main" style="cursor:grab; background:var(--card); padding:8px 12px; border-radius:8px; border:1px solid var(--border); margin-right:8px; display:inline-flex; align-items:center; font-weight:800; font-size: 15px; color:var(--text);"><i class="ph-bold ph-arrows-out-cardinal" style="margin-right:6px;"></i> Mover</div>
+        <select onchange="window.alterarParametroSecao('${el.id}', 'largura', this.value); window.aplicarDonoModularConfig()" style="padding:8px; border-radius:8px; background:var(--card); border:1px solid var(--border); color:var(--text); font-size: 15px; font-weight:700;">
           <option value="small" ${conf.largura === 'small' ? 'selected' : ''}>Pequeno (1 Col)</option>
           <option value="medium" ${conf.largura === 'medium' ? 'selected' : ''}>Médio (2 Col)</option>
           <option value="large" ${conf.largura === 'large' ? 'selected' : ''}>Grande (Linha Toda)</option>
         </select>
-        <button onclick="window.alterarParametroSecao('${el.id}', 'visivel', false); window.aplicarDonoModularConfig()" style="padding:8px 12px; border-radius:8px; background:#ef4444; border:none; color:#fff; font-size:12px; font-weight:800; margin-left:8px; cursor:pointer;"><i class="ph-bold ph-eye-slash"></i> Ocultar</button>
+        <button onclick="window.alterarParametroSecao('${el.id}', 'visivel', false); window.aplicarDonoModularConfig()" style="padding:8px 12px; border-radius:8px; background:#ef4444; border:none; color:#fff; font-size: 15px; font-weight:800; margin-left:8px; cursor:pointer;"><i class="ph-bold ph-eye-slash"></i> Ocultar</button>
       `;
       editBar.style.position = 'absolute';
       editBar.style.top = '10px';
