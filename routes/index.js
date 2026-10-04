@@ -28,6 +28,10 @@ const { createNfceRouter, createSatRouter, createFormasPagamentoRouter } = requi
 const { createDispositivosRouter }                  = require('./dispositivos.routes');
 const { createRelatoriosRouter, createAuditoriaCancelamentosRouter } = require('./relatorios.routes');
 
+// Sprint 4
+const { createAdminRouter }                         = require('./admin.routes');
+const { createMesasRouter }                         = require('./mesas.routes');
+
 /**
  * Inicializa e monta todos os módulos de rotas no app Express.
  * @param {import('express').Application} app
@@ -42,11 +46,6 @@ function initRoutes(app, deps) {
   app.use('/api/kds',        createKdsRouter());
   app.use('/api/painel-tv',  createPainelTvRouter());
 
-  app.get('/api/mesas', (req, res) => {
-    deps.getTenantDb().all('SELECT * FROM mesas ORDER BY id ASC', [], (err, rows) => {
-      res.json(rows || []);
-    });
-  });
 
   // ── Sprint 2 ─────────────────────────────────────────────────────────
   app.use('/api/pedidos',    createPedidosRouter());
@@ -67,10 +66,27 @@ function initRoutes(app, deps) {
   app.use('/api/dispositivos', createDispositivosRouter());
   app.use('/api/auditoria',    createAuditoriaCancelamentosRouter());
 
+  // ── Sprint 4 ─────────────────────────────────────────────────────────
+  app.use('/api/mesas',      createMesasRouter());
+  
+  const adminRouter = createAdminRouter();
+  app.use('/api/configuracoes', (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/configuracoes' + req.url }), res, next));
+  app.use('/api/config',        (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/config' + req.url }), res, next));
+  app.use('/api/funcoes',       (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/funcoes' + req.url }), res, next));
+  app.use('/api/loja',          (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/loja' + req.url }), res, next));
+  app.use('/api/plugins',       (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/plugins' + req.url }), res, next));
+  app.use('/api/sync',          (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/sync' + req.url }), res, next));
+  app.use('/api/mensagens',     (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/mensagens' }), res, next));
+  app.use('/api/licenca',       (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/licenca' + req.url }), res, next));
+  app.use('/api/pwa',           (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/pwa' + req.url }), res, next));
+  app.use('/api/seguranca',     (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/seguranca' + req.url }), res, next));
+  app.use('/api/status-bloqueio', (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/status-bloqueio' }), res, next));
+
   const sprints = [
     'auth', 'caixa', 'kds', 'painel-tv',
     'pedidos', 'metricas', 'cupons', 'ia',
-    'nfce', 'fiscal/sat', 'formas-pagamento', 'dispositivos', 'relatorios'
+    'nfce', 'fiscal/sat', 'formas-pagamento', 'dispositivos', 'relatorios',
+    'admin', 'mesas'
   ];
   console.log(`[routes] ✅ ${sprints.length} módulos montados: ${sprints.join(' | ')}`);
 }

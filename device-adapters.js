@@ -120,22 +120,22 @@
       this.currentProfile = profile;
       doc.style.setProperty('--vh', (h * 0.01) + 'px');
 
-      // 7. MONITOR VERTICAL (DESKTOP / BALCÃO EM MODO RETRATO: h > w e h >= 680)
-      var vMode = 'auto';
+      // 7. MONITOR VERTICAL (DESKTOP / BALCÃO EM MODO RETRATO)
+      var vMode = 'disabled';
       try {
         var layoutCfg = window.obterConfigLayoutColaborador && window.obterConfigLayoutColaborador();
         if (layoutCfg && layoutCfg.monitor_vertical_modo) vMode = layoutCfg.monitor_vertical_modo;
-        else vMode = localStorage.getItem('chef_monitor_vertical_mode') || 'auto';
+        else vMode = localStorage.getItem('chef_monitor_vertical_mode') || 'disabled';
       } catch(e) {}
 
       var isVerticalMonitor = false;
       if (vMode === 'stacked' || vMode === '2col') {
         isVerticalMonitor = true;
-      } else if (vMode === 'disabled') {
-        isVerticalMonitor = false;
+      } else if (vMode === 'auto') {
+        // Auto: apenas em telas pequenas (< 640px) com altura >= 680px
+        isVerticalMonitor = isPortrait && h >= 680 && w < 640;
       } else {
-        // Auto: detecta tela em modo retrato/vertical com altura desktop/tablet (>= 680px)
-        isVerticalMonitor = isPortrait && h >= 680;
+        isVerticalMonitor = false;
       }
 
       body.classList.toggle('chef-monitor-vertical', isVerticalMonitor);
