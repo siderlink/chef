@@ -2,7 +2,7 @@
 <html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>Chef Cozinha Ultra 3D Studio — Alta Performance (> 6GB RAM)</title>
 
   <!-- Google Fonts: Outfit, Inter & JetBrains Mono -->
@@ -20,6 +20,9 @@
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Resilience Guard (Anti-Crash & Fallback) & Offline Queue -->
+  <script src="/resilience-guard.js"></script>
+  <script src="/offline-queue.js"></script>
   <!-- Socket.io -->
   <script src="/socket.io/socket.io.js"></script>
 
@@ -27,13 +30,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-  <!-- Estilos Exclusivos Caixa Ultra 3D -->
+  <!-- Estilos Exclusivos Caixa Ultra 3D e Adaptadores Multi-Dispositivos -->
   <link rel="stylesheet" href="/caixa-ultra.css">
+  <link rel="stylesheet" href="/device-adapters.css">
 </head>
 <body>
 
   <!-- Canvas Three.js Ambiente (Aura Fluida de Fundo) -->
   <canvas id="threejs-ambient-canvas"></canvas>
+
+  <!-- Canvas de Efeitos Arcade & Partículas do Jogo Tycoon (Moedas, Estrelas, Números) -->
+  <canvas id="ultra-game-fx-canvas"></canvas>
 
   <!-- BANNER DE INFOGRÁFICO DE FLUXO DE PEDIDO (ANIMAÇÃO DESENHADA) -->
   <div id="ultra-order-flow-banner" class="ultra-order-flow-banner"></div>
@@ -69,6 +76,9 @@
         </div>
       </div>
 
+      <!-- 🎮 ARCADE GAME HUD (Nível, XP, Combos, Estrelas e Rush Hour) -->
+      <div id="ultra-game-hud-bar" class="ultra-game-hud-bar"></div>
+
       <!-- Barra de Busca de Mesas e Comandas (F4) -->
       <div class="ultra-search-container">
         <i class="ph ph-magnifying-glass ultra-search-icon"></i>
@@ -76,13 +86,16 @@
         <span class="ultra-search-badge" onclick="document.getElementById('ultra-search-input').focus()">F4</span>
       </div>
 
-      <!-- Seletor de Modo de Visualização: Grade vs Salão 3D -->
+      <!-- Seletor de Modo de Visualização: Grade vs Salão 3D vs Fila de Espera -->
       <div class="ultra-view-switch">
         <button id="btn-view-grid" class="ultra-view-btn active" onclick="ChefUltraApp.toggleSalonView('grid')" title="Visualização em Grade de Cards">
           <i class="ph-bold ph-squares-four"></i> Grade
         </button>
         <button id="btn-view-3d" class="ultra-view-btn" onclick="ChefUltraApp.toggleSalonView('3d')" title="Visualização 3D do Salão com Three.js (F11)">
           <i class="ph-bold ph-cube"></i> Salão 3D
+        </button>
+        <button id="btn-view-fila-espera" class="ultra-view-btn" onclick="window.abrirFilaEsperaModal()" title="Fila de Espera Digital com QR Code no Salão" style="color:var(--ultra-coral);">
+          <i class="ph-bold ph-users-three"></i> Fila Espera
         </button>
       </div>
 
@@ -303,6 +316,19 @@
           <button class="ultra-key" onclick="ChefUltraApp.teclarNumero('BS')"><i class="ph ph-backspace"></i></button>
         </div>
 
+        <!-- Ações Operacionais: Split/Parcial, Balança Serial e Fiscal NFC-e -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:10px;">
+          <button id="ultra-btn-pagamento-parcial" class="ultra-btn-action" onclick="ChefUltraApp.abrirPagamentoParcial()" style="background:rgba(14,165,233,0.15); border:1px solid rgba(14,165,233,0.4); color:var(--ultra-cyan); font-weight:700; font-size:11px; height:38px; display:flex; align-items:center; justify-content:center; gap:4px; border-radius:8px; cursor:pointer;" title="Divisão e Pagamento Parcial de Itens Desagrupados (F2)">
+            <i class="ph-bold ph-receipt"></i> Split (F2)
+          </button>
+          <button id="ultra-btn-conectar-balanca" class="ultra-btn-action" onclick="ChefUltraApp.conectarBalancaSerial()" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); color:var(--ultra-emerald); font-weight:700; font-size:11px; height:38px; display:flex; align-items:center; justify-content:center; gap:4px; border-radius:8px; cursor:pointer;" title="Conectar Balança Serial Toledo / Filizola / Urano">
+            <i class="ph-bold ph-scales"></i> Balança
+          </button>
+          <button id="ultra-btn-nfce-fiscal" class="ultra-btn-action" onclick="ChefUltraApp.emitirNfceAvulsa()" style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:var(--ultra-amber); font-weight:700; font-size:11px; height:38px; display:flex; align-items:center; justify-content:center; gap:4px; border-radius:8px; cursor:pointer;" title="Emitir Cupom Fiscal NFC-e SEFAZ">
+            <i class="ph-bold ph-file-text"></i> NFC-e
+          </button>
+        </div>
+
         <!-- Botão Concluir Venda -->
         <button id="ultra-btn-concluir-venda" class="ultra-btn-finalize" onclick="ChefUltraApp.concluirVenda()" disabled>
           <i class="ph-bold ph-check-circle" style="font-size:22px;"></i>
@@ -446,6 +472,10 @@
   </div>
 
   <!-- Scripts do Caixa Ultra 3D Studio -->
+  <script src="/caixa-ultra-game.js"></script>
+  <script src="/pagamento-parcial-modal.js"></script>
+  <script src="/plugins/fila-espera/client.js" defer></script>
+  <script src="/device-adapters.js"></script>
   <script src="/caixa-ultra-3d.js"></script>
   <script src="/caixa-ultra.js"></script>
 </body>

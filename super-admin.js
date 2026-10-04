@@ -7049,6 +7049,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (window.socket && typeof window.socket.on === 'function') {
+      window.socket.on('novo_visitante_site', function(data) {
+        showToast('🌍 Novo visitante no site (' + (data.page || '') + ')!', 'info');
+      });
+      window.socket.on('clique_comecar_agora', function(data) {
+        showToast('🔥 Visitante clicou em COMEÇAR AGORA (' + (data.page || '') + ')!', 'info');
+      });
+
       window.socket.on('super:instance_connected', function(data) {
         showToast('🟢 Instância conectada: ' + (data.instanceId || ''), 'info');
         carregarInstancias();

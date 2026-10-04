@@ -29,7 +29,7 @@
                 <a href="#pricing" class="magnetic">Planos</a>
             </div>
             <div class="nav-cta">
-                <button class="btn-primary magnetic glow-btn">
+                <button class="btn-primary magnetic glow-btn btn-comecar-agora">
                     <span>Começar Agora</span>
                     <i class="fa-solid fa-arrow-right"></i>
                 </button>
@@ -54,7 +54,7 @@
                 Esqueça sistemas lentos e engessados. Projetado para máxima velocidade, estabilidade offline e operação em tempo real. O verdadeiro coração tecnológico do seu negócio.
             </p>
             <div class="hero-actions reveal-up">
-                <button class="btn-primary huge glow-btn magnetic">
+                <button class="btn-primary huge glow-btn magnetic btn-comecar-agora">
                     <span>Experimentar Grátis</span>
                 </button>
                 <button class="btn-secondary huge magnetic">
@@ -146,13 +146,54 @@
         </div>
     </section>
 
+    <!-- Pricing Section -->
+    <section class="pricing" id="pricing">
+        <div class="section-header reveal-up">
+            <h2 class="section-title">Planos Transparentes</h2>
+            <p class="section-desc">Pague apenas pelo que o seu restaurante precisa. Sem taxas ocultas.</p>
+        </div>
+        <div class="pricing-grid">
+            <div class="pricing-card spotlight-card reveal-up">
+                <h3>Essencial</h3>
+                <div class="price">R$ 149<span>/mês</span></div>
+                <ul>
+                    <li><i class="fa-solid fa-check text-green"></i> PDV Básico</li>
+                    <li><i class="fa-solid fa-check text-green"></i> Até 50 Mesas</li>
+                    <li><i class="fa-solid fa-check text-green"></i> Suporte Horário Comercial</li>
+                </ul>
+                <button class="btn-secondary magnetic w-100 btn-comecar-agora">Começar Agora</button>
+            </div>
+            <div class="pricing-card spotlight-card featured reveal-up" style="transition-delay: 0.1s;">
+                <div class="badge-featured">Mais Escolhido</div>
+                <h3>Pro</h3>
+                <div class="price">R$ 299<span>/mês</span></div>
+                <ul>
+                    <li><i class="fa-solid fa-check text-green"></i> PDV Ilimitado</li>
+                    <li><i class="fa-solid fa-check text-green"></i> KDS Inteligente e Fila</li>
+                    <li><i class="fa-solid fa-check text-green"></i> Integração iFood</li>
+                </ul>
+                <button class="btn-primary glow-btn magnetic w-100 btn-comecar-agora">Começar Agora</button>
+            </div>
+            <div class="pricing-card spotlight-card reveal-up" style="transition-delay: 0.2s;">
+                <h3>Enterprise</h3>
+                <div class="price">Sob Consulta</div>
+                <ul>
+                    <li><i class="fa-solid fa-check text-green"></i> Tudo do Pro</li>
+                    <li><i class="fa-solid fa-check text-green"></i> Multi-Lojas e Franquias</li>
+                    <li><i class="fa-solid fa-check text-green"></i> Suporte Dedicado 24/7</li>
+                </ul>
+                <button class="btn-secondary magnetic w-100 btn-comecar-agora">Falar com Vendas</button>
+            </div>
+        </div>
+    </section>
+
     <!-- CTA Final -->
     <section class="final-cta">
         <div class="cta-box spotlight-card reveal-up">
             <h2>Pronto para escalar sua operação?</h2>
             <p>Junte-se a milhares de restaurantes modernos operando na velocidade da luz.</p>
             <div class="cta-actions">
-                <button class="btn-primary huge glow-btn magnetic">Criar Conta Gratuita</button>
+                <button class="btn-primary huge glow-btn magnetic btn-comecar-agora">Criar Conta Gratuita</button>
             </div>
         </div>
     </section>
@@ -170,7 +211,31 @@
         </div>
     </footer>
 
+    <!-- Modal de Cadastro -->
+    <div class="modal-overlay" id="modal-cadastro">
+        <div class="modal-content spotlight-card">
+            <button class="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            <h2>Crie sua conta</h2>
+            <p>Preencha os dados abaixo e entraremos em contato com você em menos de 5 minutos.</p>
+            <form id="form-cadastro">
+                <div class="input-group">
+                    <label>Nome do Restaurante</label>
+                    <input type="text" id="cad-nome" required placeholder="Ex: Burger House">
+                </div>
+                <div class="input-group">
+                    <label>WhatsApp</label>
+                    <input type="tel" id="cad-wpp" required placeholder="(11) 99999-9999">
+                </div>
+                <button type="submit" class="btn-primary glow-btn magnetic w-100" style="margin-top: 1rem; justify-content: center;">Solicitar Acesso</button>
+            </form>
+            <div id="cadastro-feedback" style="display: none; margin-top: 1rem; color: #22c55e; font-weight: 500;">
+                <i class="fa-solid fa-circle-check"></i> Solicitação enviada com sucesso!
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="pv-v5.js"></script>

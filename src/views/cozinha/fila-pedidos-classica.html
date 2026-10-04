@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/fila-classica.css">
+  <link rel="stylesheet" href="/device-adapters.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
@@ -299,7 +300,7 @@
             <button type="button" class="fila-settings-btn" onclick="window.trocarVersaoFila('nova')" style="border-color: #fc4b15; color: #fc4b15; cursor: pointer;" title="Mudar para o design moderno v2">
               <i class="ph-fill ph-sparkle" style="color: #fc4b15;"></i><span>Moderna (v2)</span>
             </button>
-            <button type="button" class="fila-settings-btn active" style="background: rgba(0,0,0,0.06); border-color: #94a3b8; color: #1e293b;" title="Visual Clássico v1 Ativo">
+            <button type="button" class="fila-settings-btn active" style="background: rgba(0,0,0,0.06); border-color: #94a3b8; color: #1e293b; cursor:default; pointer-events:none;" title="Visual Clássico v1 Ativo">
               <i class="ph ph-clock-counter-clockwise"></i><span>Clássica (v1)</span>
             </button>
           </div>
@@ -400,6 +401,7 @@
   <script src="/fullscreen.js"></script>
   <script>window.PUSH_ROLE = 'cozinha'; window.HIDE_COLAB_DOCK_BTN = true;</script>
   <script src="/push-client.js"></script>
+  <script src="/device-adapters.js"></script>
   <script src="/chef-colaborador-dock.js"></script>
   <script src="/chef-layout-injetor.js"></script>
 </body>

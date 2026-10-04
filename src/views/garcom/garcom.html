@@ -1504,6 +1504,10 @@
         <span id="garcom-offline-badge" style="display: none; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 12px; background: #ef4444; color: #ffffff; white-space: nowrap;"></span>
       </div>
       <div style="display: flex; gap: 8px;">
+        <button id="btn-voz-ia-garcom"
+          style="color:#8b5cf6; font-size:24px; background:none; border:none; cursor:pointer; white-space:nowrap; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center;"
+          title="Comando de Voz IA (Salão)" aria-label="Comando de Voz IA"
+          onclick="window.abrirModalVozIA && window.abrirModalVozIA()"><i class="ph-bold ph-microphone"></i></button>
         <button id="btn-notificacoes"
           style="color:#3b82f6; font-size:24px; background:none; border:none; cursor:pointer; white-space:nowrap; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center;"
           title="Ativar notificações push" aria-label="Ativar notificações push"
@@ -2324,6 +2328,17 @@
           <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Abrir com Câmera</span>
         </div>
 
+        <!-- Card Pedido por Voz IA -->
+        <div class="atalho-card" id="card-atalho-voz-ia" onclick="window.abrirModalVozIA && window.abrirModalVozIA()"
+          style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
+          <div
+            style="width: 52px; height: 52px; border-radius: 16px; background: rgba(139,92,246,0.12); color: #8b5cf6; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            <i class="ph-bold ph-microphone"></i>
+          </div>
+          <strong style="font-size: 14px; color: var(--g-text, #0f172a);">Comando de Voz IA</strong>
+          <span style="font-size: 11.5px; color: var(--g-text-muted, #64748b);">Lançar por Voz</span>
+        </div>
+
         <!-- Card Ranking & Metas -->
         <div class="atalho-card" id="card-atalho-ranking-garcom" onclick="window.abrirModalLeaderboardGarcom()"
           style="background: var(--g-card-bg, #ffffff); border: 1.5px solid var(--g-border, #e2e8f0); border-radius: 20px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s;">
@@ -2863,6 +2878,85 @@
           <button onclick="window.fecharAdicionarItemRapidoGarcom()"
             style="width: 100%; padding: 13px; border-radius: 14px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: 700; font-size: 14px; cursor: pointer;">
             Concluir / Fechar
+          </button>
+        </div>
+      </div>
+    <!-- MODAL COMANDO DE VOZ IA (GARÇOM & SALÃO) -->
+    <div id="modal-garcom-voz" class="garcom-modal-overlay"
+      style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.75); backdrop-filter:blur(6px); z-index:99999; justify-content:center; align-items:flex-end; padding:0;"
+      onclick="if(event.target===this) window.fecharModalVozIA && window.fecharModalVozIA()">
+      <div class="garcom-modal-sheet"
+        style="width: 100%; max-width: 500px; max-height: 90vh; border-radius: 28px 28px 0 0; background: var(--g-card-bg, #ffffff); box-shadow: 0 -10px 40px rgba(0,0,0,0.35); display: flex; flex-direction: column; padding: 22px 20px; box-sizing: border-box; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+
+        <!-- Header do Modal -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:42px; height:42px; border-radius:14px; background:rgba(139,92,246,0.15); color:#8b5cf6; display:flex; align-items:center; justify-content:center; font-size:24px;">
+              <i class="ph-bold ph-microphone"></i>
+            </div>
+            <div>
+              <h3 style="font-size: 18px; font-weight: 800; color: var(--g-text, #0f172a); margin: 0;">Garçom Voice IA</h3>
+              <span style="font-size: 12px; color: var(--g-text-muted, #64748b);">Dite a mesa e os itens com naturalidade</span>
+            </div>
+          </div>
+          <button onclick="window.fecharModalVozIA && window.fecharModalVozIA()"
+            style="background:#f1f5f9; border:none; font-size:20px; color:#64748b; cursor:pointer; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;">&times;</button>
+        </div>
+
+        <!-- Área Central de Gravação de Voz -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 0; gap: 12px;">
+          <!-- Botão Gigante de Microfone com Pulso -->
+          <button id="btn-garcom-mic-trigger" onclick="window.alternarReconhecimentoVoz && window.alternarReconhecimentoVoz()"
+            style="width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: 4px solid rgba(139,92,246,0.25); color: #ffffff; font-size: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 8px 24px rgba(139,92,246,0.35); transition: all 0.25s ease;">
+            <i id="icone-mic-status" class="ph-bold ph-microphone"></i>
+          </button>
+          <div id="txt-status-mic" style="font-size: 13.5px; font-weight: 700; color: #8b5cf6; text-align: center;">
+            Toque no microfone e fale o pedido
+          </div>
+        </div>
+
+        <!-- Caixa de Transcrição / Entrada de Texto -->
+        <div style="background: var(--bg-main, #f8fafc); border: 1.5px solid var(--border-color, #e2e8f0); border-radius: 16px; padding: 12px; margin-bottom: 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--g-text-muted, #64748b);">Transcrição / Comando</span>
+            <button onclick="document.getElementById('input-voz-transcricao').value=''; document.getElementById('resultado-voz-ia').style.display='none';" style="background:none; border:none; color:#94a3b8; font-size:11px; cursor:pointer; font-weight:600;">Limpar</button>
+          </div>
+          <textarea id="input-voz-transcricao" rows="2" placeholder="Ex: Mesa 12, duas cocas lata e uma pizza quatro queijos sem cebola..."
+            style="width:100%; border:none; background:transparent; outline:none; font-size:13.5px; font-weight:600; color:var(--g-text, #0f172a); resize:none; font-family:inherit;"></textarea>
+        </div>
+
+        <!-- Botão Processar IA -->
+        <button id="btn-processar-voz-ia" onclick="window.processarComandoVozIA && window.processarComandoVozIA()"
+          style="width:100%; padding:13px; border-radius:14px; background:linear-gradient(135deg, #8b5cf6, #7c3aed); border:none; color:#ffffff; font-weight:800; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(124,58,237,0.3); transition:all 0.2s;">
+          <i class="ph-bold ph-sparkle"></i> <span>Interpretar com IA</span>
+        </button>
+
+        <!-- Card de Resultado da Interpretação IA (Oculto até processar) -->
+        <div id="resultado-voz-ia" style="display:none; margin-top:14px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:18px; padding:14px; max-height:36vh; overflow-y:auto;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #bbf7d0; padding-bottom:8px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:18px;">🪑</span>
+              <strong id="voz-resultado-mesa" style="font-size:14px; color:#166534;">Mesa: Não especificada</strong>
+            </div>
+            <span id="voz-resultado-total-itens" style="font-size:12px; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:8px;">0 itens</span>
+          </div>
+
+          <!-- Lista de Itens Detectados -->
+          <div id="voz-resultado-itens-lista" style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">
+            <!-- Preenchido via JS -->
+          </div>
+
+          <!-- Botão de Ação: Lançar na Mesa -->
+          <button id="btn-confirmar-lancamento-voz" onclick="window.confirmarLancamentoVozIA && window.confirmarLancamentoVozIA()"
+            style="width:100%; padding:14px; border-radius:14px; background:#10b981; border:none; color:#ffffff; font-weight:800; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 14px rgba(16,185,129,0.35);">
+            <i class="ph-bold ph-check-circle"></i> <span>Confirmar & Lançar na Mesa</span>
+          </button>
+        </div>
+
+        <div style="padding-top: 12px; margin-top: 10px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);">
+          <button onclick="window.fecharModalVozIA && window.fecharModalVozIA()"
+            style="width: 100%; padding: 11px; border-radius: 12px; background: transparent; border: 1px solid var(--border-color, #cbd5e1); color: var(--g-text-muted, #64748b); font-weight: 700; font-size: 13px; cursor: pointer;">
+            Fechar
           </button>
         </div>
       </div>

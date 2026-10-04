@@ -119,6 +119,31 @@
 
       this.currentProfile = profile;
       doc.style.setProperty('--vh', (h * 0.01) + 'px');
+
+      // 7. MONITOR VERTICAL (DESKTOP / BALCÃO EM MODO RETRATO: h > w e h >= 680)
+      var vMode = 'auto';
+      try {
+        var layoutCfg = window.obterConfigLayoutColaborador && window.obterConfigLayoutColaborador();
+        if (layoutCfg && layoutCfg.monitor_vertical_modo) vMode = layoutCfg.monitor_vertical_modo;
+        else vMode = localStorage.getItem('chef_monitor_vertical_mode') || 'auto';
+      } catch(e) {}
+
+      var isVerticalMonitor = false;
+      if (vMode === 'stacked' || vMode === '2col') {
+        isVerticalMonitor = true;
+      } else if (vMode === 'disabled') {
+        isVerticalMonitor = false;
+      } else {
+        // Auto: detecta tela em modo retrato/vertical com altura desktop/tablet (>= 680px)
+        isVerticalMonitor = isPortrait && h >= 680;
+      }
+
+      body.classList.toggle('chef-monitor-vertical', isVerticalMonitor);
+      doc.classList.toggle('chef-monitor-vertical', isVerticalMonitor);
+      body.classList.toggle('device-monitor-vertical', isVerticalMonitor);
+      doc.classList.toggle('device-monitor-vertical', isVerticalMonitor);
+      body.classList.toggle('chef-vertical-2col', isVerticalMonitor && vMode === '2col');
+      body.classList.toggle('chef-vertical-stacked', isVerticalMonitor && vMode !== '2col');
     },
 
     setupListeners: function () {

@@ -6398,14 +6398,7 @@ document.addEventListener('DOMContentLoaded', function() {
     copiarParaClipboard(link, 'Link de ajuda remota copiado!');
   };
 
-  window.abrirModalGerarLinkSuporte = function() {
-    var modal = document.getElementById('modal-gerar-link-suporte');
-    if (!modal) return;
-    document.getElementById('sup-form-gerar-box').style.display = 'block';
-    document.getElementById('sup-result-gerar-box').style.display = 'none';
-    document.getElementById('sup-input-restaurante').value = '';
-    modal.style.display = 'flex';
-  };
+
 
   window.fecharModalGerarLinkSuporte = function() {
     var modal = document.getElementById('modal-gerar-link-suporte');
@@ -7056,6 +7049,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (window.socket && typeof window.socket.on === 'function') {
+      window.socket.on('novo_visitante_site', function(data) {
+        showToast('🌍 Novo visitante no site (' + (data.page || '') + ')!', 'info');
+      });
+      window.socket.on('clique_comecar_agora', function(data) {
+        showToast('🔥 Visitante clicou em COMEÇAR AGORA (' + (data.page || '') + ')!', 'info');
+      });
+
       window.socket.on('super:instance_connected', function(data) {
         showToast('🟢 Instância conectada: ' + (data.instanceId || ''), 'info');
         carregarInstancias();
@@ -12018,12 +12018,22 @@ window.carregarSessoesSuporte = function() {
 };
 
 window.abrirModalGerarLinkSuporte = function() {
+  console.log('abrirModalGerarLinkSuporte chamado!');
   var modal = document.getElementById('modal-gerar-link-suporte');
+  if (!modal) {
+    console.error('Modal modal-gerar-link-suporte nao encontrado no DOM!');
+    alert('Erro: Modal não encontrado.');
+    return;
+  }
+  if (modal.parentNode !== document.body) {
+    document.body.appendChild(modal);
+  }
   var formBox = document.getElementById('sup-form-gerar-box');
   var resBox = document.getElementById('sup-result-gerar-box');
   if (formBox) formBox.style.display = 'block';
   if (resBox) resBox.style.display = 'none';
-  if (modal) modal.style.display = 'flex';
+  modal.style.display = 'flex';
+  modal.style.zIndex = '999999';
   var inp = document.getElementById('sup-input-restaurante');
   if (inp) { inp.value = ''; inp.focus(); }
 };

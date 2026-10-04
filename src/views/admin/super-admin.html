@@ -1341,30 +1341,76 @@
       line-height: 1.5;
     }
 
-    /* ── MODAIS (GLASSMORPHISM) ──────────────────────────────── */
-    .modal-overlay {
+    /* ── BASE CARDS (DESKTOP & MOBILE) ────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-color);
+      border-radius: 20px;
+      padding: 1.8rem;
+      box-shadow: var(--card-shadow);
+      transition: var(--transition);
+      color: var(--text-main);
+    }
+
+    [data-theme="light"] .card,
+    body.theme-light .card {
+      background: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      color: #0f172a !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    /* ── MODAIS (GLASSMORPHISM & ROBUST OVERRIDES) ─────────────── */
+    .modal-overlay,
+    .modal {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.65);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 1000;
+      z-index: 99999;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
     }
 
-    .modal-overlay.active {
-      display: flex;
-      opacity: 1;
+    /* Qualquer modal aberto via .active OU via style.display='flex' / 'block' */
+    .modal-overlay.active,
+    .modal.active,
+    .modal-overlay[style*="display: flex"],
+    .modal-overlay[style*="display: block"],
+    .modal-overlay[style*="display:flex"],
+    .modal-overlay[style*="display:block"],
+    .modal[style*="display: flex"],
+    .modal[style*="display: block"],
+    .modal[style*="display:flex"],
+    .modal[style*="display:block"] {
+      display: flex !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
     }
 
-    .modal-content {
+    /* Modais fechados explicitamente quando NÃO ativos */
+    .modal-overlay:not(.active)[style*="display: none"],
+    .modal-overlay:not(.active)[style*="display:none"],
+    .modal:not(.active)[style*="display: none"],
+    .modal:not(.active)[style*="display:none"] {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    .modal-content,
+    .modal > div {
       background: var(--bg-card);
       border: 1.5px solid var(--border-color);
       border-radius: 24px;
@@ -1372,12 +1418,24 @@
       max-width: 560px;
       box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
       transform: translateY(-20px);
-      transition: transform 0.3s ease;
+      transition: transform 0.25s ease, opacity 0.25s ease;
       overflow: hidden;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
     }
 
-    .modal-overlay.active .modal-content {
-      transform: translateY(0);
+    .modal-overlay.active .modal-content,
+    .modal.active .modal-content,
+    .modal-overlay[style*="display: flex"] .modal-content,
+    .modal-overlay[style*="display: block"] .modal-content,
+    .modal[style*="display: flex"] .modal-content,
+    .modal[style*="display: block"] .modal-content,
+    .modal.active > div,
+    .modal[style*="display: flex"] > div,
+    .modal[style*="display: block"] > div {
+      transform: translateY(0) !important;
+      opacity: 1 !important;
     }
 
     .modal-header {
@@ -2425,6 +2483,30 @@
       });
     }
   </script>
+
+<style>
+/* FIXES FOR OVERLAPPING AND ALIGNMENT */
+.header-actions button, .btn, .btn-primary, .btn-secondary {
+    white-space: nowrap !important;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 100%;
+}
+table th, table td {
+    padding: 12px 15px !important;
+    text-align: left;
+    white-space: nowrap;
+}
+.user-action-btn, button i {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+}
+.sidebar a {
+    transition: all 0.1s ease;
+}
+</style>
+
 </head>
 
 <body>

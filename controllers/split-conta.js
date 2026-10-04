@@ -569,9 +569,21 @@ module.exports = function (socket, io, db, helpers) {
 
                 const pagId = await registraPagamentoHistory('itens', valorItens + valorServico, null);
                 if (pagId) {
-                  const stmt = db.prepare(`INSERT INTO mesa_split_itens (pagamento_id, item_id, qtd, valor) VALUES (?, ?, ?, ?)`);
-                  validClaims.forEach(c => { stmt.run([pagId, c.itemId, c.qtd, c.valor]); });
-                  stmt.finalize();
+                  if (typeof db.prepare === 'function') {
+                    try {
+                      const stmt = db.prepare(`INSERT INTO mesa_split_itens (pagamento_id, item_id, qtd, valor) VALUES (?, ?, ?, ?)`);
+                      validClaims.forEach(c => { stmt.run([pagId, c.itemId, c.qtd, c.valor]); });
+                      if (stmt && typeof stmt.finalize === 'function') stmt.finalize();
+                    } catch (_) {
+                      validClaims.forEach(c => {
+                        db.run(`INSERT INTO mesa_split_itens (pagamento_id, item_id, qtd, valor) VALUES (?, ?, ?, ?)`, [pagId, c.itemId, c.qtd, c.valor]);
+                      });
+                    }
+                  } else {
+                    validClaims.forEach(c => {
+                      db.run(`INSERT INTO mesa_split_itens (pagamento_id, item_id, qtd, valor) VALUES (?, ?, ?, ?)`, [pagId, c.itemId, c.qtd, c.valor]);
+                    });
+                  }
                 }
               }
 

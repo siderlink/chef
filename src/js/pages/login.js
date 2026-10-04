@@ -89,8 +89,8 @@ window.abrirModalEscolhaEstacao = function(data) {
     document.body.appendChild(modal);
   }
 
-  const estacoes = data.estacoes || ['garcom'];
-  const nomeColab = data.nome || 'Colaborador';
+  const estacoes = (data && data.estacoes) || ['garcom'];
+  const nomeColab = (data && data.nome) || 'Colaborador';
 
   const caixaUrl = localStorage.getItem('chef_caixa_versao') === 'v1' ? '/caixa-classico.html' : '/index.html';
   const estacoesConfig = {
@@ -143,6 +143,53 @@ window.abrirModalEscolhaEstacao = function(data) {
 window.selecionarEstacaoTrabalho = function(url, estacaoNome) {
   localStorage.setItem('chef_estacao_atual', estacaoNome);
   window.location.href = url;
+};
+
+// ─── SELETOR DE RESTAURANTES (REDE / MULTI-TENANT) ───
+window.fecharSeletorRede = function() {
+  const overlay = document.getElementById('rede-overlay');
+  if (overlay) {
+    overlay.classList.remove('visivel');
+    setTimeout(() => {
+      overlay.classList.remove('aberto');
+    }, 280);
+  }
+};
+
+window.abrirSeletorRede = function(restaurantes, saudacao) {
+  const overlay = document.getElementById('rede-overlay');
+  const lista = document.getElementById('rede-lista');
+  const saudacaoEl = document.getElementById('rede-saudacao');
+  if (!overlay || !lista) return;
+  if (saudacao && saudacaoEl) saudacaoEl.innerText = saudacao;
+
+  lista.innerHTML = '';
+  (restaurantes || []).forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'rede-card-restaurante';
+    card.innerHTML = `
+      <div class="rede-avatar"><i class="ph-bold ph-storefront" style="font-size:20px; color:var(--primary);"></i></div>
+      <div style="flex:1;">
+        <strong style="display:block; font-size:15px; color:var(--text);">${r.nome || 'Restaurante'}</strong>
+        <span style="font-size:12px; color:var(--text-muted);">${r.cnpj || r.slug || ('ID: ' + r.id)}</span>
+      </div>
+      <i class="ph-bold ph-caret-right" style="color:var(--text-muted);"></i>
+    `;
+    card.onclick = () => {
+      localStorage.setItem('restaurante_id', String(r.id));
+      if (r.nome) localStorage.setItem('restaurante_nome', r.nome);
+      window.fecharSeletorRede();
+      if (typeof window._posSelecaoRede === 'function') {
+        window._posSelecaoRede(r);
+      } else {
+        window.location.reload();
+      }
+    };
+    lista.appendChild(card);
+  });
+
+  overlay.classList.add('aberto');
+  requestAnimationFrame(() => overlay.classList.add('visivel'));
 };
 
 window.setTipoPerfil = function(tipo) {

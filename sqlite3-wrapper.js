@@ -137,6 +137,9 @@ class SQLite3Wrapper {
               return stmt[method](p);
             } catch (_) {}
           }
+          try {
+            return stmt[method]();
+          } catch (_) {}
         }
         throw err;
       }
@@ -399,6 +402,11 @@ class SQLite3Wrapper {
                   try {
                     iterator = stmt.iterate(pCopy);
                     break;
+                  } catch (_) {}
+                }
+                if (!iterator) {
+                  try {
+                    iterator = stmt.iterate();
                   } catch (_) {}
                 }
               }

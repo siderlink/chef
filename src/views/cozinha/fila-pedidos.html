@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/fila.css?v=20260930_2">
+  <link rel="stylesheet" href="/fila.css?v=1790810446299_3">
   <link rel="stylesheet" href="/device-adapters.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
@@ -112,7 +112,7 @@
     .kds-sla-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   </style>
 
-  <script src="fila.js?v=20260921"></script>
+  <script src="fila.js?v=1790810446299_4"></script>
 </head>
 
 <body class="kds-body">
@@ -170,11 +170,8 @@
       <!-- Setores (Chips com Scroll Horizontal) -->
       <div class="kds-chips-scroll" id="kds-sectors-scroll-wrap">
         <button class="kds-chip-item active sector-modal-btn" data-sector="Todos" onclick="window.abrirModalSetor()">
-            <i class="ph-bold ph-storefront"></i> <span>Todos os Setores</span>
-            <i class="ph-bold ph-caret-down" style="margin-left: 5px;"></i>
-          </button>
-          <!-- 
           <i class="ph-bold ph-storefront"></i> <span>Todos os Setores</span>
+          <i class="ph-bold ph-caret-down" style="margin-left: 5px;"></i>
         </button>
         <button class="kds-chip-item" id="kds-filter-ifood" onclick="window.filtrarCanal('ifood')" title="Filtrar apenas pedidos de Delivery iFood">
           <i class="ph-bold ph-moped" style="color: #ea1d2c;"></i> <span>iFood</span>
@@ -222,6 +219,12 @@
         <i class="ph-bold ph-storefront"></i>
         <span>Loja de Presets</span>
         <span class="kds-badge-pulse-store">Nichos</span>
+      </button>
+
+      <!-- Botão Modo Edição Direta -->
+      <button type="button" id="btn-toggle-modo-edicao" onclick="window.toggleModoEdicaoKds()" class="kds-nav-btn" style="background: rgba(59,130,246,0.12); color: #3b82f6; border: 1.5px solid rgba(59,130,246,0.3); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px; margin-right: 8px;" title="Arraste os itens direto nos cards e clique com botão direito para redimensionar">
+        <i class="ph-bold ph-pencil-simple" style="font-size: 16px;"></i>
+        <span>Ajuste Direto</span>
       </button>
 
       <!-- Botão Ajustar Layout & Tamanhos -->
@@ -404,6 +407,10 @@
             <input type="range" id="kds-slider-font" class="kds-slider-input" min="10" max="24" step="1" value="15" oninput="window.alterarTamanhoSecao('fontSize', this.value)">
           </div>
 
+          <div style="font-size: 11px; color: var(--kds-text-muted); margin: 15px 0 10px 0; line-height: 1.3; border-top: 1px solid var(--kds-card-border); padding-top: 10px;">
+            <i class="ph-bold ph-info"></i> Nota: As larguras (Cabeçalho, Qtd, Ações) aplicam-se aos formatos <strong>Linhas</strong> e <strong>Kanban</strong>. No formato <strong>Grade</strong>, o card ignora larguras fixas.
+          </div>
+
           <!-- Slider Mesa/Comanda (Cabeçalho) -->
           <div class="kds-slider-row">
             <div class="kds-slider-label">
@@ -437,14 +444,15 @@
         </div>
       </div>
 
-      <!-- ABA 3: POSIÇÃO E VISIBILIDADE DAS SEÇÕES -->
+            <!-- ABA 3: POSIÇÃO E VISIBILIDADE DAS SEÇÕES -->
       <div class="kds-drawer-tab-content" data-tab="posicao" style="display:none;">
         <div class="kds-control-section">
-          <span class="kds-control-title">Ordem das Seções no Pedido</span>
+          <span class="kds-control-title">Ordem e Visibilidade</span>
           <p style="font-size: 12px; color: var(--kds-text-muted, #94a3b8); margin: 0 0 8px 0; line-height: 1.4;">
-            Arraste com <i class="ph-bold ph-dots-six-vertical"></i> para <strong>mudar a posição</strong>, ou use as setas <strong>⬆ ⬇</strong>. Clique no olho <strong>👁</strong> para ocultar ou mostrar.
+            Selecione a disposição que melhor se encaixa na sua operação. <strong>1 clique</strong> aplica tudo.
           </p>
           <div id="kds-card-fields-drawer" style="display: flex; flex-direction: column; gap: 8px;"></div>
+
         </div>
       </div>
 
@@ -814,6 +822,29 @@
           <i class="ph-bold ph-storefront"></i> Todos os Setores
         </button>
         <div id="modal-setor-dinamicos" style="display:contents;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEXT MENU (AJUSTE DIRETO) -->
+  <div id="kds-context-menu" class="kds-context-menu hidden">
+    <div class="kds-ctx-header">
+      Ajustar: <strong id="kds-ctx-title">Seção</strong>
+      <button type="button" onclick="window.fecharContextMenuKds()" class="kds-ctx-close"><i class="ph-bold ph-x"></i></button>
+    </div>
+    <div class="kds-ctx-body">
+      <div class="kds-ctx-row">
+        <button type="button" class="kds-ctx-btn kds-ctx-hide-btn" onclick="window.ocultarSecaoPeloContexto()">
+          <i class="ph-bold ph-eye-slash"></i> Ocultar Seção
+        </button>
+      </div>
+      <div class="kds-ctx-row" id="kds-ctx-row-width">
+        <label>Largura (<span id="kds-ctx-val-width"></span>)</label>
+        <input type="range" id="kds-ctx-width" min="30" max="500" step="5" oninput="window.aplicarTamanhoDoContexto('width', this.value)">
+      </div>
+      <div class="kds-ctx-row" id="kds-ctx-row-font">
+        <label>Tamanho da Fonte (<span id="kds-ctx-val-font"></span>)</label>
+        <input type="range" id="kds-ctx-font" min="10" max="30" step="1" oninput="window.aplicarTamanhoDoContexto('fontSize', this.value)">
       </div>
     </div>
   </div>

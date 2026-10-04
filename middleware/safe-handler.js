@@ -30,6 +30,20 @@ function asyncHandler(fn) {
   };
 }
 
+// Silencia erros de stream fechado (EPIPE/EOF) em stdout e stderr quando desconectados
+if (process.stdout && typeof process.stdout.on === 'function') {
+  process.stdout.on('error', (err) => {
+    if (err && (err.code === 'EPIPE' || err.code === 'EOF')) return;
+  });
+}
+if (process.stderr && typeof process.stderr.on === 'function') {
+  process.stderr.on('error', (err) => {
+    if (err && (err.code === 'EPIPE' || err.code === 'EOF')) return;
+  });
+}
+
+let isHandlingException = false;
+
 /**
  * Configura proteção global do processo Node.js contra erros não capturados.
  * Registra o erro em log estruturado e mantém o servidor online.
@@ -39,24 +53,49 @@ function asyncHandler(fn) {
  */
 function setupProcessGuard({ onError } = {}) {
   process.on('uncaughtException', (err) => {
-    const msg = `[PROCESS GUARD] uncaughtException: ${err && err.message}`;
-    console.error(msg, err && err.stack);
-    if (typeof onError === 'function') {
-      try { onError('uncaughtException', err); } catch (_) {}
+    // Ignora erros de pipe quebrado para evitar loops recursivos de log
+    if (err && (err.code === 'EPIPE' || (err.message && err.message.includes('EPIPE')))) {
+      return;
+    }
+
+    if (isHandlingException) return;
+    isHandlingException = true;
+
+    try {
+      const msg = `[PROCESS GUARD] uncaughtException: ${err && err.message}`;
+      try { console.error(msg, err && err.stack); } catch (_) {}
+      if (typeof onError === 'function') {
+        try { onError('uncaughtException', err); } catch (_) {}
+      }
+    } finally {
+      isHandlingException = false;
     }
     // NÃO chamar process.exit() — manter o servidor online
   });
 
   process.on('unhandledRejection', (reason, promise) => {
-    const msg = `[PROCESS GUARD] unhandledRejection: ${reason}`;
-    console.error(msg, promise);
-    if (typeof onError === 'function') {
-      try { onError('unhandledRejection', reason); } catch (_) {}
+    if (reason && (reason.code === 'EPIPE' || (reason.message && String(reason.message).includes('EPIPE')))) {
+      return;
+    }
+
+    if (isHandlingException) return;
+    isHandlingException = true;
+
+    try {
+      const msg = `[PROCESS GUARD] unhandledRejection: ${reason && (reason.message || reason)}`;
+      try { console.error(msg, reason && reason.stack ? reason.stack : promise); } catch (_) {}
+      if (typeof onError === 'function') {
+        try { onError('unhandledRejection', reason); } catch (_) {}
+      }
+    } finally {
+      isHandlingException = false;
     }
     // NÃO chamar process.exit()
   });
 
-  console.log('[safe-handler] Proteção de processo global ativada (uncaughtException + unhandledRejection).');
+  try {
+    console.log('[safe-handler] Proteção de processo global ativada (uncaughtException + unhandledRejection).');
+  } catch (_) {}
 }
 
 /**

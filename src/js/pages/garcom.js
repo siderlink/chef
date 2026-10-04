@@ -5222,5 +5222,273 @@ window.repetirItemComanda = function(itemId) {
   }
 };
 
+// ══════════════════════════════════════════════════════════════════════════
+// 12. GARÇOM VOICE IA (RECONHECIMENTO DE VOZ & PARSER DE PEDIDOS NATURAL)
+// ══════════════════════════════════════════════════════════════════════════
+let speechRecognitionInstance = null;
+let isVoiceListening = false;
+let ultimoResultadoVozIA = null;
+
+window.abrirModalVozIA = function() {
+  const modal = document.getElementById('modal-garcom-voz');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  const transcricao = document.getElementById('input-voz-transcricao');
+  if (transcricao && (!transcricao.value || transcricao.value.trim() === '')) {
+    if (typeof currentTable !== 'undefined' && currentTable) {
+      transcricao.value = `${currentTable}, `;
+    }
+  }
+
+  // Se o navegador suportar, inicia automaticamente ao abrir para máxima agilidade
+  if (window.webkitSpeechRecognition || window.SpeechRecognition) {
+    window.iniciarReconhecimentoVoz();
+  }
+};
+
+window.fecharModalVozIA = function() {
+  window.pararReconhecimentoVoz();
+  const modal = document.getElementById('modal-garcom-voz');
+  if (modal) modal.style.display = 'none';
+};
+
+window.alternarReconhecimentoVoz = function() {
+  if (isVoiceListening) {
+    window.pararReconhecimentoVoz();
+  } else {
+    window.iniciarReconhecimentoVoz();
+  }
+};
+
+window.iniciarReconhecimentoVoz = function() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) {
+    if (typeof showToast === 'function') {
+      showToast('Navegador sem suporte ao microfone. Digite o pedido abaixo.', '#f59e0b');
+    }
+    const statusTxt = document.getElementById('txt-status-mic');
+    if (statusTxt) statusTxt.innerText = 'Microfone não suportado. Digite o comando:';
+    return;
+  }
+
+  try {
+    if (speechRecognitionInstance) {
+      try { speechRecognitionInstance.abort(); } catch (_) {}
+    }
+
+    speechRecognitionInstance = new SpeechRec();
+    speechRecognitionInstance.lang = 'pt-BR';
+    speechRecognitionInstance.continuous = true;
+    speechRecognitionInstance.interimResults = true;
+
+    const micBtn = document.getElementById('btn-garcom-mic-trigger');
+    const micIcon = document.getElementById('icone-mic-status');
+    const statusTxt = document.getElementById('txt-status-mic');
+    const inputTranscricao = document.getElementById('input-voz-transcricao');
+
+    speechRecognitionInstance.onstart = function() {
+      isVoiceListening = true;
+      if (micBtn) {
+        micBtn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+        micBtn.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        micBtn.style.transform = 'scale(1.08)';
+      }
+      if (micIcon) micIcon.className = 'ph-bold ph-waveform';
+      if (statusTxt) {
+        statusTxt.innerText = '🔴 Ouvindo... Pode falar o pedido!';
+        statusTxt.style.color = '#ef4444';
+      }
+      try { if (navigator.vibrate) navigator.vibrate(50); } catch (_) {}
+    };
+
+    speechRecognitionInstance.onresult = function(event) {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (inputTranscricao && finalTranscript) {
+        inputTranscricao.value = finalTranscript.trim();
+      }
+    };
+
+    speechRecognitionInstance.onerror = function(event) {
+      console.warn('Erro SpeechRecognition:', event.error);
+      window.pararReconhecimentoVoz();
+      if (statusTxt) {
+        statusTxt.innerText = 'Microfone pausado. Toque para falar novamente.';
+        statusTxt.style.color = '#8b5cf6';
+      }
+    };
+
+    speechRecognitionInstance.onend = function() {
+      window.pararReconhecimentoVoz();
+    };
+
+    speechRecognitionInstance.start();
+  } catch (err) {
+    console.error('Falha ao iniciar SpeechRecognition:', err);
+    window.pararReconhecimentoVoz();
+  }
+};
+
+window.pararReconhecimentoVoz = function() {
+  isVoiceListening = false;
+  if (speechRecognitionInstance) {
+    try { speechRecognitionInstance.stop(); } catch (_) {}
+  }
+  const micBtn = document.getElementById('btn-garcom-mic-trigger');
+  const micIcon = document.getElementById('icone-mic-status');
+  const statusTxt = document.getElementById('txt-status-mic');
+
+  if (micBtn) {
+    micBtn.style.background = 'linear-gradient(135deg, #8b5cf6, #6d28d9)';
+    micBtn.style.borderColor = 'rgba(139,92,246,0.25)';
+    micBtn.style.transform = 'scale(1)';
+  }
+  if (micIcon) micIcon.className = 'ph-bold ph-microphone';
+  if (statusTxt) {
+    statusTxt.innerText = 'Toque no microfone e fale o pedido';
+    statusTxt.style.color = '#8b5cf6';
+  }
+};
+
+window.processarComandoVozIA = async function() {
+  window.pararReconhecimentoVoz();
+
+  const inputTranscricao = document.getElementById('input-voz-transcricao');
+  const texto = inputTranscricao ? inputTranscricao.value.trim() : '';
+
+  if (!texto) {
+    if (typeof showToast === 'function') showToast('Diga ou digite o comando do pedido primeiro!', '#f59e0b');
+    return;
+  }
+
+  const btnProcessar = document.getElementById('btn-processar-voz-ia');
+  if (btnProcessar) {
+    btnProcessar.disabled = true;
+    btnProcessar.innerHTML = '<i class="ph-bold ph-spinner ph-spin"></i> <span>Analisando com IA...</span>';
+  }
+
+  try {
+    const res = await fetch('/api/ia/interpretar-comando-voz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto })
+    });
+    const data = await res.json();
+
+    if (!data || !data.sucesso) {
+      throw new Error(data?.erro || 'Não foi possível interpretar o áudio');
+    }
+
+    ultimoResultadoVozIA = data;
+    renderizarResultadoVozIA(data);
+  } catch (err) {
+    console.error('Erro ao interpretar comando de voz:', err);
+    if (typeof showToast === 'function') showToast('Erro na IA: ' + err.message, '#ef4444');
+  } finally {
+    if (btnProcessar) {
+      btnProcessar.disabled = false;
+      btnProcessar.innerHTML = '<i class="ph-bold ph-sparkle"></i> <span>Interpretar com IA</span>';
+    }
+  }
+};
+
+function renderizarResultadoVozIA(data) {
+  const container = document.getElementById('resultado-voz-ia');
+  const elMesa = document.getElementById('voz-resultado-mesa');
+  const elTotalItens = document.getElementById('voz-resultado-total-itens');
+  const listaItens = document.getElementById('voz-resultado-itens-lista');
+
+  if (!container || !listaItens) return;
+
+  const mesaIdentificada = data.mesa ? `Mesa ${data.mesa}` : (typeof currentTable !== 'undefined' && currentTable ? currentTable : 'Balcão');
+  elMesa.innerText = mesaIdentificada;
+
+  const itens = data.itens_identificados || [];
+  elTotalItens.innerText = `${itens.length} item(ns)`;
+
+  if (itens.length === 0) {
+    listaItens.innerHTML = '<div style="color:#b91c1c; font-size:13px; font-weight:600; padding:8px;">Nenhum produto do cardápio reconhecido na fala. Verifique o texto.</div>';
+    document.getElementById('btn-confirmar-lancamento-voz').style.display = 'none';
+  } else {
+    document.getElementById('btn-confirmar-lancamento-voz').style.display = 'flex';
+    listaItens.innerHTML = itens.map(item => `
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1px solid #dcfce7; border-radius:12px; padding:10px 12px; box-shadow:0 1px 4px rgba(0,0,0,0.02);">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="background:#10b981; color:#fff; font-weight:800; font-size:12px; border-radius:8px; padding:2px 7px;">${item.quantidade}x</span>
+          <div>
+            <strong style="font-size:13.5px; color:#0f172a; display:block;">${item.nome}</strong>
+            ${item.observacoes ? `<span style="font-size:11.5px; color:#b45309; background:#fffbeb; padding:1px 6px; border-radius:6px;">Obs: ${item.observacoes}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  container.style.display = 'block';
+  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+window.confirmarLancamentoVozIA = function() {
+  if (!ultimoResultadoVozIA || !Array.isArray(ultimoResultadoVozIA.itens_identificados) || ultimoResultadoVozIA.itens_identificados.length === 0) {
+    return;
+  }
+
+  const mesaDestino = ultimoResultadoVozIA.mesa ? `Mesa ${ultimoResultadoVozIA.mesa}` : (typeof currentTable !== 'undefined' && currentTable ? currentTable : 'Balcão');
+  const nomeUsuario = (typeof loggedUser !== 'undefined' && loggedUser && loggedUser.nome) ? loggedUser.nome : 'Garçom IA';
+
+  ultimoResultadoVozIA.itens_identificados.forEach(item => {
+    // Tenta casar produto com MENU carregado para pegar setor, emoji e preço oficial
+    const prodMatch = (typeof MENU !== 'undefined' && Array.isArray(MENU))
+      ? MENU.find(m => m.name.toLowerCase() === item.nome.toLowerCase() || m.name.toLowerCase().includes(item.nome.toLowerCase()))
+      : null;
+
+    const precoUnitario = prodMatch ? (prodMatch.price || 0) : 0;
+    const setor = prodMatch ? (prodMatch.sector || 'Cozinha') : 'Cozinha';
+    const emoji = prodMatch ? (prodMatch.emoji || '🍽️') : '🍽️';
+
+    const emitItem = {
+      productName: prodMatch ? prodMatch.name : item.nome,
+      productEmoji: emoji,
+      sector: setor,
+      quantity: item.quantidade || 1,
+      observations: item.observacoes || '',
+      composicoes: [],
+      total: (precoUnitario * (item.quantidade || 1)).toFixed(2).replace('.', ','),
+      mesa_comanda: '',
+      localName: mesaDestino,
+      userName: nomeUsuario,
+      status: 'Pendente',
+      time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      createdAt: Date.now()
+    };
+
+    if (typeof socket !== 'undefined' && socket) {
+      socket.emit('novo_pedido', emitItem);
+    }
+  });
+
+  try { if (navigator.vibrate) navigator.vibrate([100, 50, 100]); } catch (_) {}
+  if (typeof showToast === 'function') {
+    showToast(`✓ ${ultimoResultadoVozIA.itens_identificados.length} itens lançados na ${mesaDestino}!`, '#10b981');
+  }
+
+  window.fecharModalVozIA();
+
+  // Se o garçom estava na visão de mesas, atualiza e abre a mesa
+  if (typeof socket !== 'undefined' && socket) {
+    setTimeout(() => {
+      socket.emit('get_itens_mesa', mesaDestino);
+      socket.emit('get_mesas');
+    }, 300);
+  }
+};
+
 
 

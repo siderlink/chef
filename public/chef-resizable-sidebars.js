@@ -10,6 +10,7 @@
 
     if (newWidth <= 115) {
       // Ativa modo mini / dock de ícones
+      document.body.classList.remove('left-expanded');
       leftPanel.classList.remove('mode-expanded', 'sidebar-expanded');
       leftPanel.classList.add('mode-mini', 'sidebar-mini', 'dock-icon-only');
       leftPanel.style.setProperty('width', '68px', 'important');
@@ -36,6 +37,7 @@
       window.dispatchEvent(new CustomEvent('chef_sidebar_mode_changed', { detail: { side: 'left', mode: 'mini' } }));
     } else {
       // Modo expandido com títulos
+      document.body.classList.add('left-expanded');
       const clampedW = Math.max(220, Math.min(newWidth, 600));
       leftPanel.classList.remove('mode-mini', 'sidebar-mini', 'dock-icon-only', 'mode-hidden', 'sidebar-hidden');
       leftPanel.classList.add('mode-expanded', 'sidebar-expanded');

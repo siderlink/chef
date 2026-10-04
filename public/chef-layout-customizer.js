@@ -32,7 +32,8 @@
       setores_posicao: 'abaixo', // 'abaixo' (do Resumo) | 'antes'
       mesas_orientacao: 'horizontal',
       mesas_colunas: '2',      // '1' | '2' | '3' | 'compact'
-      mesas_agrupado: true
+      mesas_agrupado: true,
+      monitor_vertical_modo: 'auto' // 'auto' | 'stacked' | '2col' | 'disabled'
     };
   };
 
@@ -163,7 +164,56 @@
       window.toggleMesasAgrupado();
     }
 
+    // 10. Modo Monitor Vertical (Pivot / Retrato)
+    var vMode = cfg.monitor_vertical_modo || localStorage.getItem('chef_monitor_vertical_mode') || 'auto';
+    var isPortrait = (window.innerHeight || 0) >= (window.innerWidth || 1);
+    var h = window.innerHeight || 0;
+    var isVert = false;
+    if (vMode === 'stacked' || vMode === '2col') {
+      isVert = true;
+    } else if (vMode === 'disabled') {
+      isVert = false;
+    } else {
+      isVert = isPortrait && h >= 680;
+    }
+
+    document.body.classList.toggle('chef-monitor-vertical', isVert);
+    document.documentElement.classList.toggle('chef-monitor-vertical', isVert);
+    document.body.classList.toggle('device-monitor-vertical', isVert);
+    document.documentElement.classList.toggle('device-monitor-vertical', isVert);
+    document.body.classList.toggle('chef-vertical-2col', isVert && vMode === '2col');
+    document.body.classList.toggle('chef-vertical-stacked', isVert && vMode !== '2col');
+
+    var lblVMode = document.getElementById('label-monitor-vertical-val');
+    if (lblVMode) {
+      var mapNames = { 'auto': 'Auto', 'stacked': 'Empilhado', '2col': '2 Col', 'disabled': 'Desativado' };
+      lblVMode.innerText = mapNames[vMode] || 'Auto';
+    }
+
     try { window.dispatchEvent(new CustomEvent('chef_layout_colaborador_salvo')); } catch(e){}
+  };
+
+  window.setMonitorVerticalMode = function (mode) {
+    var cfg = window.obterConfigLayoutColaborador();
+    cfg.monitor_vertical_modo = mode;
+    try { localStorage.setItem('chef_monitor_vertical_mode', mode); } catch(e){}
+    window.salvarConfigLayoutColaborador(cfg);
+    if (typeof window.showToast === 'function') {
+      var mapToast = {
+        'auto': '🤖 Monitor Vertical: Automático (detecta quando na vertical)',
+        'stacked': '📐 Monitor Vertical: Empilhado (100% largura útil, resumo no rodapé)',
+        '2col': '📑 Monitor Vertical: 2-Colunas (mini-dock + resumo lateral)',
+        'disabled': '❌ Monitor Vertical: Desativado (3 colunas tradicionais)'
+      };
+      window.showToast(mapToast[mode] || 'Modo de visualização atualizado', 'info');
+    }
+  };
+
+  window.cycleMonitorVerticalMode = function () {
+    var cfg = window.obterConfigLayoutColaborador();
+    var cur = cfg.monitor_vertical_modo || localStorage.getItem('chef_monitor_vertical_mode') || 'auto';
+    var next = cur === 'auto' ? 'stacked' : (cur === 'stacked' ? '2col' : (cur === '2col' ? 'disabled' : 'auto'));
+    window.setMonitorVerticalMode(next);
   };
 
   // ─── MODAL VISUAL DE PERSONALIZAÇÃO DO LAYOUT ───
@@ -372,6 +422,20 @@
             </div>
           </div>
 
+          <!-- MODO MONITOR VERTICAL (PIVOT / RETRATO) -->
+          <div style="background:#f8fafc; padding:14px; border-radius:14px; border:1px solid #e2e8f0;">
+            <label style="font-size:13.5px; font-weight:800; color:#0f172a; display:block; margin-bottom:4px;">
+              <i class="ph-bold ph-device-tablet-speaker" style="color:#2563eb;"></i> Monitor na Vertical (Pivot / Retrato)
+            </label>
+            <span style="font-size:11.5px; color:#64748b; display:block; margin-bottom:8px;">Otimização especial para telas usadas em pé: mini-dock de ícones, Salão e Pedido amplos sem barra de rolagem horizontal.</span>
+            <select id="select-monitor-vertical-modo" style="width:100%; padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1; font-size:12.5px; font-weight:700; cursor:pointer; background:white;">
+              <option value="auto" ${cfg.monitor_vertical_modo === 'auto' || !cfg.monitor_vertical_modo ? 'selected' : ''}>🤖 Automático (Detecta quando o monitor estiver na vertical)</option>
+              <option value="stacked" ${cfg.monitor_vertical_modo === 'stacked' ? 'selected' : ''}>📐 Empilhado no Rodapé (Recomendado - 100% largura útil)</option>
+              <option value="2col" ${cfg.monitor_vertical_modo === '2col' ? 'selected' : ''}>📑 2-Colunas (Mini-dock + Salão amplo + Resumo lateral)</option>
+              <option value="disabled" ${cfg.monitor_vertical_modo === 'disabled' ? 'selected' : ''}>❌ Desativado (Manter 3 colunas tradicionais)</option>
+            </select>
+          </div>
+
         </div>
 
         <!-- BOTÕES DE AÇÃO -->
@@ -426,7 +490,8 @@
       setores_posicao: document.getElementById('select-setores-posicao').value,
       mesas_orientacao: document.getElementById('select-mesas-orient').value,
       mesas_colunas: document.getElementById('select-mesas-colunas').value,
-      mesas_agrupado: document.getElementById('chk-mesas-agrupado').checked
+      mesas_agrupado: document.getElementById('chk-mesas-agrupado').checked,
+      monitor_vertical_modo: document.getElementById('select-monitor-vertical-modo') ? document.getElementById('select-monitor-vertical-modo').value : 'auto'
     };
 
     window.salvarConfigLayoutColaborador(newConfig);

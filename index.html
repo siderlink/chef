@@ -870,6 +870,11 @@
                   <i class="ph-bold ph-layout"></i> Personalizar
                 </button>
 
+                <!-- BOTÃO RÁPIDO MONITOR VERTICAL (PIVOT / RETRATO) -->
+                <button type="button" onclick="window.cycleMonitorVerticalMode && window.cycleMonitorVerticalMode()" id="btn-toggle-monitor-vertical" class="chip-view-btn" title="Alternar Layout Otimizado para Monitor na Vertical (Auto / Empilhado / 2-Colunas / Desativado)" style="padding: 4px 9px; border-radius: 6px; border: 1px solid rgba(37,99,235,0.3); font-size: 11.5px; font-weight: 700; cursor: pointer; background: rgba(37,99,235,0.08); color: #2563eb; display: inline-flex; align-items: center; gap: 4px;">
+                  <i class="ph-bold ph-device-tablet-speaker"></i> <span>Vertical: <strong id="label-monitor-vertical-val">Auto</strong></span>
+                </button>
+
                 <!-- SELETOR DE MODO DE GRADE / COLUNAS -->
                 <div class="mesas-grid-mode-switcher" style="display: inline-flex; align-items: center; gap: 2px; background: rgba(0,0,0,0.06); padding: 2px 4px; border-radius: 8px;">
                   <button type="button" onclick="window.setMesaGridCols(3)" id="btn-grid-cols-3" title="Grade com 3 Colunas" style="padding: 4px 7px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; background: transparent; color: var(--text-muted); font-weight: 700;">

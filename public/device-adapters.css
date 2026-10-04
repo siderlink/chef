@@ -1256,4 +1256,537 @@ body.dark-mode .chef-sheet-drag-handle {
   z-index: 100;
 }
 
+/* ═════════════════════════════════════════════════════════════════════════
+   MODO MONITOR VERTICAL (PIVOT / RETRATO) — OTIMIZAÇÃO DESKTOP & BALCÃO
+   Ativado automaticamente quando a tela é vertical (h > w e h >= 680px)
+   ou explicitamente pelo operador.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. ESTRUTURA DO WORKSPACE: MODO EMPILHADO (STACKED / FULL-WIDTH) ── */
+body.chef-monitor-vertical:not(.chef-vertical-2col) .workspace,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) .workspace {
+    display: grid !important;
+    grid-template-columns: 64px 1fr !important;
+    grid-template-rows: 1fr auto !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+}
+
+body.chef-monitor-vertical.left-expanded:not(.chef-vertical-2col) .workspace {
+  grid-template-columns: 220px 1fr !important;
+}
+
+/* Oculta splitters de redimensionamento no modo monitor vertical empilhado */
+body.chef-monitor-vertical:not(.chef-vertical-2col) #resizer-left,
+body.chef-monitor-vertical:not(.chef-vertical-2col) #resizer-right,
+body.chef-monitor-vertical:not(.chef-vertical-2col) .chef-sidebar-splitter,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) #resizer-left,
+  body:not(.chef-vertical-2col):not(.force-mobile) #resizer-right,
+  body:not(.chef-vertical-2col):not(.force-mobile) .chef-sidebar-splitter {
+    display: none !important;
+  }
+}
+
+/* ── 2. BARRA ESQUERDA: MINI DOCK LATERAL DE ÍCONES (64px) ── */
+body.chef-monitor-vertical:not(.left-expanded) #left-panel,
+body.chef-monitor-vertical:not(.left-expanded) aside.left-actions,
+body.chef-monitor-vertical:not(.left-expanded) .left-actions,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.left-expanded):not(.force-mobile) #left-panel,
+  body:not(.left-expanded):not(.force-mobile) aside.left-actions,
+  body:not(.left-expanded):not(.force-mobile) .left-actions {
+    grid-column: 1 !important;
+    grid-row: 1 / -1 !important;
+    width: 64px !important;
+    min-width: 64px !important;
+    max-width: 64px !important;
+    height: 100% !important;
+    padding: 6px 4px !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    background: var(--bg-secondary, #f8fafc) !important;
+    border-right: 1px solid var(--border-color, #e2e8f0) !important;
+    z-index: 20 !important;
+  }
+}
+
+/* Oculta textos e títulos de grupos no mini dock */
+body.chef-monitor-vertical:not(.left-expanded) .left-actions .group-title,
+body.chef-monitor-vertical:not(.left-expanded) .left-actions .btn-action span,
+body.chef-monitor-vertical:not(.left-expanded) .left-actions .mobile-acoes-summary,
+body.chef-monitor-vertical:not(.left-expanded) .left-actions .sidebar-header-controls > div > span,
+body.chef-monitor-vertical:not(.left-expanded) .left-actions #mobile-acoes-summary,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.left-expanded):not(.force-mobile) .left-actions .group-title,
+  body:not(.left-expanded):not(.force-mobile) .left-actions .btn-action span,
+  body:not(.left-expanded):not(.force-mobile) .left-actions .mobile-acoes-summary,
+  body:not(.left-expanded):not(.force-mobile) .left-actions .sidebar-header-controls > div > span,
+  body:not(.left-expanded):not(.force-mobile) .left-actions #mobile-acoes-summary {
+    display: none !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.left-expanded) .left-actions .sidebar-header-controls,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.left-expanded):not(.force-mobile) .left-actions .sidebar-header-controls {
+    width: 100% !important;
+    padding: 2px 0 6px !important;
+    margin-bottom: 4px !important;
+    border-bottom: 1px solid var(--border-subtle, rgba(0,0,0,0.08)) !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.left-expanded) .left-actions .sidebar-header-controls > div,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.left-expanded):not(.force-mobile) .left-actions .sidebar-header-controls > div {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.left-expanded) .left-actions .action-group,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.left-expanded):not(.force-mobile) .left-actions .action-group {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 3px 0 !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.left-expanded) .left-actions .btn-grid-2,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.left-expanded):not(.force-mobile) .left-actions .btn-grid-2 {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin: 0 !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.left-expanded) .left-actions .btn-action,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.left-expanded):not(.force-mobile) .left-actions .btn-action {
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+    font-size: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.left-expanded) .left-actions .btn-action i,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.left-expanded):not(.force-mobile) .left-actions .btn-action i {
+    font-size: 22px !important;
+    margin: 0 !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.left-expanded) .left-actions .btn-action:hover {
+  transform: translateY(-2px) scale(1.06) !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important;
+}
+
+/* ── 3. PAINEL CENTRAL (SALÃO + PRODUTOS DO PEDIDO): LARGURA AMPLA ── */
+body.chef-monitor-vertical:not(.chef-vertical-2col) #main-panel,
+body.chef-monitor-vertical:not(.chef-vertical-2col) .main-workspace,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) #main-panel,
+  body:not(.chef-vertical-2col):not(.force-mobile) .main-workspace {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+}
+
+/* Seção de Mesas no Monitor Vertical: cartões confortáveis */
+body.chef-monitor-vertical #mesas-section-container,
+body.chef-monitor-vertical .mesas-container,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) #mesas-section-container,
+  body:not(.force-mobile) .mesas-container {
+    flex: 0 0 42% !important;
+    min-height: 180px !important;
+    border-bottom: 2px solid var(--border-color, #e2e8f0) !important;
+  }
+}
+
+body.chef-monitor-vertical #orders-grid,
+body.chef-monitor-vertical .mesas-scroll,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) #orders-grid,
+  body:not(.force-mobile) .mesas-scroll {
+    padding: 12px 14px !important;
+  }
+}
+
+body.chef-monitor-vertical #orders-grid .mesas-grid-layout,
+body.chef-monitor-vertical #orders-grid.grid-cols-3 .mesas-grid-layout,
+body.chef-monitor-vertical #orders-grid.grid-cols-2 .mesas-grid-layout,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) #orders-grid .mesas-grid-layout,
+  body:not(.force-mobile) #orders-grid.grid-cols-3 .mesas-grid-layout,
+  body:not(.force-mobile) #orders-grid.grid-cols-2 .mesas-grid-layout {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+    gap: 12px !important;
+  }
+}
+
+body.chef-monitor-vertical .mesa-item,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) .mesa-item {
+    min-height: 84px !important;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+  }
+}
+
+/* Tabela de Produtos no Monitor Vertical: ZERO overflow horizontal */
+body.chef-monitor-vertical #products-section-container,
+body.chef-monitor-vertical .products-container,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) #products-section-container,
+  body:not(.force-mobile) .products-container {
+    flex: 1 1 0% !important;
+    min-height: 160px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+}
+
+body.chef-monitor-vertical .products-table-wrapper,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) .products-table-wrapper {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    width: 100% !important;
+  }
+}
+
+body.chef-monitor-vertical table.products-table,
+body.chef-monitor-vertical #order-items-table,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) table.products-table,
+  body:not(.force-mobile) #order-items-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: auto !important;
+  }
+}
+
+body.chef-monitor-vertical table.products-table th:nth-child(1),
+body.chef-monitor-vertical table.products-table td:nth-child(1),
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) table.products-table th:nth-child(1),
+  body:not(.force-mobile) table.products-table td:nth-child(1) {
+    width: 44px !important;
+    text-align: center !important;
+    padding: 6px 4px !important;
+  }
+}
+
+body.chef-monitor-vertical table.products-table th:nth-child(2),
+body.chef-monitor-vertical table.products-table td:nth-child(2),
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) table.products-table th:nth-child(2),
+  body:not(.force-mobile) table.products-table td:nth-child(2) {
+    width: auto !important;
+    min-width: 120px !important;
+    padding: 6px 8px !important;
+  }
+}
+
+body.chef-monitor-vertical table.products-table th:nth-child(3),
+body.chef-monitor-vertical table.products-table td:nth-child(3),
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) table.products-table th:nth-child(3),
+  body:not(.force-mobile) table.products-table td:nth-child(3) {
+    width: 78px !important;
+    text-align: right !important;
+    padding: 6px 6px !important;
+  }
+}
+
+body.chef-monitor-vertical table.products-table th:nth-child(4),
+body.chef-monitor-vertical table.products-table td:nth-child(4),
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) table.products-table th:nth-child(4),
+  body:not(.force-mobile) table.products-table td:nth-child(4) {
+    width: 48px !important;
+    text-align: center !important;
+    padding: 6px 4px !important;
+  }
+}
+
+body.chef-monitor-vertical table.products-table th:nth-child(5),
+body.chef-monitor-vertical table.products-table td:nth-child(5),
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) table.products-table th:nth-child(5),
+  body:not(.force-mobile) table.products-table td:nth-child(5) {
+    width: 88px !important;
+    text-align: right !important;
+    font-weight: 700 !important;
+    padding: 6px 6px !important;
+  }
+}
+
+body.chef-monitor-vertical table.products-table th:nth-child(6),
+body.chef-monitor-vertical table.products-table td:nth-child(6),
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) table.products-table th:nth-child(6),
+  body:not(.force-mobile) table.products-table td:nth-child(6) {
+    width: 88px !important;
+    text-align: left !important;
+    padding: 6px 6px !important;
+  }
+}
+
+body.chef-monitor-vertical table.products-table th:nth-child(7),
+body.chef-monitor-vertical table.products-table td:nth-child(7),
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.force-mobile) table.products-table th:nth-child(7),
+  body:not(.force-mobile) table.products-table td:nth-child(7) {
+    width: 72px !important;
+    text-align: center !important;
+    padding: 6px 4px !important;
+  }
+}
+
+/* ── 4. RESUMO DA CONTA: DOCK INFERIOR (MODO EMPILHADO) ── */
+body.chef-monitor-vertical:not(.chef-vertical-2col) #right-panel,
+body.chef-monitor-vertical:not(.chef-vertical-2col) aside.right-info,
+body.chef-monitor-vertical:not(.chef-vertical-2col) .right-info,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) #right-panel,
+  body:not(.chef-vertical-2col):not(.force-mobile) aside.right-info,
+  body:not(.chef-vertical-2col):not(.force-mobile) .right-info {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    height: auto !important;
+    max-height: 230px !important;
+    border-left: none !important;
+    border-top: 2px solid var(--border-color, #e2e8f0) !important;
+    background: var(--bg-card, #ffffff) !important;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08) !important;
+    padding: 8px 16px !important;
+    z-index: 50 !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.chef-vertical-2col) #right-panel .sidebar-header-controls,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) #right-panel .sidebar-header-controls {
+    display: none !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary {
+    flex: 1 1 340px !important;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+    gap: 4px 14px !important;
+    padding: 8px 14px !important;
+    margin-bottom: 0 !important;
+    background: var(--bg-secondary, #f8fafc) !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--border-color, #e2e8f0) !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary .group-title,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary .group-title {
+    display: none !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary .info-row,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary .info-row {
+    margin-bottom: 2px !important;
+    font-size: 12px !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary .info-row.bold:has(#total-pagar-text),
+body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary .info-row:has(#total-pagar-text),
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary .info-row.bold:has(#total-pagar-text),
+  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary .info-row:has(#total-pagar-text) {
+    grid-column: 1 / -1 !important;
+    border-top: 1px dashed #cbd5e1 !important;
+    padding-top: 4px !important;
+    margin-top: 2px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.chef-vertical-2col) #total-pagar-text,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) #total-pagar-text {
+    font-size: 22px !important;
+    font-weight: 800 !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.chef-vertical-2col) .checkout-sticky-footer,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) .checkout-sticky-footer {
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    flex: 0 0 220px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.chef-vertical-2col) .checkout-sticky-footer .info-group,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) .checkout-sticky-footer .info-group {
+    width: 100% !important;
+  }
+}
+
+body.chef-monitor-vertical:not(.chef-vertical-2col) #btn-finalizar-venda,
+@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
+  body:not(.chef-vertical-2col):not(.force-mobile) #btn-finalizar-venda {
+    height: 52px !important;
+    min-height: 52px !important;
+    font-size: 15.5px !important;
+    font-weight: 800 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 14px rgba(58, 181, 91, 0.35) !important;
+  }
+}
+
+/* ── 5. MODO MONITOR VERTICAL 2-COLUNAS (QUANDO ESCOLHIDO PELO USUÁRIO) ── */
+body.chef-monitor-vertical.chef-vertical-2col .workspace {
+  display: grid !important;
+  grid-template-columns: 64px 1fr 240px !important;
+  grid-template-rows: 1fr !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+body.chef-monitor-vertical.chef-vertical-2col.left-expanded .workspace {
+  grid-template-columns: 220px 1fr 240px !important;
+}
+
+body.chef-monitor-vertical.chef-vertical-2col #left-panel {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+}
+
+body.chef-monitor-vertical.chef-vertical-2col #main-panel {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+}
+
+body.chef-monitor-vertical.chef-vertical-2col #right-panel {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  width: 240px !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
+  height: 100% !important;
+  border-left: 1px solid var(--border-color, #e2e8f0) !important;
+  border-top: none !important;
+  box-shadow: none !important;
+  padding: 14px 12px !important;
+}
+
+/* ── 6. HEADER & STATUS BAR NO MONITOR VERTICAL ── */
+body.chef-monitor-vertical .top-toolbar {
+  flex-wrap: wrap !important;
+  padding: 4px 8px !important;
+  gap: 4px !important;
+}
+
+body.chef-monitor-vertical .status-bar {
+  flex-wrap: wrap !important;
+  height: auto !important;
+  min-height: 28px !important;
+  padding: 4px 8px !important;
+  gap: 6px 14px !important;
+  font-size: 11px !important;
+}
+
+/* ── 7. TEMA ESCURO NO MONITOR VERTICAL ── */
+[data-theme="dark"] body.chef-monitor-vertical #right-panel {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] body.chef-monitor-vertical #inner-right-panel .info-group.summary {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] body.chef-monitor-vertical #left-panel {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+
 

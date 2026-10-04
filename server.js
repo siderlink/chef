@@ -13,9 +13,23 @@ const { setupProcessGuard, globalErrorMiddleware } = require('./middleware/safe-
 setupProcessGuard({
   onError: (type, err) => {
     try {
+      if (err && (err.code === 'EPIPE' || (err.message && String(err.message).includes('EPIPE')))) {
+        return;
+      }
       const fs = require('fs');
+      const logPath = 'crash-forensics.log';
+      try {
+        if (fs.existsSync(logPath)) {
+          const stats = fs.statSync(logPath);
+          if (stats.size > 10 * 1024 * 1024) {
+            const oldPath = 'crash-forensics.old.log';
+            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+            fs.renameSync(logPath, oldPath);
+          }
+        }
+      } catch (_) {}
       const crashLog = `[${new Date().toISOString()}] [${type}] ${err && (err.stack || err.message || err)}\n`;
-      fs.appendFileSync('crash-forensics.log', crashLog);
+      fs.appendFileSync(logPath, crashLog);
     } catch (_) {}
   }
 });
@@ -209,20 +223,30 @@ function parseAndFormatLog(line) {
   ], ANSI.cyan);
 }
 
-console.log = function(...args) {
-  const line = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
-  logLines.push(`[LOG] ${new Date().toLocaleTimeString()} - ${line}`);
-  if (logLines.length > 100) logLines.shift();
+const ENABLE_BOX_LOGS = process.env.ENABLE_BOX_LOGS === 'true';
 
-  const formatted = parseAndFormatLog(line);
-  originalLog.call(console, formatted);
+console.log = function(...args) {
+  try {
+    const line = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
+    logLines.push(`[LOG] ${new Date().toLocaleTimeString()} - ${line}`);
+    if (logLines.length > 100) logLines.shift();
+
+    if (ENABLE_BOX_LOGS) {
+      const formatted = parseAndFormatLog(line);
+      originalLog.call(console, formatted);
+    } else {
+      originalLog.apply(console, args);
+    }
+  } catch (_) {}
 };
 
 console.error = function(...args) {
-  const line = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
-  logLines.push(`[ERR] ${new Date().toLocaleTimeString()} - ${line}`);
-  if (logLines.length > 100) logLines.shift();
-  originalError.apply(console, args);
+  try {
+    const line = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
+    logLines.push(`[ERR] ${new Date().toLocaleTimeString()} - ${line}`);
+    if (logLines.length > 100) logLines.shift();
+    originalError.apply(console, args);
+  } catch (_) {}
 };
 
 function getLocalTimestamp() {
@@ -262,6 +286,7 @@ function liberarMesaSeVazia(mesaName) {
     }
   });
 }
+global.liberarMesaSeVazia = liberarMesaSeVazia;
 
 function broadcastFormasPagamento(targetSocket = null) {
   db.all(`SELECT * FROM formas_pagamento ORDER BY ordem ASC, id ASC`, [], (err, rows) => {
@@ -454,6 +479,10 @@ if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 const upload = multer({ dest: UPLOAD_DIR });
 
 const app  = express();
+try {
+  const compression = require('compression');
+  app.use(compression({ threshold: 1024 }));
+} catch (eCompression) {}
 // (Segurança) Rate-limit simples para endpoints de log públicos — evita log poisoning / DoS
 const _logErrHits = new Map();
 function _logErrLimit(req, res, next) {
@@ -863,7 +892,16 @@ app.use((req, res, next) => {
 
 const superAdminRoutes = require('./src/routes/superadmin.routes.js');
 
-const staticOpts = { extensions: ['html'] };
+const staticOpts = {
+  extensions: ['html'],
+  setHeaders: (res, filePath) => {
+    if (/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|wasm)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    } else if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+};
 if (!isPkg) {
   app.use(express.static(BASE_DIR, staticOpts));
 }
@@ -3467,10 +3505,28 @@ db.serialize(() => {
   // Criar índices após garantir que as tabelas existem
   db.run('CREATE INDEX IF NOT EXISTS idx_pedidos_status ON pedidos(status);');
   db.run('CREATE INDEX IF NOT EXISTS idx_pedidos_localName ON pedidos(localName);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_pedidos_created ON pedidos(createdAt);');
   db.run('CREATE INDEX IF NOT EXISTS idx_produtos_categoria ON produtos(categoria);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_produtos_ativo ON produtos(ativo);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_produtos_codigo ON produtos(codigo_barras);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_mesas_status ON mesas(status);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_mesas_nome ON mesas(nome);');
   db.run('CREATE INDEX IF NOT EXISTS idx_pedidos_turno_id ON pedidos(turno_id);');
   db.run('CREATE INDEX IF NOT EXISTS idx_pedidos_mesa_grupo ON pedidos(mesa_grupo);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_pedidos_funcionario ON pedidos(funcionario_id);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_pedidos_cliente ON pedidos(cliente_id);');
   db.run('CREATE INDEX IF NOT EXISTS idx_movimentacoes_turno_id ON movimentacoes(turno_id);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_movimentacoes_data ON movimentacoes(data_hora);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_turnos_caixa_status ON turnos_caixa(status);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_turnos_caixa_data ON turnos_caixa(data_abertura);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_clientes_telefone ON clientes(telefone);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_clientes_cpf ON clientes(cpf);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_clientes_nome ON clientes(nome);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_formas_pagamento_ativo ON formas_pagamento(ativo, ordem);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_funcionarios_pin ON funcionarios(pin);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_funcionarios_ativo ON funcionarios(ativo);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_cupons_codigo ON cupons(codigo);');
+  db.run('CREATE INDEX IF NOT EXISTS idx_auditoria_data ON auditoria(data_hora);');
   db.run('CREATE INDEX IF NOT EXISTS idx_pedidos_status_sector_created ON pedidos(status, sector, createdAt);');
   db.run('CREATE INDEX IF NOT EXISTS idx_pedidos_local_status ON pedidos(localName, status);', () => {
     // Checkpoint WAL do database_1.sqlite para liberar locks
@@ -4828,8 +4884,9 @@ io.on('connection', (socket) => {
         }
 
         function updateMesaStatus() {
-          if (!pedido.localName.includes('Delivery') && !pedido.localName.includes('Balcão')) {
-            db.run(`UPDATE mesas SET status = 'Ocupada' WHERE nome = ?`, [pedido.localName], () => {
+          const loc = String(pedido.localName || '').trim();
+          if (loc && !loc.includes('Delivery') && !loc.includes('Balcão')) {
+            db.run(`UPDATE mesas SET status = 'Ocupada' WHERE nome = ?`, [loc], () => {
               db.all(`SELECT * FROM mesas`, (err, rows) => {
                 io.emit('mesas_atualizadas', rows || []);
               });
@@ -12202,6 +12259,25 @@ app.post('/api/auth/registro', async (req, res) => {
   }
 });
 
+// ── Tracking de Visitantes ──
+app.post('/api/track/visit', (req, res) => {
+  const { page } = req.body || {};
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  if (io) {
+    io.emit('novo_visitante_site', { page, ip, time: new Date().toISOString() });
+  }
+  res.json({ ok: true });
+});
+
+app.post('/api/track/click', (req, res) => {
+  const { page, button } = req.body || {};
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  if (io) {
+    io.emit('clique_comecar_agora', { page, button, ip, time: new Date().toISOString() });
+  }
+  res.json({ ok: true });
+});
+
 // ── Captura de Leads Qualificados dos Sites de Nicho ──
 app.post('/api/leads/nicho', (req, res) => {
   const { nicho, restaurante_nome, cidade, whatsapp, faturamento_estimado, roi_estimado } = req.body || {};
@@ -14545,6 +14621,40 @@ app.get('/healthz', (req, res) => {
   }
 });
 
+// ── Módulos de rotas extraídos (modularização progressiva) ──────────────────
+// Cada módulo importado aqui reduz o tamanho efetivo do server.js.
+// Para adicionar novos módulos, edite apenas routes/index.js.
+try {
+  const { initRoutes } = require('./routes');
+  initRoutes(app, {
+    db,
+    masterDb,
+    getTenantDb,
+    verificarToken,
+    io,
+    upload,
+    JWT_SECRET,
+    withTenant,
+    bcrypt,
+    jwt,
+    iaService:                typeof iaService                !== 'undefined' ? iaService                : null,
+    nfceService:              typeof nfceService              !== 'undefined' ? nfceService              : null,
+    satService:               typeof satService               !== 'undefined' ? satService               : null,
+    sendPush:                 typeof sendPush                 === 'function'  ? sendPush                 : null,
+    broadcastFormasPagamento: typeof broadcastFormasPagamento === 'function'  ? broadcastFormasPagamento : null,
+    resolveTenantId:          typeof resolveTenantId          === 'function'  ? resolveTenantId          : null,
+    loginBloqueado:           typeof loginBloqueado           === 'function'  ? loginBloqueado           : null,
+    registrarFalhaLogin:      typeof registrarFalhaLogin      === 'function'  ? registrarFalhaLogin      : null,
+    getTenantDbPath,
+    createFreshTenantDb:      typeof createFreshTenantDb      === 'function'  ? createFreshTenantDb      : null,
+    fsSync:                   fs,
+    activeSockets,
+    terminalPairingService:   typeof terminalPairingService   !== 'undefined' ? terminalPairingService   : null,
+  });
+} catch (routesErr) {
+  console.error('[routes] Falha ao carregar módulos de rotas:', routesErr.message);
+}
+
 // Middleware Global de Fallback Express (Anti-Crash para rotas e APIs)
 app.use(globalErrorMiddleware);
 
@@ -14578,6 +14688,19 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // Inicializar licença e depois subir o servidor com Animação Visualizer / Matrix ────────────
+server.on('error', (err) => {
+  if (err && err.code === 'EADDRINUSE') {
+    try {
+      originalError.call(console, `\n❌ [ERRO CRÍTICO] A porta ${PORT} já está em uso por outra instância do servidor Node.js.`);
+      originalError.call(console, `👉 Verifique se já existe um processo rodando na porta ${PORT} ou encerre-o no Gerenciador de Tarefas.\n`);
+    } catch (_) {}
+  } else {
+    try {
+      originalError.call(console, '❌ Erro no servidor HTTP/WebSocket:', err && err.message);
+    } catch (_) {}
+  }
+});
+
 licenseManager.initLicense().then((licState) => {
   server.listen(PORT, HOST, () => {
     const ip = getLocalIp();
@@ -14601,6 +14724,11 @@ ${ANSI.dim}───────────────────────
       const fn = pendingLogs.shift();
       fn();
     }
+
+    try {
+      const { scheduleMaintenance } = require('./src/utils/maintenance-cleaner');
+      scheduleMaintenance(BASE_DIR);
+    } catch (_) {}
 
   });
 });

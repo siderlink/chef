@@ -7280,6 +7280,19 @@ window.initNfceTab = function () {
   if (elCertSenha) elCertSenha.value = configs.cert_senha || '';
   if (elNcm) elNcm.value = configs.ncm || '21069090';
   if (elCfop) elCfop.value = configs.cfop || '5102';
+
+  // Parâmetros SAT SP
+  const elModFiscal = document.getElementById('cfg-modelo-fiscal-ativo');
+  const elSatSerie = document.getElementById('cfg-sat-serie');
+  const elSatCodAtiv = document.getElementById('cfg-sat-codigo-ativacao');
+  const elSatCnpjSh = document.getElementById('cfg-sat-cnpj-sh');
+  const elSatSignac = document.getElementById('cfg-sat-signac');
+
+  if (elModFiscal) elModFiscal.value = configs.modelo_fiscal_ativo || 'nfce';
+  if (elSatSerie) elSatSerie.value = configs.sat_serie || '900001234';
+  if (elSatCodAtiv) elSatCodAtiv.value = configs.sat_codigo_ativacao || '12345678';
+  if (elSatCnpjSh) elSatCnpjSh.value = configs.sat_cnpj_sh || '11111111000191';
+  if (elSatSignac) elSatSignac.value = configs.sat_signac || '';
 };
 
 window.salvarConfiguracoesNfce = function () {
@@ -7318,6 +7331,62 @@ window.salvarConfiguracoesNfce = function () {
     })
     .catch(e => {
       alert('Erro de rede ao salvar configurações: ' + e.message);
+    });
+};
+
+window.salvarConfiguracoesSAT = function () {
+  const payload = {
+    modelo_fiscal_ativo: document.getElementById('cfg-modelo-fiscal-ativo')?.value || 'nfce',
+    sat_serie: (document.getElementById('cfg-sat-serie')?.value || '').trim(),
+    sat_codigo_ativacao: (document.getElementById('cfg-sat-codigo-ativacao')?.value || '').trim(),
+    sat_cnpj_sh: (document.getElementById('cfg-sat-cnpj-sh')?.value || '').trim(),
+    sat_signac: (document.getElementById('cfg-sat-signac')?.value || '').trim()
+  };
+
+  fetch('/api/config', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload)
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (res && res.success) {
+        alert('✅ Parâmetros do SAT Fiscal SP salvos com sucesso!');
+        Object.assign(configs, payload);
+      } else {
+        alert('Erro ao salvar configurações do SAT.');
+      }
+    })
+    .catch(e => {
+      alert('Erro de rede ao salvar configurações SAT: ' + e.message);
+    });
+};
+
+window.testarComunicacaoSAT = function () {
+  const serie = (document.getElementById('cfg-sat-serie')?.value || '').trim() || '900001234';
+  const codAtiv = (document.getElementById('cfg-sat-codigo-ativacao')?.value || '').trim() || '12345678';
+
+  fetch('/api/fiscal/sat/emitir', {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      valor_total: 0.10,
+      itens: [{ nome: 'TESTE COMUNICACAO SAT', preco: 0.10, quantidade: 1 }],
+      forma_pagamento: 'dinheiro',
+      sat_serie: serie,
+      sat_codigo_ativacao: codAtiv
+    })
+  })
+    .then(r => r.json())
+    .then(res => {
+      if (res && res.success) {
+        alert('🟢 Comunicação com SAT SP OK!\n\nStatus: ' + (res.mensagem || 'Conectado') + '\nChave CF-e: ' + (res.chave || 'CF-e Homologado') + '\nSérie: ' + serie);
+      } else {
+        alert('⚠️ Retorno SAT: ' + (res.error || res.mensagem || 'Falha ao comunicar com o equipamento SAT'));
+      }
+    })
+    .catch(e => {
+      alert('Erro ao testar SAT: ' + e.message);
     });
 };
 

@@ -139,4 +139,72 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.matchMedia("(pointer: fine)").matches) {
         initMagneticElements();
     }
+
+    // 6. Tracking de Visitantes e Modal de Cadastro
+    fetch('/api/track/visit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page: 'pv-v5' })
+    }).catch(e => console.error(e));
+
+    const modalCadastro = document.getElementById('modal-cadastro');
+    const closeBtn = document.querySelector('.close-modal');
+    const btnsComecar = document.querySelectorAll('.btn-comecar-agora');
+    
+    btnsComecar.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Avisa que clicou no botão
+            fetch('/api/track/click', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page: 'pv-v5', button: 'comecar_agora' })
+            }).catch(e => console.error(e));
+
+            modalCadastro.classList.add('active');
+        });
+    });
+
+    closeBtn.addEventListener('click', () => {
+        modalCadastro.classList.remove('active');
+    });
+
+    modalCadastro.addEventListener('click', (e) => {
+        if(e.target === modalCadastro) {
+            modalCadastro.classList.remove('active');
+        }
+    });
+
+    const formCadastro = document.getElementById('form-cadastro');
+    const feedbackMsg = document.getElementById('cadastro-feedback');
+
+    formCadastro.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nome = document.getElementById('cad-nome').value;
+        const wpp = document.getElementById('cad-wpp').value;
+
+        fetch('/api/leads/nicho', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nicho: 'pv-v5',
+                restaurante_nome: nome,
+                whatsapp: wpp
+            })
+        }).then(r => r.json()).then(res => {
+            if(res.ok) {
+                feedbackMsg.style.display = 'block';
+                formCadastro.reset();
+                setTimeout(() => {
+                    modalCadastro.classList.remove('active');
+                    feedbackMsg.style.display = 'none';
+                }, 3000);
+            } else {
+                alert('Erro: ' + res.erro);
+            }
+        }).catch(err => {
+            alert('Falha na comunicação. Tente novamente.');
+        });
+    });
 });

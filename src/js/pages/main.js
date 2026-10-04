@@ -48,16 +48,18 @@ window.wizardNext = wizardNext;
 window.wizardPrev = wizardPrev;
 window._updateMesasPreview = _updateMesasPreview;
 
-import { isDonoMaster, obterInfoDetalhadaDispositivo, enviarRegistroSessaoDetalhado, aplicarModoTotem, obterSerialDispositivo, apelidarDispositivo, closeMobileMenu, initMobileMenu, authHeaders } from './auth_device.js';
+import { isDonoMaster, obterInfoDetalhadaDispositivo, enviarRegistroSessaoDetalhado, aplicarModoTotem, obterSerialDispositivo, apelidarDispositivo, openMobileMenu, closeMobileMenu, initMobileMenu, authHeaders } from './auth_device.js';
 window.isDonoMaster = isDonoMaster;
 window.obterInfoDetalhadaDispositivo = obterInfoDetalhadaDispositivo;
 window.enviarRegistroSessaoDetalhado = enviarRegistroSessaoDetalhado;
 window.aplicarModoTotem = aplicarModoTotem;
 window.obterSerialDispositivo = obterSerialDispositivo;
 window.apelidarDispositivo = apelidarDispositivo;
+window.openMobileMenu = openMobileMenu;
 window.closeMobileMenu = closeMobileMenu;
 window.initMobileMenu = initMobileMenu;
 window.authHeaders = authHeaders;
+
 
 import { getCustomShortcuts, saveCustomShortcuts, restaurarAtalhosPadrao, abrirModalPersonalizarAtalhos, iniciarGravacaoAtalho, renderGuiaAtalhosUI, abrirGuiaAtalhos, setMesasSectionCollapsed, abrirModalJuntarMesas, selecionarMesaTargetJuntar, filtrarMesasJuntar, confirmarJuncaoMesasModal } from './shortcuts.js';
 window.getCustomShortcuts = getCustomShortcuts;
@@ -907,6 +909,29 @@ socket.on('erro_pagamento', (msg) => {
 });
 
 document.addEventListener('DOMContentLoaded', updateQrCode);
+
+/* ─── INICIALIZAÇÃO IMEDIATA DO QR PONTO (boot fallback) ───────────
+   Popula #qr-ponto-img com a URL pública de /painel-funcionario.html
+   assim que o DOM carrega, sem esperar pelo evento update_ponto_token.
+   Quando o socket emitir o token real, a imagem será sobrescrita. */
+document.addEventListener('DOMContentLoaded', function () {
+  const img = document.getElementById('qr-ponto-img');
+  const zoomedImg = document.getElementById('qr-ponto-img-zoomed');
+  if (!img || img.src) return; // já tem src → socket chegou antes
+  try {
+    const origin = window.location.origin || '';
+    const rid = encodeURIComponent(localStorage.getItem('restaurante_id') || '1');
+    const fallbackUrl = `${origin}/painel-funcionario.html?restaurante_id=${rid}`;
+    const qrSrc = `${origin}/api/qr?size=300&data=${encodeURIComponent(fallbackUrl)}`;
+    if (typeof window.qrImg === 'function') {
+      window.qrImg(img, fallbackUrl, 300);
+      if (zoomedImg) window.qrImg(zoomedImg, fallbackUrl, 300);
+    } else {
+      img.src = qrSrc;
+      if (zoomedImg) zoomedImg.src = qrSrc;
+    }
+  } catch (e) { /* silêncio */ }
+});
 
 /* ─── TEMA DA TELA DO CAIXA (Pro UX / Clássico / Modular v1.1) ──
    Se o restaurante escolheu o painel v1.1 nas configurações,
@@ -5838,7 +5863,100 @@ document.addEventListener('DOMContentLoaded', () => {
       if (overlay) overlay.style.display = 'none';
     };
   }
+
+  // --- OVERLAYS CLOSE BUTTONS ---
+  const btnCloseRel = document.getElementById('btn-fechar-relatorios');
+  if (btnCloseRel) {
+    btnCloseRel.onclick = () => {
+      const overlay = document.getElementById('relatorios-overlay');
+      if (overlay) overlay.style.display = 'none';
+    };
+  }
+  const btnCloseFin = document.getElementById('btn-fechar-financeiro');
+  if (btnCloseFin) {
+    btnCloseFin.onclick = () => {
+      const overlay = document.getElementById('financeiro-overlay');
+      if (overlay) overlay.style.display = 'none';
+    };
+  }
+  const btnCloseAjuda = document.getElementById('btn-fechar-ajuda');
+  if (btnCloseAjuda) {
+    btnCloseAjuda.onclick = () => {
+      const overlay = document.getElementById('ajuda-overlay');
+      if (overlay) overlay.style.display = 'none';
+    };
+  }
+
+  // --- BOTÕES CAIXA CLÁSSICO (PARCIAL & SPLIT) ---
+  const btnAddPagamento = document.getElementById('btn-add-pagamento');
+  if (btnAddPagamento) {
+    btnAddPagamento.onclick = () => {
+      if (typeof window.adicionarPagamentoClassico === 'function') {
+        window.adicionarPagamentoClassico();
+      }
+    };
+  }
+  const btnSplitEqual = document.getElementById('btn-split-equal');
+  if (btnSplitEqual) {
+    btnSplitEqual.onclick = () => {
+      if (typeof window.calcularSplitClassico === 'function') {
+        window.calcularSplitClassico();
+      }
+    };
+  }
 });
+
+// Funções globais para suporte ao Caixa Clássico
+window.adicionarPagamentoClassico = function () {
+  if (!window.mesaAtual) return alert('Selecione uma mesa primeiro.');
+  const valInput = document.getElementById('valor-pagamento');
+  const selMetodo = document.getElementById('forma-pagamento');
+  if (!valInput || !selMetodo) return;
+
+  const rawVal = (valInput.value || '').trim().replace('R$', '').replace(/\s/g, '').replace(',', '.');
+  const valor = parseFloat(rawVal);
+  if (isNaN(valor) || valor <= 0) return alert('Informe um valor de pagamento válido.');
+
+  const metodo = selMetodo.value;
+  const mesaName = window.mesaAtual.nome || window.mesaAtual.mesaName;
+  const taxaCheckbox = document.getElementById('taxa-servico');
+  const isTaxaChecked = taxaCheckbox ? taxaCheckbox.checked : true;
+
+  socket.emit('pagamento_parcial_valor', {
+    mesaName: mesaName,
+    valor: valor,
+    metodo: metodo,
+    comTaxa: isTaxaChecked,
+    desconto: window.descontoAdicional || 0,
+    userName: window.loggedInUser || 'Caixa'
+  });
+
+  valInput.value = '';
+};
+
+window.calcularSplitClassico = function () {
+  const partsInput = document.getElementById('split-equal-parts');
+  const valInput = document.getElementById('valor-pagamento');
+  if (!partsInput || !valInput) return;
+
+  const parts = parseInt(partsInput.value, 10);
+  if (isNaN(parts) || parts < 2) return alert('Informe ao menos 2 pessoas para divisão.');
+
+  let falta = typeof window.mesaFaltaPagar === 'number' ? window.mesaFaltaPagar : 0;
+  if (falta <= 0) {
+    const elFalta = document.getElementById('falta-pagar-text');
+    if (elFalta) {
+      const clean = elFalta.innerText.replace('R$', '').replace(/\s/g, '').replace(',', '.');
+      falta = parseFloat(clean) || 0;
+    }
+  }
+
+  if (falta <= 0) return alert('Não há saldo pendente para dividir.');
+
+  const valorPorPessoa = (falta / parts).toFixed(2);
+  valInput.value = valorPorPessoa.replace('.', ',');
+};
+
 
 socket.on('relatorios_atualizados', (data) => {
   const elTotal = document.getElementById('relatorios-total-geral');
