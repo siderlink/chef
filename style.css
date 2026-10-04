@@ -446,11 +446,14 @@ body.chef-sizes-on .action-group {
   word-break: break-word;
   background-color: var(--bg-secondary);
   flex-direction: column;
-  width: 260px;
+  width: var(--right-sidebar-width, 280px);
+  min-width: 190px;
+  max-width: 360px;
   padding: 12px;
   display: flex;
   overflow: hidden auto;
-  flex-shrink: 0
+  flex-shrink: 1;
+  box-sizing: border-box;
 }
 
 .info-group {
@@ -5028,7 +5031,8 @@ body.force-mobile .workspace.active-tab-mesas.mesas-collapsed-view .products-tab
 }
 
 body.force-mobile .products-table {
-  min-width: 640px;
+  min-width: 0 !important;
+  width: 100% !important;
 }
 
 body.force-mobile .workspace.active-tab-pedido .left-actions,
@@ -6629,17 +6633,7 @@ body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel {
     width: 100% !important;
   }
 
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 16px !important;
-    flex-wrap: wrap !important;
-    width: 100% !important;
-  }
-}
+
 
 body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary {
     flex: 1 1 340px !important;
@@ -6653,41 +6647,20 @@ body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-gro
     border: 1px solid var(--border-color, #e2e8f0) !important;
   }
 
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary {
-    flex: 1 1 340px !important;
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
-    gap: 4px 14px !important;
-    padding: 8px 14px !important;
-    margin-bottom: 0 !important;
-    background: var(--bg-secondary, #f8fafc) !important;
-    border-radius: 12px !important;
-    border: 1px solid var(--border-color, #e2e8f0) !important;
-  }
-}
+
 
 body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary .group-title {
     display: none !important;
   }
 
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary .group-title {
-    display: none !important;
-  }
-}
+
 
 body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary .info-row {
     margin-bottom: 2px !important;
     font-size: 12px !important;
   }
 
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary .info-row {
-    margin-bottom: 2px !important;
-    font-size: 12px !important;
-  }
-}
+
 
 body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary .info-row.bold:has(#total-pagar-text),
 body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary .info-row:has(#total-pagar-text) {
@@ -6700,30 +6673,14 @@ body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-gro
     align-items: center !important;
   }
 
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary .info-row.bold:has(#total-pagar-text),
-  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary .info-row:has(#total-pagar-text) {
-    grid-column: 1 / -1 !important;
-    border-top: 1px dashed #cbd5e1 !important;
-    padding-top: 4px !important;
-    margin-top: 2px !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-  }
-}
+
 
 body.chef-monitor-vertical:not(.chef-vertical-2col) #total-pagar-text {
     font-size: 22px !important;
     font-weight: 800 !important;
   }
 
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #total-pagar-text {
-    font-size: 22px !important;
-    font-weight: 800 !important;
-  }
-}
+
 
 body.chef-monitor-vertical:not(.chef-vertical-2col) .checkout-sticky-footer {
     position: static !important;
@@ -6736,28 +6693,13 @@ body.chef-monitor-vertical:not(.chef-vertical-2col) .checkout-sticky-footer {
     align-items: center !important;
   }
 
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) .checkout-sticky-footer {
-    position: static !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    flex: 0 0 220px !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-}
+
 
 body.chef-monitor-vertical:not(.chef-vertical-2col) .checkout-sticky-footer .info-group {
     width: 100% !important;
   }
 
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) .checkout-sticky-footer .info-group {
-    width: 100% !important;
-  }
-}
+
 
 body.chef-monitor-vertical:not(.chef-vertical-2col) #btn-finalizar-venda {
     height: 52px !important;
@@ -6768,16 +6710,7 @@ body.chef-monitor-vertical:not(.chef-vertical-2col) #btn-finalizar-venda {
     box-shadow: 0 4px 14px rgba(58, 181, 91, 0.35) !important;
   }
 
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #btn-finalizar-venda {
-    height: 52px !important;
-    min-height: 52px !important;
-    font-size: 15.5px !important;
-    font-weight: 800 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 4px 14px rgba(58, 181, 91, 0.35) !important;
-  }
-}
+
 
 /* ── 5. MODO MONITOR VERTICAL 2-COLUNAS (QUANDO ESCOLHIDO PELO USUÁRIO) ── */
 body.chef-monitor-vertical.chef-vertical-2col .workspace {
@@ -7192,4 +7125,518 @@ table.products-table,
   overflow-x: hidden !important;
   overflow-y: auto !important;
   scrollbar-width: thin !important;
+}
+
+/* ── INTEGRIDADE DO PAINEL LATERAL DE RESUMO (EVITA SER ENGOLIDO PELO LAYOUT) ── */
+#right-panel:not(.mode-hidden) {
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  min-width: 190px !important;
+  flex-shrink: 1 !important;
+}
+
+body:not(.chef-monitor-vertical) #inner-right-panel,
+body.chef-vertical-2col #inner-right-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  gap: 8px !important;
+}
+
+body:not(.chef-monitor-vertical) #inner-right-panel .info-group.summary,
+body.chef-vertical-2col #inner-right-panel .info-group.summary {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 10px 12px !important;
+}
+
+body:not(.chef-monitor-vertical) #inner-right-panel .info-group.summary .group-title,
+body.chef-vertical-2col #inner-right-panel .info-group.summary .group-title {
+  display: block !important;
+}
+
+body:not(.chef-monitor-vertical) #inner-right-panel .info-row,
+body.chef-vertical-2col #inner-right-panel .info-row {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+
+
+/* ══════════════════════════════════════════════════════════════════
+   BLINDAGEM TOTAL DA BARRA ESQUERDA (SEM VAZAMENTO SOBRE AS MESAS)
+   ══════════════════════════════════════════════════════════════════ */
+#left-panel,
+.left-actions,
+aside.left-actions {
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 20 !important;
+  background-color: var(--bg-card, #0f172a) !important;
+}
+
+#left-panel .panel-content-inner,
+#inner-left-panel {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+#left-panel .sidebar-header-controls {
+  overflow: hidden !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Quando compacta (68px ou mode-mini), força modo de ícones puros sem vazar texto */
+#left-panel.mode-mini,
+#left-panel.sidebar-mini,
+#left-panel.dock-icon-only,
+#left-panel[style*="width: 68px"],
+#left-panel[style*="width:68px"],
+#left-panel[style*="width: 64px"],
+#left-panel[style*="width:64px"] {
+  width: 68px !important;
+  min-width: 68px !important;
+  max-width: 68px !important;
+  padding: 8px 4px !important;
+  overflow-x: hidden !important;
+}
+
+#left-panel.mode-mini .sidebar-header-controls span,
+#left-panel.sidebar-mini .sidebar-header-controls span,
+#left-panel.dock-icon-only .sidebar-header-controls span,
+#left-panel[style*="width: 68px"] .sidebar-header-controls span,
+#left-panel[style*="width:68px"] .sidebar-header-controls span {
+  display: none !important;
+}
+
+#left-panel.mode-mini .sidebar-header-controls > div,
+#left-panel.sidebar-mini .sidebar-header-controls > div,
+#left-panel.dock-icon-only .sidebar-header-controls > div,
+#left-panel[style*="width: 68px"] .sidebar-header-controls > div,
+#left-panel[style*="width:68px"] .sidebar-header-controls > div {
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+}
+
+#left-panel.mode-mini .group-title,
+#left-panel.sidebar-mini .group-title,
+#left-panel.dock-icon-only .group-title,
+#left-panel[style*="width: 68px"] .group-title,
+#left-panel[style*="width:68px"] .group-title {
+  display: none !important;
+}
+
+#left-panel.mode-mini .btn-grid-2,
+#left-panel.sidebar-mini .btn-grid-2,
+#left-panel.dock-icon-only .btn-grid-2,
+#left-panel[style*="width: 68px"] .btn-grid-2,
+#left-panel[style*="width:68px"] .btn-grid-2 {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+  width: 100% !important;
+}
+
+#left-panel.mode-mini .btn-action,
+#left-panel.sidebar-mini .btn-action,
+#left-panel.dock-icon-only .btn-action,
+#left-panel[style*="width: 68px"] .btn-action,
+#left-panel[style*="width:68px"] .btn-action {
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  height: 44px !important;
+  padding: 0 !important;
+  margin: 2px auto !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+}
+
+#left-panel.mode-mini .btn-action i,
+#left-panel.sidebar-mini .btn-action i,
+#left-panel.dock-icon-only .btn-action i,
+#left-panel[style*="width: 68px"] .btn-action i,
+#left-panel[style*="width:68px"] .btn-action i {
+  font-size: 22px !important;
+  margin: 0 !important;
+}
+
+/* Em telas com largura menor que 900px, garante que a barra esquerda adote o modo mini visual */
+@media (max-width: 900px) {
+  #left-panel:not(.user-pinned-expanded) {
+    width: 68px !important;
+    min-width: 68px !important;
+    max-width: 68px !important;
+    padding: 8px 4px !important;
+    overflow-x: hidden !important;
+  }
+  #left-panel:not(.user-pinned-expanded) .sidebar-header-controls span {
+    display: none !important;
+  }
+  #left-panel:not(.user-pinned-expanded) .sidebar-header-controls > div {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 3px !important;
+  }
+  #left-panel:not(.user-pinned-expanded) .group-title {
+    display: none !important;
+  }
+  #left-panel:not(.user-pinned-expanded) .btn-grid-2 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 5px !important;
+    width: 100% !important;
+  }
+  #left-panel:not(.user-pinned-expanded) .btn-action {
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    height: 44px !important;
+    padding: 0 !important;
+    margin: 2px auto !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    overflow: hidden !important;
+  }
+  #left-panel:not(.user-pinned-expanded) .btn-action i {
+    font-size: 22px !important;
+    margin: 0 !important;
+  }
+
+  /* Grade de mesas equilibrada (máximo 2 a 3 colunas legíveis em telas compactas) */
+  #orders-grid .mesas-grid-layout,
+  .mesas-grid-layout {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+    gap: 8px !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   CHEF COZINHA — REFINAMENTO DEFINITIVO DO LAYOUT DO CAIXA (DARK & LIGHT)
+   1. Eliminação total de bolhas/cards soltos no dock lateral esquerdo em mini mode
+   2. Eliminação total de rolagem horizontal e cortes laterais no painel central (#main-panel)
+   3. Garantia de proporção saudável e equilíbrio em qualquer resolução (incluindo 575px / tablets / monitores retrato)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. DOCK LATERAL ESQUERDO COMPACTO / MINI (ESTILO TRILHO SLEEK / APPLE) ── */
+#left-panel.mode-mini,
+#left-panel.sidebar-mini,
+#left-panel.dock-icon-only,
+.left-actions.mode-mini,
+.left-actions.sidebar-mini,
+.left-actions.dock-icon-only,
+#left-panel[style*="width: 58px"],
+#left-panel[style*="width: 68px"],
+#left-panel[style*="width: 60px"],
+#left-panel[style*="width: 56px"] {
+  width: 58px !important;
+  min-width: 58px !important;
+  max-width: 58px !important;
+  flex: 0 0 58px !important;
+  padding: 6px 3px !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  background: var(--surface-sidebar, #0b1120) !important;
+  border-right: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
+}
+
+[data-theme="light"] #left-panel.mode-mini,
+[data-theme="light"] #left-panel.sidebar-mini,
+html[data-theme="light"] #left-panel.mode-mini,
+body:not(.dark-mode) #left-panel.mode-mini {
+  background: #ffffff !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+/* Neutraliza backgrounds de bolhas/cards soltos em TODOS os temas e especificidades */
+html[data-theme="dark"] #left-panel.mode-mini .action-group,
+html[data-theme="dark"] #left-panel.sidebar-mini .action-group,
+html[data-theme="dark"] #left-panel.dock-icon-only .action-group,
+html[data-theme="dark"] .left-actions.mode-mini .action-group,
+html[data-theme="dark"] .left-actions.sidebar-mini .action-group,
+html[data-theme="dark"] .left-actions.dock-icon-only .action-group,
+body.dark-mode #left-panel.mode-mini .action-group,
+body.dark-mode #left-panel.sidebar-mini .action-group,
+body.dark-mode #left-panel.dock-icon-only .action-group,
+body.dark-mode .left-actions.mode-mini .action-group,
+body.dark-mode .left-actions.sidebar-mini .action-group,
+body.theme-dark #left-panel.mode-mini .action-group,
+body.theme-dark .left-actions.mode-mini .action-group,
+html[data-theme="light"] #left-panel.mode-mini .action-group,
+html[data-theme="light"] .left-actions.mode-mini .action-group,
+body:not(.dark-mode) #left-panel.mode-mini .action-group,
+body:not(.dark-mode) .left-actions.mode-mini .action-group,
+#left-panel.mode-mini .action-group,
+#left-panel.sidebar-mini .action-group,
+#left-panel.dock-icon-only .action-group,
+.left-actions.mode-mini .action-group,
+.left-actions.sidebar-mini .action-group,
+.left-actions.dock-icon-only .action-group,
+#left-panel[style*="width: 58px"] .action-group,
+#left-panel[style*="width: 68px"] .action-group {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 3px 0 !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+#left-panel.mode-mini .group-title,
+.left-actions.mode-mini .group-title,
+#left-panel.sidebar-mini .group-title,
+.left-actions.sidebar-mini .group-title,
+#left-panel.dock-icon-only .group-title,
+.left-actions.dock-icon-only .group-title,
+#left-panel[style*="width: 58px"] .group-title,
+#left-panel[style*="width: 68px"] .group-title {
+  display: none !important;
+}
+
+/* Botões do modo mini: ícones elegantes 42x42 com cantos arredondados */
+#left-panel.mode-mini .btn-action,
+.left-actions.mode-mini .btn-action,
+#left-panel.sidebar-mini .btn-action,
+.left-actions.sidebar-mini .btn-action,
+#left-panel.dock-icon-only .btn-action,
+.left-actions.dock-icon-only .btn-action,
+#left-panel.mode-mini .btn-grid-2 > .btn-action,
+.left-actions.mode-mini .btn-grid-2 > .btn-action,
+#left-panel[style*="width: 58px"] .btn-action,
+#left-panel[style*="width: 68px"] .btn-action {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  max-width: 42px !important;
+  max-height: 42px !important;
+  padding: 0 !important;
+  margin: 2px auto !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+#left-panel.mode-mini .btn-action:hover,
+.left-actions.mode-mini .btn-action:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  transform: scale(1.06) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+html[data-theme="light"] #left-panel.mode-mini .btn-action,
+html[data-theme="light"] .left-actions.mode-mini .btn-action,
+body:not(.dark-mode) #left-panel.mode-mini .btn-action {
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+html[data-theme="light"] #left-panel.mode-mini .btn-action:hover,
+html[data-theme="light"] .left-actions.mode-mini .btn-action:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  transform: scale(1.06) !important;
+}
+
+#left-panel.mode-mini .btn-action i,
+.left-actions.mode-mini .btn-action i {
+  font-size: 20px !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Botão Restaurar Ordem dos Botões em modo mini */
+#left-panel.mode-mini #btn-reset-sidebar-order,
+#left-panel.mode-mini .btn-reset-order,
+.left-actions.mode-mini #btn-reset-sidebar-order,
+.left-actions.mode-mini .btn-reset-order,
+#left-panel[style*="width: 58px"] #btn-reset-sidebar-order,
+#left-panel[style*="width: 68px"] #btn-reset-sidebar-order {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  padding: 0 !important;
+  margin: 6px auto !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#left-panel.mode-mini #btn-reset-sidebar-order i,
+#left-panel.mode-mini .btn-reset-order i,
+.left-actions.mode-mini #btn-reset-sidebar-order i,
+.left-actions.mode-mini .btn-reset-order i {
+  font-size: 18px !important;
+  margin: 0 !important;
+}
+
+/* Controles de topo da barra esquerda em modo mini */
+#left-panel.mode-mini .sidebar-header-controls,
+.left-actions.mode-mini .sidebar-header-controls {
+  width: 100% !important;
+  padding: 4px 0 !important;
+  margin-bottom: 6px !important;
+  display: flex !important;
+  justify-content: center !important;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
+}
+
+#left-panel.mode-mini .sidebar-header-controls span,
+.left-actions.mode-mini .sidebar-header-controls span {
+  display: none !important;
+}
+
+#left-panel.mode-mini .sidebar-header-controls > div,
+.left-actions.mode-mini .sidebar-header-controls > div {
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 3px !important;
+  border-bottom: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+#left-panel.mode-mini .sidebar-ctrl-btn,
+.left-actions.mode-mini .sidebar-ctrl-btn {
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+}
+
+/* ── 2. PROTEÇÃO ABSOLUTA CONTRA CORTE LATERAL NO PAINEL CENTRAL (#main-panel) ── */
+#main-panel,
+.main-workspace {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  overflow-x: clip !important;
+  overflow-y: hidden !important;
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#mesas-section-container,
+.mesas-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: clip !important;
+}
+
+.mesas-header {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  overflow-x: hidden !important;
+}
+
+.mesas-scroll,
+#orders-grid {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)) !important;
+  gap: 8px !important;
+  padding: 8px !important;
+}
+
+.mesa-item {
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#products-section-container,
+.products-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: clip !important;
+}
+
+table.products-table,
+#order-items-table {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  table-layout: auto !important;
+}
+
+.products-table-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+.mobile-mesa-info-card,
+#mobile-mesa-info-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+}
+
+/* ── 3. RESPIRO E SAÚDE DO LAYOUT EM TELAS ESTREITAS (< 900px / 575px) ── */
+@media (max-width: 900px) {
+  #right-panel {
+    width: var(--right-sidebar-width, 220px) !important;
+    min-width: 180px !important;
+    max-width: 250px !important;
+    flex-shrink: 1 !important;
+    padding: 12px 10px !important;
+  }
 }

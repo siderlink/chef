@@ -4617,262 +4617,83 @@ io.on('connection', (socket) => {
 
           // Inserir itens
           itens.forEach((item) => {
-            db.run(
-              `INSERT INTO pedidos (productName, productEmoji, quantity, total, status, localName, userName, time, sector, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
-              [item.nome + ' (Resgate)', item.emoji || '🎁', item.quantity || 1, '0,00', 'Em espera', mesaName, userName || 'Garçom', timeStr, item.sector || 'Bar']
-            );
-            hasInserted = true;
-          });
+            // Função auxiliar para inserir usando a nova estrutura (Comandas)
+          function inserirComandaItem(prodName, prodEmoji, qty, timeStr, totalVal, prodStatus, prodSector, bonusCb) {
+            const mesaName = pedido.localName || 'Mesa ?';
+            const clientId = pedido.cliente_id || null;
+            const promId = pedido.promocao_id || null;
 
-          // Inserir lógica financeira
-          if (cupom.valor_tipo === 'desconto_fixo' && cupom.valor > 0) {
-            db.run(
-              `INSERT INTO pedidos (productName, productEmoji, quantity, total, status, localName, userName, time, sector, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
-              ['Desconto Promocional', '🏏·️', 1, '-' + cupom.valor.toFixed(2).replace('.', ','), 'Pronto', mesaName, userName || 'Garçom', timeStr, 'Caixa']
-            );
-            hasInserted = true;
-          } else if (cupom.valor_tipo === 'preco_fixo' && cupom.valor > 0) {
-            db.run(
-              `INSERT INTO pedidos (productName, productEmoji, quantity, total, status, localName, userName, time, sector, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
-              ['Cobrança de Combo/Cupom', '💲', 1, cupom.valor.toFixed(2).replace('.', ','), 'Pronto', mesaName, userName || 'Garçom', timeStr, 'Caixa']
-            );
-            hasInserted = true;
-          }
-
-          if (hasInserted) {
-            broadcastPedidos();
-            db.all("SELECT * FROM mesas", (e, r) => io.emit('mesas_atualizadas', r || []));
-          }
-
-          socket.emit('cupom_sucesso', { mensagem: 'Cupom aplicado com sucesso!' });
-        } catch (error) {
-          socket.emit('cupom_invalido', { error: 'Erro ao ler os itens do cupom.' });
-        }
-      });
-    });
-  });
-
-
-  // Garçom envia um novo pedido
-  socket.on('buscar_cliente_telefone', (telefone) => {
-    if (!telefone) return;
-    const cleanPhone = telefone.replace(/\D/g, '');
-    db.get(`SELECT nome FROM clientes WHERE telefone = ? OR telefone LIKE ? OR id IN (SELECT id FROM clientes WHERE REPLACE(REPLACE(REPLACE(REPLACE(telefone, ' ', ''), '-', ''), '(', ''), ')', '') = ?) LIMIT 1`, [telefone, `%${cleanPhone}`, cleanPhone], (err, row) => {
-      if (row) {
-        socket.emit('cliente_telefone_encontrado', { telefone, nome: row.nome });
-      } else {
-        socket.emit('cliente_telefone_encontrado', { telefone, nome: null });
-      }
-    });
-  });
-
-  socket.on('novo_pedido', (pedido) => {
-    // ── VERIFICAÇÃO DE LICENÇA ──
-    if (licenseManager.isRestricted()) {
-      socket.emit('pedido_erro', { msg: '⚠️ Sistema em modo restrito. Ative a licença para adicionar pedidos.' });
-      return;
-    }
-    if (!pedido || typeof pedido !== 'object') return;
-    // (Segurança) Remove marcadores HTML de campos exibidos na fila/cardápio para
-    // impedir XSS armazenado via pedido malicioso.
-    function _sanitizeXss(v) {
-      if (typeof v !== 'string') return v;
-      return v.replace(/[<>"'&]/g, function(c) {
-        return { '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;', '&':'&amp;' }[c] || '';
-      });
-    }
-    ['productName', 'productEmoji', 'localName', 'userName', 'time', 'mensagem', 'observations'].forEach(function (f) {
-      if (typeof pedido[f] === 'string') pedido[f] = _sanitizeXss(pedido[f]);
-    });
-    if (Array.isArray(pedido.composicoes)) {
-      pedido.composicoes = pedido.composicoes.map(c => {
-        if (typeof c === 'string') return _sanitizeXss(c);
-        if (c && typeof c === 'object') {
-          const clean = {};
-          for (const k in c) { clean[_sanitizeXss(k)] = _sanitizeXss(c[k]); }
-          return clean;
-        }
-        return c;
-      });
-    }
-    const clientName = pedido.mesa_comanda ? pedido.mesa_comanda.trim() : null;
-    const clientPhone = pedido.cliente_telefone ? pedido.cliente_telefone.trim() : null;
-
-    function proceedWithOrder(clienteId) {
-      const tid = socket.restaurante_id || socketTenantId || 1;
-      masterDb.get('SELECT licenca FROM restaurantes WHERE id = ?', [tid], (errLic, rest) => {
-        const licenca = (rest && rest.licenca) || 'lite';
-        const limits = featurePlans.getPlanLimits(licenca);
-        if (limits.max_pedidos_mes !== Infinity) {
-          db.get(`
-            SELECT COUNT(*) AS total FROM pedidos 
-            WHERE (
-              strftime('%Y-%m', time) = strftime('%Y-%m', 'now') 
-              OR strftime('%Y-%m', criado_em) = strftime('%Y-%m', 'now')
-              OR date(time) >= date('now', 'start of month')
-            )
-          `, (errP, rowP) => {
-            if (!errP && rowP && rowP.total >= limits.max_pedidos_mes) {
-              socket.emit('pedido_erro', { msg: `⚠️ Limite mensal de ${limits.max_pedidos_mes} pedidos do seu plano atingido! Faça upgrade para o Plano Pro para continuar recebendo pedidos.` });
-              socket.emit('upgrade_necessario', { recurso: 'pedidos', limite: limits.max_pedidos_mes, atual: rowP.total });
-              return;
-            }
-            executarOrdem();
-          });
-        } else {
-          executarOrdem();
-        }
-      });
-
-      function executarOrdem() {
-        pedido.cliente_id = clienteId || pedido.cliente_id || null;
-        let status = pedido.status_inicial || 'Em preparo';
-        if (pedido.sector === 'Bar' && status === 'Em espera') {
-          status = 'Em preparo';
-        }
-      const etapa = pedido.etapa || 'Principal';
-      const marchaStatus = pedido.marcha_status || (pedido.aguardar_marcha ? 'aguardando_marcha' : 'marchado');
-      if (marchaStatus === 'aguardando_marcha') {
-        status = 'Aguardando Marcha';
-      }
-      const now = new Date();
-      const dayOfWeek = now.getDay(); // 0-6
-      const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-
-      // 1. Fetch active promos
-      db.all(`SELECT * FROM promocoes WHERE ativo = 1`, [], (err, promocoes) => {
-        let comboBonus = null;
-
-        const activePromos = (promocoes || []).map(p => {
-          try { return { ...p, config: JSON.parse(p.config || '{}') }; } catch (e) { return { ...p, config: {} }; }
-        }).filter(p => {
-          const c = p.config;
-          if (c.dias_semana && c.dias_semana.length > 0 && !c.dias_semana.includes(dayOfWeek)) return false;
-          if (c.horario_inicio && currentTime < c.horario_inicio) return false;
-          if (c.horario_fim && currentTime > c.horario_fim) return false;
-          return true;
-        });
-
-        const livrePromos = activePromos.filter(p => p.config.tipo_promocao === 'livre');
-        const comboPromos = activePromos.filter(p => p.config.tipo_promocao === 'combo');
-        const precoFixoPromos = activePromos.filter(p => p.config.tipo_promocao === 'preco_fixo');
-        const descontoFixoPromos = activePromos.filter(p => p.config.tipo_promocao === 'desconto_fixo');
-        const descontoPctPromos = activePromos.filter(p => p.config.tipo_promocao === 'desconto_pct');
-
-        // preco_fixo: override product price server-side
-        const matchingPrecoFixo = precoFixoPromos.find(p => p.config.produto_alvo_nome === pedido.productName);
-        if (matchingPrecoFixo && matchingPrecoFixo.config.novo_preco > 0) {
-          const qty = parseInt(pedido.quantity) || 1;
-          pedido.total = (matchingPrecoFixo.config.novo_preco * qty).toFixed(2);
-          pedido.promocao_id = matchingPrecoFixo.id;
-        }
-
-        // desconto_fixo: apply fixed R$ discount to subtotal
-        if (descontoFixoPromos.length > 0 && !matchingPrecoFixo) {
-          const descontoMax = Math.max(...descontoFixoPromos.map(p => p.config.desconto || 0));
-          const currentTotal = parseFloat(String(pedido.total).replace(',', '.')) || 0;
-          const novoTotal = Math.max(0, currentTotal - descontoMax);
-          pedido.total = novoTotal.toFixed(2);
-          pedido.promocao_id = descontoFixoPromos.find(p => (p.config.desconto || 0) === descontoMax).id;
-        }
-
-        // desconto_pct: apply % discount to subtotal
-        if (descontoPctPromos.length > 0 && !matchingPrecoFixo && descontoFixoPromos.length === 0) {
-          const pctMax = Math.max(...descontoPctPromos.map(p => p.config.desconto_pct || 0));
-          const currentTotal = parseFloat(String(pedido.total).replace(',', '.')) || 0;
-          const novoTotal = currentTotal * (1 - pctMax / 100);
-          pedido.total = Math.max(0, novoTotal).toFixed(2);
-          pedido.promocao_id = descontoPctPromos.find(p => (p.config.desconto_pct || 0) === pctMax).id;
-        }
-
-        const matchingCombo = comboPromos.find(p => p.config.produto_alvo_nome === pedido.productName);
-        if (matchingCombo) {
-          comboBonus = matchingCombo.config.produto_brinde_nome;
-        }
-
-        if (livrePromos.length > 0) {
-          db.all(`SELECT productName FROM pedidos WHERE localName = ? AND status != 'Finalizado'`, [pedido.localName], (err, itemsMesa) => {
-            let tableIsLivre = false;
-            let activeLivreCategories = [];
-
-            for (const item of (itemsMesa || [])) {
-              const lp = livrePromos.find(p => p.config.produto_alvo_nome === item.productName);
-              if (lp) {
-                tableIsLivre = true;
-                if (lp.config.categorias_inclusas) {
-                  activeLivreCategories = activeLivreCategories.concat(lp.config.categorias_inclusas);
-                }
+            db.get("SELECT id FROM comandas WHERE mesa = ? AND status = 'Aberta'", [mesaName], (errC, rowC) => {
+              if (rowC && rowC.id) {
+                doInsertItem(rowC.id);
+              } else {
+                db.run(
+                  "INSERT INTO comandas (mesa, cliente_id, promocao_id, status, criado_em) VALUES (?, ?, ?, 'Aberta', datetime('now', 'localtime'))",
+                  [mesaName, clientId, promId],
+                  function(errI) {
+                    if (errI) return console.error('Erro ao criar comanda:', errI);
+                    doInsertItem(this.lastID);
+                  }
+                );
               }
-            }
+            });
 
-            if (tableIsLivre) {
-              db.get(`SELECT categoria FROM produtos WHERE nome = ?`, [pedido.productName], (err, prodRow) => {
-                if (prodRow && activeLivreCategories.includes(prodRow.categoria)) {
-                  pedido.total = "0.00";
-                }
-                savePedidoAndBonus();
-              });
-            } else {
-              savePedidoAndBonus();
-            }
-          });
-        } else {
-          savePedidoAndBonus();
-        }
+            function doInsertItem(comanda_id) {
+               const precoUnitario = parseFloat(totalVal) / (qty || 1);
+               db.run(`
+                 INSERT INTO comandas_itens 
+                 (comanda_id, nome, emoji, quantidade, preco_unitario, total, status, setor, observacoes, composicoes, opcionais, garcom, criado_em)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+               `, [
+                 comanda_id, prodName, prodEmoji, qty, precoUnitario, parseFloat(totalVal),
+                 prodStatus, prodSector, pedido.observations || '', JSON.stringify(pedido.composicoes || []),
+                 pedido.options || '', pedido.userName || ''
+               ], function(err) {
+                 if (err) {
+                   if (!bonusCb) {
+                     console.error('Erro ao inserir item:', err);
+                     socket.emit('erro_servidor', 'Falha ao gravar o pedido. Tente novamente.');
+                   }
+                   return;
+                 }
+                 const insertedId = this.lastID;
+                 
+                 // Atualiza os totais da comanda
+                 db.run("UPDATE comandas SET valor_subtotal = (SELECT SUM(total) FROM comandas_itens WHERE comanda_id = ?), valor_total = (SELECT SUM(total) FROM comandas_itens WHERE comanda_id = ?) WHERE id = ?", [comanda_id, comanda_id, comanda_id]);
 
-        function savePedidoAndBonus() {
-          let tempoPreparo = parseInt(pedido.tempo_preparo_min) || 0;
-          if (!tempoPreparo) {
-            const prodNameLower = (pedido.productName || '').toLowerCase();
-            if (/picanha|bife|steak|carne|costela|churrasco|feijoada|paella|bacalhau|moqueca|cordeiro|ancho|t-bone|wagyu/.test(prodNameLower)) {
-              tempoPreparo = 22;
-            } else if (/risoto|pizza|hamb[uú]rguer|burger|massa|lasanha|parmegiana|peixe|salm[aã]o|polvo|fondue/.test(prodNameLower)) {
-              tempoPreparo = 16;
-            } else if (/frango|omelete|pastel|por[cç][aã]o|batata|tapioca|sandu[ií]che|wrap|guarni[cç][aã]o/.test(prodNameLower)) {
-              tempoPreparo = 12;
-            } else if (/sobremesa|pudim|petit|torta|brownie|a[cç]a[ií]|sorvete|churros/.test(prodNameLower)) {
-              tempoPreparo = 6;
-            } else if (/salada|carpaccio|ceviche|tartare|bruschetta|couvert|entrada|tabua/.test(prodNameLower)) {
-              tempoPreparo = 6;
-            } else if (/bebida|refrigerante|suco|cerveja|chopp|vinho|drink|caipirinha|caf[eé]|água|shot/.test(prodNameLower) || pedido.sector === 'Bar') {
-              tempoPreparo = 3;
-            } else {
-              tempoPreparo = 15;
+                 if (bonusCb) {
+                   bonusCb(insertedId);
+                 } else {
+                   const finalSector = prodSector || 'Cozinha 1';
+                   const newOrder = { ...pedido, id: insertedId, status: prodStatus, sector: finalSector, etapa: etapa, marcha_status: marchaStatus, tempo_preparo_min: tempoPreparo, createdAt: new Date().toISOString() };
+                   io.emit('pedido_adicionado', newOrder);
+                   sendPush('cozinha', '🆕 Novo Pedido!', `${qty}x ${prodName} — ${mesaName}`.trim(), 'pedido-' + insertedId, '/fila-pedidos.html');
+                   updateMesaStatus();
+                   broadcastPedidos();
+
+                   if (comboBonus) {
+                     db.get(`SELECT emoji, categoria FROM produtos WHERE nome = ?`, [comboBonus], (err, bonusProd) => {
+                       const bonusSector = (bonusProd && bonusProd.categoria === 'Bebidas') ? 'Bar' : 'Cozinha 1';
+                       const bonusEmoji = bonusProd ? bonusProd.emoji : '🎁 ';
+                       inserirComandaItem(
+                         comboBonus + ' (Brinde)', bonusEmoji, qty, timeStr, "0.00", prodStatus, bonusSector,
+                         function(bonusId) {
+                           io.emit('pedido_adicionado', {
+                             productName: comboBonus + ' (Brinde)', productEmoji: bonusEmoji, quantity: qty,
+                             time: timeStr, localName: mesaName, userName: pedido.userName,
+                             total: "0.00", status: prodStatus, sector: bonusSector, id: bonusId, createdAt: new Date().toISOString()
+                           });
+                           broadcastPedidos();
+                         }
+                       );
+                     });
+                   }
+                 }
+               });
             }
           }
-          db.run(
-            `INSERT INTO pedidos (productName, productEmoji, quantity, time, localName, userName, total, status, sector, cliente_id, promocao_id, entregador_id, mesa_comanda, observations, composicoes, etapa, marcha_status, tempo_preparo_min, createdAt)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
-            [pedido.productName, pedido.productEmoji, pedido.quantity, pedido.time, pedido.localName, pedido.userName, pedido.total, status, pedido.sector || 'Cozinha 1', pedido.cliente_id || null, pedido.promocao_id || null, pedido.entregador_id || null, pedido.mesa_comanda || null, pedido.observations || '', JSON.stringify(pedido.composicoes || []), etapa, marchaStatus, tempoPreparo],
-            function (err) {
-              if (err) {
-                console.error('Erro ao inserir pedido:', err);
-                socket.emit('erro_servidor', 'Falha ao gravar o pedido. Tente novamente.');
-                return;
-              }
-              const mainId = this.lastID;
-              const finalSector = pedido.sector || 'Cozinha 1';
-              const newOrder = { ...pedido, id: mainId, status: status, sector: finalSector, etapa: etapa, marcha_status: marchaStatus, tempo_preparo_min: tempoPreparo, createdAt: new Date().toISOString() };
-              io.emit('pedido_adicionado', newOrder);
-              sendPush('cozinha', '🆕 Novo Pedido!', `${newOrder.quantity || 1}x ${newOrder.productName || 'Item'} — ${newOrder.localName || ''}`.trim(), 'pedido-' + mainId, '/fila-pedidos.html');
-              updateMesaStatus();
-              broadcastPedidos();
 
-              if (comboBonus) {
-                db.get(`SELECT emoji, categoria FROM produtos WHERE nome = ?`, [comboBonus], (err, bonusProd) => {
-                  const bonusSector = (bonusProd && bonusProd.categoria === 'Bebidas') ? 'Bar' : 'Cozinha 1';
-                  const bonusEmoji = bonusProd ? bonusProd.emoji : '🎁';
-                  db.run(
-                    `INSERT INTO pedidos (productName, productEmoji, quantity, time, localName, userName, total, status, sector, mesa_comanda, createdAt)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
-                    [comboBonus + ' (Brinde)', bonusEmoji, pedido.quantity, pedido.time, pedido.localName, pedido.userName, "0.00", status, bonusSector, pedido.mesa_comanda || null],
-                    function (err2) {
-                      if (!err2) {
-                        io.emit('pedido_adicionado', {
-                          productName: comboBonus + ' (Brinde)', productEmoji: bonusEmoji, quantity: pedido.quantity,
-                          time: pedido.time, localName: pedido.localName, userName: pedido.userName,
-                          total: "0.00", status: status, sector: bonusSector, id: this.lastID, createdAt: new Date().toISOString()
-                        });
+          inserirComandaItem(pedido.productName, pedido.productEmoji, pedido.quantity, pedido.time, pedido.total, status, pedido.sector || 'Cozinha 1', null);
                         broadcastPedidos();
                       }
                     }

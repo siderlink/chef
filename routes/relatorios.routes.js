@@ -29,6 +29,7 @@ function createRelatoriosRouter() {
           SUM(CAST(REPLACE(REPLACE(p.total, 'R$', ''), ',', '.') AS REAL)) as receita_total
         FROM pedidos p
         WHERE LOWER(COALESCE(p.status, '')) IN ('finalizado', 'pago', 'entregue')
+        AND p.productName NOT LIKE '%Pgto%' AND p.productName NOT LIKE '%Pagamento%'
         GROUP BY p.productName
         ORDER BY receita_total DESC
       `, [], (err, rows) => {
@@ -88,6 +89,7 @@ function createRelatoriosRouter() {
           COALESCE(SUM(CAST(REPLACE(REPLACE(total, 'R$', ''), ',', '.') AS REAL)), 0) as receita_bruta
         FROM pedidos
         WHERE LOWER(COALESCE(status, '')) IN ('finalizado', 'pago', 'entregue')
+        AND productName NOT LIKE '%Pgto%' AND productName NOT LIKE '%Pagamento%'
       `, [], (errPed, rowPed) => {
         if (errPed) return res.status(500).json({ success: false, error: errPed.message });
 

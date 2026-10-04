@@ -28,12 +28,11 @@ services:
       - key: CORS_ORIGIN
         sync: false
         value: ""    # vazio = aceita qualquer origem (ajuste depois)
+      - key: CHEF_DATA_DIR
+        value: "/opt/data"
     # ---- PARA DADOS PERMANENTES (plano pago) ------------------------------
-    # Descomente o bloco abaixo e troque "sizeGB" se quiser que os dados
-    # do SQLite sobrevivam aos redeploys. Depois edite server.js para gravar
-    # o banco dentro de CHEF_DATA_DIR (consulte deploy/install-render.ps1).
-    #
-    # disk:
-    #   name: data
-    #   mountPath: /opt/data
-    #   sizeGB: 1
+    # O banco de dados SQLite agora será salvo neste disco persistente.
+    disk:
+      name: data
+      mountPath: /opt/data
+      sizeGB: 1

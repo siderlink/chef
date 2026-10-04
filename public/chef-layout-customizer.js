@@ -128,6 +128,7 @@
       leftPanel.style.order = cfg.dock_lado === 'direita' ? '2' : '-2';
       rightPanel.style.order = cfg.resumo_lado === 'esquerda' ? '-2' : '2';
       mainPanel.style.order = '0';
+      mainPanel.scrollLeft = 0;
       var rl = document.getElementById('resizer-left');
       var rr = document.getElementById('resizer-right');
       if (rl) rl.style.order = String(parseInt(leftPanel.style.order, 10) / 2);
@@ -138,7 +139,8 @@
     // 8. Modo (tamanho) da Barra Esquerda e Direita
     if (leftPanel && cfg.dock_modo) {
       if (typeof window.chefApplySidebarMode === 'function') {
-        var dockMode = cfg.dock_modo === 'compacta' ? 'mini' : (cfg.dock_modo === 'oculta' ? 'hidden' : 'expanded');
+        var defaultDock = (window.innerWidth < 900 && !cfg.dock_modo) ? 'mini' : 'expanded';
+        var dockMode = cfg.dock_modo === 'compacta' ? 'mini' : (cfg.dock_modo === 'oculta' ? 'hidden' : (cfg.dock_modo === 'expandida' ? 'expanded' : defaultDock));
         window.chefApplySidebarMode('left', dockMode);
       } else if (typeof window.applyLeftSidebarResize === 'function') {
         window.applyLeftSidebarResize(cfg.dock_modo === 'compacta' ? 68 : (cfg.dock_modo === 'oculta' ? 0 : 240));
@@ -148,10 +150,16 @@
       var resumoMode = cfg.resumo_modo === 'compacto' ? 'mini' : (cfg.resumo_modo === 'oculto' ? 'hidden' : 'expanded');
       window.chefApplySidebarMode('right', resumoMode);
       if (resumoMode === 'expanded') {
-        var wRes = parseInt(cfg.resumo_width_px, 10) || 320;
+        var wRes = parseInt(cfg.resumo_width_px, 10) || 280;
+        if (window.innerWidth < 768) {
+          wRes = Math.min(wRes, 210);
+        } else if (window.innerWidth < 850 && wRes > 250) {
+          wRes = 240;
+        }
         rightPanel.style.width = wRes + 'px';
-        rightPanel.style.maxWidth = (wRes + 20) + 'px';
-        rightPanel.style.minWidth = (wRes - 20) + 'px';
+        rightPanel.style.maxWidth = Math.max(wRes + 20, 340) + 'px';
+        rightPanel.style.minWidth = '190px';
+        rightPanel.style.flexShrink = '1';
         try { localStorage.setItem('chef_sidebar_right_width', String(wRes)); } catch(e){}
       }
     }
@@ -240,8 +248,8 @@
       document.getElementById('label-mesas-height-val').innerText = '50%';
       document.getElementById('select-dock-modo').value = 'expandida';
       document.getElementById('select-resumo-modo').value = 'expandido';
-      document.getElementById('range-resumo-width').value = '320';
-      document.getElementById('label-resumo-width-val').innerText = '320px';
+      document.getElementById('range-resumo-width').value = '280';
+      document.getElementById('label-resumo-width-val').innerText = '280px';
       document.getElementById('select-mesas-colunas').value = '2';
       document.getElementById('select-mesas-orient').value = 'horizontal';
       document.getElementById('select-monitor-vertical-modo').value = 'disabled';

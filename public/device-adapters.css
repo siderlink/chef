@@ -1263,110 +1263,38 @@ body.dark-mode .chef-sheet-drag-handle {
    ═════════════════════════════════════════════════════════════════════════ */
 
 /* ── 1. ESTRUTURA DO WORKSPACE: MODO EMPILHADO (STACKED / FULL-WIDTH) ── */
-body.chef-monitor-vertical:not(.chef-vertical-2col) .workspace;
+
 /* Media query right-panel portrait desativada */
 
-body.chef-monitor-vertical:not(.chef-vertical-2col) #right-panel .sidebar-header-controls;
+
 /* Media query right-panel portrait desativada */
 
-body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel;
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 16px !important;
-    flex-wrap: wrap !important;
-    width: 100% !important;
-  }
-}
 
-body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary;
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary {
-    flex: 1 1 340px !important;
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
-    gap: 4px 14px !important;
-    padding: 8px 14px !important;
-    margin-bottom: 0 !important;
-    background: var(--bg-secondary, #f8fafc) !important;
-    border-radius: 12px !important;
-    border: 1px solid var(--border-color, #e2e8f0) !important;
-  }
-}
 
-body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary .group-title;
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary .group-title {
-    display: none !important;
-  }
-}
 
-body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary .info-row;
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary .info-row {
-    margin-bottom: 2px !important;
-    font-size: 12px !important;
-  }
-}
 
-body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary .info-row.bold:has(#total-pagar-text),
-body.chef-monitor-vertical:not(.chef-vertical-2col) #inner-right-panel .info-group.summary .info-row:has(#total-pagar-text);
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary .info-row.bold:has(#total-pagar-text),
-  body:not(.chef-vertical-2col):not(.force-mobile) #inner-right-panel .info-group.summary .info-row:has(#total-pagar-text) {
-    grid-column: 1 / -1 !important;
-    border-top: 1px dashed #cbd5e1 !important;
-    padding-top: 4px !important;
-    margin-top: 2px !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-  }
-}
 
-body.chef-monitor-vertical:not(.chef-vertical-2col) #total-pagar-text;
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #total-pagar-text {
-    font-size: 22px !important;
-    font-weight: 800 !important;
-  }
-}
 
-body.chef-monitor-vertical:not(.chef-vertical-2col) .checkout-sticky-footer;
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) .checkout-sticky-footer {
-    position: static !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    flex: 0 0 220px !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-}
 
-body.chef-monitor-vertical:not(.chef-vertical-2col) .checkout-sticky-footer .info-group;
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) .checkout-sticky-footer .info-group {
-    width: 100% !important;
-  }
-}
 
-body.chef-monitor-vertical:not(.chef-vertical-2col) #btn-finalizar-venda;
-@media screen and (orientation: portrait) and (min-height: 680px) and (min-width: 500px) {
-  body:not(.chef-vertical-2col):not(.force-mobile) #btn-finalizar-venda {
-    height: 52px !important;
-    min-height: 52px !important;
-    font-size: 15.5px !important;
-    font-weight: 800 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 4px 14px rgba(58, 181, 91, 0.35) !important;
-  }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ── 5. MODO MONITOR VERTICAL 2-COLUNAS (QUANDO ESCOLHIDO PELO USUÁRIO) ── */
 body.chef-monitor-vertical.chef-vertical-2col .workspace {

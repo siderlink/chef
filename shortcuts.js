@@ -294,7 +294,9 @@ document.addEventListener('keydown', (e) => {
       else proximo = e.key === 'ArrowDown' ? Math.min(cards.length - 1, idxAtual + 1) : Math.max(0, idxAtual - 1);
       if (proximo !== idxAtual) {
         cards[proximo].click();
-        cards[proximo].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        cards[proximo].scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+        const mp2 = document.getElementById('main-panel');
+        if (mp2 && mp2.scrollLeft !== 0) mp2.scrollLeft = 0;
       }
     }
     return;
@@ -443,7 +445,9 @@ document.addEventListener('keydown', (e) => {
       if (idx === window.focusedMesaIndex) {
         card.style.outline = '3px solid #fc4b15';
         card.style.outlineOffset = '2px';
-        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        const mp = document.getElementById('main-panel');
+        if (mp && mp.scrollLeft !== 0) mp.scrollLeft = 0;
       } else {
         card.style.outline = 'none';
       }

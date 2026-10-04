@@ -97,6 +97,15 @@ function createNfceRouter() {
         const config = {};
         if (configRows) configRows.forEach(r => { config[r.chave] = r.valor; });
         try {
+          let itensSaneados = req.body.itens || req.body.items || [];
+          itensSaneados = itensSaneados.filter(i => {
+            const nome = String(i.name || i.nome || i.productName || '').toLowerCase();
+            const price = parseFloat(i.price || i.preco || i.total || 0);
+            return price >= 0 && !nome.includes('pgto') && !nome.includes('pagamento');
+          });
+          req.body.itens = itensSaneados;
+          req.body.items = itensSaneados;
+
           const result = await nfceService.emitirNFCe({ db, ...req.body, config });
           res.json(result);
         } catch (e) {
@@ -134,13 +143,21 @@ function createSatRouter() {
             const result = await satService.emitirSAT({
               db,
               orderId:       req.body.pedido_id || req.body.orderId,
-              items:         req.body.itens || req.body.items || [],
+              items:         (req.body.itens || req.body.items || []).filter(i => {
+                const nome = String(i.name || i.nome || i.productName || '').toLowerCase();
+                const price = parseFloat(i.price || i.preco || i.total || 0);
+                return price >= 0 && !nome.includes('pgto') && !nome.includes('pagamento');
+              }),
               paymentMethod: req.body.forma_pagamento || req.body.paymentMethod || 'Dinheiro',
               changeFor:     req.body.troco_para || req.body.changeFor || 0,
               cpf_cnpj:      req.body.cpf_destinatario || req.body.cpf_cnpj || null,
               config
             });
-            const xmlResult = satService.gerarXMLCFe({ items: req.body.itens || [], numero_cupom: result.numero_cupom }, config);
+            const sanitizedItems = (req.body.itens || req.body.items || []).filter(i => {
+              const nome = String(i.name || i.nome || i.productName || '').toLowerCase();
+              return parseFloat(i.price || i.preco || i.total || 0) >= 0 && !nome.includes('pgto') && !nome.includes('pagamento');
+            });
+            const xmlResult = satService.gerarXMLCFe({ items: sanitizedItems, numero_cupom: result.numero_cupom }, config);
             res.json({
               success:      result.ok,
               ok:           result.ok,
