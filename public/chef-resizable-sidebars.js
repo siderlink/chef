@@ -437,11 +437,10 @@
       if (floatRestore) floatRestore.style.display = 'flex';
     } else if (mode === 'mini') {
       panel.style.removeProperty('display');
-      panel.style.display = 'flex';
       const w = right ? '190px' : '58px';
-      panel.style.setProperty('width', w, 'important');
-      panel.style.setProperty('min-width', right ? '170px' : '58px', 'important');
-      panel.style.setProperty('max-width', right ? '240px' : '58px', 'important');
+      panel.style.width = w;
+      panel.style.minWidth = right ? '190px' : '64px';
+      panel.style.maxWidth = right ? '240px' : '58px';
       panel.style.flexShrink = right ? '1' : '0';
       document.documentElement.style.setProperty('--' + side + '-sidebar-width', w);
       if (floatRestore) floatRestore.style.display = 'none';

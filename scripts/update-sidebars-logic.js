@@ -24,8 +24,8 @@ function updateFile(filePath) {
       panel.style.removeProperty('display');
       panel.style.display = 'flex';
       const w = right ? '190px' : '58px';
-      panel.style.setProperty('width', w, 'important');
-      panel.style.setProperty('min-width', right ? '170px' : '58px', 'important');
+      panel.style.width = w;
+      panel.style.minWidth = right ? '190px' : '64px';
       panel.style.setProperty('max-width', right ? '240px' : '58px', 'important');
       panel.style.flexShrink = right ? '1' : '0';
       document.documentElement.style.setProperty('--' + side + '-sidebar-width', w);

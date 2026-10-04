@@ -2416,7 +2416,8 @@ body.chef-sizes-on .action-group {
   }
 
   .products-table {
-    min-width: 640px;
+    min-width: 0 !important;
+    width: 100% !important;
   }
 }
 
@@ -5031,8 +5032,8 @@ body.force-mobile .workspace.active-tab-mesas.mesas-collapsed-view .products-tab
 }
 
 body.force-mobile .products-table {
-  min-width: 0 !important;
-  width: 100% !important;
+    min-width: 0 !important;
+    width: 100% !important;
 }
 
 body.force-mobile .workspace.active-tab-pedido .left-actions,
