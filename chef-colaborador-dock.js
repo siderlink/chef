@@ -3,9 +3,11 @@
  */
 (function() {
   function renderDock() {
-    // Não renderizar botão flutuante no app Garçom ou telas mobile compactas para não cobrir a barra inferior
+    // Não renderizar botão flutuante no app Garçom, telas mobile ou telas com barra de status fixa (ex: Caixa PDV) para não cobrir a barra inferior
     const isGarcomPage = window.location.pathname.includes('garcom') || window.location.pathname.includes('garcom-lite');
-    if (isGarcomPage || window.innerWidth <= 768) {
+    const isCaixaPage = window.location.pathname === '/' || window.location.pathname.endsWith('/index.html') || window.location.pathname.includes('caixa');
+    const hasStatusBar = !!document.querySelector('.status-bar');
+    if (isGarcomPage || isCaixaPage || hasStatusBar || window.innerWidth <= 768) {
       return;
     }
 

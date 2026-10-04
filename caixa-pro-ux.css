@@ -464,7 +464,7 @@ body.theme-dark {
   flex: 1 1 0% !important;
   min-height: 0 !important;
   overflow-y: auto !important;
-  overflow-x: auto !important;
+  overflow-x: hidden !important;
   width: 100% !important;
   background: #ffffff !important;
 }
@@ -472,9 +472,9 @@ body.theme-dark {
 table.products-table,
 #order-items-table {
   width: 100% !important;
-  min-width: 680px !important;
+  min-width: 0 !important;
   border-collapse: collapse !important;
-  table-layout: fixed !important;
+  table-layout: auto !important;
 }
 
 table.products-table th {
@@ -503,7 +503,7 @@ table.products-table td {
 /* Larguras específicas para cada coluna da tabela de itens */
 table.products-table th:nth-child(1),
 table.products-table td:nth-child(1) {
-  width: 48px !important;
+  width: 38px !important;
   text-align: center !important;
   font-variant-numeric: tabular-nums !important;
   color: #94a3b8 !important;
@@ -513,14 +513,14 @@ table.products-table td:nth-child(1) {
 table.products-table th:nth-child(2),
 table.products-table td:nth-child(2) {
   width: auto !important;
-  min-width: 250px !important;
+  min-width: 90px !important;
   text-align: left !important;
   font-weight: 600 !important;
 }
 
 table.products-table th:nth-child(3),
 table.products-table td:nth-child(3) {
-  width: 88px !important;
+  width: 68px !important;
   text-align: right !important;
   font-variant-numeric: tabular-nums !important;
   white-space: nowrap !important;
@@ -528,7 +528,7 @@ table.products-table td:nth-child(3) {
 
 table.products-table th:nth-child(4),
 table.products-table td:nth-child(4) {
-  width: 50px !important;
+  width: 38px !important;
   text-align: center !important;
   font-weight: 700 !important;
   font-variant-numeric: tabular-nums !important;
@@ -537,7 +537,7 @@ table.products-table td:nth-child(4) {
 
 table.products-table th:nth-child(5),
 table.products-table td:nth-child(5) {
-  width: 95px !important;
+  width: 72px !important;
   text-align: right !important;
   font-weight: 700 !important;
   font-variant-numeric: tabular-nums !important;
@@ -546,7 +546,7 @@ table.products-table td:nth-child(5) {
 
 table.products-table th:nth-child(6),
 table.products-table td:nth-child(6) {
-  width: 95px !important;
+  width: 65px !important;
   text-align: left !important;
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -557,7 +557,7 @@ table.products-table td:nth-child(6) {
 
 table.products-table th:nth-child(7),
 table.products-table td:nth-child(7) {
-  width: 85px !important;
+  width: 50px !important;
   text-align: center !important;
   white-space: nowrap !important;
 }
@@ -2609,7 +2609,7 @@ body.force-mobile .btn-setor-tab {
 /* Em desktop, reservar espaço à direita para o card QR Ponto sempre visível (~220px) */
 @media (min-width: 768px) {
   .top-menubar {
-    padding-right: 220px !important;
+    padding-right: 12px !important;
   }
 }
 

@@ -1,6 +1,6 @@
 /**
  * scripts/sync-statics.js
- * Garante que os arquivos entre a raiz e src/ estejam sempre sincronizados,
+ * Garante que os arquivos entre a raiz, src/ e public/ estejam sempre sincronizados,
  * prevenindo divergências e bugs fantasmas durante o desenvolvimento ou build.
  */
 const fs = require('fs');
@@ -10,6 +10,9 @@ const mappings = [
   ['dark-mode.css', 'src/css/dark-mode.css'],
   ['fila.css', 'src/css/fila.css'],
   ['style.css', 'src/css/style.css'],
+  ['device-adapters.css', 'public/device-adapters.css'],
+  ['device-adapters.js', 'public/device-adapters.js'],
+  ['chef-layout-customizer.js', 'public/chef-layout-customizer.js'],
   ['auth.js', 'src/js/modules/auth.js'],
   ['auth_device.js', 'src/js/modules/auth_device.js'],
   ['broadcast.js', 'src/js/modules/broadcast.js'],
@@ -60,8 +63,7 @@ mappings.forEach(([root, sub]) => {
       syncCount++;
     }
   } else if (fs.existsSync(rootPath) && !fs.existsSync(subPath)) {
-    const dir = path.dirname(subPath);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.mkdirSync(path.dirname(subPath), { recursive: true });
     fs.copyFileSync(rootPath, subPath);
     syncCount++;
   } else if (!fs.existsSync(rootPath) && fs.existsSync(subPath)) {
@@ -70,4 +72,4 @@ mappings.forEach(([root, sub]) => {
   }
 });
 
-console.log(`[Sync-Statics] Sincronização concluída. ${syncCount} arquivos atualizados.`);
+console.log(`[sync-statics] ${syncCount} arquivo(s) sincronizados com sucesso.`);

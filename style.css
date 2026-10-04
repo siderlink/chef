@@ -1169,14 +1169,16 @@ body.chef-sizes-on .action-group {
 /* Card fixo no topo-direito do caixa — sempre visível no desktop,
    ocultado no mobile via @media (max-width: 767px). */
 .qr-ponto-box {
-  position: absolute;
-  right: 12px;
-  top: 2px;
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  margin-left: 8px !important;
+  height: 28px !important;
   z-index: 1000;
   background: var(--bg-card, #ffffff);
-  padding: 6px 12px;
+  padding: 2px 8px !important;
   border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  box-shadow: none !important;
   display: flex !important;
   align-items: center;
   gap: 10px;
@@ -1191,8 +1193,8 @@ body.chef-sizes-on .action-group {
 }
 
 .qr-ponto-img {
-  width: 85px;
-  height: 85px;
+  width: 22px !important;
+  height: 22px !important;
   border-radius: 6px;
   object-fit: contain;
   cursor: pointer;
@@ -1208,7 +1210,9 @@ body.chef-sizes-on .action-group {
 
 .qr-ponto-details {
   display: flex;
-  flex-direction: column;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 6px !important;
   justify-content: center;
   line-height: 1.25;
 }
@@ -1242,7 +1246,7 @@ body.chef-sizes-on .action-group {
 }
 
 .qr-ponto-desc {
-  font-size: 9.5px;
+  display: none !important;
   color: #555;
   max-width: 100px;
   line-height: 1.15;
@@ -2291,14 +2295,37 @@ body.chef-sizes-on .action-group {
 }
 
 .top-toolbar {
-  flex-wrap: wrap;
-  gap: 8px;
-  height: auto;
-  padding: 8px
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 5px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 12px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  box-sizing: border-box !important;
+  scrollbar-width: none !important;
 }
 
 .toolbar-btn {
-  padding: 8px 12px;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  min-width: 32px !important;
+  width: auto !important;
+  padding: 0 8px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: var(--bg-card, #ffffff) !important;
+  color: var(--text-primary, #334155) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
   font-size: 13px
 }
 
@@ -4831,7 +4858,7 @@ button:not(:disabled):active,
 }
 
 /* 2. CABEÇALHO / TOPBAR GLASSMORPHISM IOS */
-.topbar, .top-menubar {
+.topbar {
   backdrop-filter: blur(25px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
   border-bottom: 0.5px solid rgba(0, 0, 0, 0.12) !important;
@@ -4840,11 +4867,11 @@ button:not(:disabled):active,
   padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
 }
 
-[data-theme="light"] .topbar, [data-theme="light"] .top-menubar {
+[data-theme="light"] .topbar {
   background: rgba(255, 255, 255, 0.86) !important;
 }
 
-[data-theme="dark"] .topbar, [data-theme="dark"] .top-menubar {
+[data-theme="dark"] .topbar {
   background: rgba(18, 18, 26, 0.86) !important;
   border-bottom: 0.5px solid rgba(255, 255, 255, 0.08) !important;
 }
@@ -6835,4 +6862,334 @@ body.chef-monitor-vertical .status-bar {
   flex-shrink: 0 !important;
   font-variant-numeric: tabular-nums !important;
   text-align: right !important;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   CHEF UI POLISH — HEADER SUPERIOR, TOOLBAR E STATUS BAR PERFEITOS
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* 1. TOP MENUBAR — Alinhamento vertical milimétrico e sem cortes */
+.top-menubar {
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+  gap: 4px !important;
+  overflow: visible !important;
+  z-index: 1000 !important;
+}
+
+.top-menubar .menu-trigger {
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.15s ease !important;
+}
+
+.top-menubar .menu-trigger:hover {
+  background: rgba(252, 75, 21, 0.08) !important;
+  color: #fc4b15 !important;
+}
+
+/* Dropdown Menus do Top Menubar */
+.dropdown-wrapper {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.dropdown-menu {
+  display: none !important;
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  left: 0 !important;
+  z-index: 999999 !important;
+  background-color: var(--bg-card, #ffffff) !important;
+  border: 1px solid var(--border-color, #e2e8f0) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18) !important;
+  padding: 6px !important;
+  min-width: 220px !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.dropdown-menu.show {
+  display: flex !important;
+}
+
+#drop-caixa-version {
+  right: 0 !important;
+  left: auto !important;
+}
+
+.dropdown-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary, #1e293b) !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+  white-space: nowrap !important;
+  user-select: none !important;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(252, 75, 21, 0.08) !important;
+  color: #fc4b15 !important;
+}
+
+.dropdown-item i {
+  font-size: 16px !important;
+  color: var(--text-secondary, #64748b) !important;
+}
+
+.dropdown-item:hover i {
+  color: #fc4b15 !important;
+}
+
+[data-theme="dark"] .dropdown-menu {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+/* 2. QR PONTO BOX — Pill compacto no menubar (sem sobrepor a toolbar) */
+.qr-ponto-box {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: 100 !important;
+  background: rgba(252, 75, 21, 0.08) !important;
+  padding: 2px 8px !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  border: 1px solid rgba(252, 75, 21, 0.25) !important;
+  transition: all 0.2s ease !important;
+  user-select: none !important;
+  height: 28px !important;
+  box-sizing: border-box !important;
+  margin-left: 8px !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+}
+
+.qr-ponto-box:hover {
+  border-color: #fc4b15 !important;
+  background: rgba(252, 75, 21, 0.14) !important;
+  box-shadow: 0 2px 8px rgba(252, 75, 21, 0.2) !important;
+}
+
+.qr-ponto-img {
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 4px !important;
+  object-fit: contain !important;
+  cursor: pointer !important;
+  border: 1px solid rgba(252, 75, 21, 0.3) !important;
+  background: #ffffff !important;
+  padding: 1px !important;
+  flex-shrink: 0 !important;
+}
+
+.qr-ponto-details {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 6px !important;
+  line-height: 1 !important;
+}
+
+.qr-ponto-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #fc4b15 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+
+.qr-ponto-desc {
+  display: none !important;
+}
+
+.qr-ponto-zoom-btn {
+  font-size: 10px !important;
+  color: #2563eb !important;
+  margin: 0 !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  white-space: nowrap !important;
+}
+
+/* 3. TOP TOOLBAR — Linha única horizontal sem quebra e botões limpos */
+.top-toolbar {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0 12px !important;
+  gap: 4px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  box-sizing: border-box !important;
+  scrollbar-width: none !important;
+}
+
+.top-toolbar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.top-toolbar .toolbar-btn {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  min-width: 32px !important;
+  width: auto !important;
+  padding: 0 8px !important;
+  font-size: 14px !important;
+  border-radius: 7px !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: var(--bg-card, #ffffff) !important;
+  color: var(--text-primary, #334155) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme="dark"] .top-toolbar .toolbar-btn {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.top-toolbar .toolbar-btn:hover {
+  background: rgba(252, 75, 21, 0.08) !important;
+  border-color: rgba(252, 75, 21, 0.25) !important;
+  color: #fc4b15 !important;
+}
+
+.top-toolbar .toolbar-btn.active {
+  background: rgba(252, 75, 21, 0.14) !important;
+  border-color: #fc4b15 !important;
+  color: #fc4b15 !important;
+  font-weight: 700 !important;
+}
+
+#modality-indicator-badge {
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  max-width: fit-content !important;
+  height: 24px !important;
+  line-height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 11px !important;
+  border-radius: 20px !important;
+  background: rgba(252, 75, 21, 0.12) !important;
+  border: 1px solid rgba(252, 75, 21, 0.3) !important;
+  color: #fc4b15 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  margin-right: 0 !important;
+}
+
+/* 4. BARRA DE STATUS INFERIOR — Sem sobreposição e sem rolagem horizontal */
+.status-bar,
+footer.status-bar,
+.footer-info-bar {
+  flex-shrink: 0 !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 12px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  gap: 12px !important;
+  z-index: 50 !important;
+}
+
+.status-bar span,
+.status-bar div {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+/* Esconder qualquer botão flutuante residual que queira cobrir a barra de status */
+body:has(.status-bar) #chef-colab-global-dock-btn,
+.status-bar ~ #chef-colab-global-dock-btn,
+.chef-app ~ #chef-colab-global-dock-btn {
+  display: none !important;
+}
+
+/* 5. ELIMINAÇÃO TOTAL DE ROLAGEM HORIZONTAL DO WORKSPACE */
+.chef-app,
+.workspace,
+#main-panel,
+.main-workspace {
+  overflow-x: hidden !important;
+}
+
+table.products-table,
+#order-items-table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: auto !important;
+}
+
+.products-table th,
+.products-table td {
+  padding: 6px 8px !important;
+  font-size: 12px !important;
+}
+
+.products-table-wrapper {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin !important;
 }
