@@ -35,7 +35,7 @@
       mesas_orientacao: 'horizontal',
       mesas_colunas: '2',      // '1' | '2' | '3' | 'compact'
       mesas_agrupado: true,
-      monitor_vertical_modo: 'disabled', // 'disabled' | 'stacked' | '2col' | 'auto'
+      monitor_vertical_modo: 'auto', // 'disabled' | 'stacked' | '2col' | 'auto'
       zoom_pct: 100            // 85 | 90 | 100 | 110 | 120
     };
   };
@@ -189,7 +189,7 @@
     }
 
     // 11. Modo Monitor Vertical (Pivot / Retrato)
-    var vMode = cfg.monitor_vertical_modo || localStorage.getItem('chef_monitor_vertical_mode') || 'disabled';
+    var vMode = cfg.monitor_vertical_modo || localStorage.getItem('chef_monitor_vertical_mode') || 'auto';
     var isPortrait = (window.innerHeight || 0) >= (window.innerWidth || 1);
     var h = window.innerHeight || 0;
     var w = window.innerWidth || 0;
@@ -197,7 +197,8 @@
     if (vMode === 'stacked' || vMode === '2col') {
       isVert = true;
     } else if (vMode === 'auto') {
-      isVert = isPortrait && h >= 680 && w < 640;
+      // Telas em proporção retrato, janela estreita (<850px) ou split screen no monitor
+      isVert = (isPortrait && h >= 580 && w < 850) || (w < 680);
     } else {
       isVert = false;
     }

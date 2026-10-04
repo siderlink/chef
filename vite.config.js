@@ -52,7 +52,28 @@ const injectPolyfills = () => {
   }
 }
 
-const isCodespaces = process.env.CODESPACES === 'true';
+const isCodespaces = process.env.CODESPACES === \'true\';
+
+const extensionlessHtml = () => {
+  return {
+    name: 'extensionless-html',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url.startsWith('/api') || req.url.startsWith('/socket.io')) return next();
+        const urlObj = new URL(req.url, 'http://localhost');
+        let pathname = urlObj.pathname;
+        if (!pathname.includes('.') && pathname.length > 1) {
+          const htmlName = pathname.substring(1) + '.html';
+          if (fs.existsSync(resolve(__dirname, htmlName)) || fs.existsSync(resolve(__dirname, 'public', htmlName))) {
+            req.url = pathname + '.html' + urlObj.search;
+          }
+        }
+        next();
+      });
+    }
+  };
+};
+
 
 export default defineConfig({
   resolve: {
@@ -66,6 +87,7 @@ export default defineConfig({
   plugins: [
     copyRootStatics(),
     injectPolyfills(),
+    extensionlessHtml(),
     ...(process.env.VITE_SSL === 'true' ? [basicSsl()] : []),
     legacy({
       targets: ['chrome >= 49', 'firefox >= 52']

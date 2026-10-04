@@ -3384,8 +3384,13 @@ window.salvarEdicaoRestaurante = function() {
 window.toggleMobileSidebar = function() {
   var sb = document.querySelector('.sidebar');
   var ov = document.getElementById('sidebar-overlay');
-  if (sb) sb.classList.toggle('open');
-  if (ov) ov.classList.toggle('open');
+  if (window.innerWidth <= 900) {
+    if (sb) sb.classList.toggle('open');
+    if (ov) ov.classList.toggle('open');
+  } else {
+    var panel = document.getElementById('admin-panel');
+    if (panel) panel.classList.toggle('sidebar-collapsed');
+  }
 };
 
 window.abrirModalNovoRestaurante = function() {

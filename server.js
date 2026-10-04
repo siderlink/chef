@@ -4695,29 +4695,23 @@ io.on('connection', (socket) => {
 
           inserirComandaItem(pedido.productName, pedido.productEmoji, pedido.quantity, pedido.time, pedido.total, status, pedido.sector || 'Cozinha 1', null);
                         broadcastPedidos();
-                      }
-                    }
-                  );
-                });
-              }
-            }
-          );
+          });
+        } catch (e) {
+          console.error(e);
         }
 
         function updateMesaStatus() {
-          const loc = String(pedido.localName || '').trim();
-          if (loc && !loc.includes('Delivery') && !loc.includes('Balcão')) {
+          const loc = String(mesaName || "").trim();
+          if (loc && !loc.includes("Delivery") && !loc.includes("Balcão")) {
             db.run(`UPDATE mesas SET status = 'Ocupada' WHERE nome = ?`, [loc], () => {
               db.all(`SELECT * FROM mesas`, (err, rows) => {
-                io.emit('mesas_atualizadas', rows || []);
+                io.emit("mesas_atualizadas", rows || []);
               });
             });
           }
         }
       });
-      }
-    }
-
+  });
     if (clientName) {
       if (clientPhone) {
         db.get(`SELECT id FROM clientes WHERE telefone = ?`, [clientPhone], (err, row) => {

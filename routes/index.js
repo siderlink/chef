@@ -32,6 +32,9 @@ const { createRelatoriosRouter, createAuditoriaCancelamentosRouter } = require('
 const { createAdminRouter }                         = require('./admin.routes');
 const { createMesasRouter }                         = require('./mesas.routes');
 
+// Sprint 5
+const { createComandasRouter }                      = require('./comandas.routes');
+
 /**
  * Inicializa e monta todos os módulos de rotas no app Express.
  * @param {import('express').Application} app
@@ -82,11 +85,14 @@ function initRoutes(app, deps) {
   app.use('/api/seguranca',     (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/seguranca' + req.url }), res, next));
   app.use('/api/status-bloqueio', (req, res, next) => adminRouter.handle(Object.assign(req, { url: '/status-bloqueio' }), res, next));
 
+  // ── Sprint 5 ─────────────────────────────────────────────────────────
+  app.use('/api/comandas',   createComandasRouter());
+
   const sprints = [
     'auth', 'caixa', 'kds', 'painel-tv',
     'pedidos', 'metricas', 'cupons', 'ia',
     'nfce', 'fiscal/sat', 'formas-pagamento', 'dispositivos', 'relatorios',
-    'admin', 'mesas'
+    'admin', 'mesas', 'comandas'
   ];
   console.log(`[routes] ✅ ${sprints.length} módulos montados: ${sprints.join(' | ')}`);
 }
