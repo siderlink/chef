@@ -98,16 +98,18 @@ body.kds-body, .kds-body {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  justify-content: center;
 }
 
 .kds-navbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
+  gap: 6px;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 /* SCROLL HORIZONTAL DE SETORES NO TOPO */
@@ -2502,16 +2504,234 @@ body.dark-mode .kds-pizza-retiradas,
 }
 
 
-@media (max-width: 900px) {
-  .kds-navbar-left .kds-btn-caixa span { display: none !important; }
-  #btn-topbar-setor span { display: none !important; }
+@media (max-width: 1650px) {
+  #btn-sync-ifood span,
+  #btn-toggle-smartsync span,
+  #btn-switch-to-v1 span,
+  #btn-loja-layouts span,
+  #btn-toggle-modo-edicao span,
+  #btn-toggle-layout-drawer span,
+  #btn-toggle-modo-tv span,
+  #btn-toggle-sound span {
+    display: none !important;
+  }
+  .kds-navbar-right .kds-nav-btn {
+    padding: 0 10px !important;
+    height: 34px !important;
+  }
+  .kds-navbar-right {
+    gap: 5px !important;
+  }
 }
 
+@media (max-width: 1100px) {
+  .kds-sla-legend {
+    display: none !important;
+  }
+  .kds-navbar-left .kds-btn-caixa span {
+    display: none !important;
+  }
+  .kds-brand-texts .kds-brand-sector {
+    display: none !important;
+  }
+}
 
 @media (max-width: 900px) {
-  .kds-navbar { overflow-x: auto !important; flex-wrap: nowrap !important; }
-  .kds-navbar::-webkit-scrollbar { display: none; }
-  .kds-navbar-right .kds-nav-btn span, .kds-navbar-right button span { display: none !important; }
-  .kds-navbar-right { gap: 4px !important; }
-  .kds-navbar-right .kds-nav-btn, .kds-navbar-right button { padding: 6px !important; }
-  .kds-navbar-center { display: flex; flex-shrink: 0; }
+  .kds-navbar {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+  }
+  .kds-navbar::-webkit-scrollbar {
+    display: none !important;
+  }
+  .kds-navbar-right .kds-nav-btn span,
+  .kds-navbar-right button span {
+    display: none !important;
+  }
+  .kds-navbar-right {
+    gap: 4px !important;
+  }
+  .kds-navbar-right .kds-nav-btn,
+  .kds-navbar-right button {
+    padding: 6px !important;
+  }
+  .kds-navbar-center {
+    display: flex !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   🛠 CONTEXT MENU (AJUSTE DIRETO DO KDS) & MODO DE EDIÇÃO
+   ══════════════════════════════════════════════════════════════════ */
+.kds-context-menu {
+  position: fixed !important;
+  z-index: 100050 !important;
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  padding: 14px 16px !important;
+  min-width: 250px !important;
+  max-width: 320px !important;
+  font-family: inherit !important;
+  backdrop-filter: blur(16px) !important;
+  box-sizing: border-box !important;
+}
+
+.kds-context-menu.hidden {
+  display: none !important;
+}
+
+.kds-ctx-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #94a3b8 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding-bottom: 8px !important;
+  margin-bottom: 12px !important;
+}
+
+.kds-ctx-header strong {
+  color: #38bdf8 !important;
+  margin-left: 4px !important;
+}
+
+.kds-ctx-close {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 14px !important;
+  transition: all 0.15s !important;
+}
+
+.kds-ctx-close:hover {
+  background: rgba(239, 68, 68, 0.25) !important;
+  color: #ef4444 !important;
+}
+
+.kds-ctx-body {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+.kds-ctx-row {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.kds-ctx-row label {
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: #cbd5e1 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+}
+
+.kds-ctx-btn {
+  width: 100% !important;
+  padding: 9px 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #f87171 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  transition: all 0.15s !important;
+  box-sizing: border-box !important;
+}
+
+.kds-ctx-btn:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+.kds-ctx-row input[type="range"] {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  width: 100% !important;
+  height: 6px !important;
+  border-radius: 3px !important;
+  background: #334155 !important;
+  outline: none !important;
+  margin: 4px 0 !important;
+}
+
+.kds-ctx-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  background: #38bdf8 !important;
+  cursor: pointer !important;
+  border: 2px solid #0f172a !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+.kds-ctx-row input[type="range"]::-moz-range-thumb {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  background: #38bdf8 !important;
+  cursor: pointer !important;
+  border: 2px solid #0f172a !important;
+}
+
+/* Badge flutuante de Sair do Modo Ajuste Direto */
+.kds-edit-badge {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 100040 !important;
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: white !important;
+  font-weight: 800 !important;
+  font-size: 13.5px !important;
+  padding: 12px 20px !important;
+  border-radius: 99px !important;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.2s ease !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.kds-edit-badge:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 10px 28px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* Efeito visual nos cards durante o Modo de Edição */
+body.kds-modo-edicao .queue-item [data-field-key] {
+  cursor: grab !important;
+  position: relative !important;
+  transition: outline 0.15s, background 0.15s !important;
+  outline: 1.5px dashed rgba(59, 130, 246, 0.5) !important;
+  outline-offset: -2px !important;
+}
+
+body.kds-modo-edicao .queue-item [data-field-key]:hover {
+  outline: 1.5px dashed #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.08) !important;
+}

@@ -41,77 +41,217 @@ let cachedPedidosPreparo = [];
 let filtroPreparoAtual = 'todos';
 let buscaPreparoQuery = '';
 
-// 1. Aplicação das Configurações de Atalhos Ativos
-window.applyAtalhosConfig = function() {
-  let atalhosCfg = {
-    fila_espera: true,
-    fila_preparo: true,
-    consulta_preco: true,
-    nova_comanda: true,
-    chamar_gerente: true,
-    minhas_vendas: true,
+// 1. Aplicação das Configurações de Atalhos Ativos & Ordenação Dinâmica
+const DEFAULT_ATALHOS_ORDEM = [
+  'transferir_mesa',
+  'juntar_mesas',
+  'pedir_preconta',
+  'dividir_conta',
+  'limpar_mesa',
+  'alergenos',
+  'ler_qr_mesa',
+  'fila_espera',
+  'fila_preparo',
+  'consulta_preco',
+  'nova_comanda',
+  'chamar_gerente',
+  'minhas_vendas',
+  'pizza_meio_a_meio',
+  'rodizio_carnes',
+  'marchar_prato',
+  'sommelier_ia',
+  'area_colaborador',
+  'voz_ia',
+  'ranking_garcom',
+  'alternar_tema'
+];
+
+const MAP_ATALHO_CARDS = {
+  'transferir_mesa': 'card-atalho-transferir-mesa',
+  'juntar_mesas': 'card-atalho-juntar-mesas',
+  'pedir_preconta': 'card-atalho-pedir-preconta',
+  'dividir_conta': 'card-atalho-dividir-conta',
+  'limpar_mesa': 'card-atalho-limpar-mesa',
+  'alergenos': 'card-atalho-alergenos',
+  'ler_qr_mesa': 'card-atalho-ler-qr-mesa',
+  'fila_espera': 'card-atalho-fila-espera',
+  'fila_preparo': 'card-atalho-fila-preparo',
+  'consulta_preco': 'card-atalho-consulta-preco',
+  'nova_comanda': 'card-atalho-nova-comanda',
+  'chamar_gerente': 'card-atalho-chamar-gerente',
+  'minhas_vendas': 'card-atalho-minhas-vendas',
+  'pizza_meio_a_meio': 'card-atalho-pizza-meio-a-meio',
+  'rodizio_carnes': 'card-atalho-rodizio-carnes',
+  'marchar_prato': 'card-atalho-marchar-prato',
+  'sommelier_ia': 'card-atalho-sommelier-ia',
+  'area_colaborador': 'card-atalho-area-colaborador',
+  'voz_ia': 'card-atalho-voz-ia',
+  'ranking_garcom': 'card-atalho-ranking-garcom',
+  'alternar_tema': 'card-atalho-alternar-tema'
+};
+
+window.applyAtalhosConfig = function(customConfig) {
+  let atalhosCfg = null;
+
+  // 1. Configuração passada explicitamente (ex: via WebSocket ou parâmetro)
+  if (customConfig && typeof customConfig === 'object') {
+    atalhosCfg = customConfig;
+  }
+
+  // 2. Tenta obter do loggedUser atual
+  if (!atalhosCfg && typeof loggedUser !== 'undefined' && loggedUser) {
+    if (loggedUser.atalhos_config) {
+      try {
+        atalhosCfg = typeof loggedUser.atalhos_config === 'string'
+          ? JSON.parse(loggedUser.atalhos_config)
+          : loggedUser.atalhos_config;
+      } catch (e) {}
+    }
+  }
+
+  // 3. Tenta do localStorage específico do colaborador logado
+  if (!atalhosCfg && typeof loggedUser !== 'undefined' && loggedUser && loggedUser.id) {
+    try {
+      const colabLocal = localStorage.getItem('chef_garcom_atalhos_' + loggedUser.id);
+      if (colabLocal) atalhosCfg = JSON.parse(colabLocal);
+    } catch (e) {}
+  }
+
+  // 4. Fallback: Configuração global do restaurante (CONFIGS ou localStorage)
+  if (!atalhosCfg) {
+    try {
+      if (typeof CONFIGS !== 'undefined' && CONFIGS && CONFIGS.garcom_atalhos) {
+        atalhosCfg = typeof CONFIGS.garcom_atalhos === 'string'
+          ? JSON.parse(CONFIGS.garcom_atalhos)
+          : CONFIGS.garcom_atalhos;
+      } else {
+        const local = localStorage.getItem('chef_garcom_atalhos_cfg');
+        if (local) atalhosCfg = JSON.parse(local);
+      }
+    } catch (e) {}
+  }
+
+  // Normalização de formato
+  let order = DEFAULT_ATALHOS_ORDEM.slice();
+  let enabled = {};
+  let pills = {
     transferir_mesa: true,
     juntar_mesas: true,
     pedir_preconta: true,
     dividir_conta: true,
     limpar_mesa: true,
     alergenos: true,
-    ler_qr_mesa: true,
-    ranking_garcom: true,
-    alternar_tema: true,
-    pizza_meio_a_meio: true,
-    rodizio_carnes: true,
-    marchar_prato: true,
-    sommelier_ia: true
+    ler_qr_mesa: true
   };
 
-  try {
-    if (CONFIGS && CONFIGS.garcom_atalhos) {
-      const parsed = typeof CONFIGS.garcom_atalhos === 'string' ? JSON.parse(CONFIGS.garcom_atalhos) : CONFIGS.garcom_atalhos;
-      atalhosCfg = Object.assign(atalhosCfg, parsed);
+  if (atalhosCfg && typeof atalhosCfg === 'object') {
+    if (Array.isArray(atalhosCfg.order) && atalhosCfg.order.length > 0) {
+      order = atalhosCfg.order.slice();
+      DEFAULT_ATALHOS_ORDEM.forEach(k => {
+        if (!order.includes(k)) order.push(k);
+      });
+    }
+    if (atalhosCfg.enabled && typeof atalhosCfg.enabled === 'object') {
+      enabled = Object.assign({}, atalhosCfg.enabled);
     } else {
-      const local = localStorage.getItem('chef_garcom_atalhos_cfg');
-      if (local) atalhosCfg = Object.assign(atalhosCfg, JSON.parse(local));
+      // Formato legado { chave: true/false }
+      Object.keys(atalhosCfg).forEach(k => {
+        if (typeof atalhosCfg[k] === 'boolean') enabled[k] = atalhosCfg[k];
+      });
     }
-  } catch (e) {}
-
-  const mapCards = {
-    'fila_espera': 'card-atalho-fila-espera',
-    'fila_preparo': 'card-atalho-fila-preparo',
-    'consulta_preco': 'card-atalho-consulta-preco',
-    'nova_comanda': 'card-atalho-nova-comanda',
-    'chamar_gerente': 'card-atalho-chamar-gerente',
-    'minhas_vendas': 'card-atalho-minhas-vendas',
-    'transferir_mesa': 'card-atalho-transferir-mesa',
-    'juntar_mesas': 'card-atalho-juntar-mesas',
-    'pedir_preconta': 'card-atalho-pedir-preconta',
-    'dividir_conta': 'card-atalho-dividir-conta',
-    'limpar_mesa': 'card-atalho-limpar-mesa',
-    'alergenos': 'card-atalho-alergenos',
-    'ler_qr_mesa': 'card-atalho-ler-qr-mesa',
-    'ranking_garcom': 'card-atalho-ranking-garcom',
-    'alternar_tema': 'card-atalho-alternar-tema',
-    'pizza_meio_a_meio': 'card-atalho-pizza-meio-a-meio',
-    'rodizio_carnes': 'card-atalho-rodizio-carnes',
-    'marchar_prato': 'card-atalho-marchar-prato',
-    'sommelier_ia': 'card-atalho-sommelier-ia'
-  };
-
-  Object.keys(mapCards).forEach(key => {
-    const el = document.getElementById(mapCards[key]);
-    if (el) {
-      el.style.display = atalhosCfg[key] === false ? 'none' : 'flex';
+    if (atalhosCfg.pills && typeof atalhosCfg.pills === 'object') {
+      pills = Object.assign(pills, atalhosCfg.pills);
     }
-  });
+  }
+
+  // A. APLICA NA GRADE PRINCIPAL DE ATALHOS (#atalhos-grid-container)
+  const grid = document.getElementById('atalhos-grid-container');
+  if (grid) {
+    // 1. Define visibilidade dos cards
+    Object.keys(MAP_ATALHO_CARDS).forEach(key => {
+      const cardEl = document.getElementById(MAP_ATALHO_CARDS[key]);
+      if (cardEl) {
+        const isVisible = (enabled[key] !== false);
+        cardEl.style.display = isVisible ? 'flex' : 'none';
+      }
+    });
+
+    // 2. Reordena no DOM na sequência exata definida pelo Caixa
+    order.forEach(key => {
+      const cardId = MAP_ATALHO_CARDS[key];
+      if (cardId) {
+        const cardEl = document.getElementById(cardId);
+        if (cardEl && cardEl.parentNode === grid) {
+          grid.appendChild(cardEl);
+        }
+      }
+    });
+  }
+
+  // B. APLICA NA BARRA RÁPIDA DE PÍLULAS (#garcom-quick-pills-bar)
+  const pillsBar = document.getElementById('garcom-quick-pills-bar');
+  if (pillsBar) {
+    const pillButtons = pillsBar.querySelectorAll('button[data-atalho]');
+    const pillMap = {};
+    pillButtons.forEach(btn => {
+      const k = btn.getAttribute('data-atalho');
+      if (k) pillMap[k] = btn;
+    });
+
+    // 1. Define visibilidade das pílulas
+    Object.keys(pillMap).forEach(key => {
+      const btn = pillMap[key];
+      const isVisible = (enabled[key] !== false && pills[key] === true);
+      btn.style.display = isVisible ? 'inline-flex' : 'none';
+    });
+
+    // 2. Reordena botões de acordo com a ordem definida
+    order.forEach(key => {
+      const btn = pillMap[key];
+      if (btn && btn.parentNode === pillsBar) {
+        pillsBar.appendChild(btn);
+      }
+    });
+
+    // 3. Garante que o botão 'Mais Atalhos' fique sempre no final
+    const btnMais = document.getElementById('btn-quick-pill-mais-atalhos') || pillsBar.querySelector('button[onclick*="showView(\'atalhos\'"]');
+    if (btnMais && btnMais.parentNode === pillsBar) {
+      pillsBar.appendChild(btnMais);
+    }
+  }
 };
 
 window.carregarAtalhosGarcom = function() {
   window.applyAtalhosConfig();
-  if (typeof socket !== 'undefined' && socket) {
-    socket.emit('get_fila_espera');
-    socket.emit('get_pedidos');
+
+  // Se colaborador logado, busca dados atualizados do backend
+  if (typeof loggedUser !== 'undefined' && loggedUser && loggedUser.id) {
+    fetch('/api/funcionarios/' + loggedUser.id + '/atalhos')
+      .then(r => r.json())
+      .then(data => {
+        if (data && (data.config || data.global)) {
+          const cfg = data.config || data.global;
+          try { localStorage.setItem('chef_garcom_atalhos_' + loggedUser.id, JSON.stringify(cfg)); } catch (e) {}
+          window.applyAtalhosConfig(cfg);
+        }
+      })
+      .catch(() => {});
   }
 };
+
+// Escuta em tempo real notificações de configuração atualizada pelo Caixa
+if (typeof socket !== 'undefined' && socket) {
+  socket.on('atalhos_config_atualizada', (data) => {
+    if (!data) return;
+    const myId = (typeof loggedUser !== 'undefined' && loggedUser) ? loggedUser.id : null;
+    if (data.funcionario_id === myId || (data.funcionario_id === null && (!loggedUser || !loggedUser.atalhos_config))) {
+      window.applyAtalhosConfig(data.config);
+      if (typeof showToast === 'function') {
+        showToast('Atalhos atualizados pelo Caixa!', '#10b981');
+      }
+    }
+  });
+}
 
 // ── 🪑 2. FILA DE ESPERA POR MESAS ──
 window.abrirFilaEsperaGarcom = function() {
@@ -1633,6 +1773,330 @@ window.compartilharWhatsappDivisao = function() {
     `👉 *Valor por Pessoa: R$ ${porPessoa.toFixed(2).replace('.', ',')}*`;
 
   window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── 4.1 QR CODE DA CONTA PARA O WHATSAPP DO CLIENTE (SEM WHATSAPP GARÇOM) ──
+// ══════════════════════════════════════════════════════════════════════════
+window._qrContaMesaAtual = '';
+window._qrContaComTaxa = true;
+window._qrContaComPix = true;
+window._qrContaDivisaoQtd = 0;
+window._qrContaItensCache = [];
+window._qrContaSubtotalCache = 0;
+window._qrContaUltimoTexto = '';
+
+window.mostrarQrContaWhatsapp = async function(mesaNome, options = {}) {
+  // 1. Determina a mesa
+  if (!mesaNome || typeof mesaNome !== 'string') {
+    mesaNome = (typeof currentTable === 'string' && currentTable) ? currentTable : '';
+  }
+  if (!mesaNome) {
+    const selPreConta = document.getElementById('garcom-preconta-mesa');
+    if (selPreConta && selPreConta.value) mesaNome = selPreConta.value;
+  }
+  if (!mesaNome && Array.isArray(MESAS) && MESAS.length > 0) {
+    const mesaOcupada = MESAS.find(m => (m.total_pedidos > 0 || (typeof m._total === 'number' && m._total > 0)));
+    mesaNome = mesaOcupada ? mesaOcupada.nome : MESAS[0].nome;
+  }
+  if (!mesaNome) mesaNome = 'Mesa 1';
+
+  window._qrContaMesaAtual = mesaNome;
+  window._qrContaComTaxa = (typeof options.comTaxa === 'boolean') ? options.comTaxa : true;
+  window._qrContaDivisaoQtd = (typeof options.pessoas === 'number' && options.pessoas > 1) ? options.pessoas : 0;
+
+  // Atualiza modal UI inicial
+  const modal = document.getElementById('modal-qr-conta-whatsapp');
+  const badgeMesa = document.getElementById('qr-conta-whatsapp-mesa-badge');
+  const qrContainer = document.getElementById('qr-conta-whatsapp-container');
+  if (badgeMesa) badgeMesa.innerText = mesaNome.startsWith('Mesa') ? mesaNome : `Mesa ${mesaNome}`;
+  if (qrContainer) {
+    qrContainer.innerHTML = '<div style="color:#64748b; font-size:13px; font-weight:600; padding:20px;"><i class="ph ph-spinner-gap" style="animation:spin 1s infinite; font-size:24px; display:block; margin:0 auto 8px;"></i>Carregando conta da mesa...</div>';
+  }
+  if (modal) modal.style.display = 'flex';
+
+  // 2. Coleta itens e subtotal
+  let itens = [];
+  let subtotal = 0;
+
+  // Se já estiver com a mesa ativa e billItems populado
+  if (mesaNome === currentTable && Array.isArray(billItems) && billItems.length > 0) {
+    itens = billItems.filter(it => it.totalVal >= 0 && it.status !== 'Cancelado');
+    subtotal = itens.reduce((acc, it) => acc + (parseFloat(String(it.totalVal != null ? it.totalVal : it.total).replace(',', '.')) || 0), 0);
+  } else {
+    // Tenta puxar de MESAS localmente
+    const mesaObj = (Array.isArray(MESAS) ? MESAS : []).find(m => m.nome === mesaNome);
+    if (mesaObj && Array.isArray(mesaObj.pedidos) && mesaObj.pedidos.length > 0) {
+      itens = mesaObj.pedidos;
+      subtotal = typeof mesaObj._total === 'number' ? mesaObj._total : 0;
+    }
+
+    // Busca via API para garantir itens em tempo real
+    try {
+      const resp = await fetch(`/api/pedidos/mesa/${encodeURIComponent(mesaNome)}`);
+      const data = await resp.json();
+      if (data && data.ok && Array.isArray(data.items) && data.items.length > 0) {
+        itens = data.items.filter(it => it.status !== 'Cancelado');
+        subtotal = data.subtotal || itens.reduce((acc, it) => acc + (parseFloat(String(it.total).replace(',', '.')) || 0), 0);
+      }
+    } catch(err) {
+      console.warn('[QR WhatsApp] Falha ao consultar /api/pedidos/mesa:', err);
+    }
+  }
+
+  // Se subtotal ainda não calculado e itens existirem
+  if (subtotal <= 0 && itens.length > 0) {
+    subtotal = itens.reduce((acc, it) => acc + (parseFloat(String(it.totalVal != null ? it.totalVal : it.total).replace(',', '.')) || 0), 0);
+  }
+
+  // Se mesmo assim subtotal for 0, tenta do objeto mesa
+  if (subtotal <= 0) {
+    const mObj = (Array.isArray(MESAS) ? MESAS : []).find(m => m.nome === mesaNome);
+    if (mObj && typeof mObj._total === 'number' && mObj._total > 0) {
+      subtotal = mObj._total;
+    }
+  }
+
+  window._qrContaItensCache = itens;
+  window._qrContaSubtotalCache = subtotal;
+
+  window.renderizarQrContaWhatsapp();
+};
+
+window.fecharModalQrContaWhatsapp = function() {
+  const modal = document.getElementById('modal-qr-conta-whatsapp');
+  if (modal) modal.style.display = 'none';
+};
+
+window.alternarTaxaQrContaWhatsapp = function() {
+  window._qrContaComTaxa = !window._qrContaComTaxa;
+  window.renderizarQrContaWhatsapp();
+};
+
+window.alternarPixQrContaWhatsapp = function() {
+  window._qrContaComPix = !window._qrContaComPix;
+  window.renderizarQrContaWhatsapp();
+};
+
+window.togglePreviaTextoQrConta = function() {
+  const box = document.getElementById('qr-conta-whatsapp-preview-box');
+  const icone = document.getElementById('icon-previa-toggle');
+  const label = document.getElementById('label-previa-toggle');
+  if (!box) return;
+  const isAberto = box.style.display === 'block';
+  box.style.display = isAberto ? 'none' : 'block';
+  if (icone) icone.className = isAberto ? 'ph-bold ph-caret-down' : 'ph-bold ph-caret-up';
+  if (label) label.innerText = isAberto ? 'Ver texto que será enviado' : 'Ocultar prévia do texto';
+};
+
+window.gerarTextoContaWhatsapp = function(mesaNome, itens, subtotal, comTaxa, opcoes = {}) {
+  const cfg = (typeof CONFIGS !== 'undefined' && CONFIGS) ? CONFIGS : {};
+  const restNome = cfg.rest_nome || cfg.nome_restaurante || localStorage.getItem('restaurante_nome') || 'Chef Cozinha';
+  const chavePix = cfg.rest_pix || cfg.qr_pix_key || cfg.pix_chave || localStorage.getItem('pix_chave') || '';
+
+  const agora = new Date();
+  const dataFormatada = agora.toLocaleDateString('pt-BR') + ' às ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  let linhasItens = '';
+  if (Array.isArray(itens) && itens.length > 0) {
+    // Agrupa itens por nome para ficar compacto e elegante
+    const mapaItens = new Map();
+    itens.forEach(it => {
+      const nome = it.productName || it.nome || it.name || 'Item';
+      const qtd = parseInt(it.quantity || it.qtd || 1, 10);
+      const val = parseFloat(String(it.totalVal != null ? it.totalVal : it.total).replace(',', '.')) || (parseFloat(String(it.preco || it.price).replace(',', '.')) * qtd) || 0;
+      if (mapaItens.has(nome)) {
+        const exist = mapaItens.get(nome);
+        exist.qtd += qtd;
+        exist.val += val;
+      } else {
+        mapaItens.set(nome, { qtd, val });
+      }
+    });
+
+    const linhasArr = [];
+    mapaItens.forEach((v, k) => {
+      linhasArr.push(`${v.qtd}x ${k} - R$ ${v.val.toFixed(2).replace('.', ',')}`);
+    });
+
+    // Se tiver mais de 25 linhas, compacta para caber com folga no QR Code
+    if (linhasArr.length > 25) {
+      const primeiras = linhasArr.slice(0, 20);
+      const restantes = linhasArr.length - 20;
+      linhasItens = primeiras.join('\n') + `\n... e mais ${restantes} itens no extrato`;
+    } else {
+      linhasItens = linhasArr.join('\n');
+    }
+  } else {
+    linhasItens = `Consumo registrado na conta - R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+  }
+
+  const taxa = comTaxa ? (subtotal * 0.10) : 0;
+  const total = subtotal + taxa;
+
+  let msg = `🍽️ *${restNome}*\n`;
+  msg += `🧾 *Extrato de Consumo - ${mesaNome}*\n`;
+  msg += `📅 ${dataFormatada}\n`;
+  msg += `────────────────────────\n`;
+  msg += `${linhasItens}\n`;
+  msg += `────────────────────────\n`;
+  msg += `• Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
+  if (comTaxa) {
+    msg += `• Taxa de Serviço (10%): R$ ${taxa.toFixed(2).replace('.', ',')}\n`;
+    msg += `*👉 TOTAL A PAGAR: R$ ${total.toFixed(2).replace('.', ',')}*\n`;
+  } else {
+    msg += `*👉 TOTAL A PAGAR: R$ ${total.toFixed(2).replace('.', ',')}* (sem taxa)\n`;
+  }
+
+  // Divisão se houver
+  const pessoas = opcoes.pessoas || 0;
+  if (pessoas > 1) {
+    const porPessoa = total / pessoas;
+    msg += `────────────────────────\n`;
+    msg += `👥 *Divisão:* ${pessoas} pessoas\n`;
+    msg += `👉 *Valor por Pessoa: R$ ${porPessoa.toFixed(2).replace('.', ',')}*\n`;
+  }
+
+  // Chave Pix
+  if (opcoes.comPix && chavePix) {
+    msg += `────────────────────────\n`;
+    msg += `🔑 *Chave Pix:* ${chavePix}\n`;
+  }
+
+  msg += `────────────────────────\n`;
+  msg += `Agradecemos a sua preferência! Volte sempre!`;
+
+  return msg;
+};
+
+window.renderizarQrContaWhatsapp = function() {
+  const mesaNome = window._qrContaMesaAtual || 'Mesa';
+  const itens = window._qrContaItensCache || [];
+  const subtotal = window._qrContaSubtotalCache || 0;
+  const comTaxa = window._qrContaComTaxa;
+  const comPix = window._qrContaComPix;
+  const pessoas = window._qrContaDivisaoQtd || 0;
+
+  const taxa = comTaxa ? (subtotal * 0.10) : 0;
+  const total = subtotal + taxa;
+
+  // Atualiza botões
+  const btn10 = document.getElementById('btn-qr-conta-10pct');
+  const icone10 = document.getElementById('icon-qr-conta-10pct');
+  if (btn10 && icone10) {
+    if (comTaxa) {
+      btn10.style.border = '1.5px solid #10b981';
+      btn10.style.background = '#ecfdf5';
+      btn10.style.color = '#065f46';
+      btn10.innerHTML = `<i class="ph-bold ph-check-circle" id="icon-qr-conta-10pct" style="font-size:16px;"></i> Taxa 10% (+R$ ${taxa.toFixed(2).replace('.', ',')})`;
+    } else {
+      btn10.style.border = '1.5px solid #cbd5e1';
+      btn10.style.background = '#f8fafc';
+      btn10.style.color = '#64748b';
+      btn10.innerHTML = `<i class="ph-bold ph-circle" id="icon-qr-conta-10pct" style="font-size:16px;"></i> Sem Taxa de 10%`;
+    }
+  }
+
+  const labelPix = document.getElementById('label-qr-conta-pix-status');
+  const btnPix = document.getElementById('btn-qr-conta-pix');
+  if (labelPix && btnPix) {
+    labelPix.innerText = comPix ? 'Sim' : 'Não';
+    if (comPix) {
+      btnPix.style.border = '1.5px solid #10b981';
+      btnPix.style.background = '#ecfdf5';
+      btnPix.style.color = '#065f46';
+    } else {
+      btnPix.style.border = '1.5px solid #cbd5e1';
+      btnPix.style.background = '#f8fafc';
+      btnPix.style.color = '#64748b';
+    }
+  }
+
+  // Atualiza box de resumo
+  const elQtdItens = document.getElementById('qr-conta-whatsapp-itens-qtd');
+  const elSubtotal = document.getElementById('qr-conta-whatsapp-subtotal');
+  const elTaxa = document.getElementById('qr-conta-whatsapp-taxa');
+  const elTotal = document.getElementById('qr-conta-whatsapp-total');
+  if (elQtdItens) elQtdItens.innerText = itens.length;
+  if (elSubtotal) elSubtotal.innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+  if (elTaxa) elTaxa.innerText = `R$ ${taxa.toFixed(2).replace('.', ',')}`;
+  if (elTotal) elTotal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+
+  const boxDivisao = document.getElementById('qr-conta-whatsapp-divisao-box');
+  const lblDivisao = document.getElementById('qr-conta-whatsapp-divisao-label');
+  const valDivisao = document.getElementById('qr-conta-whatsapp-divisao-valor');
+  if (boxDivisao) {
+    if (pessoas > 1) {
+      boxDivisao.style.display = 'flex';
+      const porPessoa = total / pessoas;
+      if (lblDivisao) lblDivisao.innerText = `Divisão p/ ${pessoas} pessoas:`;
+      if (valDivisao) valDivisao.innerText = `R$ ${porPessoa.toFixed(2).replace('.', ',')} / pessoa`;
+    } else {
+      boxDivisao.style.display = 'none';
+    }
+  }
+
+  // Gera texto formatado
+  const textoMsg = window.gerarTextoContaWhatsapp(mesaNome, itens, subtotal, comTaxa, { comPix, pessoas });
+  window._qrContaUltimoTexto = textoMsg;
+
+  // Atualiza preview de texto
+  const boxPreview = document.getElementById('qr-conta-whatsapp-preview-box');
+  if (boxPreview) boxPreview.innerText = textoMsg;
+
+  // Gera QR Code
+  const qrContainer = document.getElementById('qr-conta-whatsapp-container');
+  if (!qrContainer) return;
+
+  const urlWhatsapp = `https://api.whatsapp.com/send?text=${encodeURIComponent(textoMsg)}`;
+
+  try {
+    if (typeof window.qrcode === 'function') {
+      const qr = window.qrcode(0, 'L');
+      qr.addData(urlWhatsapp);
+      qr.make();
+      const dataUrl = qr.createDataURL(5, 0);
+      qrContainer.innerHTML = `<img src="${dataUrl}" alt="QR Code Conta WhatsApp" style="width:230px; height:230px; display:block; margin:0 auto; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.06);">`;
+      return;
+    }
+  } catch(err) {
+    console.warn('[QR WhatsApp] Erro no gerador offline, tentando fallback:', err);
+  }
+
+  // Fallback via API se texto for gigante ou qrcode offline falhar
+  const imgFallback = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(urlWhatsapp)}`;
+  qrContainer.innerHTML = `<img src="${imgFallback}" alt="QR Code Conta WhatsApp" style="width:230px; height:230px; display:block; margin:0 auto; border-radius:12px;" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\'padding:20px; color:#ef4444; font-weight:bold;\'>Não foi possível desenhar o QR Code. Copie o texto abaixo.</div>';">`;
+};
+
+window.copiarTextoContaWhatsapp = function() {
+  const texto = window._qrContaUltimoTexto || '';
+  if (!texto) return;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(() => {
+      if (typeof showToast === 'function') showToast('📋 Texto da conta copiado!', '#10b981');
+      else alert('Texto da conta copiado!');
+    }).catch(() => {
+      prompt('Copie o texto da conta:', texto);
+    });
+  } else {
+    prompt('Copie o texto da conta:', texto);
+  }
+};
+
+window.mostrarQrDivisaoWhatsapp = function() {
+  const selMesa = document.getElementById('garcom-dividir-mesa');
+  const inpValor = document.getElementById('garcom-dividir-valor');
+  const inpPessoas = document.getElementById('garcom-dividir-pessoas');
+
+  const mesaNome = selMesa?.value || currentTable || 'Mesa';
+  const pessoas = parseInt(inpPessoas?.value || '2', 10) || 2;
+  const valorBase = parseFloat(inpValor?.value || '0') || 0;
+
+  window.mostrarQrContaWhatsapp(mesaNome, {
+    pessoas: pessoas,
+    comTaxa: !!window._dividirComGorjeta
+  });
 };
 
 // ── 5. AVISO DE LIMPEZA / HIGIENIZAÇÃO ──

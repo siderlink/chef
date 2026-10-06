@@ -5689,17 +5689,40 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- TOP MENUBAR DROPDOWNS ---
   document.querySelectorAll('.menu-trigger').forEach(trigger => {
     trigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
       const dropdownId = trigger.getAttribute('data-dropdown');
-      if (dropdownId) {
-        document.getElementById(dropdownId).classList.toggle('show');
+      if (!dropdownId) return;
+
+      e.stopPropagation();
+      const m = document.getElementById(dropdownId);
+      if (!m) return;
+      const willOpen = !m.classList.contains('show');
+
+      document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        if (menu !== m) menu.classList.remove('show');
+      });
+      document.querySelectorAll('.dropdown-wrapper').forEach(w => {
+        if (!w.contains(m)) w.classList.remove('open');
+      });
+
+      if (willOpen) {
+        m.classList.add('show');
+        const wrap = trigger.closest('.dropdown-wrapper');
+        if (wrap) wrap.classList.add('open');
+        if (dropdownId === 'drop-caixa-version' && window.CaixaVersionManager) {
+          const curVer = trigger.getAttribute('data-current-version') || 'v1.1.1';
+          window.CaixaVersionManager.renderDropdown(dropdownId, curVer);
+        }
+      } else {
+        m.classList.remove('show');
+        const wrap = trigger.closest('.dropdown-wrapper');
+        if (wrap) wrap.classList.remove('open');
       }
     });
   });
 
   document.addEventListener('click', () => {
     document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+    document.querySelectorAll('.dropdown-wrapper').forEach(w => w.classList.remove('open'));
   });
 
   const mnuAbrir = document.getElementById('menu-abrir-caixa');

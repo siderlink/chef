@@ -60,17 +60,17 @@
           }
         }
 
-        if (navigator.sendBeacon) {
-          var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-          navigator.sendBeacon('/api/public/geo-hit', blob);
-        } else {
-          fetch('/api/public/geo-hit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            keepalive: true
-          }).catch(function () {});
-        }
+        fetch('/api/public/geo-hit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          keepalive: true
+        }).catch(function () {
+          if (navigator.sendBeacon) {
+            var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+            navigator.sendBeacon('/api/public/geo-hit', blob);
+          }
+        });
       } catch (e) {}
     },
 

@@ -463,7 +463,7 @@ window.switchMobileTab = (tabId) => {
   // ── FIX: Remove mode-hidden/mode-mini dos painéis ao ativar no mobile ──
   // O setSidebarMode pode ter salvo mode-hidden no localStorage e aplicado ao painel.
   // No mobile, quando o usuário clica na aba, o painel deve ser forçado a aparecer.
-  const isMobileLayout = window.innerWidth <= 767 || document.body.classList.contains('force-mobile');
+  const isMobileLayout = window.innerWidth <= 900 || document.body.classList.contains('force-mobile');
   const lp = document.getElementById('left-panel') || document.querySelector('.left-actions');
   const rp = document.getElementById('right-panel') || document.querySelector('.right-info');
   const mp = document.getElementById('main-panel') || document.querySelector('.main-workspace');
@@ -592,7 +592,7 @@ document.addEventListener('click', (e) => {
 
   const mesaCard = e.target.closest('.mesa-item');
   if (mesaCard && !mesaCard.classList.contains('nova-comanda-card')) {
-    const isMobile = window.innerWidth <= 767 || document.body.classList.contains('force-mobile');
+    const isMobile = window.innerWidth <= 900 || document.body.classList.contains('force-mobile');
     if (isMobile && typeof window.switchMobileTab === 'function') {
       setTimeout(() => {
         window.switchMobileTab('pedido');
@@ -738,7 +738,7 @@ function initMobileMenu() {
 }
 
 window.addEventListener('resize', () => {
-  const isMobile = window.innerWidth <= 767 || document.body.classList.contains('force-mobile');
+  const isMobile = window.innerWidth <= 900 || document.body.classList.contains('force-mobile');
   const lp = document.getElementById('left-panel') || document.querySelector('.left-actions');
   const rp = document.getElementById('right-panel') || document.querySelector('.right-info');
   const mp = document.getElementById('main-panel') || document.querySelector('.main-workspace');

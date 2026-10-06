@@ -45,6 +45,8 @@ class SQLite3Wrapper {
         this.db.pragma('busy_timeout = 10000');
         this.db.pragma('temp_store = MEMORY');
         this.db.pragma('cache_size = -64000');
+        this.db.pragma('mmap_size = 268435456');
+        this.db.pragma('wal_autocheckpoint = 1000');
       } catch (pragmaErr) {
         console.warn('[sqlite3-wrapper] Aviso ao aplicar pragmas:', pragmaErr.message);
       }

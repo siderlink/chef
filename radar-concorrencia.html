@@ -385,6 +385,10 @@
       z-index: 10;
     }
 
+    #map-view .leaflet-tile-pane {
+      filter: brightness(0.65) invert(1) contrast(3) hue-rotate(200deg) saturate(0.35);
+    }
+
     /* Competitor List */
     .competitor-list-card {
       background: var(--card-bg);
@@ -822,10 +826,10 @@
     function inicializarMapa() {
       map = L.map('map-view').setView([latCentro, lngCentro], 14);
 
-      // Camada CartoDB Dark Matter (estilo escuro sofisticado)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-        subdomains: 'abcd',
+      // Camada OpenStreetMap com filtro Dark Cinema nativo (100% livre e sem dependência de API Key)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" style="color:#06b6d4;">OpenStreetMap</a> contributors',
+        subdomains: ['a', 'b', 'c'],
         maxZoom: 19
       }).addTo(map);
 

@@ -1149,15 +1149,44 @@ body.dark-mode #tabela-movimentacoes td,
 }
 
 /* Relatório Avançado */
+body.dark-mode #section-relatorio-avancado,
+[data-theme="dark"] #section-relatorio-avancado {
+  color: #f8fafc !important;
+}
+
+/* Evita caixas acidentais nos containers de layout/grid */
 body.dark-mode #section-relatorio-avancado > div,
 [data-theme="dark"] #section-relatorio-avancado > div {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Cards reais do relatório */
+body.dark-mode #section-relatorio-avancado .rep-card,
+body.dark-mode #section-relatorio-avancado [style*="background: var(--fin-card)"],
+[data-theme="dark"] #section-relatorio-avancado .rep-card,
+[data-theme="dark"] #section-relatorio-avancado [style*="background: var(--fin-card)"] {
   background: #182030 !important;
   border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35) !important;
+  color: #f8fafc !important;
 }
+
+body.dark-mode #section-relatorio-avancado h3,
+body.dark-mode #section-relatorio-avancado h1,
+[data-theme="dark"] #section-relatorio-avancado h3,
+[data-theme="dark"] #section-relatorio-avancado h1 {
+  color: #f8fafc !important;
+}
+
 body.dark-mode #section-relatorio-avancado label,
-[data-theme="dark"] #section-relatorio-avancado label {
+body.dark-mode #section-relatorio-avancado strong,
+[data-theme="dark"] #section-relatorio-avancado label,
+[data-theme="dark"] #section-relatorio-avancado strong {
   color: #94a3b8 !important;
 }
+
 body.dark-mode #section-relatorio-avancado input,
 body.dark-mode #section-relatorio-avancado select,
 [data-theme="dark"] #section-relatorio-avancado input,
@@ -1166,8 +1195,176 @@ body.dark-mode #section-relatorio-avancado select,
   border: 1px solid rgba(255,255,255,0.12) !important;
   color: #f8fafc !important;
 }
+
+body.dark-mode #section-relatorio-avancado input[type="date"],
+[data-theme="dark"] #section-relatorio-avancado input[type="date"] {
+  color-scheme: dark !important;
+}
+
+body.dark-mode #section-relatorio-avancado input:focus,
+body.dark-mode #section-relatorio-avancado select:focus,
+[data-theme="dark"] #section-relatorio-avancado input:focus,
+[data-theme="dark"] #section-relatorio-avancado select:focus {
+  border-color: #fc4b15 !important;
+  box-shadow: 0 0 0 3px rgba(252,75,21,0.2) !important;
+}
+
+/* KPIs (Valores dos 4 Cards) */
+body.dark-mode #section-relatorio-avancado [id^="rep-kpi-"],
 body.dark-mode #rep-kpi-faturamento,
-[data-theme="dark"] #rep-kpi-faturamento {
+body.dark-mode #rep-kpi-itens,
+body.dark-mode #rep-kpi-pedidos,
+body.dark-mode #rep-kpi-ticket,
+[data-theme="dark"] #section-relatorio-avancado [id^="rep-kpi-"],
+[data-theme="dark"] #rep-kpi-faturamento,
+[data-theme="dark"] #rep-kpi-itens,
+[data-theme="dark"] #rep-kpi-pedidos,
+[data-theme="dark"] #rep-kpi-ticket {
+  color: #f8fafc !important;
+}
+
+/* Ícones dos 4 Cards de KPI com badges translúcidos elegantes */
+body.dark-mode #section-relatorio-avancado .rep-kpi-icon-faturamento,
+[data-theme="dark"] #section-relatorio-avancado .rep-kpi-icon-faturamento {
+  background: rgba(49, 151, 149, 0.2) !important;
+  color: #4fd1c5 !important;
+}
+body.dark-mode #section-relatorio-avancado .rep-kpi-icon-itens,
+[data-theme="dark"] #section-relatorio-avancado .rep-kpi-icon-itens {
+  background: rgba(49, 130, 206, 0.2) !important;
+  color: #63b3ed !important;
+}
+body.dark-mode #section-relatorio-avancado .rep-kpi-icon-pedidos,
+[data-theme="dark"] #section-relatorio-avancado .rep-kpi-icon-pedidos {
+  background: rgba(221, 107, 32, 0.2) !important;
+  color: #fbd38d !important;
+}
+body.dark-mode #section-relatorio-avancado .rep-kpi-icon-ticket,
+[data-theme="dark"] #section-relatorio-avancado .rep-kpi-icon-ticket {
+  background: rgba(128, 90, 213, 0.2) !important;
+  color: #d6bcfa !important;
+}
+
+/* Hover nos cards de KPI */
+body.dark-mode #section-relatorio-avancado .rep-kpi-card:hover,
+[data-theme="dark"] #section-relatorio-avancado .rep-kpi-card:hover {
+  border-color: rgba(252, 75, 21, 0.35) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.5) !important;
+}
+
+/* Trilhas das Barras de Progresso */
+body.dark-mode #section-relatorio-avancado .rep-progress-track,
+body.dark-mode #section-relatorio-avancado [style*="background: #f0f0f0"],
+body.dark-mode #section-relatorio-avancado [style*="background:#f0f0f0"],
+[data-theme="dark"] #section-relatorio-avancado .rep-progress-track,
+[data-theme="dark"] #section-relatorio-avancado [style*="background: #f0f0f0"],
+[data-theme="dark"] #section-relatorio-avancado [style*="background:#f0f0f0"] {
+  background: rgba(255,255,255,0.08) !important;
+}
+
+/* Meios de Pagamento */
+body.dark-mode #section-relatorio-avancado #rep-pagamentos-container,
+[data-theme="dark"] #section-relatorio-avancado #rep-pagamentos-container {
+  color: #f8fafc !important;
+}
+
+/* Gráfico de Vendas */
+body.dark-mode #section-relatorio-avancado #rep-grafico-container,
+[data-theme="dark"] #section-relatorio-avancado #rep-grafico-container {
+  border-left-color: rgba(255,255,255,0.12) !important;
+  border-bottom-color: rgba(255,255,255,0.12) !important;
+}
+
+/* Caixa de Perdas (Cancelados) */
+body.dark-mode #section-relatorio-avancado .rep-perdas-box,
+body.dark-mode #section-relatorio-avancado [style*="background: #fdf2f2"],
+[data-theme="dark"] #section-relatorio-avancado .rep-perdas-box,
+[data-theme="dark"] #section-relatorio-avancado [style*="background: #fdf2f2"] {
+  background: rgba(239,68,68,0.12) !important;
+  border-color: rgba(239,68,68,0.3) !important;
+}
+body.dark-mode #section-relatorio-avancado .rep-perdas-box strong,
+[data-theme="dark"] #section-relatorio-avancado .rep-perdas-box strong {
+  color: #f87171 !important;
+}
+body.dark-mode #section-relatorio-avancado .rep-perdas-box div,
+body.dark-mode #section-relatorio-avancado .rep-perdas-box span,
+[data-theme="dark"] #section-relatorio-avancado .rep-perdas-box div,
+[data-theme="dark"] #section-relatorio-avancado .rep-perdas-box span {
+  color: #fca5a5 !important;
+}
+
+/* Divisores internos */
+body.dark-mode #section-relatorio-avancado [style*="border-top: 1px dashed"],
+[data-theme="dark"] #section-relatorio-avancado [style*="border-top: 1px dashed"] {
+  border-top-color: rgba(255,255,255,0.08) !important;
+}
+body.dark-mode #section-relatorio-avancado [style*="border-bottom: 1px solid #e2e8f0"],
+[data-theme="dark"] #section-relatorio-avancado [style*="border-bottom: 1px solid #e2e8f0"] {
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Sub-abas de Itens e Pedidos */
+body.dark-mode #section-relatorio-avancado .rep-subtab-btn,
+[data-theme="dark"] #section-relatorio-avancado .rep-subtab-btn {
+  color: #94a3b8 !important;
+}
+body.dark-mode #section-relatorio-avancado .rep-subtab-btn.active,
+[data-theme="dark"] #section-relatorio-avancado .rep-subtab-btn.active {
+  color: #fc4b15 !important;
+}
+
+/* Tabelas */
+body.dark-mode #section-relatorio-avancado thead tr,
+[data-theme="dark"] #section-relatorio-avancado thead tr {
+  border-bottom-color: rgba(255,255,255,0.1) !important;
+  color: #94a3b8 !important;
+}
+body.dark-mode #section-relatorio-avancado tbody tr,
+[data-theme="dark"] #section-relatorio-avancado tbody tr {
+  border-bottom-color: rgba(255,255,255,0.06) !important;
+  color: #f8fafc !important;
+}
+body.dark-mode #section-relatorio-avancado tbody tr:hover,
+[data-theme="dark"] #section-relatorio-avancado tbody tr:hover {
+  background: rgba(255,255,255,0.03) !important;
+}
+
+/* Badges de Status da Tabela */
+body.dark-mode .rep-status-badge.status-ok,
+[data-theme="dark"] .rep-status-badge.status-ok {
+  background: rgba(16,185,129,0.15) !important;
+  color: #34d399 !important;
+}
+body.dark-mode .rep-status-badge.status-cancel,
+[data-theme="dark"] .rep-status-badge.status-cancel {
+  background: rgba(239,68,68,0.15) !important;
+  color: #f87171 !important;
+}
+
+/* Modal de Exportação */
+body.dark-mode #export-modal > div,
+[data-theme="dark"] #export-modal > div {
+  background: #182030 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #f8fafc !important;
+}
+body.dark-mode #export-modal .rep-export-btn,
+body.dark-mode #export-modal button[id^="btn-export-"],
+[data-theme="dark"] #export-modal .rep-export-btn,
+[data-theme="dark"] #export-modal button[id^="btn-export-"] {
+  background: #121824 !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+body.dark-mode #export-modal .rep-export-btn:hover,
+body.dark-mode #export-modal button[id^="btn-export-"]:hover,
+[data-theme="dark"] #export-modal .rep-export-btn:hover,
+[data-theme="dark"] #export-modal button[id^="btn-export-"]:hover {
+  background: #1e2435 !important;
+  border-color: #fc4b15 !important;
+}
+body.dark-mode #export-modal span,
+[data-theme="dark"] #export-modal span {
   color: #f8fafc !important;
 }
 

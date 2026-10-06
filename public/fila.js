@@ -323,13 +323,13 @@ function aplicarTamanhosCSS(sizes) {
   const root = document.documentElement;
   const queueList = document.getElementById('queue-list');
 
-  root.style.setProperty('--kds-col-header-width', (sizes.header || 260) + 'px');
-  root.style.setProperty('--kds-col-qty-width', (sizes.qty || 54) + 'px');
-  root.style.setProperty('--kds-col-action-width', (sizes.action || 230) + 'px');
-  root.style.setProperty('--kds-card-height', (sizes.height || 76) + 'px');
+  root.style.setProperty('--kds-col-header-width', Math.max(140, sizes.header || 260) + 'px');
+  root.style.setProperty('--kds-col-qty-width', Math.max(38, sizes.qty || 54) + 'px');
+  root.style.setProperty('--kds-col-action-width', Math.max(140, sizes.action || 230) + 'px');
+  root.style.setProperty('--kds-card-height', Math.max(32, sizes.height || 76) + 'px');
   root.style.setProperty('--kds-card-gap', (sizes.gap !== undefined ? sizes.gap : 12) + 'px');
-  root.style.setProperty('--kds-card-min-width', (sizes.cardMin || 290) + 'px');
-  root.style.setProperty('--kds-font-size', (sizes.fontSize || 15) + 'px');
+  root.style.setProperty('--kds-card-min-width', Math.max(200, sizes.cardMin || 290) + 'px');
+  root.style.setProperty('--kds-font-size', Math.max(10, sizes.fontSize || 15) + 'px');
 
   // Ajustes dinâmicos de Grid Columns
   const colCss = (sizes.gridCols && sizes.gridCols !== 'auto')
@@ -455,15 +455,23 @@ window.alterarTamanhoCard = function(tam) {
   if (tam === 'p') {
     kdsSectionSizes.fontSize = 13;
     kdsSectionSizes.gap = 8;
+    kdsSectionSizes.height = 60;
+    kdsSectionSizes.qty = 46;
   } else if (tam === 'm') {
     kdsSectionSizes.fontSize = 15;
     kdsSectionSizes.gap = 12;
+    kdsSectionSizes.height = 76;
+    kdsSectionSizes.qty = 54;
   } else if (tam === 'g') {
     kdsSectionSizes.fontSize = 18;
     kdsSectionSizes.gap = 16;
+    kdsSectionSizes.height = 92;
+    kdsSectionSizes.qty = 64;
   } else if (tam === 'gg') {
     kdsSectionSizes.fontSize = 22;
     kdsSectionSizes.gap = 20;
+    kdsSectionSizes.height = 110;
+    kdsSectionSizes.qty = 76;
   }
   localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
   aplicarTamanhosCSS(kdsSectionSizes);
@@ -606,7 +614,7 @@ function renderizarListaApelidosDrawer() {
         <span style="color:var(--kds-text-secondary);">${escHtml(k)}:</span>
         <strong style="color:var(--kds-primary, #fc4b15); margin-left:4px;">${escHtml(kdsColabApelidos[k])}</strong>
       </div>
-      <button type="button" onclick="window.removerApelidoColaborador('${escJs(k)}')" style="border:none; background:transparent; color:#ef4444; cursor:pointer; font-weight:bold; font-size:14px;" title="Remover apelido">&times;</button>
+      <button type="button" onclick="window.removerApelidoColaborador(${escJs(k)})" style="border:none; background:transparent; color:#ef4444; cursor:pointer; font-weight:bold; font-size:14px;" title="Remover apelido">&times;</button>
     </div>
   `).join('');
 }
@@ -632,6 +640,9 @@ window.trocarAbaLayoutDrawer = function(aba) {
   document.querySelectorAll('.kds-drawer-tab-content').forEach(c => {
     c.style.display = (c.getAttribute('data-tab') === aba) ? 'flex' : 'none';
   });
+  if (aba === 'posicao') {
+    renderizarCamposCardList('kds-card-fields-drawer');
+  }
   if (aba === 'apelidos') {
     renderizarListaApelidosDrawer();
   }
@@ -642,9 +653,9 @@ window.trocarAbaLayoutDrawer = function(aba) {
 
 // ── CAMPOS DO CARD (ORDEM E VISIBILIDADE) ──
 const CARD_FIELDS = [
-  { key: 'cabecalho', label: 'Mesa / Comanda e Tempo' },
   { key: 'quantidade', label: 'Badge Quantidade' },
   { key: 'produto', label: 'Produto (Nome, Obs, Adicionais)' },
+  { key: 'cabecalho', label: 'Mesa / Comanda e Tempo' },
   { key: 'acao', label: 'Botões de Ação (Pronto / Chamar)' }
 ];
 let kdsCardOrder = [];
@@ -673,6 +684,13 @@ function obterCardOrder() {
   }
   if (kdsCardOrder.length === 0) kdsCardOrder = CARD_FIELDS.map(f => f.key);
   kdsCardOrder.forEach(k => { if (!CARD_FIELDS.some(f => f.key === k)) kdsCardOrder = kdsCardOrder.filter(x => x !== k); });
+  
+  // Anti-burros forçado antes de retornar:
+  kdsCardOrder = Array.from(new Set(kdsCardOrder));
+  if (kdsCardOrder.length !== CARD_FIELDS.length) {
+    kdsCardOrder = CARD_FIELDS.map(f => f.key);
+    localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
+  }
   return kdsCardOrder;
 }
 window.obterCardHidden = function() {
@@ -711,64 +729,102 @@ window.alternarCampoCard = function(key) {
   renderQueue(true);
   kdsAgendarSalvarNoServidor();
 };
+window.resetarOrdemCampos = function() {
+  kdsCardOrder = CARD_FIELDS.map(f => f.key);
+  localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
+  kdsCardHidden = new Set();
+  localStorage.setItem('chef_kds_card_hidden', JSON.stringify([]));
+  renderizarCamposCardModal();
+  renderQueue(true);
+  kdsAgendarSalvarNoServidor();
+};
+
+
+// ── APLICAR PRESET DE ORDEM (1 CLIQUE) ──
+window.aplicarPresetOrdem = function(ordemArray) {
+  kdsCardOrder = ordemArray.slice();
+  localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
+  renderizarCamposCardModal();
+  renderQueue(true);
+  kdsAgendarSalvarNoServidor();
+};
+
+// ── PRESETS DE ORDEM PARA O DRAWER ──
+const ORDER_PRESETS = [
+  {
+    nome: '\u26a1 Opera\u00e7\u00e3o R\u00e1pida (Recomendado)',
+    desc: 'Quantidade \u2192 Produto \u2192 Mesa \u2192 Bot\u00f5es',
+    ordem: ['quantidade', 'produto', 'cabecalho', 'acao'],
+    cor: '#22c55e'
+  },
+  {
+    nome: '\ud83c\udf7d\ufe0f Mesa Primeiro',
+    desc: 'Mesa \u2192 Quantidade \u2192 Produto \u2192 Bot\u00f5es',
+    ordem: ['cabecalho', 'quantidade', 'produto', 'acao'],
+    cor: '#3b82f6'
+  },
+  {
+    nome: '\ud83d\udce6 Produto Destaque',
+    desc: 'Produto \u2192 Quantidade \u2192 Mesa \u2192 Bot\u00f5es',
+    ordem: ['produto', 'quantidade', 'cabecalho', 'acao'],
+    cor: '#f59e0b'
+  },
+  {
+    nome: '\ud83c\udfaf A\u00e7\u00e3o Imediata',
+    desc: 'Bot\u00f5es \u2192 Quantidade \u2192 Produto \u2192 Mesa',
+    ordem: ['acao', 'quantidade', 'produto', 'cabecalho'],
+    cor: '#ef4444'
+  }
+];
 
 function renderizarCamposCardList(containerId) {
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
-  const ordem = obterCardOrder();
+  const ordemAtual = obterCardOrder();
   const hidden = window.obterCardHidden();
-  wrap.innerHTML = ordem.map(k => {
-    const oculto = hidden.has(k);
-    return `
-      <div class="kds-field-item" data-key="${k}">
-        <div class="kds-drag-handle" title="Segure e arraste para reordenar">
-          <i class="ph-bold ph-dots-six-vertical"></i>
-        </div>
-        <div class="kds-field-title">
-          <span>${window.cardFieldLabel(k)}</span>
-          <span style="font-size: 11px; padding: 2px 7px; border-radius: 6px; font-weight: 800; ${oculto ? 'background: rgba(239,68,68,0.15); color: #ef4444;' : 'background: rgba(34,197,94,0.15); color: #22c55e;'}">
-            ${oculto ? 'Oculto' : 'Visível'}
-          </span>
-        </div>
-        <div class="kds-field-actions">
-          <button type="button" class="kds-field-btn" onclick="window.moverCampoCard('${k}',-1)" title="Mover para cima / esquerda">
-            <i class="ph-bold ph-arrow-up"></i>
-          </button>
-          <button type="button" class="kds-field-btn" onclick="window.moverCampoCard('${k}',1)" title="Mover para baixo / direita">
-            <i class="ph-bold ph-arrow-down"></i>
-          </button>
-          <button type="button" class="kds-field-btn" onclick="window.alternarCampoCard('${k}')" title="${oculto ? 'Mostrar' : 'Ocultar'}" style="${oculto ? 'color: #22c55e;' : 'color: #ef4444;'}">
-            <i class="ph-bold ${oculto ? 'ph-eye' : 'ph-eye-slash'}"></i>
-          </button>
-        </div>
-      </div>`;
-  }).join('');
+  const ordemStr = JSON.stringify(ordemAtual);
 
-  if (typeof Sortable !== 'undefined' && !wrap._sortableInited) {
-    wrap._sortableInited = true;
-    Sortable.create(wrap, {
-      handle: '.kds-drag-handle',
-      animation: 160,
-      ghostClass: 'sortable-ghost',
-      chosenClass: 'sortable-chosen',
-      onEnd: () => {
-        const novaOrdem = Array.from(wrap.children).map(c => c.getAttribute('data-key')).filter(Boolean);
-        if (novaOrdem.length === CARD_FIELDS.length) {
-          kdsCardOrder = novaOrdem.slice();
-          localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
-          if (containerId === 'kds-card-fields-drawer') {
-            const outro = document.getElementById('kds-card-fields-config');
-            if (outro) renderizarCamposCardList('kds-card-fields-config');
-          } else {
-            const outro = document.getElementById('kds-card-fields-drawer');
-            if (outro) renderizarCamposCardList('kds-card-fields-drawer');
-          }
-          renderQueue(true);
-          kdsAgendarSalvarNoServidor();
-        }
-      }
-    });
-  }
+  const fieldIcons = { quantidade: '\ud83d\udd22', produto: '\ud83c\udf54', cabecalho: '\ud83d\udccd', acao: '\u25b6\ufe0f' };
+  const fieldShortLabels = { quantidade: 'QTD', produto: 'PRODUTO', cabecalho: 'MESA', acao: 'BOT\u00d5ES' };
+
+  let html = '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">';
+  html += '<span style="font-size:12px;font-weight:800;color:var(--kds-text-primary);margin-bottom:2px;">Escolha a Ordem (1 clique):</span>';
+  ORDER_PRESETS.forEach(p => {
+    const isActive = JSON.stringify(p.ordem) === ordemStr;
+    const activeBorder = isActive ? `border: 2.5px solid ${p.cor}; box-shadow: 0 0 12px ${p.cor}44;` : `border: 1.5px solid var(--kds-card-border);`;
+    const activeLabel = isActive ? `<span style="font-size:10px;font-weight:900;color:${p.cor};background:${p.cor}18;padding:1px 6px;border-radius:4px;margin-left:auto;">ATIVO</span>` : '';
+    html += `
+      <button type="button" onclick="window.aplicarPresetOrdem(${JSON.stringify(p.ordem).replace(/"/g, '&quot;')})"
+        style="display:flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:10px;${activeBorder};background:var(--kds-card-bg);cursor:pointer;text-align:left;transition:all 0.15s ease;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:13px;font-weight:800;color:var(--kds-text-primary);">${p.nome}</span>
+          ${activeLabel}
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:2px;">
+          ${p.ordem.map(k => `<span style="font-size:11px;font-weight:700;color:var(--kds-text-muted);background:var(--kds-btn-bg);padding:2px 6px;border-radius:4px;">${fieldIcons[k]} ${fieldShortLabels[k]}</span>`).join('<span style="color:var(--kds-text-muted);font-size:10px;">\u2192</span>')}
+        </div>
+      </button>`;
+  });
+  html += '</div>';
+
+  html += '<div style="border-top:1px solid var(--kds-card-border);padding-top:10px;margin-top:4px;">';
+  html += '<span style="font-size:12px;font-weight:800;color:var(--kds-text-primary);margin-bottom:6px;display:block;">Mostrar / Ocultar Se\u00e7\u00f5es:</span>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+  CARD_FIELDS.forEach(f => {
+    const oculto = hidden.has(f.key);
+    const btnStyle = oculto
+      ? 'background:rgba(239,68,68,0.1);color:#ef4444;border:1.5px solid rgba(239,68,68,0.3);'
+      : 'background:rgba(34,197,94,0.1);color:#22c55e;border:1.5px solid rgba(34,197,94,0.3);';
+    html += `
+      <button type="button" onclick="window.alternarCampoCard('${f.key}')"
+        style="${btnStyle}padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:800;display:flex;align-items:center;gap:4px;transition:all 0.15s ease;">
+        <i class="ph-bold ${oculto ? 'ph-eye-slash' : 'ph-eye'}" style="font-size:14px;"></i>
+        ${fieldIcons[f.key]} ${fieldShortLabels[f.key]}
+      </button>`;
+  });
+  html += '</div></div>';
+
+  wrap.innerHTML = html;
 }
 
 function renderizarCamposCardModal() {
@@ -1825,13 +1881,24 @@ function renderQueue(forceRerender) {
   if (bProntoMob) bProntoMob.innerText = countPronto;
 
   if (filtered.length === 0) {
+    const temOutros = (countEspera > 0 && currentFilter !== 'Em espera') || (countPreparo > 0 && currentFilter !== 'Em preparo') || (countPronto > 0 && currentFilter !== 'Pronto') || (currentSector !== 'Todos');
     const emptyHtml = `
-      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; background: var(--bg-card, #ffffff); border-radius: 24px; border: 1.5px dashed var(--border-color, #cbd5e1); margin: 30px auto; max-width: 480px; box-shadow: 0 4px 16px rgba(0,0,0,0.02);">
+      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 20px; text-align: center; background: var(--bg-card, #ffffff); border-radius: 24px; border: 1.5px dashed var(--border-color, #cbd5e1); margin: 30px auto; max-width: 500px; box-shadow: 0 4px 16px rgba(0,0,0,0.02);">
         <div style="width: 72px; height: 72px; border-radius: 50%; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 38px; margin-bottom: 16px;">
           <i class="ph-fill ph-check-circle"></i>
         </div>
         <h3 style="font-size: 19px; font-weight: 800; color: var(--text-primary, #0f172a); margin: 0 0 6px 0;">Tudo limpo na cozinha!</h3>
         <p style="font-size: 14px; color: var(--text-secondary, #64748b); margin: 0 0 16px 0; line-height: 1.4;">Nenhum pedido com status <strong>${escHtml(currentFilter)}</strong> no setor <strong>${escHtml(currentSector)}</strong> no momento.</p>
+        
+        ${temOutros ? `
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 16px;">
+          ${(countEspera > 0 && currentFilter !== 'Em espera') ? `<button type="button" onclick="window.filtrarFila('Em espera')" style="background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1.5px solid #f59e0b; padding: 7px 14px; border-radius: 12px; font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="ph-bold ph-hourglass-high"></i> Ver ${countEspera} em Espera</button>` : ''}
+          ${(countPreparo > 0 && currentFilter !== 'Em preparo') ? `<button type="button" onclick="window.filtrarFila('Em preparo')" style="background: rgba(59, 130, 246, 0.15); color: #2563eb; border: 1.5px solid #3b82f6; padding: 7px 14px; border-radius: 12px; font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="ph-bold ph-fire"></i> Ver ${countPreparo} em Preparo</button>` : ''}
+          ${(countPronto > 0 && currentFilter !== 'Pronto') ? `<button type="button" onclick="window.filtrarFila('Pronto')" style="background: rgba(16, 185, 129, 0.15); color: #059669; border: 1.5px solid #10b981; padding: 7px 14px; border-radius: 12px; font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="ph-bold ph-bowl-food"></i> Ver ${countPronto} Prontos</button>` : ''}
+          ${(currentSector !== 'Todos') ? `<button type="button" onclick="if(window.selecionarSetorModal){window.selecionarSetorModal('Todos');}else{currentSector='Todos';renderQueue(true);}" style="background: rgba(100, 116, 139, 0.15); color: #475569; border: 1.5px solid #cbd5e1; padding: 7px 14px; border-radius: 12px; font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="ph-bold ph-storefront"></i> Todos os Setores</button>` : ''}
+        </div>
+        ` : ''}
+
         <span style="font-size: 12px; background: var(--bg-secondary, #f1f5f9); color: var(--text-secondary, #64748b); padding: 6px 14px; border-radius: 20px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
           <i class="ph-fill ph-circle" style="color:#10b981; font-size: 8px;"></i> Monitorando novos pedidos em tempo real...
         </span>
@@ -2109,7 +2176,10 @@ function renderizarCardIndividual(item, itemIndex = 0) {
   const isNewClass = newOrderIds.has(id) ? ' new-order-entry-pulse' : '';
 
   const statusEsc = escHtml(status);
-  const nomeEsc = escHtml(item.productName || item.nome || 'Produto');
+  let rawNome = item.productName || item.nome || 'Produto';
+  const regexQty = new RegExp(`^${qty}\\s*x\\s*`, 'i');
+  rawNome = rawNome.replace(regexQty, '');
+  const nomeEsc = escHtml(rawNome);
   const emojiEsc = escHtml(item.productEmoji || '🍽️');
   const localEsc = escHtml(item.localName || 'Mesa');
   const userEsc = escHtml(item.userName || '');
@@ -2159,7 +2229,7 @@ function renderizarCardIndividual(item, itemIndex = 0) {
         <div class="kds-card-mesa-badge">
           <i class="ph-bold ph-table" style="color: ${localColor}; font-size: 19px; flex-shrink: 0;"></i>
           <div class="kds-card-mesa-info">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:6px;white-space:nowrap;">
               <strong class="kds-mesa-title">${localEsc}</strong>
               ${bumpKeyBadge}
               ${badgeIfood}
@@ -2174,7 +2244,7 @@ function renderizarCardIndividual(item, itemIndex = 0) {
               `}
             </div>
             ${rawUser ? `
-              <span class="kds-card-garcom" onclick="event.stopPropagation(); window.cadastrarApelidoColaborador('${escJs(rawUser)}')" title="Colaborador: ${escHtml(rawUser)}${apelidoColab ? ` (Apelido: ${escHtml(apelidoColab)})` : ''}. Clique para alterar apelido.">
+              <span class="kds-card-garcom" onclick="event.stopPropagation(); window.cadastrarApelidoColaborador(${escJs(rawUser)})" title="Colaborador: ${escHtml(rawUser)}${apelidoColab ? ` (Apelido: ${escHtml(apelidoColab)})` : ''}. Clique para alterar apelido.">
                 <i class="ph-bold ph-user"></i>
                 <span>${escHtml(displayUser)}</span>
                 ${apelidoColab ? '<i class="ph-fill ph-tag" style="color:#fc4b15;font-size:9px;"></i>' : '<i class="ph ph-pencil-simple" style="font-size:9px;opacity:0.6;"></i>'}
@@ -2188,8 +2258,9 @@ function renderizarCardIndividual(item, itemIndex = 0) {
         </div>
       </div>`;
 
+  const multipleClass = qty > 1 ? ' qty-high' : '';
   const ptQtd = `
-      <div class="kds-qty-badge" data-field-key="quantidade">${qty}x</div>`;
+      <div class="kds-qty-badge${multipleClass}" data-field-key="quantidade">${qty}x</div>`;
 
   const smartSyncInfo = calcularSmartSyncInfo(item, queueData);
   let smartSyncHtml = '';
@@ -2241,7 +2312,7 @@ function renderizarCardIndividual(item, itemIndex = 0) {
   const ptProduto = `
       <div class="item-produto" data-field-key="produto">
         <div class="item-produto-title-line">
-          <span class="kds-card-qty-inline">${qty}x</span>
+          <span class="kds-card-qty-inline${multipleClass}">${qty}x</span>
           <span class="item-emoji" style="font-size:20px;">${emojiEsc}</span>
           <span class="kds-product-name">${nomeEsc}</span>
           ${badgeEspecial}
@@ -3460,3 +3531,235 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
+// ══════════════════════════════════════════════════════════════════
+// 🛠 MODO DE EDIÇÃO DIRETA NOS CARDS (LAYOUT BUILDER)
+// ══════════════════════════════════════════════════════════════════
+
+window.kdsModoEdicaoAtivo = false;
+
+window.toggleModoEdicaoKds = function(forcar) {
+  window.kdsModoEdicaoAtivo = typeof forcar === 'boolean' ? forcar : !window.kdsModoEdicaoAtivo;
+  const body = document.body;
+  if (window.kdsModoEdicaoAtivo) {
+    body.classList.add('kds-modo-edicao');
+    if (typeof window.toggleLayoutDrawer === 'function') window.toggleLayoutDrawer(false);
+    
+    let btnSair = document.getElementById('kds-btn-sair-edicao');
+    if (!btnSair) {
+      btnSair = document.createElement('div');
+      btnSair.id = 'kds-btn-sair-edicao';
+      btnSair.className = 'kds-edit-badge';
+      btnSair.innerHTML = '<i class="ph-bold ph-check-circle"></i> Sair do Modo de Ajuste';
+      btnSair.onclick = () => window.toggleModoEdicaoKds(false);
+      document.body.appendChild(btnSair);
+    }
+    btnSair.style.display = 'flex';
+    window.initSortableNosCards();
+  } else {
+    body.classList.remove('kds-modo-edicao');
+    const btnSair = document.getElementById('kds-btn-sair-edicao');
+    if (btnSair) btnSair.style.display = 'none';
+    window.destroySortableNosCards();
+    window.fecharContextMenuKds();
+  }
+};
+
+window.kdsActiveSortables = window.kdsActiveSortables || [];
+
+window.initSortableNosCards = function() {
+  if (typeof Sortable === 'undefined') return;
+  
+  // Anti-Memory Leak: Destruir instancias antigas antes de inicializar novas
+  if (window.kdsActiveSortables) {
+    window.kdsActiveSortables.forEach(s => {
+      try { s.destroy(); } catch (e) {}
+    });
+  }
+  window.kdsActiveSortables = [];
+
+  const cards = document.querySelectorAll('#queue-list .queue-item');
+  cards.forEach(card => {
+    if (card._kdsSortable) card._kdsSortable.destroy();
+    const sortableInst = Sortable.create(card, {
+
+      animation: 150,
+      draggable: '[data-field-key]',
+      group: { name: 'kds-cards', pull: false, put: false },
+      onEnd: (evt) => {
+        const chavesNodes = Array.from(card.children)
+          .map(c => c.getAttribute('data-field-key'))
+          .filter(Boolean);
+        
+        // Remove duplicadas caso o Sortable deixe algum clone
+        const novaOrdem = Array.from(new Set(chavesNodes));
+        
+        let finalOrder = [];
+        const ocultos = window.obterCardOrder().filter(k => window.obterCardHidden().has(k));
+        novaOrdem.forEach(k => finalOrder.push(k));
+        ocultos.forEach(k => {
+          if (!finalOrder.includes(k)) finalOrder.push(k);
+        });
+        
+        // Trava Anti-Burros: Garante que só salva se for válido (ter todas as chaves e sem duplicatas)
+        const temTodasAsChaves = CARD_FIELDS.every(f => finalOrder.includes(f.key));
+        if (finalOrder.length === CARD_FIELDS.length && temTodasAsChaves) {
+          kdsCardOrder = finalOrder.slice();
+          localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
+          renderQueue(true);
+          kdsAgendarSalvarNoServidor();
+          setTimeout(window.initSortableNosCards, 100);
+        } else {
+          // Se algo quebrou (ex: arrastou fora), reseta visualmente
+          renderQueue(true);
+          setTimeout(window.initSortableNosCards, 100);
+        }
+      }
+    });
+    window.kdsActiveSortables.push(sortableInst);
+    card._kdsSortable = sortableInst;
+  });
+};
+
+window.destroySortableNosCards = function() {
+  const cards = document.querySelectorAll('#queue-list .queue-item');
+  cards.forEach(card => {
+    if (card._kdsSortable) {
+      card._kdsSortable.destroy();
+      card._kdsSortable = null;
+    }
+  });
+};
+
+window.abrirContextMenuKds = function(sectionEl, x, y) {
+  const fieldKey = sectionEl.getAttribute('data-field-key');
+  if (!fieldKey) return;
+  const menu = document.getElementById('kds-context-menu');
+  if (!menu) return;
+  
+  menu.setAttribute('data-current-field', fieldKey);
+  
+  const title = document.getElementById('kds-ctx-title');
+  if (title && typeof window.cardFieldLabel === 'function') {
+    title.innerText = window.cardFieldLabel(fieldKey);
+  }
+  
+  const widthInput = document.getElementById('kds-ctx-width');
+  const fontInput = document.getElementById('kds-ctx-font');
+  const widthVal = document.getElementById('kds-ctx-val-width');
+  const fontVal = document.getElementById('kds-ctx-val-font');
+  
+  const mapKeyToCss = {
+    'cabecalho': 'header',
+    'quantidade': 'qty',
+    'acao': 'action'
+  };
+  
+  const isWidthApplicable = ['cabecalho', 'quantidade', 'acao'].includes(fieldKey);
+  const rowWidth = document.getElementById('kds-ctx-row-width');
+  if (rowWidth) rowWidth.style.display = isWidthApplicable ? 'flex' : 'none';
+  
+  if (isWidthApplicable && widthInput && widthVal) {
+    const cssKey = mapKeyToCss[fieldKey];
+    widthInput.value = kdsSectionSizes[cssKey] || (cssKey === 'header' ? 260 : cssKey === 'qty' ? 54 : 230);
+    widthVal.innerText = widthInput.value + 'px';
+  }
+  
+  if (fontInput && fontVal) {
+    fontInput.value = kdsSectionSizes.fontSize || 15;
+    fontVal.innerText = fontInput.value + 'px';
+  }
+  
+  menu.classList.remove('hidden');
+  menu.style.display = 'block';
+  
+  let pX = x;
+  let pY = y;
+  if (pX + 270 > window.innerWidth) pX = window.innerWidth - 280;
+  if (pY + 200 > window.innerHeight) pY = window.innerHeight - 210;
+  
+  menu.style.left = pX + 'px';
+  menu.style.top = pY + 'px';
+};
+
+window.fecharContextMenuKds = function() {
+  const menu = document.getElementById('kds-context-menu');
+  if (menu) {
+    menu.classList.add('hidden');
+    menu.style.display = 'none';
+  }
+};
+
+window.ocultarSecaoPeloContexto = function() {
+  const menu = document.getElementById('kds-context-menu');
+  if (!menu) return;
+  const fieldKey = menu.getAttribute('data-current-field');
+  if (fieldKey && typeof window.alternarCampoCard === 'function') {
+    window.alternarCampoCard(fieldKey); 
+  }
+  window.fecharContextMenuKds();
+  setTimeout(window.initSortableNosCards, 100);
+};
+
+window.aplicarTamanhoDoContexto = function(type, val) {
+  const menu = document.getElementById('kds-context-menu');
+  if (!menu) return;
+  const fieldKey = menu.getAttribute('data-current-field');
+  
+  if (type === 'fontSize') {
+    const valEl = document.getElementById('kds-ctx-val-font');
+    if (valEl) valEl.innerText = val + 'px';
+    if (typeof window.alterarTamanhoSecao === 'function') window.alterarTamanhoSecao('fontSize', val);
+  } else if (type === 'width') {
+    const valEl = document.getElementById('kds-ctx-val-width');
+    if (valEl) valEl.innerText = val + 'px';
+    const mapKeyToCss = {
+      'cabecalho': 'header',
+      'quantidade': 'qty',
+      'acao': 'action'
+    };
+    const cssKey = mapKeyToCss[fieldKey];
+    if (cssKey && typeof window.alterarTamanhoSecao === 'function') {
+      window.alterarTamanhoSecao(cssKey, val);
+    }
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  let kdsLongPressTimer = null;
+  const qList = document.getElementById('queue-list');
+  if (qList) {
+    qList.addEventListener('contextmenu', (e) => {
+      if (!window.kdsModoEdicaoAtivo) return;
+      const sec = e.target.closest('.queue-item > div[data-field-key]');
+      if (sec) {
+        e.preventDefault();
+        window.abrirContextMenuKds(sec, e.clientX, e.clientY);
+      }
+    });
+    
+    qList.addEventListener('touchstart', (e) => {
+      if (!window.kdsModoEdicaoAtivo) return;
+      const sec = e.target.closest('.queue-item > div[data-field-key]');
+      if (sec) {
+        kdsLongPressTimer = setTimeout(() => {
+          const touch = e.touches[0];
+          window.abrirContextMenuKds(sec, touch.clientX, touch.clientY);
+        }, 600);
+      }
+    });
+    qList.addEventListener('touchend', () => clearTimeout(kdsLongPressTimer));
+    qList.addEventListener('touchmove', () => clearTimeout(kdsLongPressTimer));
+  }
+
+  // Fechar context menu ao clicar fora
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('kds-context-menu');
+    if (menu && !menu.classList.contains('hidden') && menu.style.display !== 'none') {
+      if (!menu.contains(e.target)) {
+        window.fecharContextMenuKds();
+      }
+    }
+  });
+});

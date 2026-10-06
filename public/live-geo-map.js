@@ -649,15 +649,29 @@
       btnSim.addEventListener('click', function () {
         btnSim.disabled = true;
         btnSim.textContent = '⏳ Gerando...';
+        var token = (typeof getSuperAdminToken === 'function' ? getSuperAdminToken() : '') ||
+                    localStorage.getItem('chef_super_admin_local_token') ||
+                    localStorage.getItem('super_admin_token') ||
+                    localStorage.getItem('token') || '';
+
+        var headers = { 'Content-Type': 'application/json' };
+        if (token) {
+          headers['Authorization'] = 'Bearer ' + token;
+          headers['x-super-admin-token'] = token;
+        }
+
         fetch('/api/super/geo-traffic/simulate', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify({ count: 6 })
         })
           .then(function (r) { return r.json(); })
-          .then(function () {
+          .then(function (res) {
             btnSim.disabled = false;
             btnSim.innerHTML = '⚡ Simular Tráfego';
+            if (res && Array.isArray(res.hits)) {
+              res.hits.forEach(function(h) { self.onNewHit(h); });
+            }
           })
           .catch(function () {
             btnSim.disabled = false;
@@ -697,7 +711,11 @@
     var self = this;
     if (typeof io === 'undefined') return;
 
-    var socket = window.superAdminSocket || io();
+    var socket = window.superAdminSocket || window._superAdminSocket || window.socket || io();
+    if (!socket) return;
+    window.superAdminSocket = socket;
+
+    socket.off && socket.off('geo_traffic_hit');
     socket.on('geo_traffic_hit', function (hit) {
       self.onNewHit(hit);
     });
@@ -705,16 +723,38 @@
 
   LiveGeoMap.prototype.fetchInitialState = function () {
     var self = this;
-    fetch('/api/super/geo-traffic/live')
+    var token = (typeof getSuperAdminToken === 'function' ? getSuperAdminToken() : '') ||
+                localStorage.getItem('chef_super_admin_local_token') ||
+                localStorage.getItem('super_admin_token') ||
+                localStorage.getItem('super_token') ||
+                localStorage.getItem('token') || '';
+
+    var headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = 'Bearer ' + token;
+      headers['x-super-admin-token'] = token;
+    }
+
+    fetch('/api/super/geo-traffic/live', { headers: headers })
       .then(function (res) { return res.json(); })
       .then(function (data) {
         if (data && data.stats) {
-          self.stats = data.stats;
+          self.stats = {
+            onlineNow: data.stats.onlineNow || data.activeVisitors || 1,
+            siteHits: data.stats.siteHits || data.stats.site || 0,
+            loginHits: data.stats.loginHits || data.stats.login || 0,
+            loginApproved: data.stats.loginApproved || data.stats.login_sucesso || 0,
+            totalHits: data.stats.totalHits || data.stats.total || 0
+          };
           self.updateKPIs();
         }
-        if (data && Array.isArray(data.recentHits)) {
-          data.recentHits.forEach(function (h) {
+        if (data && Array.isArray(data.recentHits) && data.recentHits.length > 0) {
+          var feedList = document.getElementById('live-feed-list');
+          if (feedList) feedList.innerHTML = '';
+
+          data.recentHits.slice(0, 15).reverse().forEach(function (h) {
             self.onNewHit(h, true);
+            self.appendFeedItem(h);
           });
         }
       })

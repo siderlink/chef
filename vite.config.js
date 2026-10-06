@@ -52,7 +52,7 @@ const injectPolyfills = () => {
   }
 }
 
-const isCodespaces = process.env.CODESPACES === \'true\';
+const isCodespaces = process.env.CODESPACES === 'true';
 
 const extensionlessHtml = () => {
   return {
@@ -143,6 +143,8 @@ export default defineConfig({
   },
   build: {
     target: 'es2020',
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
@@ -195,6 +197,15 @@ export default defineConfig({
         'tablet-mesa': resolve(__dirname, 'tablet-mesa.html'),
         'host-fila-espera': resolve(__dirname, 'host-fila-espera.html'),
         'totem-kiosk': resolve(__dirname, 'totem-kiosk.html')
+      },
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('xlsx')) return 'vendor-xlsx';
+            if (id.includes('socket.io-client')) return 'vendor-socket';
+            return 'vendor-libs';
+          }
+        }
       }
     }
   }

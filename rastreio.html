@@ -464,10 +464,11 @@
         attributionControl: false
       }).setView([lat, lng], 15);
 
-      // Tiles Dark Modern (CartoDB DarkMatter)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      // OpenStreetMap Oficial (estável e sem bloqueio de API Key)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        subdomains: 'abcd'
+        subdomains: ['a', 'b', 'c'],
+        attribution: '&copy; OpenStreetMap'
       }).addTo(mapa);
     }
 

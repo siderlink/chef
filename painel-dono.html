@@ -2140,6 +2140,10 @@
         </div>
 
         <div class="layout-switcher-btns">
+          <button type="button" onclick="window.restaurarTodasSecoesPainel()" title="Garante que 100% das 24 seções e ferramentas do sistema estejam visíveis" style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.15)); border: 1.5px solid #10b981; color: #10b981; padding: 8px 14px; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="ph-bold ph-eye"></i>
+            <span>Exibir Todas as Funções (100%)</span>
+          </button>
           <button type="button" id="btn-toggle-all-sections" onclick="window.toggleTodasSecoes()" style="background:var(--card2); border:1.5px solid var(--border); color:var(--text); padding:8px 14px; border-radius:12px; font-size: 15px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:var(--shadow-sm); transition:all 0.15s;">
             <i class="ph-bold ph-caret-double-up" id="icon-toggle-all" style="color:var(--primary); font-size:15px;"></i>
             <span id="txt-toggle-all">Recolher Tudo</span>
@@ -3213,202 +3217,461 @@
 
     <!-- CONTROLE REMOTO DO CAIXA -->
     <div class="dono-section dono-sec-half" id="sec-remoto-telas" data-secao="remoto-caixa" title="Controle Remoto do Caixa">
-      <div class="sec-title">
-        <i class="ph-bold ph-desktop"></i>
-        <span>Controle Remoto do Caixa</span>
+      <div class="sec-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <i class="ph-bold ph-desktop" style="font-size: 24px; color: var(--primary);"></i>
+          <div>
+            <span style="font-size: 18px; font-weight: 900;">Central de Acesso &amp; Controle de Telas</span>
+            <div style="font-size: 13.5px; color: var(--text-sub); margin-top: 2px;">Navegue por qualquer tela operacional, PDV, KDS ou ferramenta com 1 clique</div>
+          </div>
+        </div>
+        <span id="contador-telas-remoto" style="background: rgba(59,130,246,0.15); color: #3b82f6; font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 20px;">
+          58 funções disponíveis
+        </span>
+      </div>
+
+      <!-- Barra de Busca Rápida de Funções / Telas -->
+      <div style="position: relative; margin-bottom: 12px;">
+        <input type="text" id="busca-remoto-telas" placeholder="🔍 Buscar função ou tela (ex: garçom, delivery, kds, motoboy, mesas, estoque, fiscal...)" oninput="window.filtrarTelasRemoto(this.value)" style="width: 100%; box-sizing: border-box; background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 14px 10px 38px; font-size: 14.5px; color: var(--text); outline: none;">
+        <i class="ph-bold ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-sub); font-size: 18px;"></i>
+      </div>
+
+      <!-- Abas de Filtro de Categoria -->
+      <div id="filtros-cat-remoto" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; scrollbar-width: thin;">
+        <button type="button" class="tab-btn-cat-remoto active" data-cat="todas" onclick="window.filtrarCatTelasRemoto('todas', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 800; border: 1.5px solid var(--border); background: var(--primary); color: #fff; cursor: pointer; white-space: nowrap;">
+          ⭐ Todas as Funções (58)
+        </button>
+        <button type="button" class="tab-btn-cat-remoto" data-cat="salao" onclick="window.filtrarCatTelasRemoto('salao', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 700; border: 1.5px solid var(--border); background: var(--card2); color: var(--text-sub); cursor: pointer; white-space: nowrap;">
+          🍽️ Salão &amp; Mesas
+        </button>
+        <button type="button" class="tab-btn-cat-remoto" data-cat="cozinha" onclick="window.filtrarCatTelasRemoto('cozinha', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 700; border: 1.5px solid var(--border); background: var(--card2); color: var(--text-sub); cursor: pointer; white-space: nowrap;">
+          👨‍🍳 Cozinha &amp; KDS
+        </button>
+        <button type="button" class="tab-btn-cat-remoto" data-cat="delivery" onclick="window.filtrarCatTelasRemoto('delivery', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 700; border: 1.5px solid var(--border); background: var(--card2); color: var(--text-sub); cursor: pointer; white-space: nowrap;">
+          🛵 Delivery &amp; Logística
+        </button>
+        <button type="button" class="tab-btn-cat-remoto" data-cat="caixa" onclick="window.filtrarCatTelasRemoto('caixa', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 700; border: 1.5px solid var(--border); background: var(--card2); color: var(--text-sub); cursor: pointer; white-space: nowrap;">
+          💵 Caixa &amp; Hardware
+        </button>
+        <button type="button" class="tab-btn-cat-remoto" data-cat="financas" onclick="window.filtrarCatTelasRemoto('financas', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 700; border: 1.5px solid var(--border); background: var(--card2); color: var(--text-sub); cursor: pointer; white-space: nowrap;">
+          📊 Finanças &amp; BI
+        </button>
+        <button type="button" class="tab-btn-cat-remoto" data-cat="marketing" onclick="window.filtrarCatTelasRemoto('marketing', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 700; border: 1.5px solid var(--border); background: var(--card2); color: var(--text-sub); cursor: pointer; white-space: nowrap;">
+          📢 Marketing &amp; Vendas
+        </button>
+        <button type="button" class="tab-btn-cat-remoto" data-cat="equipe" onclick="window.filtrarCatTelasRemoto('equipe', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 700; border: 1.5px solid var(--border); background: var(--card2); color: var(--text-sub); cursor: pointer; white-space: nowrap;">
+          👥 Equipe &amp; Gestão
+        </button>
       </div>
 
       <!-- Telas do Sistema -->
-      <div style="font-size: var(--fs-xs); font-weight: 800; color: var(--text-sub); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
-        Navegação de Telas
-      </div>
-      <div class="remote-grid" style="margin-bottom: 16px;">
-        <button class="remote-btn orange-btn" onclick="comandarNavegacao('index.html')">
+      <div class="remote-grid" id="grid-remoto-telas" style="margin-bottom: 16px;">
+        <button class="remote-btn orange-btn" data-cat="salao" data-keywords="mesas salao salão pedidos frente salao comanda tablet balcao" onclick="comandarNavegacao('index.html')">
           <div class="rb-icon" style="background: var(--primary-light); color: var(--primary);">
             <i class="ph-bold ph-armchair"></i>
           </div>
           <span class="rb-label">Mesas & Salão</span>
-          <span class="rb-sub">Tela principal de pedidos</span>
+          <span class="rb-sub">Tela principal de pedidos e salão</span>
         </button>
-
-        <button class="remote-btn blue-btn" onclick="comandarNavegacao('financeiro.html')">
-          <div class="rb-icon" style="background: var(--blue-light); color: var(--blue);">
-            <i class="ph-bold ph-money"></i>
-          </div>
-          <span class="rb-label">Financeiro & DRE</span>
-          <span class="rb-sub">Caixa, fluxo e sangria</span>
-        </button>
-
-        <button class="remote-btn green-btn" onclick="comandarNavegacao('fila-pedidos.html')">
-          <div class="rb-icon" style="background: var(--green-light); color: var(--green);">
-            <i class="ph-bold ph-cooking-pot"></i>
-          </div>
-          <span class="rb-label">KDS Cozinha</span>
-          <span class="rb-sub">Fila e esteira de preparo</span>
-        </button>
-
-        <button class="remote-btn purple-btn" onclick="comandarNavegacao('dashboard.html')">
-          <div class="rb-icon" style="background: var(--purple-light); color: var(--purple);">
-            <i class="ph-bold ph-chart-line-up"></i>
-          </div>
-          <span class="rb-label">Dashboard</span>
-          <span class="rb-sub">Relatórios e vendas</span>
-        </button>
-
-        <button class="remote-btn" onclick="comandarNavegacao('cardapio.html')">
+        <button class="remote-btn " data-cat="salao" data-keywords="cardapio digital qr code pratos itens categorias" onclick="comandarNavegacao('cardapio.html')">
           <div class="rb-icon" style="background: rgba(234,88,12,0.15); color: #ea580c;">
             <i class="ph-bold ph-book-open"></i>
           </div>
-          <span class="rb-label">Cardápio</span>
-          <span class="rb-sub">Cardápio digital</span>
+          <span class="rb-label">Cardápio Digital</span>
+          <span class="rb-sub">Cardápio interativo e fotos</span>
         </button>
-
-        <button class="remote-btn" onclick="comandarNavegacao('configuracoes.html')">
-          <div class="rb-icon" style="background: rgba(100,116,139,0.15); color: #64748b;">
-            <i class="ph-bold ph-gear"></i>
-          </div>
-          <span class="rb-label">Configurações</span>
-          <span class="rb-sub">Painel administrativo</span>
-        </button>
-
-        <button class="remote-btn" onclick="abrirModalTotemDispositivos()" style="position: relative;">
-          <div class="rb-icon" style="background: rgba(14,165,233,0.15); color: #0ea5e9;">
-            <i class="ph-bold ph-monitor-play"></i>
-          </div>
-          <span class="rb-label">Modo Totem</span>
-          <span class="rb-sub">Autoatendimento no dispositivo</span>
-          <span id="totem-badge-ativo" style="display:none; position:absolute; top:8px; right:10px; background:#22c55e; color:#fff; font-size:9px; font-weight:800; padding:2px 7px; border-radius:999px;">ATIVO</span>
-        </button>
-
-        <button class="remote-btn" onclick="window.open('painel-tv.html', '_blank')">
+        <button class="remote-btn " data-cat="salao" data-keywords="garcom garçom mobile comanda celular pedidos atendimento" onclick="window.open('garcom.html', '_blank')">
           <div class="rb-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">
-            <i class="ph-bold ph-television"></i>
+            <i class="ph-bold ph-user-check"></i>
           </div>
-          <span class="rb-label">Painel TV Senhas</span>
-          <span class="rb-sub">Fast-food com voz e ofertas</span>
+          <span class="rb-label">App Garçom Mobile</span>
+          <span class="rb-sub">Comanda ágil pelo celular</span>
         </button>
-
-        <button class="remote-btn" onclick="window.open('pague-na-mesa.html?mesa=1', '_blank')">
+        <button class="remote-btn " data-cat="salao" data-keywords="tablet mesa autoatendimento cliente totem mesa pedidos" onclick="window.open('tablet-mesa.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
+            <i class="ph-bold ph-device-tablet"></i>
+          </div>
+          <span class="rb-label">Tablet de Mesa</span>
+          <span class="rb-sub">Autoatendimento direto na mesa</span>
+        </button>
+        <button class="remote-btn " data-cat="salao" data-keywords="pague na mesa tabpay qr code pix gorjeta checkout pagar" onclick="window.open('pague-na-mesa.html?mesa=1', '_blank')">
           <div class="rb-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
             <i class="ph-bold ph-qr-code"></i>
           </div>
           <span class="rb-label">Pague na Mesa QR</span>
-          <span class="rb-sub">TabPay Pix e gorjetas</span>
+          <span class="rb-sub">TabPay Pix e gorjetas instantâneas</span>
         </button>
-
-        <button class="remote-btn" onclick="window.open('validade-etiquetas.html', '_blank')">
-          <div class="rb-icon" style="background: rgba(249,115,22,0.15); color: #f97316;">
-            <i class="ph-bold ph-barcode"></i>
+        <button class="remote-btn " data-cat="salao" data-keywords="hostess reservas concierge mesas agendamento vip clientes" onclick="window.open('hostess-reservas.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(236,72,153,0.15); color: #ec4899;">
+            <i class="ph-bold ph-calendar-check"></i>
+          </div>
+          <span class="rb-label">Hostess & Reservas</span>
+          <span class="rb-sub">Gestão de mesas e reservas VIP</span>
+        </button>
+        <button class="remote-btn " data-cat="salao" data-keywords="fila espera host chamada clientes organizacao fila sms whatsapp" onclick="window.open('host-fila-espera.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;">
+            <i class="ph-bold ph-hourglass-medium"></i>
+          </div>
+          <span class="rb-label">Fila de Espera Digital</span>
+          <span class="rb-sub">Gestão de fila com aviso WhatsApp</span>
+        </button>
+        <button class="remote-btn " data-cat="salao" data-keywords="mapa mesas 3d visual salao layout arquitetura salao" onclick="window.open('mapa-mesas-3d.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(6,182,212,0.15); color: #06b6d4;">
+            <i class="ph-bold ph-compass"></i>
+          </div>
+          <span class="rb-label">Mapa de Mesas 3D</span>
+          <span class="rb-sub">Visão espacial do salão ao vivo</span>
+        </button>
+        <button class="remote-btn " data-cat="salao" data-keywords="separar conta dividir pagar fracionado split mesa clientes" onclick="window.open('separar-conta.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
+            <i class="ph-bold ph-arrows-split"></i>
+          </div>
+          <span class="rb-label">Separar Conta</span>
+          <span class="rb-sub">Divisão justa por pessoa ou item</span>
+        </button>
+        <button class="remote-btn green-btn" data-cat="cozinha" data-keywords="kds cozinha fila preparo esteira pedidos chapeiro pratos" onclick="comandarNavegacao('fila-pedidos.html')">
+          <div class="rb-icon" style="background: var(--green-light); color: var(--green);">
+            <i class="ph-bold ph-cooking-pot"></i>
+          </div>
+          <span class="rb-label">KDS Cozinha Principal</span>
+          <span class="rb-sub">Fila e esteira de preparo ao vivo</span>
+        </button>
+        <button class="remote-btn " data-cat="cozinha" data-keywords="montador pizza meio sabores bordas massas adicionais pizzaiolo" onclick="window.open('montador-pizza.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(252,75,21,0.15); color: #fc4b15;">
+            <i class="ph-bold ph-pizza"></i>
+          </div>
+          <span class="rb-label">Montador de Pizza</span>
+          <span class="rb-sub">Sabores, frações, bordas e massas</span>
+        </button>
+        <button class="remote-btn " data-cat="cozinha" data-keywords="kds pizza forno esteira pizzaria montagem expedicao" onclick="window.open('kds-cozinha-pizza.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;">
+            <i class="ph-bold ph-flame"></i>
+          </div>
+          <span class="rb-label">KDS Setor Pizzas</span>
+          <span class="rb-sub">Massa, montagem e forno</span>
+        </button>
+        <button class="remote-btn " data-cat="cozinha" data-keywords="esteira kanban fluxo producao pedidos status preparo" onclick="window.open('esteira-kanban.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
+            <i class="ph-bold ph-kanban"></i>
+          </div>
+          <span class="rb-label">Esteira Kanban</span>
+          <span class="rb-sub">Fluxo visual de produção</span>
+        </button>
+        <button class="remote-btn " data-cat="cozinha" data-keywords="expedicao despacho conferencia empacotamento entrega sacola" onclick="window.open('expedicao.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">
+            <i class="ph-bold ph-package"></i>
+          </div>
+          <span class="rb-label">Expedição KDS</span>
+          <span class="rb-sub">Conferência de itens e sacolas</span>
+        </button>
+        <button class="remote-btn " data-cat="cozinha" data-keywords="validade anvisa etiquetas termicas rdc 216 lote ingredientes" onclick="window.open('validade-etiquetas.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(239,68,68,0.15); color: #ef4444;">
+            <i class="ph-bold ph-tag"></i>
           </div>
           <span class="rb-label">Validades & ANVISA</span>
           <span class="rb-sub">Etiquetas térmicas RDC 216</span>
         </button>
-
-        <button class="remote-btn" onclick="window.open('encomendas-eventos.html', '_blank')">
+        <button class="remote-btn " data-cat="cozinha" data-keywords="fichas tecnicas cmv custos receitas ingredientes porcao preparo" onclick="window.open('fichas-tecnicas.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
+            <i class="ph-bold ph-fork-knife"></i>
+          </div>
+          <span class="rb-label">Fichas Técnicas & CMV</span>
+          <span class="rb-sub">Custos reais e modo de preparo</span>
+        </button>
+        <button class="remote-btn " data-cat="delivery" data-keywords="hub delivery canais ifood whatsapp telefone balcao integracao" onclick="window.open('hub-delivery.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(6,182,212,0.15); color: #06b6d4;">
+            <i class="ph-bold ph-storefront"></i>
+          </div>
+          <span class="rb-label">Hub de Delivery</span>
+          <span class="rb-sub">Central de pedidos multi-canais</span>
+        </button>
+        <button class="remote-btn " data-cat="delivery" data-keywords="despacho motoboys entregadores rotas tsp entrega saida tempo" onclick="window.open('painel-entregas.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">
+            <i class="ph-bold ph-moped"></i>
+          </div>
+          <span class="rb-label">Despacho & Motoboys</span>
+          <span class="rb-sub">Roteirização TSP e envio</span>
+        </button>
+        <button class="remote-btn " data-cat="delivery" data-keywords="app motoboy entregador rota gps corrida celular pwa" onclick="window.open('motoboy.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
+            <i class="ph-bold ph-navigation-arrow"></i>
+          </div>
+          <span class="rb-label">App do Motoboy</span>
+          <span class="rb-sub">Painel do entregador com GPS</span>
+        </button>
+        <button class="remote-btn " data-cat="delivery" data-keywords="rastreio pedido ao vivo cliente mapa motoboy rota tempo" onclick="window.open('rastreio.html', '_blank')">
           <div class="rb-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;">
+            <i class="ph-bold ph-map-pin"></i>
+          </div>
+          <span class="rb-label">Rastreio ao Vivo</span>
+          <span class="rb-sub">Link de acompanhamento do cliente</span>
+        </button>
+        <button class="remote-btn " data-cat="delivery" data-keywords="auditor ifood taxas glosas retencoes cancelamentos comissoes" onclick="window.open('auditor-ifood.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(234,29,44,0.15); color: #ea1d2c;">
+            <i class="ph-bold ph-shield-check"></i>
+          </div>
+          <span class="rb-label">Auditor iFood</span>
+          <span class="rb-sub">Glosas, taxas retidas e conciliação</span>
+        </button>
+        <button class="remote-btn " data-cat="caixa" data-keywords="caixa pdv balcao recebimento sangria suprimento fechamento fiscal" onclick="comandarNavegacao('caixa-v11.html')">
+          <div class="rb-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
+            <i class="ph-bold ph-cash-register"></i>
+          </div>
+          <span class="rb-label">Caixa PDV Completo</span>
+          <span class="rb-sub">Frente de caixa, sangrias e turno</span>
+        </button>
+        <button class="remote-btn " data-cat="caixa" data-keywords="painel tv senhas chamada voz fast food televisao painel senha" onclick="window.open('painel-tv.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">
+            <i class="ph-bold ph-television"></i>
+          </div>
+          <span class="rb-label">Painel TV Senhas</span>
+          <span class="rb-sub">Fast-food com áudio e promoções</span>
+        </button>
+        <button class="remote-btn " data-cat="caixa" data-keywords="modo totem autoatendimento dispositivo ativar tablet" onclick="abrirModalTotemDispositivos()">
+          <div class="rb-icon" style="background: rgba(14,165,233,0.15); color: #0ea5e9;">
+            <i class="ph-bold ph-monitor-play"></i>
+          </div>
+          <span class="rb-label">Modo Totem Terminal</span>
+          <span class="rb-sub">Transformar terminal em totem</span>
+        </button>
+        <button class="remote-btn " data-cat="caixa" data-keywords="totem autoatendimento kiosk pedidos cliente balcao touchscreen" onclick="window.open('totem-autoatendimento.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
+            <i class="ph-bold ph-device-tablet-speaker"></i>
+          </div>
+          <span class="rb-label">Totem Autoatendimento</span>
+          <span class="rb-sub">Interface de totem para o público</span>
+        </button>
+        <button class="remote-btn " data-cat="caixa" data-keywords="totem configuracao timeout tela banners imagens kiosk" onclick="window.open('totem-config.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;">
+            <i class="ph-bold ph-sliders-horizontal"></i>
+          </div>
+          <span class="rb-label">Configurar Totem</span>
+          <span class="rb-sub">Banners, tempos e modo de operação</span>
+        </button>
+        <button class="remote-btn " data-cat="caixa" data-keywords="display cliente segunda tela balcao qrcode espelho valores" onclick="window.open('display-cliente.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
+            <i class="ph-bold ph-screencast"></i>
+          </div>
+          <span class="rb-label">Display do Cliente</span>
+          <span class="rb-sub">2ª Tela com itens e QR Pix</span>
+        </button>
+        <button class="remote-btn " data-cat="caixa" data-keywords="sync hub anti queda spooler impressora balanca edge offline rede" onclick="window.open('sync-hub.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
+            <i class="ph-bold ph-cpu"></i>
+          </div>
+          <span class="rb-label">Sync Edge Hub</span>
+          <span class="rb-sub">Zero queda, spooler e balanças</span>
+        </button>
+        <button class="remote-btn " data-cat="caixa" data-keywords="instalador chef sync windows download exe guia instalacao chave" onclick="window.abrirModalInstalarSyncDono()">
+          <div class="rb-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">
+            <i class="ph-bold ph-download-simple"></i>
+          </div>
+          <span class="rb-label">Instalador Chef Sync</span>
+          <span class="rb-sub">Instale no Caixa Windows</span>
+        </button>
+        <button class="remote-btn " data-cat="caixa" data-keywords="importar xml nfe fiscal notas compras entrada estoque danfe" onclick="window.open('importar-xml.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
+            <i class="ph-bold ph-file-arrow-up"></i>
+          </div>
+          <span class="rb-label">Importar XML / NF-e</span>
+          <span class="rb-sub">Entrada automática de compras</span>
+        </button>
+        <button class="remote-btn " data-cat="caixa" data-keywords="auditor cartoes taxas maquininha antecipacao conciliacao debito credito" onclick="window.open('auditor-cartoes.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(244,63,94,0.15); color: #f43f5e;">
+            <i class="ph-bold ph-credit-card"></i>
+          </div>
+          <span class="rb-label">Auditor de Cartões</span>
+          <span class="rb-sub">Recupere taxas indevidas e concilie</span>
+        </button>
+        <button class="remote-btn blue-btn" data-cat="financas" data-keywords="financeiro dre fluxo caixa despesas contas pagar receber receitas sangria" onclick="comandarNavegacao('financeiro.html')">
+          <div class="rb-icon" style="background: var(--blue-light); color: var(--blue);">
+            <i class="ph-bold ph-money"></i>
+          </div>
+          <span class="rb-label">Financeiro & DRE</span>
+          <span class="rb-sub">Fluxo, despesas, lucros e contas</span>
+        </button>
+        <button class="remote-btn purple-btn" data-cat="financas" data-keywords="dashboard vendas faturamento relatorios kpi graficos analise" onclick="comandarNavegacao('dashboard.html')">
+          <div class="rb-icon" style="background: var(--purple-light); color: var(--purple);">
+            <i class="ph-bold ph-chart-line-up"></i>
+          </div>
+          <span class="rb-label">Dashboard Executivo</span>
+          <span class="rb-sub">Relatórios consolidados de vendas</span>
+        </button>
+        <button class="remote-btn " data-cat="financas" data-keywords="cfo virtual indicadores margem rentabilidade ponto equilibrio gestao meta" onclick="window.open('cfo-virtual.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
+            <i class="ph-bold ph-calculator"></i>
+          </div>
+          <span class="rb-label">CFO Virtual & Margens</span>
+          <span class="rb-sub">Inteligência financeira e Break-even</span>
+        </button>
+        <button class="remote-btn " data-cat="financas" data-keywords="radar antifraude auditoria cancelamentos sangrias descontos desvios" onclick="window.open('radar-antifraude.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(239,68,68,0.15); color: #ef4444;">
+            <i class="ph-bold ph-shield-warning"></i>
+          </div>
+          <span class="rb-label">Radar Antifraude</span>
+          <span class="rb-sub">Auditoria de cancelamentos e caixa</span>
+        </button>
+        <button class="remote-btn " data-cat="financas" data-keywords="radar concorrencia raio km geomarketing precos vizinhos mercado" onclick="window.open('radar-concorrencia.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(6,182,212,0.15); color: #06b6d4;">
+            <i class="ph-bold ph-radar"></i>
+          </div>
+          <span class="rb-label">Radar Concorrência</span>
+          <span class="rb-sub">Raio de km e geomarketing</span>
+        </button>
+        <button class="remote-btn " data-cat="financas" data-keywords="estoque preditivo reposicao quebras faltas compras insumos alerta" onclick="window.open('estoque-preditivo.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;">
+            <i class="ph-bold ph-warehouse"></i>
+          </div>
+          <span class="rb-label">Estoque Preditivo</span>
+          <span class="rb-sub">Previsão de faltas e reposição</span>
+        </button>
+        <button class="remote-btn " data-cat="financas" data-keywords="cotacao b2b insumos fornecedores lances compras economia atacado" onclick="window.open('cotacao-b2b.html?token=demo', '_blank')">
+          <div class="rb-icon" style="background: rgba(6,182,212,0.15); color: #06b6d4;">
+            <i class="ph-bold ph-shopping-bag-open"></i>
+          </div>
+          <span class="rb-label">Cotação B2B Insumos</span>
+          <span class="rb-sub">Portal fornecedores e cotação</span>
+        </button>
+        <button class="remote-btn " data-cat="financas" data-keywords="compras coletivas b2b industria queijo carne atacado grupo" onclick="window.open('compras-b2b.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
+            <i class="ph-bold ph-shopping-cart"></i>
+          </div>
+          <span class="rb-label">Compras Coletivas B2B</span>
+          <span class="rb-sub">Poder de compra direto da indústria</span>
+        </button>
+        <button class="remote-btn " data-cat="financas" data-keywords="encomendas ceias eventos festas sinal pagamento antecipado buffet" onclick="window.open('encomendas-eventos.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(236,72,153,0.15); color: #ec4899;">
             <i class="ph-bold ph-cake"></i>
           </div>
           <span class="rb-label">Encomendas & Ceias</span>
           <span class="rb-sub">Eventos com sinal de 50%</span>
         </button>
-
-        <button class="remote-btn" onclick="window.open('gift-cards.html', '_blank')">
+        <button class="remote-btn " data-cat="financas" data-keywords="franquias redes lojas multi unidades matriz filiais consolidado" onclick="window.open('franquias.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">
+            <i class="ph-bold ph-tree-structure"></i>
+          </div>
+          <span class="rb-label">Redes & Franquias</span>
+          <span class="rb-sub">Gestão consolidada multi-lojas</span>
+        </button>
+        <button class="remote-btn " data-cat="marketing" data-keywords="crm whatsapp marketing disparo retencao rfm clientes mensagens choveu vendeu" onclick="window.open('crm-marketing.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(37,211,102,0.15); color: #25d366;">
+            <i class="ph-bold ph-whatsapp-logo"></i>
+          </div>
+          <span class="rb-label">CRM WhatsApp VIP</span>
+          <span class="rb-sub">Retenção RFM e mensagens em massa</span>
+        </button>
+        <button class="remote-btn " data-cat="marketing" data-keywords="clube fidelidade cashback tiers vip pontos premios clientes retorno" onclick="window.open('clube-fidelidade.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;">
+            <i class="ph-bold ph-seal-check"></i>
+          </div>
+          <span class="rb-label">Clube Fidelidade VIP</span>
+          <span class="rb-sub">Cashback e tiers progressivos</span>
+        </button>
+        <button class="remote-btn " data-cat="marketing" data-keywords="gift cards vip vale presente voucher saldo corporativo antecipado" onclick="window.open('gift-cards.html', '_blank')">
           <div class="rb-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
             <i class="ph-bold ph-gift"></i>
           </div>
           <span class="rb-label">Gift Cards VIP</span>
           <span class="rb-sub">Carteira e saldo pré-pago</span>
         </button>
-
-        <button class="remote-btn" onclick="window.open('reputacao-ia.html', '_blank')">
+        <button class="remote-btn " data-cat="marketing" data-keywords="roleta premiada cupons descontos gamificacao sorteio brinde cliente" onclick="window.open('roleta-premiada.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(236,72,153,0.15); color: #ec4899;">
+            <i class="ph-bold ph-spinner"></i>
+          </div>
+          <span class="rb-label">Roleta Premiada</span>
+          <span class="rb-sub">Roleta de prêmios interativa</span>
+        </button>
+        <button class="remote-btn " data-cat="marketing" data-keywords="reputacao google maps ia notas 5 estrelas nps avaliacoes filtro feedback" onclick="window.open('reputacao-ia.html', '_blank')">
           <div class="rb-icon" style="background: rgba(251,191,36,0.15); color: #fbbf24;">
             <i class="ph-bold ph-star"></i>
           </div>
           <span class="rb-label">Reputação Google IA</span>
-          <span class="rb-sub">Filtro NPS e 5 estrelas</span>
+          <span class="rb-sub">Filtro NPS e notas 5 estrelas</span>
         </button>
-
-        <button class="remote-btn" onclick="window.open('cotacao-b2b.html?token=demo', '_blank')">
-          <div class="rb-icon" style="background: rgba(6,182,212,0.15); color: #06b6d4;">
-            <i class="ph-bold ph-storefront"></i>
-          </div>
-          <span class="rb-label">Cotação B2B Insumos</span>
-          <span class="rb-sub">Portal fornecedores e lances</span>
-        </button>
-
-        <button class="remote-btn" onclick="window.open('sync-hub.html', '_blank')" style="position: relative; border-color: rgba(16,185,129,0.4); background: linear-gradient(135deg, rgba(16,185,129,0.08), transparent);">
-          <span style="position:absolute; top:8px; right:10px; background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:9.5px; font-weight:800; padding:2px 8px; border-radius:999px; box-shadow:0 2px 6px rgba(16,185,129,0.4);">ANTI-QUEDA</span>
+        <button class="remote-btn " data-cat="marketing" data-keywords="gerador avaliacoes google qrcode feedback positivo clientes" onclick="window.open('gerador-avaliacoes.html', '_blank')">
           <div class="rb-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
-            <i class="ph-bold ph-cpu"></i>
+            <i class="ph-bold ph-star-half"></i>
           </div>
-          <span class="rb-label">Sync Edge Hub</span>
-          <span class="rb-sub">Zero queda de internet, spooler & balança</span>
+          <span class="rb-label">Gerador de Avaliações</span>
+          <span class="rb-sub">Conquiste mais notas 5 estrelas</span>
         </button>
-
-        <button class="remote-btn" onclick="window.open('guia-sync.html', '_blank')" style="position: relative; border-color: rgba(59,130,246,0.4); background: linear-gradient(135deg, rgba(59,130,246,0.08), transparent);">
-          <span style="position:absolute; top:8px; right:10px; background:linear-gradient(135deg, #3b82f6, #1d4ed8); color:#fff; font-size:9.5px; font-weight:800; padding:2px 8px; border-radius:999px; box-shadow:0 2px 6px rgba(59,130,246,0.4);">INSTALADOR</span>
+        <button class="remote-btn " data-cat="marketing" data-keywords="editor site cardapio web loja online white label dominio proprio" onclick="window.open('editor-site.html', '_blank')">
           <div class="rb-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">
-            <i class="ph-bold ph-download-simple"></i>
+            <i class="ph-bold ph-globe-stand"></i>
           </div>
-          <span class="rb-label">Instalador & Guia Sync</span>
-          <span class="rb-sub">Baixar agente e passo a passo</span>
+          <span class="rb-label">Editor do Site Web</span>
+          <span class="rb-sub">Personalize sua vitrine online</span>
         </button>
-
-        <button class="remote-btn" onclick="window.open('radar-concorrencia.html', '_blank')">
-          <div class="rb-icon" style="background: rgba(6,182,212,0.15); color: #06b6d4;">
-            <i class="ph-bold ph-radar"></i>
-          </div>
-          <span class="rb-label">Radar Concorrência</span>
-          <span class="rb-sub">Raio de km & geomarketing</span>
-        </button>
-
-        <button class="remote-btn" onclick="window.open('auditor-cartoes.html', '_blank')">
-          <div class="rb-icon" style="background: rgba(244,63,94,0.15); color: #f43f5e;">
-            <i class="ph-bold ph-credit-card"></i>
-          </div>
-          <span class="rb-label">Auditor de Cartões</span>
-          <span class="rb-sub">Recupere taxas indevidas</span>
-        </button>
-
-        <button class="remote-btn" onclick="window.open('montador-pizza.html', '_blank')">
+        <button class="remote-btn " data-cat="marketing" data-keywords="portal vendas site institucional cardapio web pedidos delivery proprio" onclick="window.open('site-vendas.html', '_blank')">
           <div class="rb-icon" style="background: rgba(252,75,21,0.15); color: #fc4b15;">
-            <i class="ph-bold ph-pizza"></i>
+            <i class="ph-bold ph-browser"></i>
           </div>
-          <span class="rb-label">Montador de Pizza</span>
-          <span class="rb-sub">Sabores, bordas e adicionais</span>
+          <span class="rb-label">Portal de Vendas Web</span>
+          <span class="rb-sub">Site próprio e delivery direto</span>
         </button>
-
-        <button class="remote-btn" onclick="window.open('kds-cozinha-pizza.html', '_blank')">
-          <div class="rb-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;">
-            <i class="ph-bold ph-flame"></i>
+        <button class="remote-btn " data-cat="marketing" data-keywords="loja temas personalizacao cores visual design dark light modo" onclick="window.open('theme-store.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
+            <i class="ph-bold ph-palette"></i>
           </div>
-          <span class="rb-label">KDS Cozinha Pizzas</span>
-          <span class="rb-sub">Massa, montagem e forno</span>
+          <span class="rb-label">Loja de Temas</span>
+          <span class="rb-sub">Personalização visual do sistema</span>
         </button>
-
-        <button class="remote-btn" onclick="window.open('painel-entregas.html', '_blank')">
+        <button class="remote-btn " data-cat="marketing" data-keywords="portal afiliados indicacao comissao parceiros link divulgacao" onclick="window.open('portal-afiliados.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
+            <i class="ph-bold ph-handshake"></i>
+          </div>
+          <span class="rb-label">Portal de Afiliados</span>
+          <span class="rb-sub">Indique parceiros e ganhe</span>
+        </button>
+        <button class="remote-btn " data-cat="equipe" data-keywords="pwa colaborador ponto digital holerite escalas funcionarios presenca" onclick="window.open('pwa-colaborador.html', '_blank')">
           <div class="rb-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">
-            <i class="ph-bold ph-moped"></i>
+            <i class="ph-bold ph-user-circle-gear"></i>
           </div>
-          <span class="rb-label">Despacho & Motoboys</span>
-          <span class="rb-sub">Rotas TSP e app entregador</span>
+          <span class="rb-label">Ponto do Colaborador</span>
+          <span class="rb-sub">Ponto digital e escala PWA</span>
         </button>
-        <button class="remote-btn" onclick="window.open('auditor-ifood.html', '_blank')">
-          <div class="rb-icon" style="background: rgba(234,29,44,0.15); color: #ea1d2c;">
-            <i class="ph-bold ph-shield-check"></i>
+        <button class="remote-btn " data-cat="equipe" data-keywords="painel funcionario holerite dados equipe turnos escalas" onclick="window.open('painel-funcionario.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
+            <i class="ph-bold ph-identification-card"></i>
           </div>
-          <span class="rb-label">Auditor iFood</span>
-          <span class="rb-sub">Glosas e taxas retidas</span>
+          <span class="rb-label">Painel do Funcionário</span>
+          <span class="rb-sub">Área do colaborador e escalas</span>
         </button>
-
-        <button class="remote-btn" onclick="window.open('crm-marketing.html', '_blank')">
-          <div class="rb-icon" style="background: rgba(37,211,102,0.15); color: #25d366;">
-            <i class="ph-bold ph-whatsapp-logo"></i>
+        <button class="remote-btn " data-cat="equipe" data-keywords="cheff ai assistente inteligencia artificial copilot sugestoes gestao" onclick="window.open('cheff-ai.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(192,132,252,0.15); color: #c084fc;">
+            <i class="ph-bold ph-sparkle"></i>
           </div>
-          <span class="rb-label">CRM WhatsApp</span>
-          <span class="rb-sub">Retenção e choveu vendeu</span>
+          <span class="rb-label">Cheff AI Assistente</span>
+          <span class="rb-sub">Copiloto de inteligência executiva</span>
         </button>
-
+        <button class="remote-btn " data-cat="equipe" data-keywords="painel crm gestao clientes historico visitas contato" onclick="window.open('painel-crm.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
+            <i class="ph-bold ph-users-three"></i>
+          </div>
+          <span class="rb-label">Painel CRM Clientes</span>
+          <span class="rb-sub">Base completa de clientes e hábitos</span>
+        </button>
+        <button class="remote-btn " data-cat="equipe" data-keywords="configuracoes sistema administrativo geral usuarios impressoras fiscais" onclick="comandarNavegacao('configuracoes.html')">
+          <div class="rb-icon" style="background: rgba(100,116,139,0.15); color: #64748b;">
+            <i class="ph-bold ph-gear"></i>
+          </div>
+          <span class="rb-label">Configurações Gerais</span>
+          <span class="rb-sub">Painel administrativo da casa</span>
+        </button>
+        <button class="remote-btn " data-cat="equipe" data-keywords="ajuda suporte tutoriais videos manual como usar duvidas" onclick="window.open('ajuda.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(6,182,212,0.15); color: #06b6d4;">
+            <i class="ph-bold ph-book-bookmark"></i>
+          </div>
+          <span class="rb-label">Central de Ajuda</span>
+          <span class="rb-sub">Tutoriais e manuais ilustrados</span>
+        </button>
+        <button class="remote-btn " data-cat="equipe" data-keywords="suporte tecnico whatsapp chamado ticket ajuda atendimento suporte" onclick="window.open('suporte.html', '_blank')">
+          <div class="rb-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;">
+            <i class="ph-bold ph-lifebuoy"></i>
+          </div>
+          <span class="rb-label">Suporte Técnico VIP</span>
+          <span class="rb-sub">Atendimento e abertura de chamados</span>
+        </button>
       </div>
 
       <!-- Ações Imediatas no Terminal -->
@@ -4145,25 +4408,42 @@
           <!-- Filtros Rápidos / Abas de Categoria -->
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
             <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="filtros-modulos-dono">
-              <button type="button" class="modulo-tab-btn active" data-filtro="todos" onclick="filtrarModulosDono('todos', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 16px; font-weight: 800; border: 1px solid var(--border); background: var(--primary); color: #fff; cursor: pointer;">
-                Todos os Módulos
+              <button type="button" class="modulo-tab-btn active" data-filtro="todos" onclick="filtrarModulosDono('todos', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 14.5px; font-weight: 800; border: 1px solid var(--border); background: var(--primary); color: #fff; cursor: pointer;">
+                Todos os Módulos (73)
               </button>
-              <button type="button" class="modulo-tab-btn" data-filtro="ativos" onclick="filtrarModulosDono('ativos', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 16px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
+              <button type="button" class="modulo-tab-btn" data-filtro="ativos" onclick="filtrarModulosDono('ativos', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 14.5px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
                 🟢 Ativos no meu Plano
               </button>
-              <button type="button" class="modulo-tab-btn" data-filtro="addons" onclick="filtrarModulosDono('addons', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 16px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
+              <button type="button" class="modulo-tab-btn" data-filtro="addons" onclick="filtrarModulosDono('addons', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 14.5px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
                 🚀 Add-ons Disponíveis
               </button>
-              <button type="button" class="modulo-tab-btn" data-filtro="Hardware" onclick="filtrarModulosDono('Hardware', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 16px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
-                🖥️ Totem & Balança
+              <button type="button" class="modulo-tab-btn" data-filtro="Fiscal" onclick="filtrarModulosDono('Fiscal', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 14.5px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
+                🛡️ Fiscal
               </button>
-              <button type="button" class="modulo-tab-btn" data-filtro="Marketing" onclick="filtrarModulosDono('Marketing', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 16px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
-                📢 WhatsApp & Fidelidade
+              <button type="button" class="modulo-tab-btn" data-filtro="Vendas" onclick="filtrarModulosDono('Vendas', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 14.5px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
+                🚀 Vendas
               </button>
-              <button type="button" class="modulo-tab-btn" data-filtro="Gestão" onclick="filtrarModulosDono('Gestão', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 16px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
-                👥 RH & IA
+              <button type="button" class="modulo-tab-btn" data-filtro="Operação" onclick="filtrarModulosDono('Operação', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 14.5px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
+                👨‍🍳 Operação &amp; Cozinha
               </button>
-            </div>
+              <button type="button" class="modulo-tab-btn" data-filtro="Financeiro" onclick="filtrarModulosDono('Financeiro', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 14.5px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
+                💰 Financeiro
+              </button>
+              <button type="button" class="modulo-tab-btn" data-filtro="Delivery" onclick="filtrarModulosDono('Delivery', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 14.5px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
+                🛵 Delivery
+              </button>
+              <button type="button" class="modulo-tab-btn" data-filtro="Marketing" onclick="filtrarModulosDono('Marketing', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 14.5px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
+                📢 Marketing
+              </button>
+              <button type="button" class="modulo-tab-btn" data-filtro="Gestão" onclick="filtrarModulosDono('Gestão', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 14.5px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
+                👥 Gestão &amp; RH
+              </button>
+              <button type="button" class="modulo-tab-btn" data-filtro="Hardware" onclick="filtrarModulosDono('Hardware', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 14.5px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
+                🖥️ Hardware &amp; Totem
+              </button>
+              <button type="button" class="modulo-tab-btn" data-filtro="Inteligência" onclick="filtrarModulosDono('Inteligência', this)" style="padding: 6px 14px; border-radius: 10px; font-size: 14.5px; font-weight: 700; border: 1px solid var(--border); background: var(--bg); color: var(--text-sub); cursor: pointer;">
+                🧠 Inteligência IA
+              </button></div>
             <div style="position: relative; min-width: 200px; flex: 1; max-width: 320px;">
               <input type="text" id="busca-modulos-dono" placeholder="Buscar módulo ou benefício..." oninput="filtrarModulosDonoPorTexto(this.value)" style="width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 7px 12px 7px 32px; font-size: 16px; color: var(--text); outline: none;">
               <i class="ph-bold ph-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-sub); font-size: 16px;"></i>
@@ -4900,83 +5180,112 @@
 
   <!-- Modal: Menu Rápido "Mais" para Smartphone/Tablet -->
   <div id="modal-menu-mais-dono" class="modal-overlay hidden">
-    <div class="modal-sheet" style="max-width: 480px;">
+    <div class="modal-sheet" style="max-width: 540px; max-height: 85vh; overflow-y: auto;">
       <div class="modal-drag"></div>
       <div class="modal-title-row">
-        <span class="modal-title"><i class="ph-bold ph-squares-four" style="color:var(--primary);"></i> Menu Rápido</span>
+        <span class="modal-title"><i class="ph-bold ph-squares-four" style="color:var(--primary);"></i> Menu Geral do Dono</span>
         <button class="modal-close" onclick="fecharModal('modal-menu-mais-dono')"><i class="ph-bold ph-x"></i></button>
       </div>
-      <p class="caixa-modal-desc">Acesso rápido a todos os recursos e configurações do seu restaurante.</p>
+      <p class="caixa-modal-desc">Acesso rápido a todos os recursos, relatórios e telas do sistema.</p>
 
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:14px;">
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.abrirLojaAddonsDono();" style="padding:14px 10px; background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(5,150,105,0.15)); border:1px solid rgba(16,185,129,0.4);">
-          <i class="ph-bold ph-storefront" style="font-size:24px; color:#10b981;"></i>
-          <span style="font-weight:800; font-size: 16px; color:#fff;">Loja de Add-ons</span>
+      <!-- Botão Master Restaurar Tudo -->
+      <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.restaurarTodasSecoesPainel();" style="width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 14px; background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(5,150,105,0.18)); border: 1.5px solid #10b981; color: #10b981; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <i class="ph-bold ph-eye" style="font-size: 20px;"></i>
+        <strong style="font-size: 15px;">Exibir 100% das Funções e Telas do Painel</strong>
+      </button>
+
+      <div style="font-size: 12px; font-weight: 800; color: var(--text-sub); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
+        Navegação Rápida &amp; Módulos
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; margin-bottom:14px;">
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-remoto-telas');" style="padding:12px 10px;">
+          <i class="ph-bold ph-desktop" style="font-size:22px; color:var(--primary);"></i>
+          <span style="font-weight:800; font-size: 14px;">58 Telas &amp; PDV</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-ia-briefing');" style="padding:14px 10px;">
-          <i class="ph-bold ph-sparkle" style="font-size:24px; color:#c084fc;"></i>
-          <span style="font-weight:800; font-size: 16px;">Copiloto IA</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.abrirLojaAddonsDono();" style="padding:12px 10px; background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(5,150,105,0.12)); border:1px solid rgba(16,185,129,0.4);">
+          <i class="ph-bold ph-storefront" style="font-size:22px; color:#10b981;"></i>
+          <span style="font-weight:800; font-size: 14px; color:#fff;">Loja (73 Módulos)</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-canais-venda');" style="padding:14px 10px;">
-          <i class="ph-bold ph-storefront" style="font-size:24px; color:#3b82f6;"></i>
-          <span style="font-weight:800; font-size: 16px;">Canais Venda</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-ia-briefing');" style="padding:12px 10px;">
+          <i class="ph-bold ph-sparkle" style="font-size:22px; color:#c084fc;"></i>
+          <span style="font-weight:800; font-size: 14px;">Copiloto IA</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-antifraude');" style="padding:14px 10px;">
-          <i class="ph-bold ph-shield-warning" style="font-size:24px; color:#f59e0b;"></i>
-          <span style="font-weight:800; font-size: 16px;">Antifraude</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-nicho-operacao');" style="padding:12px 10px;">
+          <i class="ph-bold ph-pizza" style="font-size:22px; color:#f97316;"></i>
+          <span style="font-weight:800; font-size: 14px;">Nichos Gastronômicos</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-cupons');" style="padding:14px 10px;">
-          <i class="ph-bold ph-ticket" style="font-size:24px; color:var(--primary);"></i>
-          <span style="font-weight:800; font-size: 16px;">Cupons QR</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-bi-dre-abc');" style="padding:12px 10px;">
+          <i class="ph-bold ph-chart-polar" style="font-size:22px; color:#10b981;"></i>
+          <span style="font-weight:800; font-size: 14px;">DRE &amp; Lucro Real</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-marketing-vip');" style="padding:14px 10px;">
-          <i class="ph-bold ph-megaphone" style="font-size:24px; color:#3b82f6;"></i>
-          <span style="font-weight:800; font-size: 16px;">Mensagens & Push</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-contador-cheff');" style="padding:12px 10px;">
+          <i class="ph-bold ph-calculator" style="font-size:22px; color:#3b82f6;"></i>
+          <span style="font-weight:800; font-size: 14px;">Contador Cheff</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-gamificacao-equipe');" style="padding:14px 10px;">
-          <i class="ph-bold ph-medal" style="font-size:24px; color:#f59e0b;"></i>
-          <span style="font-weight:800; font-size: 16px;">Gamificação</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-reservas-hub');" style="padding:12px 10px;">
+          <i class="ph-bold ph-calendar-check" style="font-size:22px; color:#ec4899;"></i>
+          <span style="font-weight:800; font-size: 14px;">Reservas de Mesas</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-indicacao-parceiros');" style="padding:14px 10px;">
-          <i class="ph-bold ph-gift" style="font-size:24px; color:#fc4b15;"></i>
-          <span style="font-weight:800; font-size: 16px;">Indique & Ganhe</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-contratacao-talentos');" style="padding:12px 10px;">
+          <i class="ph-bold ph-user-plus" style="font-size:22px; color:#f59e0b;"></i>
+          <span style="font-weight:800; font-size: 14px;">Vagas &amp; Freelancers</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-meta-aviso');" style="padding:14px 10px;">
-          <i class="ph-bold ph-target" style="font-size:24px; color:#8b5cf6;"></i>
-          <span style="font-weight:800; font-size: 16px;">Meta & Avisos</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-antifraude');" style="padding:12px 10px;">
+          <i class="ph-bold ph-shield-warning" style="font-size:22px; color:#ef4444;"></i>
+          <span style="font-weight:800; font-size: 14px;">Radar Antifraude</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-ranking');" style="padding:14px 10px;">
-          <i class="ph-bold ph-trophy" style="font-size:24px; color:#10b981;"></i>
-          <span style="font-weight:800; font-size: 16px;">Mais Vendidos</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-marketing-vip');" style="padding:12px 10px;">
+          <i class="ph-bold ph-whatsapp-logo" style="font-size:22px; color:#25d366;"></i>
+          <span style="font-weight:800; font-size: 14px;">Disparos WhatsApp</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); abrirTrocarRestaurante();" style="padding:14px 10px;">
-          <i class="ph-bold ph-buildings" style="font-size:24px; color:#f59e0b;"></i>
-          <span style="font-weight:800; font-size: 16px;">Trocar Restaurante</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-cupons');" style="padding:12px 10px;">
+          <i class="ph-bold ph-ticket" style="font-size:22px; color:var(--primary);"></i>
+          <span style="font-weight:800; font-size: 14px;">Cupons QR</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.abrirModalReordenarSeccoes();" style="padding:14px 10px;">
-          <i class="ph-bold ph-sliders" style="font-size:24px; color:var(--primary);"></i>
-          <span style="font-weight:800; font-size: 16px;">Modularizar Painel</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-gamificacao-equipe');" style="padding:12px 10px;">
+          <i class="ph-bold ph-trophy" style="font-size:22px; color:#f59e0b;"></i>
+          <span style="font-weight:800; font-size: 14px;">Batalha da Equipe</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); abrirModalRelato();" style="padding:14px 10px;">
-          <i class="ph-bold ph-lifebuoy" style="font-size:24px; color:#0ea5e9;"></i>
-          <span style="font-weight:800; font-size: 16px;">Suporte Técnico</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.navMobilePara('sec-ranking');" style="padding:12px 10px;">
+          <i class="ph-bold ph-chart-line-up" style="font-size:22px; color:#10b981;"></i>
+          <span style="font-weight:800; font-size: 14px;">Produtos Mais Vendidos</span>
         </button>
 
-        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); comandarCaixaAcao('alternar_tema');" style="padding:14px 10px;">
-          <i class="ph-bold ph-moon-stars" style="font-size:24px; color:#ec4899;"></i>
-          <span style="font-weight:800; font-size: 16px;">Alternar Tema</span>
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); window.abrirModalReordenarSeccoes();" style="padding:12px 10px;">
+          <i class="ph-bold ph-sliders" style="font-size:22px; color:var(--primary);"></i>
+          <span style="font-weight:800; font-size: 14px;">Modularizar Painel</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); abrirTrocarRestaurante();" style="padding:12px 10px;">
+          <i class="ph-bold ph-buildings" style="font-size:22px; color:#f59e0b;"></i>
+          <span style="font-weight:800; font-size: 14px;">Trocar Restaurante</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); comandarNavegacao('configuracoes.html');" style="padding:12px 10px;">
+          <i class="ph-bold ph-gear" style="font-size:22px; color:#64748b;"></i>
+          <span style="font-weight:800; font-size: 14px;">Configurações</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); abrirModalRelato();" style="padding:12px 10px;">
+          <i class="ph-bold ph-lifebuoy" style="font-size:22px; color:#0ea5e9;"></i>
+          <span style="font-weight:800; font-size: 14px;">Suporte Técnico</span>
+        </button>
+
+        <button class="colab-action-btn" onclick="fecharModal('modal-menu-mais-dono'); comandarCaixaAcao('alternar_tema');" style="padding:12px 10px;">
+          <i class="ph-bold ph-moon-stars" style="font-size:22px; color:#ec4899;"></i>
+          <span style="font-weight:800; font-size: 14px;">Alternar Tema</span>
         </button>
       </div>
 
@@ -4985,7 +5294,6 @@
       </button>
     </div>
   </div>
-
 
   <!-- Modal Completo: DRE Contábil & Engenharia de Cardápio para o Dono -->
   <div id="modal-dre-bi-dono" class="modal-overlay hidden" style="align-items: center; justify-content: center; z-index: 1050;">
@@ -5214,6 +5522,7 @@
         <i class="ph-bold ph-paper-plane-tilt"></i> Enviar Solicitação ao Contador
       </button>
     </div>
+  </div>
   <!-- Modal: Hub Completo de Contratação & Talentos Gastronômicos -->
   <div id="modal-contratacao-talentos" class="modal-overlay hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(8px); z-index:99999; display:none; align-items:center; justify-content:center; padding:16px;">
     <div style="background:var(--card); border:1px solid var(--border); border-radius:22px; width:100%; max-width:1120px; max-height:92vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow-md);">
@@ -5841,11 +6150,14 @@
 
       <!-- Filtro de Categorias de Add-ons -->
       <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px;">
-        <button class="tab-btn-terminal active" onclick="window.filtrarAddonsLoja('todos', this)" style="padding: 6px 14px; font-size: 16px;">Todos (30)</button>
+        <button class="tab-btn-terminal active" onclick="window.filtrarAddonsLoja('todos', this)" style="padding: 6px 14px; font-size: 16px;">Todos (73)</button>
         <button class="tab-btn-terminal" onclick="window.filtrarAddonsLoja('fiscal', this)" style="padding: 6px 14px; font-size: 16px;">🛡️ Fiscal &amp; Caixa</button>
         <button class="tab-btn-terminal" onclick="window.filtrarAddonsLoja('vendas', this)" style="padding: 6px 14px; font-size: 16px;">🚀 Vendas &amp; Delivery</button>
         <button class="tab-btn-terminal" onclick="window.filtrarAddonsLoja('gestao', this)" style="padding: 6px 14px; font-size: 16px;">👥 RH &amp; Operação</button>
         <button class="tab-btn-terminal" onclick="window.filtrarAddonsLoja('compras', this)" style="padding: 6px 14px; font-size: 16px;">🛒 Compras B2B</button>
+        <button class="tab-btn-terminal" onclick="window.filtrarAddonsLoja('financeiro', this)" style="padding: 6px 14px; font-size: 16px;">💰 Financeiro</button>
+        <button class="tab-btn-terminal" onclick="window.filtrarAddonsLoja('marketing', this)" style="padding: 6px 14px; font-size: 16px;">📢 Marketing</button>
+        <button class="tab-btn-terminal" onclick="window.filtrarAddonsLoja('hardware', this)" style="padding: 6px 14px; font-size: 16px;">🖥️ Hardware</button>
       </div>
 
       <!-- Grid de Módulos & Add-ons -->
@@ -5884,6 +6196,161 @@
           <i class="ph-bold ph-sparkle" style="color: #f59e0b;"></i> Degustar 7 Dias Grátis (Sem Pagar Nada)
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal: Em Qual Terminal Instalar o Chef Sync (Dono Mobile & Desktop) -->
+  <div id="modal-instalar-sync-dono" class="modal-overlay hidden" style="align-items: center; justify-content: center; z-index: 1080;">
+    <div class="modal-sheet" style="max-width: 680px; width: 92%; max-height: 90vh; border-radius: 20px; overflow-y: auto; padding: 22px;">
+      
+      <!-- Modal Header -->
+      <div class="modal-title-row" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 4px 14px rgba(59,130,246,0.35);">
+            <i class="ph-bold ph-cpu"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 19px; font-weight: 800; color: var(--text); margin: 0;">Instalação do Chef Cozinha Sync</h3>
+            <p style="font-size: 13.5px; color: var(--text-sub); margin: 2px 0 0 0;">Em qual terminal do seu restaurante você deseja instalar?</p>
+          </div>
+        </div>
+        <button type="button" onclick="window.fecharModalInstalarSyncDono()" style="background: none; border: none; color: var(--text-sub); font-size: 22px; cursor: pointer; padding: 4px;">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <!-- Banner de Detecção de Dispositivo -->
+      <div id="sync-dono-device-banner" style="margin-bottom: 16px; padding: 12px 14px; border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 14px; line-height: 1.4;">
+        <!-- Injetado dinamicamente via JS (ex: celular vs computador) -->
+      </div>
+
+      <!-- Card Chave de Ativação do Restaurante -->
+      <div style="background: var(--card2); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-sub);">Chave de Licença do seu Restaurante</span>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 3px;">
+            <code id="sync-dono-chave-licenca" style="font-family: monospace; font-size: 16px; font-weight: 800; color: #10b981; background: rgba(16,185,129,0.1); padding: 2px 8px; border-radius: 6px; letter-spacing: 1px;">CHEF-LOCAL-0001</code>
+            <span id="sync-dono-rest-nome" style="font-size: 13.5px; color: var(--text-sub);">(Restaurante Principal)</span>
+          </div>
+        </div>
+        <button type="button" onclick="window.copiarChaveSyncDono()" class="btn-secondary" style="padding: 7px 12px; font-size: 13.5px; border-radius: 8px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+          <i class="ph-bold ph-copy"></i> Copiar Chave
+        </button>
+      </div>
+
+      <!-- Abas de Seleção de Terminal -->
+      <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 18px; overflow-x: auto;">
+        <button id="tab-btn-sync-caixa" class="tab-btn-terminal active" onclick="window.alternarTabModalSyncDono('caixa')" style="padding: 8px 14px; font-size: 14px; font-weight: 700; border-radius: 10px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+          <i class="ph-bold ph-desktop"></i> 1. Caixa Principal (Recomendado)
+        </button>
+        <button id="tab-btn-sync-multi" class="tab-btn-terminal" onclick="window.alternarTabModalSyncDono('multi')" style="padding: 8px 14px; font-size: 14px; font-weight: 700; border-radius: 10px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+          <i class="ph-bold ph-hard-drives"></i> 2. Todos os Terminais (Multi-Caixa)
+        </button>
+        <button id="tab-btn-sync-moveis" class="tab-btn-terminal" onclick="window.alternarTabModalSyncDono('moveis')" style="padding: 8px 14px; font-size: 14px; font-weight: 700; border-radius: 10px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+          <i class="ph-bold ph-device-mobile"></i> 3. Celulares &amp; KDS
+        </button>
+      </div>
+
+      <!-- Conteúdo Aba 1: Caixa Principal -->
+      <div id="tab-content-sync-caixa" style="display: block;">
+        <div style="background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="background: #10b981; color: white; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">OPÇÃO RECOMENDADA (95% DOS RESTAURANTES)</span>
+          </div>
+          <strong style="font-size: 15px; color: var(--text);">Instale no Computador do Caixa / Balcão</strong>
+          <p style="font-size: 13.5px; color: var(--text-sub); margin: 4px 0 0 0; line-height: 1.45;">
+            O Chef Sync opera no computador onde ficam conectadas as impressoras de cupom e a gaveta. Ele transforma essa máquina no <strong>servidor local</strong>: se a internet cair, as vendas continuem normais! Os demais aparelhos (garçons, tablets e telas de cozinha) conectam direto nele pela rede Wi-Fi sem precisar de instalação.
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button type="button" onclick="window.enviarWhatsAppSyncDono('caixa')" class="btn-primary" style="padding: 13px 18px; border-radius: 12px; background: #25D366; border-color: #25D366; color: white; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; box-shadow: 0 4px 14px rgba(37,211,102,0.3);">
+            <i class="ph-bold ph-whatsapp-logo" style="font-size: 20px;"></i> Enviar Passo a Passo para o WhatsApp do Caixa
+          </button>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button type="button" onclick="window.copiarLinkGuiaSyncDono('caixa')" class="btn-secondary" style="padding: 11px; border-radius: 10px; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+              <i class="ph-bold ph-link"></i> Copiar Link do Guia
+            </button>
+            <button type="button" onclick="window.abrirGuiaSyncDono()" class="btn-secondary" style="padding: 11px; border-radius: 10px; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+              <i class="ph-bold ph-book-open"></i> Abrir Guia na Web
+            </button>
+          </div>
+
+          <div style="border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 10px; display: flex; gap: 10px;">
+            <a id="btn-sync-dono-download-exe" href="/api/sync/installers/Instalador-ChefSync.exe" download class="btn-secondary" style="flex: 1; padding: 10px; border-radius: 10px; font-size: 13.5px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--text);">
+              <i class="ph-bold ph-download-simple"></i> Baixar .EXE (Neste PC)
+            </a>
+            <a id="btn-sync-dono-download-zip" href="/api/sync/installers/ChefSync-Distribuicao.zip" download class="btn-secondary" style="padding: 10px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--text-sub);" title="Pacote Portátil ZIP">
+              <i class="ph-bold ph-file-zip"></i> .ZIP
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conteúdo Aba 2: Todos os Terminais (Multi-Caixa) -->
+      <div id="tab-content-sync-multi" style="display: none;">
+        <div style="background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="background: #3b82f6; color: white; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">OPERAÇÃO COM MÚLTIPLOS CAIXAS FÍSICOS</span>
+          </div>
+          <strong style="font-size: 15px; color: var(--text);">Instale em Cada Máquina Windows do Restaurante</strong>
+          <p style="font-size: 13.5px; color: var(--text-sub); margin: 4px 0 0 0; line-height: 1.45;">
+            Use esta opção se o seu restaurante possui <strong>2 ou mais computadores com Windows</strong> com operadores e impressoras próprias (ex: Caixa 1, Caixa 2, Bar e Balcão). O instalador deve ser baixado e executado em cada computador. Todos usam a mesma chave de licença do restaurante e sincronizam pedidos entre si e com a nuvem em tempo real.
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button type="button" onclick="window.enviarWhatsAppSyncDono('multi')" class="btn-primary" style="padding: 13px 18px; border-radius: 12px; background: #25D366; border-color: #25D366; color: white; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; box-shadow: 0 4px 14px rgba(37,211,102,0.3);">
+            <i class="ph-bold ph-whatsapp-logo" style="font-size: 20px;"></i> Enviar Guia Multi-Caixa para WhatsApp da Equipe
+          </button>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button type="button" onclick="window.copiarLinkGuiaSyncDono('multi')" class="btn-secondary" style="padding: 11px; border-radius: 10px; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+              <i class="ph-bold ph-link"></i> Copiar Link do Guia
+            </button>
+            <button type="button" onclick="window.abrirGuiaSyncDono()" class="btn-secondary" style="padding: 11px; border-radius: 10px; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+              <i class="ph-bold ph-book-open"></i> Abrir Guia na Web
+            </button>
+          </div>
+
+          <div style="border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 10px;">
+            <a href="/api/sync/installers/Instalador-ChefSync.exe" download class="btn-secondary" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; font-size: 13.5px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--text);">
+              <i class="ph-bold ph-download-simple"></i> Baixar Instalador (.EXE) para Pen Drive ou Esta Máquina
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conteúdo Aba 3: Dispositivos Móveis & KDS -->
+      <div id="tab-content-sync-moveis" style="display: none;">
+        <div style="background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="background: #f59e0b; color: #1e1b4b; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">NÃO REQUER INSTALADOR .EXE</span>
+          </div>
+          <strong style="font-size: 15px; color: var(--text);">Celulares de Garçom, Tablets de Mesa e Monitores KDS</strong>
+          <p style="font-size: 13.5px; color: var(--text-sub); margin: 4px 0 0 0; line-height: 1.45;">
+            Dispositivos móveis funcionam <strong>100% pelo navegador de internet</strong> (Chrome, Safari). Eles não executam arquivos .EXE do Windows. Para liberar garçons e cozinheiros, basta gerar um <strong>Link Mágico</strong> ou autorizar o aparelho por <strong>QR Code / Código PIN</strong>.
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button type="button" onclick="window.redirecionarParaLiberacaoTerminaisDono()" class="btn-primary" style="padding: 13px 18px; border-radius: 12px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
+            <i class="ph-bold ph-qr-code" style="font-size: 20px;"></i> Abrir Central de Liberação (QR Code &amp; Link Mágico)
+          </button>
+        </div>
+      </div>
+
+      <!-- Rodapé do Modal -->
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <span style="font-size: 12.5px; color: var(--text-sub);">
+          <i class="ph-bold ph-shield-check" style="color: #10b981;"></i> Instalador Oficial v2.4 — Suporta Windows 7, 10 e 11
+        </span>
+        <button type="button" onclick="window.fecharModalInstalarSyncDono()" class="btn-secondary" style="padding: 7px 16px; border-radius: 8px; font-size: 13.5px; cursor: pointer;">
+          Fechar
+        </button>
+      </div>
+
     </div>
   </div>
 

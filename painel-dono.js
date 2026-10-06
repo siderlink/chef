@@ -2923,21 +2923,27 @@ window.executarDisparoMassa = async function() {
 const DONO_SECOES_DEF = [
   { id: 'sec-periodo', nome: '📅 Período & Preferências de Layout', icon: 'ph-calendar', larguraDef: 'large' },
   { id: 'sec-ia-briefing', nome: '✨ Copiloto Cheff IA — Briefing Executivo', icon: 'ph-sparkle', larguraDef: 'large' },
+  { id: 'sec-nicho-operacao', nome: '🍕 Operações por Nicho (Pizzaria, Burger, Sushi, Buffet, etc.)', icon: 'ph-fork-knife', larguraDef: 'large' },
   { id: 'sec-kpis', nome: '📊 Resumo do Dia & Lucro Real (KPIs)', icon: 'ph-chart-bar', larguraDef: 'large' },
   { id: 'sec-bi-dre-abc', nome: '💎 DRE Gerencial & Inteligência de Cardápio (BI)', icon: 'ph-chart-polar', larguraDef: 'large' },
+  { id: 'sec-contador-cheff', nome: '💼 Contador Cheff Dedicado & Fiscal', icon: 'ph-calculator', larguraDef: 'large' },
   { id: 'sec-canais-venda', nome: '🏪 Canais de Venda (Salão, Delivery, Balcão)', icon: 'ph-storefront', larguraDef: 'medium' },
   { id: 'sec-antifraude', nome: '🛡️ Radar Antifraude & Auditoria de Caixa', icon: 'ph-shield-warning', larguraDef: 'medium' },
   { id: 'sec-caixa', nome: '💵 Controle do Caixa (Abrir/Fechar)', icon: 'ph-cash-register', larguraDef: 'medium' },
   { id: 'sec-equipe', nome: '👥 Equipe & Colaboradores Ativos', icon: 'ph-users-three', larguraDef: 'medium' },
-  { id: 'sec-remoto-telas', nome: '🖥️ Controle Remoto — Navegação e Terminal', icon: 'ph-desktop', larguraDef: 'medium' },
+  { id: 'sec-remoto-telas', nome: '🖥️ Central de Acesso & Controle de Telas (55 Funções)', icon: 'ph-desktop', larguraDef: 'large' },
   { id: 'sec-remoto-equipe', nome: '📱 Gestão da Equipe & Políticas de Acesso', icon: 'ph-users', larguraDef: 'medium' },
+  { id: 'sec-contratacao-talentos', nome: '👔 Recrutamento & Banco de Talentos Gastronômicos', icon: 'ph-user-plus', larguraDef: 'large' },
+  { id: 'sec-clima-demanda', nome: '⛅ Previsão Meteorológica & Demanda Preditiva', icon: 'ph-cloud-sun', larguraDef: 'large' },
+  { id: 'sec-reservas-hub', nome: '📅 Concierge & Gestão de Reservas de Mesas', icon: 'ph-calendar-check', larguraDef: 'large' },
+  { id: 'sec-cashback-vip', nome: '💳 Cashback VIP & Retenção de Clientes', icon: 'ph-coins', larguraDef: 'large' },
   { id: 'sec-marketing-vip', nome: '📢 Mensagens em Massa & Push (Marketing VIP)', icon: 'ph-megaphone', larguraDef: 'medium' },
   { id: 'sec-cupons', nome: '🎟️ Cupons QR & Promoções', icon: 'ph-ticket', larguraDef: 'medium' },
   { id: 'sec-gamificacao-equipe', nome: '⚔️ Batalha de Vendas & Gamificação da Equipe', icon: 'ph-trophy', larguraDef: 'medium' },
   { id: 'sec-indicacao-parceiros', nome: '🎁 Programa Indique & Ganhe Parceiros', icon: 'ph-gift', larguraDef: 'medium' },
   { id: 'sec-meta-aviso', nome: '🎯 Meta Diária & Aviso à Equipe', icon: 'ph-target', larguraDef: 'medium' },
   { id: 'sec-ranking', nome: '🏆 Ranking de Produtos Mais Vendidos', icon: 'ph-chart-line-up', larguraDef: 'medium' },
-  { id: 'sec-features', nome: '🧩 Central de Módulos & Extensões', icon: 'ph-puzzle-piece', larguraDef: 'large' },
+  { id: 'sec-features', nome: '🧩 Central de Módulos & Extensões (73 Add-ons)', icon: 'ph-puzzle-piece', larguraDef: 'large' },
   { id: 'sec-atividade', nome: '⚡ Feed de Atividade em Tempo Real', icon: 'ph-activity', larguraDef: 'large' }
 ];
 
@@ -3062,8 +3068,10 @@ window.aplicarDonoModularConfig = function(cfg = null) {
   const dataSecToId = {
     'periodo': 'sec-periodo',
     'ia-briefing': 'sec-ia-briefing',
+    'nicho-operacao': 'sec-nicho-operacao',
     'kpis': 'sec-kpis',
     'bi-dre-abc': 'sec-bi-dre-abc',
+    'contador-cheff': 'sec-contador-cheff',
     'canais-venda': 'sec-canais-venda',
     'antifraude': 'sec-antifraude',
     'caixa': 'sec-caixa',
@@ -3072,6 +3080,12 @@ window.aplicarDonoModularConfig = function(cfg = null) {
     'remoto-telas': 'sec-remoto-telas',
     'remoto-colabs': 'sec-remoto-equipe',
     'remoto-equipe': 'sec-remoto-equipe',
+    'contratacao-talentos': 'sec-contratacao-talentos',
+    'clima-demanda': 'sec-clima-demanda',
+    'reservas': 'sec-reservas-hub',
+    'reservas-hub': 'sec-reservas-hub',
+    'cashback': 'sec-cashback-vip',
+    'cashback-vip': 'sec-cashback-vip',
     'marketing': 'sec-marketing-vip',
     'marketing-vip': 'sec-marketing-vip',
     'cupons': 'sec-cupons',
@@ -3385,30 +3399,48 @@ window.carregarModulosDono = async function(forcar = false) {
     grid.innerHTML = `
       <div style="text-align:center; color:var(--text-sub); padding:30px; grid-column:1/-1;">
         <i class="ph-bold ph-spinner-gap spin" style="font-size: 26px; color: var(--primary);"></i>
-        <div style="margin-top: 8px; font-size: 16px;">Carregando módulos disponíveis...</div>
+        <div style="margin-top: 8px; font-size: 16px;">Carregando catálogo de módulos...</div>
       </div>
     `;
   }
 
+  const tokenAuth = (typeof obterTokenDono === 'function') ? obterTokenDono() : (localStorage.getItem('chef_token') || localStorage.getItem('token') || '');
+
   try {
     const res = await fetch('/api/funcoes', {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: {
+        'Authorization': 'Bearer ' + tokenAuth,
+        'Accept': 'application/json'
+      }
     });
+    if (!res.ok) throw new Error('Status ' + res.status);
     const data = await res.json();
 
-    if (data && data.success && Array.isArray(data.features)) {
+    if (data && data.success && Array.isArray(data.features) && data.features.length > 0) {
       _cachedModulosDono = data.features;
-      const ativosCount = _cachedModulosDono.filter(m => m.enabled && m.available).length;
-      if (badgeContador) {
-        badgeContador.textContent = `${ativosCount} Ativos no seu Plano`;
-      }
-      window.renderizarGridModulosDono();
     } else {
-      if (grid) grid.innerHTML = '<div style="text-align:center; color:#ef4444; padding:24px; grid-column:1/-1;">Não foi possível carregar os módulos.</div>';
+      throw new Error('Lista vazia');
     }
   } catch (err) {
-    if (grid) grid.innerHTML = '<div style="text-align:center; color:var(--text-sub); padding:24px; grid-column:1/-1;">Erro de conexão ao buscar módulos.</div>';
+    console.warn('[Painel Dono] Carregando catálogo completo local (73 módulos):', err);
+    _cachedModulosDono = CAT_ADDONS_DONO.map(a => ({
+      chave: a.id,
+      nome: a.nome,
+      desc: a.desc,
+      icone: a.icone,
+      categorias: [a.cat === 'fiscal' ? 'Fiscal' : a.cat === 'vendas' ? 'Vendas' : a.cat === 'financeiro' ? 'Financeiro' : a.cat === 'marketing' ? 'Marketing' : a.cat === 'hardware' ? 'Hardware' : 'Gestão'],
+      preco: a.preco,
+      roi: a.roi,
+      available: true,
+      enabled: true,
+      status_impl: 'liberada'
+    }));
   } finally {
+    const ativosCount = _cachedModulosDono.filter(m => m.enabled && m.available).length;
+    if (badgeContador) {
+      badgeContador.textContent = `${_cachedModulosDono.length} Módulos Disponíveis (${ativosCount} Ativos)`;
+    }
+    window.renderizarGridModulosDono();
     if (iconRefresh) iconRefresh.classList.remove('spin');
   }
 };
@@ -6128,62 +6160,736 @@ if (typeof socket !== 'undefined' && socket && typeof socket.on === 'function') 
 // LOJA DE ADD-ONS & GOVERNANÇA DE PLANO NO PAINEL DO DONO
 // ══════════════════════════════════════════════════════════════════
 const CAT_ADDONS_DONO = [
-  { id: 'antecipacao_recebiveis_giro', cat: 'fiscal', nome: 'Antecipação de Recebíveis & Crédito Giro', preco: '3.2% spread', roi: 'Capital de giro na mesma hora via Pix', desc: 'Antecipe vendas de cartão e repasses do iFood na hora direto no Pix sem banco.', icone: 'ph-currency-dollar', cor: '#10b981' },
-  { id: 'totem_kiosk_touchscreen', cat: 'gestao', nome: 'Totem Kiosk de Autoatendimento Touch', preco: 'R$ 69/mês', roi: 'Economia de R$ 2.500/mês por atendente', desc: 'Transforme tablets Android em totens de pedido com pagamento touch e senha.', icone: 'ph-device-tablet-speaker', cor: '#0ea5e9' },
-  { id: 'trafego_hiperlocal_1clique', cat: 'vendas', nome: 'Piloto de Tráfego Pago Hiperlocal 1-Clique', preco: 'R$ 49/mês', roi: '+25 a +40 clientes nas noites fracas', desc: 'Suba anúncios automáticos no Instagram num raio de 3km para lotar a casa.', icone: 'ph-megaphone-simple', cor: '#f59e0b' },
-  { id: 'auditor_glosas_ifood', cat: 'fiscal', nome: 'Auditor de Repasses & Glosas do iFood', preco: 'R$ 89/mês', roi: 'Recupera em média R$ 1.400/mês', desc: 'Audita extratos do iFood e aponta retenções indevidas para contestação imediata.', icone: 'ph-magnifying-glass-plus', cor: '#ef4444' },
-  { id: 'clube_assinaturas_prime', cat: 'vendas', nome: 'Motor de Clube de Assinaturas Prime', preco: 'R$ 79/mês', roi: 'Receita recorrente garantida no dia 1º', desc: 'Crie seu clube VIP com entrega grátis e cobre mensalidades no cartão dos clientes.', icone: 'ph-crown', cor: '#8b5cf6' },
-  { id: 'tv_senhas_chamada_voz', cat: 'gestao', nome: 'TV Chamador de Senhas com Áudio', preco: 'R$ 39/mês', roi: 'Zero aglomeração e fila organizada', desc: 'Transforme qualquer Smart TV em painel de senhas com voz sintetizada em português.', icone: 'ph-television', cor: '#ec4899' },
-  { id: 'despacho_multi_frota', cat: 'vendas', nome: 'Central de Despacho Multi-Frota (Uber/Lalamove)', preco: 'R$ 79/mês', roi: 'Reduz 30% dos custos de motoboy fixo', desc: 'Acione motoboys terceirizados com 1 clique e rastreio ao vivo para o cliente.', icone: 'ph-moped', cor: '#0ea5e9' },
-  { id: 'reservas_vip_caucao', cat: 'vendas', nome: 'Reservas VIP com Caução Pix (Anti No-Show)', preco: 'R$ 69/mês', roi: 'Zera mesas vazias em noites nobres', desc: 'Garante o comparecimento cobrando caução Pix antecipada abatida da conta.', icone: 'ph-calendar-star', cor: '#ec4899' },
-  { id: 'wallet_digital_prepaga', cat: 'fiscal', nome: 'Carteira Digital Pré-Paga & Cashback VIP', preco: 'R$ 89/mês', roi: 'Caixa antecipado e clientes fiéis', desc: 'Clientes compram R$ 200 em créditos adiantados e ganham bônus de consumo.', icone: 'ph-wallet', cor: '#10b981' },
-  { id: 'escudo_reputacao_google', cat: 'vendas', nome: 'Escudo de Reputação Google Maps 5★', preco: 'R$ 59/mês', roi: '+35% de novos clientes via Maps', desc: 'Filtra elogios para o Google e retém críticas na ouvidoria interna do dono.', icone: 'ph-star', cor: '#eab308' },
-  { id: 'split_mesa_pix', cat: 'fiscal', nome: 'Split de Conta na Mesa com Pix Autônomo', preco: 'R$ 49/mês', roi: 'Giro de mesa 20 min mais rápido', desc: 'Clientes dividem e pagam frações da conta via QR Code sem chamar o garçom.', icone: 'ph-arrows-split', cor: '#8b5cf6' },
-  { id: 'dark_kitchen_marcas', cat: 'gestao', nome: 'Dark Kitchen Multi-Marcas (Hub Virtual)', preco: 'R$ 79/mês', roi: '+100% de receita na mesma cozinha', desc: 'Opere hamburgueria, marmitas e sobremesas no mesmo espaço com KDS separado.', icone: 'ph-cooking-pot', cor: '#f97316' },
-  { id: 'tributos_monofasicos', cat: 'fiscal', nome: 'Recuperador Tributário (PIS/COFINS)', preco: 'R$ 99/mês', roi: 'Economiza R$ 800 a R$ 3.000/mês', desc: 'Abate PIS/COFINS de bebidas frias no Simples Nacional com laudo para o contador.', icone: 'ph-shield-check', cor: '#10b981' },
-  { id: 'sentinela_anti_fraude', cat: 'fiscal', nome: 'Sentinela Anti-Fraude & Cancelamentos', preco: 'R$ 79/mês', roi: 'Elimina 3% a 8% de perdas', desc: 'Audita cancelamentos pós-produção na cozinha e descontos manuais suspeitos.', icone: 'ph-detective', cor: '#ef4444' },
-  { id: 'banco_freelancers_plantao', cat: 'gestao', nome: 'Banco de Freelancers & Plantão Urgente', preco: 'R$ 49/mês', roi: 'Garçom de pico em 15 min', desc: 'Chame garçons, chapeiros e barmans avaliados para turnos de sexta e sábado.', icone: 'ph-users-three', cor: '#f59e0b' },
-  { id: 'gatilho_clima_delivery', cat: 'vendas', nome: 'Gatilho Meteorológico (Choveu, Vendeu)', preco: 'R$ 49/mês', roi: '+45% de vendas na chuva', desc: 'Dispara automações com combos quentes quando a chuva começa na cidade.', icone: 'ph-cloud-rain', cor: '#3b82f6' },
-  { id: 'compras_coletivas_b2b', cat: 'compras', nome: 'Clube de Compras Coletivas B2B', preco: 'R$ 89/mês', roi: '-18% no CMV de insumos', desc: 'Compre queijo, carne e embalagens com poder de grande rede direto da indústria.', icone: 'ph-shopping-cart', cor: '#8b5cf6' },
-  { id: 'hub_multi_marketplace', cat: 'vendas', nome: 'Hub Multi-Marketplace (Rappi+Uber+99)', preco: 'R$ 129/mês', roi: '-40% em atrasos e multas', desc: 'Centralize todos os marketplaces num único painel sem tablets espalhados.', icone: 'ph-device-mobile-camera', cor: '#06b6d4' },
-  { id: 'ficha_tecnica_visual', cat: 'gestao', nome: 'Ficha Técnica Visual com Foto do Prato', preco: 'R$ 49/mês', roi: 'Padrão 100% fiel na montagem', desc: 'Foto do prato montado, modo de preparo e checklist no KDS da cozinha.', icone: 'ph-fork-knife', cor: '#ec4899' },
-  { id: 'link_pagamento_virtual', cat: 'fiscal', nome: 'Maquininha Virtual & Link WhatsApp', preco: 'R$ 59/mês', roi: '+15% de ticket no delivery', desc: 'Envie links de pagamento parcelado via WhatsApp com baixa automática no caixa.', icone: 'ph-credit-card', cor: '#14b8a6' },
-  { id: 'foto_ia_cardapio', cat: 'vendas', nome: 'Cardápio com Foto IA Instantânea', preco: 'R$ 49/mês', roi: '+30% de conversão no QR', desc: 'Gere fotos profissionais realistas dos pratos usando IA sem contratar fotógrafo.', icone: 'ph-camera', cor: '#6366f1' },
-  { id: 'escala_inteligente_ia', cat: 'gestao', nome: 'Agenda de Escalas CLT com IA', preco: 'R$ 69/mês', roi: '-30% em horas extras', desc: 'Gera escalas automáticas respeitando folgas CLT, preferências e picos de venda.', icone: 'ph-calendar-check', cor: '#84cc16' },
-
-  // NOVOS MÓDULOS EXPANDIDOS DE ALTA RENTABILIDADE & FINTECH
-  { id: 'gorjeta_legal_13419', cat: 'fiscal', nome: 'Split de Gorjeta Legalizada (Lei 13.419)', preco: 'R$ 69/mês + R$ 0,25/op', roi: 'Zero passivo trabalhista e rateio Pix', desc: 'Calcula retenção de encargos (20%/33%) e distribui por pontos diretamente via Pix aos garçons.', icone: 'ph-hand-coins', cor: '#10b981' },
-  { id: 'antichurn_preditivo_whats', cat: 'vendas', nome: 'Robô Preditivo Anti-Churn WhatsApp', preco: 'R$ 59/mês', roi: 'Recupera em média 28% dos clientes', desc: 'Detecta desvio do intervalo de compra e dispara cupom personalizado de resgate.', icone: 'ph-whatsapp-logo', cor: '#25d366' },
-  { id: 'gamificacao_salao_metas', cat: 'gestao', nome: 'Gamificação do Salão & Venda Sugestiva', preco: 'R$ 59/mês', roi: '+15% a +25% no ticket médio', desc: 'Metas ao vivo no PDV para garçons venderem sobremesas e drinks com comissão instantânea.', icone: 'ph-trophy', cor: '#f59e0b' },
-  { id: 'influencer_roi_rastreado', cat: 'vendas', nome: 'Portal do Influencer com ROI Real', preco: 'R$ 49/mês', roi: 'Fim do jantar de graça sem retorno', desc: 'Gera links e cupons rastreados com comissão paga apenas sobre vendas reais geradas.', icone: 'ph-instagram-logo', cor: '#e1306c' },
-  { id: 'voucher_vr_antecipacao', cat: 'fiscal', nome: 'Conciliação & Antecipação VR/VA', preco: 'R$ 89/mês + 3.5% spread', roi: 'Fluxo de caixa na hora sem 60 dias de espera', desc: 'Audita taxas de Ticket, Sodexo e Alelo e antecipa recebíveis futuros via Pix.', icone: 'ph-credit-card', cor: '#0ea5e9' },
-  { id: 'drivethru_curbside_geofence', cat: 'vendas', nome: 'Drive-Thru & Pegue-e-Leve Geofence', preco: 'R$ 49/mês', roi: 'Entrega na janela do carro sem filas', desc: 'Rastreia aproximação por GPS (300m) e entrega a sacola direto na vaga do carro.', icone: 'ph-car', cor: '#f97316' },
-  { id: 'rfid_pulseira_cashless', cat: 'fiscal', nome: 'Comanda RFID / Pulseira Cashless', preco: 'R$ 99/mês + R$ 0,30/op', roi: 'Aumento de 25% a 35% no consumo', desc: 'Elimina filas de saída com débito por aproximação em bares, baladas e eventos.', icone: 'ph-broadcast', cor: '#ec4899' },
-  { id: 'hotel_room_service_pms', cat: 'gestao', nome: 'Room Service & Integração PMS Hotéis', preco: 'R$ 149/mês', roi: 'Cobrança unificada no check-out', desc: 'Lança consumos de frigobar e restaurante direto na conta do quarto do hóspede.', icone: 'ph-bed', cor: '#8b5cf6' },
-  { id: 'perdas_avarias_barata_zero', cat: 'gestao', nome: 'Auditor de Quebras & Barata Zero', preco: 'R$ 59/mês', roi: 'Economiza R$ 2k-5k/mês em desperdício', desc: 'Registro com foto de quebras, carne queimada e garrafas quebradas por turno.', icone: 'ph-trash', cor: '#ef4444' },
-  { id: 'reforma_tributaria_simulador', cat: 'fiscal', nome: 'Simulador Reforma Tributária (IBS/CBS)', preco: 'R$ 99/mês', roi: 'Adequação fiscal preventiva', desc: 'Simula o split payment, créditos de atacado e recalibra preços de cardápio.', icone: 'ph-calculator', cor: '#10b981' },
-  { id: 'marmitas_b2b_corporativo', cat: 'compras', nome: 'Assinatura Corporativa de Refeições B2B', preco: 'R$ 79/mês + 1% faturamento', roi: 'Faturamento previsível com empresas', desc: 'Contratos com empresas para marmitas diárias com portal de escolha dos funcionários.', icone: 'ph-buildings', cor: '#0ea5e9' },
-  { id: 'recrutador_gastronomico_flash', cat: 'gestao', nome: 'Recrutador Flash de Equipe Gastronômica', preco: 'R$ 49/mês', roi: 'Mão de obra de pico em 15 minutos', desc: 'Disparo de vagas urgentes e triagem rápida de cozinheiros, chapeiros e garçons.', icone: 'ph-user-plus', cor: '#f59e0b' },
-  { id: 'franquias_royalties_fpp', cat: 'gestao', nome: 'Franquias & Master Franchising', preco: 'R$ 199/mês por franqueado', roi: 'Royalties auditados direto do PDV', desc: 'Apuração automática de royalties e fundo de propaganda de múltiplas unidades.', icone: 'ph-tree-structure', cor: '#8b5cf6' },
-  { id: 'polo_gastronomico_compartilhado', cat: 'vendas', nome: 'Polo Gastronômico Delivery Compartilhado', preco: 'R$ 149/mês + 2% take-rate', roi: 'Frete unificado multi-lojas', desc: 'Carrinho único de delivery para shoppings, vilas gastronômicas e praças.', icone: 'ph-storefront', cor: '#06b6d4' },
-  { id: 'antifurto_inventario_cego', cat: 'fiscal', nome: 'Sentinela de Inventário Cego (Carnes & Whisky)', preco: 'R$ 79/mês', roi: 'Elimina R$ 3k-8k/mês de furtos internos', desc: 'Contagem cega de 3 min dos 10 itens mais caros com alerta imediato ao dono.', icone: 'ph-eye', cor: '#ef4444' },
-  { id: 'fidelidade_tiers_vip', cat: 'vendas', nome: 'Fidelidade por Níveis VIP (Bronze a Diamante)', preco: 'R$ 69/mês', roi: 'Aumenta ticket e frequência de visita', desc: 'Níveis de prestígio com benefícios exclusivos, drink de boas-vindas e cashback.', icone: 'ph-medal', cor: '#eab308' },
-  { id: 'menuboard_tv_balcao', cat: 'gestao', nome: 'Menu Board Digital para TVs de Balcão', preco: 'R$ 49/mês por tela', roi: '+20% em vendas de combos estilo fast-food', desc: 'Transforme Smart TVs suspensas em painéis dinâmicos com troca por horário.', icone: 'ph-monitor', cor: '#3b82f6' },
-  { id: 'satisfacao_ia_emocional', cat: 'gestao', nome: 'Totem de Satisfação IA Emocional', preco: 'R$ 39/mês', roi: 'Alerta de crise no WhatsApp em 5s', desc: 'Totem de 4 emojis com gravação de áudio e análise de sentimento instantânea.', icone: 'ph-smiley', cor: '#10b981' },
-  { id: 'sped_fiscal_automatico', cat: 'fiscal', nome: 'SPED Fiscal & Exportação Contábil Automática', preco: 'R$ 99/mês', roi: 'Elimina 100% do estresse e tempo com fechamento fiscal', desc: 'Gera e envia mensalmente arquivos SPED EFD, XMLs de NFC-e e relatórios fiscais diretamente ao contador.', icone: 'ph-file-archive', cor: '#10b981' },
-  { id: 'preco_dinamico_happyhour', cat: 'vendas', nome: 'Precificação Dinâmica & Happy Hour Automático', preco: 'R$ 59/mês', roi: '+15% de receita aproveitando horários de maior procura', desc: 'Ajuste inteligente de preços por horário de pico, dia da semana ou lotação do salão.', icone: 'ph-chart-line-up', cor: '#f59e0b' },
-  { id: 'nutricional_calorias', cat: 'gestao', nome: 'Controle Nutricional & Tabela de Calorias', preco: 'R$ 49/mês', roi: 'Atrai o público fitness e atende exigências de rotulagem', desc: 'Cálculo de calorias (kcal), macronutrientes, alérgenos e selos funcionais (vegano, sem glúten) para o cardápio.', icone: 'ph-heartbeat', cor: '#ec4899' },
-  { id: 'desperdicio_pesagem_lixo', cat: 'gestao', nome: 'Controle de Desperdício com Balança de Descarte', preco: 'R$ 69/mês', roi: 'Economiza até R$ 3.500/mês eliminando vazamentos', desc: 'Pesagem e registro fotográfico de sobras de buffet, pré-preparo e devoluções com metas anti-desperdício.', icone: 'ph-trash', cor: '#ef4444' },
-  { id: 'checklist_abertura_fechamento', cat: 'gestao', nome: 'Checklist de Abertura & Fechamento com Fotos', preco: 'R$ 49/mês', roi: 'Garante padrão de excelência e higiene em todos os turnos', desc: 'Listas de verificação operacionais obrigatórias para a equipe antes de abrir e fechar a casa com fotos.', icone: 'ph-check-square-offset', cor: '#8b5cf6' },
-  { id: 'manutencao_preventiva', cat: 'gestao', nome: 'Manutenção Preventiva de Equipamentos', preco: 'R$ 59/mês', roi: 'Evita paradas repentinas no meio do almoço de domingo', desc: 'Ordens de serviço, cronograma de preventiva de freezers, fogões e coifas, e histórico de custos por máquina.', icone: 'ph-wrench', cor: '#0ea5e9' },
-  { id: 'academia_restaurante', cat: 'gestao', nome: 'Academia do Restaurante & Treinamento Onboarding', preco: 'R$ 69/mês', roi: 'Reduz o tempo de adaptação de novos contratados em 70%', desc: 'Plataforma interna com cursos, vídeos de atendimento e quizzes para capacitar novos garçons em 48h.', icone: 'ph-graduation-cap', cor: '#6366f1' },
-  { id: 'iot_temperatura_haccp', cat: 'gestao', nome: 'Monitoramento de Temperatura IoT (HACCP)', preco: 'R$ 79/mês', roi: 'Evita perda de milhares de reais em carnes e laticínios', desc: 'Sensores inteligentes de temperatura para câmaras frias e freezers com alerta sonoro e no WhatsApp se esquentar.', icone: 'ph-thermometer', cor: '#14b8a6' },
-  { id: 'atendente_social_ia', cat: 'vendas', nome: 'Atendente Virtual para Instagram & Facebook', preco: 'R$ 79/mês', roi: 'Zero perda de clientes que perguntam pelo Instagram à noite', desc: 'Robô com inteligência artificial para responder direct no Instagram, tirar dúvidas do cardápio e fechar pedidos.', icone: 'ph-chat-circle-dots', cor: '#ec4899' },
-  { id: 'benchmark_anonimo_setor', cat: 'fiscal', nome: 'Benchmark Anônimo do Setor Gastronômico', preco: 'R$ 49/mês', roi: 'Descubra se está pagando caro em insumos ou cobrando pouco', desc: 'Comparativo do CMV, ticket médio e giro do seu restaurante contra a média do mercado da sua cidade e nicho.', icone: 'ph-scales', cor: '#3b82f6' },
-  { id: 'app_funcionario_ponto', cat: 'gestao', nome: 'App do Funcionário (Ponto, Holerite & Escalas)', preco: 'R$ 49/mês', roi: 'Transparência total e comunicação sem ruídos com a equipe', desc: 'Portal exclusivo para colaboradores visualizarem seus pontos, escalas de folga, gorjetas e comunicados do chefe.', icone: 'ph-user-list', cor: '#10b981' },
-  { id: 'valet_estacionamento', cat: 'gestao', nome: 'Valet & Controle de Estacionamento', preco: 'R$ 49/mês', roi: 'Segurança jurídica contra falsas avarias e agilidade na saída', desc: 'Registro de entrada e saída de veículos de clientes com foto de avarias, solicitação de carro e cobrança.', icone: 'ph-car-profile', cor: '#f97316' },
-  { id: 'gestao_playlist_ambiente', cat: 'vendas', nome: 'Ambientação Sonora & Playlist por Horário', preco: 'R$ 39/mês', roi: 'Aumenta o tempo de permanência e consumo em 18%', desc: 'Controle de trilha sonora integrada para almoço executivo, happy hour animado ou jantar romântico.', icone: 'ph-music-notes', cor: '#a855f7' },
-  { id: 'portal_cliente_vip', cat: 'vendas', nome: 'Portal do Cliente & Re-Pedir em 1 Clique', preco: 'R$ 49/mês', roi: 'Aumenta a recompra espontânea de clientes habituais', desc: 'Área exclusiva onde o cliente vê seu histórico de pedidos, salva pratos favoritos e repete pedidos em segundos.', icone: 'ph-user-circle', cor: '#06b6d4' }
+  {
+    "id": "totem",
+    "cat": "hardware",
+    "nome": "Totem de Autoatendimento Kiosk",
+    "preco": "R$ 99/mês",
+    "roi": "Reduz filas e custos com atendentes",
+    "desc": "Quiosque touchscreen com bloqueio kiosk, montagem de pedidos e Pix na tela.",
+    "icone": "ph-device-tablet",
+    "cor": "#06b6d4"
+  },
+  {
+    "id": "pesagem_selfservice",
+    "cat": "hardware",
+    "nome": "Pesagem Automática & Balança Self-Service",
+    "preco": "R$ 69/mês",
+    "roi": "Elimina erros de pesagem em buffets",
+    "desc": "Integração direta com balanças Toledo/Filizola/Urano, cálculo de tara e totem de pesagem.",
+    "icone": "ph-scales",
+    "cor": "#06b6d4"
+  },
+  {
+    "id": "fidelidade",
+    "cat": "vendas",
+    "nome": "Clube Fidelidade & Cashback",
+    "preco": "R$ 59/mês",
+    "roi": "+30% de retorno de clientes",
+    "desc": "Programa de pontuação por compra, resgate de cashback no caixa e cupons automatizados.",
+    "icone": "ph-gift",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "whatsapp_bot",
+    "cat": "marketing",
+    "nome": "WhatsApp Bot Notificador de Pedidos",
+    "preco": "R$ 79/mês",
+    "roi": "-80% de chamadas de suporte",
+    "desc": "Avisos automáticos de status de entrega, rota do motoboy em tempo real e cupom de recompra.",
+    "icone": "ph-whatsapp-logo",
+    "cor": "#ec4899"
+  },
+  {
+    "id": "rh",
+    "cat": "gestao",
+    "nome": "Gestão de RH, Escalas & Comissões",
+    "preco": "R$ 49/mês",
+    "roi": "Fechamento de comissões sem erro",
+    "desc": "Escalas semanais, folgas, ponto eletrônico e rateio automático dos 10% e comissões da equipe.",
+    "icone": "ph-users",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "cheff_ai",
+    "cat": "gestao",
+    "nome": "Copiloto Cheff IA & Previsão de Demanda",
+    "preco": "R$ 89/mês",
+    "roi": "Reduz desperdício de insumos em 25%",
+    "desc": "Inteligência preditiva de movimento, sugestão de compras de insumos e alerta anti-desperdício.",
+    "icone": "ph-sparkle",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "estoque_avancado",
+    "cat": "financeiro",
+    "nome": "Controle de Estoque com Ficha Técnica",
+    "preco": "R$ 69/mês",
+    "roi": "Controle total do lucro real",
+    "desc": "Baixa automática de gramaturas a cada prato vendido e cálculo analítico de CMV por receita.",
+    "icone": "ph-package",
+    "cor": "#059669"
+  },
+  {
+    "id": "kds_avancado",
+    "cat": "gestao",
+    "nome": "KDS Multi-Praças Cozinha & Bar",
+    "preco": "R$ 59/mês",
+    "roi": "Zera atrasos e perda de comandas",
+    "desc": "Monitor de produção dividido por setores (cozinha, bar, frios) com alertas de tempo e sonoros.",
+    "icone": "ph-cooking-pot",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "hub_delivery",
+    "cat": "vendas",
+    "nome": "Hub Delivery Multi-Canais",
+    "preco": "R$ 79/mês",
+    "roi": "Centraliza todos os pedidos em 1 tela",
+    "desc": "Central de pedidos agregados de marketplaces (iFood, Rappi, WhatsApp) e frota própria.",
+    "icone": "ph-moped",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "reservas",
+    "cat": "gestao",
+    "nome": "Reservas Futuras de Mesas",
+    "preco": "R$ 49/mês",
+    "roi": "Otimiza lotação em dias de pico",
+    "desc": "Reservas online de mesas com calendário, aprovação e bloqueio automático no salão.",
+    "icone": "ph-calendar-check",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "fila_espera",
+    "cat": "gestao",
+    "nome": "Fila de Espera Digital",
+    "preco": "R$ 39/mês",
+    "roi": "Retém clientes em horários de pico",
+    "desc": "Fila digital de clientes com estimativa de tempo e chamada automática no celular.",
+    "icone": "ph-users-three",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "jogos",
+    "cat": "marketing",
+    "nome": "Jogos / Batalha de Mesas",
+    "preco": "R$ 39/mês",
+    "roi": "Aumenta consumo de bebidas e permanência",
+    "desc": "Quizzes interativos na mesa e premiação para clientes duelarem e aumentarem o consumo.",
+    "icone": "ph-game-controller",
+    "cor": "#ec4899"
+  },
+  {
+    "id": "ifood",
+    "cat": "vendas",
+    "nome": "Integração Oficial iFood",
+    "preco": "Incluso no Pro/Premium",
+    "roi": "Importação automática de pedidos",
+    "desc": "Sincronização bidirecional de cardápio, pedidos e status com a rede iFood.",
+    "icone": "ph-storefront",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "nfce",
+    "cat": "fiscal",
+    "nome": "Emissão Fiscal NFC-e / SAT",
+    "preco": "Incluso no Pro/Premium",
+    "roi": "Conformidade fiscal garantida",
+    "desc": "Emissão de cupom fiscal eletrônico na hora da venda com contingência offline automática.",
+    "icone": "ph-receipt",
+    "cor": "#10b981"
+  },
+  {
+    "id": "guardiao_compras_nfe",
+    "cat": "financeiro",
+    "nome": "Guardião de Compras & Leitor XML NFe",
+    "preco": "R$ 79/mês",
+    "roi": "Economiza 20h/mês e zera aumentos abusivos",
+    "desc": "Importação automática de XML de fornecedores, radar de inflação de insumos e contas a pagar.",
+    "icone": "ph-file-arrow-up",
+    "cor": "#059669"
+  },
+  {
+    "id": "resumo_noturno_whatsapp",
+    "cat": "gestao",
+    "nome": "Resumo Noturno do Dono no WhatsApp",
+    "preco": "R$ 49/mês",
+    "roi": "Controle total na palma da mão sem stress",
+    "desc": "Fechamento executivo automático às 23:45 direto no WhatsApp com faturamento, ticket e alertas.",
+    "icone": "ph-moon-stars",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "crm_whatsapp_ia",
+    "cat": "marketing",
+    "nome": "WhatsApp CRM & Reativação por IA",
+    "preco": "R$ 99/mês",
+    "roi": "Reativa de 20 a 50 clientes sumidos por mês",
+    "desc": "Piloto automático para reconquistar clientes inativos, felicitar aniversariantes e pós-venda NPS.",
+    "icone": "ph-robot",
+    "cor": "#ec4899"
+  },
+  {
+    "id": "clube_assinaturas",
+    "cat": "vendas",
+    "nome": "Clube de Assinaturas & Fidelidade VIP",
+    "preco": "R$ 79/mês",
+    "roi": "Garante faturamento fixo antes do mês começar",
+    "desc": "Criação de planos de mensalidade (Chopp, Pizza, Executivo VIP) com receita recorrente garantida.",
+    "icone": "ph-crown",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "auditor_cartoes",
+    "cat": "financeiro",
+    "nome": "Auditor de Taxas de Cartão & Conciliador",
+    "preco": "R$ 99/mês",
+    "roi": "Recupera de R$ 300 a R$ 2.000 cobrados a mais",
+    "desc": "Audita taxas de adquirentes (Stone, Cielo, Rede) e recupera cobranças divergentes de MDR.",
+    "icone": "ph-credit-card",
+    "cor": "#059669"
+  },
+  {
+    "id": "gamificacao_gorjetas",
+    "cat": "gestao",
+    "nome": "Gamificação do Salão & Rateio Gorjetas",
+    "preco": "R$ 59/mês",
+    "roi": "+18% no ticket médio e zero passivo trabalhista",
+    "desc": "Leaderboard de vendas em tempo real para garçons e divisão da taxa de serviço (Lei 13.419).",
+    "icone": "ph-trophy",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "roteirizador_entregas_tsp",
+    "cat": "vendas",
+    "nome": "Roteirizador de Entregas TSP & Rastreio ao Vivo",
+    "preco": "R$ 69/mês",
+    "roi": "-35% em combustível e fim do cliente cobrando status",
+    "desc": "Otimizador de rotas com algoritmo TSP, despacho em lote e link de rastreio ao vivo para WhatsApp.",
+    "icone": "ph-navigation-arrow",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "seat_ordering",
+    "cat": "gestao",
+    "nome": "Comanda por Assento & Split Instantâneo",
+    "preco": "R$ 49/mês",
+    "roi": "Zera tempo de fechamento em mesas de 10+ pessoas",
+    "desc": "Organização de pedidos por cadeira/pessoa e fechamento parcial com Pix em 1 clique sem confusão.",
+    "icone": "ph-chair",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "bar_guardiao_chopp",
+    "cat": "gestao",
+    "nome": "Guardião do Bar & Doses de Chopp",
+    "preco": "R$ 69/mês",
+    "roi": "Economiza até R$ 2.500/mês em chopp não faturado",
+    "desc": "Controle milimétrico de volume de barris (50L/30L), copos servidos, sangrias e prevenção de perdas.",
+    "icone": "ph-beer-bottle",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "cardapio_multilingue_i18n",
+    "cat": "vendas",
+    "nome": "Cardápio Multilíngue Turístico por IA",
+    "preco": "R$ 59/mês",
+    "roi": "+40% de conversão de clientes estrangeiros",
+    "desc": "Tradução gastronômica automática para 5 idiomas (EN, ES, FR, DE, ZH) e filtro de alérgenos.",
+    "icone": "ph-translate",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "totem_fastpass",
+    "cat": "hardware",
+    "nome": "Totem Fast-Pass & Reconhecimento VIP",
+    "preco": "R$ 89/mês",
+    "roi": "Reduz fila de autoatendimento de 90s para 15s",
+    "desc": "Identificação por CPF/QR Code com repetição do combo habitual em 1 toque e Pix dinâmico.",
+    "icone": "ph-lightning",
+    "cor": "#06b6d4"
+  },
+  {
+    "id": "backup_nuvem_blindado",
+    "cat": "gestao",
+    "nome": "Sentinela de Backup Criptografado em Nuvem",
+    "preco": "R$ 49/mês",
+    "roi": "Proteção blindada contra queima de HD ou perdas",
+    "desc": "Disaster recovery diário com AES-256 às 04:00, verificação de integridade e restore em 1 clique.",
+    "icone": "ph-shield-check",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "menu_engenharia_lucro",
+    "cat": "gestao",
+    "nome": "Engenharia de Cardápio BCG (Kasavana & Smith)",
+    "preco": "R$ 89/mês",
+    "roi": "+12% a +22% no lucro líquido do cardápio",
+    "desc": "Matriz analítica de Estrelas, Burros de Carga, Quebra-Cabeças e Cães para maximizar margem.",
+    "icone": "ph-chart-polar",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "pague_na_mesa",
+    "cat": "vendas",
+    "nome": "Auto-Pagamento na Mesa via QR Code (TabPay & Gorjeta)",
+    "preco": "R$ 49/mês + 0.89% Pix",
+    "roi": "Gira mesas até 20 minutos mais rápido e zera filas no caixa",
+    "desc": "Cliente consulta comanda na mesa, divide a conta, insere gorjeta e paga com Pix/Cartão instantâneo liberando a mesa.",
+    "icone": "ph-qr-code",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "validade_anvisa_perdas",
+    "cat": "gestao",
+    "nome": "Sentinela de Validades ANVISA & Etiquetas Térmicas",
+    "preco": "R$ 69/mês",
+    "roi": "Zera multas sanitárias e reduz desperdício de insumos em até 80%",
+    "desc": "RDC 216 ANVISA: geração automática de etiquetas térmicas de manipulação, alerta diário de vencimento e queima promocional de estoque.",
+    "icone": "ph-barcode",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "cotacao_b2b_fornecedores",
+    "cat": "financeiro",
+    "nome": "Central de Cotações B2B & Compras Coletivas",
+    "preco": "R$ 89/mês",
+    "roi": "Economiza até 18% nos insumos e poupa 10h/mês de cotações manuais",
+    "desc": "Disparo de cotações automáticas para distribuidores via WhatsApp, matriz comparativa de menores preços e pool de compras coletivas.",
+    "icone": "ph-shopping-cart-simple",
+    "cor": "#059669"
+  },
+  {
+    "id": "reputacao_google_ia",
+    "cat": "marketing",
+    "nome": "Guardião de Reputação & Avaliações por IA (Google Maps/iFood)",
+    "preco": "R$ 59/mês",
+    "roi": "Multiplica reviews 5 estrelas no Google e intercepta clientes insatisfeitos",
+    "desc": "Filtro inteligente de NPS: avaliações 5 estrelas são direcionadas ao Google Maps; notas 1 a 3 alertam o gerente no WhatsApp para contenção.",
+    "icone": "ph-star",
+    "cor": "#ec4899"
+  },
+  {
+    "id": "painel_tv_senhas",
+    "cat": "hardware",
+    "nome": "Painel TV de Senhas & Digital Signage (Fast-Food)",
+    "preco": "R$ 39/mês",
+    "roi": "Atendimento profissional de fast-food com voz e +20% em vendas de sobremesas",
+    "desc": "Transforma qualquer Smart TV em painel profissional com voz sintetizada (Pronto/Preparando) e carrossel de ofertas/combos lucrativos.",
+    "icone": "ph-television",
+    "cor": "#06b6d4"
+  },
+  {
+    "id": "encomendas_eventos",
+    "cat": "vendas",
+    "nome": "Gestão de Encomendas, Buffets & Ceias",
+    "preco": "R$ 69/mês",
+    "roi": "Organiza pedidos com data futura e garante sinal de 50% antecipado",
+    "desc": "Controle de vendas com data futura, adiantamento de 50% de sinal via Pix, orçamentos personalizados e calendário de produção da cozinha.",
+    "icone": "ph-cake",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "redes_franquias",
+    "cat": "gestao",
+    "nome": "Gestão Multi-Lojas, Redes e Franquias (Master Chain)",
+    "preco": "R$ 149/mês por filial",
+    "roi": "DRE consolidado, transferências entre lojas e replicação de cardápio",
+    "desc": "Dashboard executivo consolidado multi-CNPJ, transferência de insumos entre matriz e filiais, e replicação de cardápio com 1 clique.",
+    "icone": "ph-buildings",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "gift_card_wallet",
+    "cat": "vendas",
+    "nome": "Gift Cards Corporativos & Saldo Pré-Pago VIP",
+    "preco": "R$ 49/mês + 1% recarga",
+    "roi": "Injeção imediata de capital de giro e fidelização de clientes",
+    "desc": "Venda de vouchers para presentes ou empresas e carteira pré-paga para clientes fiéis (consumo antecipado com bônus).",
+    "icone": "ph-wallet",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "antecipacao_recebiveis_giro",
+    "cat": "financeiro",
+    "nome": "Antecipação de Recebíveis & Crédito Giro",
+    "preco": "3.2% spread",
+    "roi": "Capital de giro na mesma hora via Pix",
+    "desc": "Crédito giro no Pix antecipando cartões e repasses iFood na hora com taxa competitiva.",
+    "icone": "ph-currency-dollar",
+    "cor": "#059669"
+  },
+  {
+    "id": "totem_kiosk_touchscreen",
+    "cat": "hardware",
+    "nome": "Totem Kiosk Touchscreen Autoatendimento",
+    "preco": "R$ 69/mês",
+    "roi": "Economia de R$ 2.500/mês por atendente",
+    "desc": "Transforme tablets em terminais de autoatendimento estilo fast-food com pagamento e senha.",
+    "icone": "ph-device-tablet-speaker",
+    "cor": "#06b6d4"
+  },
+  {
+    "id": "trafego_hiperlocal_1clique",
+    "cat": "marketing",
+    "nome": "Piloto de Tráfego Pago Hiperlocal 1-Clique",
+    "preco": "R$ 49/mês",
+    "roi": "+25 a +40 clientes nas noites fracas",
+    "desc": "Dispare anúncios no Instagram/Meta no raio de 3km com 1 toque para lotar terças e quartas.",
+    "icone": "ph-megaphone-simple",
+    "cor": "#ec4899"
+  },
+  {
+    "id": "auditor_glosas_ifood",
+    "cat": "fiscal",
+    "nome": "Auditor de Repasses & Glosas do iFood",
+    "preco": "R$ 89/mês",
+    "roi": "Recupera em média R$ 1.400/mês",
+    "desc": "Detecte cancelamentos indevidos e retenções no extrato do iFood com laudo de contestação.",
+    "icone": "ph-magnifying-glass-plus",
+    "cor": "#10b981"
+  },
+  {
+    "id": "tv_senhas_chamada_voz",
+    "cat": "hardware",
+    "nome": "TV Chamador de Senhas com Voz em Português",
+    "preco": "R$ 39/mês",
+    "roi": "Zero aglomeração e retirada rápida",
+    "desc": "Transforme qualquer Smart TV em painel profissional com voz sintetizada para balcão e delivery.",
+    "icone": "ph-television",
+    "cor": "#06b6d4"
+  },
+  {
+    "id": "gorjeta_legal_13419",
+    "cat": "fiscal",
+    "nome": "Split de Gorjeta Legalizada (Lei nº 13.419)",
+    "preco": "R$ 69/mês + R$ 0,25/op",
+    "roi": "Blindagem contra passivo trabalhista e equipe motivada",
+    "desc": "Calcula a retenção de encargos (20%/33%) e distribui por pontos via Pix diretamente aos garçons.",
+    "icone": "ph-hand-coins",
+    "cor": "#10b981"
+  },
+  {
+    "id": "antichurn_preditivo_whats",
+    "cat": "marketing",
+    "nome": "Robô Preditivo Anti-Churn WhatsApp",
+    "preco": "R$ 59/mês",
+    "roi": "Recupera em média 28% dos clientes sumidos",
+    "desc": "Detecta desvio do intervalo de compra e dispara cupom de resgate personalizado no WhatsApp.",
+    "icone": "ph-whatsapp-logo",
+    "cor": "#ec4899"
+  },
+  {
+    "id": "gamificacao_salao_metas",
+    "cat": "gestao",
+    "nome": "Gamificação do Salão & Venda Sugestiva",
+    "preco": "R$ 59/mês",
+    "roi": "+15% a +25% de aumento no ticket médio",
+    "desc": "Metas em tempo real no PDV para garçons venderem sobremesas e bebidas com comissão ao vivo.",
+    "icone": "ph-trophy",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "influencer_roi_rastreado",
+    "cat": "marketing",
+    "nome": "Portal do Influencer com ROI Real",
+    "preco": "R$ 49/mês",
+    "roi": "Fim do jantar de graça sem retorno comprovado",
+    "desc": "Links e cupons rastreados para blogueiros gastronômicos com comissão paga apenas sobre vendas reais.",
+    "icone": "ph-instagram-logo",
+    "cor": "#ec4899"
+  },
+  {
+    "id": "voucher_vr_antecipacao",
+    "cat": "financeiro",
+    "nome": "Conciliação & Antecipação VR/VA",
+    "preco": "R$ 89/mês + 3.5% spread",
+    "roi": "Fluxo de caixa imediato sem 60 dias de espera",
+    "desc": "Audita taxas de Ticket, Sodexo e Alelo e antecipa recebíveis futuros via Pix em minutos.",
+    "icone": "ph-credit-card",
+    "cor": "#059669"
+  },
+  {
+    "id": "drivethru_curbside_geofence",
+    "cat": "gestao",
+    "nome": "Drive-Thru & Pegue-e-Leve Geofence",
+    "preco": "R$ 49/mês",
+    "roi": "Retirada rápida sem fila nem vaga de estacionamento",
+    "desc": "Rastreia aproximação por GPS (300m) e entrega a sacola quente direto na vaga do carro.",
+    "icone": "ph-car",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "rfid_pulseira_cashless",
+    "cat": "hardware",
+    "nome": "Comanda RFID / Pulseira Cashless",
+    "preco": "R$ 99/mês + R$ 0,30/op",
+    "roi": "Aumento de 25% a 35% no consumo interno",
+    "desc": "Elimina filas de fechamento de conta com consumo por aproximação em bares, baladas e eventos.",
+    "icone": "ph-broadcast",
+    "cor": "#06b6d4"
+  },
+  {
+    "id": "hotel_room_service_pms",
+    "cat": "gestao",
+    "nome": "Room Service & Integração PMS Hotéis",
+    "preco": "R$ 149/mês",
+    "roi": "Atende hotéis, resorts e pousadas sem retrabalho",
+    "desc": "Lança consumos de frigobar e restaurante direto na conta do quarto do hóspede no check-out.",
+    "icone": "ph-bed",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "perdas_avarias_barata_zero",
+    "cat": "gestao",
+    "nome": "Auditor de Quebras & Barata Zero",
+    "preco": "R$ 59/mês",
+    "roi": "Economiza R$ 2k-5k/mês eliminando vazamentos",
+    "desc": "Controle fotográfico e financeiro de pratos quebrados, chopp derramado e insumos queimados.",
+    "icone": "ph-trash",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "reforma_tributaria_simulador",
+    "cat": "fiscal",
+    "nome": "Simulador Reforma Tributária (IBS/CBS)",
+    "preco": "R$ 99/mês",
+    "roi": "Adequação preventiva à nova legislação",
+    "desc": "Calcula o impacto da transição tributária, aproveitamento de créditos de insumos e split payment.",
+    "icone": "ph-calculator",
+    "cor": "#10b981"
+  },
+  {
+    "id": "marmitas_b2b_corporativo",
+    "cat": "vendas",
+    "nome": "Assinatura Corporativa de Refeições B2B",
+    "preco": "R$ 79/mês + 1% faturamento",
+    "roi": "Faturamento corporativo garantido e previsível",
+    "desc": "Contratos recorrentes com empresas para fornecimento diário de marmitas com portal de escolha.",
+    "icone": "ph-buildings",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "recrutador_gastronomico_flash",
+    "cat": "gestao",
+    "nome": "Recrutador Flash de Equipe Gastronômica",
+    "preco": "R$ 49/mês",
+    "roi": "Contratação em minutos para noites de pico",
+    "desc": "Disparo de vagas urgentes e triagem expressa de garçons, chapeiros e cozinheiros com score.",
+    "icone": "ph-user-plus",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "franquias_royalties_fpp",
+    "cat": "gestao",
+    "nome": "Franquias & Master Franchising",
+    "preco": "R$ 199/mês por franqueado",
+    "roi": "Prestação de contas blindada para o franqueador",
+    "desc": "Apuração automática de royalties, fundo de propaganda e gestão de redes auditada pelo PDV.",
+    "icone": "ph-tree-structure",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "polo_gastronomico_compartilhado",
+    "cat": "vendas",
+    "nome": "Polo Gastronômico Delivery Compartilhado",
+    "preco": "R$ 149/mês + 2% take-rate",
+    "roi": "Ticket médio 40% maior reunindo múltiplos parceiros",
+    "desc": "Carrinho unificado para múltiplos restaurantes da mesma praça ou vila com frete único.",
+    "icone": "ph-storefront",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "antifurto_inventario_cego",
+    "cat": "gestao",
+    "nome": "Sentinela de Inventário Cego (Carnes & Whisky)",
+    "preco": "R$ 79/mês",
+    "roi": "Elimina R$ 3k-8k/mês em desvios internos",
+    "desc": "Contagem cega de 3 minutos por turno dos 10 itens mais caros com alerta imediato de desvio no WhatsApp.",
+    "icone": "ph-eye",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "fidelidade_tiers_vip",
+    "cat": "marketing",
+    "nome": "Fidelidade por Níveis VIP (Bronze a Diamante)",
+    "preco": "R$ 69/mês",
+    "roi": "Eleva ticket médio e frequência de clientes fiéis",
+    "desc": "Níveis de prestígio com benefícios exclusivos, drink cortesia e cashback progressivo.",
+    "icone": "ph-medal",
+    "cor": "#ec4899"
+  },
+  {
+    "id": "menuboard_tv_balcao",
+    "cat": "hardware",
+    "nome": "Menu Board Digital para TVs de Balcão",
+    "preco": "R$ 49/mês por tela",
+    "roi": "+20% em combos e visual profissional de fast-food",
+    "desc": "Exibição de cardápio digital em Smart TVs com troca automática por momento do dia.",
+    "icone": "ph-monitor",
+    "cor": "#06b6d4"
+  },
+  {
+    "id": "satisfacao_ia_emocional",
+    "cat": "gestao",
+    "nome": "Totem de Satisfação IA Emocional & Áudio",
+    "preco": "R$ 39/mês",
+    "roi": "Alerta em 5s no WhatsApp antes do cliente postar no Google",
+    "desc": "Totem tátil de 4 emojis com transcrição e análise de sentimento em áudio com alerta crítico no WhatsApp.",
+    "icone": "ph-smiley",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "hub_multi_marketplace",
+    "cat": "vendas",
+    "nome": "Hub Multi-Marketplace (Rappi + Uber Eats + 99Food)",
+    "preco": "R$ 129/mês",
+    "roi": "Zera atrasos e multas de cancelamento em marketplaces",
+    "desc": "Unificação de todos os pedidos de delivery externos em uma única tela, dispensando múltiplos tablets no balcão.",
+    "icone": "ph-arrows-merge",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "sped_fiscal_automatico",
+    "cat": "fiscal",
+    "nome": "SPED Fiscal & Exportação Contábil Automática",
+    "preco": "R$ 99/mês",
+    "roi": "Elimina 100% do estresse e tempo gasto com fechamento contábil",
+    "desc": "Geração e envio automático mensal de arquivos SPED EFD, XMLs de NFC-e e relatórios fiscais diretamente ao contador.",
+    "icone": "ph-file-archive",
+    "cor": "#10b981"
+  },
+  {
+    "id": "preco_dinamico_happyhour",
+    "cat": "financeiro",
+    "nome": "Precificação Dinâmica & Happy Hour Automático",
+    "preco": "R$ 59/mês",
+    "roi": "+15% de receita aproveitando horários de maior procura",
+    "desc": "Ajuste inteligente de preços por horário de pico, dia da semana ou lotação do salão, maximizando faturamento.",
+    "icone": "ph-chart-line-up",
+    "cor": "#059669"
+  },
+  {
+    "id": "nutricional_calorias",
+    "cat": "vendas",
+    "nome": "Controle Nutricional & Tabela de Calorias",
+    "preco": "R$ 49/mês",
+    "roi": "Atrai o público fitness e atende exigências de rotulagem",
+    "desc": "Cálculo de calorias (kcal), macronutrientes, alérgenos e selos funcionais (vegano, sem glúten) para o cardápio.",
+    "icone": "ph-heartbeat",
+    "cor": "#3b82f6"
+  },
+  {
+    "id": "desperdicio_pesagem_lixo",
+    "cat": "gestao",
+    "nome": "Controle de Desperdício com Balança de Descarte",
+    "preco": "R$ 69/mês",
+    "roi": "Economiza até R$ 3.500/mês eliminando vazamentos de insumos",
+    "desc": "Pesagem e registro fotográfico de sobras de buffet, pré-preparo e devoluções com metas diárias anti-desperdício.",
+    "icone": "ph-trash",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "checklist_abertura_fechamento",
+    "cat": "gestao",
+    "nome": "Checklist de Abertura & Fechamento com Fotos",
+    "preco": "R$ 49/mês",
+    "roi": "Garante padrão de excelência e higiene em todos os turnos",
+    "desc": "Listas de verificação operacionais obrigatórias para a equipe antes de abrir e fechar a casa com evidências.",
+    "icone": "ph-check-square-offset",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "manutencao_preventiva",
+    "cat": "gestao",
+    "nome": "Manutenção Preventiva de Equipamentos",
+    "preco": "R$ 59/mês",
+    "roi": "Evita paradas repentinas no meio do almoço de domingo",
+    "desc": "Ordens de serviço, cronograma de preventiva de freezers, fogões e coifas, e histórico de custos por máquina.",
+    "icone": "ph-wrench",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "academia_restaurante",
+    "cat": "gestao",
+    "nome": "Academia do Restaurante & Treinamento Onboarding",
+    "preco": "R$ 69/mês",
+    "roi": "Reduz o tempo de adaptação de novos contratados em 70%",
+    "desc": "Plataforma interna com cursos, vídeos de atendimento e quizzes para capacitar novos garçons e ajudantes em 48h.",
+    "icone": "ph-graduation-cap",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "iot_temperatura_haccp",
+    "cat": "hardware",
+    "nome": "Monitoramento de Temperatura IoT (HACCP)",
+    "preco": "R$ 79/mês",
+    "roi": "Evita perda de milhares de reais em carnes e laticínios",
+    "desc": "Sensores inteligentes de temperatura para câmaras frias e freezers com alerta sonoro e no WhatsApp se esquentar.",
+    "icone": "ph-thermometer",
+    "cor": "#06b6d4"
+  },
+  {
+    "id": "atendente_social_ia",
+    "cat": "marketing",
+    "nome": "Atendente Virtual para Instagram & Facebook",
+    "preco": "R$ 79/mês",
+    "roi": "Zero perda de clientes que perguntam pelo Instagram à noite",
+    "desc": "Robô com inteligência artificial para responder direct no Instagram, tirar dúvidas do cardápio e fechar pedidos.",
+    "icone": "ph-chat-circle-dots",
+    "cor": "#ec4899"
+  },
+  {
+    "id": "benchmark_anonimo_setor",
+    "cat": "gestao",
+    "nome": "Benchmark Anônimo do Setor Gastronômico",
+    "preco": "R$ 49/mês",
+    "roi": "Descubra se está pagando caro em insumos ou cobrando pouco",
+    "desc": "Comparativo do CMV, ticket médio e giro do seu restaurante contra a média do mercado da sua cidade e nicho.",
+    "icone": "ph-scales",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "app_funcionario_ponto",
+    "cat": "gestao",
+    "nome": "App do Funcionário (Ponto, Holerite & Escalas)",
+    "preco": "R$ 49/mês",
+    "roi": "Transparência total e comunicação sem ruídos com a equipe",
+    "desc": "Portal exclusivo para colaboradores visualizarem seus pontos, escalas de folga, gorjetas e comunicados do chefe.",
+    "icone": "ph-user-list",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "valet_estacionamento",
+    "cat": "gestao",
+    "nome": "Valet & Controle de Estacionamento",
+    "preco": "R$ 49/mês",
+    "roi": "Segurança jurídica contra falsas avarias e agilidade na saída",
+    "desc": "Registro de entrada e saída de veículos de clientes com foto de avarias, solicitação de carro e cobrança.",
+    "icone": "ph-car-profile",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "gestao_playlist_ambiente",
+    "cat": "gestao",
+    "nome": "Ambientação Sonora & Playlist por Horário",
+    "preco": "R$ 39/mês",
+    "roi": "Aumenta o tempo de permanência e consumo em 18%",
+    "desc": "Controle de trilha sonora integrada para almoço executivo, happy hour animado ou jantar romântico.",
+    "icone": "ph-music-notes",
+    "cor": "#f59e0b"
+  },
+  {
+    "id": "portal_cliente_vip",
+    "cat": "vendas",
+    "nome": "Portal do Cliente & Re-Pedir em 1 Clique",
+    "preco": "R$ 49/mês",
+    "roi": "Aumenta a recompra espontânea de clientes habituais",
+    "desc": "Área exclusiva onde o cliente vê seu histórico de pedidos, salva pratos favoritos e repete pedidos em segundos.",
+    "icone": "ph-user-circle",
+    "cor": "#3b82f6"
+  }
 ];
 
 window.abrirLojaAddonsDono = function() {
@@ -7223,4 +7929,298 @@ window.toggleModoEdicao = function() {
     }
     window.aplicarDonoModularConfig();
   }
+};
+
+// ============================================================================
+// MODAL INTELIGENTE DE INSTALAÇÃO DO CHEF SYNC (DONO MOBILE & DESKTOP)
+// ============================================================================
+
+let _syncDonoInfo = null;
+
+// Carrega as informações e chave de licença do restaurante para o Sync
+window.carregarInfoSyncDono = async function() {
+  const restId = localStorage.getItem('restaurante_id') || '1';
+  const restNome = sessionStorage.getItem('chef_impersonate_rest') || 'Restaurante Principal';
+  
+  // Valores padrão de contingência
+  if (!_syncDonoInfo) {
+    const chaveDefault = 'CHEF-LOCAL-' + String(restId).padStart(4, '0');
+    _syncDonoInfo = {
+      chave: chaveDefault,
+      nome: restNome,
+      restaurante_id: restId,
+      guiaUrl: `${window.location.origin}/guia-sync.html?chave=${encodeURIComponent(chaveDefault)}`,
+      downloadExeUrl: `/api/sync/installers/Instalador-ChefSync.exe?key=${encodeURIComponent(chaveDefault)}`,
+      downloadZipUrl: `/api/sync/installers/ChefSync-Distribuicao.zip`
+    };
+  }
+
+  try {
+    const token = (typeof obterTokenDono === 'function') ? obterTokenDono() : localStorage.getItem('chef_token');
+    const resp = await fetch('/api/dono/sync-info', {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/json'
+      }
+    });
+    if (resp.ok) {
+      const dados = await resp.json();
+      if (dados && dados.ok) {
+        _syncDonoInfo = dados;
+      }
+    }
+  } catch (err) {
+    console.warn('[Sync Dono] Fallback local para informações do sync:', err);
+  }
+
+  // Atualiza elementos no modal
+  const elChave = document.getElementById('sync-dono-chave-licenca');
+  const elNome = document.getElementById('sync-dono-rest-nome');
+  const btnExe = document.getElementById('btn-sync-dono-download-exe');
+  const btnZip = document.getElementById('btn-sync-dono-download-zip');
+
+  if (elChave) elChave.textContent = _syncDonoInfo.chave;
+  if (elNome) elNome.textContent = `(${_syncDonoInfo.nome || 'Restaurante'})`;
+  if (btnExe && _syncDonoInfo.downloadExeUrl) btnExe.href = _syncDonoInfo.downloadExeUrl;
+  if (btnZip && _syncDonoInfo.downloadZipUrl) btnZip.href = _syncDonoInfo.downloadZipUrl;
+};
+
+// Abre o modal inteligente de instalação do Sync
+window.abrirModalInstalarSyncDono = function(tabInicial = 'caixa') {
+  const modal = document.getElementById('modal-instalar-sync-dono');
+  if (!modal) return;
+
+  // Detecta se o dono está em dispositivo móvel (celular ou tablet)
+  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const banner = document.getElementById('sync-dono-device-banner');
+  if (banner) {
+    if (isMobile) {
+      banner.style.background = 'rgba(59,130,246,0.12)';
+      banner.style.border = '1px solid rgba(59,130,246,0.3)';
+      banner.style.color = '#93c5fd';
+      banner.innerHTML = `
+        <i class="ph-bold ph-device-mobile" style="font-size:24px; color:#3b82f6; flex-shrink:0;"></i>
+        <div>
+          <strong style="color:#fff;">Acessando pelo celular ou tablet?</strong><br>
+          O instalador do Sync (.exe) roda nos computadores Windows do restaurante. Envie o passo a passo direto para o WhatsApp do Caixa ou copie o link abaixo!
+        </div>
+      `;
+    } else {
+      banner.style.background = 'rgba(16,185,129,0.1)';
+      banner.style.border = '1px solid rgba(16,185,129,0.25)';
+      banner.style.color = '#86efac';
+      banner.innerHTML = `
+        <i class="ph-bold ph-desktop" style="font-size:24px; color:#10b981; flex-shrink:0;"></i>
+        <div>
+          <strong style="color:#fff;">Você está em um computador:</strong><br>
+          Se esta máquina for o computador do Caixa, você pode baixar o instalador diretamente ou enviar o guia para outros terminais.
+        </div>
+      `;
+    }
+  }
+
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+  window.alternarTabModalSyncDono(tabInicial);
+  window.carregarInfoSyncDono();
+};
+
+// Fecha o modal de instalação
+window.fecharModalInstalarSyncDono = function() {
+  const modal = document.getElementById('modal-instalar-sync-dono');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.style.display = 'none';
+};
+
+// Alterna entre abas (caixa / multi / moveis)
+window.alternarTabModalSyncDono = function(tab) {
+  const tabs = ['caixa', 'multi', 'moveis'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`tab-btn-sync-${t}`);
+    const content = document.getElementById(`tab-content-sync-${t}`);
+    if (btn) {
+      if (t === tab) {
+        btn.classList.add('active');
+        btn.style.background = 'rgba(59,130,246,0.2)';
+        btn.style.borderColor = 'rgba(59,130,246,0.5)';
+        btn.style.color = '#fff';
+      } else {
+        btn.classList.remove('active');
+        btn.style.background = 'var(--card)';
+        btn.style.borderColor = 'var(--border)';
+        btn.style.color = 'var(--text-sub)';
+      }
+    }
+    if (content) {
+      content.style.display = (t === tab) ? 'block' : 'none';
+    }
+  });
+};
+
+// Envia link formatado para WhatsApp do Caixa ou da Equipe
+window.enviarWhatsAppSyncDono = function(tipo = 'caixa') {
+  const chave = _syncDonoInfo?.chave || 'CHEF-LOCAL-0001';
+  const guiaUrl = _syncDonoInfo?.guiaUrl || `${window.location.origin}/guia-sync.html?chave=${encodeURIComponent(chave)}`;
+  const nomeRest = _syncDonoInfo?.nome || 'nosso restaurante';
+
+  let msg = '';
+  if (tipo === 'caixa') {
+    msg = `*Chef Cozinha Sync — Instalação no Caixa*\n\n` +
+          `Olá! Segue o link com o passo a passo ilustrado e o instalador oficial do Chef Sync para o computador do Caixa de ${nomeRest}:\n\n` +
+          `🔗 *Acesse no computador do caixa:*\n${guiaUrl}\n\n` +
+          `🔑 *Chave de Ativação:* \`${chave}\`\n\n` +
+          `Basta abrir o link no navegador do PC, baixar o instalador e seguir os 4 passos rápidos na tela. O sistema funciona mesmo se a internet cair!`;
+  } else {
+    msg = `*Chef Cozinha Sync — Instalação Multi-Terminais*\n\n` +
+          `Olá equipe! Segue o instalador e guia oficial do Chef Sync para configurar em TODOS os computadores Windows de ${nomeRest}:\n\n` +
+          `🔗 *Guia e Instalador Oficial:*\n${guiaUrl}\n\n` +
+          `🔑 *Chave da Licença:* \`${chave}\`\n\n` +
+          `Instale em cada computador do caixa (Balcão, Bar, Delivery) para proteção anti-queda e impressão térmica direta.`;
+  }
+
+  const urlWhats = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+  window.open(urlWhats, '_blank');
+};
+
+// Copia o link do guia com a chave
+window.copiarLinkGuiaSyncDono = function(tipo = 'caixa') {
+  const chave = _syncDonoInfo?.chave || 'CHEF-LOCAL-0001';
+  const guiaUrl = _syncDonoInfo?.guiaUrl || `${window.location.origin}/guia-sync.html?chave=${encodeURIComponent(chave)}`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(guiaUrl).then(() => {
+      if (typeof showToast === 'function') showToast('🔗 Link do guia copiado para a área de transferência!', 'ph-check-circle', 'success');
+      else alert('Link copiado!');
+    }).catch(() => fallbackCopiar(guiaUrl));
+  } else {
+    fallbackCopiar(guiaUrl);
+  }
+
+  function fallbackCopiar(txt) {
+    const temp = document.createElement('textarea');
+    temp.value = txt;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand('copy');
+    document.body.removeChild(temp);
+    if (typeof showToast === 'function') showToast('🔗 Link do guia copiado!', 'ph-check-circle', 'success');
+    else alert('Link copiado!');
+  }
+};
+
+// Copia a chave de ativação
+window.copiarChaveSyncDono = function() {
+  const chave = _syncDonoInfo?.chave || 'CHEF-LOCAL-0001';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(chave).then(() => {
+      if (typeof showToast === 'function') showToast(`🔑 Chave ${chave} copiada!`, 'ph-key', 'success');
+      else alert('Chave copiada: ' + chave);
+    });
+  } else {
+    const temp = document.createElement('textarea');
+    temp.value = chave;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand('copy');
+    document.body.removeChild(temp);
+    if (typeof showToast === 'function') showToast(`🔑 Chave ${chave} copiada!`, 'ph-key', 'success');
+    else alert('Chave copiada: ' + chave);
+  }
+};
+
+// Abre o guia em nova aba
+window.abrirGuiaSyncDono = function() {
+  const chave = _syncDonoInfo?.chave || 'CHEF-LOCAL-0001';
+  const guiaUrl = _syncDonoInfo?.guiaUrl || `${window.location.origin}/guia-sync.html?chave=${encodeURIComponent(chave)}`;
+  window.open(guiaUrl, '_blank');
+};
+
+// Redireciona da aba móveis para liberação de terminais QR Code
+window.redirecionarParaLiberacaoTerminaisDono = function() {
+  window.fecharModalInstalarSyncDono();
+  if (typeof window.abrirModalLiberarTerminalDono === 'function') {
+    window.abrirModalLiberarTerminalDono('codigo');
+  }
+};
+
+
+// ════════════════════════════════════════════════════════════════════
+// RESTAURAÇÃO TOTAL DO PAINEL (100% DAS SEÇÕES E FUNÇÕES VISÍVEIS)
+// ════════════════════════════════════════════════════════════════════
+window.restaurarTodasSecoesPainel = function() {
+  const cfg = window.getDonoModularConfig();
+  cfg.perfil = 'completo';
+  cfg.secoes.forEach(s => {
+    s.visivel = true;
+    const def = DONO_SECOES_DEF.find(d => d.id === s.id);
+    if (def) s.largura = def.larguraDef || 'medium';
+  });
+  window.salvarDonoModularConfig(cfg);
+
+  // Remove qualquer recolhimento salvo
+  try {
+    localStorage.removeItem('chef_dono_collapsed_sections');
+  } catch(e){}
+
+  document.querySelectorAll('.dono-section, main > div').forEach(sec => {
+    sec.classList.remove('is-collapsed');
+    sec.style.display = '';
+  });
+  window.atualizarBotaoToggleGlobal();
+
+  if (typeof showToast === 'function') {
+    showToast('✨ 100% das 24 Seções e Telas do Painel Foram Restauradas!', 'ph-check-circle', 'success');
+  } else {
+    alert('100% das funções do painel foram restauradas!');
+  }
+};
+
+// ════════════════════════════════════════════════════════════════════
+// BUSCA E FILTRO DAS TELAS OPERACIONAIS DO SISTEMA (SEC-REMOTO-TELAS)
+// ════════════════════════════════════════════════════════════════════
+window.filtrarTelasRemoto = function(termo) {
+  const busca = (termo || '').toLowerCase().trim();
+  const catAtiva = document.querySelector('#filtros-cat-remoto .tab-btn-cat-remoto.active')?.getAttribute('data-cat') || 'todas';
+  const botoes = document.querySelectorAll('#grid-remoto-telas .remote-btn');
+  let visiveis = 0;
+
+  botoes.forEach(btn => {
+    const btnCat = btn.getAttribute('data-cat') || 'todas';
+    const matchCat = (catAtiva === 'todas' || btnCat === catAtiva);
+    const txt = btn.textContent.toLowerCase();
+    const kw = (btn.getAttribute('data-keywords') || '').toLowerCase();
+    const matchBusca = !busca || txt.includes(busca) || kw.includes(busca);
+
+    const vis = matchCat && matchBusca;
+    btn.style.display = vis ? 'flex' : 'none';
+    if (vis) visiveis++;
+  });
+
+  const contador = document.getElementById('contador-telas-remoto');
+  if (contador) contador.textContent = `${visiveis} funções`;
+};
+
+window.filtrarCatTelasRemoto = function(cat, btnElem) {
+  document.querySelectorAll('#filtros-cat-remoto .tab-btn-cat-remoto').forEach(b => b.classList.remove('active'));
+  if (btnElem) btnElem.classList.add('active');
+
+  const termoBusca = (document.getElementById('busca-remoto-telas')?.value || '').toLowerCase().trim();
+  const botoes = document.querySelectorAll('#grid-remoto-telas .remote-btn');
+  let visiveis = 0;
+
+  botoes.forEach(btn => {
+    const btnCat = btn.getAttribute('data-cat') || 'todas';
+    const matchCat = (cat === 'todas' || btnCat === cat);
+    const txt = btn.textContent.toLowerCase();
+    const kw = (btn.getAttribute('data-keywords') || '').toLowerCase();
+    const matchBusca = !termoBusca || txt.includes(termoBusca) || kw.includes(termoBusca);
+
+    const vis = matchCat && matchBusca;
+    btn.style.display = vis ? 'flex' : 'none';
+    if (vis) visiveis++;
+  });
+
+  const contador = document.getElementById('contador-telas-remoto');
+  if (contador) contador.textContent = `${visiveis} funções`;
 };

@@ -1,6 +1,13 @@
 // --- Esteira ---
 let prontosAnterioresIds = [];
 const chamadasReclamadas = new Map();
+window._passBannerDismissed = false;
+
+window.fecharPassAlertBanner = function() {
+  const passBanner = document.getElementById('garcom-pass-alert-banner');
+  if (passBanner) passBanner.style.display = 'none';
+  window._passBannerDismissed = true;
+};
 
 socket.on('pedidos_atualizados', () => {
   if (loggedUser) socket.emit('get_esteira', loggedUser.nome);
@@ -16,6 +23,10 @@ socket.on('esteira_atualizada', (pedidos) => {
   const idsNovos = novosIds.filter(id => !prontosAnterioresIds.includes(id));
   prontosAnterioresIds = novosIds;
 
+  if (idsNovos.length > 0) {
+    window._passBannerDismissed = false;
+  }
+
   const badge = document.getElementById('esteira-badge');
   if (badge) {
     badge.style.display = (prontos.length > 0) ? 'block' : 'none';
@@ -25,11 +36,12 @@ socket.on('esteira_atualizada', (pedidos) => {
   const passBanner = document.getElementById('garcom-pass-alert-banner');
   const passText = document.getElementById('garcom-pass-alert-text');
   if (passBanner) {
-    if (prontos.length > 0) {
+    if (prontos.length > 0 && !window._passBannerDismissed) {
       passBanner.style.display = 'flex';
       if (passText) passText.innerText = `${prontos.length} pedido${prontos.length > 1 ? 's' : ''} pronto${prontos.length > 1 ? 's' : ''} na cozinha!`;
     } else {
       passBanner.style.display = 'none';
+      if (prontos.length === 0) window._passBannerDismissed = false;
     }
   }
 

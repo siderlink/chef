@@ -1881,13 +1881,24 @@ function renderQueue(forceRerender) {
   if (bProntoMob) bProntoMob.innerText = countPronto;
 
   if (filtered.length === 0) {
+    const temOutros = (countEspera > 0 && currentFilter !== 'Em espera') || (countPreparo > 0 && currentFilter !== 'Em preparo') || (countPronto > 0 && currentFilter !== 'Pronto') || (currentSector !== 'Todos');
     const emptyHtml = `
-      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; background: var(--bg-card, #ffffff); border-radius: 24px; border: 1.5px dashed var(--border-color, #cbd5e1); margin: 30px auto; max-width: 480px; box-shadow: 0 4px 16px rgba(0,0,0,0.02);">
+      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 20px; text-align: center; background: var(--bg-card, #ffffff); border-radius: 24px; border: 1.5px dashed var(--border-color, #cbd5e1); margin: 30px auto; max-width: 500px; box-shadow: 0 4px 16px rgba(0,0,0,0.02);">
         <div style="width: 72px; height: 72px; border-radius: 50%; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 38px; margin-bottom: 16px;">
           <i class="ph-fill ph-check-circle"></i>
         </div>
         <h3 style="font-size: 19px; font-weight: 800; color: var(--text-primary, #0f172a); margin: 0 0 6px 0;">Tudo limpo na cozinha!</h3>
         <p style="font-size: 14px; color: var(--text-secondary, #64748b); margin: 0 0 16px 0; line-height: 1.4;">Nenhum pedido com status <strong>${escHtml(currentFilter)}</strong> no setor <strong>${escHtml(currentSector)}</strong> no momento.</p>
+        
+        ${temOutros ? `
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 16px;">
+          ${(countEspera > 0 && currentFilter !== 'Em espera') ? `<button type="button" onclick="window.filtrarFila('Em espera')" style="background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1.5px solid #f59e0b; padding: 7px 14px; border-radius: 12px; font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="ph-bold ph-hourglass-high"></i> Ver ${countEspera} em Espera</button>` : ''}
+          ${(countPreparo > 0 && currentFilter !== 'Em preparo') ? `<button type="button" onclick="window.filtrarFila('Em preparo')" style="background: rgba(59, 130, 246, 0.15); color: #2563eb; border: 1.5px solid #3b82f6; padding: 7px 14px; border-radius: 12px; font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="ph-bold ph-fire"></i> Ver ${countPreparo} em Preparo</button>` : ''}
+          ${(countPronto > 0 && currentFilter !== 'Pronto') ? `<button type="button" onclick="window.filtrarFila('Pronto')" style="background: rgba(16, 185, 129, 0.15); color: #059669; border: 1.5px solid #10b981; padding: 7px 14px; border-radius: 12px; font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="ph-bold ph-bowl-food"></i> Ver ${countPronto} Prontos</button>` : ''}
+          ${(currentSector !== 'Todos') ? `<button type="button" onclick="if(window.selecionarSetorModal){window.selecionarSetorModal('Todos');}else{currentSector='Todos';renderQueue(true);}" style="background: rgba(100, 116, 139, 0.15); color: #475569; border: 1.5px solid #cbd5e1; padding: 7px 14px; border-radius: 12px; font-weight: 800; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="ph-bold ph-storefront"></i> Todos os Setores</button>` : ''}
+        </div>
+        ` : ''}
+
         <span style="font-size: 12px; background: var(--bg-secondary, #f1f5f9); color: var(--text-secondary, #64748b); padding: 6px 14px; border-radius: 20px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
           <i class="ph-fill ph-circle" style="color:#10b981; font-size: 8px;"></i> Monitorando novos pedidos em tempo real...
         </span>
@@ -3661,6 +3672,7 @@ window.abrirContextMenuKds = function(sectionEl, x, y) {
   }
   
   menu.classList.remove('hidden');
+  menu.style.display = 'block';
   
   let pX = x;
   let pY = y;
@@ -3673,7 +3685,10 @@ window.abrirContextMenuKds = function(sectionEl, x, y) {
 
 window.fecharContextMenuKds = function() {
   const menu = document.getElementById('kds-context-menu');
-  if (menu) menu.classList.add('hidden');
+  if (menu) {
+    menu.classList.add('hidden');
+    menu.style.display = 'none';
+  }
 };
 
 window.ocultarSecaoPeloContexto = function() {
@@ -3737,4 +3752,14 @@ document.addEventListener('DOMContentLoaded', () => {
     qList.addEventListener('touchend', () => clearTimeout(kdsLongPressTimer));
     qList.addEventListener('touchmove', () => clearTimeout(kdsLongPressTimer));
   }
+
+  // Fechar context menu ao clicar fora
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('kds-context-menu');
+    if (menu && !menu.classList.contains('hidden') && menu.style.display !== 'none') {
+      if (!menu.contains(e.target)) {
+        window.fecharContextMenuKds();
+      }
+    }
+  });
 });

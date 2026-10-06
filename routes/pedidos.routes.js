@@ -79,7 +79,7 @@ function createMetricasRouter() {
     const db = getDb();
     db.all("SELECT * FROM funcionarios WHERE status = 'Ativo' ORDER BY nome", [], (errFunc, funcionarios) => {
       if (errFunc) return res.json({ ok: false, erro: 'Erro ao consultar funcionários.' });
-      db.all('SELECT * FROM pedidos ORDER BY id', [], (errPed, pedidos) => {
+      db.all('SELECT id, userName, total, status, createdAt, entregueEm FROM pedidos ORDER BY id DESC LIMIT 5000', [], (errPed, pedidos) => {
         if (errPed) return res.json({ ok: false, erro: 'Erro ao consultar pedidos.' });
         const hojeStr = new Date().toISOString().slice(0, 10);
         const metricas = (funcionarios || []).map(f => {

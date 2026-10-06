@@ -4055,110 +4055,68 @@
           </div>
         </div>
 
-        <!-- Painel de Configuração: Atalhos do App Garçom (Mobile) -->
-        <div class="cfg-card">
-          <div class="cfg-card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <!-- Painel de Configuração: Atalhos do App Garçom (Mobile) por Colaborador -->
+        <div class="cfg-card" id="card-cfg-atalhos-garcom">
+          <div class="cfg-card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 14px; border-bottom: 1px solid var(--cfg-border); padding-bottom: 16px;">
             <div style="display: flex; align-items: center; gap: 12px;">
-              <i class="ph-bold ph-device-mobile" style="color: var(--cfg-primary);"></i>
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(252,75,21,0.12); color: #fc4b15; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
+                <i class="ph-bold ph-device-mobile"></i>
+              </div>
               <div>
-                <h3>Atalhos e Funções Rápidas do App Garçom</h3>
-                <p>Selecione quais botões e funções de atalho estarão visíveis no painel de deslize rápido do App Garçom no celular/tablet.</p>
+                <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--cfg-text);">Atalhos & Funções da Comanda Mobile</h3>
+                <p style="margin: 2px 0 0 0; font-size: 12.5px; color: var(--cfg-text-muted);">Defina a visibilidade (mostrar/ocultar) e a posição/ordem de cada função para cada colaborador do salão.</p>
               </div>
             </div>
-            <button onclick="window.salvarConfigAtalhosGarcom()" class="cfg-btn-primary" style="display: flex; align-items: center; gap: 8px;">
-              <i class="ph ph-floppy-disk"></i> Salvar Atalhos
-            </button>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button type="button" onclick="window.restaurarAtalhosPadraoColaborador()" class="cfg-btn-subtle" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; border: 1px solid var(--cfg-border); background: var(--cfg-subtle-bg); color: var(--cfg-text); cursor: pointer;">
+                <i class="ph-bold ph-arrow-counter-clockwise"></i> Restaurar Padrão
+              </button>
+              <button type="button" onclick="window.salvarConfigAtalhosGarcom()" class="cfg-btn-primary" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; background: #fc4b15; color: white; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(252,75,21,0.25);">
+                <i class="ph-bold ph-floppy-disk"></i> Salvar Atalhos
+              </button>
+            </div>
           </div>
-          <div class="cfg-card-body">
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px;">
-              <!-- Fila de Espera -->
-              <div class="cfg-toggle-row" style="background:var(--cfg-subtle-bg); border:1px solid var(--cfg-border); border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size:22px;">🪑</span>
-                  <div>
-                    <strong style="font-size: 13.5px; display: block; color: var(--cfg-text);">Fila de Espera por Mesas</strong>
-                    <span style="font-size: 12px; color: var(--cfg-text-muted);">Adicionar clientes e acomodar na mesa</span>
-                  </div>
+
+          <div class="cfg-card-body" style="padding: 18px 20px;">
+            <!-- SELETOR DE COLABORADOR / PERFIL -->
+            <div style="background: var(--cfg-subtle-bg); border: 1.5px solid var(--cfg-border); border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px;">
+              <div style="display: flex; align-items: center; gap: 12px; min-width: 280px; flex: 1;">
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(59,130,246,0.12); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+                  <i class="ph-bold ph-user-gear"></i>
                 </div>
-                <label class="cfg-switch">
-                  <input type="checkbox" id="cfg-garcom-fila-espera" checked>
-                  <span class="cfg-slider"></span>
-                </label>
+                <div style="flex: 1;">
+                  <label for="cfg-atalhos-colaborador-select" style="display: block; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--cfg-text-muted); margin-bottom: 4px;">Configurar Atalhos Para:</label>
+                  <select id="cfg-atalhos-colaborador-select" onchange="window.trocarColaboradorAtalhos(this.value)"
+                    style="width: 100%; max-width: 420px; padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--cfg-border); background: var(--cfg-card-bg); color: var(--cfg-text); font-size: 13.5px; font-weight: 700; outline: none;">
+                    <option value="global">⭐ Padrão do Restaurante (Todos os Colaboradores)</option>
+                  </select>
+                </div>
               </div>
 
-              <!-- Fila de Preparo -->
-              <div class="cfg-toggle-row" style="background:var(--cfg-subtle-bg); border:1px solid var(--cfg-border); border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size:22px;">🍳</span>
-                  <div>
-                    <strong style="font-size: 13.5px; display: block; color: var(--cfg-text);">Fila de Preparo (Status KDS)</strong>
-                    <span style="font-size: 12px; color: var(--cfg-text-muted);">Consultar situação do pedido p/ cliente</span>
-                  </div>
-                </div>
-                <label class="cfg-switch">
-                  <input type="checkbox" id="cfg-garcom-fila-preparo" checked>
-                  <span class="cfg-slider"></span>
-                </label>
+              <!-- STATUS BADGE & AÇÕES EM MASSA -->
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span id="cfg-atalhos-status-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; background: rgba(16,185,129,0.12); color: #059669; border: 1px solid rgba(16,185,129,0.25);">
+                  <i class="ph-bold ph-check-circle"></i> Padrão do Salão
+                </span>
+                <button type="button" onclick="window.alternarTodosAtalhos(true)" style="padding: 6px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--cfg-border); background: var(--cfg-card-bg); color: var(--cfg-text); cursor: pointer;">
+                  <i class="ph-bold ph-eye"></i> Mostrar Todos
+                </button>
+                <button type="button" onclick="window.alternarTodosAtalhos(false)" style="padding: 6px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--cfg-border); background: var(--cfg-card-bg); color: var(--cfg-text-muted); cursor: pointer;">
+                  <i class="ph-bold ph-eye-slash"></i> Ocultar Todos
+                </button>
               </div>
+            </div>
 
-              <!-- Consulta de Preço -->
-              <div class="cfg-toggle-row" style="background:var(--cfg-subtle-bg); border:1px solid var(--cfg-border); border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size:22px;">🔍</span>
-                  <div>
-                    <strong style="font-size: 13.5px; display: block; color: var(--cfg-text);">Consultar Preço e Estoque</strong>
-                    <span style="font-size: 12px; color: var(--cfg-text-muted);">Busca rápida de itens e ingredientes</span>
-                  </div>
-                </div>
-                <label class="cfg-switch">
-                  <input type="checkbox" id="cfg-garcom-consulta-preco" checked>
-                  <span class="cfg-slider"></span>
-                </label>
-              </div>
+            <!-- DICA RÁPIDA -->
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; background: rgba(59,130,246,0.06); border: 1px dashed rgba(59,130,246,0.25); color: var(--cfg-text); font-size: 12px; margin-bottom: 16px;">
+              <i class="ph-bold ph-info" style="color: #2563eb; font-size: 16px; flex-shrink: 0;"></i>
+              <span>Use os botões <strong>🔼 Subir</strong> e <strong>🔽 Descer</strong> para definir a posição exata de cada botão no celular. Marque <strong>Barra Rápida (Pílulas)</strong> para o botão aparecer no topo da tela de mesas.</span>
+            </div>
 
-              <!-- Nova Comanda -->
-              <div class="cfg-toggle-row" style="background:var(--cfg-subtle-bg); border:1px solid var(--cfg-border); border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size:22px;">👤</span>
-                  <div>
-                    <strong style="font-size: 13.5px; display: block; color: var(--cfg-text);">Nova Comanda Individual</strong>
-                    <span style="font-size: 12px; color: var(--cfg-text-muted);">Abrir comanda de cliente avulso</span>
-                  </div>
-                </div>
-                <label class="cfg-switch">
-                  <input type="checkbox" id="cfg-garcom-nova-comanda" checked>
-                  <span class="cfg-slider"></span>
-                </label>
-              </div>
-
-              <!-- Chamar Gerente -->
-              <div class="cfg-toggle-row" style="background:var(--cfg-subtle-bg); border:1px solid var(--cfg-border); border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size:22px;">🛎️</span>
-                  <div>
-                    <strong style="font-size: 13.5px; display: block; color: var(--cfg-text);">Chamar Gerente / Suporte</strong>
-                    <span style="font-size: 12px; color: var(--cfg-text-muted);">Solicitar auxílio de supervisor</span>
-                  </div>
-                </div>
-                <label class="cfg-switch">
-                  <input type="checkbox" id="cfg-garcom-chamar-gerente" checked>
-                  <span class="cfg-slider"></span>
-                </label>
-              </div>
-
-              <!-- Minhas Vendas -->
-              <div class="cfg-toggle-row" style="background:var(--cfg-subtle-bg); border:1px solid var(--cfg-border); border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size:22px;">📊</span>
-                  <div>
-                    <strong style="font-size: 13.5px; display: block; color: var(--cfg-text);">Minhas Vendas do Turno</strong>
-                    <span style="font-size: 12px; color: var(--cfg-text-muted);">Acompanhar comissão e total vendido</span>
-                  </div>
-                </div>
-                <label class="cfg-switch">
-                  <input type="checkbox" id="cfg-garcom-minhas-vendas" checked>
-                  <span class="cfg-slider"></span>
-                </label>
+            <!-- CONTAINER DINÂMICO DE ATALHOS ORDENÁVEIS -->
+            <div id="cfg-atalhos-lista-container" style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="text-align: center; padding: 30px; color: var(--cfg-text-muted);">
+                <i class="ph-bold ph-spinner ph-spin" style="font-size: 24px;"></i> Carregando atalhos...
               </div>
             </div>
           </div>
@@ -7231,61 +7189,269 @@
         </div>
 
         <!-- 5. IDENTIDADE VISUAL & BRANDING WHITE-LABEL -->
-        <div class="cfg-card">
-          <h3 style="margin-top:0; color:#fc4b15; display:flex; align-items:center; gap:8px;">
-            <i class="ph-bold ph-paint-brush-broad"></i> Identidade Visual & Branding do Restaurante
-          </h3>
-          <p style="color:var(--cfg-text-muted); font-size:13.5px; margin-bottom:18px;">
-            Personalize as cores, logomarca e fontes para que o cardápio e totens reflitam a identidade única da sua marca.
-          </p>
-
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+        <!-- ESTÚDIO DE CORES & BRANDING DO CARDÁPIO DIGITAL -->
+        <div class="cfg-card" id="card-branding-cardapio" style="border: 1.5px solid var(--cfg-field-border); border-radius: 16px; overflow: hidden; background: var(--cfg-card-bg, #ffffff);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
             <div>
-              <label style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">Cor Primária da Marca</label>
-              <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
-                <input type="color" id="rest-cor-primaria" value="#fc4b15" style="width: 44px; height: 38px; border: 1px solid var(--cfg-field-border); border-radius: 8px; cursor: pointer; padding: 2px; background: transparent;">
-                <input type="text" id="rest-cor-primaria-hex" value="#fc4b15" style="flex: 1; padding: 8px 10px; border: 1px solid var(--cfg-field-border); border-radius: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; background:var(--cfg-input-bg);">
+              <h3 style="margin:0; color:var(--primary, #fc4b15); display:flex; align-items:center; gap:8px; font-size:17px; font-weight:800;">
+                <i class="ph-bold ph-palette"></i> Estúdio de Cores & Identidade do Cardápio Digital
+              </h3>
+              <p style="color:var(--cfg-text-muted); font-size:13px; margin:4px 0 0 0;">
+                Defina como os clientes veem seu restaurante no celular e no totem: escolha um estilo de nicho ou monte sua paleta exclusiva.
+              </p>
+            </div>
+            <span style="font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:20px; background:rgba(252,75,21,0.1); color:var(--primary, #fc4b15); display:inline-flex; align-items:center; gap:4px;">
+              <i class="ph-fill ph-sparkle"></i> Atualização em Tempo Real
+            </span>
+          </div>
+
+          <!-- 1. PRESETS RÁPIDOS EM 1 CLIQUE -->
+          <div style="margin-bottom:20px; background:var(--cfg-input-bg, #f8fafc); border:1px solid var(--cfg-field-border, #e2e8f0); border-radius:14px; padding:14px;">
+            <label style="font-size:12px; font-weight:800; color:var(--cfg-text-muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:10px;">
+              ⚡ Paletas Gastronômicas de 1 Clique (Escolha o Estilo da sua Casa)
+            </label>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap:10px;" id="presets-paletas-cardapio">
+              
+              <div class="preset-theme-card active" data-preset="alacarte" data-primary="#be123c" data-sec="#e11d48" data-bg="#fbfbfa" data-surface="#ffffff" data-text="#1c1917" style="cursor:pointer; border:2px solid var(--primary, #be123c); border-radius:12px; padding:10px; background:#ffffff; transition:all .2s ease; text-align:center; box-shadow:0 4px 12px rgba(190,18,60,0.15);">
+                <div style="display:flex; justify-content:center; gap:4px; margin-bottom:6px;">
+                  <span style="width:16px; height:16px; border-radius:50%; background:#be123c; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#e11d48; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#fbfbfa; border:1px solid #d1d5db;"></span>
+                </div>
+                <strong style="font-size:12px; display:block; color:#0f172a;">🍷 À La Carte Gourmet</strong>
+                <span style="font-size:10px; color:#64748b;">Rubi & Linho Suave</span>
               </div>
-              <div style="display: flex; gap: 6px; margin-top: 8px;" id="presets-cores-primarias">
-                <span class="cor-preset" data-cor="#e11d48" style="width: 20px; height: 20px; border-radius: 50%; background: #e11d48; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Burguer / Carnes (#e11d48)"></span>
-                <span class="cor-preset" data-cor="#fc4b15" style="width: 20px; height: 20px; border-radius: 50%; background: #fc4b15; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Laranja Clássico (#fc4b15)"></span>
-                <span class="cor-preset" data-cor="#16a34a" style="width: 20px; height: 20px; border-radius: 50%; background: #16a34a; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Verde Fresh / Saudável (#16a34a)"></span>
-                <span class="cor-preset" data-cor="#d97706" style="width: 20px; height: 20px; border-radius: 50%; background: #d97706; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Dourado Bistrô / Bar (#d97706)"></span>
-                <span class="cor-preset" data-cor="#8b5cf6" style="width: 20px; height: 20px; border-radius: 50%; background: #8b5cf6; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Roxo / Açaí (#8b5cf6)"></span>
-                <span class="cor-preset" data-cor="#2563eb" style="width: 20px; height: 20px; border-radius: 50%; background: #2563eb; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Azul Náutico (#2563eb)"></span>
-                <span class="cor-preset" data-cor="#18181b" style="width: 20px; height: 20px; border-radius: 50%; background: #18181b; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px #d1d5db;" title="Preto Gourmet (#18181b)"></span>
+              
+              <div class="preset-theme-card" data-preset="burguer" data-primary="#e11d48" data-sec="#f97316" data-bg="#0f172a" data-surface="#1e293b" data-text="#f8fafc" style="cursor:pointer; border:2px solid #e2e8f0; border-radius:12px; padding:10px; background:#ffffff; transition:all .2s ease; text-align:center;">
+                <div style="display:flex; justify-content:center; gap:4px; margin-bottom:6px;">
+                  <span style="width:16px; height:16px; border-radius:50%; background:#e11d48; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#f97316; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#0f172a; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                </div>
+                <strong style="font-size:12px; display:block; color:#0f172a;">🍔 Burguer & Brasa</strong>
+                <span style="font-size:10px; color:#64748b;">Dark Gourmet</span>
+              </div>
+
+              <div class="preset-theme-card" data-preset="pizza" data-primary="#c2410c" data-sec="#15803d" data-bg="#fefce8" data-surface="#ffffff" data-text="#1c1917" style="cursor:pointer; border:2px solid #e2e8f0; border-radius:12px; padding:10px; background:#ffffff; transition:all .2s ease; text-align:center;">
+                <div style="display:flex; justify-content:center; gap:4px; margin-bottom:6px;">
+                  <span style="width:16px; height:16px; border-radius:50%; background:#c2410c; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#15803d; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#fefce8; border:1px solid #d1d5db;"></span>
+                </div>
+                <strong style="font-size:12px; display:block; color:#0f172a;">🍕 Cantina & Pizza</strong>
+                <span style="font-size:10px; color:#64748b;">Marfim Aconchego</span>
+              </div>
+
+              <div class="preset-theme-card" data-preset="sushi" data-primary="#dc2626" data-sec="#71717a" data-bg="#09090b" data-surface="#18181b" data-text="#fafafa" style="cursor:pointer; border:2px solid #e2e8f0; border-radius:12px; padding:10px; background:#ffffff; transition:all .2s ease; text-align:center;">
+                <div style="display:flex; justify-content:center; gap:4px; margin-bottom:6px;">
+                  <span style="width:16px; height:16px; border-radius:50%; background:#dc2626; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#71717a; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#09090b; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                </div>
+                <strong style="font-size:12px; display:block; color:#0f172a;">🍣 Sushi & Oriental</strong>
+                <span style="font-size:10px; color:#64748b;">Preto Ônix Minimalista</span>
+              </div>
+
+              <div class="preset-theme-card" data-preset="cafe" data-primary="#78350f" data-sec="#d97706" data-bg="#fafaf9" data-surface="#ffffff" data-text="#1c1917" style="cursor:pointer; border:2px solid #e2e8f0; border-radius:12px; padding:10px; background:#ffffff; transition:all .2s ease; text-align:center;">
+                <div style="display:flex; justify-content:center; gap:4px; margin-bottom:6px;">
+                  <span style="width:16px; height:16px; border-radius:50%; background:#78350f; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#d97706; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#fafaf9; border:1px solid #d1d5db;"></span>
+                </div>
+                <strong style="font-size:12px; display:block; color:#0f172a;">☕ Café & Bistrô</strong>
+                <span style="font-size:10px; color:#64748b;">Creme Artesanal</span>
+              </div>
+
+              <div class="preset-theme-card" data-preset="salada" data-primary="#059669" data-sec="#84cc16" data-bg="#f0fdf4" data-surface="#ffffff" data-text="#064e3b" style="cursor:pointer; border:2px solid #e2e8f0; border-radius:12px; padding:10px; background:#ffffff; transition:all .2s ease; text-align:center;">
+                <div style="display:flex; justify-content:center; gap:4px; margin-bottom:6px;">
+                  <span style="width:16px; height:16px; border-radius:50%; background:#059669; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#84cc16; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#f0fdf4; border:1px solid #d1d5db;"></span>
+                </div>
+                <strong style="font-size:12px; display:block; color:#0f172a;">🥗 Natural & Poke</strong>
+                <span style="font-size:10px; color:#64748b;">Verde Fresh</span>
+              </div>
+
+              <div class="preset-theme-card" data-preset="bar" data-primary="#8b5cf6" data-sec="#06b6d4" data-bg="#090d16" data-surface="#131b2e" data-text="#f8fafc" style="cursor:pointer; border:2px solid #e2e8f0; border-radius:12px; padding:10px; background:#ffffff; transition:all .2s ease; text-align:center;">
+                <div style="display:flex; justify-content:center; gap:4px; margin-bottom:6px;">
+                  <span style="width:16px; height:16px; border-radius:50%; background:#8b5cf6; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#06b6d4; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#090d16; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                </div>
+                <strong style="font-size:12px; display:block; color:#0f172a;">🍹 Bar & Pub</strong>
+                <span style="font-size:10px; color:#64748b;">Neon Nightlife</span>
+              </div>
+
+              <div class="preset-theme-card" data-preset="steak" data-primary="#991b1b" data-sec="#eab308" data-bg="#18181b" data-surface="#27272a" data-text="#f4f4f5" style="cursor:pointer; border:2px solid #e2e8f0; border-radius:12px; padding:10px; background:#ffffff; transition:all .2s ease; text-align:center;">
+                <div style="display:flex; justify-content:center; gap:4px; margin-bottom:6px;">
+                  <span style="width:16px; height:16px; border-radius:50%; background:#991b1b; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#eab308; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#18181b; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                </div>
+                <strong style="font-size:12px; display:block; color:#0f172a;">🥩 Steak & Parrilla</strong>
+                <span style="font-size:10px; color:#64748b;">Vinho & Carvão</span>
+              </div>
+
+              <div class="preset-theme-card" data-preset="doceria" data-primary="#ec4899" data-sec="#a855f7" data-bg="#fdf4ff" data-surface="#ffffff" data-text="#701a75" style="cursor:pointer; border:2px solid #e2e8f0; border-radius:12px; padding:10px; background:#ffffff; transition:all .2s ease; text-align:center;">
+                <div style="display:flex; justify-content:center; gap:4px; margin-bottom:6px;">
+                  <span style="width:16px; height:16px; border-radius:50%; background:#ec4899; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#a855f7; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#fdf4ff; border:1px solid #d1d5db;"></span>
+                </div>
+                <strong style="font-size:12px; display:block; color:#0f172a;">🧁 Doces & Gelato</strong>
+                <span style="font-size:10px; color:#64748b;">Rosa & Lavanda</span>
+              </div>
+
+              <div class="preset-theme-card" data-preset="chef" data-primary="#fc4b15" data-sec="#ff8c00" data-bg="#f8fafc" data-surface="#ffffff" data-text="#0f172a" style="cursor:pointer; border:2px solid var(--primary, #fc4b15); border-radius:12px; padding:10px; background:#ffffff; transition:all .2s ease; text-align:center; box-shadow:0 4px 12px rgba(252,75,21,0.15);">
+                <div style="display:flex; justify-content:center; gap:4px; margin-bottom:6px;">
+                  <span style="width:16px; height:16px; border-radius:50%; background:#fc4b15; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#ff8c00; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                  <span style="width:16px; height:16px; border-radius:50%; background:#f8fafc; border:1px solid #d1d5db;"></span>
+                </div>
+                <strong style="font-size:12px; display:block; color:#0f172a;">💎 Chef Cozinha</strong>
+                <span style="font-size:10px; color:#64748b;">Laranja Clássico</span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 2. CONTROLES E LIVE PREVIEW EM 2 COLUNAS -->
+          <div style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap:24px; align-items:start;">
+            
+            <!-- Coluna Esquerda: Seletores de Cores Personalizadas -->
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <input type="hidden" id="rest-tema-preset" value="alacarte">
+              
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                  <label style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">Cor Primária da Marca (Botões & Preços)</label>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                    <input type="color" id="rest-cor-primaria" value="#be123c" style="width: 44px; height: 38px; border: 1px solid var(--cfg-field-border); border-radius: 8px; cursor: pointer; padding: 2px; background: transparent;">
+                    <input type="text" id="rest-cor-primaria-hex" value="#BE123C" style="flex: 1; padding: 8px 10px; border: 1px solid var(--cfg-field-border); border-radius: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; background:var(--cfg-input-bg);">
+                  </div>
+                </div>
+
+                <div>
+                  <label style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">Cor Secundária / Destaques & Gradientes</label>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                    <input type="color" id="rest-cor-secundaria" value="#e11d48" style="width: 44px; height: 38px; border: 1px solid var(--cfg-field-border); border-radius: 8px; cursor: pointer; padding: 2px; background: transparent;">
+                    <input type="text" id="rest-cor-secundaria-hex" value="#E11D48" style="flex: 1; padding: 8px 10px; border: 1px solid var(--cfg-field-border); border-radius: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; background:var(--cfg-input-bg);">
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                  <label style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">Tom de Fundo do Cardápio</label>
+                  <select id="rest-cor-fundo" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid var(--cfg-field-border); border-radius: 8px; font-size: 13px; background: var(--cfg-input-bg); font-weight:600;">
+                    <option value="#f8fafc">☀️ Claro Clean (#f8fafc)</option>
+                    <option value="#fefce8">📜 Marfim Bistrô Aconchegante (#fefce8)</option>
+                    <option value="#fafaf9">☕ Creme Artesanal (#fafaf9)</option>
+                    <option value="#0f172a">🌑 Dark Slate Gourmet (#0f172a)</option>
+                    <option value="#09090b">🖤 Preto Ônix Minimalista (#09090b)</option>
+                    <option value="#090d16">🌃 Noite Profunda (#090d16)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">Tipografia / Fonte</label>
+                  <select id="rest-fonte-familia" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid var(--cfg-field-border); border-radius: 8px; font-size: 13px; background: var(--cfg-input-bg);">
+                    <option value="Inter, sans-serif">Inter (Moderna & Clean)</option>
+                    <option value="'Poppins', sans-serif">Poppins (Arredondada & Acolhedora)</option>
+                    <option value="'Montserrat', sans-serif">Montserrat (Moderna & Marcante)</option>
+                    <option value="'Playfair Display', serif">Playfair Display (Alta Gastronomia & Bistrô)</option>
+                    <option value="'Roboto', sans-serif">Roboto (Clássica & Neutra)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">URL da Logomarca (PNG transparente ou SVG)</label>
+                <input type="text" id="rest-logo-url" placeholder="https://meusite.com/logo.png" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid var(--cfg-field-border); border-radius: 8px; font-size: 13px; background:var(--cfg-input-bg);">
+              </div>
+
+              <div>
+                <label style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">URL do Banner de Capa Panorâmico (Hero Banner)</label>
+                <input type="text" id="rest-banner-url" placeholder="https://images.unsplash.com/photo-gastronomia..." style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid var(--cfg-field-border); border-radius: 8px; font-size: 13px; background:var(--cfg-input-bg);">
               </div>
             </div>
 
-            <div>
-              <label style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">Cor Secundária / Hover</label>
-              <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
-                <input type="color" id="rest-cor-secundaria" value="#ff8c00" style="width: 44px; height: 38px; border: 1px solid var(--cfg-field-border); border-radius: 8px; cursor: pointer; padding: 2px; background: transparent;">
-                <input type="text" id="rest-cor-secundaria-hex" value="#ff8c00" style="flex: 1; padding: 8px 10px; border: 1px solid var(--cfg-field-border); border-radius: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; background:var(--cfg-input-bg);">
+            <!-- Coluna Direita: LIVE SMARTPHONE PREVIEW -->
+            <div style="background:var(--cfg-input-bg, #f1f5f9); border:1px solid var(--cfg-field-border, #e2e8f0); border-radius:20px; padding:16px; display:flex; flex-direction:column; align-items:center;">
+              <span style="font-size:11px; font-weight:800; color:var(--cfg-text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                <i class="ph-bold ph-eye"></i> Prévia ao Vivo no Smartphone
+              </span>
+
+              <!-- MOCKUP CELULAR -->
+              <div id="cardapio-live-phone" style="width: 240px; height: 380px; background: #f8fafc; border: 8px solid #1e293b; border-radius: 36px; box-shadow: 0 16px 40px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden; position: relative; transition: all .3s ease;">
+                <!-- Notch -->
+                <div style="width: 70px; height: 14px; background: #1e293b; border-radius: 0 0 10px 10px; margin: 0 auto; z-index: 10;"></div>
+                
+                <!-- Phone Header -->
+                <div id="phone-header" style="background: #ffffff; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; transition: background .3s ease;">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span id="phone-logo-badge" style="width: 22px; height: 22px; border-radius: 6px; background: #fc4b15; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">🍽️</span>
+                    <strong id="phone-rest-name" style="font-size: 11.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;">Chef Cozinha</strong>
+                  </div>
+                  <span id="phone-mesa-badge" style="font-size: 9.5px; font-weight: 800; color: white; background: #fc4b15; padding: 2px 7px; border-radius: 10px; transition: background .3s ease;">Mesa 05</span>
+                </div>
+
+                <!-- Phone Body -->
+                <div id="phone-body" style="flex: 1; padding: 10px; overflow-y: hidden; display: flex; flex-direction: column; gap: 8px; background: #f8fafc; transition: background .3s ease;">
+                  
+                  <!-- Tabs preview -->
+                  <div style="display:flex; gap:4px; overflow-x:hidden;">
+                    <span id="phone-tab-active" style="padding: 3px 8px; border-radius: 12px; background: #fc4b15; color: white; font-size: 9px; font-weight: 800; white-space: nowrap; transition: background .3s ease;">Destaques</span>
+                    <span style="padding: 3px 8px; border-radius: 12px; background: rgba(0,0,0,0.06); color: #64748b; font-size: 9px; font-weight: 600; white-space: nowrap;">Pratos</span>
+                    <span style="padding: 3px 8px; border-radius: 12px; background: rgba(0,0,0,0.06); color: #64748b; font-size: 9px; font-weight: 600; white-space: nowrap;">Bebidas</span>
+                  </div>
+
+                  <!-- Item Card Preview -->
+                  <div id="phone-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all .3s ease;">
+                    <div id="phone-card-icon" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(252,75,21,0.12); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                      🍔
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                      <span id="phone-card-title" style="font-size: 10.5px; font-weight: 800; color: #0f172a; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Prato Especial da Casa</span>
+                      <span id="phone-card-price" style="font-size: 11px; font-weight: 900; color: #fc4b15; transition: color .3s ease;">R$ 39,90</span>
+                    </div>
+                    <button id="phone-btn-add" style="width: 24px; height: 24px; border-radius: 6px; background: #fc4b15; color: white; border: none; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; transition: background .3s ease;">
+                      +
+                    </button>
+                  </div>
+
+                  <!-- Item Card Preview 2 -->
+                  <div id="phone-card-2" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all .3s ease;">
+                    <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                      🍹
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                      <span style="font-size: 10.5px; font-weight: 800; color: #0f172a; display: block;">Drink Artesanal</span>
+                      <span id="phone-card-price-2" style="font-size: 11px; font-weight: 900; color: #fc4b15; transition: color .3s ease;">R$ 24,00</span>
+                    </div>
+                    <button id="phone-btn-add-2" style="width: 24px; height: 24px; border-radius: 6px; background: #fc4b15; color: white; border: none; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; transition: background .3s ease;">
+                      +
+                    </button>
+                  </div>
+
+                </div>
+
+                <!-- Phone Bottom Bar Preview -->
+                <div id="phone-dock" style="background: #ffffff; border-top: 1px solid #e2e8f0; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; transition: background .3s ease;">
+                  <span style="font-size: 9px; font-weight: 700; color: #64748b;">Mesa 05</span>
+                  <button id="phone-btn-cart" style="padding: 5px 10px; border-radius: 10px; background: #fc4b15; color: white; border: none; font-size: 9.5px; font-weight: 800; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: background .3s ease;">
+                    <span>🛒 2 itens</span> • <span>R$ 63,90</span>
+                  </button>
+                </div>
               </div>
-              <span style="font-size: 11px; color: var(--cfg-text-muted); display: block; margin-top: 4px;">Usada em efeitos de foco e botões secundários.</span>
+
+              <div style="margin-top:10px; text-align:center;">
+                <span id="label-preset-selecionado" style="font-size:12px; font-weight:800; color:var(--primary, #fc4b15);">
+                  Tema Ativo: Laranja Clássico Chef
+                </span>
+              </div>
             </div>
 
-            <div>
-              <label style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">Tipografia / Fonte do Cardápio</label>
-              <select id="rest-fonte-familia" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid var(--cfg-field-border); border-radius: 8px; font-size: 13px; background: var(--cfg-input-bg);">
-                <option value="Inter, sans-serif">Inter (Moderna & Clean)</option>
-                <option value="'Poppins', sans-serif">Poppins (Arredondada & Acolhedora)</option>
-                <option value="'Montserrat', sans-serif">Montserrat (Moderna & Marcante)</option>
-                <option value="'Playfair Display', serif">Playfair Display (Alta Gastronomia & Bistrô)</option>
-                <option value="'Roboto', sans-serif">Roboto (Clássica & Neutra)</option>
-              </select>
-            </div>
-
-            <div>
-              <label style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">URL da Logomarca (PNG/SVG)</label>
-              <input type="text" id="rest-logo-url" placeholder="https://meusite.com/logo.png" style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid var(--cfg-field-border); border-radius: 8px; font-size: 13px; background:var(--cfg-input-bg);">
-            </div>
-
-            <div style="grid-column: span 2;">
-              <label style="font-size:12px; font-weight:700; color:var(--cfg-text-muted);">URL do Banner de Capa (Panorâmico)</label>
-              <input type="text" id="rest-banner-url" placeholder="https://images.unsplash.com/photo-exemplo..." style="width: 100%; margin-top: 6px; padding: 9px; border: 1px solid var(--cfg-field-border); border-radius: 8px; font-size: 13px; background:var(--cfg-input-bg);">
-            </div>
           </div>
         </div>
 

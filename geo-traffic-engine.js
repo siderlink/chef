@@ -272,6 +272,11 @@ class GeoTrafficEngine {
       ok: true,
       activeVisitors,
       stats: {
+        onlineNow: activeVisitors,
+        siteHits: this.stats.site,
+        loginHits: this.stats.login,
+        loginApproved: this.stats.login_sucesso,
+        totalHits: this.stats.total,
         site: this.stats.site,
         login: this.stats.login,
         login_sucesso: this.stats.login_sucesso,

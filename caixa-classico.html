@@ -32,6 +32,7 @@
   <!-- Intro.js for Guided Tour -->
   <link rel="stylesheet" href="/vendor/introjs/introjs.min.css" />
   <script src="/vendor/introjs/intro.min.js"></script>
+  <script src="/caixa-version-manager.js"></script>
 
 
   <style>
@@ -419,18 +420,11 @@
 
       <!-- SELETOR DE VERSÃO DO CAIXA: v1 (Clássico) vs v1.1.1 (Moderno) -->
       <div class="dropdown-wrapper" id="caixa-version-switcher-wrapper" style="position:relative;">
-        <span class="menu-trigger caixa-version-badge" id="btn-toggle-caixa-version" onclick="var m = document.getElementById('drop-caixa-version'); if(m) m.classList.toggle('show'); event.stopPropagation();" title="Alternar versão da tela do Caixa" style="display:inline-flex; align-items:center; gap:5px; background:rgba(37,99,235,0.12); border:1px solid rgba(37,99,235,0.3); color:#2563eb; padding:3px 8px; border-radius:6px; font-size:11.5px; font-weight:700; cursor:pointer;">
+        <button type="button" class="menu-trigger caixa-version-badge" id="btn-toggle-caixa-version" data-dropdown="drop-caixa-version" data-current-version="v1" onclick="window.CaixaVersionManager && window.CaixaVersionManager.toggleDropdown(event, 'drop-caixa-version', 'v1')" title="Alternar versão do Caixa" style="display:inline-flex; align-items:center; gap:5px; background:rgba(37,99,235,0.12); border:1px solid rgba(37,99,235,0.3); color:#2563eb; padding:3px 8px; border-radius:6px; font-size:11.5px; font-weight:700; cursor:pointer;">
           <i class="ph-bold ph-tag"></i> Caixa v1 (Clássico) <i class="ph ph-caret-down" style="font-size:10px;"></i>
-        </span>
-        <div class="dropdown-menu" id="drop-caixa-version" style="min-width: 250px; right:0; left:auto; z-index:999999;">
-          <div class="dropdown-item active" style="display:flex; justify-content:space-between; align-items:center; background:rgba(37,99,235,0.08); font-weight:700;">
-            <span><i class="ph-bold ph-check" style="color:#2563eb;"></i> <strong>Caixa v1</strong> (Clássico)</span>
-            <span style="font-size:10px; color:#16a34a; font-weight:700;">Ativo</span>
-          </div>
-          <div class="dropdown-item" onclick="localStorage.setItem('chef_caixa_versao', 'v1.1.1'); localStorage.setItem('chef_caixa_tema', 'pro_ux'); location.href='/index.html'" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
-            <span><i class="ph ph-sparkle" style="color:#fc4b15;"></i> <strong>Caixa v1.1.1</strong> (Moderno)</span>
-            <span style="font-size:10px; color:#fc4b15; font-weight:700;">Novo</span>
-          </div>
+        </button>
+        <div class="dropdown-menu" id="drop-caixa-version" style="min-width: 260px; right:0; left:auto; z-index:9000;">
+          <!-- Content dynamically rendered by CaixaVersionManager -->
         </div>
       </div>
 

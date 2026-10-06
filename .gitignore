@@ -6,6 +6,7 @@ dist/
 build/
 *.tar.gz
 *.zip
+Instalador-ChefSync.exe
 ChefCozinha-Nativo/
 versao-win/
 installer/*
@@ -33,6 +34,7 @@ restaurante.db
 # Logs
 *.log
 *.err.log
+logs/
 
 # Certificados e Chaves de Segurança
 certs/

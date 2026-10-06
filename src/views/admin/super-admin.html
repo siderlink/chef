@@ -1991,7 +1991,7 @@
     }
 
     #btn-hamburger {
-      display: none;
+      display: inline-flex;
       background: var(--bg-card);
       border: 1.5px solid var(--border-color);
       color: var(--primary);
@@ -2441,6 +2441,14 @@
         gap: 22px;
       }
     }
+
+    /* Desktop Sidebar Collapse */
+    @media (min-width: 901px) {
+      #admin-panel { transition: grid-template-columns 0.3s ease; }
+      .sidebar { transition: transform 0.3s ease, width 0.3s ease, opacity 0.3s ease; }
+      #admin-panel.sidebar-collapsed { grid-template-columns: 0 1fr !important; }
+      #admin-panel.sidebar-collapsed .sidebar { width: 0 !important; overflow: hidden !important; opacity: 0; transform: translateX(-100%); padding: 0 !important; border: none !important; }
+    }
   </style>
 
   <script src="/locales.js"></script>
@@ -2470,7 +2478,7 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="/vendor/qrcode/qrcode-generator.js"></script>
   <script src="/vendor/qrcode/qr-helper.js"></script>
-  <script src="super-admin.js?v=20260929fixed"></script>
+  <script src="super-admin-script.js?v=20260929fixed"></script>
   <script src="/anti-tamper.js" defer></script>
   <script>
     if ('serviceWorker' in navigator) {

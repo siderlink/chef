@@ -146,7 +146,7 @@
           oldViewEl.style.display = 'none';
         }
         if (onComplete) onComplete();
-      }, 380);
+      }, 160);
     },
 
     /**
@@ -180,7 +180,7 @@
         currentViewEl.style.display = 'none';
         if (previousViewEl) previousViewEl.classList.remove('ios-view-pop-enter');
         if (onComplete) onComplete();
-      }, 380);
+      }, 160);
     },
 
     presentSheet(modalCardEl, backdropEl, backgroundAppEl) {
@@ -201,7 +201,7 @@
         return;
       }
       if (!modalCardEl) return;
-      modalCardEl.style.animation = 'iosSheetExit 320ms cubic-bezier(0.32, 0.72, 0, 1) forwards';
+      modalCardEl.style.animation = 'iosSheetExit 180ms cubic-bezier(0.32, 0.72, 0, 1) forwards';
       if (backgroundAppEl) backgroundAppEl.classList.remove('ios-sheet-backdrop-active');
 
       setTimeout(() => {
@@ -210,7 +210,7 @@
         modalCardEl.style.display = 'none';
         if (backdropEl) backdropEl.style.display = 'none';
         if (onDone) onDone();
-      }, 320);
+      }, 180);
     }
   };
 
@@ -224,19 +224,27 @@
         const currentActive = document.querySelector('.view.active');
         const targetView = document.getElementById('view-' + name);
 
-        if (currentActive && targetView && currentActive !== targetView) {
-          const isPop = name === 'tables' || (name === 'table-options' && currentActive.id === 'view-menu');
-          if (isPop) {
-            AppleTransitions.popView(document.body, currentActive, targetView, () => {
-              window._origShowView(name, title);
-            });
-          } else {
-            AppleTransitions.pushView(document.body, targetView, currentActive, () => {
-              window._origShowView(name, title);
-            });
-          }
-        } else {
+        // Abas principais do rodapé e telas raiz (Mesas, Esteira, Atalhos, Login):
+        // NUNCA aplicar atraso ou animações 3D pesadas entre abas primárias.
+        // A resposta deve ser 100% instantânea (0ms lag) para feedback tátil imediato!
+        const rootTabs = ['tables', 'mesas', 'esteira', 'atalhos', 'login'];
+        const currentName = currentActive ? (currentActive.id || '').replace('view-', '') : '';
+        const isRootNav = rootTabs.includes(name) || rootTabs.includes(currentName);
+
+        if (isRootNav || !currentActive || !targetView || currentActive === targetView) {
           window._origShowView(name, title);
+          return;
+        }
+
+        const isPop = name === 'tables' || (name === 'table-options' && currentActive.id === 'view-menu');
+        if (isPop) {
+          AppleTransitions.popView(document.body, currentActive, targetView, () => {
+            window._origShowView(name, title);
+          });
+        } else {
+          AppleTransitions.pushView(document.body, targetView, currentActive, () => {
+            window._origShowView(name, title);
+          });
         }
       };
     }

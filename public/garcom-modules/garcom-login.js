@@ -114,6 +114,13 @@ socket.on('login_success', (user) => {
   socket.emit('get_mesas');
   socket.emit('get_produtos');
   socket.emit('get_esteira', loggedUser.nome);
+  if (typeof window.applyAtalhosConfig === 'function') {
+    if (user.atalhos_config) {
+      window.applyAtalhosConfig(user.atalhos_config);
+    } else if (typeof window.carregarAtalhosGarcom === 'function') {
+      window.carregarAtalhosGarcom();
+    }
+  }
 
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();

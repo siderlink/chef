@@ -64,6 +64,7 @@
   <script src="/pagamento-parcial-modal.js?v=20261004v4" defer></script>
   <script src="/chef-telemetry-clicks.js" defer></script>
   <script src="/chef-layout-customizer.js?v=20261004v4" defer></script>
+<script src="/caixa-version-manager.js"></script>
 </head>
 
 <body>
@@ -460,22 +461,11 @@
       </button>
 
       <div class="dropdown-wrapper" id="caixa-version-switcher-wrapper" style="position:relative;">
-        <span class="menu-trigger caixa-version-badge" id="btn-toggle-caixa-version" onclick="var m = document.getElementById('drop-caixa-version'); if(m) m.classList.toggle('show'); event.stopPropagation();" title="Alternar versão da tela do Caixa" style="display:inline-flex; align-items:center; gap:5px; background:rgba(252,75,21,0.12); border:1px solid rgba(252,75,21,0.3); color:#fc4b15; padding:3px 8px; border-radius:6px; font-size:11.5px; font-weight:700; cursor:pointer;">
+        <button type="button" class="menu-trigger caixa-version-badge" id="btn-toggle-caixa-version" data-dropdown="drop-caixa-version" data-current-version="v1.1.1" onclick="window.CaixaVersionManager && window.CaixaVersionManager.toggleDropdown(event, 'drop-caixa-version', 'v1.1.1')" title="Alternar versão do Caixa" style="display:inline-flex; align-items:center; gap:5px; background:rgba(252,75,21,0.12); border:1px solid rgba(252,75,21,0.3); color:#fc4b15; padding:3px 8px; border-radius:6px; font-size:11.5px; font-weight:700; cursor:pointer;">
           <i class="ph-bold ph-tag"></i> Caixa v1.1.1 <i class="ph ph-caret-down" style="font-size:10px;"></i>
-        </span>
-        <div class="dropdown-menu" id="drop-caixa-version" style="min-width: 250px; right:0; left:auto; z-index:999999;">
-          <div class="dropdown-item" onclick="localStorage.setItem('chef_caixa_versao', 'ultra'); location.href='/caixa-ultra.html'" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
-            <span><i class="ph-bold ph-lightning" style="color:#06b6d4;"></i> <strong>Caixa Ultra 3D</strong> (&gt; 6GB RAM)</span>
-            <span style="font-size:10px; color:#06b6d4; font-weight:700;">Studio</span>
-          </div>
-          <div class="dropdown-item active" style="display:flex; justify-content:space-between; align-items:center; background:rgba(252,75,21,0.08); font-weight:700;">
-            <span><i class="ph-bold ph-check" style="color:#fc4b15;"></i> <strong>Caixa v1.1.1</strong> (Moderno)</span>
-            <span style="font-size:10px; color:#fc4b15; font-weight:700;">Ativo</span>
-          </div>
-          <div class="dropdown-item" onclick="localStorage.setItem('chef_caixa_versao', 'v1'); localStorage.setItem('chef_caixa_tema', 'classico'); location.href='/caixa-classico.html'" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
-            <span><i class="ph ph-clock-counter-clockwise"></i> <strong>Caixa v1</strong> (Clássico)</span>
-            <span style="font-size:10px; color:#16a34a; font-weight:700;">Estável</span>
-          </div>
+        </button>
+        <div class="dropdown-menu" id="drop-caixa-version" style="min-width: 260px; right:0; left:auto; z-index:9000;">
+          <!-- Content dynamically rendered by CaixaVersionManager -->
         </div>
       </div>
 
@@ -530,6 +520,7 @@
         <i class="ph ph-sun" id="theme-toggle-icon"></i>
       </button>
       <button class="toolbar-btn" id="btn-toolbar-layout-customizer" onclick="window.abrirModalPersonalizarLayout && window.abrirModalPersonalizarLayout()" title="Personalizar Exibição do Colaborador (Layout, Colunas, Zoom)"><i class="ph-bold ph-sliders"></i></button>
+      <button class="toolbar-btn" id="btn-toolbar-atalhos-garcom" onclick="window.location.href='configuracoes.html?tab=atalhos'" title="Configurar Atalhos da Comanda Mobile por Colaborador"><i class="ph-bold ph-device-mobile"></i></button>
       <button class="toolbar-btn btn-view-mode-toggle" id="btn-view-mode-toggle" onclick="if(window.ChefViewMode) window.ChefViewMode.toggle()" title="Alternar Visualização (Auto / Mobile / Desktop)">
         <i class="ph ph-arrows-clockwise" id="view-mode-icon"></i>
       </button>
@@ -731,19 +722,19 @@
 
           <div class="action-group">
             <div class="group-title">Ações</div>
-            <button class="btn-action primary" id="btn-adicionar-produtos" title="Lançar itens de consumo">
-              <i class="ph ph-plus-circle"></i> Lançar
+            <button class="btn-action primary" id="btn-adicionar-produtos" title="Lançar itens de consumo (F2)">
+              <i class="ph ph-plus-circle"></i> <span>Lançar</span> <span class="shortcut-pill">F2</span>
             </button>
           </div>
 
           <div class="action-group">
             <div class="group-title">Movimentos</div>
             <div class="btn-grid-2">
-              <button class="btn-action" id="btn-movimento-parcial" title="Receber pagamento parcial">
-                <i class="ph ph-currency-dollar" style="color: #3ab55b;"></i> Parcial
+              <button class="btn-action" id="btn-movimento-parcial" title="Receber pagamento parcial (F7)">
+                <i class="ph ph-currency-dollar" style="color: #3ab55b;"></i> <span>Parcial</span> <span class="shortcut-pill">F7</span>
               </button>
-              <button class="btn-action" id="btn-movimento-concluir" title="Fechar conta da mesa">
-                <i class="ph ph-check" style="color: #3ab55b;"></i> Fechar Mesa
+              <button class="btn-action" id="btn-movimento-concluir" title="Fechar conta da mesa (F12)">
+                <i class="ph ph-check" style="color: #3ab55b;"></i> <span>Fechar</span> <span class="shortcut-pill">F12</span>
               </button>
             </div>
             <div class="btn-grid-2" style="margin-top: 6px;">
@@ -762,8 +753,8 @@
           <div class="action-group">
             <div class="group-title">Relatórios e Digital</div>
             <div class="btn-grid-2">
-              <button class="btn-action" id="btn-imprimir-conta" title="Imprimir conferência da conta">
-                <i class="ph ph-printer"></i> Imprimir
+              <button class="btn-action" id="btn-imprimir-conta" title="Imprimir conferência da conta (F9)">
+                <i class="ph ph-printer"></i> <span>Imprimir</span> <span class="shortcut-pill">F9</span>
               </button>
               <button class="btn-action" id="btn-mostrar-conta-cliente" title="Mostrar conta ao cliente no dispositivo">
                 <i class="ph ph-device-mobile"></i> Cliente
@@ -777,11 +768,11 @@
           <div class="action-group">
             <div class="group-title">Desconto e Taxa</div>
             <div class="btn-grid-2">
-              <button class="btn-action" id="btn-aplicar-desconto" title="Aplicar desconto na conta">
-                <i class="ph ph-percent"></i> Desconto
+              <button class="btn-action" id="btn-aplicar-desconto" title="Aplicar desconto na conta (F6)">
+                <i class="ph ph-percent"></i> <span>Desconto</span> <span class="shortcut-pill">F6</span>
               </button>
-              <button class="btn-action" id="btn-aplicar-servico" title="Serviços ou gorjeta">
-                <i class="ph ph-bell"></i> Serviços
+              <button class="btn-action" id="btn-aplicar-servico" title="Serviços ou gorjeta (F10)">
+                <i class="ph ph-bell"></i> <span>Serviços</span> <span class="shortcut-pill">F10</span>
               </button>
             </div>
           </div>
@@ -3424,3 +3415,4 @@
 </body>
 
 </html>
+

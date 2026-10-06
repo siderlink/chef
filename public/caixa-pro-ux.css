@@ -43,7 +43,7 @@ body.theme-dark {
 /* ══════════════════════════════════════════════════════════════════
    1. DESKTOP & MONITORES (>= 768px): 3 COLUNAS VISÍVEIS
    ══════════════════════════════════════════════════════════════════ */
-@media (min-width: 768px) {
+@media (min-width: 901px) {
   body {
     overflow: hidden !important;
   }
@@ -189,7 +189,7 @@ body.theme-dark {
 /* ══════════════════════════════════════════════════════════════════
    2. MOBILE & SMARTPHONES (< 768px): ABAS EM TELA CHEIA
    ══════════════════════════════════════════════════════════════════ */
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   .workspace {
     display: flex !important;
     flex-direction: column !important;
@@ -674,7 +674,7 @@ body.dark-mode .footer-info-bar {
 
 
 /* ── EXIBIÇÃO EXPLÍCITA DE MESAS NO MOBILE ── */
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   .workspace.active-tab-mesas #mesas-section-container,
   .workspace:not(.active-tab-acoes):not(.active-tab-resumo) #mesas-section-container,
   #mesas-section-container {
@@ -833,13 +833,13 @@ body.dark-mode .footer-info-bar {
 }
 
 /* ── LAYOUT RESPONSIVO INTELIGENTE COM ZOOM TOTAL ── */
-@media (min-width: 768px) {
+@media (min-width: 901px) {
   .workspace { display: flex !important; flex-direction: row !important; width: 100% !important; flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; padding: 0 !important; margin: 0 !important;
     overflow: hidden !important;
     background: #f8fafc !important;
   }
 }
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   .workspace {
     display: flex !important;
     flex-direction: column !important;
@@ -850,7 +850,7 @@ body.dark-mode .footer-info-bar {
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 901px) {
   /* 1. BARRA ESQUERDA (FLEXÍVEL E PROPORCIONAL) */
   .left-actions,
   aside.left-actions,
@@ -959,7 +959,7 @@ body.mostrar-abas-ativas .mobile-tabs-grip {
 }
 
 /* ── SALÃO DE MESAS EM TELA CHEIA NO MOBILE / HORIZONTAL ── */
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   body {
     padding-top: 0 !important;
   }
@@ -1881,7 +1881,7 @@ body.dark-mode .chip-status-filter.active:not(.status-ocupada):not(.status-fecha
 /* ── MODOS DAS BARRAS LATERAIS (EXPANDIDO / MINI / OCULTO) ──
    Comandados por window.setSidebarMode (caixa-pro-ux.js / chef-resizable-sidebars.js).
    Regras só em desktop para não conflitar com as abas mobile. */
-@media (min-width: 768px) {
+@media (min-width: 901px) {
   .left-actions.mode-hidden,
   aside.left-actions.mode-hidden,
   #left-panel.mode-hidden,
@@ -2484,7 +2484,7 @@ body.dark-mode .caixa-ux-key-badge {
 }
 
 /* ── Mobile (<768px) ── */
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   #caixa-ux-dashboard-header,
   #caixa-ux-setores-container {
     background: var(--bg-card, #ffffff) !important;
@@ -2602,7 +2602,7 @@ body.force-mobile .btn-setor-tab {
 
 /* ── Busca de Mesa/Comanda no TOP MENUBAR (presente em todas as visualizações) ── */
 /* Em desktop, reservar espaço à direita para o card QR Ponto sempre visível (~220px) */
-@media (min-width: 768px) {
+@media (min-width: 901px) {
   .top-menubar {
     padding-right: 12px !important;
   }
@@ -2805,7 +2805,7 @@ body.force-mobile .top-menubar.has-caixa-busca #caixa-ux-search-box-topbar .caix
 /* ── 1. WORKSPACE MOBILE: altura e padding unificados ──
    Neutraliza conflitos de style.css (100dvh) e responsive-native.css (12px).
    Usa 100dvh com fallback para 100vh para máxima compatibilidade. */
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   html, body {
     height: 100% !important;
     overflow: hidden !important;
@@ -2836,7 +2836,7 @@ body.force-mobile .top-menubar.has-caixa-busca #caixa-ux-search-box-topbar .caix
 
 /* ── 2. BARRA DE ABAS MOBILE: fixa e sempre visível ──
    Neutraliza o touch-action:none do style.css e o z-index baixo. */
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   #mobile-workspace-tabs,
   .mobile-tabs {
     display: flex !important;
@@ -2911,7 +2911,7 @@ body.force-mobile .top-menubar.has-caixa-busca #caixa-ux-search-box-topbar .caix
 }
 
 /* ── 3. DARK MODE: barra de abas escura ── */
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   [data-theme="dark"] #mobile-workspace-tabs,
   [data-theme="dark"] .mobile-tabs {
     background: rgba(18, 18, 26, 0.95) !important;
@@ -2923,7 +2923,7 @@ body.force-mobile .top-menubar.has-caixa-busca #caixa-ux-search-box-topbar .caix
 /* ── 4. COERÊNCIA DAS ABAS: visibilidade dos painéis por aba ──
    Garante que o CSS das abas funcione mesmo quando as regras anteriores
    conflitam com as do style.css. */
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   /* ABA MESAS: só mostra mesas */
   .workspace.active-tab-mesas #left-panel,
   .workspace.active-tab-mesas aside.left-actions,
@@ -3031,7 +3031,7 @@ body.force-mobile .top-menubar.has-caixa-busca #caixa-ux-search-box-topbar .caix
 }
 
 /* ── 5. OVERFLOW HORIZONTAL: nenhum elemento ultrapassa 100vw ── */
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   body {
     overflow-x: hidden !important;
     max-width: 100% !important; max-width: 100% !important; box-sizing: border-box !important;
@@ -3079,7 +3079,7 @@ body.force-mobile .top-menubar.has-caixa-busca #caixa-ux-search-box-topbar .caix
 /* ── 6. NEUTRALIZAR pointer:coarse em desktops touch ──
    O style.css usa (pointer:coarse) para aplicar estilos mobile mesmo em
    telas largas (notebooks touch, Surface, etc.). Este bloco reverte isso. */
-@media (pointer: coarse) and (min-width: 768px) {
+@media (pointer: coarse) and (min-width: 901px) {
   /* Em touch com tela larga: mantém layout desktop */
   .workspace {
     flex-direction: row !important;
@@ -3153,7 +3153,7 @@ body.force-desktop .workspace {
 /* ── 10. MODO MOBILE FULLSCREEN: classe aplicada por JS ao ativar abas laterais ──
    Sobrescreve mode-hidden / mode-mini com especificidade máxima.
    Garante que os painéis apareçam ao clicar nas abas Ações e Conta. */
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   #left-panel.mode-mobile-fullscreen,
   .left-actions.mode-mobile-fullscreen,
   aside.left-actions.mode-mobile-fullscreen {
@@ -3225,7 +3225,7 @@ body.force-mobile .right-info.mode-mobile-fullscreen {
 }
 
 /* ── RIGID 100VH POS SHELL GUARANTEE ── */
-@media (min-width: 768px) {
+@media (min-width: 901px) {
   html, body {
     height: 100vh !important;
     max-height: 100vh !important;
@@ -3955,7 +3955,7 @@ body.theme-dark .mesa-item.status-livre {
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   .top-toolbar:not(.expandida) {
     display: none !important;
   }
@@ -4322,14 +4322,15 @@ body.dark-mode #left-panel.mode-mini .action-group,
 .mesas-grid-layout,
 #orders-grid .mesas-grid-layout {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
-  gap: 8px !important;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+  gap: 10px !important;
   width: 100% !important;
   box-sizing: border-box !important;
 }
 
 .mesa-item {
-  min-width: 125px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
   box-sizing: border-box !important;
   border-radius: 12px !important;
   padding: 8px 10px !important;
@@ -4409,19 +4410,76 @@ table.products-table,
   box-sizing: border-box !important;
 }
 
+@media (min-width: 901px) {
+  .mobile-mesa-info-card,
+  #mobile-mesa-info-card {
+    display: none !important;
+  }
+}
+
 /* ── 7. BARRAS SUPERIOR E INFERIOR — ZERO QUEBRAS / MULTILINHA ── */
 .top-menubar {
   display: flex !important;
   flex-wrap: nowrap !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
+  overflow: visible !important;
   white-space: nowrap !important;
   height: 40px !important;
   min-height: 40px !important;
   max-height: 40px !important;
   align-items: center !important;
+  position: relative !important;
+  z-index: 8000 !important;
 }
 .top-menubar::-webkit-scrollbar { display: none !important; }
+
+/* Dropdown Menus do Top Menubar — Sempre acima de todo o layout */
+.dropdown-wrapper {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  z-index: 8100 !important;
+}
+
+.dropdown-wrapper.open,
+.dropdown-wrapper:hover,
+.dropdown-wrapper:focus-within {
+  z-index: 8500 !important;
+}
+
+.dropdown-menu {
+  display: none !important;
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  left: 0 !important;
+  z-index: 9000 !important;
+  background-color: var(--bg-card, #ffffff) !important;
+  border: 1px solid var(--border-color, #e2e8f0) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25) !important;
+  padding: 6px !important;
+  min-width: 220px !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.dropdown-menu.show {
+  display: flex !important;
+}
+
+#drop-caixa-version {
+  right: 0 !important;
+  left: auto !important;
+  min-width: 260px !important;
+}
+
+[data-theme="dark"] .dropdown-menu,
+body.dark-mode .dropdown-menu,
+body.theme-dark .dropdown-menu {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6) !important;
+}
 
 .top-toolbar {
   display: flex !important;
@@ -4429,12 +4487,48 @@ table.products-table,
   overflow-x: auto !important;
   overflow-y: hidden !important;
   white-space: nowrap !important;
-  height: 44px !important;
-  min-height: 44px !important;
-  max-height: 44px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
   align-items: center !important;
+  gap: 6px !important;
+  padding: 0 10px !important;
 }
 .top-toolbar::-webkit-scrollbar { display: none !important; }
+
+.top-toolbar .toolbar-btn {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  min-width: 36px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-secondary, #cbd5e1) !important;
+  font-size: 13px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.top-toolbar .toolbar-btn i {
+  font-size: 16px !important;
+}
+
+.top-toolbar .toolbar-btn:hover {
+  background: rgba(252, 75, 21, 0.12) !important;
+  border-color: rgba(252, 75, 21, 0.3) !important;
+  color: #fc4b15 !important;
+}
+
+.top-toolbar .toolbar-btn.active {
+  background: rgba(252, 75, 21, 0.18) !important;
+  border-color: #fc4b15 !important;
+  color: #fc4b15 !important;
+}
 
 .status-bar {
   display: flex !important;
@@ -4450,3 +4544,53 @@ table.products-table,
 }
 .status-bar::-webkit-scrollbar { display: none !important; }
 
+
+/* --- MOBILE LAYOUT FIXES FOR HEADER AND SHORTCUTS --- */
+@media (max-width: 900px) {
+  .top-menubar { flex-wrap: wrap !important; height: auto !important; padding: 10px !important; }
+  .top-menubar > * { margin-bottom: 8px !important; }
+  .caixa-ux-search-box { width: 100% !important; margin-top: 5px !important; }
+  .top-toolbar { flex-wrap: nowrap !important; overflow-x: auto !important; padding-bottom: 5px !important; }
+  .keyboard-shortcuts, .shortcuts-banner, #shortcut-hints-container, .shortcut-bar { display: none !important; }
+  .stats-grid { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+  .btn-toggle-top-toolbar { display: none !important; }
+}
+
+
+/* ── KEYBOARD SHORTCUT PILL EM BOTÕES DO CAIXA ── */
+.shortcut-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: 'JetBrains Mono', Consolas, monospace !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  padding: 1px 5px !important;
+  border-radius: 4px !important;
+  margin-left: auto !important;
+  line-height: 1.2 !important;
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: var(--text-secondary, #64748b) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+[data-theme="dark"] .shortcut-pill,
+body.dark-mode .shortcut-pill,
+body.theme-dark .shortcut-pill {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #cbd5e1 !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+.btn-action.primary .shortcut-pill {
+  background: rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+#left-panel.mini .shortcut-pill,
+.left-actions.mini .shortcut-pill {
+  display: none !important;
+}

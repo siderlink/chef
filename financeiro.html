@@ -23,17 +23,19 @@
       --fin-border: #e2e8f0;
       --fin-hover: rgba(0, 0, 0, 0.04);
       --fin-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      --rep-track-bg: #f1f5f9;
     }
 
     [data-theme="dark"], body.dark-mode, body.theme-dark {
-      --fin-bg: #0f172a;
-      --fin-card: #1e293b;
-      --fin-sidebar: #0f172a;
+      --fin-bg: #0d121c;
+      --fin-card: #182030;
+      --fin-sidebar: #13171f;
       --fin-text: #f8fafc;
       --fin-text-muted: #94a3b8;
-      --fin-border: #334155;
+      --fin-border: rgba(255, 255, 255, 0.08);
       --fin-hover: rgba(255, 255, 255, 0.05);
       --fin-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      --rep-track-bg: rgba(255, 255, 255, 0.08);
     }
     
     body, html, .app-container {
@@ -54,25 +56,120 @@
       to { opacity: 1; transform: translateY(0); }
     }
     #section-resumo-caixa > div:nth-child(2) > div,
-    #section-relatorio-avancado .dash-card {
-      animation: fadeInUp 0.5s ease-out forwards;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+    #section-relatorio-avancado .rep-card {
+      animation: fadeInUp 0.4s ease-out forwards;
       box-shadow: var(--fin-shadow) !important;
       border: 1px solid var(--fin-border) !important;
       background: var(--fin-card) !important;
       color: var(--fin-text) !important;
-      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
-    #section-resumo-caixa > div:nth-child(2) > div:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
-      border-color: rgba(252, 75, 21, 0.4) !important;
+    #section-resumo-caixa > div:nth-child(2) > div:hover,
+    #section-relatorio-avancado .rep-kpi-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.15) !important;
+      border-color: rgba(252, 75, 21, 0.35) !important;
     }
     table { color: var(--fin-text) !important; }
     thead th { border-bottom: 2px solid var(--fin-border) !important; color: var(--fin-text-muted) !important; }
     tbody tr { border-bottom: 1px solid var(--fin-border) !important; }
     tbody tr:hover { background: var(--fin-hover) !important; }
+
+    /* Relatório Avançado Form Controls & Details */
+    #section-relatorio-avancado input,
+    #section-relatorio-avancado select {
+      background: var(--fin-card) !important;
+      border: 1px solid var(--fin-border) !important;
+      color: var(--fin-text) !important;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #section-relatorio-avancado input:focus,
+    #section-relatorio-avancado select:focus {
+      border-color: #fc4b15 !important;
+      box-shadow: 0 0 0 3px rgba(252, 75, 21, 0.18) !important;
+      outline: none !important;
+    }
+    [data-theme="dark"] #section-relatorio-avancado input[type="date"],
+    body.dark-mode #section-relatorio-avancado input[type="date"] {
+      color-scheme: dark !important;
+    }
+    .rep-status-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      display: inline-block;
+    }
+    .rep-status-badge.status-ok {
+      background: #e6f4ea;
+      color: #137333;
+    }
+    .rep-status-badge.status-cancel {
+      background: #fce8e6;
+      color: #c5221f;
+    }
+    [data-theme="dark"] .rep-status-badge.status-ok,
+    body.dark-mode .rep-status-badge.status-ok {
+      background: rgba(16, 185, 129, 0.15) !important;
+      color: #34d399 !important;
+    }
+    [data-theme="dark"] .rep-status-badge.status-cancel,
+    body.dark-mode .rep-status-badge.status-cancel {
+      background: rgba(239, 68, 68, 0.15) !important;
+      color: #f87171 !important;
+    }
+    [data-theme="dark"] #section-relatorio-avancado .rep-kpi-icon-faturamento,
+    body.dark-mode #section-relatorio-avancado .rep-kpi-icon-faturamento {
+      background: rgba(49, 151, 149, 0.2) !important;
+      color: #4fd1c5 !important;
+    }
+    [data-theme="dark"] #section-relatorio-avancado .rep-kpi-icon-itens,
+    body.dark-mode #section-relatorio-avancado .rep-kpi-icon-itens {
+      background: rgba(49, 130, 206, 0.2) !important;
+      color: #63b3ed !important;
+    }
+    [data-theme="dark"] #section-relatorio-avancado .rep-kpi-icon-pedidos,
+    body.dark-mode #section-relatorio-avancado .rep-kpi-icon-pedidos {
+      background: rgba(221, 107, 32, 0.2) !important;
+      color: #fbd38d !important;
+    }
+    [data-theme="dark"] #section-relatorio-avancado .rep-kpi-icon-ticket,
+    body.dark-mode #section-relatorio-avancado .rep-kpi-icon-ticket {
+      background: rgba(128, 90, 213, 0.2) !important;
+      color: #d6bcfa !important;
+    }
+    [data-theme="dark"] #section-relatorio-avancado .rep-perdas-box,
+    body.dark-mode #section-relatorio-avancado .rep-perdas-box {
+      background: rgba(239, 68, 68, 0.12) !important;
+      border: 1px dashed rgba(239, 68, 68, 0.35) !important;
+    }
+    [data-theme="dark"] #section-relatorio-avancado .rep-perdas-box strong,
+    body.dark-mode #section-relatorio-avancado .rep-perdas-box strong {
+      color: #f87171 !important;
+    }
+    [data-theme="dark"] #section-relatorio-avancado .rep-perdas-box div,
+    body.dark-mode #section-relatorio-avancado .rep-perdas-box div,
+    [data-theme="dark"] #section-relatorio-avancado .rep-perdas-box span,
+    body.dark-mode #section-relatorio-avancado .rep-perdas-box span {
+      color: #fca5a5 !important;
+    }
+    .rep-export-btn {
+      transition: all 0.2s ease !important;
+    }
+    .rep-export-btn:hover {
+      border-color: #fc4b15 !important;
+      transform: translateY(-2px);
+    }
+    [data-theme="dark"] .rep-export-btn,
+    body.dark-mode .rep-export-btn {
+      background: #121824 !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    [data-theme="dark"] .rep-export-btn:hover,
+    body.dark-mode .rep-export-btn:hover {
+      background: #1e2435 !important;
+      border-color: #fc4b15 !important;
+    }
     
     /* Make text neon glow in KPI */
     #card-faturado {
@@ -589,28 +686,28 @@
 
       <!-- Section 2: Relatório Avançado -->
       <div id="section-relatorio-avancado" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-          <h1>Relatório de Vendas e Pagamentos</h1>
-          <button id="btn-exportar-relatorio" style="background: #fc4b15; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+        <div class="rep-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h1 style="color: var(--fin-text); margin: 0;">Relatório de Vendas e Pagamentos</h1>
+          <button id="btn-exportar-relatorio" style="background: #fc4b15; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(252, 75, 21, 0.25);">
             <i class="ph ph-export"></i> EXPORTAR DADOS
           </button>
         </div>
 
         <!-- Filters Section -->
-        <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); margin-bottom: 24px;">
-          <h3 style="margin-top: 0; margin-bottom: 16px; color: #1a202c; font-weight: 600;">Filtros de Busca</h3>
+        <div class="rep-card rep-filters" style="padding: 24px; border-radius: 16px; margin-bottom: 24px;">
+          <h3 style="margin-top: 0; margin-bottom: 16px; color: var(--fin-text); font-weight: 600;">Filtros de Busca</h3>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-end;">
             <div>
-              <label style="display: block; font-size: 13px; color: #718096; margin-bottom: 6px; font-weight: 500;">Data Inicial</label>
-              <input type="date" id="relatorio-data-inicial" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; transition: border-color 0.2s;" onfocus="this.style.borderColor='#fc4b15'" onblur="this.style.borderColor='#e2e8f0'">
+              <label style="display: block; font-size: 13px; color: var(--fin-text-muted); margin-bottom: 6px; font-weight: 500;">Data Inicial</label>
+              <input type="date" id="relatorio-data-inicial" style="width: 100%; padding: 10px; border-radius: 8px; font-size: 14px; font-family: inherit; box-sizing: border-box;">
             </div>
             <div>
-              <label style="display: block; font-size: 13px; color: #718096; margin-bottom: 6px; font-weight: 500;">Data Final</label>
-              <input type="date" id="relatorio-data-final" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; transition: border-color 0.2s;" onfocus="this.style.borderColor='#fc4b15'" onblur="this.style.borderColor='#e2e8f0'">
+              <label style="display: block; font-size: 13px; color: var(--fin-text-muted); margin-bottom: 6px; font-weight: 500;">Data Final</label>
+              <input type="date" id="relatorio-data-final" style="width: 100%; padding: 10px; border-radius: 8px; font-size: 14px; font-family: inherit; box-sizing: border-box;">
             </div>
             <div>
-              <label style="display: block; font-size: 13px; color: #718096; margin-bottom: 6px; font-weight: 500;">Agrupamento</label>
-              <select id="relatorio-agrupamento" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; background: var(--fin-card); transition: border-color 0.2s;" onfocus="this.style.borderColor='#fc4b15'" onblur="this.style.borderColor='#e2e8f0'">
+              <label style="display: block; font-size: 13px; color: var(--fin-text-muted); margin-bottom: 6px; font-weight: 500;">Agrupamento</label>
+              <select id="relatorio-agrupamento" style="width: 100%; padding: 10px; border-radius: 8px; font-size: 14px; font-family: inherit; box-sizing: border-box;">
                 <option value="hour">Por Hora</option>
                 <option value="day" selected>Por Dia</option>
                 <option value="week">Por Semana</option>
@@ -619,24 +716,24 @@
               </select>
             </div>
             <div>
-              <label style="display: block; font-size: 13px; color: #718096; margin-bottom: 6px; font-weight: 500;">Cliente</label>
-              <select id="relatorio-cliente" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; background: var(--fin-card); transition: border-color 0.2s;" onfocus="this.style.borderColor='#fc4b15'" onblur="this.style.borderColor='#e2e8f0'">
+              <label style="display: block; font-size: 13px; color: var(--fin-text-muted); margin-bottom: 6px; font-weight: 500;">Cliente</label>
+              <select id="relatorio-cliente" style="width: 100%; padding: 10px; border-radius: 8px; font-size: 14px; font-family: inherit; box-sizing: border-box;">
                 <option value="">Todos os Clientes</option>
               </select>
             </div>
             <div>
-              <label style="display: block; font-size: 13px; color: #718096; margin-bottom: 6px; font-weight: 500;">Garçom</label>
-              <select id="relatorio-garcom" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; background: var(--fin-card); transition: border-color 0.2s;" onfocus="this.style.borderColor='#fc4b15'" onblur="this.style.borderColor='#e2e8f0'">
+              <label style="display: block; font-size: 13px; color: var(--fin-text-muted); margin-bottom: 6px; font-weight: 500;">Garçom</label>
+              <select id="relatorio-garcom" style="width: 100%; padding: 10px; border-radius: 8px; font-size: 14px; font-family: inherit; box-sizing: border-box;">
                 <option value="">Todos os Garçons</option>
               </select>
             </div>
             <div>
-              <label style="display: block; font-size: 13px; color: #718096; margin-bottom: 6px; font-weight: 500;">Mesa / Comanda</label>
-              <input type="text" id="relatorio-mesa-comanda" list="relatorio-mesa-comanda-list" placeholder="Ex: Mesa 3, Comanda 10" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; transition: border-color 0.2s;" onfocus="this.style.borderColor='#fc4b15'" onblur="this.style.borderColor='#e2e8f0'">
+              <label style="display: block; font-size: 13px; color: var(--fin-text-muted); margin-bottom: 6px; font-weight: 500;">Mesa / Comanda</label>
+              <input type="text" id="relatorio-mesa-comanda" list="relatorio-mesa-comanda-list" placeholder="Ex: Mesa 3, Comanda 10" style="width: 100%; padding: 10px; border-radius: 8px; font-size: 14px; font-family: inherit; box-sizing: border-box;">
               <datalist id="relatorio-mesa-comanda-list"></datalist>
             </div>
             <div>
-              <button id="btn-atualizar-relatorio" style="width: 100%; background: #fc4b15; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(252, 75, 21, 0.2);" onmouseover="this.style.background='#e03e0d'; this.style.boxShadow='0 10px 15px -3px rgba(252, 75, 21, 0.3)';" onmouseout="this.style.background='#fc4b15'; this.style.boxShadow='0 4px 6px -1px rgba(252, 75, 21, 0.2)';">
+              <button id="btn-atualizar-relatorio" style="width: 100%; background: #fc4b15; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(252, 75, 21, 0.2);">
                 <i class="ph ph-funnel"></i> Filtrar Relatório
               </button>
             </div>
@@ -644,81 +741,81 @@
         </div>
 
         <!-- KPIs Row -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="rep-grid-kpis" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
           <!-- Card 1: Faturamento -->
-          <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s, box-shadow 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)';">
+          <div class="rep-card rep-kpi-card" style="padding: 20px; border-radius: 16px; display: flex; justify-content: space-between; align-items: flex-start; cursor: default;">
             <div>
-              <div style="color: #718096; font-size: 14px; font-weight: 500;">Total Vendas</div>
-              <div id="rep-kpi-faturamento" style="font-size: 28px; font-weight: 700; color: #1a202c; margin-top: 8px;">R$ 0,00</div>
+              <div style="color: var(--fin-text-muted); font-size: 14px; font-weight: 500;">Total Vendas</div>
+              <div id="rep-kpi-faturamento" style="font-size: 28px; font-weight: 700; color: var(--fin-text); margin-top: 8px;">R$ 0,00</div>
             </div>
-            <div style="background: #e6fffa; color: #319795; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+            <div class="rep-kpi-icon-faturamento" style="background: #e6fffa; color: #319795; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
               <i class="ph ph-trend-up" style="font-size: 24px;"></i>
             </div>
           </div>
           <!-- Card 2: Itens Vendidos -->
-          <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s, box-shadow 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)';">
+          <div class="rep-card rep-kpi-card" style="padding: 20px; border-radius: 16px; display: flex; justify-content: space-between; align-items: flex-start; cursor: default;">
             <div>
-              <div style="color: #718096; font-size: 14px; font-weight: 500;">Itens Vendidos</div>
-              <div id="rep-kpi-itens" style="font-size: 28px; font-weight: 700; color: #1a202c; margin-top: 8px;">0</div>
+              <div style="color: var(--fin-text-muted); font-size: 14px; font-weight: 500;">Itens Vendidos</div>
+              <div id="rep-kpi-itens" style="font-size: 28px; font-weight: 700; color: var(--fin-text); margin-top: 8px;">0</div>
             </div>
-            <div style="background: #ebf8ff; color: #3182ce; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+            <div class="rep-kpi-icon-itens" style="background: #ebf8ff; color: #3182ce; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
               <i class="ph ph-package" style="font-size: 24px;"></i>
             </div>
           </div>
           <!-- Card 3: Pedidos -->
-          <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s, box-shadow 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)';">
+          <div class="rep-card rep-kpi-card" style="padding: 20px; border-radius: 16px; display: flex; justify-content: space-between; align-items: flex-start; cursor: default;">
             <div>
-              <div style="color: #718096; font-size: 14px; font-weight: 500;">Pedidos Realizados</div>
-              <div id="rep-kpi-pedidos" style="font-size: 28px; font-weight: 700; color: #1a202c; margin-top: 8px;">0</div>
+              <div style="color: var(--fin-text-muted); font-size: 14px; font-weight: 500;">Pedidos Realizados</div>
+              <div id="rep-kpi-pedidos" style="font-size: 28px; font-weight: 700; color: var(--fin-text); margin-top: 8px;">0</div>
             </div>
-            <div style="background: #fffaf0; color: #dd6b20; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+            <div class="rep-kpi-icon-pedidos" style="background: #fffaf0; color: #dd6b20; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
               <i class="ph ph-receipt" style="font-size: 24px;"></i>
             </div>
           </div>
           <!-- Card 4: Ticket Médio -->
-          <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s, box-shadow 0.2s; cursor: default;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)';">
+          <div class="rep-card rep-kpi-card" style="padding: 20px; border-radius: 16px; display: flex; justify-content: space-between; align-items: flex-start; cursor: default;">
             <div>
-              <div style="color: #718096; font-size: 14px; font-weight: 500;">Ticket Médio</div>
-              <div id="rep-kpi-ticket" style="font-size: 28px; font-weight: 700; color: #1a202c; margin-top: 8px;">R$ 0,00</div>
+              <div style="color: var(--fin-text-muted); font-size: 14px; font-weight: 500;">Ticket Médio</div>
+              <div id="rep-kpi-ticket" style="font-size: 28px; font-weight: 700; color: var(--fin-text); margin-top: 8px;">R$ 0,00</div>
             </div>
-            <div style="background: #faf5ff; color: #805ad5; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+            <div class="rep-kpi-icon-ticket" style="background: #faf5ff; color: #805ad5; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
               <i class="ph ph-ticket" style="font-size: 24px;"></i>
             </div>
           </div>
         </div>
 
         <!-- Charts Row -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <div class="rep-grid-charts" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
           <!-- Payment Breakdown -->
-          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
-            <h3 style="margin-top: 0; margin-bottom: 16px; color: #1a202c; font-weight: 600;">Meios de Pagamento (Filtros Aplicados)</h3>
+          <div class="rep-card" style="padding: 24px; border-radius: 16px; display: flex; flex-direction: column;">
+            <h3 style="margin-top: 0; margin-bottom: 16px; color: var(--fin-text); font-weight: 600;">Meios de Pagamento (Filtros Aplicados)</h3>
             <div id="rep-pagamentos-container" style="display: flex; flex-direction: column; gap: 14px; flex-grow: 1; justify-content: center;">
               <!-- JS Populated Progress Bars -->
             </div>
           </div>
 
           <!-- Sales Trend Chart -->
-          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02);">
-            <h3 style="margin-top: 0; margin-bottom: 16px; color: #1a202c; font-weight: 600;">Desempenho de Vendas</h3>
-            <div id="rep-grafico-container" style="height: 200px; display: flex; align-items: flex-end; gap: 12px; padding: 10px 0; border-left: 2px solid #e2e8f0; border-bottom: 2px solid #e2e8f0; overflow-x: auto;">
+          <div class="rep-card" style="padding: 24px; border-radius: 16px;">
+            <h3 style="margin-top: 0; margin-bottom: 16px; color: var(--fin-text); font-weight: 600;">Desempenho de Vendas</h3>
+            <div id="rep-grafico-container" style="height: 200px; display: flex; align-items: flex-end; gap: 12px; padding: 10px 0; border-left: 2px solid var(--fin-border); border-bottom: 2px solid var(--fin-border); overflow-x: auto;">
               <!-- JS Populated CSS Bar Chart -->
             </div>
           </div>
         </div>
 
         <!-- Row 3: Advanced Business Metrics -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
+        <div class="rep-grid-metrics" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
           <!-- Card 1: Categorias e Setores -->
-          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
-            <h3 style="margin-top: 0; margin-bottom: 16px; color: #1a202c; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px;"><i class="ph ph-chart-pie" style="color: #fc4b15;"></i> Vendas por Categoria e Setor</h3>
+          <div class="rep-card" style="padding: 24px; border-radius: 16px; display: flex; flex-direction: column;">
+            <h3 style="margin-top: 0; margin-bottom: 16px; color: var(--fin-text); font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px;"><i class="ph ph-chart-pie" style="color: #fc4b15;"></i> Vendas por Categoria e Setor</h3>
             <div style="margin-bottom: 15px;">
-              <strong style="font-size:11px; color:#718096; display:block; margin-bottom:8px; text-transform: uppercase; letter-spacing: 0.5px;">POR CATEGORIA</strong>
+              <strong style="font-size:11px; color: var(--fin-text-muted); display:block; margin-bottom:8px; text-transform: uppercase; letter-spacing: 0.5px;">POR CATEGORIA</strong>
               <div id="rep-categorias-container" style="display:flex; flex-direction:column; gap:10px;">
                 <div style="color: var(--fin-text-muted); font-size:12px; font-style:italic;">Nenhuma venda registrada.</div>
               </div>
             </div>
-            <div style="margin-top: auto; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
-              <strong style="font-size:11px; color:#718096; display:block; margin-bottom:8px; text-transform: uppercase; letter-spacing: 0.5px;">POR SETOR DE PREPARO</strong>
+            <div style="margin-top: auto; border-top: 1px dashed var(--fin-border); padding-top: 15px;">
+              <strong style="font-size:11px; color: var(--fin-text-muted); display:block; margin-bottom:8px; text-transform: uppercase; letter-spacing: 0.5px;">POR SETOR DE PREPARO</strong>
               <div id="rep-setores-container" style="display:flex; flex-direction:column; gap:10px;">
                 <div style="color: var(--fin-text-muted); font-size:12px; font-style:italic;">Nenhuma venda registrada.</div>
               </div>
@@ -726,23 +823,23 @@
           </div>
 
           <!-- Card 2: Ranking de Garçons -->
-          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
-            <h3 style="margin-top: 0; margin-bottom: 16px; color: #1a202c; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px;"><i class="ph ph-users" style="color: #8e44ad;"></i> Desempenho da Equipe (Garçons)</h3>
+          <div class="rep-card" style="padding: 24px; border-radius: 16px; display: flex; flex-direction: column;">
+            <h3 style="margin-top: 0; margin-bottom: 16px; color: var(--fin-text); font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px;"><i class="ph ph-users" style="color: #a855f7;"></i> Desempenho da Equipe (Garçons)</h3>
             <div id="rep-garcons-container" style="display:flex; flex-direction:column; gap:10px; flex-grow:1;">
               <div style="color: var(--fin-text-muted); font-size:12px; font-style:italic;">Nenhum dado de garçom disponível.</div>
             </div>
           </div>
 
           <!-- Card 3: Clientes VIP e Perdas -->
-          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
-            <h3 style="margin-top: 0; margin-bottom: 16px; color: #1a202c; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px;"><i class="ph ph-crown" style="color: #f2994a;"></i> Clientes VIP &amp; Cancelamentos</h3>
+          <div class="rep-card" style="padding: 24px; border-radius: 16px; display: flex; flex-direction: column;">
+            <h3 style="margin-top: 0; margin-bottom: 16px; color: var(--fin-text); font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px;"><i class="ph ph-crown" style="color: #f2994a;"></i> Clientes VIP &amp; Cancelamentos</h3>
             <div style="margin-bottom: 15px; flex-grow:1;">
-              <strong style="font-size:11px; color:#718096; display:block; margin-bottom:8px; text-transform: uppercase; letter-spacing: 0.5px;">TOP 5 CLIENTES</strong>
+              <strong style="font-size:11px; color: var(--fin-text-muted); display:block; margin-bottom:8px; text-transform: uppercase; letter-spacing: 0.5px;">TOP 5 CLIENTES</strong>
               <div id="rep-clientes-vip-container" style="display:flex; flex-direction:column; gap:10px;">
                 <div style="color: var(--fin-text-muted); font-size:12px; font-style:italic;">Nenhum cliente registrado.</div>
               </div>
             </div>
-            <div style="background: #fdf2f2; border: 1px dashed #f8b4b4; padding: 12px; border-radius: 8px; margin-top: auto;">
+            <div class="rep-perdas-box" style="background: #fdf2f2; border: 1px dashed #f8b4b4; padding: 12px; border-radius: 8px; margin-top: auto;">
               <strong style="font-size:11px; color:#9b1c1c; display:block; margin-bottom:6px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;"><i class="ph ph-warning-octagon"></i> Perdas (Cancelados)</strong>
               <div style="display:flex; justify-content:space-between; font-size:13px; color:#7f1d1d;">
                 <span>Pedidos Cancelados:</span>
@@ -757,17 +854,17 @@
         </div>
 
         <!-- Tables Section -->
-        <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #eef2f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02);">
-          <div style="display: flex; gap: 16px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
-            <button id="rep-subtab-btn-produtos" style="background: transparent; border: none; font-size: 15px; font-weight: 600; cursor: pointer; color: #fc4b15; border-bottom: 2px solid #fc4b15; outline: none; padding: 8px 16px; transition: all 0.2s;">Itens Vendidos</button>
-            <button id="rep-subtab-btn-pedidos" style="background: transparent; border: none; font-size: 15px; font-weight: 600; cursor: pointer; color: var(--fin-text-muted); border-bottom: 2px solid transparent; outline: none; padding: 8px 16px; transition: all 0.2s;">Lista de Pedidos</button>
+        <div class="rep-card rep-tables" style="padding: 24px; border-radius: 16px;">
+          <div style="display: flex; gap: 16px; margin-bottom: 20px; border-bottom: 1px solid var(--fin-border); padding-bottom: 12px;">
+            <button id="rep-subtab-btn-produtos" class="rep-subtab-btn active" style="background: transparent; border: none; font-size: 15px; font-weight: 600; cursor: pointer; color: #fc4b15; border-bottom: 2px solid #fc4b15; outline: none; padding: 8px 16px; transition: all 0.2s;">Itens Vendidos</button>
+            <button id="rep-subtab-btn-pedidos" class="rep-subtab-btn" style="background: transparent; border: none; font-size: 15px; font-weight: 600; cursor: pointer; color: var(--fin-text-muted); border-bottom: 2px solid transparent; outline: none; padding: 8px 16px; transition: all 0.2s;">Lista de Pedidos</button>
           </div>
 
           <!-- Table 1: Products -->
           <div id="rep-container-produtos" style="display: block; max-height: 400px; overflow-y: auto;">
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
               <thead>
-                <tr style="border-bottom: 2px solid #e2e8f0; color: #718096; font-size: 13px;">
+                <tr style="border-bottom: 2px solid var(--fin-border); color: var(--fin-text-muted); font-size: 13px;">
                   <th style="padding: 12px; font-weight: 600;">Produto</th>
                   <th style="padding: 12px; text-align: center; font-weight: 600;">Quantidade</th>
                   <th style="padding: 12px; text-align: right; font-weight: 600;">Total Recebido</th>
@@ -777,14 +874,14 @@
                 <!-- JS populated -->
               </tbody>
             </table>
-            <div style="text-align:center; color: #718096; font-size: 12px; margin-top: 10px; padding-bottom: 10px;">Exibindo os 150 itens mais vendidos do período (Limitado para performance). Totais do painel consideram 100% dos dados.</div>
+            <div style="text-align:center; color: var(--fin-text-muted); font-size: 12px; margin-top: 10px; padding-bottom: 10px;">Exibindo os 150 itens mais vendidos do período (Limitado para performance). Totais do painel consideram 100% dos dados.</div>
           </div>
 
           <!-- Table 2: Detailed Orders -->
           <div id="rep-container-pedidos" style="display: none; max-height: 400px; overflow-y: auto;">
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
               <thead>
-                <tr style="border-bottom: 2px solid #e2e8f0; color: #718096; font-size: 13px;">
+                <tr style="border-bottom: 2px solid var(--fin-border); color: var(--fin-text-muted); font-size: 13px;">
                   <th style="padding: 12px; font-weight: 600;">ID</th>
                   <th style="padding: 12px; font-weight: 600;">Produto</th>
                   <th style="padding: 12px; text-align: center; font-weight: 600;">Qtd</th>
@@ -801,7 +898,7 @@
                 <!-- JS populated -->
               </tbody>
             </table>
-            <div style="text-align:center; color: #718096; font-size: 12px; margin-top: 10px; padding-bottom: 10px;">Exibindo os 150 pedidos mais recentes do período (Limitado para performance). Totais do painel consideram 100% dos dados.</div>
+            <div style="text-align:center; color: var(--fin-text-muted); font-size: 12px; margin-top: 10px; padding-bottom: 10px;">Exibindo os 150 pedidos mais recentes do período (Limitado para performance). Totais do painel consideram 100% dos dados.</div>
           </div>
         </div>
       </div>
@@ -831,39 +928,39 @@
           <!-- Left: Config Panel -->
           <div style="display: flex; flex-direction: column; gap: 16px;">
             <!-- Contact Info -->
-            <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03);">
-              <h3 style="margin: 0 0 14px 0; font-size: 15px; color: #1a202c; display: flex; align-items: center; gap: 8px;">
+            <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid var(--fin-border); box-shadow: var(--fin-shadow);">
+              <h3 style="margin: 0 0 14px 0; font-size: 15px; color: var(--fin-text); display: flex; align-items: center; gap: 8px;">
                 <i class="ph ph-user-circle" style="color: #3b82f6;"></i> Dados do Contador
               </h3>
               <div style="display: flex; flex-direction: column; gap: 10px;">
                 <div>
-                  <label style="display: block; font-size: 13px; color: #64748b; margin-bottom: 4px; font-weight: 600;">Nome do Contador</label>
-                  <input type="text" id="cnt-nome" placeholder="Ex: João da Silva Contabilidade" style="width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box;">
+                  <label style="display: block; font-size: 13px; color: var(--fin-text-muted); margin-bottom: 4px; font-weight: 600;">Nome do Contador</label>
+                  <input type="text" id="cnt-nome" placeholder="Ex: João da Silva Contabilidade" style="width: 100%; padding: 9px 12px; border: 1px solid var(--fin-border); background: var(--fin-card); color: var(--fin-text); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box;">
                 </div>
                 <div>
-                  <label style="display: block; font-size: 13px; color: #64748b; margin-bottom: 4px; font-weight: 600;">WhatsApp do Contador</label>
-                  <input type="tel" id="cnt-whatsapp" placeholder="Ex: 11999998888" style="width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box;">
+                  <label style="display: block; font-size: 13px; color: var(--fin-text-muted); margin-bottom: 4px; font-weight: 600;">WhatsApp do Contador</label>
+                  <input type="tel" id="cnt-whatsapp" placeholder="Ex: 11999998888" style="width: 100%; padding: 9px 12px; border: 1px solid var(--fin-border); background: var(--fin-card); color: var(--fin-text); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box;">
                 </div>
                 <div>
-                  <label style="display: block; font-size: 13px; color: #64748b; margin-bottom: 4px; font-weight: 600;">E-mail do Contador</label>
-                  <input type="email" id="cnt-email" placeholder="Ex: contador@exemplo.com.br" style="width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box;">
+                  <label style="display: block; font-size: 13px; color: var(--fin-text-muted); margin-bottom: 4px; font-weight: 600;">E-mail do Contador</label>
+                  <input type="email" id="cnt-email" placeholder="Ex: contador@exemplo.com.br" style="width: 100%; padding: 9px 12px; border: 1px solid var(--fin-border); background: var(--fin-card); color: var(--fin-text); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box;">
                 </div>
               </div>
             </div>
 
             <!-- Date Range -->
-            <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03);">
-              <h3 style="margin: 0 0 14px 0; font-size: 15px; color: #1a202c; display: flex; align-items: center; gap: 8px;">
+            <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid var(--fin-border); box-shadow: var(--fin-shadow);">
+              <h3 style="margin: 0 0 14px 0; font-size: 15px; color: var(--fin-text); display: flex; align-items: center; gap: 8px;">
                 <i class="ph ph-calendar-blank" style="color: #fc4b15;"></i> Período dos Dados
               </h3>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div>
-                  <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 600;">Data Inicial</label>
-                  <input type="date" id="cnt-data-inicio" style="width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box;">
+                  <label style="display: block; font-size: 12px; color: var(--fin-text-muted); margin-bottom: 4px; font-weight: 600;">Data Inicial</label>
+                  <input type="date" id="cnt-data-inicio" style="width: 100%; padding: 9px 12px; border: 1px solid var(--fin-border); background: var(--fin-card); color: var(--fin-text); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box;">
                 </div>
                 <div>
-                  <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 600;">Data Final</label>
-                  <input type="date" id="cnt-data-fim" style="width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box;">
+                  <label style="display: block; font-size: 12px; color: var(--fin-text-muted); margin-bottom: 4px; font-weight: 600;">Data Final</label>
+                  <input type="date" id="cnt-data-fim" style="width: 100%; padding: 9px 12px; border: 1px solid var(--fin-border); background: var(--fin-card); color: var(--fin-text); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; box-sizing: border-box;">
                 </div>
               </div>
               <button id="cnt-btn-carregar" style="width: 100%; margin-top: 12px; background: #fc4b15; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
@@ -872,37 +969,37 @@
             </div>
 
             <!-- Data Checkboxes -->
-            <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03);">
-              <h3 style="margin: 0 0 14px 0; font-size: 15px; color: #1a202c; display: flex; align-items: center; gap: 8px;">
+            <div style="background: var(--fin-card); padding: 20px; border-radius: 16px; border: 1px solid var(--fin-border); box-shadow: var(--fin-shadow);">
+              <h3 style="margin: 0 0 14px 0; font-size: 15px; color: var(--fin-text); display: flex; align-items: center; gap: 8px;">
                 <i class="ph ph-checkbox-square" style="color: #8b5cf6;"></i> O que Enviar
               </h3>
               <div style="display: flex; flex-direction: column; gap: 8px;" id="cnt-checklist">
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fin-text); cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;">
                   <input type="checkbox" id="cnt-ck-resumo" checked style="accent-color: #fc4b15; width: 16px; height: 16px;"> Resumo do Turno (Faturamento, Gaveta, Sangrias)
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fin-text); cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;">
                   <input type="checkbox" id="cnt-ck-kpis" checked style="accent-color: #fc4b15; width: 16px; height: 16px;"> KPIs (Total Vendas, Ticket Médio, Itens)
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fin-text); cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;">
                   <input type="checkbox" id="cnt-ck-pagamentos" checked style="accent-color: #fc4b15; width: 16px; height: 16px;"> Meios de Pagamento (Detalhado)
                 </label>
                 <div id="cnt-pagamentos-filtros" style="display: none; margin-left: 28px; padding: 6px 0; flex-direction: column; gap: 4px;"></div>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fin-text); cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;">
                   <input type="checkbox" id="cnt-ck-produtos" checked style="accent-color: #fc4b15; width: 16px; height: 16px;"> Produtos Mais Vendidos
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fin-text); cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;">
                   <input type="checkbox" id="cnt-ck-pedidos" checked style="accent-color: #fc4b15; width: 16px; height: 16px;"> Lista Completa de Pedidos
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fin-text); cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;">
                   <input type="checkbox" id="cnt-ck-categorias" style="accent-color: #fc4b15; width: 16px; height: 16px;"> Vendas por Categoria e Setor
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fin-text); cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;">
                   <input type="checkbox" id="cnt-ck-garcons" style="accent-color: #fc4b15; width: 16px; height: 16px;"> Desempenho da Equipe (Garçons)
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fin-text); cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;">
                   <input type="checkbox" id="cnt-ck-movimentacoes" style="accent-color: #fc4b15; width: 16px; height: 16px;"> Movimentações do Caixa (Sangria/Suprimento)
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #334155; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fin-text); cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s;">
                   <input type="checkbox" id="cnt-ck-cancelamentos" style="accent-color: #fc4b15; width: 16px; height: 16px;"> Cancelamentos e Perdas
                 </label>
               </div>
@@ -910,14 +1007,14 @@
           </div>
 
           <!-- Right: Preview Panel -->
-          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03); min-height: 500px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
-              <h3 style="margin: 0; font-size: 15px; color: #1a202c; display: flex; align-items: center; gap: 8px;">
+          <div style="background: var(--fin-card); padding: 24px; border-radius: 16px; border: 1px solid var(--fin-border); box-shadow: var(--fin-shadow); min-height: 500px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--fin-border);">
+              <h3 style="margin: 0; font-size: 15px; color: var(--fin-text); display: flex; align-items: center; gap: 8px;">
                 <i class="ph ph-eye" style="color: #10b981;"></i> Pré-visualização
               </h3>
-              <span id="cnt-status" style="font-size: 12px; color: #64748b; font-style: italic;">Configure e clique em "Carregar Dados"</span>
+              <span id="cnt-status" style="font-size: 12px; color: var(--fin-text-muted); font-style: italic;">Configure e clique em "Carregar Dados"</span>
             </div>
-            <pre id="cnt-preview" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; font-family: 'Courier New', Courier, monospace; font-size: 12px; line-height: 1.5; color: #1e293b; white-space: pre-wrap; word-wrap: break-word; max-height: 600px; overflow-y: auto; margin: 0;">Nenhum dado carregado ainda.</pre>
+            <pre id="cnt-preview" style="background: var(--fin-bg); border: 1px solid var(--fin-border); border-radius: 10px; padding: 16px; font-family: 'Courier New', Courier, monospace; font-size: 12px; line-height: 1.5; color: var(--fin-text); white-space: pre-wrap; word-wrap: break-word; max-height: 600px; overflow-y: auto; margin: 0;">Nenhum dado carregado ainda.</pre>
           </div>
         </div>
       </div>
@@ -955,7 +1052,7 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 24px;">
           <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
             <div style="color: var(--fin-text-muted); font-size: 12.5px; font-weight: 600;">(+) Receita Bruta</div>
-            <div id="dre-kpi-bruta" style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 4px;">R$ 0,00</div>
+            <div id="dre-kpi-bruta" style="font-size: 22px; font-weight: 800; color: var(--fin-text); margin-top: 4px;">R$ 0,00</div>
             <small style="color: var(--fin-text-muted); font-size: 11px;">Total faturado no período</small>
           </div>
           <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
@@ -1171,7 +1268,7 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
           <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border);">
             <div style="color: var(--fin-text-muted); font-size: 12.5px; font-weight: 600;">Total Lançado</div>
-            <div id="despesas-kpi-total" style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 4px;">R$ 0,00</div>
+            <div id="despesas-kpi-total" style="font-size: 22px; font-weight: 800; color: var(--fin-text); margin-top: 4px;">R$ 0,00</div>
           </div>
           <div style="background: var(--fin-card); padding: 18px; border-radius: 12px; border: 1px solid var(--fin-border);">
             <div style="color: #16a34a; font-size: 12.5px; font-weight: 600;">Total Pago</div>
@@ -1624,27 +1721,28 @@
   </div>
 
     <!-- Modal Exportação -->
-  <div id="export-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1001; padding: 24px;">
-    <div style="background: var(--fin-card); border-radius: 12px; padding: 28px; max-width: 500px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column;">
+  <!-- Modal Exportação -->
+  <div id="export-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); align-items: center; justify-content: center; z-index: 1001; padding: 24px; backdrop-filter: blur(4px);">
+    <div style="background: var(--fin-card); border-radius: 14px; padding: 28px; max-width: 500px; width: 100%; border: 1px solid var(--fin-border); box-shadow: var(--fin-shadow); display: flex; flex-direction: column;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0; font-size: 20px;"><i class="ph ph-export" style="color: #fc4b15;"></i> Exportar Relatório</h2>
-        <button onclick="document.getElementById('export-modal').style.display='none'" style="background: transparent; border: none; font-size: 24px; cursor: pointer; color: #999;"><i class="ph ph-x"></i></button>
+        <h2 style="margin: 0; font-size: 20px; color: var(--fin-text);"><i class="ph ph-export" style="color: #fc4b15;"></i> Exportar Relatório</h2>
+        <button onclick="document.getElementById('export-modal').style.display='none'" style="background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--fin-text-muted);"><i class="ph ph-x"></i></button>
       </div>
       <p style="margin-top: 0; margin-bottom: 24px; color: var(--fin-text-muted); font-size: 14px;">Selecione o formato de exportação desejado para os dados filtrados:</p>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-        <button id="btn-export-txt" style="background: #f7f9fb; border: 1px solid #e1e8ed; border-radius: 10px; padding: 20px 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; font-family: inherit;">
+        <button id="btn-export-txt" class="rep-export-btn" style="background: var(--fin-bg); border: 1px solid var(--fin-border); border-radius: 10px; padding: 20px 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-family: inherit;">
           <i class="ph ph-file-text" style="font-size: 32px; color: #4f46e5;"></i>
           <span style="font-weight: 600; font-size: 14px; color: var(--fin-text);">Arquivo .TXT</span>
         </button>
-        <button id="btn-export-pdf" style="background: #f7f9fb; border: 1px solid #e1e8ed; border-radius: 10px; padding: 20px 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; font-family: inherit;">
+        <button id="btn-export-pdf" class="rep-export-btn" style="background: var(--fin-bg); border: 1px solid var(--fin-border); border-radius: 10px; padding: 20px 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-family: inherit;">
           <i class="ph ph-file-pdf" style="font-size: 32px; color: #ef4444;"></i>
           <span style="font-weight: 600; font-size: 14px; color: var(--fin-text);">Documento .PDF</span>
         </button>
-        <button id="btn-export-wa" style="background: #f7f9fb; border: 1px solid #e1e8ed; border-radius: 10px; padding: 20px 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; font-family: inherit;">
+        <button id="btn-export-wa" class="rep-export-btn" style="background: var(--fin-bg); border: 1px solid var(--fin-border); border-radius: 10px; padding: 20px 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-family: inherit;">
           <i class="ph ph-whatsapp-logo" style="font-size: 32px; color: #22c55e;"></i>
           <span style="font-weight: 600; font-size: 14px; color: var(--fin-text);">Enviar WhatsApp</span>
         </button>
-        <button id="btn-export-sheets" style="background: #f7f9fb; border: 1px solid #e1e8ed; border-radius: 10px; padding: 20px 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; font-family: inherit;">
+        <button id="btn-export-sheets" class="rep-export-btn" style="background: var(--fin-bg); border: 1px solid var(--fin-border); border-radius: 10px; padding: 20px 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-family: inherit;">
           <i class="ph ph-microsoft-excel" style="font-size: 32px; color: #10b981;"></i>
           <span style="font-weight: 600; font-size: 14px; color: var(--fin-text);">Google Sheets</span>
         </button>

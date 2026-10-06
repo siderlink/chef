@@ -1066,6 +1066,7 @@ const ioAllowedOrigins = process.env.CORS_ORIGIN
 const io = new Server(server, { cors: { origin: ioAllowedOrigins, methods: ['GET', 'POST'] } });
 if (serverHttp) io.attach(serverHttp);
 io.setMaxListeners(100);
+global.io = io;
 
 // Protocolo efetivo da instalação (HTTPS quando há cert ativo).
 // O sync-prod.js corta a seção do server.js onde PROTOCOL é definido, então o
@@ -1250,6 +1251,15 @@ try {
   };
 }
 const tenantContext = new (require('async_hooks').AsyncLocalStorage)();
+
+// OTIMIZACAO DE PERFORMANCE:
+// Intercepta io.emit() para que dispare apenas na room do tenant
+const originalIoEmit = io.emit.bind(io);
+io.emit = function(eventName, ...args) {
+  const tid = tenantContext.getStore();
+  if (tid) return io.to('restaurante_' + tid).emit(eventName, ...args);
+  return originalIoEmit(eventName, ...args);
+};
 const fsSync = fs;
 
 function isBcryptHash(v) { return typeof v === 'string' && /^\$2[aby]\$/.test(v); }
@@ -2156,6 +2166,7 @@ function applyTenantMigrations(tenantDb, done) {
     `ALTER TABLE funcionarios ADD COLUMN telefone TEXT`,
     `ALTER TABLE funcionarios ADD COLUMN observacao_rh TEXT`,
     `ALTER TABLE funcionarios ADD COLUMN pin_hash TEXT`,
+    `ALTER TABLE funcionarios ADD COLUMN atalhos_config TEXT`,
     `ALTER TABLE produtos ADD COLUMN ativo INTEGER DEFAULT 1`,
     `ALTER TABLE produtos ADD COLUMN ordem INTEGER DEFAULT 0`,
     `ALTER TABLE montavel_opcoes ADD COLUMN produto_id INTEGER`,
@@ -2679,6 +2690,7 @@ db.serialize(() => {
   db.run(`ALTER TABLE funcionarios ADD COLUMN login_expires_at TEXT`, (err) => { });
   db.run(`ALTER TABLE funcionarios ADD COLUMN data_cadastro TEXT`, (err) => { });
   db.run(`ALTER TABLE funcionarios ADD COLUMN restaurante_id INTEGER`, (err) => { });
+  db.run(`ALTER TABLE funcionarios ADD COLUMN atalhos_config TEXT`, (err) => { });
 
   db.run(`
     CREATE TABLE IF NOT EXISTS pontos (
@@ -2981,6 +2993,7 @@ db.serialize(() => {
   db.run(`ALTER TABLE funcionarios ADD COLUMN login_expires_at TEXT`, (err) => { });
   db.run(`ALTER TABLE funcionarios ADD COLUMN data_cadastro TEXT`, (err) => { });
   db.run(`ALTER TABLE funcionarios ADD COLUMN restaurante_id INTEGER`, (err) => { });
+  db.run(`ALTER TABLE funcionarios ADD COLUMN atalhos_config TEXT`, (err) => { });
 
   db.run(`
     CREATE TABLE IF NOT EXISTS pontos (
@@ -8519,6 +8532,7 @@ io.on('connection', (socket) => {
               usuario: f.usuario,
               cargo: f.cargo || 'Colaborador',
               status: f.status,
+              atalhos_config: f.atalhos_config || null,
               restaurante_id: socketTenantId || tenantContext.getStore() || 1
             };
             socket.emit('login_success', payload);
@@ -11050,7 +11064,7 @@ setInterval(runIAVerificacao, IA_CONFIG.intervaloVerificacao);
 // ── Minha Rede (Multi-Lojas Dono) ──
 // ── Funcionários ──
 app.get('/api/funcionarios', (req, res) => {
-  db.all('SELECT id, nome, usuario, cargo, status, valor_hora, tipo_remuneracao, valor_dia, valor_semana, valor_mes, chave_pix, cpf, telefone, observacao_rh, data_cadastro FROM funcionarios ORDER BY id DESC', [], (err, rows) => {
+  db.all('SELECT id, nome, usuario, cargo, status, valor_hora, tipo_remuneracao, valor_dia, valor_semana, valor_mes, chave_pix, cpf, telefone, observacao_rh, data_cadastro, atalhos_config FROM funcionarios ORDER BY id DESC', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows || []);
   });
@@ -11076,6 +11090,53 @@ app.delete('/api/funcionarios/:id', (req, res) => {
   db.run('DELETE FROM funcionarios WHERE id = ?', [id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true });
+  });
+});
+
+// ── Atalhos da Comanda Mobile por Colaborador & Global ──
+app.get('/api/funcionarios/:id/atalhos', (req, res) => {
+  const id = req.params.id;
+  db.get('SELECT id, nome, usuario, cargo, atalhos_config FROM funcionarios WHERE id = ?', [id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Funcionário não encontrado.' });
+
+    db.get('SELECT valor FROM configuracoes WHERE chave = "garcom_atalhos"', [], (errCfg, cfgRow) => {
+      let globalCfg = null;
+      if (cfgRow && cfgRow.valor) {
+        try { globalCfg = typeof cfgRow.valor === 'string' ? JSON.parse(cfgRow.valor) : cfgRow.valor; } catch (e) {}
+      }
+      let funcCfg = null;
+      if (row.atalhos_config) {
+        try { funcCfg = typeof row.atalhos_config === 'string' ? JSON.parse(row.atalhos_config) : row.atalhos_config; } catch (e) {}
+      }
+      res.json({
+        id: row.id,
+        nome: row.nome,
+        cargo: row.cargo,
+        config: funcCfg,
+        global: globalCfg
+      });
+    });
+  });
+});
+
+app.post('/api/funcionarios/:id/atalhos', (req, res) => {
+  const id = req.params.id;
+  const { config } = req.body || {};
+  const configVal = (config && typeof config === 'object') ? JSON.stringify(config) : (config === null ? null : null);
+
+  db.run('UPDATE funcionarios SET atalhos_config = ? WHERE id = ?', [configVal, id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+
+    // Notifica instantaneamente a comanda mobile conectada
+    if (typeof io !== 'undefined') {
+      io.emit('atalhos_config_atualizada', {
+        funcionario_id: parseInt(id, 10),
+        config: config
+      });
+    }
+
+    res.json({ success: true, funcionario_id: parseInt(id, 10), config: config });
   });
 });
 
@@ -11704,6 +11765,34 @@ app.post('/api/terminais/revogar', verificarToken, async (req, res) => {
   res.json({ ...result, sucesso: true });
 });
 
+// ─── API: Obter Informações e Chave do Chef Sync para o Painel do Dono ───
+app.get('/api/dono/sync-info', verificarToken, (req, res) => {
+  const restId = req.restaurante_id || 1;
+  masterDb.get('SELECT id, nome, chave_ativacao, licenca, telefone, dono_telefone FROM restaurantes WHERE id = ?', [restId], (err, rest) => {
+    if (err || !rest) {
+      return res.status(404).json({ ok: false, erro: 'Restaurante não localizado.' });
+    }
+    const chave = rest.chave_ativacao || ('CHEF-LOCAL-' + String(rest.id).padStart(4, '0'));
+    const host = req.get('host') || '127.0.0.1:8080';
+    const protocol = req.protocol || 'http';
+    const baseUrl = `${protocol}://${host}`;
+    const guiaUrl = `${baseUrl}/guia-sync.html?chave=${encodeURIComponent(chave)}`;
+    const downloadExeUrl = `/api/sync/installers/Instalador-ChefSync.exe?key=${encodeURIComponent(chave)}`;
+    const downloadZipUrl = `/api/sync/installers/ChefSync-Distribuicao.zip`;
+
+    res.json({
+      ok: true,
+      restaurante_id: rest.id,
+      nome: rest.nome,
+      telefone: rest.telefone || rest.dono_telefone || '',
+      chave,
+      guiaUrl,
+      downloadExeUrl,
+      downloadZipUrl,
+      plano: rest.licenca || 'Pro'
+    });
+  });
+});
 
 // ─── API: Autorização de Supervisor/Gerente por PIN ───
 // ─── App Store de Temas (catálogo global, curadoria e aplicação por restaurante) ───

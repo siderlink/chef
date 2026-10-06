@@ -8153,6 +8153,15 @@ socket.on('restaurante_config', (cfg) => {
       document.getElementById('rest-fila-alocacao-auto').value = cfg['rest_fila_alocacao_auto'] || 'manual';
     }
     // Personalizações Visuais & White-label
+    if (document.getElementById('rest-tema-preset')) {
+      document.getElementById('rest-tema-preset').value = cfg['rest_tema_preset'] || 'chef';
+      if (typeof window.ativarPresetCardapioVisual === 'function') {
+        window.ativarPresetCardapioVisual(cfg['rest_tema_preset'] || 'chef', false);
+      }
+    }
+    if (document.getElementById('rest-cor-fundo')) {
+      document.getElementById('rest-cor-fundo').value = cfg['rest_cor_fundo'] || '#f8fafc';
+    }
     if (document.getElementById('rest-cor-primaria')) {
       const corPrim = cfg['rest_cor_primaria'] || '#fc4b15';
       document.getElementById('rest-cor-primaria').value = corPrim;
@@ -8243,6 +8252,8 @@ if (_btnSalvarPerfil) _btnSalvarPerfil.onclick = () => {
     'rest_obs': document.getElementById('rest-obs').value,
     'rest_dias_funcionamento': JSON.stringify(dias),
     // Personalizações Adicionais
+    'rest_tema_preset': (document.getElementById('rest-tema-preset') || {}).value || 'chef',
+    'rest_cor_fundo': (document.getElementById('rest-cor-fundo') || {}).value || '#f8fafc',
     'rest_cor_primaria': (document.getElementById('rest-cor-primaria') || {}).value || '#fc4b15',
     'rest_cor_secundaria': (document.getElementById('rest-cor-secundaria') || {}).value || '#ff8c00',
     'rest_fonte_familia': (document.getElementById('rest-fonte-familia') || {}).value || 'Inter, sans-serif',
@@ -8277,7 +8288,165 @@ socket.on('restaurante_config_salvo', () => {
   alert('Perfil salvo com sucesso!');
 });
 
-// Sincronização e presets do seletor de cores da marca
+
+// ─── ESTÚDIO DE CORES & LIVE PREVIEW DO CARDÁPIO ───
+(function initCardapioColorStudio() {
+  function getLuminance(hex) {
+    if (!hex || !hex.startsWith('#') || hex.length !== 7) return 0.5;
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  window.atualizarLivePhoneMockup = function() {
+    const pickerPrim = document.getElementById('rest-cor-primaria');
+    const pickerSec = document.getElementById('rest-cor-secundaria');
+    const selectFundo = document.getElementById('rest-cor-fundo');
+    const inputNome = document.getElementById('rest-nome');
+
+    const corPrim = pickerPrim ? pickerPrim.value : '#fc4b15';
+    const corSec = pickerSec ? pickerSec.value : '#ff8c00';
+    const corFundo = selectFundo ? selectFundo.value : '#f8fafc';
+    const nomeRest = (inputNome && inputNome.value.trim()) ? inputNome.value.trim() : 'Chef Cozinha';
+
+    const isDark = getLuminance(corFundo) < 0.35;
+    const corSurface = isDark ? (corFundo === '#09090b' ? '#18181b' : '#1e293b') : '#ffffff';
+    const corText = isDark ? '#f8fafc' : '#0f172a';
+    const corTextMuted = isDark ? '#94a3b8' : '#64748b';
+    const corBorder = isDark ? 'rgba(255,255,255,0.09)' : '#e2e8f0';
+
+    const phoneBody = document.getElementById('phone-body');
+    const phoneHeader = document.getElementById('phone-header');
+    const phoneDock = document.getElementById('phone-dock');
+    const phoneRestName = document.getElementById('phone-rest-name');
+    const phoneLogoBadge = document.getElementById('phone-logo-badge');
+    const phoneMesaBadge = document.getElementById('phone-mesa-badge');
+    const phoneTabActive = document.getElementById('phone-tab-active');
+    const phoneCard = document.getElementById('phone-card');
+    const phoneCard2 = document.getElementById('phone-card-2');
+    const phoneCardPrice = document.getElementById('phone-card-price');
+    const phoneCardPrice2 = document.getElementById('phone-card-price-2');
+    const phoneBtnAdd = document.getElementById('phone-btn-add');
+    const phoneBtnAdd2 = document.getElementById('phone-btn-add-2');
+    const phoneBtnCart = document.getElementById('phone-btn-cart');
+    const phoneCardIcon = document.getElementById('phone-card-icon');
+    const phoneCardTitle = document.getElementById('phone-card-title');
+
+    if (phoneRestName) phoneRestName.textContent = nomeRest;
+    if (phoneBody) phoneBody.style.background = corFundo;
+    if (phoneHeader) {
+      phoneHeader.style.background = corSurface;
+      phoneHeader.style.borderBottomColor = corBorder;
+    }
+    if (phoneDock) {
+      phoneDock.style.background = corSurface;
+      phoneDock.style.borderTopColor = corBorder;
+    }
+    if (phoneRestName) phoneRestName.style.color = corText;
+    if (phoneLogoBadge) phoneLogoBadge.style.background = corPrim;
+    if (phoneMesaBadge) phoneMesaBadge.style.background = corPrim;
+    if (phoneTabActive) phoneTabActive.style.background = corPrim;
+
+    [phoneCard, phoneCard2].forEach(c => {
+      if (c) {
+        c.style.background = corSurface;
+        c.style.borderColor = corBorder;
+      }
+    });
+
+    if (phoneCardTitle) phoneCardTitle.style.color = corText;
+    if (phoneCardPrice) phoneCardPrice.style.color = corPrim;
+    if (phoneCardPrice2) phoneCardPrice2.style.color = corPrim;
+    if (phoneBtnAdd) phoneBtnAdd.style.background = corPrim;
+    if (phoneBtnAdd2) phoneBtnAdd2.style.background = corPrim;
+    if (phoneBtnCart) phoneBtnCart.style.background = `linear-gradient(135deg, ${corPrim}, ${corSec})`;
+    if (phoneCardIcon) {
+      phoneCardIcon.style.background = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+    }
+  };
+
+  window.ativarPresetCardapioVisual = function(presetKey, atualizarInputs = true) {
+    const cards = document.querySelectorAll('.preset-theme-card');
+    let targetCard = null;
+    cards.forEach(card => {
+      if (card.dataset.preset === presetKey) {
+        card.classList.add('active');
+        card.style.borderColor = 'var(--primary, #fc4b15)';
+        card.style.boxShadow = '0 4px 14px rgba(0,0,0,0.12)';
+        targetCard = card;
+      } else {
+        card.classList.remove('active');
+        card.style.borderColor = '#e2e8f0';
+        card.style.boxShadow = 'none';
+      }
+    });
+
+    if (targetCard && atualizarInputs) {
+      const prim = targetCard.dataset.primary;
+      const sec = targetCard.dataset.sec;
+      const bg = targetCard.dataset.bg;
+
+      const pPrim = document.getElementById('rest-cor-primaria');
+      const hPrim = document.getElementById('rest-cor-primaria-hex');
+      const pSec = document.getElementById('rest-cor-secundaria');
+      const hSec = document.getElementById('rest-cor-secundaria-hex');
+      const sBg = document.getElementById('rest-cor-fundo');
+      const hiddenPreset = document.getElementById('rest-tema-preset');
+      const lblPreset = document.getElementById('label-preset-selecionado');
+
+      if (pPrim) pPrim.value = prim;
+      if (hPrim) hPrim.value = prim.toUpperCase();
+      if (pSec) pSec.value = sec;
+      if (hSec) hSec.value = sec.toUpperCase();
+      if (sBg) sBg.value = bg;
+      if (hiddenPreset) hiddenPreset.value = presetKey;
+      if (lblPreset) {
+        const titleEl = targetCard.querySelector('strong');
+        lblPreset.textContent = 'Tema Ativo: ' + (titleEl ? titleEl.textContent : presetKey);
+      }
+    }
+
+    window.atualizarLivePhoneMockup();
+  };
+
+  // Bind dos presets
+  document.querySelectorAll('.preset-theme-card').forEach(card => {
+    card.addEventListener('click', () => {
+      window.ativarPresetCardapioVisual(card.dataset.preset, true);
+    });
+  });
+
+  // Bind dos inputs de cor e texto
+  ['rest-cor-primaria', 'rest-cor-secundaria'].forEach(id => {
+    const el = document.getElementById(id);
+    const hex = document.getElementById(id + '-hex');
+    if (el) {
+      el.addEventListener('input', () => {
+        if (hex) hex.value = el.value.toUpperCase();
+        window.atualizarLivePhoneMockup();
+      });
+    }
+    if (hex) {
+      hex.addEventListener('input', () => {
+        if (/^#[0-9A-Fa-f]{6}$/.test(hex.value)) {
+          if (el) el.value = hex.value;
+          window.atualizarLivePhoneMockup();
+        }
+      });
+    }
+  });
+
+  const sFundo = document.getElementById('rest-cor-fundo');
+  if (sFundo) sFundo.addEventListener('change', window.atualizarLivePhoneMockup);
+
+  const inpNome = document.getElementById('rest-nome');
+  if (inpNome) inpNome.addEventListener('input', window.atualizarLivePhoneMockup);
+
+  setTimeout(window.atualizarLivePhoneMockup, 300);
+})();
+
+// Sincronização legado
 (function initColorPresets() {
   const pickerPrim = document.getElementById('rest-cor-primaria');
   const hexPrim = document.getElementById('rest-cor-primaria-hex');
@@ -9094,69 +9263,409 @@ window.salvarMontavel = function() {
 };
 
 // ═════════════════════════════════════════════════════════════════════
-// ATALHOS DO APP GARÇOM (CONFIGURAÇÃO NO PAINEL ADMIN)
+// ATALHOS DA COMANDA MOBILE POR COLABORADOR & GLOBAL (PAINEL DO CAIXA)
 // ═════════════════════════════════════════════════════════════════════
-window.carregarConfigAtalhosGarcom = function() {
-  fetch('/api/configuracoes')
-    .then(r => r.json())
-    .then(data => {
-      let cfg = {
-        fila_espera: true,
-        fila_preparo: true,
-        consulta_preco: true,
-        nova_comanda: true,
-        chamar_gerente: true,
-        minhas_vendas: true
-      };
-      if (data && data.garcom_atalhos) {
-        try {
-          const parsed = typeof data.garcom_atalhos === 'string' ? JSON.parse(data.garcom_atalhos) : data.garcom_atalhos;
-          cfg = Object.assign(cfg, parsed);
-        } catch(e) {}
-      }
-      if (document.getElementById('cfg-garcom-fila-espera')) document.getElementById('cfg-garcom-fila-espera').checked = cfg.fila_espera !== false;
-      if (document.getElementById('cfg-garcom-fila-preparo')) document.getElementById('cfg-garcom-fila-preparo').checked = cfg.fila_preparo !== false;
-      if (document.getElementById('cfg-garcom-consulta-preco')) document.getElementById('cfg-garcom-consulta-preco').checked = cfg.consulta_preco !== false;
-      if (document.getElementById('cfg-garcom-nova-comanda')) document.getElementById('cfg-garcom-nova-comanda').checked = cfg.nova_comanda !== false;
-      if (document.getElementById('cfg-garcom-chamar-gerente')) document.getElementById('cfg-garcom-chamar-gerente').checked = cfg.chamar_gerente !== false;
-      if (document.getElementById('cfg-garcom-minhas-vendas')) document.getElementById('cfg-garcom-minhas-vendas').checked = cfg.minhas_vendas !== false;
-    })
-    .catch(() => {});
+
+const ATALHOS_CATALOGO = [
+  { id: 'transferir_mesa', nome: 'Transferir Mesa', desc: 'Mudar de mesa ou transferir itens selecionados', icone: 'ph-arrows-left-right', cor: '#f97316', pills: true },
+  { id: 'juntar_mesas', nome: 'Juntar Mesas', desc: 'Unir grupos de mesas e somar comandos/contas', icone: 'ph-link-simple', cor: '#8b5cf6', pills: true },
+  { id: 'pedir_preconta', nome: 'Pedir Pré-Conta', desc: 'Conferência parcial ou final e envio à impressão', icone: 'ph-receipt', cor: '#0284c7', pills: true },
+  { id: 'dividir_conta', nome: 'Dividir Conta', desc: 'Calculadora rápida por pessoa ou cotas proporcionais', icone: 'ph-calculator', cor: '#059669', pills: true },
+  { id: 'limpar_mesa', nome: 'Avisar Limpeza', desc: 'Notificar equipe de salão para higienizar a mesa', icone: 'ph-sparkle', cor: '#0891b2', pills: true },
+  { id: 'alergenos', nome: 'Guia de Alérgenos', desc: 'Filtro e alerta de glúten, lactose, vegan e restrições', icone: 'ph-shield-check', cor: '#e11d48', pills: true },
+  { id: 'ler_qr_mesa', nome: 'Bipar QR da Mesa', desc: 'Leitor óptico de QR code via câmera do dispositivo', icone: 'ph-qr-code', cor: '#f59e0b', pills: true },
+  { id: 'fila_espera', nome: 'Fila de Espera', desc: 'Adicionar clientes aguardando e acomodar em mesas', icone: 'ph-users-three', cor: '#2563eb', pills: false },
+  { id: 'fila_preparo', nome: 'Fila de Preparo (KDS)', desc: 'Consultar situação e tempo estimado dos pratos', icone: 'ph-cooking-pot', cor: '#ea580c', pills: false },
+  { id: 'consulta_preco', nome: 'Consultar Preço & Estoque', desc: 'Busca rápida de itens, ingredientes e valores', icone: 'ph-tag', cor: '#059669', pills: false },
+  { id: 'nova_comanda', nome: 'Nova Comanda Avulsa', desc: 'Abertura imediata de comanda para cliente de balcão', icone: 'ph-user-plus', cor: '#7e22ce', pills: false },
+  { id: 'chamar_gerente', nome: 'Chamar Gerente / Suporte', desc: 'Solicitar auxílio ou autorização de supervisor', icone: 'ph-bell-ringing', cor: '#dc2626', pills: false },
+  { id: 'minhas_vendas', nome: 'Minhas Vendas do Turno', desc: 'Acompanhar total vendido, taxa de serviço e comissões', icone: 'ph-chart-line-up', cor: '#0284c7', pills: false },
+  { id: 'pizza_meio_a_meio', nome: 'Pizza Meio a Meio', desc: 'Divisão de frações, múltiplos sabores e bordas', icone: 'ph-pizza', cor: '#fc4b15', pills: false },
+  { id: 'rodizio_carnes', nome: 'Sinal de Rodízio', desc: 'Alternar status da mesa entre Verde (servir) e Vermelho', icone: 'ph-traffic-signal', cor: '#10b981', pills: false },
+  { id: 'marchar_prato', nome: 'Marchar Pratos (À La Carte)', desc: 'Comandar liberação de preparo dos pratos principais', icone: 'ph-footprints', cor: '#6366f1', pills: false },
+  { id: 'sommelier_ia', nome: 'Sommelier IA & Harmonização', desc: 'Sugestões inteligentes de harmonização e upsell', icone: 'ph-wine', cor: '#ec4899', pills: false },
+  { id: 'area_colaborador', nome: 'Área do Colaborador (Ponto)', desc: 'Meu turno, espelho de ponto eletrônico e escala', icone: 'ph-identification-badge', cor: '#7e22ce', pills: false },
+  { id: 'voz_ia', nome: 'Comando de Voz IA', desc: 'Lançar pedidos com reconhecimento inteligente por voz', icone: 'ph-microphone', cor: '#8b5cf6', pills: false },
+  { id: 'ranking_garcom', nome: 'Ranking & Metas', desc: 'Leaderboard e desempenho operacional da equipe', icone: 'ph-trophy', cor: '#ca8a04', pills: false },
+  { id: 'alternar_tema', nome: 'Tema Claro / Escuro', desc: 'Alternar contraste visual para economia de bateria', icone: 'ph-moon-stars', cor: '#4f46e5', pills: false }
+];
+
+let atalhosFuncionariosLista = [];
+let atalhosColaboradorSelecionado = 'global';
+let atalhosConfigGlobalArmazenada = null;
+let atalhosListaEmEdicao = [];
+
+function normalizarConfigAtalhos(raw) {
+  let order = [];
+  let enabled = {};
+  let pills = {};
+
+  if (raw && typeof raw === 'object') {
+    if (Array.isArray(raw.order)) {
+      order = raw.order.slice();
+    }
+    if (raw.enabled && typeof raw.enabled === 'object') {
+      enabled = Object.assign({}, raw.enabled);
+    } else {
+      // Compatibilidade se o objeto era apenas { chave: bool }
+      Object.keys(raw).forEach(k => {
+        if (typeof raw[k] === 'boolean') enabled[k] = raw[k];
+      });
+    }
+    if (raw.pills && typeof raw.pills === 'object') {
+      pills = Object.assign({}, raw.pills);
+    }
+  }
+
+  // Preenche atalhos do catálogo que não estavam na ordem
+  ATALHOS_CATALOGO.forEach(item => {
+    if (!order.includes(item.id)) order.push(item.id);
+    if (enabled[item.id] === undefined) enabled[item.id] = true;
+    if (pills[item.id] === undefined) pills[item.id] = !!item.pills;
+  });
+
+  return { order, enabled, pills };
+}
+
+function gerarListaOrdenada(cfg) {
+  const norm = normalizarConfigAtalhos(cfg);
+  const mapa = {};
+  ATALHOS_CATALOGO.forEach(item => { mapa[item.id] = item; });
+
+  const lista = [];
+  norm.order.forEach(id => {
+    if (mapa[id]) {
+      lista.push({
+        ...mapa[id],
+        visivel: norm.enabled[id] !== false,
+        pills: norm.pills[id] === true
+      });
+    }
+  });
+
+  // Itens restantes que porventura faltaram
+  ATALHOS_CATALOGO.forEach(item => {
+    if (!lista.some(x => x.id === item.id)) {
+      lista.push({
+        ...item,
+        visivel: norm.enabled[item.id] !== false,
+        pills: norm.pills[item.id] === true
+      });
+    }
+  });
+
+  return lista;
+}
+
+window.renderizarTabelaAtalhosConfig = function() {
+  const container = document.getElementById('cfg-atalhos-lista-container');
+  if (!container) return;
+
+  if (!atalhosListaEmEdicao || atalhosListaEmEdicao.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--cfg-text-muted);">Nenhum atalho encontrado.</div>';
+    return;
+  }
+
+  let html = '';
+  atalhosListaEmEdicao.forEach((item, idx) => {
+    const isFirst = (idx === 0);
+    const isLast = (idx === atalhosListaEmEdicao.length - 1);
+    const cor = item.cor || '#fc4b15';
+
+    html += `
+      <div class="cfg-atalho-item" data-id="${item.id}"
+        style="background:var(--cfg-card-bg); border:1.5px solid var(--cfg-border); border-radius:12px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:14px; transition:all 0.15s ease; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+        
+        <!-- POSIÇÃO & BOTÕES DE SUBIR/DESCER -->
+        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+          <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; background:var(--cfg-subtle-bg); border:1px solid var(--cfg-border); font-size:12px; font-weight:800; color:var(--cfg-text);">
+            #${idx + 1}
+          </span>
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <button type="button" onclick="window.moverAtalhoItem(${idx}, -1)" ${isFirst ? 'disabled' : ''}
+              style="width:26px; height:22px; border-radius:4px; border:1px solid var(--cfg-border); background:${isFirst ? 'transparent' : 'var(--cfg-subtle-bg)'}; color:${isFirst ? 'var(--cfg-border)' : 'var(--cfg-text)'}; cursor:${isFirst ? 'not-allowed' : 'pointer'}; display:flex; align-items:center; justify-content:center; font-size:11px;"
+              title="Mover para cima">
+              <i class="ph-bold ph-caret-up"></i>
+            </button>
+            <button type="button" onclick="window.moverAtalhoItem(${idx}, 1)" ${isLast ? 'disabled' : ''}
+              style="width:26px; height:22px; border-radius:4px; border:1px solid var(--cfg-border); background:${isLast ? 'transparent' : 'var(--cfg-subtle-bg)'}; color:${isLast ? 'var(--cfg-border)' : 'var(--cfg-text)'}; cursor:${isLast ? 'not-allowed' : 'pointer'}; display:flex; align-items:center; justify-content:center; font-size:11px;"
+              title="Mover para baixo">
+              <i class="ph-bold ph-caret-down"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ÍCONE, NOME E DESCRIÇÃO -->
+        <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
+          <div style="width:40px; height:40px; border-radius:12px; background:${cor}18; color:${cor}; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
+            <i class="ph-bold ${item.icone}"></i>
+          </div>
+          <div style="min-width:0;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <strong style="font-size:13.5px; color:var(--cfg-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.nome}</strong>
+              <span id="badge-vis-${item.id}" style="font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px; background:${item.visivel ? 'rgba(16,185,129,0.12)' : 'rgba(100,116,139,0.12)'}; color:${item.visivel ? '#059669' : '#64748b'};">
+                ${item.visivel ? 'Visível' : 'Oculto'}
+              </span>
+            </div>
+            <div style="font-size:12px; color:var(--cfg-text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.desc}</div>
+          </div>
+        </div>
+
+        <!-- CONTROLES: BARRA RÁPIDA (PÍLULA) & TOGGLE VISIBILIDADE -->
+        <div style="display:flex; align-items:center; gap:18px; flex-shrink:0;">
+          <!-- Opção Pílula Superior -->
+          <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:var(--cfg-text); user-select:none;" title="Exibir como botão horizontal no topo da tela de Mesas">
+            <input type="checkbox" id="cfg-pill-${item.id}" ${item.pills ? 'checked' : ''} onchange="window.atualizarEstadoAtalhoItem(${idx}, 'pills', this.checked)"
+              style="accent-color:#fc4b15; width:16px; height:16px; cursor:pointer;">
+            <span style="display:none; @media(min-width:600px){display:inline;}">Barra Rápida</span>
+          </label>
+
+          <!-- Switch Mostrar / Ocultar -->
+          <label class="cfg-switch" title="Mostrar ou ocultar função na comanda mobile">
+            <input type="checkbox" id="cfg-vis-${item.id}" ${item.visivel ? 'checked' : ''} onchange="window.atualizarEstadoAtalhoItem(${idx}, 'visivel', this.checked)">
+            <span class="cfg-slider"></span>
+          </label>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
 };
 
-window.salvarConfigAtalhosGarcom = function() {
-  const cfg = {
-    fila_espera: document.getElementById('cfg-garcom-fila-espera') ? document.getElementById('cfg-garcom-fila-espera').checked : true,
-    fila_preparo: document.getElementById('cfg-garcom-fila-preparo') ? document.getElementById('cfg-garcom-fila-preparo').checked : true,
-    consulta_preco: document.getElementById('cfg-garcom-consulta-preco') ? document.getElementById('cfg-garcom-consulta-preco').checked : true,
-    nova_comanda: document.getElementById('cfg-garcom-nova-comanda') ? document.getElementById('cfg-garcom-nova-comanda').checked : true,
-    chamar_gerente: document.getElementById('cfg-garcom-chamar-gerente') ? document.getElementById('cfg-garcom-chamar-gerente').checked : true,
-    minhas_vendas: document.getElementById('cfg-garcom-minhas-vendas') ? document.getElementById('cfg-garcom-minhas-vendas').checked : true
-  };
+window.moverAtalhoItem = function(index, direcao) {
+  const novoIdx = index + direcao;
+  if (novoIdx < 0 || novoIdx >= atalhosListaEmEdicao.length) return;
+  const temp = atalhosListaEmEdicao[index];
+  atalhosListaEmEdicao[index] = atalhosListaEmEdicao[novoIdx];
+  atalhosListaEmEdicao[novoIdx] = temp;
+  window.renderizarTabelaAtalhosConfig();
+};
 
-  localStorage.setItem('chef_garcom_atalhos_cfg', JSON.stringify(cfg));
+window.atualizarEstadoAtalhoItem = function(index, chave, valor) {
+  if (atalhosListaEmEdicao[index]) {
+    atalhosListaEmEdicao[index][chave] = !!valor;
+    if (chave === 'visivel') {
+      const badge = document.getElementById('badge-vis-' + atalhosListaEmEdicao[index].id);
+      if (badge) {
+        badge.style.background = valor ? 'rgba(16,185,129,0.12)' : 'rgba(100,116,139,0.12)';
+        badge.style.color = valor ? '#059669' : '#64748b';
+        badge.innerText = valor ? 'Visível' : 'Oculto';
+      }
+    }
+  }
+};
 
-  fetch('/api/configuracoes', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ garcom_atalhos: JSON.stringify(cfg) })
-  })
-  .then(r => r.json())
-  .then(() => {
-    if (typeof showToast === 'function') {
-      showToast('Atalhos do App Garçom salvos com sucesso!', 'success');
+window.alternarTodosAtalhos = function(habilitar) {
+  atalhosListaEmEdicao.forEach(item => {
+    item.visivel = !!habilitar;
+  });
+  window.renderizarTabelaAtalhosConfig();
+};
+
+window.trocarColaboradorAtalhos = function(colabId) {
+  atalhosColaboradorSelecionado = colabId || 'global';
+  const badgeStatus = document.getElementById('cfg-atalhos-status-badge');
+
+  if (atalhosColaboradorSelecionado === 'global') {
+    if (badgeStatus) {
+      badgeStatus.style.background = 'rgba(16,185,129,0.12)';
+      badgeStatus.style.color = '#059669';
+      badgeStatus.style.borderColor = 'rgba(16,185,129,0.25)';
+      badgeStatus.innerHTML = '<i class="ph-bold ph-check-circle"></i> Padrão do Salão';
+    }
+    atalhosListaEmEdicao = gerarListaOrdenada(atalhosConfigGlobalArmazenada);
+    window.renderizarTabelaAtalhosConfig();
+    return;
+  }
+
+  // Colaborador específico
+  const colab = atalhosFuncionariosLista.find(f => String(f.id) === String(atalhosColaboradorSelecionado));
+  if (badgeStatus) {
+    const hasCustom = colab && colab.atalhos_config;
+    badgeStatus.style.background = hasCustom ? 'rgba(252,75,21,0.12)' : 'rgba(59,130,246,0.12)';
+    badgeStatus.style.color = hasCustom ? '#fc4b15' : '#2563eb';
+    badgeStatus.style.borderColor = hasCustom ? 'rgba(252,75,21,0.25)' : 'rgba(59,130,246,0.25)';
+    badgeStatus.innerHTML = hasCustom
+      ? '<i class="ph-bold ph-user-check"></i> Personalizado (' + (colab ? colab.nome : 'Garçom') + ')'
+      : '<i class="ph-bold ph-arrow-bend-down-right"></i> Herdando Padrão (' + (colab ? colab.nome : 'Garçom') + ')';
+  }
+
+  // Busca configuração específica do servidor
+  fetch('/api/funcionarios/' + atalhosColaboradorSelecionado + '/atalhos')
+    .then(r => r.json())
+    .then(data => {
+      const cfg = data.config || atalhosConfigGlobalArmazenada;
+      atalhosListaEmEdicao = gerarListaOrdenada(cfg);
+      window.renderizarTabelaAtalhosConfig();
+    })
+    .catch(() => {
+      atalhosListaEmEdicao = gerarListaOrdenada(atalhosConfigGlobalArmazenada);
+      window.renderizarTabelaAtalhosConfig();
+    });
+};
+
+window.carregarConfigAtalhosGarcom = function() {
+  Promise.all([
+    fetch('/api/configuracoes').then(r => r.json()).catch(() => ({})),
+    fetch('/api/funcionarios').then(r => r.json()).catch(() => [])
+  ]).then(([configsData, funcsData]) => {
+    // 1. Armazena global
+    if (configsData && configsData.garcom_atalhos) {
+      try {
+        atalhosConfigGlobalArmazenada = typeof configsData.garcom_atalhos === 'string'
+          ? JSON.parse(configsData.garcom_atalhos)
+          : configsData.garcom_atalhos;
+      } catch (e) {
+        atalhosConfigGlobalArmazenada = null;
+      }
     } else {
-      alert('Atalhos do App Garçom salvos com sucesso!');
+      const local = localStorage.getItem('chef_garcom_atalhos_cfg');
+      if (local) {
+        try { atalhosConfigGlobalArmazenada = JSON.parse(local); } catch(e) {}
+      }
     }
-  })
-  .catch(err => {
-    if (typeof showToast === 'function') {
-      showToast('Erro ao salvar configurações', 'danger');
+
+    // 2. Popula lista de colaboradores
+    atalhosFuncionariosLista = Array.isArray(funcsData) ? funcsData : [];
+    const select = document.getElementById('cfg-atalhos-colaborador-select');
+    if (select) {
+      let optionsHtml = '<option value="global">⭐ Padrão do Restaurante (Todos os Colaboradores)</option>';
+      atalhosFuncionariosLista.forEach(f => {
+        const customTag = f.atalhos_config ? ' • [Personalizado]' : '';
+        optionsHtml += `<option value="${f.id}">${f.nome} (${f.cargo || 'Colaborador'})${customTag}</option>`;
+      });
+      select.innerHTML = optionsHtml;
     }
+
+    // 3. Verifica se veio colaborador via URL param
+    const uParams = new URLSearchParams(window.location.search);
+    const colabParam = uParams.get('colaborador');
+    if (colabParam && (colabParam === 'global' || atalhosFuncionariosLista.some(f => String(f.id) === String(colabParam)))) {
+      atalhosColaboradorSelecionado = colabParam;
+      if (select) select.value = colabParam;
+    }
+
+    // 4. Renderiza inicial
+    window.trocarColaboradorAtalhos(atalhosColaboradorSelecionado);
+  }).catch(err => {
+    console.error('Erro ao carregar atalhos garçom:', err);
   });
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+window.salvarConfigAtalhosGarcom = function() {
+  const payload = {
+    order: atalhosListaEmEdicao.map(x => x.id),
+    enabled: {},
+    pills: {}
+  };
+
+  atalhosListaEmEdicao.forEach(item => {
+    const visEl = document.getElementById('cfg-vis-' + item.id);
+    const pillEl = document.getElementById('cfg-pill-' + item.id);
+    payload.enabled[item.id] = visEl ? visEl.checked : item.visivel !== false;
+    payload.pills[item.id] = pillEl ? pillEl.checked : item.pills === true;
+  });
+
+  const isGlobal = (atalhosColaboradorSelecionado === 'global');
+
+  if (isGlobal) {
+    atalhosConfigGlobalArmazenada = payload;
+    try { localStorage.setItem('chef_garcom_atalhos_cfg', JSON.stringify(payload)); } catch(e) {}
+
+    fetch('/api/configuracoes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ garcom_atalhos: JSON.stringify(payload) })
+    })
+    .then(r => r.json())
+    .then(() => {
+      if (typeof showToast === 'function') {
+        showToast('Atalhos padrão do salão salvos com sucesso!', 'success');
+      } else {
+        alert('Atalhos padrão do salão salvos com sucesso!');
+      }
+    })
+    .catch(() => {
+      if (typeof showToast === 'function') showToast('Erro ao salvar atalhos', 'danger');
+    });
+  } else {
+    // Salva para colaborador individual
+    fetch('/api/funcionarios/' + atalhosColaboradorSelecionado + '/atalhos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config: payload })
+    })
+    .then(r => r.json())
+    .then(() => {
+      const colab = atalhosFuncionariosLista.find(f => String(f.id) === String(atalhosColaboradorSelecionado));
+      if (colab) colab.atalhos_config = JSON.stringify(payload);
+
+      // Atualiza badge de select
+      const select = document.getElementById('cfg-atalhos-colaborador-select');
+      if (select) {
+        const opt = select.querySelector('option[value="' + atalhosColaboradorSelecionado + '"]');
+        if (opt && colab) opt.textContent = colab.nome + ' (' + (colab.cargo || 'Colaborador') + ') • [Personalizado]';
+      }
+
+      window.trocarColaboradorAtalhos(atalhosColaboradorSelecionado);
+
+      const nomeColab = colab ? colab.nome : 'Colaborador';
+      if (typeof showToast === 'function') {
+        showToast('Atalhos de ' + nomeColab + ' salvos com sucesso!', 'success');
+      } else {
+        alert('Atalhos de ' + nomeColab + ' salvos com sucesso!');
+      }
+    })
+    .catch(() => {
+      if (typeof showToast === 'function') showToast('Erro ao salvar atalhos do colaborador', 'danger');
+    });
+  }
+};
+
+window.restaurarAtalhosPadraoColaborador = function() {
+  const isGlobal = (atalhosColaboradorSelecionado === 'global');
+
+  if (isGlobal) {
+    if (!confirm('Deseja restaurar a ordem e visibilidade padrão dos atalhos para todos os garçons?')) return;
+    atalhosListaEmEdicao = ATALHOS_CATALOGO.map(item => ({
+      ...item,
+      visivel: true,
+      pills: !!item.pills
+    }));
+    window.renderizarTabelaAtalhosConfig();
+    window.salvarConfigAtalhosGarcom();
+  } else {
+    const colab = atalhosFuncionariosLista.find(f => String(f.id) === String(atalhosColaboradorSelecionado));
+    const nomeColab = colab ? colab.nome : 'este colaborador';
+    if (!confirm('Deseja remover as configurações personalizadas de ' + nomeColab + ' e voltar ao padrão do restaurante?')) return;
+
+    fetch('/api/funcionarios/' + atalhosColaboradorSelecionado + '/atalhos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config: null })
+    })
+    .then(r => r.json())
+    .then(() => {
+      if (colab) colab.atalhos_config = null;
+      const select = document.getElementById('cfg-atalhos-colaborador-select');
+      if (select) {
+        const opt = select.querySelector('option[value="' + atalhosColaboradorSelecionado + '"]');
+        if (opt && colab) opt.textContent = colab.nome + ' (' + (colab.cargo || 'Colaborador') + ')';
+      }
+      window.trocarColaboradorAtalhos(atalhosColaboradorSelecionado);
+      if (typeof showToast === 'function') {
+        showToast('Atalhos de ' + nomeColab + ' restaurados para o padrão!', 'info');
+      }
+    })
+    .catch(() => {
+      if (typeof showToast === 'function') showToast('Erro ao restaurar padrão', 'danger');
+    });
+  }
+};
+
+
+document.addEventListener("DOMContentLoaded", () => {
   window.carregarConfigAtalhosGarcom();
 });
 

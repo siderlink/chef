@@ -97,8 +97,35 @@ textarea,
     min-height: 80px !important;
   }
 
-  /* Barra de controle e filtros do Garçom */
-  #garcom-tables-control-bar,
+  /* Barra de controle e filtros do Garçom: elegante, compacta e sem esmagamento */
+  #garcom-tables-control-bar {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+  #garcom-tables-control-bar > div:first-child {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+  #garcom-quick-pills-bar {
+    flex-shrink: 0 !important;
+    min-height: 44px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+  #garcom-quick-pills-bar button {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    height: 36px !important;
+    touch-action: manipulation !important;
+  }
+  #garcom-pass-alert-banner,
+  #garcom-search-filter-container,
+  #garcom-sector-pills {
+    flex-shrink: 0 !important;
+  }
   .garcom-toolbar-wrap {
     flex-direction: column !important;
     align-items: stretch !important;

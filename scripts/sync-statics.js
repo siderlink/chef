@@ -8,9 +8,13 @@ const path = require('path');
 
 const mappings = [
   ['dark-mode.css', 'src/css/dark-mode.css'],
+  ['dark-mode.css', 'public/dark-mode.css'],
   ['fila.css', 'src/css/fila.css'],
   ['style.css', 'src/css/style.css'],
   ['device-adapters.css', 'public/device-adapters.css'],
+  ['caixa-pro-ux.css', 'public/caixa-pro-ux.css'],
+  ['caixa-pro-ux.js', 'public/caixa-pro-ux.js'],
+  ['caixa-version-manager.js', 'public/caixa-version-manager.js'],
   ['device-adapters.js', 'public/device-adapters.js'],
   ['chef-layout-customizer.js', 'public/chef-layout-customizer.js'],
   ['auth.js', 'src/js/modules/auth.js'],

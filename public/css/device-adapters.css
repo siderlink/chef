@@ -97,8 +97,35 @@ textarea,
     min-height: 80px !important;
   }
 
-  /* Barra de controle e filtros do Garçom */
-  #garcom-tables-control-bar,
+  /* Barra de controle e filtros do Garçom: elegante, compacta e sem esmagamento */
+  #garcom-tables-control-bar {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+  #garcom-tables-control-bar > div:first-child {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+  #garcom-quick-pills-bar {
+    flex-shrink: 0 !important;
+    min-height: 44px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+  #garcom-quick-pills-bar button {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    height: 36px !important;
+    touch-action: manipulation !important;
+  }
+  #garcom-pass-alert-banner,
+  #garcom-search-filter-container,
+  #garcom-sector-pills {
+    flex-shrink: 0 !important;
+  }
   .garcom-toolbar-wrap {
     flex-direction: column !important;
     align-items: stretch !important;
@@ -1256,4 +1283,125 @@ body.dark-mode .chef-sheet-drag-handle {
   z-index: 100;
 }
 
+/* ═════════════════════════════════════════════════════════════════════════
+   MODO MONITOR VERTICAL (PIVOT / RETRATO) — OTIMIZAÇÃO DESKTOP & BALCÃO
+   Ativado automaticamente quando a tela é vertical (h > w e h >= 680px)
+   ou explicitamente pelo operador.
+   ═════════════════════════════════════════════════════════════════════════ */
 
+/* ── 1. ESTRUTURA DO WORKSPACE: MODO EMPILHADO (STACKED / FULL-WIDTH) ── */
+
+/* Media query right-panel portrait desativada */
+
+
+/* Media query right-panel portrait desativada */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ── 5. MODO MONITOR VERTICAL 2-COLUNAS (QUANDO ESCOLHIDO PELO USUÁRIO) ── */
+body.chef-monitor-vertical.chef-vertical-2col .workspace {
+  display: grid !important;
+  grid-template-columns: 64px 1fr 240px !important;
+  grid-template-rows: 1fr !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+body.chef-monitor-vertical.chef-vertical-2col.left-expanded .workspace {
+  grid-template-columns: 220px 1fr 240px !important;
+}
+
+body.chef-monitor-vertical.chef-vertical-2col #left-panel {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+}
+
+body.chef-monitor-vertical.chef-vertical-2col #main-panel {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+}
+
+body.chef-monitor-vertical.chef-vertical-2col #right-panel {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  width: 240px !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
+  height: 100% !important;
+  border-left: 1px solid var(--border-color, #e2e8f0) !important;
+  border-top: none !important;
+  box-shadow: none !important;
+  padding: 14px 12px !important;
+}
+
+/* ── 6. HEADER & STATUS BAR NO MONITOR VERTICAL ── */
+body.chef-monitor-vertical .top-toolbar {
+  flex-wrap: wrap !important;
+  padding: 4px 8px !important;
+  gap: 4px !important;
+}
+
+body.chef-monitor-vertical .status-bar {
+  flex-wrap: wrap !important;
+  height: auto !important;
+  min-height: 28px !important;
+  padding: 4px 8px !important;
+  gap: 6px 14px !important;
+  font-size: 11px !important;
+}
+
+/* ── 7. TEMA ESCURO NO MONITOR VERTICAL ── */
+[data-theme="dark"] body.chef-monitor-vertical #right-panel {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] body.chef-monitor-vertical #inner-right-panel .info-group.summary {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] body.chef-monitor-vertical #left-panel {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+
+
+
+
+/* CHEF CURRENCY PROTECTION */
+.info-row .val,
+#resumo-taxas,
+#total-pagar-text,
+#resumo-total-itens,
+#resumo-desconto,
+#resumo-subtotal {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  flex-shrink: 0 !important;
+  font-variant-numeric: tabular-nums !important;
+}

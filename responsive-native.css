@@ -177,8 +177,7 @@ body.chef-ui-wide .chef-app {
 
   .top-menubar {
     flex-wrap: nowrap !important;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: visible !important; position: relative !important; z-index: 8000 !important;
     height: 34px !important;
     min-height: 34px;
   }
@@ -275,5 +274,23 @@ body.tabs-collapsed #chef-tabs-restore {
   #chef-tabs-restore {
     display: none !important;
   }
+}
+
+
+/* --- MOBILE LAYOUT FIXES FOR HEADER AND SHORTCUTS --- */
+@media (max-width: 900px) {
+  .top-menubar { flex-wrap: wrap !important; height: auto !important; }
+  .keyboard-shortcuts, .shortcuts-banner, #shortcut-hints-container, .shortcut-bar, [id*='shortcut'] { display: none !important; }
+}
+
+
+@media (max-width: 900px) {
+  #left-panel, #left-panel:not(.user-pinned-expanded) { width: 100% !important; max-width: 100% !important; min-width: 100% !important; }
+  #left-panel:not(.user-pinned-expanded) .btn-grid-2 { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; flex-direction: row !important; gap: 8px !important; }
+  #left-panel:not(.user-pinned-expanded) .btn-action { width: auto !important; min-width: 0 !important; max-width: none !important; height: 48px !important; font-size: 13px !important; display: flex !important; flex-direction: row !important; justify-content: flex-start !important; align-items: center !important; padding: 0 12px !important; line-height: normal !important; overflow: visible !important; }
+  #left-panel:not(.user-pinned-expanded) .btn-action i { font-size: 20px !important; margin-right: 8px !important; margin-bottom: 0 !important; }
+  #left-panel:not(.user-pinned-expanded) .group-title { display: flex !important; font-size: 14px !important; }
+  .products-table-wrapper { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+  .products-table { min-width: 500px !important; }
 }
 

@@ -1991,7 +1991,7 @@
     }
 
     #btn-hamburger {
-      display: none;
+      display: inline-flex;
       background: var(--bg-card);
       border: 1.5px solid var(--border-color);
       color: var(--primary);
@@ -2445,22 +2445,9 @@
     /* Desktop Sidebar Collapse */
     @media (min-width: 901px) {
       #admin-panel { transition: grid-template-columns 0.3s ease; }
-      .sidebar { transition: width 0.3s ease; }
-      #admin-panel.sidebar-collapsed { grid-template-columns: 80px 1fr !important; }
-      #admin-panel.sidebar-collapsed .sidebar { width: 80px !important; overflow-x: hidden; }
-      #admin-panel.sidebar-collapsed .sidebar-header h2,
-      #admin-panel.sidebar-collapsed .sidebar-header .fa-crown,
-      #admin-panel.sidebar-collapsed .menu-item span,
-      #admin-panel.sidebar-collapsed .cat-header span,
-      #admin-panel.sidebar-collapsed .cat-seta,
-      #admin-panel.sidebar-collapsed .sidebar-footer,
-      #admin-panel.sidebar-collapsed .menu-item [id$='-badge'] { display: none !important; }
-      #admin-panel.sidebar-collapsed .menu-item,
-      #admin-panel.sidebar-collapsed .cat-header { justify-content: center !important; padding: 1rem 0 !important; }
-      #admin-panel.sidebar-collapsed .menu-item i,
-      #admin-panel.sidebar-collapsed .cat-header i { margin-right: 0 !important; font-size: 1.4rem !important; }
-      #admin-panel.sidebar-collapsed .cat-itens { display: none !important; }
-      #admin-panel.sidebar-collapsed .sidebar-header { justify-content: center; padding: 1.5rem 0; }
+      .sidebar { transition: transform 0.3s ease, width 0.3s ease, opacity 0.3s ease; }
+      #admin-panel.sidebar-collapsed { grid-template-columns: 0 1fr !important; }
+      #admin-panel.sidebar-collapsed .sidebar { width: 0 !important; overflow: hidden !important; opacity: 0; transform: translateX(-100%); padding: 0 !important; border: none !important; }
     }
   </style>
 

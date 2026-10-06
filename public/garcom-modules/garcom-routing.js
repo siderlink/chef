@@ -7,7 +7,12 @@ window.showView = (id, titleText, pushToHistory = true) => {
   if (document.getElementById('header-title')) document.getElementById('header-title').innerText = titleText || 'Chef Garçom';
   
   if (pushToHistory) {
-    history.pushState({ view: id, title: titleText }, '', '');
+    const rootTabs = ['tables', 'mesas', 'esteira', 'atalhos'];
+    if (rootTabs.includes(id)) {
+      history.replaceState({ view: id, title: titleText }, '', '');
+    } else {
+      history.pushState({ view: id, title: titleText }, '', '');
+    }
   }
 
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));

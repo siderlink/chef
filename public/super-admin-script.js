@@ -285,6 +285,8 @@ function initSuperAdminSockets() {
   if (_superAdminSocket) return; // já inicializado
   try {
     _superAdminSocket = io();
+    window.superAdminSocket = _superAdminSocket;
+    window._superAdminSocket = _superAdminSocket;
     // Sala exclusiva de monitoramento de cadastros ao vivo
     _superAdminSocket.emit('entrar_super_admin');
 
@@ -472,7 +474,8 @@ function logout() {
   sessionStorage.removeItem('super_admin_token');
   localToken = '';
   isLocalMode = false;
-  exibirTelaLogin();
+  document.getElementById('login-container').style.display = 'flex';
+  document.getElementById('admin-panel').style.display = 'none';
   document.body.style.alignItems = 'center';
 }
 
@@ -6287,6 +6290,19 @@ document.addEventListener('DOMContentLoaded', function() {
     var ps1Query = hub + '/api/sync/installers/install.ps1' + (key ? '?key=' + encodeURIComponent(key) : '');
     var shQuery = hub + '/api/sync/installers/install.sh' + (key ? '?key=' + encodeURIComponent(key) : '');
 
+    var exeQuery = hub + '/api/sync/installers/Instalador-ChefSync.exe' + (key ? '?key=' + encodeURIComponent(key) : '');
+    var zipQuery = hub + '/api/sync/installers/ChefSync-Distribuicao.zip';
+    var guiaQuery = hub + '/guia-sync.html' + (key ? '?chave=' + encodeURIComponent(key) : '');
+
+    var btnDownloadExe = document.getElementById('btn-download-exe');
+    if (btnDownloadExe) btnDownloadExe.href = exeQuery;
+
+    var btnDownloadZip = document.getElementById('btn-download-zip');
+    if (btnDownloadZip) btnDownloadZip.href = zipQuery;
+
+    var linkGuia = document.getElementById('link-guia-restaurante');
+    if (linkGuia) linkGuia.value = guiaQuery;
+
     var btnDownloadBat = document.getElementById('btn-download-bat');
     if (btnDownloadBat) btnDownloadBat.href = batQuery;
 
@@ -6310,6 +6326,24 @@ document.addEventListener('DOMContentLoaded', function() {
     var el = document.getElementById(elemId);
     if (!el) return;
     copiarParaClipboard(el.value, msg || 'Comando copiado!');
+  };
+
+  window.copiarLinkGuiaRestaurante = function() {
+    var el = document.getElementById('link-guia-restaurante');
+    if (el) copiarParaClipboard(el.value, 'Link do Guia copiado!');
+  };
+
+  window.enviarGuiaWhatsApp = function() {
+    var inputKey = document.getElementById('modal-inst-input-key');
+    var key = (inputKey && inputKey.value != null ? String(inputKey.value) : '').trim();
+    var linkEl = document.getElementById('link-guia-restaurante');
+    var link = linkEl ? linkEl.value : (window.location.origin + '/guia-sync.html');
+
+    var texto = '👋 Olá! Segue o link com o passo a passo para instalar o *Chef Cozinha Sync* no seu restaurante:\n\n'
+      + '🔗 ' + link + '\n'
+      + (key ? '🔑 *Chave de Ativação:* `' + key + '`\n\n' : '\n')
+      + 'Basta acessar pelo computador do restaurante e seguir os 4 passos para sincronização segura e proteção anti-queda de internet.';
+    copiarParaClipboard(texto, 'Mensagem com guia copiada para WhatsApp!');
   };
 
   /* ═══ ASSISTÊNCIA REMOTA 1-CLIQUE & TELEPRESENÇA ═══ */

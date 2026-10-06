@@ -21,8 +21,6 @@
   <!-- QR Code local (funciona sem internet) -->
   <script src="/vendor/qrcode/qrcode-generator.js"></script>
   <script src="/vendor/qrcode/qr-helper.js"></script>
-  <!-- 3D Ultra Engine (Three.js 6GB+ Experience) -->
-  <script src="/cardapio-3d-engine.js" defer></script>
   <style>
     @keyframes pulse3d {
       0%, 100% { opacity: 1; transform: scale(1); }
@@ -99,7 +97,7 @@
     }
 
     .table-badge {
-      background: linear-gradient(135deg, var(--primary) 0%, #ff6b3d 100%);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover, var(--primary)) 100%);
       color: white;
       padding: 6px 14px;
       border-radius: 20px;
@@ -1657,7 +1655,139 @@
     .racha-item-row:last-child {
       border-bottom: none;
     }
-</style>
+
+    /* DOCK INFERIOR MODERNA FIXA */
+    .cardapio-bottom-dock {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface, #ffffff);
+      border-top: 1px solid var(--border, #e2e8f0);
+      padding: 10px 16px env(safe-area-inset-bottom, 10px) 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 1000;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+    }
+    body.dark-mode .cardapio-bottom-dock {
+      background: #181c24;
+      border-top-color: rgba(255,255,255,0.08);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+    }
+    .dock-actions-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dock-btn-action {
+      background: var(--bg, #fbfbfa);
+      border: 1px solid var(--border, #e2e8f0);
+      color: var(--text, #1c1917);
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .dock-btn-action i {
+      font-size: 17px;
+      color: var(--primary, #be123c);
+    }
+    .dock-btn-action:hover {
+      background: rgba(190, 18, 60, 0.08);
+    }
+    .dock-cart-btn {
+      flex: 1;
+      max-width: 320px;
+      background: var(--primary, #be123c) !important;
+      color: #ffffff !important;
+      border: none !important;
+      border-radius: 14px !important;
+      padding: 11px 18px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      cursor: pointer !important;
+      box-shadow: 0 4px 16px rgba(190, 18, 60, 0.3) !important;
+      transition: all 0.2s ease !important;
+    }
+    .dock-cart-btn:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 22px rgba(190, 18, 60, 0.4) !important;
+    }
+    .dock-cart-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .dock-cart-icon-wrap {
+      position: relative;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      color: #ffffff;
+    }
+    .dock-cart-badge {
+      position: absolute;
+      top: -6px;
+      right: -8px;
+      background: #ffffff !important;
+      color: var(--primary, #be123c) !important;
+      font-size: 10px !important;
+      font-weight: 900 !important;
+      min-width: 17px !important;
+      height: 17px !important;
+      border-radius: 10px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 4px !important;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+    }
+    .dock-cart-totals {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+    .dock-cart-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #ffffff;
+    }
+    .dock-cart-price {
+      font-size: 14.5px;
+      font-weight: 900;
+      letter-spacing: -0.2px;
+      color: #ffffff;
+    }
+    .dock-cart-arrow {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    #fab-cart, #fab-garcom, #fab-perfil, #fab-avaliar {
+      display: none !important;
+    }
+    main {
+      padding-bottom: 90px !important;
+    }
+  
+  </style>
   <script src="/locales.js"></script>
   <script src="/broadcast.js"></script>
   <script src="/i18n.js"></script>
@@ -1694,33 +1824,14 @@
       <h1 id="restaurant-name-header">Chef Cozinha</h1>
       <p id="welcome-user-crm">Cardápio Digital</p>
     </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <button class="tour-toggle" id="btn-tour-toggle" onclick="window.toggleTour()" title="Tour Guiado">
-        <i class="ph ph-compass"></i> Tour
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button id="btn-header-racha-conta" onclick="window.abrirModalRachaConta()" style="background: var(--surface, #ffffff); border: 1px solid var(--border, #e2e8f0); color: var(--text, #0f172a); padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 5px;" title="Dividir a conta da mesa">
+        <i class="ph-bold ph-receipt" style="color: var(--primary);"></i>
+        <span>Racha-Conta</span>
       </button>
-      <div id="btn-edit-profile-header" onclick="window.editarPerfilCrm()"
-        style="cursor: pointer; display: none; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: #f1f5f9; color: #475569; font-size: 18px; border: 1px solid #cbd5e1;"
-        title="Editar Perfil">
-        <i class="ph ph-user"></i>
-      </div>
-      
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <button class="tour-toggle" onclick="window.abrirTourGastronomico()" style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 1.5px solid #fed7aa; color: #c2410c; padding: 7px 14px; border-radius: 20px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(252,75,21,0.12);">
-          <i class="ph-fill ph-sparkle" style="color: #fc4b15; font-size: 16px;"></i>
-          <span>Tour da Casa</span>
-        </button>
-        <button id="btn-header-racha-conta" onclick="window.abrirModalRachaConta()" style="background: linear-gradient(135deg, rgba(252,75,21,0.12), rgba(245,158,11,0.18)); border: 1.5px solid rgba(252,75,21,0.35); color: var(--primary); padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(252,75,21,0.12);" title="Dividir a conta da mesa">
-          <i class="ph-bold ph-receipt"></i>
-          <span>Racha-Conta</span>
-        </button>
-        <button id="btn-header-fidelidade" onclick="window.abrirPerfilCliente()" style="background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.2)); border: 1.5px solid rgba(245,158,11,0.4); color: #d97706; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(245,158,11,0.12);" title="Clube de Fidelidade, Loja de Pontos e Cupons">
-          <i class="ph-fill ph-crown"></i>
-          <span id="btn-header-pontos-txt">Clube VIP</span>
-        </button>
-        <button id="btn-cardapio-theme" onclick="if(window.ChefTheme && window.ChefTheme.toggle) window.ChefTheme.toggle(); else document.body.classList.toggle('dark-mode');" style="background: transparent; border: 1px solid var(--border); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted);" title="Alternar Tema Claro / Escuro">
-          <i id="cardapio-theme-icon" class="ph ph-moon"></i>
-        </button>
-      </div>
+      <button id="btn-cardapio-theme" onclick="if(window.ChefTheme && window.ChefTheme.toggle) window.ChefTheme.toggle(); else document.body.classList.toggle('dark-mode');" style="background: var(--surface, #ffffff); border: 1px solid var(--border, #e2e8f0); border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted);" title="Alternar Tema Claro / Escuro">
+        <i id="cardapio-theme-icon" class="ph ph-moon"></i>
+      </button>
       <div class="table-badge" id="mesa-badge">Mesa</div>
     </div>
   </header>
@@ -1868,7 +1979,7 @@
     </div>
 
     <!-- PIZZA BUILDER HERO BANNER -->
-    <div id="pizza-builder-hero" onclick="window.abrirMontadorPizza()" style="cursor:pointer; background:linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #fc4b15 100%); border-radius:18px; padding:16px 20px; color:white; display:flex; align-items:center; justify-content:space-between; gap:16px; box-shadow:0 10px 25px rgba(252,75,21,0.22); border:1.5px solid rgba(255,255,255,0.15); position:relative; overflow:hidden; margin-bottom:12px; transition:transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+    <div id="pizza-builder-hero" onclick="window.abrirMontadorPizza()" style="display:none !important; cursor:pointer; background:linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #fc4b15 100%); border-radius:18px; padding:16px 20px; color:white; display:flex; align-items:center; justify-content:space-between; gap:16px; box-shadow:0 10px 25px rgba(252,75,21,0.22); border:1.5px solid rgba(255,255,255,0.15); position:relative; overflow:hidden; margin-bottom:12px; transition:transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
       <div style="position:absolute; right:-20px; top:-20px; width:130px; height:130px; background:radial-gradient(circle, rgba(252,75,21,0.45) 0%, transparent 70%); border-radius:50%; filter:blur(25px); pointer-events:none;"></div>
       <div style="flex:1; z-index:1;">
         <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(252,75,21,0.35); border:1px solid rgba(255,255,255,0.2); padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
@@ -1924,22 +2035,38 @@
     <div id="tracking-items"></div>
   </div>
 
-  <button id="fab-cart" onclick="window.abrirCarrinho()">
-    <i class="ph ph-shopping-cart-simple"></i>
-    <span class="cart-badge" id="cart-badge-count">0</span>
-  </button>
+  <!-- DOCK FLUTUANTE INFERIOR MODERNA -->
+  <div id="cardapio-bottom-dock" class="cardapio-bottom-dock">
+    <div class="dock-actions-left">
+      <button class="dock-btn-action" onclick="window.chamarGarcom()" title="Chamar Garçom na Mesa">
+        <i class="ph-bold ph-hand-waving"></i>
+        <span>Garçom</span>
+      </button>
+      <button class="dock-btn-action" onclick="window.abrirPerfilCliente()" title="Meus Dados & Fidelidade">
+        <i class="ph-bold ph-user"></i>
+        <span>Perfil</span>
+      </button>
+      <button class="dock-btn-action" onclick="window.toggleTrackingPanel()" title="Acompanhar Meus Pedidos">
+        <i class="ph-bold ph-receipt"></i>
+        <span>Conta</span>
+      </button>
+    </div>
 
-  <button id="fab-garcom" onclick="window.chamarGarcom()">
-    <i class="ph ph-hand-waving"></i>
-  </button>
-
-  <button id="fab-perfil" onclick="window.abrirPerfilCliente()">
-    <i class="ph ph-user-circle"></i>
-  </button>
-
-  <div class="area-colaborador-btns" style="display:none;">
-    <button id="fab-avaliar" title="Avaliar experiência" style="position:fixed; bottom:228px; right:24px; width:52px; height:52px; background:linear-gradient(135deg,#f59e0b,#d97706); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; border:none; cursor:pointer; box-shadow:0 6px 20px rgba(245,158,11,.4); z-index:95; transition:all .2s ease;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">
-      <i class="ph-fill ph-star"></i>
+    <button id="dock-cart-cta" class="dock-cart-btn" onclick="window.abrirCarrinho()">
+      <div class="dock-cart-info">
+        <div class="dock-cart-icon-wrap">
+          <i class="ph-bold ph-shopping-bag"></i>
+          <span class="dock-cart-badge" id="cart-badge-count">0</span>
+        </div>
+        <div class="dock-cart-totals">
+          <span class="dock-cart-label">Minha Sacola</span>
+          <span class="dock-cart-price" id="dock-cart-subtotal">R$ 0,00</span>
+        </div>
+      </div>
+      <div class="dock-cart-arrow">
+        <span>Ver Pedido</span>
+        <i class="ph-bold ph-arrow-right"></i>
+      </div>
     </button>
   </div>
 
@@ -2078,7 +2205,7 @@
   </div>
 
   <!-- MODAL: DETALHES / ADICIONAR ITEM -->
-  <div class="modal-overlay" id="modal-item-details">
+  <div class="modal-overlay" id="modal-item-details" style="display: none;">
     <div class="modal-content">
       <button class="modal-close" onclick="window.fecharItemDetails()">&times;</button>
       <div style="display: flex; gap: 14px; align-items: center;">
@@ -2137,7 +2264,7 @@
   </div>
 
   <!-- MODAL: REVISAR CARRINHO / CHECKOUT -->
-  <div class="modal-overlay" id="modal-cart">
+  <div class="modal-overlay" id="modal-cart" style="display: none;">
     <div class="modal-content">
       <button class="modal-close" onclick="window.fecharCarrinho()">&times;</button>
       <div class="modal-title">
@@ -2211,7 +2338,7 @@
   </div>
 
   <!-- MODAL: PAGAMENTO PIX E AGUARDANDO CONFIRMAÇÃO -->
-  <div class="modal-overlay" id="modal-checkout-status">
+  <div class="modal-overlay" id="modal-checkout-status" style="display: none;">
     <div class="modal-content"
       style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px;">
 
@@ -2748,7 +2875,7 @@
           }
         } catch (e) { }
       }
-      document.getElementById('modal-crm-login').style.display = 'flex';
+      const modalCrm = document.getElementById('modal-crm-login'); if (modalCrm) modalCrm.style.display = 'none';
     }
 
     // Reidentifica o cliente já salvo no celular (mesmo telefone) para
@@ -2973,6 +3100,18 @@
         if (CONFIGS.rest_cor_secundaria) {
           document.documentElement.style.setProperty('--primary-hover', CONFIGS.rest_cor_secundaria);
         }
+        if (CONFIGS.rest_cor_fundo) {
+          document.documentElement.style.setProperty('--bg', CONFIGS.rest_cor_fundo);
+          document.body.style.backgroundColor = CONFIGS.rest_cor_fundo;
+        }
+        const pizzaHero = document.getElementById('pizza-builder-hero');
+        if (pizzaHero) {
+          if (CONFIGS.rest_modalidade === 'pizzaria') {
+            pizzaHero.style.display = 'flex';
+          } else {
+            pizzaHero.style.display = 'none';
+          }
+        }
         if (CONFIGS.rest_fonte_familia) {
           document.documentElement.style.setProperty('--app-font', CONFIGS.rest_fonte_familia);
           document.body.style.fontFamily = CONFIGS.rest_fonte_familia;
@@ -3139,7 +3278,8 @@
 
     function renderTabs() {
       const container = document.getElementById('categories-tabs');
-      const hasPizzas = (MENU || []).some(p => (p.categoria || '').toLowerCase().includes('pizza') || (p.nome || '').toLowerCase().includes('pizza'));
+      const isPizzaria = (typeof CONFIGS !== 'undefined' && CONFIGS.rest_modalidade === 'pizzaria');
+      const hasPizzas = isPizzaria && (MENU || []).some(p => (p.categoria || '').toLowerCase().includes('pizza') || (p.nome || '').toLowerCase().includes('pizza'));
       const extraTabs = hasPizzas ? ['🍕 Monte sua Pizza'] : [];
       const cats = ['Todos', ...extraTabs, ...new Set(MENU.map(p => p.categoria))];
 
@@ -3230,7 +3370,8 @@
         const desc = gerarDescricao(p);
         const fotoSegura = (p.foto_url && /^https?:\/\//i.test(p.foto_url)) ? p.foto_url.replace(/"/g, '&quot;') : '';
         const isEstrela = PRODUTOS_ESTRELAS.has((p.nome || '').toLowerCase().trim());
-        const isPizza = (p.categoria || '').toLowerCase().includes('pizza') || (p.nome || '').toLowerCase().includes('pizza');
+        const isPizzaria = (typeof CONFIGS !== 'undefined' && CONFIGS.rest_modalidade === 'pizzaria');
+        const isPizza = isPizzaria && ((p.categoria || '').toLowerCase().includes('pizza') || (p.nome || '').toLowerCase().includes('pizza'));
         const clickHandler = isPizza ? `window.abrirMontadorPizza('${p.nome.replace(/'/g, "\\'")}')` : `window.abrirItemDetails(${p.id})`;
         const pizzaBadge = isPizza
           ? `<div style="margin-top:4px;"><span style="background:#fff7ed; border:1px solid #ffedd5; color:#ea580c; border-radius:8px; padding:2px 7px; font-size:10px; font-weight:800; display:inline-flex; align-items:center; gap:4px;"><i class="ph-bold ph-pizza"></i> Monte ou Divida Sabores</span></div>`
@@ -6183,7 +6324,7 @@
 
 
   <!-- MODAL DO TOUR GASTRONÔMICO IMERSIVO -->
-  <div id="modal-tour-imersivo" class="tour-modal-overlay" onclick="if(event.target===this) window.fecharTourGastronomico()">
+  <div id="modal-tour-imersivo" class="tour-modal-overlay" style="display: none;" onclick="if(event.target===this) window.fecharTourGastronomico()">
     <div class="tour-modal-card">
       
       <!-- Cabeçalho com Indicadores de Etapas -->
@@ -6232,11 +6373,7 @@
     </a>
   </div>
 
-  <a href="/roleta-premiada.html" style="position: fixed; bottom: 80px; left: 20px; width: 60px; height: 60px; background: #8b5cf6; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.5); z-index: 1000; text-decoration: none; animation: bounce 2s infinite;">
-    <i class="ph-fill ph-gift" style="font-size: 32px; color: #fff;"></i>
-    <div style="position: absolute; top: -10px; right: -10px; background: #fc4b15; color: #fff; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px; line-height: 1;">TENTE<br>A SORTE</div>
-  </a>
-  <style>@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }</style>
+  
 
 </body>
 
@@ -6587,4 +6724,90 @@ window.adicionarItemTourDireto = function(itemId) {
     renderizarEtapaTour();
   }
 };
+
+
+  // ─── ENGINE DE IDENTIDADE VISUAL E CORES DO CARDÁPIO ───
+  window.THEME_PRESETS_MAP = {
+    alacarte: { primary: '#be123c', sec: '#e11d48', bg: '#fbfbfa', surface: '#ffffff', card: '#ffffff', text: '#1c1917', nome: 'À la Carte Gourmet' },
+    burguer:  { primary: '#e11d48', sec: '#f43f5e', bg: '#0f172a', surface: '#1e293b', card: '#1e293b', text: '#f8fafc', nome: 'Burguer & Brasa' },
+    pizza:    { primary: '#c2410c', sec: '#ea580c', bg: '#fefce8', surface: '#ffffff', card: '#ffffff', text: '#1c1917', nome: 'Cantina & Pizza' },
+    sushi:    { primary: '#dc2626', sec: '#ef4444', bg: '#09090b', surface: '#18181b', card: '#18181b', text: '#fafafa', nome: 'Sushi & Oriental' },
+    cafe:     { primary: '#78350f', sec: '#92400e', bg: '#fafaf9', surface: '#ffffff', card: '#ffffff', text: '#1c1917', nome: 'Café & Bistrô' },
+    salada:   { primary: '#059669', sec: '#10b981', bg: '#f0fdf4', surface: '#ffffff', card: '#ffffff', text: '#064e3b', nome: 'Natural & Saudável' },
+    bar:      { primary: '#7c3aed', sec: '#8b5cf6', bg: '#0b0f19', surface: '#131b2e', card: '#172033', text: '#f8fafc', nome: 'Bar & Lounge' },
+    steak:    { primary: '#991b1b', sec: '#b91c1c', bg: '#18181b', surface: '#27272a', card: '#27272a', text: '#f4f4f5', nome: 'Steak & Parrilla' },
+    doceria:  { primary: '#db2777', sec: '#ec4899', bg: '#fdf4ff', surface: '#ffffff', card: '#ffffff', text: '#701a75', nome: 'Doces & Gelato' },
+    chef:     { primary: '#ea580c', sec: '#f97316', bg: '#fbfbfa', surface: '#ffffff', card: '#ffffff', text: '#1c1917', nome: 'Chef Cozinha' }
+  };
+
+  function hexToRgb(hex) {
+    if (!hex) return null;
+    hex = String(hex).replace('#', '').trim();
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    if (hex.length !== 6) return null;
+    const num = parseInt(hex, 16);
+    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+  }
+
+  function getLuminance(r, g, b) {
+    const [rs, gs, bs] = [r, g, b].map(c => {
+      c = c / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+  }
+
+  window.aplicarIdentidadeVisualCardapio = function(cfg) {
+    if (!cfg) cfg = {};
+    const presetKey = cfg.rest_tema_preset || 'alacarte';
+    const preset = window.THEME_PRESETS_MAP[presetKey] || window.THEME_PRESETS_MAP.alacarte;
+
+    let primary = cfg.rest_cor_primaria || preset.primary;
+    let secondary = cfg.rest_cor_secundaria || preset.sec;
+    let bg = cfg.rest_cor_fundo || preset.bg;
+
+    if (!/^#[0-9A-Fa-f]{6}$/.test(primary)) primary = preset.primary;
+    if (!/^#[0-9A-Fa-f]{6}$/.test(secondary)) secondary = preset.sec;
+
+    const rgbP = hexToRgb(primary) || { r: 190, g: 18, b: 60 };
+    const rgbBg = hexToRgb(bg) || { r: 251, g: 251, b: 250 };
+    const lumBg = getLuminance(rgbBg.r, rgbBg.g, rgbBg.b);
+    const isDark = lumBg < 0.35;
+
+    const root = document.documentElement;
+    root.style.setProperty('--primary', primary);
+    root.style.setProperty('--primary-hover', secondary);
+    root.style.setProperty('--primary-rgb', `${rgbP.r}, ${rgbP.g}, ${rgbP.b}`);
+    root.style.setProperty('--bg', bg);
+
+    if (isDark) {
+      document.body.classList.add('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      root.style.setProperty('--surface', preset.surface || '#181c24');
+      root.style.setProperty('--surface-card', preset.card || '#181c24');
+      root.style.setProperty('--text', preset.text || '#f8fafc');
+      root.style.setProperty('--text-muted', '#94a3b8');
+      root.style.setProperty('--border', 'rgba(255, 255, 255, 0.08)');
+    } else {
+      document.body.classList.remove('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'light');
+      root.style.setProperty('--surface', preset.surface || '#ffffff');
+      root.style.setProperty('--surface-card', preset.card || '#ffffff');
+      root.style.setProperty('--text', preset.text || '#1c1917');
+      root.style.setProperty('--text-muted', '#78716c');
+      root.style.setProperty('--border', '#e7e5e4');
+    }
+  };
+
+  // Sincronizar subtotal da dock ao alterar carrinho
+  const _origAtualizarBadge = window.atualizarBadgeCarrinho;
+  window.atualizarBadgeCarrinho = function() {
+    if (typeof _origAtualizarBadge === 'function') _origAtualizarBadge();
+    const dockSub = document.getElementById('dock-cart-subtotal');
+    if (dockSub && typeof CART !== 'undefined') {
+      const valTotal = CART.reduce((acc, it) => acc + (it.preco * it.qtd), 0);
+      dockSub.innerText = 'R$ ' + valTotal.toFixed(2).replace('.', ',');
+    }
+  };
+  
 </script>

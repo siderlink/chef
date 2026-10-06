@@ -106,16 +106,58 @@ function createAdminRouter() {
     );
   }
 
-  // GET /api/configuracoes
-  router.get('/configuracoes', (req, res) => {
+  // In-Memory Cache para Configurações (Micro-cache de alta performance com TTL e invalidação imediata)
+  const configCacheByTenant = new Map();
+  const CONFIG_CACHE_TTL_MS = 60000; // 60s
+  const invalidateConfigCache = (tid) => {
+    if (tid !== undefined && tid !== null) {
+      configCacheByTenant.delete(Number(tid));
+    } else {
+      configCacheByTenant.clear();
+    }
+  };
+
+  // GET /api/configuracoes e GET /api/config
+  const handleGetConfig = (req, res) => {
+    const tid = (resolveTenantId && resolveTenantId(req)) || 1;
+    const cached = configCacheByTenant.get(tid);
+    const now = Date.now();
+    if (cached && (now - cached.timestamp < CONFIG_CACHE_TTL_MS)) {
+      return res.json(cached.data);
+    }
     withTenant(req, () => {
       getDb().all('SELECT * FROM configuracoes', [], (err, rows) => {
         const configMap = {};
-        if (rows) rows.forEach(r => { configMap[r.chave] = r.valor; });
-        res.json(configMap);
+        const secretKeys = [
+          'mp_access_token', 'pagbank_token', 'stone_stonecode', 'sitef_ip',
+          'cert_senha', 'csc', 'token_api_fiscal', 'ponto_token', 'jwt_secret',
+          'ia_api_key'
+        ];
+        if (rows) {
+          rows.forEach(r => {
+            if (!secretKeys.includes(r.chave)) {
+              configMap[r.chave] = r.valor;
+            }
+          });
+        }
+        const defaultBranding = {
+          rest_modalidade: 'a_la_carte',
+          rest_tema_preset: 'alacarte',
+          rest_cor_primaria: '#be123c',
+          rest_cor_secundaria: '#e11d48',
+          rest_cor_fundo: '#fbfbfa',
+          rest_fonte_familia: 'Inter, sans-serif',
+          rest_layout_cardapio: 'grid_fotos'
+        };
+        const responseData = { ...defaultBranding, ...configMap };
+        configCacheByTenant.set(tid, { timestamp: now, data: responseData });
+        res.json(responseData);
       });
     });
-  });
+  };
+
+  router.get('/configuracoes', handleGetConfig);
+  router.get('/config', handleGetConfig);
 
   // POST /api/configuracoes
   router.post('/configuracoes', (req, res) => {
@@ -132,7 +174,17 @@ function createAdminRouter() {
           [chave, valStr, valStr],
           () => {
             done++;
-            if (done === entries.length) res.json({ success: true });
+            if (done === entries.length) {
+              const tid = (resolveTenantId && resolveTenantId(req)) || 1;
+              invalidateConfigCache(tid);
+              if (configs.garcom_atalhos && typeof global.io !== 'undefined') {
+                try {
+                  const parsedAtalhos = typeof configs.garcom_atalhos === 'string' ? JSON.parse(configs.garcom_atalhos) : configs.garcom_atalhos;
+                  global.io.emit('atalhos_config_atualizada', { funcionario_id: null, config: parsedAtalhos });
+                } catch (e) {}
+              }
+              res.json({ success: true });
+            }
           }
         );
       });
@@ -228,6 +280,7 @@ function createAdminRouter() {
       const val = enabled ? 'true' : 'false';
       getDb().run(`INSERT INTO configuracoes (chave, valor) VALUES (?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor`, [cfgKey, val], (e) => {
         if (e) return res.status(500).json({ success: false, error: e.message });
+        invalidateConfigCache(tid);
         if (io) setTimeout(() => io.emit('configuracoes_atualizadas'), 300);
         res.json({ success: true, mensagem: 'Função atualizada com sucesso!' });
       });

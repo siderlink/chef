@@ -815,3 +815,8 @@
   }
   bindTemaSocket();
 })();
+
+function applyAutoMobile() { if (localStorage.getItem('chef_view_mode') === 'desktop') return; if (window.innerWidth <= 900) { document.body && document.body.classList.add('force-mobile'); document.documentElement.classList.add('force-mobile'); } else if (localStorage.getItem('chef_view_mode') !== 'mobile') { document.body && document.body.classList.remove('force-mobile'); document.documentElement.classList.remove('force-mobile'); } }
+window.addEventListener('resize', applyAutoMobile);
+document.addEventListener('DOMContentLoaded', applyAutoMobile);
+applyAutoMobile();

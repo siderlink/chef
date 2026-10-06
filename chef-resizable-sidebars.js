@@ -373,11 +373,20 @@
     document.addEventListener('mouseup', stopDrag);
     document.addEventListener('touchend', stopDrag);
 
-    // Aplicar estados salvos
-    if (savedLeftMode === 'mini' || savedLeftW === '68' || (window.innerWidth < 900 && savedLeftMode !== 'expanded')) {
-      window.applyLeftSidebarResize(68);
+    // Aplicar estados salvos: em Desktop (>= 900px), sempre garantir modo expandido com texto legível
+    if (window.innerWidth >= 900) {
+      if (savedLeftMode === 'hidden') {
+        window.setSidebarMode('left', 'hidden', false);
+      } else {
+        window.setSidebarMode('left', 'expanded', false);
+        window.applyLeftSidebarResize(Math.max(220, parseInt(savedLeftW, 10) || 240));
+      }
     } else {
-      window.setSidebarMode('left', savedLeftMode, false);
+      if (savedLeftMode === 'expanded') {
+        window.setSidebarMode('left', 'expanded', false);
+      } else {
+        window.applyLeftSidebarResize(68);
+      }
     }
     window.setSidebarMode('right', savedRightMode, false);
 

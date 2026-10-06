@@ -1134,6 +1134,9 @@
                 </div>
                 <button type="submit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">Salvar Segmento</button>
             </form>
+        </div>
+    </div>
+
     <!-- Modal Campanha -->
     <div class="modal-overlay" id="modal-campanha">
         <div class="modal-content">
@@ -1406,8 +1409,26 @@
             alertasPotenciais: [],
             alertasFiltroAtual: 'todos',
             mapaHorarios: null,
-            radarDinheiro: null
+            radarDinheiro: null,
+            _loadingViews: new Set(),
+            _abortControllers: new Map()
         };
+
+        // Debounce utility
+        function debounce(fn, ms = 350) {
+            let timer;
+            return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+        }
+
+        // Guard against double-loading the same view
+        function guardLoad(viewName) {
+            if (state._loadingViews.has(viewName)) return false;
+            state._loadingViews.add(viewName);
+            return true;
+        }
+        function releaseLoad(viewName) {
+            state._loadingViews.delete(viewName);
+        }
 
         // Navigation
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -1443,6 +1464,19 @@
                 try { localStorage.setItem('superAdminToken', urlToken); } catch(e) {}
             }
             const token = urlToken || localStorage.getItem('superAdminToken') || localStorage.getItem('token') || '';
+
+            // Abort any previous in-flight request to the same endpoint (GET only)
+            const method = (options.method || 'GET').toUpperCase();
+            if (method === 'GET') {
+                const prev = state._abortControllers.get(endpoint);
+                if (prev) prev.abort();
+            }
+            const controller = new AbortController();
+            if (method === 'GET') state._abortControllers.set(endpoint, controller);
+
+            // Timeout after 30s
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+
             const defaultOptions = {
                 headers: {
                     'Authorization': token ? `Bearer ${token}` : '',
@@ -1454,15 +1488,23 @@
                 const res = await fetch(`${API_BASE}${endpoint}`, {
                     ...defaultOptions,
                     ...options,
+                    signal: controller.signal,
                     headers: { ...defaultOptions.headers, ...(options.headers || {}) }
                 });
+                clearTimeout(timeoutId);
+                if (method === 'GET') state._abortControllers.delete(endpoint);
                 if (!res.ok) {
                     const errData = await res.json().catch(() => ({}));
                     return { ok: false, erro: errData.erro || `HTTP ${res.status}` };
                 }
                 return await res.json();
             } catch (error) {
-                console.error(error);
+                clearTimeout(timeoutId);
+                if (method === 'GET') state._abortControllers.delete(endpoint);
+                if (error.name === 'AbortError') {
+                    return { ok: false, erro: 'Requisição cancelada (timeout ou substituída)', aborted: true };
+                }
+                console.error(`[apiCall] ${endpoint}:`, error);
                 showToast('Erro de comunicação com o servidor', 'danger');
                 return { ok: false, erro: error.message };
             }
@@ -1471,12 +1513,21 @@
         // Toasts
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
+            if (!container) return;
+            const icons = { success: '✅', danger: '❌', warning: '⚠️', info: 'ℹ️' };
+            const colors = { danger: '#ef4444', success: '#10b981', warning: '#f59e0b', info: '#3b82f6' };
             const toast = document.createElement('div');
             toast.className = `toast badge-${type}`;
-            toast.style.background = type === 'danger' ? '#ef4444' : type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : '#3b82f6';
-            toast.innerText = message;
+            toast.style.background = colors[type] || colors.info;
+            toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span> <span>${message}</span>`;
             container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3500);
+            const duration = type === 'danger' ? 5000 : 3500;
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
         }
 
         // Modals
@@ -1502,20 +1553,22 @@
 
         // Loaders
         async function loadDataForView(view) {
-            if (view === 'dashboard') loadDashboard();
-            if (view === 'copiloto-ia') loadCopilotoContexto();
-            if (view === 'economia-desempenho') loadEconomiaDesempenho();
-            if (view === 'alertas-potenciais') loadAlertasPotenciais();
-            if (view === 'mapas-calor') loadMapasCalor('horarios');
-            if (view === 'radar-dinheiro') loadRadarDinheiro();
-            if (view === 'perfis') loadPerfis();
-            if (view === 'segmentos') loadSegmentos();
-            if (view === 'campanhas') loadCampanhas();
-            if (view === 'produtos') loadProdutos();
-            if (view === 'vendas') loadVendas();
-            if (view === 'automacoes') loadAutomacoes();
-            if (view === 'plataformas') loadPlataformas();
-            if (view === 'analytics') showAnalyticsTab('rfm');
+            switch (view) {
+                case 'dashboard':           loadDashboard(); break;
+                case 'copiloto-ia':         loadCopilotoContexto(); break;
+                case 'economia-desempenho': loadEconomiaDesempenho(); break;
+                case 'alertas-potenciais':  loadAlertasPotenciais(); break;
+                case 'mapas-calor':         loadMapasCalor('horarios'); break;
+                case 'radar-dinheiro':      loadRadarDinheiro(); break;
+                case 'perfis':              loadPerfis(); break;
+                case 'segmentos':           loadSegmentos(); break;
+                case 'campanhas':           loadCampanhas(); break;
+                case 'produtos':            loadProdutos(); break;
+                case 'vendas':              loadVendas(); break;
+                case 'automacoes':          loadAutomacoes(); break;
+                case 'plataformas':         loadPlataformas(); break;
+                case 'analytics':           showAnalyticsTab('rfm'); break;
+            }
         }
 
         async function syncPerfis() {
@@ -1523,51 +1576,73 @@
             const res = await apiCall('/sync-perfis', { method: 'POST' });
             if (res.ok) {
                 showToast(`Perfis sincronizados: ${res.novos || 0} novos, ${res.atualizados || 0} atualizados!`, 'success');
+                loadDashboard();
+                loadAlertasPotenciais();
+            } else {
+                showToast(res.erro || 'Erro ao sincronizar perfis', 'danger');
             }
-            loadDashboard();
-            loadAlertasPotenciais();
         }
 
         // 📊 DASHBOARD
         async function loadDashboard() {
-            const res = await apiCall('/dashboard');
-            if (res && res.ok && res.dados) {
-                const d = res.dados;
-                if (document.getElementById('dash-total-perfis')) document.getElementById('dash-total-perfis').innerText = d.total_perfis || 0;
-                if (document.getElementById('header-total-perfis')) document.getElementById('header-total-perfis').innerText = d.total_perfis || 0;
-                if (document.getElementById('dash-segmentos-ativos')) document.getElementById('dash-segmentos-ativos').innerText = d.segmentos_ativos || 0;
-                if (document.getElementById('dash-campanhas-ativas')) document.getElementById('dash-campanhas-ativas').innerText = d.campanhas_ativas || 0;
-                if (document.getElementById('dash-vendas-mes')) document.getElementById('dash-vendas-mes').innerText = formatMoeda(d.vendas_mes || 0);
-                if (document.getElementById('dash-roi-medio')) document.getElementById('dash-roi-medio').innerText = (d.roi_medio || 0) + '%';
+            if (!guardLoad('dashboard')) return;
+            try {
+                const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
-                if (d.funil) {
-                    const funnel = document.getElementById('funnel-chart');
-                    if (funnel) {
-                        funnel.innerHTML = `
-                            <div class="funnel-stage" style="width: 100%; opacity: 1;">👥 Cadastrados: ${d.funil.cadastrados || 0}</div>
-                            <div class="funnel-stage" style="width: 75%; opacity: 0.9;">🔥 Engajados: ${d.funil.engajados || 0}</div>
-                            <div class="funnel-stage" style="width: 50%; opacity: 0.8;">💳 Compradores: ${d.funil.compradores || 0}</div>
-                            <div class="funnel-stage" style="width: 25%; opacity: 0.7;">👑 VIPs: ${d.funil.vips || 0}</div>
-                        `;
+                const res = await apiCall('/dashboard');
+                if (res && res.ok && (res.data || res.dados)) {
+                    const d = (res.data || res.dados);
+                    setEl('dash-total-perfis', d.total_perfis || 0);
+                    setEl('header-total-perfis', d.total_perfis || 0);
+                    setEl('dash-segmentos', d.segmentos_ativos || 0);
+                    setEl('dash-campanhas', d.campanhas_ativas || 0);
+                    setEl('dash-vendas', formatMoeda(d.vendas_mes || 0));
+
+                    if (d.funil) {
+                        const funnel = document.getElementById('funnel-chart');
+                        if (funnel) {
+                            const stages = [
+                                { icon: '👥', label: 'Cadastrados', val: d.funil.cadastrados || 0, w: '100%', op: 1 },
+                                { icon: '🔥', label: 'Engajados',   val: d.funil.engajados   || 0, w: '75%',  op: 0.9 },
+                                { icon: '💳', label: 'Compradores', val: d.funil.compradores || 0, w: '50%',  op: 0.8 },
+                                { icon: '👑', label: 'VIPs',        val: d.funil.vips        || 0, w: '25%',  op: 0.7 }
+                            ];
+                            funnel.innerHTML = stages.map(s =>
+                                `<div class="funnel-stage" style="width: ${s.w}; opacity: ${s.op};">${s.icon} ${s.label}: ${s.val}</div>`
+                            ).join('');
+                        }
                     }
+
+                    // Render top segments
+                    if (d.top_segmentos) {
+                        const topList = document.getElementById('top-segmentos-list');
+                        if (topList) {
+                            topList.innerHTML = d.top_segmentos.map(s =>
+                                `<div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--glass-border);">
+                                    <span>${s.icone || '👥'} ${s.nome}</span>
+                                    <strong style="color: #34d399;">${s.total_clientes || 0}</strong>
+                                </div>`
+                            ).join('');
+                        }
+                    }
+                } else {
+                    setEl('dash-total-perfis', state.perfis.length || '0');
+                    setEl('header-total-perfis', state.perfis.length || '0');
                 }
-            } else {
-                // Fallback
-                document.getElementById('dash-total-perfis').innerText = state.perfis.length || '0';
-                document.getElementById('header-total-perfis').innerText = state.perfis.length || '0';
+
+                // Load IA insights and alerts badge in parallel
+                await Promise.allSettled([
+                    loadInsightsAutomaticos(),
+                    apiCall('/alertas-potenciais').then(al => {
+                        if (al && al.ok && al.dados) {
+                            const count = al.dados.total_alertas || (al.dados.alertas ? al.dados.alertas.length : 0);
+                            setEl('header-potenciais-badge', count);
+                        }
+                    })
+                ]);
+            } finally {
+                releaseLoad('dashboard');
             }
-
-            // Carrega Diagnósticos Diários da IA
-            loadInsightsAutomaticos();
-
-            // Also refresh active alerts badge count in header
-            apiCall('/alertas-potenciais').then(al => {
-                if (al && al.ok && al.dados) {
-                    const count = al.dados.total_alertas || (al.dados.alertas ? al.dados.alertas.length : 0);
-                    const b = document.getElementById('header-potenciais-badge');
-                    if (b) b.innerText = count;
-                }
-            }).catch(() => {});
         }
 
         // 🚨 ALERTAS DE CLIENTES POTENCIAIS
@@ -1974,34 +2049,46 @@
         }
 
         async function executarAcaoRapida(tipo) {
+            const acoes = {
+                resgate_vip: {
+                    payload: { tipo: 'resgate_vip', acao: 'notificar_inativos_vip' },
+                    sucesso: '🚀 Campanha VIP de Resgate ativada para clientes inativos!'
+                },
+                happy_hour: {
+                    payload: { tipo: 'happy_hour', desconto: 15 },
+                    sucesso: '⚡ Preço Dinâmico / Happy Hour ativado nos horários ociosos com sucesso!'
+                },
+                cross_sell: {
+                    payload: { tipo: 'cross_sell', modo: 'combo_automatico' },
+                    sucesso: '🍔 Combo Cross-Sell ativado no prato #1 do cardápio digital!'
+                }
+            };
+
+            const acao = acoes[tipo];
+            if (!acao) { showToast('Ação desconhecida', 'warning'); return; }
+
             showToast('Executando ação estratégica...', 'info');
-            if (tipo === 'resgate_vip') {
+            try {
                 const res = await apiCall('/automacoes/executar-acao-rapida', {
                     method: 'POST',
-                    body: JSON.stringify({ tipo: 'resgate_vip', acao: 'notificar_inativos_vip' })
+                    body: JSON.stringify(acao.payload)
                 });
-                showToast('🚀 Campanha VIP de Resgate ativada para clientes inativos!', 'success');
-            } else if (tipo === 'happy_hour') {
-                const res = await apiCall('/automacoes/executar-acao-rapida', {
-                    method: 'POST',
-                    body: JSON.stringify({ tipo: 'happy_hour', desconto: 15 })
-                });
-                showToast('⚡ Preço Dinâmico / Happy Hour ativado nos horários ociosos com sucesso!', 'success');
-            } else if (tipo === 'cross_sell') {
-                const res = await apiCall('/automacoes/executar-acao-rapida', {
-                    method: 'POST',
-                    body: JSON.stringify({ tipo: 'cross_sell', modo: 'combo_automatico' })
-                });
-                showToast('🍔 Combo Cross-Sell ativado no prato #1 do cardápio digital!', 'success');
+                if (res.ok) {
+                    showToast(acao.sucesso, 'success');
+                    loadDashboard();
+                } else {
+                    showToast(res.erro || 'Falha ao executar ação', 'danger');
+                }
+            } catch (e) {
+                showToast('Erro na execução: ' + e.message, 'danger');
             }
-            loadDashboard();
         }
 
         async function verDetalhesPerfil(id) {
             if (!id) return;
             const res = await apiCall(`/perfis/${id}`);
-            if (res && res.ok && res.dados) {
-                const p = res.dados;
+            if (res && res.ok && (res.data || res.dados)) {
+                const p = (res.data || res.dados);
                 const container = document.getElementById('perfil-detalhes');
                 container.innerHTML = `
                     <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 20px;">
@@ -2044,176 +2131,186 @@
         }
 
         // Render Functions (Simplified for demonstration)
-        function loadPerfis() {
-            apiCall('/perfis').then(res => {
-                const tbody = document.getElementById('tabela-perfis');
-                if (res && res.ok && res.dados && res.dados.perfis) {
-                    const list = res.dados.perfis;
-                    state.perfis = list;
-                    if (list.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Nenhum perfil cadastrado. Clique em Sincronizar Perfis.</td></tr>';
-                        return;
-                    }
-                    let html = '';
-                    list.forEach(p => {
-                        html += `
-                            <tr>
-                                <td><strong>${p.nome || 'Cliente'}</strong></td>
-                                <td>${p.telefone || '-'}</td>
-                                <td>${p.total_visitas || 0}</td>
-                                <td><strong style="color: #34d399;">${formatMoeda(p.total_gasto)}</strong></td>
-                                <td>${formatMoeda(p.ticket_medio)}</td>
-                                <td><span class="badge badge-success">${p.score_engajamento || 0}</span></td>
-                                <td><span class="badge badge-info">${p.frequencia_visita || 'novo'}</span></td>
-                                <td><button class="btn btn-glass" onclick="verDetalhesPerfil(${p.id})">Ver</button></td>
-                            </tr>
-                        `;
-                    });
-                    tbody.innerHTML = html;
+        async function loadPerfis() {
+            const tbody = document.getElementById('tabela-perfis');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Carregando perfis...</td></tr>';
+
+            const busca = (document.getElementById('busca-perfil')?.value || '').trim();
+            const segmento = document.getElementById('filtro-segmento')?.value || '';
+
+            const params = new URLSearchParams();
+            if (busca) params.set('busca', busca);
+            if (segmento) params.set('segmento_id', segmento);
+            const qs = params.toString() ? `?${params}` : '';
+
+            try {
+                const res = await apiCall(`/perfis${qs}`);
+                const list = res?.dados?.perfis || res?.dados || [];
+                state.perfis = list;
+
+                if (list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">${busca ? 'Nenhum perfil encontrado para a busca.' : 'Nenhum perfil cadastrado. Clique em Sincronizar Perfis.'}</td></tr>`;
+                    return;
                 }
-            }).catch(() => {});
+                tbody.innerHTML = list.map(p => `
+                    <tr>
+                        <td><strong>${p.nome || 'Cliente'}</strong></td>
+                        <td>${p.telefone || '-'}</td>
+                        <td>${p.total_visitas || 0}</td>
+                        <td><strong style="color: #34d399;">${formatMoeda(p.total_gasto)}</strong></td>
+                        <td>${formatMoeda(p.ticket_medio)}</td>
+                        <td><span class="badge badge-success">${p.score_engajamento || 0}</span></td>
+                        <td><span class="badge badge-info">${p.frequencia_visita || 'novo'}</span></td>
+                        <td><button class="btn btn-glass" onclick="verDetalhesPerfil(${p.id})">Ver</button></td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #ef4444;">Erro ao carregar perfis</td></tr>';
+            }
         }
 
-        function loadSegmentos() {
-            apiCall('/segmentos').then(res => {
-                const grid = document.getElementById('grid-segmentos');
-                if (res && res.ok && res.dados) {
-                    const list = res.dados;
-                    if (list.length === 0) {
-                        grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 3; text-align: center; color: var(--text-muted);">Nenhum segmento criado ainda.</div>';
-                        return;
-                    }
-                    let html = '';
-                    list.forEach(s => {
-                        html += `
-                            <div class="glass" style="padding: 20px; border-top: 4px solid ${s.cor || 'var(--primary)'};">
-                                <h4>${s.icone || '👥'} ${s.nome}</h4>
-                                <p style="color: var(--text-muted); margin: 10px 0; font-size: 0.85rem;">${s.descricao || 'Sem descrição'}</p>
-                                <div style="font-size: 1.5rem; font-weight: bold;">${s.total_clientes || 0} perfis</div>
-                            </div>
-                        `;
-                    });
-                    grid.innerHTML = html;
+        async function loadSegmentos() {
+            const grid = document.getElementById('grid-segmentos');
+            if (!grid) return;
+            grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 3; text-align: center; color: var(--text-muted);">Carregando segmentos...</div>';
+            try {
+                const res = await apiCall('/segmentos');
+                const list = res?.dados || [];
+                if (list.length === 0) {
+                    grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 3; text-align: center; color: var(--text-muted);">Nenhum segmento criado ainda.</div>';
+                    return;
                 }
-            }).catch(() => {});
+                grid.innerHTML = list.map(s => `
+                    <div class="glass" style="padding: 20px; border-top: 4px solid ${s.cor || 'var(--primary)'};">
+                        <h4>${s.icone || '👥'} ${s.nome}</h4>
+                        <p style="color: var(--text-muted); margin: 10px 0; font-size: 0.85rem;">${s.descricao || 'Sem descrição'}</p>
+                        <div style="font-size: 1.5rem; font-weight: bold;">${s.total_clientes || 0} perfis</div>
+                    </div>
+                `).join('');
+            } catch(e) {
+                grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 3; text-align: center; color: #ef4444;">Erro ao carregar segmentos</div>';
+            }
         }
 
-        function loadCampanhas() {
-            apiCall('/campanhas').then(res => {
-                const tbody = document.getElementById('tabela-campanhas');
-                if (res && res.ok && res.dados) {
-                    const list = res.dados;
-                    if (list.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nenhuma campanha cadastrada.</td></tr>';
-                        return;
-                    }
-                    let html = '';
-                    list.forEach(c => {
-                        html += `
-                            <tr>
-                                <td><strong>${c.nome}</strong></td>
-                                <td><span class="badge badge-info">${c.tipo}</span></td>
-                                <td>${c.segmento_nome || 'Todos'}</td>
-                                <td><span class="badge badge-success">${c.status}</span></td>
-                                <td>${c.total_enviados || 0}</td>
-                                <td>${formatData(c.criado_em)}</td>
-                            </tr>
-                        `;
-                    });
-                    tbody.innerHTML = html;
+        async function loadCampanhas() {
+            const tbody = document.getElementById('tabela-campanhas');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Carregando campanhas...</td></tr>';
+            try {
+                const res = await apiCall('/campanhas');
+                const list = res?.dados || [];
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nenhuma campanha cadastrada.</td></tr>';
+                    return;
                 }
-            }).catch(() => {});
+                tbody.innerHTML = list.map(c => `
+                    <tr>
+                        <td><strong>${c.nome}</strong></td>
+                        <td><span class="badge badge-info">${c.tipo}</span></td>
+                        <td>${c.segmento_nome || 'Todos'}</td>
+                        <td><span class="badge badge-success">${c.status}</span></td>
+                        <td>${c.total_enviados || 0}</td>
+                        <td>${formatData(c.criado_em)}</td>
+                    </tr>
+                `).join('');
+            } catch(e) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444;">Erro ao carregar campanhas</td></tr>';
+            }
         }
 
-        function loadProdutos() {
-            apiCall('/produtos').then(res => {
-                const grid = document.getElementById('grid-produtos');
-                if (res && res.ok && res.dados) {
-                    const list = res.dados;
-                    if (list.length === 0) {
-                        grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 4; text-align: center; color: var(--text-muted);">Nenhum produto cadastrado no Hub.</div>';
-                        return;
-                    }
-                    let html = '';
-                    list.forEach(p => {
-                        html += `
-                            <div class="glass" style="padding: 20px;">
-                                <h4>${p.nome}</h4>
-                                <span class="badge badge-primary">${p.tipo || 'Produto'}</span>
-                                <div style="font-size: 1.5rem; font-weight: bold; margin-top: 10px; color: #34d399;">${formatMoeda(p.preco)}</div>
-                            </div>
-                        `;
-                    });
-                    grid.innerHTML = html;
+        async function loadProdutos() {
+            const grid = document.getElementById('grid-produtos');
+            if (!grid) return;
+            grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 4; text-align: center; color: var(--text-muted);">Carregando produtos...</div>';
+            try {
+                const res = await apiCall('/produtos');
+                const list = res?.dados || [];
+                if (list.length === 0) {
+                    grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 4; text-align: center; color: var(--text-muted);">Nenhum produto cadastrado no Hub.</div>';
+                    return;
                 }
-            }).catch(() => {});
+                grid.innerHTML = list.map(p => `
+                    <div class="glass" style="padding: 20px;">
+                        <h4>${p.nome}</h4>
+                        <span class="badge badge-primary">${p.tipo || 'Produto'}</span>
+                        <div style="font-size: 1.5rem; font-weight: bold; margin-top: 10px; color: #34d399;">${formatMoeda(p.preco)}</div>
+                    </div>
+                `).join('');
+            } catch(e) {
+                grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 4; text-align: center; color: #ef4444;">Erro ao carregar produtos</div>';
+            }
         }
 
-        function loadVendas() {
-            apiCall('/vendas').then(res => {
-                const tbody = document.getElementById('tabela-vendas');
-                if (res && res.ok && res.dados) {
-                    const list = res.dados;
-                    if (list.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhuma venda registrada no Hub.</td></tr>';
-                        return;
-                    }
-                    let html = '';
-                    list.forEach(v => {
-                        html += `
-                            <tr>
-                                <td>${v.produto_nome || 'Produto'}</td>
-                                <td>${v.cliente_nome || '-'}</td>
-                                <td><strong>${formatMoeda(v.valor_total)}</strong></td>
-                                <td>${formatData(v.criado_em)}</td>
-                                <td><span class="badge badge-success">${v.status}</span></td>
-                            </tr>
-                        `;
-                    });
-                    tbody.innerHTML = html;
+        async function loadVendas() {
+            const tbody = document.getElementById('tabela-vendas');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Carregando vendas...</td></tr>';
+
+            const mes = document.getElementById('filtro-vendas-mes')?.value || '';
+            const qs = mes ? `?mes=${mes}` : '';
+
+            try {
+                const res = await apiCall(`/vendas${qs}`);
+                const list = res?.dados || [];
+                if (list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">${mes ? 'Nenhuma venda encontrada nesse período.' : 'Nenhuma venda registrada no Hub.'}</td></tr>`;
+                    return;
                 }
-            }).catch(() => {});
+                tbody.innerHTML = list.map(v => `
+                    <tr>
+                        <td>${v.produto_nome || 'Produto'}</td>
+                        <td>${v.cliente_nome || '-'}</td>
+                        <td><strong>${formatMoeda(v.valor_total)}</strong></td>
+                        <td>${formatData(v.criado_em)}</td>
+                        <td><span class="badge badge-${v.status === 'cancelado' ? 'danger' : 'success'}">${v.status}</span></td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">Erro ao carregar vendas</td></tr>';
+            }
         }
 
-        function loadAutomacoes() {
-            apiCall('/automacoes').then(res => {
-                const grid = document.getElementById('grid-automacoes');
-                if (res && res.ok && res.dados) {
-                    const list = res.dados;
-                    if (list.length === 0) {
-                        grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 3; text-align: center; color: var(--text-muted);">Nenhuma automação configurada.</div>';
-                        return;
-                    }
-                    let html = '';
-                    list.forEach(a => {
-                        html += `
-                            <div class="glass" style="padding: 20px;">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <h4>${a.nome}</h4>
-                                    <input type="checkbox" ${a.ativo ? 'checked' : ''} disabled>
-                                </div>
-                                <span class="badge badge-warning">Trigger: ${a.trigger_tipo}</span>
-                                <p style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted);">${a.descricao || 'Automação ativa'}</p>
-                            </div>
-                        `;
-                    });
-                    grid.innerHTML = html;
+        async function loadAutomacoes() {
+            const grid = document.getElementById('grid-automacoes');
+            if (!grid) return;
+            grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 3; text-align: center; color: var(--text-muted);">Carregando automações...</div>';
+            try {
+                const res = await apiCall('/automacoes');
+                const list = res?.dados || [];
+                if (list.length === 0) {
+                    grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 3; text-align: center; color: var(--text-muted);">Nenhuma automação configurada.</div>';
+                    return;
                 }
-            }).catch(() => {});
+                grid.innerHTML = list.map(a => `
+                    <div class="glass" style="padding: 20px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <h4>${a.nome}</h4>
+                            <input type="checkbox" ${a.ativo ? 'checked' : ''} disabled>
+                        </div>
+                        <span class="badge badge-warning">Trigger: ${a.trigger_tipo}</span>
+                        <p style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted);">${a.descricao || 'Automação ativa'}</p>
+                    </div>
+                `).join('');
+            } catch(e) {
+                grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 3; text-align: center; color: #ef4444;">Erro ao carregar automações</div>';
+            }
         }
 
-        function loadPlataformas() {
-            apiCall('/plataformas').then(res => {
-                const grid = document.getElementById('grid-plataformas');
+        async function loadPlataformas() {
+            const grid = document.getElementById('grid-plataformas');
+            if (!grid) return;
+            grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 3; text-align: center; color: var(--text-muted);">Carregando plataformas...</div>';
+            try {
+                const res = await apiCall('/plataformas');
                 const list = res?.data || res?.dados || [];
                 if (list.length === 0) {
                     grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 3; text-align: center; color: var(--text-muted);">Nenhuma plataforma cadastrada. Clique em "+ Nova Plataforma" para criar!</div>';
                     return;
                 }
-                let html = '';
-                list.forEach(p => {
+                grid.innerHTML = list.map(p => {
                     const statusColor = p.status === 'ativa' ? 'var(--success)' : (p.status === 'rascunho' ? '#fbbf24' : '#ef4444');
-                    html += `
+                    return `
                         <div class="glass" style="padding: 20px; border-top: 3px solid #6366f1;">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
                                 <h4>${p.nome}</h4>
@@ -2226,9 +2323,10 @@
                             </div>
                         </div>
                     `;
-                });
-                grid.innerHTML = html;
-            }).catch(() => {});
+                }).join('');
+            } catch(e) {
+                grid.innerHTML = '<div class="glass" style="padding: 20px; grid-column: span 3; text-align: center; color: #ef4444;">Erro ao carregar plataformas</div>';
+            }
         }
 
         // 📈 ANALYTICS RFM 5x5 INTERATIVA & COHORT
@@ -2307,80 +2405,60 @@
                 }
             } else {
                 // Aba Cohort
-                content.innerHTML = `
-                    <div style="margin-bottom: 20px;">
-                        <h4 style="margin: 0 0 6px 0; color: #fff; font-size: 1.15rem;">Análise de Retenção de Clientes por Safra (Cohort Analysis)</h4>
-                        <span style="font-size: 0.85rem; color: var(--text-muted);">Percentual de clientes cadastrados a cada mês que continuaram visitando o restaurante nos meses seguintes.</span>
-                    </div>
-                    <div class="glass" style="padding: 20px; overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-                            <thead>
-                                <tr style="border-bottom: 1px solid var(--glass-border); color: var(--text-muted);">
-                                    <th style="padding: 10px; text-align: left;">Mês de Entrada</th>
-                                    <th style="padding: 10px; text-align: center;">Novos Clientes</th>
-                                    <th style="padding: 10px; text-align: center;">Mês 0</th>
-                                    <th style="padding: 10px; text-align: center;">Mês 1</th>
-                                    <th style="padding: 10px; text-align: center;">Mês 2</th>
-                                    <th style="padding: 10px; text-align: center;">Mês 3</th>
-                                    <th style="padding: 10px; text-align: center;">Mês 4</th>
-                                    <th style="padding: 10px; text-align: center;">Mês 5</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                    <td style="padding: 12px; font-weight: 700; color: #fff;">Maio 2026</td>
-                                    <td style="padding: 12px; text-align: center;">48</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.3); font-weight: 700;">100%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.25); font-weight: 700;">58%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.2); font-weight: 700;">44%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.18); font-weight: 700;">38%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.15); font-weight: 700;">32%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.15); font-weight: 700;">31%</td>
-                                </tr>
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                    <td style="padding: 12px; font-weight: 700; color: #fff;">Junho 2026</td>
-                                    <td style="padding: 12px; text-align: center;">62</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.3); font-weight: 700;">100%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.26); font-weight: 700;">61%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.22); font-weight: 700;">48%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.19); font-weight: 700;">41%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.16); font-weight: 700;">35%</td>
-                                    <td style="padding: 12px; text-align: center; color: var(--text-muted);">-</td>
-                                </tr>
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                    <td style="padding: 12px; font-weight: 700; color: #fff;">Julho 2026</td>
-                                    <td style="padding: 12px; text-align: center;">55</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.3); font-weight: 700;">100%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.28); font-weight: 700;">65%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.24); font-weight: 700;">52%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.2); font-weight: 700;">45%</td>
-                                    <td style="padding: 12px; text-align: center; color: var(--text-muted);">-</td>
-                                    <td style="padding: 12px; text-align: center; color: var(--text-muted);">-</td>
-                                </tr>
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                    <td style="padding: 12px; font-weight: 700; color: #fff;">Agosto 2026</td>
-                                    <td style="padding: 12px; text-align: center;">71</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.3); font-weight: 700;">100%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.29); font-weight: 700;">68%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.25); font-weight: 700;">55%</td>
-                                    <td style="padding: 12px; text-align: center; color: var(--text-muted);">-</td>
-                                    <td style="padding: 12px; text-align: center; color: var(--text-muted);">-</td>
-                                    <td style="padding: 12px; text-align: center; color: var(--text-muted);">-</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 12px; font-weight: 700; color: #fff;">Setembro 2026</td>
-                                    <td style="padding: 12px; text-align: center;">84</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.3); font-weight: 700;">100%</td>
-                                    <td style="padding: 12px; text-align: center; background: rgba(16,185,129,0.3); font-weight: 700;">72%</td>
-                                    <td style="padding: 12px; text-align: center; color: var(--text-muted);">-</td>
-                                    <td style="padding: 12px; text-align: center; color: var(--text-muted);">-</td>
-                                    <td style="padding: 12px; text-align: center; color: var(--text-muted);">-</td>
-                                    <td style="padding: 12px; text-align: center; color: var(--text-muted);">-</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                `;
+                content.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);"><span style="display:inline-block; animation: pulseFogo 1.5s infinite; font-size: 1.5rem;">📅</span><br><br>Calculando Safra de Clientes (Cohort)...</div>';
+                try {
+                    const res = await apiCall('/analytics/cohort');
+                    const cohortData = res?.data || res?.dados || [];
+                    
+                    if (!res || !res.ok || cohortData.length === 0) {
+                        content.innerHTML = '<div style="color: var(--text-muted); padding: 20px; text-align: center;">Não há dados suficientes para a análise de Cohort ainda.</div>';
+                        return;
+                    }
+
+                    let tableHtml = `
+                        <div style="margin-bottom: 20px;">
+                            <h4 style="margin: 0 0 6px 0; color: #fff; font-size: 1.15rem;">Análise de Retenção de Clientes por Safra (Cohort Analysis)</h4>
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">Percentual de clientes cadastrados a cada mês que continuaram visitando o restaurante nos meses seguintes.</span>
+                        </div>
+                        <div class="glass" style="padding: 20px; overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--glass-border); color: var(--text-muted);">
+                                        <th style="padding: 10px; text-align: left;">Mês de Entrada</th>
+                                        <th style="padding: 10px; text-align: center;">Novos Clientes</th>
+                                        <th style="padding: 10px; text-align: center;">Mês 0</th>
+                                        <th style="padding: 10px; text-align: center;">Mês 1</th>
+                                        <th style="padding: 10px; text-align: center;">Mês 2</th>
+                                        <th style="padding: 10px; text-align: center;">Mês 3</th>
+                                        <th style="padding: 10px; text-align: center;">Mês 4</th>
+                                        <th style="padding: 10px; text-align: center;">Mês 5</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                    cohortData.forEach(row => {
+                        tableHtml += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">`;
+                        tableHtml += `<td style="padding: 12px; font-weight: 700; color: #fff;">${row.mes || 'Mês'}</td>`;
+                        tableHtml += `<td style="padding: 12px; text-align: center;">${row.novos_clientes || 0}</td>`;
+                        
+                        for (let i = 0; i <= 5; i++) {
+                            const val = row.retencao && row.retencao[i] !== undefined ? row.retencao[i] : null;
+                            if (val === null) {
+                                tableHtml += `<td style="padding: 12px; text-align: center; color: var(--text-muted);">-</td>`;
+                            } else {
+                                const opacity = Math.max(0.1, val / 100 * 0.5);
+                                tableHtml += `<td style="padding: 12px; text-align: center; background: rgba(16,185,129,${opacity}); font-weight: 700;">${val}%</td>`;
+                            }
+                        }
+                        tableHtml += `</tr>`;
+                    });
+
+                    tableHtml += `</tbody></table></div>`;
+                    content.innerHTML = tableHtml;
+                } catch(e) {
+                    content.innerHTML = `<div style="color: #ef4444; padding: 20px;">Falha ao carregar análise Cohort: ${e.message}</div>`;
+                }
             }
         }
 
@@ -2523,28 +2601,37 @@
 
         // 🤖 COPILOTO IA ESTRATÉGICO
         async function loadCopilotoContexto() {
+            const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
             try {
-                const res = await apiCall('/alertas-potenciais');
-                if (res && res.ok && res.dados) {
-                    const r = res.dados.resumo || {};
-                    const nWhales = r.total_baleias ?? r.baleias ?? 0;
-                    const nChurn = r.total_risco_vip ?? r.churn ?? 0;
-                    if (document.getElementById('cop-kpi-whales')) document.getElementById('cop-kpi-whales').innerText = nWhales;
-                    if (document.getElementById('cop-kpi-churn')) document.getElementById('cop-kpi-churn').innerText = nChurn;
+                // Run all 3 API calls in parallel for faster loading
+                const [alertasRes, perfisRes, rfmRes] = await Promise.allSettled([
+                    apiCall('/alertas-potenciais'),
+                    apiCall('/perfis?limite=1'),
+                    apiCall('/analytics/rfm')
+                ]);
+
+                const al = alertasRes.status === 'fulfilled' ? alertasRes.value : null;
+                if (al?.ok && al?.dados) {
+                    const r = al.dados.resumo || {};
+                    setEl('cop-kpi-whales', r.total_baleias ?? r.baleias ?? 0);
+                    setEl('cop-kpi-churn', r.total_risco_vip ?? r.churn ?? 0);
                 }
-                const perfisRes = await apiCall('/perfis?limite=1');
-                if (perfisRes && perfisRes.ok) {
-                    const totalP = perfisRes.total || (perfisRes.dados ? perfisRes.dados.length : 0);
-                    if (document.getElementById('cop-kpi-perfis')) document.getElementById('cop-kpi-perfis').innerText = totalP;
+
+                const pf = perfisRes.status === 'fulfilled' ? perfisRes.value : null;
+                if (pf?.ok) {
+                    setEl('cop-kpi-perfis', pf.total || (pf.dados?.length ?? 0));
                 }
-                const rfmRes = await apiCall('/analytics/rfm');
-                if (rfmRes && rfmRes.ok && rfmRes.data) {
-                    const tot = rfmRes.data.totalClientes || 1;
-                    const fat = rfmRes.data.receitaGeral || 0;
-                    const tMedio = Math.round(fat / tot);
-                    if (document.getElementById('cop-kpi-ticket')) document.getElementById('cop-kpi-ticket').innerText = formatMoeda(tMedio);
+
+                const rfm = rfmRes.status === 'fulfilled' ? rfmRes.value : null;
+                const rfmData = rfm?.data || rfm?.dados;
+                if (rfm?.ok && rfmData) {
+                    const tot = rfmData.totalClientes || 1;
+                    const fat = rfmData.receitaGeral || 0;
+                    setEl('cop-kpi-ticket', formatMoeda(Math.round(fat / tot)));
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error('[Copiloto Contexto]', e);
+            }
         }
 
         function enviarPerguntaCopiloto(texto) {
@@ -2566,28 +2653,28 @@
             const msgContainer = document.getElementById('copiloto-mensagens');
             if (!msgContainer) return;
 
-            // Renderiza mensagem do usuário
-            const userMsgId = 'msg-user-' + Date.now();
-            msgContainer.innerHTML += `
-                <div id="${userMsgId}" style="display: flex; gap: 14px; justify-content: flex-end; align-items: flex-start;">
-                    <div class="glass" style="padding: 14px 18px; border-radius: 12px; max-width: 80%; background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4);">
-                        <div style="font-weight: 700; color: #818cf8; margin-bottom: 4px; font-size: 0.8rem;">Você (Gestor)</div>
-                        <div style="color: #fff; line-height: 1.5; font-size: 0.95rem;">${pergunta}</div>
-                    </div>
-                    <div style="width: 38px; height: 38px; border-radius: 10px; background: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">👤</div>
+            // Renderiza mensagem do usuário via DOM (preserves existing children/events)
+            const userMsgEl = document.createElement('div');
+            userMsgEl.style.cssText = 'display: flex; gap: 14px; justify-content: flex-end; align-items: flex-start;';
+            userMsgEl.innerHTML = `
+                <div class="glass" style="padding: 14px 18px; border-radius: 12px; max-width: 80%; background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4);">
+                    <div style="font-weight: 700; color: #818cf8; margin-bottom: 4px; font-size: 0.8rem;">Você (Gestor)</div>
+                    <div style="color: #fff; line-height: 1.5; font-size: 0.95rem;">${pergunta}</div>
                 </div>
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">👤</div>
             `;
+            msgContainer.appendChild(userMsgEl);
 
             // Indicador de carregamento / digitando
-            const loadingId = 'cop-loading-' + Date.now();
-            msgContainer.innerHTML += `
-                <div id="${loadingId}" style="display: flex; gap: 14px; align-items: flex-start;">
-                    <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">🤖</div>
-                    <div class="glass" style="padding: 14px 20px; border-radius: 12px; border-left: 3px solid #a855f7;">
-                        <span style="color: #c084fc; font-size: 0.9rem;">Consultando dados operacionais e calculando estratégia com IA...</span>
-                    </div>
+            const loadingEl = document.createElement('div');
+            loadingEl.style.cssText = 'display: flex; gap: 14px; align-items: flex-start;';
+            loadingEl.innerHTML = `
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">🤖</div>
+                <div class="glass" style="padding: 14px 20px; border-radius: 12px; border-left: 3px solid #a855f7;">
+                    <span style="color: #c084fc; font-size: 0.9rem;">Consultando dados operacionais e calculando estratégia com IA...</span>
                 </div>
             `;
+            msgContainer.appendChild(loadingEl);
             msgContainer.scrollTop = msgContainer.scrollHeight;
 
             try {
@@ -2596,8 +2683,7 @@
                     body: JSON.stringify({ pergunta })
                 });
 
-                const loaderElem = document.getElementById(loadingId);
-                if (loaderElem) loaderElem.remove();
+                if (loadingEl.parentNode) loadingEl.remove();
 
                 const resposta = res?.resposta || 'Análise estratégica concluída.';
                 const acoes = res?.acoesSugeridas || [];
@@ -2623,20 +2709,20 @@
                     acoesHtml += '</div>';
                 }
 
-                msgContainer.innerHTML += `
-                    <div style="display: flex; gap: 14px; align-items: flex-start;">
-                        <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">🤖</div>
-                        <div class="glass" style="padding: 16px 20px; border-radius: 12px; max-width: 85%; border-left: 3px solid #6366f1;">
-                            <div style="font-weight: 700; color: #a855f7; margin-bottom: 6px;">Cheff.pro Copilot</div>
-                            <div style="line-height: 1.6; font-size: 0.92rem; color: #e2e8f0;">${formattedHtml}</div>
-                            ${acoesHtml}
-                        </div>
+                const aiMsgEl = document.createElement('div');
+                aiMsgEl.style.cssText = 'display: flex; gap: 14px; align-items: flex-start;';
+                aiMsgEl.innerHTML = `
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">🤖</div>
+                    <div class="glass" style="padding: 16px 20px; border-radius: 12px; max-width: 85%; border-left: 3px solid #6366f1;">
+                        <div style="font-weight: 700; color: #a855f7; margin-bottom: 6px;">Cheff.pro Copilot</div>
+                        <div style="line-height: 1.6; font-size: 0.92rem; color: #e2e8f0;">${formattedHtml}</div>
+                        ${acoesHtml}
                     </div>
                 `;
+                msgContainer.appendChild(aiMsgEl);
                 msgContainer.scrollTop = msgContainer.scrollHeight;
             } catch(e) {
-                const loaderElem = document.getElementById(loadingId);
-                if (loaderElem) loaderElem.remove();
+                if (loadingEl.parentNode) loadingEl.remove();
                 showToast('Erro ao consultar o Copiloto IA: ' + e.message, 'danger');
             }
         }
@@ -2765,9 +2851,14 @@
                 method: 'POST',
                 body: JSON.stringify({ nome, tipo, regras_json: '[]' })
             }).then(res => {
-                showToast('Segmento salvo com sucesso!', 'success');
-                closeModal('modal-segmento');
-                loadSegmentos();
+                if (res.ok) {
+                    showToast('Segmento salvo com sucesso!', 'success');
+                    closeModal('modal-segmento');
+                    document.getElementById('form-segmento')?.reset();
+                    loadSegmentos();
+                } else {
+                    showToast(res.erro || 'Erro ao salvar segmento', 'danger');
+                }
             }).catch(() => {
                 showToast('Erro ao salvar segmento', 'danger');
             });
@@ -2794,6 +2885,7 @@
             if (res.ok) {
                 showToast('Campanha criada e programada com sucesso!', 'success');
                 closeModal('modal-campanha');
+                document.getElementById('form-campanha')?.reset();
                 loadCampanhas();
             } else {
                 showToast(res.erro || 'Erro ao criar campanha', 'danger');
@@ -2826,6 +2918,7 @@
             if (res.ok) {
                 showToast('Produto adicionado ao catálogo com sucesso!', 'success');
                 closeModal('modal-produto');
+                document.getElementById('form-produto')?.reset();
                 loadProdutos();
             } else {
                 showToast(res.erro || 'Erro ao salvar produto', 'danger');
@@ -2852,6 +2945,7 @@
             if (res.ok) {
                 showToast('Automação ativada com sucesso!', 'success');
                 closeModal('modal-automacao');
+                document.getElementById('form-automacao')?.reset();
                 loadAutomacoes();
             } else {
                 showToast(res.erro || 'Erro ao ativar automação', 'danger');
@@ -2879,6 +2973,7 @@
             if (res.ok) {
                 showToast('Plataforma criada com sucesso!', 'success');
                 closeModal('modal-plataforma');
+                document.getElementById('form-plataforma')?.reset();
                 loadPlataformas();
             } else {
                 showToast(res.erro || 'Erro ao criar plataforma', 'danger');
@@ -2909,6 +3004,8 @@
             if (document.getElementById('sim-ganho-total')) document.getElementById('sim-ganho-total').innerText = `+ ${formatMoeda(totalMes)} / mês`;
             if (document.getElementById('sim-ganho-anual')) document.getElementById('sim-ganho-anual').innerText = `+ ${formatMoeda(totalAno)} / ano projetado`;
         }
+
+
 
         // ⚡ CENTRO DE DESEMPENHO, ECONOMIA & REDUÇÃO DE CMV
         async function loadEconomiaDesempenho() {
@@ -3041,6 +3138,33 @@
         // Init
         document.addEventListener('DOMContentLoaded', () => {
             loadDashboard();
+
+            // Debounced live search on perfis
+            const buscaInput = document.getElementById('busca-perfil');
+            if (buscaInput) {
+                buscaInput.addEventListener('input', debounce(() => loadPerfis(), 400));
+            }
+
+            // Close modals on overlay click
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) overlay.classList.remove('active');
+                });
+            });
+
+            // Close modals on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+                }
+            });
+
+            // Set default month filter to current month
+            const filtroMes = document.getElementById('filtro-vendas-mes');
+            if (filtroMes && !filtroMes.value) {
+                const now = new Date();
+                filtroMes.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            }
         });
 
     </script>

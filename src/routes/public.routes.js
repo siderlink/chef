@@ -40,25 +40,42 @@ module.exports = function (appContext) {
   });
 
   router.post('/api/public/geo-hit', express.json({ limit: '1mb' }), (req, res) => {
-    const payload = req.body || {};
-    const baseLat = -14.2350;
-    const baseLng = -51.9253;
-    const lat = baseLat + (Math.random() * 15 - 7.5);
-    const lng = baseLng + (Math.random() * 15 - 7.5);
-    
+    let payload = req.body || {};
+    if (typeof payload === 'string') {
+      try { payload = JSON.parse(payload); } catch(e) {}
+    }
+    const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1').split(',')[0].trim();
     const ioObj = typeof getIo === 'function' ? getIo() : null;
-    if (ioObj) {
-      ioObj.emit('geo_traffic_hit', {
+
+    let hit = null;
+    try {
+      const geoTrafficEngine = require('../../geo-traffic-engine');
+      hit = geoTrafficEngine.registerHit(payload.tipo || 'site', clientIp, {
+        path: payload.path || '/',
+        device: payload.userAgent ? (payload.userAgent.includes('Mobi') ? 'Mobile' : 'Desktop') : 'Desktop',
+        cidade: payload.cidade,
+        estado: payload.estado,
+        lat: payload.lat,
+        lng: payload.lng
+      }, ioObj);
+    } catch (e) {
+      // Fallback simples se houver falha no módulo
+      const baseLat = -14.2350;
+      const baseLng = -51.9253;
+      hit = {
         id: Date.now().toString() + Math.floor(Math.random() * 1000),
-        lat: lat,
-        lng: lng,
+        lat: baseLat + (Math.random() * 15 - 7.5),
+        lng: baseLng + (Math.random() * 15 - 7.5),
         tipo: payload.tipo || 'site',
         path: payload.path || '/',
+        cidade: 'São Paulo',
+        estado: 'SP',
         label: 'Acesso Público',
-        timestamp: Date.now()
-      });
+        timestamp: new Date().toISOString()
+      };
+      if (ioObj) ioObj.emit('geo_traffic_hit', hit);
     }
-    res.json({ ok: true });
+    res.json({ ok: true, hit: hit });
   });
 
   router.post('/api/monitor/cadastro-progresso', express.json(), (req, res) => {

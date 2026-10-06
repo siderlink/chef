@@ -865,7 +865,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalPayments = validPayments.reduce((acc, curr) => acc + curr.total, 0);
     const payContainer = document.getElementById('rep-pagamentos-container');
     if (validPayments.length === 0) {
-      payContainer.innerHTML = `<div style="text-align: center; color: gray; padding: 20px;">Nenhum faturamento registrado no período.</div>`;
+      payContainer.innerHTML = `<div style="text-align: center; color: var(--fin-text-muted); padding: 20px;">Nenhum faturamento registrado no período.</div>`;
     } else {
       const colors = {
         'Dinheiro': '#3ab55b',
@@ -873,24 +873,24 @@ document.addEventListener('DOMContentLoaded', () => {
         'Crédito': '#2d9cdb',
         'Cartão': '#2d9cdb',
         'Débito': '#00c49f',
-        'Na Conta': '#8e44ad',
-        'Fiado': '#8e44ad',
+        'Na Conta': '#a855f7',
+        'Fiado': '#a855f7',
         'Múltiplo': '#f2994a',
-        'Não Definido': '#bdbdbd'
+        'Não Definido': '#94a3b8'
       };
       payContainer.innerHTML = validPayments.map(p => {
         const pVal = Math.max(0, p.total);
         const pctNum = totalPayments > 0 ? (pVal / totalPayments) * 100 : 0;
         const pct = pctNum.toFixed(1);
         const widthPct = Math.min(100, Math.max(0, pctNum));
-        const color = colors[p.metodo] || '#666';
+        const color = colors[p.metodo] || '#fc4b15';
         return `
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #333;">
+          <div class="rep-pay-item">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--fin-text);">
               <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: ${color}; display: inline-block;"></span>${p.metodo}</span>
-              <span style="font-weight: 600;">${fmt(pVal)} (${pct}%)</span>
+              <span style="font-weight: 600; color: var(--fin-text);">${fmt(pVal)} <span style="font-weight: 400; color: var(--fin-text-muted);">(${pct}%)</span></span>
             </div>
-            <div style="width: 100%; height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden;">
+            <div class="rep-progress-track" style="width: 100%; height: 8px; background: var(--rep-track-bg, #f0f0f0); border-radius: 4px; overflow: hidden;">
               <div style="width: ${widthPct}%; height: 100%; background: ${color}; border-radius: 4px; transition: width 0.5s;"></div>
             </div>
           </div>
@@ -902,7 +902,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxVal = report.periodSales.reduce((acc, curr) => Math.max(acc, curr.val_total), 0) || 1;
     const chartContainer = document.getElementById('rep-grafico-container');
     if (report.periodSales.length === 0) {
-      chartContainer.innerHTML = `<div style="width: 100%; text-align: center; color: gray; margin-bottom: 20px; font-size: 13px;">Sem dados de vendas.</div>`;
+      chartContainer.innerHTML = `<div style="width: 100%; text-align: center; color: var(--fin-text-muted); margin-bottom: 20px; font-size: 13px;">Sem dados de vendas.</div>`;
     } else {
       chartContainer.innerHTML = report.periodSales.map(p => {
         const percent = (p.val_total / maxVal) * 80; // max 80% height
@@ -923,10 +923,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         return `
           <div style="flex: 1; min-width: 45px; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; position: relative;" title="${p.period}: ${fmt(p.val_total)} (${p.qty_total} itens)">
-            <div style="color: #4a5568; font-size: 10px; font-weight: 700; margin-bottom: 6px;">R$ ${Math.round(p.val_total)}</div>
+            <div style="color: var(--fin-text); font-size: 10px; font-weight: 700; margin-bottom: 6px;">R$ ${Math.round(p.val_total)}</div>
             <div style="${heightStyle} width: 60%; background: linear-gradient(180deg, #fc4b15 0%, #ff8e53 100%); border-radius: 6px 6px 0 0; box-shadow: 0 4px 6px -1px rgba(252, 75, 21, 0.15); transition: all 0.2s; cursor: pointer;" 
                  onmouseover="this.style.transform='scaleX(1.05)'; this.style.filter='brightness(1.1)';" onmouseout="this.style.transform='none'; this.style.filter='none';"></div>
-            <div style="font-size: 10px; color: #718096; font-weight: 500; margin-top: 8px; text-align: center; white-space: nowrap;">${cleanPeriod}</div>
+            <div style="font-size: 10px; color: var(--fin-text-muted); font-weight: 500; margin-top: 8px; text-align: center; white-space: nowrap;">${cleanPeriod}</div>
           </div>
         `;
       }).join('');
@@ -935,13 +935,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Render Products Table
     const prodTbody = document.getElementById('rep-tabela-produtos');
     if (report.soldItems.length === 0) {
-      prodTbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: gray;">Nenhum produto vendido no período.</td></tr>`;
+      prodTbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: var(--fin-text-muted);">Nenhum produto vendido no período.</td></tr>`;
     } else {
       prodTbody.innerHTML = report.soldItems.map(p => `
-        <tr style="border-bottom: 1px solid #eee;">
-          <td style="padding: 12px; font-weight: 500;">${p.productName}</td>
-          <td style="padding: 12px; text-align: center; font-weight: bold;">${p.qty}x</td>
-          <td style="padding: 12px; text-align: right; color: #3ab55b; font-weight: bold;">${fmt(p.valTotal)}</td>
+        <tr style="border-bottom: 1px solid var(--fin-border);">
+          <td style="padding: 12px; font-weight: 500; color: var(--fin-text);">${p.productName}</td>
+          <td style="padding: 12px; text-align: center; font-weight: bold; color: var(--fin-text);">${p.qty}x</td>
+          <td style="padding: 12px; text-align: right; color: #10b981; font-weight: bold;">${fmt(p.valTotal)}</td>
         </tr>
       `).join('');
     }
@@ -949,22 +949,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Render Detailed Orders Table
     const ordersTbody = document.getElementById('rep-tabela-pedidos');
     if (report.orders.length === 0) {
-      ordersTbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: gray;">Nenhum pedido correspondente.</td></tr>`;
+      ordersTbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: var(--fin-text-muted);">Nenhum pedido correspondente.</td></tr>`;
     } else {
       ordersTbody.innerHTML = report.orders.map(o => {
         const dateFormatted = new Date(o.createdAt).toLocaleString('pt-BR');
         return `
-          <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 12px; font-weight: bold;">#${o.id}</td>
-            <td style="padding: 12px;">${o.productName}</td>
-            <td style="padding: 12px; text-align: center; font-weight: bold;">${o.quantity}x</td>
-            <td style="padding: 12px; color: #555;">${o.localName}</td>
-            <td style="padding: 12px;">${o.clientName || '-'}</td>
-            <td style="padding: 12px; color: gray;">${o.userName}</td>
-            <td style="padding: 12px; color: gray;">${dateFormatted}</td>
-            <td style="padding: 12px;">${o.paymentMethod || 'N/A'}</td>
-            <td style="padding: 12px; text-align: right; font-weight: bold; color: #3ab55b;">${fmt(parseFloat(o.total))}</td>
-            <td style="padding: 12px;"><span style="background: ${o.status === 'Finalizado' ? '#e6f4ea' : '#fce8e6'}; color: ${o.status === 'Finalizado' ? '#137333' : '#c5221f'}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">${o.status}</span></td>
+          <tr style="border-bottom: 1px solid var(--fin-border);">
+            <td style="padding: 12px; font-weight: bold; color: var(--fin-text);">#${o.id}</td>
+            <td style="padding: 12px; color: var(--fin-text);">${o.productName}</td>
+            <td style="padding: 12px; text-align: center; font-weight: bold; color: var(--fin-text);">${o.quantity}x</td>
+            <td style="padding: 12px; color: var(--fin-text-muted);">${o.localName}</td>
+            <td style="padding: 12px; color: var(--fin-text);">${o.clientName || '-'}</td>
+            <td style="padding: 12px; color: var(--fin-text-muted);">${o.userName}</td>
+            <td style="padding: 12px; color: var(--fin-text-muted);">${dateFormatted}</td>
+            <td style="padding: 12px; color: var(--fin-text);">${o.paymentMethod || 'N/A'}</td>
+            <td style="padding: 12px; text-align: right; font-weight: bold; color: #10b981;">${fmt(parseFloat(o.total))}</td>
+            <td style="padding: 12px;"><span class="rep-status-badge ${o.status === 'Finalizado' ? 'status-ok' : 'status-cancel'}">${o.status}</span></td>
           </tr>
         `;
       }).join('');
@@ -974,18 +974,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const catContainer = document.getElementById('rep-categorias-container');
     if (catContainer) {
       if (!report.categorySales || report.categorySales.length === 0) {
-        catContainer.innerHTML = `<div style="color:gray; font-size:12px; font-style:italic;">Nenhuma venda registrada.</div>`;
+        catContainer.innerHTML = `<div style="color: var(--fin-text-muted); font-size:12px; font-style:italic;">Nenhuma venda registrada.</div>`;
       } else {
         const totalCat = report.categorySales.reduce((acc, curr) => acc + curr.valTotal, 0) || 1;
         catContainer.innerHTML = report.categorySales.map(c => {
           const pct = ((c.valTotal / totalCat) * 100).toFixed(1);
           return `
             <div>
-              <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-                <span>${c.categoria} <span style="color:gray; font-size:10px;">(${c.qty}x)</span></span>
-                <span style="font-weight:600; color:#333;">${fmt(c.valTotal)} (${pct}%)</span>
+              <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color: var(--fin-text);">
+                <span>${c.categoria} <span style="color: var(--fin-text-muted); font-size:10px;">(${c.qty}x)</span></span>
+                <span style="font-weight:600; color: var(--fin-text);">${fmt(c.valTotal)} <span style="font-weight:400; color: var(--fin-text-muted);">(${pct}%)</span></span>
               </div>
-              <div style="width:100%; height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden;">
+              <div class="rep-progress-track" style="width:100%; height:6px; background: var(--rep-track-bg, #f0f0f0); border-radius:3px; overflow:hidden;">
                 <div style="width:${pct}%; height:100%; background:#fc4b15; border-radius:3px;"></div>
               </div>
             </div>
@@ -998,7 +998,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const secContainer = document.getElementById('rep-setores-container');
     if (secContainer) {
       if (!report.sectorSales || report.sectorSales.length === 0) {
-        secContainer.innerHTML = `<div style="color:gray; font-size:12px; font-style:italic;">Nenhuma venda registrada.</div>`;
+        secContainer.innerHTML = `<div style="color: var(--fin-text-muted); font-size:12px; font-style:italic;">Nenhuma venda registrada.</div>`;
       } else {
         const totalSec = report.sectorSales.reduce((acc, curr) => acc + curr.valTotal, 0) || 1;
         secContainer.innerHTML = report.sectorSales.map(s => {
@@ -1006,11 +1006,11 @@ document.addEventListener('DOMContentLoaded', () => {
           const color = s.setor === 'Bar' ? '#2d9cdb' : '#e67e22';
           return `
             <div>
-              <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-                <span>${s.setor} <span style="color:gray; font-size:10px;">(${s.qty}x)</span></span>
-                <span style="font-weight:600; color:#333;">${fmt(s.valTotal)} (${pct}%)</span>
+              <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color: var(--fin-text);">
+                <span>${s.setor} <span style="color: var(--fin-text-muted); font-size:10px;">(${s.qty}x)</span></span>
+                <span style="font-weight:600; color: var(--fin-text);">${fmt(s.valTotal)} <span style="font-weight:400; color: var(--fin-text-muted);">(${pct}%)</span></span>
               </div>
-              <div style="width:100%; height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden;">
+              <div class="rep-progress-track" style="width:100%; height:6px; background: var(--rep-track-bg, #f0f0f0); border-radius:3px; overflow:hidden;">
                 <div style="width:${pct}%; height:100%; background:${color}; border-radius:3px;"></div>
               </div>
             </div>
@@ -1023,7 +1023,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const garconsContainer = document.getElementById('rep-garcons-container');
     if (garconsContainer) {
       if (!report.waiterRanking || report.waiterRanking.length === 0) {
-        garconsContainer.innerHTML = `<div style="color:gray; font-size:12px; font-style:italic;">Nenhum dado de garçom disponível.</div>`;
+        garconsContainer.innerHTML = `<div style="color: var(--fin-text-muted); font-size:12px; font-style:italic;">Nenhum dado de garçom disponível.</div>`;
       } else {
         const maxSales = report.waiterRanking.reduce((acc, curr) => Math.max(acc, curr.totalSales), 0) || 1;
         garconsContainer.innerHTML = report.waiterRanking.map((g, idx) => {
@@ -1031,12 +1031,12 @@ document.addEventListener('DOMContentLoaded', () => {
           const icon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}º`;
           return `
             <div>
-              <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
-                <span style="font-weight:500;">${icon} ${g.garcom} <span style="color:gray; font-size:10px; font-weight:normal;">(${g.totalOrders} pedidos)</span></span>
-                <span style="font-weight:700; color:#8e44ad;">${fmt(g.totalSales)}</span>
+              <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; color: var(--fin-text);">
+                <span style="font-weight:500;">${icon} ${g.garcom} <span style="color: var(--fin-text-muted); font-size:10px; font-weight:normal;">(${g.totalOrders} pedidos)</span></span>
+                <span style="font-weight:700; color: #a855f7;">${fmt(g.totalSales)}</span>
               </div>
-              <div style="width:100%; height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden;">
-                <div style="width:${pct}%; height:100%; background:#8e44ad; border-radius:3px;"></div>
+              <div class="rep-progress-track" style="width:100%; height:6px; background: var(--rep-track-bg, #f0f0f0); border-radius:3px; overflow:hidden;">
+                <div style="width:${pct}%; height:100%; background:#a855f7; border-radius:3px;"></div>
               </div>
             </div>
           `;
@@ -1048,18 +1048,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const vipsContainer = document.getElementById('rep-clientes-vip-container');
     if (vipsContainer) {
       if (!report.clientRanking || report.clientRanking.length === 0) {
-        vipsContainer.innerHTML = `<div style="color:gray; font-size:12px; font-style:italic;">Nenhum cliente registrado.</div>`;
+        vipsContainer.innerHTML = `<div style="color: var(--fin-text-muted); font-size:12px; font-style:italic;">Nenhum cliente registrado.</div>`;
       } else {
         const maxSales = report.clientRanking.reduce((acc, curr) => Math.max(acc, curr.totalSales), 0) || 1;
         vipsContainer.innerHTML = report.clientRanking.slice(0, 5).map((c, idx) => {
           const pct = ((c.totalSales / maxSales) * 100).toFixed(1);
           return `
             <div>
-              <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-                <span>${idx + 1}º ${c.cliente} <span style="color:gray; font-size:10px;">(${c.totalOrders} pedidos)</span></span>
+              <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color: var(--fin-text);">
+                <span>${idx + 1}º ${c.cliente} <span style="color: var(--fin-text-muted); font-size:10px;">(${c.totalOrders} pedidos)</span></span>
                 <span style="font-weight:600; color:#f2994a;">${fmt(c.totalSales)}</span>
               </div>
-              <div style="width:100%; height:4px; background:#f0f0f0; border-radius:2px; overflow:hidden;">
+              <div class="rep-progress-track" style="width:100%; height:4px; background: var(--rep-track-bg, #f0f0f0); border-radius:2px; overflow:hidden;">
                 <div style="width:${pct}%; height:100%; background:#f2994a; border-radius:2px;"></div>
               </div>
             </div>
@@ -1086,18 +1086,22 @@ document.addEventListener('DOMContentLoaded', () => {
   btnSubProd.addEventListener('click', () => {
     containerProd.style.display = 'block';
     containerPed.style.display = 'none';
+    btnSubProd.classList.add('active');
+    btnSubPed.classList.remove('active');
     btnSubProd.style.color = '#fc4b15';
     btnSubProd.style.borderBottom = '2px solid #fc4b15';
-    btnSubPed.style.color = '#777';
+    btnSubPed.style.color = 'var(--fin-text-muted, #94a3b8)';
     btnSubPed.style.borderBottom = '2px solid transparent';
   });
 
   btnSubPed.addEventListener('click', () => {
     containerProd.style.display = 'none';
     containerPed.style.display = 'block';
+    btnSubPed.classList.add('active');
+    btnSubProd.classList.remove('active');
     btnSubPed.style.color = '#fc4b15';
     btnSubPed.style.borderBottom = '2px solid #fc4b15';
-    btnSubProd.style.color = '#777';
+    btnSubProd.style.color = 'var(--fin-text-muted, #94a3b8)';
     btnSubProd.style.borderBottom = '2px solid transparent';
   });
 
