@@ -3,6 +3,8 @@ const fs = require('fs');
 const filesToSync = [
   'super-admin.html',
   'super-admin.js',
+  'super-admin-script.js',
+  'guia-sync.html',
   'hub-marketing.html',
   'kds.html',
   'importar-xml.html',

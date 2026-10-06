@@ -2428,6 +2428,40 @@ module.exports = function (app, masterDb, sqlite3, options) {
     }
   });
 
+  app.get('/api/sync/installers/Instalador-ChefSync.exe', (req, res) => {
+    const candidates = [
+      path.join(__dirname, '..', 'installer', 'output', 'Instalador-ChefSync.exe'),
+      path.join(__dirname, '..', 'Instalador-ChefSync.exe')
+    ];
+    for (const p of candidates) {
+      if (fsSync.existsSync(p)) {
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Disposition', 'attachment; filename="Instalador-ChefSync.exe"');
+        return res.sendFile(p);
+      }
+    }
+    res.status(404).send('Instalador Executavel do Sync nao encontrado. Execute npm run build:sync para compilar.');
+  });
+
+  app.get('/api/sync/installers/windows.exe', (req, res) => {
+    res.redirect('/api/sync/installers/Instalador-ChefSync.exe');
+  });
+
+  app.get('/api/sync/installers/ChefSync-Distribuicao.zip', (req, res) => {
+    const candidates = [
+      path.join(__dirname, '..', 'installer', 'output', 'ChefSync-Distribuicao.zip'),
+      path.join(__dirname, '..', 'ChefSync-Distribuicao.zip')
+    ];
+    for (const p of candidates) {
+      if (fsSync.existsSync(p)) {
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', 'attachment; filename="ChefSync-Distribuicao.zip"');
+        return res.sendFile(p);
+      }
+    }
+    res.status(404).send('Pacote ZIP de distribuicao do Sync nao encontrado. Execute npm run build:sync.');
+  });
+
   // ═══════════════════════════════════════════════════════════════
   // FUNCIONALIDADES POR RESTAURANTE (restaurant-level feature toggles)
   // ═══════════════════════════════════════════════════════════════

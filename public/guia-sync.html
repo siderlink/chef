@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guia de Instalação — Chef Cozinha Sync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --bg: #090d14;
+      --card-bg: #111723;
+      --card-border: #1e293b;
+      --primary: #fc4b15;
+      --primary-hover: #e03d0e;
+      --accent-green: #10b981;
+      --accent-blue: #3b82f6;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    header {
+      background: rgba(17, 23, 35, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 1.1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--primary), #ff8c00);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 4px 15px rgba(252, 75, 21, 0.35);
+    }
+    .brand h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .container {
+      max-width: 900px;
+      width: 92%;
+      margin: 2.5rem auto 4rem auto;
+      flex: 1;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--accent-green);
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .hero h2 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #fff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .key-box {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.04));
+      border: 1.5px solid rgba(59, 130, 246, 0.3);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 2.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .key-info h4 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent-blue);
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+    .key-value {
+      font-family: var(--mono);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+    .btn-copy-key {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-copy-key:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .cta-downloads {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+    .btn-main-download {
+      background: linear-gradient(135deg, var(--primary), #e03d0e);
+      color: #fff;
+      text-decoration: none;
+      padding: 1rem 2.2rem;
+      border-radius: 12px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(252, 75, 21, 0.4);
+      transition: all 0.2s;
+    }
+    .btn-main-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 35px rgba(252, 75, 21, 0.55);
+    }
+    .btn-secondary-download {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      color: var(--text);
+      text-decoration: none;
+      padding: 1rem 1.8rem;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+    .btn-secondary-download:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    .step-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.8rem;
+      position: relative;
+      transition: all 0.2s;
+    }
+    .step-card:hover {
+      border-color: rgba(252, 75, 21, 0.4);
+      transform: translateY(-3px);
+    }
+    .step-num {
+      width: 36px; height: 36px;
+      background: rgba(252, 75, 21, 0.15);
+      border: 1px solid rgba(252, 75, 21, 0.4);
+      color: var(--primary);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      margin-bottom: 1.2rem;
+    }
+    .step-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+    .step-card p {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .diag-box {
+      background: rgba(17, 23, 35, 0.6);
+      border: 1px dashed var(--card-border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .diag-icon {
+      font-size: 2rem;
+      color: var(--accent-green);
+    }
+    .diag-content h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .diag-content p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .footer-support {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.8rem;
+      text-align: center;
+    }
+    .footer-support h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .footer-support p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-bottom: 1.2rem;
+    }
+    .btn-whats {
+      background: #22c55e;
+      color: #fff;
+      text-decoration: none;
+      padding: 0.8rem 1.8rem;
+      border-radius: 10px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-whats:hover {
+      background: #16a34a;
+      transform: translateY(-2px);
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      display: none;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/" class="brand">
+      <div class="brand-icon">🍳</div>
+      <div>
+        <h1>Chef Cozinha</h1>
+      </div>
+    </a>
+    <span style="font-size:0.85rem; color:var(--text-muted); font-weight:600;">
+      <i class="fa-solid fa-shield-halved" style="color:var(--accent-green); margin-right:4px;"></i> Canal de Instalação Oficial
+    </span>
+  </header>
+
+  <div class="container">
+    
+    <div class="hero">
+      <div class="hero-badge">
+        <i class="fa-solid fa-bolt"></i> Instalação Expressa em 1 Minuto
+      </div>
+      <h2>Instalador do Chef Cozinha Sync</h2>
+      <p>
+        O Sync Agent garante sincronização contínua de comandas, pedidos e pagamentos locais com o seu painel em nuvem, garantindo operação 100% ininterrupta mesmo se a internet cair.
+      </p>
+    </div>
+
+    <!-- BOX DE CHAVE DE ATIVAÇÃO -->
+    <div class="key-box" id="key-box" style="display:none;">
+      <div class="key-info">
+        <h4>Sua Chave de Ativação do Restaurante</h4>
+        <div class="key-value" id="key-display">CHEF-XXXX-YYYY</div>
+      </div>
+      <button class="btn-copy-key" onclick="copiarChave()">
+        <i class="fa-solid fa-copy"></i> Copiar Chave
+      </button>
+    </div>
+
+    <!-- BOTÕES PRINCIPAIS DE DOWNLOAD -->
+    <div class="cta-downloads">
+      <a id="btn-download-exe" href="/api/sync/installers/Instalador-ChefSync.exe" download class="btn-main-download">
+        <i class="fa-brands fa-windows" style="font-size:1.4rem;"></i>
+        <span>Baixar Instalador Automático (.EXE)</span>
+      </a>
+      <a id="btn-download-zip" href="/api/sync/installers/ChefSync-Distribuicao.zip" download class="btn-secondary-download">
+        <i class="fa-solid fa-file-zipper" style="font-size:1.2rem;"></i>
+        <span>Baixar Pacote Completo (.ZIP)</span>
+      </a>
+    </div>
+
+    <!-- 4 PASSOS ILUSTRADOS -->
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Fazer o Download</h3>
+        <p>Clique no botão <strong>Baixar Instalador Automático (.EXE)</strong> acima no computador principal (caixa ou servidor) do restaurante.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>Executar o Instalador</h3>
+        <p>Abra o arquivo <strong>Instalador-ChefSync.exe</strong> baixado e clique em <strong>Instalar</strong>. O processo leva menos de 10 segundos.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>Vincular a Chave</h3>
+        <p>Ao abrir a janela do Chef Cozinha Sync, confirme ou cole a chave de ativação informada no topo desta página e clique em <strong>Testar & Salvar</strong>.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <h3>Operação Segura</h3>
+        <p>O ícone do Chef Cozinha ficará ativo na bandeja ao lado do relógio do Windows, sincronizando tudo em segundo plano automaticamente.</p>
+      </div>
+    </div>
+
+    <!-- DIAGNÓSTICO DO AMBIENTE LOCAL -->
+    <div class="diag-box">
+      <div class="diag-icon">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div class="diag-content">
+        <h4>Compatibilidade Garantida</h4>
+        <p>Suporta Windows 7 SP1, Windows 8, 8.1, Windows 10 e Windows 11 (32 e 64 bits). Não requer instalação prévia de banco de dados ou softwares adicionais.</p>
+      </div>
+    </div>
+
+    <!-- SUPORTE -->
+    <div class="footer-support">
+      <h3>Precisa de auxílio na instalação?</h3>
+      <p>Nossa equipe técnica pode acompanhar ou realizar a ativação remota via AnyDesk / TeamViewer com você.</p>
+      <a href="https://wa.me/?text=Ol%C3%A1!%20Estou%20instalando%20o%20Chef%20Cozinha%20Sync%20e%20preciso%20de%20ajuda%20com%20minha%20chave." target="_blank" class="btn-whats">
+        <i class="fa-brands fa-whatsapp" style="font-size:1.2rem;"></i> Falar com o Suporte Técnico
+      </a>
+    </div>
+
+  </div>
+
+  <div id="toast">Chave copiada com sucesso!</div>
+
+  <script>
+    // Recupera parâmetros da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const chave = urlParams.get('chave') || urlParams.get('key') || '';
+
+    if (chave) {
+      document.getElementById('key-box').style.display = 'flex';
+      document.getElementById('key-display').textContent = chave;
+      
+      // Ajusta links de download com a chave
+      document.getElementById('btn-download-exe').href = '/api/sync/installers/Instalador-ChefSync.exe?key=' + encodeURIComponent(chave);
+    }
+
+    function copiarChave() {
+      if (!chave) return;
+      navigator.clipboard.writeText(chave).then(() => {
+        mostrarToast('Chave copiada para a área de transferência!');
+      }).catch(() => {
+        const temp = document.createElement('textarea');
+        temp.value = chave;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        mostrarToast('Chave copiada!');
+      });
+    }
+
+    function mostrarToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+  </script>
+</body>
+</html>

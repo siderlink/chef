@@ -3403,7 +3403,49 @@
 
               <!-- CONTEÚDO WINDOWS -->
               <div id="content-os-win" class="content-os-box">
-                <div style="background:rgba(0,164,239,0.06); border:1px solid rgba(0,164,239,0.2); border-radius:8px; padding:12px; margin-bottom:1rem;">
+                <!-- OPCAO 1: EXECUTAVEL DE 1 CLIQUE -->
+                <div style="background:linear-gradient(135deg, rgba(34,197,94,0.08), rgba(0,164,239,0.06)); border:1.5px solid rgba(34,197,94,0.3); border-radius:10px; padding:14px; margin-bottom:1rem;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+                    <div>
+                      <span style="font-weight:800; font-size:14px; color:#4ade80; display:flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-circle-check"></i> Opção Recomendada: Instalador Executável (.EXE)
+                      </span>
+                      <small style="color:var(--text-muted); font-size:11.5px;">Instalação com 1 clique no Windows (Node.js e agente embutidos)</small>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                      <a id="btn-download-exe" href="/api/sync/installers/Instalador-ChefSync.exe" download class="btn-action" style="background:#16a34a; color:#fff; font-size:12px; font-weight:700; padding:8px 16px; border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(22,163,74,0.3);">
+                        <i class="fa-solid fa-download"></i> Baixar Instalador-ChefSync.exe
+                      </a>
+                      <a id="btn-download-zip" href="/api/sync/installers/ChefSync-Distribuicao.zip" download class="btn-action" style="background:rgba(255,255,255,0.08); border:1px solid var(--border-color); color:#fff; font-size:12px; font-weight:700; padding:8px 14px; border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-file-zipper"></i> Pacote .ZIP Completo
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- OPCAO 2: GUIA PASSO A PASSO PARA O RESTAURANTE -->
+                <div style="background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.25); border-radius:10px; padding:14px; margin-bottom:1rem;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                    <span style="font-weight:700; font-size:13px; color:#60a5fa;">
+                      <i class="fa-solid fa-share-nodes"></i> Opção 2: Encaminhar Guia Passo a Passo para o Restaurante
+                    </span>
+                    <div style="display:flex; gap:6px;">
+                      <button id="btn-copiar-guia" class="btn-action" onclick="copiarLinkGuiaRestaurante()" style="background:#2563eb; color:#fff; font-size:11.5px; font-weight:700; padding:6px 12px; border-radius:6px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-copy"></i> Copiar Link
+                      </button>
+                      <button id="btn-whats-guia" class="btn-action" onclick="enviarGuiaWhatsApp()" style="background:#22c55e; color:#fff; font-size:11.5px; font-weight:700; padding:6px 12px; border-radius:6px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="fa-brands fa-whatsapp"></i> Enviar no WhatsApp
+                      </button>
+                    </div>
+                  </div>
+                  <input type="text" id="link-guia-restaurante" readonly style="width:100%; padding:8px 10px; font-family:monospace; font-size:12px; border-radius:6px; border:1px solid var(--border-color); background:rgba(0,0,0,0.4); color:#93c5fd;">
+                  <small style="color:var(--text-muted); font-size:11px; display:block; margin-top:4px;">
+                    O restaurante acessa uma página interativa pronta com os botões de download e os 4 passos de instalação com a chave dele.
+                  </small>
+                </div>
+
+                <!-- OPCAO 3: SCRIPT .BAT PORTATIL -->
+                <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:8px; padding:12px; margin-bottom:1rem;">
                   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
                     <span style="font-weight:700; font-size:13px; color:#38bdf8;">
                       <i class="fa-solid fa-file-arrow-down"></i> Opção 1: Download do Instalador (.BAT)
