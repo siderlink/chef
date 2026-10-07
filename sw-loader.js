@@ -1,47 +1,138 @@
-const CACHE_NAME = 'chef-pwa-loader-v1';
-const ASSETS = [
+/**
+ * ══════════════════════════════════════════════════════════════════
+ * 📱 CHEF SYNC — SERVICE WORKER UNIFICADO DE SHELL PWA (v2.0)
+ * ══════════════════════════════════════════════════════════════════
+ * - Padrão W3C PWA & Google Chrome PWA Checklist
+ * - Stale-While-Revalidate para cascas de tela (Carregamento instantâneo)
+ * - Cache-First para fontes, ícones e bibliotecas estáticas
+ * - Bypass total para WebSockets (Socket.IO) e chamadas dinâmicas (/api)
+ * - Resiliência e feedback offline automático
+ */
+
+const CACHE_NAME = 'chef-pwa-shell-v2';
+
+const PRECACHE_ASSETS = [
   '/central-pwa.html',
+  '/pwa-garcom.html',
+  '/pwa-cozinha.html',
+  '/pwa-motoboy.html',
+  '/pwa-pdv.html',
+  '/pwa-gerente.html',
   '/pwa-loader.html',
+  '/pwa-colaborador.html',
   '/manifest-central.json',
-  '/vendor/phosphor/src/bold/style.css'
+  '/manifest-garcom.json',
+  '/manifest-cozinha.json',
+  '/manifest-motoboy.json',
+  '/manifest-pdv.json',
+  '/manifest-gerente.json',
+  '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-256.png',
+  '/icons/icon-512.png',
+  '/icon.ico',
+  '/vendor/phosphor/src/bold/style.css',
+  '/vendor/phosphor/src/regular/style.css',
+  '/vendor/phosphor/src/fill/style.css',
+  '/vendor/html5-qrcode/html5-qrcode.min.js'
 ];
 
-self.addEventListener('install', event => {
+// Instalação do Service Worker
+self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS.map(url => new Request(url, { cache: 'reload' })));
-    }).catch(err => console.log('SW Install Error:', err))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(
+        PRECACHE_ASSETS.map((url) => new Request(url, { cache: 'reload' }))
+      ).catch((err) => {
+        console.warn('[SW-Chef] Precache parcial concluído:', err);
+      });
+    })
   );
 });
 
-self.addEventListener('activate', event => {
-  event.waitUntil(clients.claim());
+// Ativação e limpeza de versões antigas do cache
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-    ))
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys
+          .filter((k) => k !== CACHE_NAME)
+          .map((k) => {
+            console.log('[SW-Chef] Removendo cache legado:', k);
+            return caches.delete(k);
+          })
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-  
-  // Apenas intercepta as rotas do Loader PWA
-  if (ASSETS.includes(url.pathname)) {
+// Estratégia de Fetch inteligente
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+
+  // 1. Ignora WebSockets e APIs dinâmicas
+  if (url.pathname.startsWith('/socket.io/') || url.pathname.startsWith('/api/')) {
+    return;
+  }
+
+  // 2. Recursos Estáticos de Terceiros e Fontes Google: Cache-First
+  if (
+    url.hostname.includes('googleapis.com') ||
+    url.hostname.includes('gstatic.com') ||
+    url.pathname.endsWith('.png') ||
+    url.pathname.endsWith('.jpg') ||
+    url.pathname.endsWith('.svg') ||
+    url.pathname.endsWith('.ico') ||
+    url.pathname.endsWith('.woff2') ||
+    url.pathname.endsWith('.woff') ||
+    url.pathname.endsWith('.ttf')
+  ) {
     event.respondWith(
-      caches.match(event.request, { ignoreSearch: true }).then(response => {
-        // Retorna do cache se tiver, caso contrário busca da rede e atualiza
-        const fetchPromise = fetch(event.request).then(networkResponse => {
-          if (networkResponse.ok) {
-            const cacheCopy = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, cacheCopy));
+      caches.match(req).then((cached) => {
+        if (cached) return cached;
+        return fetch(req).then((networkRes) => {
+          if (networkRes && networkRes.ok) {
+            const clone = networkRes.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(req, clone));
           }
-          return networkResponse;
-        }).catch(() => {});
-        
-        return response || fetchPromise;
+          return networkRes;
+        }).catch(() => cached);
       })
     );
+    return;
+  }
+
+  // 3. Páginas Shell do PWA: Stale-While-Revalidate
+  const isPwaShell = PRECACHE_ASSETS.some((asset) => url.pathname.endsWith(asset) || url.pathname === asset);
+  if (isPwaShell || url.pathname.startsWith('/pwa-')) {
+    event.respondWith(
+      caches.match(req, { ignoreSearch: true }).then((cached) => {
+        const fetchPromise = fetch(req).then((networkRes) => {
+          if (networkRes && networkRes.ok) {
+            const clone = networkRes.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(req, clone));
+          }
+          return networkRes;
+        }).catch((err) => {
+          console.warn('[SW-Chef] Falha na rede para shell PWA:', err);
+          return null;
+        });
+
+        // Retorna o cache de imediato se disponível, ou aguarda a rede
+        return cached || fetchPromise;
+      })
+    );
+    return;
+  }
+});
+
+// Suporte para mensagem de SkipWaiting
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.action === 'skipWaiting') {
+    self.skipWaiting();
   }
 });

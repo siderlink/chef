@@ -2,94 +2,592 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Central de Apps (PWA) - Chef Cozinha</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0f19">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Chef Apps">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="icon" href="/icon.ico">
+  <title>Central de Apps PWA — Chef Cozinha</title>
+  
   <link rel="manifest" href="/manifest-central.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+
   <style>
     :root {
-      --bg: #0f172a; --panel: #1e293b; --border: #334155;
-      --text: #f8fafc; --muted: #94a3b8;
-      --primary: #3b82f6; --success: #22c55e;
+      --bg: #0b0f19;
+      --card: #121927;
+      --card-hover: #182236;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.2);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
-    body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-    .header { text-align: center; margin-bottom: 40px; margin-top: 20px; }
-    .header h1 { font-family: 'Outfit', sans-serif; font-size: 2.5rem; margin: 0; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .header p { color: var(--muted); margin-top: 8px; font-size: 1.1rem; }
-    
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; max-width: 1000px; }
-    
-    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px; text-align: center; transition: 0.3s; position: relative; overflow: hidden; }
-    .card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 30px rgba(59,130,246,0.15); }
-    
-    .icon-wrapper { width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px; background: rgba(255,255,255,0.05); }
-    .card.garcom .icon-wrapper { color: #f59e0b; background: rgba(245,158,11,0.1); }
-    .card.cozinha .icon-wrapper { color: #ef4444; background: rgba(239,68,68,0.1); }
-    .card.motoboy .icon-wrapper { color: #22c55e; background: rgba(34,197,94,0.1); }
-    .card.caixa .icon-wrapper { color: #3b82f6; background: rgba(59,130,246,0.1); }
-    .card.gerente .icon-wrapper { color: #8b5cf6; background: rgba(139,92,246,0.1); }
 
-    .card h3 { margin: 0 0 8px 0; font-family: 'Outfit', sans-serif; font-size: 1.4rem; }
-    .card p { color: var(--muted); font-size: 0.9rem; line-height: 1.4; margin-bottom: 20px; min-height: 40px; }
-    
-    .btn-install { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
-    .btn-install:hover { filter: brightness(1.1); }
-    .btn-install:active { transform: scale(0.95); }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: calc(var(--safe-top) + 24px) 20px calc(var(--safe-bottom) + 32px) 20px;
+      touch-action: manipulation;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Top Header */
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+      max-width: 600px;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    /* PWA Install Banner */
+    #pwa-install-banner {
+      display: none;
+      width: 100%;
+      max-width: 640px;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 18px;
+      padding: 16px 20px;
+      margin-bottom: 28px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      backdrop-filter: blur(10px);
+    }
+
+    .banner-text h4 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+
+    .banner-text p {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    .btn-banner-install {
+      background: #ffffff;
+      color: #0b0f19;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: transform 0.15s;
+    }
+    .btn-banner-install:active { transform: scale(0.96); }
+
+    /* Quick Pairing Strip */
+    .pairing-strip {
+      width: 100%;
+      max-width: 640px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 18px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .pairing-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .pairing-info i { font-size: 20px; color: #10b981; }
+
+    .btn-scan-global {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+    .btn-scan-global:active { transform: scale(0.96); background: rgba(255,255,255,0.15); }
+
+    /* Scanner Modal Overlay */
+    #qr-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .qr-modal-card {
+      width: 100%;
+      max-width: 360px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+    }
+
+    #qr-reader-hub {
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      margin: 16px 0;
+      border: 2px solid var(--primary);
+    }
+
+    /* Grid de Aplicativos */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 20px;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-hover);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .icon-wrapper {
+      width: 60px;
+      height: 60px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+    }
+
+    .category-badge {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* Cores Temáticas Específicas */
+    .card.garcom .icon-wrapper { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1.5px solid rgba(245, 158, 11, 0.3); }
+    .card.garcom .category-badge { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .card.garcom .btn-open { background: #f59e0b; color: #0b0f19; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.25); }
+
+    .card.cozinha .icon-wrapper { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1.5px solid rgba(239, 68, 68, 0.3); }
+    .card.cozinha .category-badge { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    .card.cozinha .btn-open { background: #ef4444; color: #ffffff; box-shadow: 0 6px 16px rgba(239, 68, 68, 0.25); }
+
+    .card.motoboy .icon-wrapper { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1.5px solid rgba(34, 197, 94, 0.3); }
+    .card.motoboy .category-badge { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+    .card.motoboy .btn-open { background: #22c55e; color: #0b0f19; box-shadow: 0 6px 16px rgba(34, 197, 94, 0.25); }
+
+    .card.pdv .icon-wrapper { background: rgba(252, 75, 21, 0.12); color: #fc4b15; border: 1.5px solid rgba(252, 75, 21, 0.3); }
+    .card.pdv .category-badge { background: rgba(252, 75, 21, 0.1); color: #fc4b15; }
+    .card.pdv .btn-open { background: #fc4b15; color: #ffffff; box-shadow: 0 6px 16px rgba(252, 75, 21, 0.25); }
+
+    .card.gerente .icon-wrapper { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; border: 1.5px solid rgba(139, 92, 246, 0.3); }
+    .card.gerente .category-badge { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+    .card.gerente .btn-open { background: #8b5cf6; color: #ffffff; box-shadow: 0 6px 16px rgba(139, 92, 246, 0.25); }
+
+    .card.colaborador .icon-wrapper { background: rgba(99, 102, 241, 0.12); color: #6366f1; border: 1.5px solid rgba(99, 102, 241, 0.3); }
+    .card.colaborador .category-badge { background: rgba(99, 102, 241, 0.1); color: #818cf8; }
+    .card.colaborador .btn-open { background: #6366f1; color: #ffffff; box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25); }
+
+    .card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+      margin-bottom: 22px;
+      flex: 1;
+    }
+
+    .btn-open {
+      text-decoration: none;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: filter 0.15s, transform 0.15s;
+    }
+    .btn-open:active {
+      transform: scale(0.97);
+      filter: brightness(0.9);
+    }
+
+    /* Footer info */
+    .footer-note {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+      .header h1 { font-size: 2rem; }
+      .grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <h1>Central de PWAs</h1>
-    <p>Escolha o módulo e instale o App no seu dispositivo</p>
-  </div>
-
-  <div class="grid">
-    <div class="card garcom">
-      <div class="icon-wrapper"><i class="ph-bold ph-notebook"></i></div>
-      <h3>App do Garçom</h3>
-      <p>Lançamento de pedidos, mesas e comandas.</p>
-      <a href="/pwa-garcom.html" class="btn-install">
-        <i class="ph-bold ph-arrow-circle-right"></i> Abrir & Instalar
-      </a>
-    </div>
-
-    <div class="card cozinha">
-      <div class="icon-wrapper"><i class="ph-bold ph-cooking-pot"></i></div>
-      <h3>KDS Cozinha</h3>
-      <p>Fila de produção e roteamento de pratos.</p>
-      <a href="/pwa-cozinha.html" class="btn-install">
-        <i class="ph-bold ph-arrow-circle-right"></i> Abrir & Instalar
-      </a>
-    </div>
-
-    <div class="card motoboy">
-      <div class="icon-wrapper"><i class="ph-bold ph-motorcycle"></i></div>
-      <h3>App do Motoboy</h3>
-      <p>Entregas e GPS em tempo real.</p>
-      <a href="/pwa-motoboy.html" class="btn-install">
-        <i class="ph-bold ph-arrow-circle-right"></i> Abrir & Instalar
-      </a>
-    </div>
-
-    <div class="card caixa">
-      <div class="icon-wrapper"><i class="ph-bold ph-desktop"></i></div>
-      <h3>PDV Mobile</h3>
-      <p>Fechamento de contas e NFC-e.</p>
-      <a href="/pwa-pdv.html" class="btn-install">
-        <i class="ph-bold ph-arrow-circle-right"></i> Abrir & Instalar
-      </a>
-    </div>
+  <div class="container">
     
-    <div class="card gerente">
-      <div class="icon-wrapper"><i class="ph-bold ph-chart-line-up"></i></div>
-      <h3>Painel Gerencial</h3>
-      <p>Dashboard de vendas e DRE.</p>
-      <a href="/pwa-gerente.html" class="btn-install">
-        <i class="ph-bold ph-arrow-circle-right"></i> Abrir & Instalar
-      </a>
+    <!-- Cabeçalho -->
+    <div class="header">
+      <div class="header-badge">
+        <i class="ph-bold ph-devices"></i>
+        <span>Ecossistema Multi-Dispositivo</span>
+      </div>
+      <h1>Central de Apps PWA</h1>
+      <p>Instale os aplicativos nativos do Chef Cozinha em qualquer smartphone, tablet ou computador da sua equipe.</p>
+    </div>
+
+    <!-- Banner PWA Global -->
+    <div id="pwa-install-banner">
+      <div class="banner-text">
+        <h4>Instalar Portal de Apps</h4>
+        <p id="pwa-banner-subtitle">Adicione esta central à sua tela de início para acesso rápido a todos os módulos.</p>
+      </div>
+      <button class="btn-banner-install" id="btn-install-central" onclick="instalarCentralPWA()">
+        <i class="ph-bold ph-plus-circle"></i> Instalar Portal
+      </button>
+    </div>
+
+    <!-- Barra de Pareamento com Caixa -->
+    <div class="pairing-strip">
+      <div class="pairing-info">
+        <i class="ph-bold ph-wifi-high"></i>
+        <span>Servidor Atual: <strong id="current-server-display" style="color: #fff;">Detectando...</strong></span>
+      </div>
+      <button class="btn-scan-global" onclick="abrirLeitorQR()">
+        <i class="ph-bold ph-qr-code"></i> Parear via QR
+      </button>
+    </div>
+
+    <!-- Grid dos PWAs Especializados -->
+    <div class="grid">
+
+      <!-- 1. Garçom -->
+      <div class="card garcom">
+        <div class="card-top">
+          <div class="icon-wrapper"><i class="ph-bold ph-notebook"></i></div>
+          <span class="category-badge">Salão & Atendimento</span>
+        </div>
+        <h3>App do Garçom</h3>
+        <p>Lançamento veloz de pedidos, controle de mesas, divisão de comandas e fechamento direto no salão.</p>
+        <a href="/pwa-garcom.html" class="btn-open">
+          <span>Abrir & Instalar</span>
+          <i class="ph-bold ph-arrow-right"></i>
+        </a>
+      </div>
+
+      <!-- 2. Cozinha KDS -->
+      <div class="card cozinha">
+        <div class="card-top">
+          <div class="icon-wrapper"><i class="ph-bold ph-cooking-pot"></i></div>
+          <span class="category-badge">Produção & Esteira</span>
+        </div>
+        <h3>KDS Cozinha</h3>
+        <p>Esteira visual de pedidos em tempo real, tempos de preparo, cancelamentos e despacho por praças.</p>
+        <a href="/pwa-cozinha.html" class="btn-open">
+          <span>Abrir & Instalar</span>
+          <i class="ph-bold ph-arrow-right"></i>
+        </a>
+      </div>
+
+      <!-- 3. Motoboy -->
+      <div class="card motoboy">
+        <div class="card-top">
+          <div class="icon-wrapper"><i class="ph-bold ph-motorcycle"></i></div>
+          <span class="category-badge">Delivery & Logística</span>
+        </div>
+        <h3>App do Motoboy</h3>
+        <p>Roteirização de entregas, GPS com Waze/Maps, comprovante fotográfico e controle de taxas em tempo real.</p>
+        <a href="/pwa-motoboy.html" class="btn-open">
+          <span>Abrir & Instalar</span>
+          <i class="ph-bold ph-arrow-right"></i>
+        </a>
+      </div>
+
+      <!-- 4. PDV Mobile -->
+      <div class="card pdv">
+        <div class="card-top">
+          <div class="icon-wrapper"><i class="ph-bold ph-storefront"></i></div>
+          <span class="category-badge">Caixa & Vendas</span>
+        </div>
+        <h3>PDV Mobile</h3>
+        <p>Frente de caixa móvel completa para atendentes volantes, balcão, sangrias e impressão remota.</p>
+        <a href="/pwa-pdv.html" class="btn-open">
+          <span>Abrir & Instalar</span>
+          <i class="ph-bold ph-arrow-right"></i>
+        </a>
+      </div>
+
+      <!-- 5. Painel Gerencial -->
+      <div class="card gerente">
+        <div class="card-top">
+          <div class="icon-wrapper"><i class="ph-bold ph-chart-line-up"></i></div>
+          <span class="category-badge">Gestão & Estratégia</span>
+        </div>
+        <h3>Painel Gerencial</h3>
+        <p>Cockpit em tempo real com faturamento, DRE dinâmico, cancelamentos, auditoria e controle de equipe.</p>
+        <a href="/pwa-gerente.html" class="btn-open">
+          <span>Abrir & Instalar</span>
+          <i class="ph-bold ph-arrow-right"></i>
+        </a>
+      </div>
+
+      <!-- 6. Colaborador -->
+      <div class="card colaborador">
+        <div class="card-top">
+          <div class="icon-wrapper"><i class="ph-bold ph-user"></i></div>
+          <span class="category-badge">Equipe & Ponto</span>
+        </div>
+        <h3>App do Colaborador</h3>
+        <p>Registro de ponto eletrônico com geolocalização, escala de trabalho, metas e comunicados internos.</p>
+        <a href="/pwa-colaborador.html" class="btn-open">
+          <span>Abrir & Instalar</span>
+          <i class="ph-bold ph-arrow-right"></i>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Nota de Rodapé -->
+    <div class="footer-note">
+      <p>Todos os aplicativos utilizam a tecnologia Progressive Web App (PWA) de alta performance.</p>
+      <p>Totalmente compatível com Android, iOS (iPhone/iPad), Windows e terminais POS inteligentes.</p>
+    </div>
+
+  </div>
+
+  <!-- Modal do Leitor QR Code -->
+  <div id="qr-modal-overlay">
+    <div class="qr-modal-card">
+      <h3 style="font-family:'Outfit',sans-serif; margin-bottom: 8px;">Escanear QR Code do Caixa</h3>
+      <p style="font-size: 13px; color: var(--text-muted);">Aponte a câmera para o QR Code exibido na tela principal do Caixa.</p>
+      
+      <div id="qr-reader-hub"></div>
+
+      <button onclick="fecharLeitorQR()" style="width:100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.1); border:1px solid var(--border); color:#fff; font-weight:700; cursor:pointer;">
+        Cancelar
+      </button>
     </div>
   </div>
+
+  <script src="/vendor/html5-qrcode/html5-qrcode.min.js"></script>
+  <script>
+    // Registro do Service Worker Global
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw-loader.js').then(reg => {
+          console.log('[Central] SW Registrado:', reg.scope);
+        }).catch(err => console.warn('[Central] SW Erro:', err));
+      });
+    }
+
+    // Exibe IP atual
+    function atualizarHostDisplay() {
+      const savedIp = localStorage.getItem('chef_server_ip');
+      const host = savedIp || window.location.host;
+      document.getElementById('current-server-display').innerText = host || 'Não configurado';
+    }
+    atualizarHostDisplay();
+
+    // Captura evento de instalação PWA para a Central
+    let deferredCentralPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredCentralPrompt = e;
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'flex';
+    });
+
+    const isIosDevice = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    if (isIosDevice && !isStandaloneMode) {
+      const banner = document.getElementById('pwa-install-banner');
+      const sub = document.getElementById('pwa-banner-subtitle');
+      const btn = document.getElementById('btn-install-central');
+      if (banner && sub && btn) {
+        banner.style.display = 'flex';
+        sub.innerHTML = 'No iPhone: Toque no botão <strong>Compartilhar <i class="ph-bold ph-export"></i></strong> e selecione <strong>Adicionar à Tela de Início</strong>.';
+        btn.style.display = 'none';
+      }
+    }
+
+    function instalarCentralPWA() {
+      if (deferredCentralPrompt) {
+        deferredCentralPrompt.prompt();
+        deferredCentralPrompt.userChoice.then(() => {
+          deferredCentralPrompt = null;
+          document.getElementById('pwa-install-banner').style.display = 'none';
+        });
+      }
+    }
+
+    // Leitor de QR Code para configurar IP em lote
+    let html5QrHub = null;
+
+    function abrirLeitorQR() {
+      const modal = document.getElementById('qr-modal-overlay');
+      modal.style.display = 'flex';
+
+      if (!html5QrHub) {
+        html5QrHub = new Html5Qrcode("qr-reader-hub");
+      }
+
+      html5QrHub.start(
+        { facingMode: "environment" },
+        { fps: 12, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+          fecharLeitorQR();
+          let ip = decodedText.trim();
+          try {
+            if (ip.startsWith('http')) {
+              const url = new URL(ip);
+              ip = url.host;
+            } else {
+              ip = ip.replace(/^https?:\\/\\//, '');
+            }
+          } catch(e) {}
+          
+          localStorage.setItem('chef_server_ip', ip);
+          atualizarHostDisplay();
+          alert('Servidor atualizado com sucesso para: ' + ip + '! Agora ao abrir qualquer app, ele conectará automaticamente.');
+        },
+        () => {}
+      ).catch(err => {
+        alert('Erro ao acessar a câmera: ' + err);
+        fecharLeitorQR();
+      });
+    }
+
+    function fecharLeitorQR() {
+      if (html5QrHub) {
+        html5QrHub.stop().catch(() => {}).then(() => {
+          document.getElementById('qr-modal-overlay').style.display = 'none';
+        });
+      } else {
+        document.getElementById('qr-modal-overlay').style.display = 'none';
+      }
+    }
+  </script>
 </body>
 </html>

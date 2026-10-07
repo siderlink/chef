@@ -1,25 +1,17 @@
 {
-  "id": "br.com.chefsync.pwa.motoboy",
-  "name": "Chef Sync — App do Motoboy",
-  "short_name": "Motoboy",
-  "description": "Gestão de rotas, despacho de entregas e comprovantes com GPS para entregadores.",
-  "start_url": "/pwa-motoboy.html",
+  "id": "br.com.chefsync.pwa.colaborador",
+  "name": "Chef Sync — App do Colaborador",
+  "short_name": "Colaborador",
+  "description": "Ponto eletrônico, escala de trabalho e atalhos de operações para a equipe.",
+  "start_url": "/pwa-colaborador.html",
   "scope": "/",
   "display": "standalone",
-  "display_override": [
-    "standalone",
-    "minimal-ui",
-    "window-controls-overlay"
-  ],
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "background_color": "#0b0f19",
-  "theme_color": "#22c55e",
+  "theme_color": "#6366f1",
   "orientation": "portrait",
   "lang": "pt-BR",
-  "categories": [
-    "business",
-    "food",
-    "productivity"
-  ],
+  "categories": ["business", "productivity"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -43,13 +35,6 @@
       "src": "/icon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Minhas Entregas",
-      "url": "/pwa-motoboy.html#entregas",
-      "description": "Ver lista de entregas"
     }
   ]
 }

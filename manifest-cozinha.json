@@ -1,16 +1,55 @@
 {
-  "name": "KDS Cozinha",
-  "short_name": "Cozinha",
-  "start_url": "/pwa-loader.html?app=cozinha",
+  "id": "br.com.chefsync.pwa.cozinha",
+  "name": "Chef Sync — KDS Cozinha",
+  "short_name": "KDS Cozinha",
+  "description": "Sistema KDS de fila de produção, preparo em esteira e expedição para cozinha.",
+  "start_url": "/pwa-cozinha.html",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "window-controls-overlay"
+  ],
+  "background_color": "#0b0f19",
   "theme_color": "#ef4444",
-  "orientation": "portrait",
+  "orientation": "any",
+  "lang": "pt-BR",
+  "categories": [
+    "business",
+    "food",
+    "productivity"
+  ],
   "icons": [
     {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/icon.ico",
-      "sizes": "192x192 512x512",
+      "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Fila de Preparo",
+      "url": "/pwa-cozinha.html#fila",
+      "description": "Acompanhar pedidos pendentes"
     }
   ]
 }

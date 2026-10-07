@@ -1,21 +1,94 @@
-<!DOCTYPE html>
+const fs = require('fs');
+
+const appConfigs = {
+  garcom: {
+    id: 'garcom',
+    manifest: '/manifest-garcom.json',
+    name: 'Chef Sync — Garçom',
+    shortName: 'Garçom',
+    description: 'Atendimento de salão, mesas e comandas',
+    file: 'garcom.html',
+    color: '#f59e0b',
+    colorLight: 'rgba(245, 158, 11, 0.15)',
+    colorGlow: 'rgba(245, 158, 11, 0.3)',
+    icon: 'ph-notebook',
+    shortcutTips: 'Ideal para smartphones de garçons e atendentes de salão.'
+  },
+  cozinha: {
+    id: 'cozinha',
+    manifest: '/manifest-cozinha.json',
+    name: 'Chef Sync — KDS Cozinha',
+    shortName: 'KDS Cozinha',
+    description: 'Fila de pedidos, esteira e expedição',
+    file: 'fila-pedidos.html',
+    color: '#ef4444',
+    colorLight: 'rgba(239, 68, 68, 0.15)',
+    colorGlow: 'rgba(239, 68, 68, 0.3)',
+    icon: 'ph-cooking-pot',
+    shortcutTips: 'Ideal para tablets e monitores de parede na cozinha.'
+  },
+  motoboy: {
+    id: 'motoboy',
+    manifest: '/manifest-motoboy.json',
+    name: 'Chef Sync — Motoboy',
+    shortName: 'Motoboy',
+    description: 'Entregas, GPS e comprovantes de rota',
+    file: 'motoboy.html',
+    color: '#22c55e',
+    colorLight: 'rgba(34, 197, 94, 0.15)',
+    colorGlow: 'rgba(34, 197, 94, 0.3)',
+    icon: 'ph-motorcycle',
+    shortcutTips: 'Ideal para celulares de motoboys e entregadores de delivery.'
+  },
+  pdv: {
+    id: 'pdv',
+    manifest: '/manifest-pdv.json',
+    name: 'Chef Sync — PDV Mobile',
+    shortName: 'PDV Mobile',
+    description: 'Frente de caixa móvel e pagamentos',
+    file: 'pdv-mobile.html',
+    color: '#fc4b15',
+    colorLight: 'rgba(252, 75, 21, 0.15)',
+    colorGlow: 'rgba(252, 75, 21, 0.3)',
+    icon: 'ph-storefront',
+    shortcutTips: 'Ideal para terminais de atendimento balcão e caixas volantes.'
+  },
+  gerente: {
+    id: 'gerente',
+    manifest: '/manifest-gerente.json',
+    name: 'Chef Sync — Painel Gerencial',
+    shortName: 'Painel Dono',
+    description: 'Cockpit do gestor, KPIs e financeiro',
+    file: 'painel-dono.html',
+    color: '#8b5cf6',
+    colorLight: 'rgba(139, 92, 246, 0.15)',
+    colorGlow: 'rgba(139, 92, 246, 0.3)',
+    icon: 'ph-chart-line-up',
+    shortcutTips: 'Ideal para o celular ou tablet do proprietário e gerente.'
+  }
+};
+
+function renderPwaHtml(appKey, isUniversalLoader = false) {
+  const currentApp = appConfigs[appKey] || appConfigs.garcom;
+
+  return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#fc4b15">
+  <meta name="theme-color" content="${currentApp.color}">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="PDV Mobile">
+  <meta name="apple-mobile-web-app-title" content="${currentApp.shortName}">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
   <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
   <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
   <link rel="icon" href="/icon.ico">
-  <title>Chef Sync — PDV Mobile</title>
+  <title>${currentApp.name}</title>
   
-  <link rel="manifest" href="/manifest-pdv.json">
+  <link rel="manifest" href="${currentApp.manifest}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -24,14 +97,14 @@
 
   <style>
     :root {
-      --primary: #fc4b15;
-      --primary-light: rgba(252, 75, 21, 0.15);
-      --primary-glow: rgba(252, 75, 21, 0.3);
+      --primary: ${currentApp.color};
+      --primary-light: ${currentApp.colorLight};
+      --primary-glow: ${currentApp.colorGlow};
       --bg: #0b0f19;
       --card: #121927;
       --card-hover: #182235;
       --border: rgba(255, 255, 255, 0.08);
-      --border-focus: #fc4b15;
+      --border-focus: ${currentApp.color};
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --success: #10b981;
@@ -663,11 +736,11 @@
     <div id="setup-screen">
       <div class="setup-wrapper">
         <div class="app-brand-badge">
-          <i class="ph-bold ph-storefront"></i>
+          <i class="ph-bold ${currentApp.icon}"></i>
         </div>
 
-        <h1 class="app-title" id="app-title-text">Chef Sync — PDV Mobile</h1>
-        <p class="app-desc" id="app-desc-text">Frente de caixa móvel e pagamentos</p>
+        <h1 class="app-title" id="app-title-text">${currentApp.name}</h1>
+        <p class="app-desc" id="app-desc-text">${currentApp.description}</p>
 
         <!-- Banner de Instalação PWA (Nativo & iOS) -->
         <div id="install-banner" class="pwa-install-banner">
@@ -706,7 +779,7 @@
         </div>
 
         <p style="font-size: 11px; color: #64748b; line-height: 1.4;">
-          Ideal para terminais de atendimento balcão e caixas volantes.
+          ${currentApp.shortcutTips}
         </p>
       </div>
     </div>
@@ -714,9 +787,9 @@
     <!-- 2. TELA DE SPLASH / CARREGAMENTO SUAVE -->
     <div id="splash-loading">
       <div class="splash-logo">
-        <i class="ph-bold ph-storefront"></i>
+        <i class="ph-bold ${currentApp.icon}"></i>
       </div>
-      <h2 class="splash-title">PDV Mobile</h2>
+      <h2 class="splash-title">${currentApp.shortName}</h2>
       <p class="splash-status" id="splash-status-text">Conectando ao Chef Cozinha...</p>
       <div class="loading-bar-track">
         <div class="loading-bar-thumb"></div>
@@ -755,7 +828,7 @@
       <div class="dock-pill" onclick="abrirPainelControles()">
         <span class="status-dot" id="dock-status-dot"></span>
         <span class="dock-pill-label">
-          <span>PDV Mobile</span>
+          <span>${currentApp.shortName}</span>
           <i class="ph-bold ph-dots-three-vertical"></i>
         </span>
       </div>
@@ -825,8 +898,16 @@
       });
     }
 
-    const appConfig = {"id":"pdv","manifest":"/manifest-pdv.json","name":"Chef Sync — PDV Mobile","shortName":"PDV Mobile","description":"Frente de caixa móvel e pagamentos","file":"pdv-mobile.html","color":"#fc4b15","colorLight":"rgba(252, 75, 21, 0.15)","colorGlow":"rgba(252, 75, 21, 0.3)","icon":"ph-storefront","shortcutTips":"Ideal para terminais de atendimento balcão e caixas volantes."};
-    
+    const appConfig = ${JSON.stringify(currentApp)};
+    ${isUniversalLoader ? `
+    // Suporte dinâmico caso seja o pwa-loader.html genérico
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryApp = urlParams.get('app');
+    const dynamicMap = ${JSON.stringify(appConfigs)};
+    if (queryApp && dynamicMap[queryApp]) {
+      Object.assign(appConfig, dynamicMap[queryApp]);
+    }
+    ` : ''}
 
     let deferredPrompt = null;
     let wakeLockSentinel = null;
@@ -921,7 +1002,7 @@
         document.getElementById('server-ip').focus();
         return;
       }
-      ip = ip.replace(/^https?:\/\//, '');
+      ip = ip.replace(/^https?:\\/\\//, '');
       localStorage.setItem('chef_server_ip', ip);
       iniciarCarregamento(ip);
     }
@@ -1027,7 +1108,7 @@
               const urlObj = new URL(parsedIp);
               parsedIp = urlObj.host;
             } else {
-              parsedIp = parsedIp.replace(/^https?:\/\//, '');
+              parsedIp = parsedIp.replace(/^https?:\\/\\//, '');
             }
             document.getElementById('server-ip').value = parsedIp;
             conectarServidor();
@@ -1153,3 +1234,17 @@
   </script>
 </body>
 </html>
+`;
+}
+
+// Generate each dedicated PWA HTML
+for (const appKey of Object.keys(appConfigs)) {
+  const html = renderPwaHtml(appKey, false);
+  fs.writeFileSync(`pwa-${appKey}.html`, html, 'utf8');
+  console.log(`Generated: pwa-${appKey}.html`);
+}
+
+// Generate the universal pwa-loader.html
+const loaderHtml = renderPwaHtml('garcom', true);
+fs.writeFileSync('pwa-loader.html', loaderHtml, 'utf8');
+console.log('Generated: pwa-loader.html');

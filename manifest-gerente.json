@@ -1,16 +1,55 @@
 {
-  "name": "Painel Gerencial",
+  "id": "br.com.chefsync.pwa.gerente",
+  "name": "Chef Sync — Painel Gerencial",
   "short_name": "Painel Dono",
-  "start_url": "/pwa-loader.html?app=gerente",
+  "description": "Cockpit executivo, KPIs em tempo real, faturamento, DRE e controle da operação.",
+  "start_url": "/pwa-gerente.html",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "window-controls-overlay"
+  ],
+  "background_color": "#0b0f19",
   "theme_color": "#8b5cf6",
-  "orientation": "portrait",
+  "orientation": "any",
+  "lang": "pt-BR",
+  "categories": [
+    "business",
+    "food",
+    "productivity"
+  ],
   "icons": [
     {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/icon.ico",
-      "sizes": "192x192 512x512",
+      "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Faturamento Hoje",
+      "url": "/pwa-gerente.html#faturamento",
+      "description": "Ver métricas financeiras"
     }
   ]
 }
