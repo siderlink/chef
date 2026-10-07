@@ -39,6 +39,8 @@
     </div>
 
     <div class="v11-header-actions">
+      <button id="v11-btn-pwa" class="v11-hbtn" title="Gerenciar PWA e Equipe" onclick="abrirModalPwa()"><i
+          class="ph-bold ph-device-mobile"></i><span style="color:#22c55e;">Dispositivos</span></button>
       <button id="v11-btn-editar" class="v11-hbtn" title="Organizar blocos do layout"><i
           class="ph ph-cursor-click"></i><span>Editar Layout</span></button>
       <button id="v11-btn-resetar" class="v11-hbtn" title="Restaurar layout padrão"><i
@@ -167,6 +169,22 @@
     style="display:none; z-index:100000; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(4px); justify-content:center; align-items:center;">
     <img id="qr-ponto-img-zoomed" alt="QR Ponto Ampliado"
       style="width:340px; height:340px; max-width:85vw; max-height:85vh; border-radius:16px; background:#fff; padding:14px; object-fit:contain;">
+  </div>
+
+  <!-- MODAL GERENCIAR DISPOSITIVOS PWA -->
+  <div id="modal-gerenciar-pwa" style="display:none; z-index:10000; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.8); backdrop-filter:blur(4px); align-items:center; justify-content:center;">
+    <div style="background:#1e293b; width:90%; max-width:600px; border-radius:16px; border:1px solid #334155; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+      <div style="padding:16px 20px; background:#0f172a; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; color:#f8fafc; font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;"><i class="ph-bold ph-device-mobile" style="color:#3b82f6;"></i> Dispositivos PWA e Equipe</h3>
+        <button onclick="document.getElementById('modal-gerenciar-pwa').style.display='none'" style="background:transparent; border:none; color:#64748b; font-size:24px; cursor:pointer;">&times;</button>
+      </div>
+      <div style="padding:20px; overflow-y:auto; max-height:60vh;" id="lista-pwa-container">
+        <p style="color:#94a3b8; text-align:center; font-size:13px;"><i class="ph-bold ph-spinner ph-spin"></i> Carregando dispositivos...</p>
+      </div>
+      <div style="padding:16px 20px; border-top:1px solid #334155; background:#0f172a; display:flex; justify-content:flex-end;">
+        <button onclick="window.carregarDispositivosPwa()" style="background:#3b82f6; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;"><i class="ph-bold ph-arrows-clockwise"></i> Atualizar</button>
+      </div>
+    </div>
   </div>
 
   <script src="/chef-tz.js"></script>

@@ -2084,6 +2084,25 @@ function seedTenantDb(db, restauranteNome, done) {
     created_at DATETIME DEFAULT (datetime('now', 'localtime'))
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS pwa_dispositivos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id TEXT UNIQUE,
+    app_id TEXT,
+    app_name TEXT,
+    user_agent TEXT,
+    status TEXT DEFAULT 'online',
+    last_seen DATETIME DEFAULT (datetime('now', 'localtime')),
+    criado_em DATETIME DEFAULT (datetime('now', 'localtime')),
+    perm_tipo TEXT DEFAULT 'padrao',
+    perm_classe TEXT DEFAULT 'operacional',
+    perm_genero TEXT DEFAULT 'mobile',
+    perm_grau INTEGER DEFAULT 1
+  )`);
+  db.run(`ALTER TABLE pwa_dispositivos ADD COLUMN perm_tipo TEXT DEFAULT 'padrao'`, () => {});
+  db.run(`ALTER TABLE pwa_dispositivos ADD COLUMN perm_classe TEXT DEFAULT 'operacional'`, () => {});
+  db.run(`ALTER TABLE pwa_dispositivos ADD COLUMN perm_genero TEXT DEFAULT 'mobile'`, () => {});
+  db.run(`ALTER TABLE pwa_dispositivos ADD COLUMN perm_grau INTEGER DEFAULT 1`, () => {});
+
   db.run(`CREATE TABLE IF NOT EXISTS itens_montaveis (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     produto_id INTEGER,
@@ -3774,6 +3793,22 @@ io.on('connection', (socket) => {
       });
     });
   };
+
+  // --- GERENCIAMENTO PWA ---
+  socket.on('pwa_device_connected', (data) => {
+    db.run(
+      `INSERT INTO pwa_dispositivos (device_id, app_id, app_name, user_agent, status, last_seen) 
+       VALUES (?, ?, ?, ?, 'online', datetime('now', 'localtime'))
+       ON CONFLICT(device_id) DO UPDATE SET 
+          app_id=excluded.app_id, app_name=excluded.app_name, 
+          user_agent=excluded.user_agent, status='online', 
+          last_seen=datetime('now', 'localtime')`,
+      [data.deviceId, data.appId, data.appName, data.userAgent],
+      function() {
+         io.to(`restaurante_${socketTenantId}`).emit('novo_dispositivo_pwa', data);
+      }
+    );
+  });
 
   // --- GAMIFICACAO / JOGOS DE MESA ---
   
@@ -5821,6 +5856,32 @@ io.on('connection', (socket) => {
       });
   });
 
+  // --- GERENCIAMENTO DE DISPOSITIVOS PWA ---
+  app.get('/api/pwa-dispositivos', authMiddleware, (req, res) => {
+    getTenantDb(req).all(`SELECT * FROM pwa_dispositivos ORDER BY last_seen DESC`, [], (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Erro ao buscar dispositivos' });
+      res.json(rows || []);
+    });
+  });
+
+  app.post('/api/pwa-dispositivos/:deviceId/remover', authMiddleware, (req, res) => {
+    getTenantDb(req).run(`DELETE FROM pwa_dispositivos WHERE device_id = ?`, [req.params.deviceId], function(err) {
+      if (err) return res.status(500).json({ error: 'Erro ao remover' });
+      res.json({ success: true });
+    });
+  });
+
+  app.post('/api/pwa-dispositivos/:deviceId/permissoes', authMiddleware, (req, res) => {
+    const { tipo, classe, genero, grau } = req.body;
+    getTenantDb(req).run(
+      `UPDATE pwa_dispositivos SET perm_tipo = ?, perm_classe = ?, perm_genero = ?, perm_grau = ? WHERE device_id = ?`,
+      [tipo, classe, genero, grau, req.params.deviceId],
+      function(err) {
+        if (err) return res.status(500).json({ error: 'Erro ao salvar permissões' });
+        res.json({ success: true });
+      }
+    );
+  });
 
   // --- HUB DELIVERY → COZINHA: Enviar pedido para fila de preparo ---
   socket.on('hub_enviar_para_cozinha', (hubPedidoId) => {

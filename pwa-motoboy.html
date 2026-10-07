@@ -2,176 +2,207 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Hub do Entregador</title>
-  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQXBwIEVudHJlZ2Fkb3IiLCJzaG9ydF9uYW1lIjoiRW50cmVnYWRvciIsInN0YXJ0X3VybCI6Ii9wd2EtbW90b2JveS5odG1sIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzFmMjkzNyIsInRoZW1lX2NvbG9yIjoiI2Y1OWUwYiJ9">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Chef Sync PWA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
-  <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
-  <script src="/socket.io/socket.io.js"></script>
-  
+  <link rel="manifest" href="/manifest-motoboy.json">
   <style>
-    :root { --bg: #111827; --panel: #1f2937; --primary: #f59e0b; --text: #f9fafb; --muted: #9ca3af; }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; user-select: none; }
-    body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #0f172a; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
     
-    .header { padding: 20px; background: var(--panel); border-bottom: 1px solid #374151; padding-top: env(safe-area-inset-top, 20px); display: flex; justify-content: space-between; align-items: center; }
-    .header-title { font-family: 'Outfit'; font-size: 20px; font-weight: 900; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+    #setup-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; text-align: center; overflow-y: auto; }
+    .brand-icon { font-size: 64px; color: #3b82f6; margin-bottom: 20px; }
+    h1 { font-family: 'Outfit', sans-serif; font-size: 2rem; margin: 0 0 10px 0; }
+    p { color: #94a3b8; font-size: 1rem; margin-bottom: 30px; max-width: 300px; line-height: 1.5; }
     
-    .status-btn { background: #10b981; color: #fff; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); transition: 0.3s; }
-    .status-btn.offline { background: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
-
-    .dash-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 20px; }
-    .metric-card { background: var(--panel); padding: 16px; border-radius: 16px; text-align: center; border: 1px solid #374151; }
-    .metric-card h3 { font-size: 12px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
-    .metric-card p { font-family: 'Outfit'; font-size: 24px; font-weight: 900; }
-    .metric-card p.ganho { color: #10b981; }
-
-    .map-preview { height: 120px; background: url('https://developers.google.com/static/maps/images/landing/hero_maps_static_api.png') center/cover; margin: 0 20px 20px 20px; border-radius: 16px; border: 2px solid var(--primary); position: relative; overflow: hidden; }
-    .map-overlay { position: absolute; bottom: 0; width: 100%; background: linear-gradient(transparent, rgba(0,0,0,0.8)); padding: 10px; text-align: center; font-weight: bold; font-size: 12px; color: var(--primary); }
-
-    .deliveries { flex: 1; overflow-y: auto; padding: 0 20px 100px 20px; }
-    .section-title { font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; }
-
-    .d-card { background: var(--panel); border: 1px solid #374151; border-radius: 16px; padding: 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 12px; }
-    .d-header { display: flex; justify-content: space-between; align-items: flex-start; }
-    .d-header h4 { font-size: 16px; font-weight: bold; }
-    .d-header span { font-size: 12px; color: var(--muted); }
-    .d-address { font-size: 13px; color: #d1d5db; display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; }
-    .d-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .input-group { width: 100%; max-width: 320px; text-align: left; margin-bottom: 20px; }
+    .input-group label { display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 8px; font-weight: 600; }
+    .input-group input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #334155; background: #1e293b; color: white; font-size: 1.1rem; box-sizing: border-box; font-family: monospace; }
+    .input-group input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.3); }
     
-    .btn-rota { background: #3b82f6; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 13px; display: flex; justify-content: center; align-items: center; gap: 6px; text-decoration: none; }
-    .btn-done { background: #10b981; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 13px; display: flex; justify-content: center; align-items: center; gap: 6px; cursor: pointer; }
-
-    .empty-state { text-align: center; padding: 40px 0; color: var(--muted); }
-    .empty-state i { font-size: 48px; opacity: 0.5; margin-bottom: 12px; }
-
+    .btn-connect { width: 100%; max-width: 320px; background: #3b82f6; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; }
+    .btn-connect:active { transform: scale(0.96); }
+    
+    .btn-scan { width: 100%; max-width: 320px; background: transparent; border: 2px solid #3b82f6; color: #3b82f6; padding: 16px; border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-scan:active { transform: scale(0.96); background: rgba(59,130,246,0.1); }
+    
+    #app-frame { display: none; width: 100%; height: 100%; border: none; background: #fff; }
+    
+    #btn-change-ip { position: fixed; bottom: -50px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 20px 20px 0 0; font-size: 12px; border: none; z-index: 9999; transition: 0.3s; opacity: 0; cursor: pointer; backdrop-filter: blur(4px); }
+    body:hover #btn-change-ip { bottom: 0; opacity: 1; }
   </style>
 </head>
 <body>
 
-  <header class="header">
-    <div class="header-title"><i class="ph-fill ph-moped"></i> Cheff.pro Entregas</div>
-    <button class="status-btn" id="btn-status" onclick="toggleStatus()">
-      <i class="ph-fill ph-check-circle"></i> ONLINE
+  <!-- Tela de Configuração de IP -->
+  <div id="setup-screen">
+    <i class="ph-bold ph-wifi-high brand-icon"></i>
+    <h1 id="app-title">Conectar Servidor</h1>
+    <p>Insira o IP do computador onde o Chef Sync está rodando.</p>
+    
+    <div class="input-group">
+      <label>Endereço IP / Porta</label>
+      <input type="text" id="server-ip" placeholder="Ex: 192.168.1.100:3000" value="">
+    </div>
+    
+    <button class="btn-connect" onclick="conectar()">
+      <i class="ph-bold ph-plug"></i> Conectar e Entrar
     </button>
-  </header>
-
-  <div class="dash-metrics">
-    <div class="metric-card">
-      <h3>Entregas Hoje</h3>
-      <p id="qtd-entregas">0</p>
-    </div>
-    <div class="metric-card">
-      <h3>Ganhos (Taxa)</h3>
-      <p class="ganho" id="val-ganho">R$ 0,00</p>
-    </div>
+    <button class="btn-scan" onclick="iniciarScanner()" id="btn-iniciar-scan">
+      <i class="ph-bold ph-qr-code"></i> Escanear QR do Caixa
+    </button>
+    
+    <div id="qr-reader" style="width: 100%; max-width: 320px; margin-top: 16px; display: none; border-radius: 12px; overflow: hidden; border: 2px solid #334155;"></div>
   </div>
 
-  <div class="map-preview">
-    <div class="map-overlay">Radar GPS Ativo</div>
-  </div>
+  <!-- App Wrapper (Iframe) -->
+  <iframe id="app-frame" allow="geolocation; camera; microphone; fullscreen"></iframe>
+  
+  <button id="btn-change-ip" onclick="resetarConfig()"><i class="ph-bold ph-gear"></i> Mudar IP do Servidor</button>
 
-  <div class="deliveries">
-    <h3 class="section-title">Pedidos para Entrega</h3>
-    <div id="lista-entregas">
-      <div class="empty-state">Buscando corridas...</div>
-    </div>
-  </div>
-
+  <script src="/vendor/html5-qrcode/html5-qrcode.min.js"></script>
   <script>
-    const token = localStorage.getItem('chef_token') || '';
-    const restId = localStorage.getItem('restaurante_id') || '1';
-    const socket = io({ query: { token, restaurante_id: restId } });
+    // Registra o Service Worker Global
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw-loader.js').then(reg => {
+        console.log('SW Loader registrado!', reg);
+      });
+    }
 
-    let isOnline = true;
-    function toggleStatus() {
-      const btn = document.getElementById('btn-status');
-      isOnline = !isOnline;
-      if(isOnline) {
-        btn.classList.remove('offline');
-        btn.innerHTML = '<i class="ph-fill ph-check-circle"></i> ONLINE';
-        document.querySelector('.map-overlay').innerText = 'Radar GPS Ativo';
-        socket.emit('get_pedidos');
+    const params = new URLSearchParams(window.location.search);
+    const appId = params.get('app') || 'motoboy';
+    
+    const appMap = {
+      'garcom': { file: 'garcom.html', name: 'App do Garçom' },
+      'cozinha': { file: 'fila-pedidos.html', name: 'KDS Cozinha' },
+      'motoboy': { file: 'motoboy.html', name: 'App do Motoboy' },
+      'pdv': { file: 'pdv-mobile.html', name: 'PDV Mobile' },
+      'gerente': { file: 'painel-dono.html', name: 'Painel Gerencial' }
+    };
+    
+    const appConfig = appMap[appId] || appMap['garcom'];
+    document.getElementById('app-title').innerText = appConfig.name;
+
+    // Tenta preencher automaticamente com o host atual se não houver salvo
+    const defaultHost = window.location.host;
+    
+    function init() {
+      const savedIp = localStorage.getItem('chef_server_ip');
+      if (savedIp) {
+        document.getElementById('server-ip').value = savedIp;
+        carregarIframe(savedIp);
       } else {
-        btn.classList.add('offline');
-        btn.innerHTML = '<i class="ph-fill ph-minus-circle"></i> OFFLINE';
-        document.querySelector('.map-overlay').innerText = 'Radar Desligado';
-        document.getElementById('lista-entregas').innerHTML = `<div class="empty-state"><i class="ph-fill ph-moon"></i><p>Você está offline.</p></div>`;
+        document.getElementById('server-ip').value = defaultHost;
       }
     }
-
-    socket.on('connect', () => { if(isOnline) socket.emit('get_pedidos'); });
-    socket.on('pedido_adicionado', () => { if(isOnline) socket.emit('get_pedidos'); });
-    socket.on('pedido_status_alterado', () => { if(isOnline) socket.emit('get_pedidos'); });
-
-    socket.on('pedidos_atualizados', (pedidos) => {
-      if(!isOnline) return;
-
-      // Filtrar apenas pedidos Delivery que estão Prontos ou Em Rota
-      const entregas = (pedidos || []).filter(p => 
-        (p.sector === 'Delivery' || (p.localName && p.localName.toLowerCase().includes('delivery'))) &&
-        (p.status === 'Pronto' || p.status === 'Em Rota' || p.status === 'Saiu para Entrega')
-      );
-
-      // Metricas fakes para o entregador baseado no storage local
-      const entregasFeitas = parseInt(localStorage.getItem('entregas_hoje') || '0');
-      document.getElementById('qtd-entregas').innerText = entregasFeitas;
-      document.getElementById('val-ganho').innerText = 'R$ ' + (entregasFeitas * 5.50).toFixed(2).replace('.',',');
-
-      const lista = document.getElementById('lista-entregas');
+    
+    function conectar() {
+      let ip = document.getElementById('server-ip').value.trim();
+      if (!ip) return;
       
-      if(entregas.length === 0) {
-        lista.innerHTML = `<div class="empty-state"><i class="ph-fill ph-coffee"></i><p>Nenhuma entrega na fila.</p></div>`;
-        return;
+      // Remove http:// se o usuário digitou
+      ip = ip.replace('http://', '').replace('https://', '');
+      
+      localStorage.setItem('chef_server_ip', ip);
+      carregarIframe(ip);
+    }
+    
+    function carregarIframe(ip) {
+      document.getElementById('setup-screen').style.display = 'none';
+      const frame = document.getElementById('app-frame');
+      frame.style.display = 'block';
+      frame.src = `http://${ip}/${appConfig.file}`;
+      
+      // Registrar dispositivo no servidor (Para aviso no Caixa)
+      let deviceId = localStorage.getItem('chef_device_id');
+      if (!deviceId) {
+         deviceId = 'pwa_' + Math.random().toString(36).substr(2, 9);
+         localStorage.setItem('chef_device_id', deviceId);
       }
-
-      lista.innerHTML = entregas.map(p => {
-        const endStr = (p.cliente_endereco || 'Endereço não informado').replace(/<[^>]*>?/gm, '');
-        const wazeLink = `https://waze.com/ul?q=${encodeURIComponent(endStr)}`;
-        const total = parseFloat(String(p.total).replace(',','.')) || 0;
-        
-        return `
-          <div class="d-card">
-            <div class="d-header">
-              <div>
-                <h4>Pedido #${p.id}</h4>
-                <span style="color:var(--primary); font-weight:bold;">Cobrar: R$ ${total.toFixed(2).replace('.',',')}</span>
-              </div>
-              <span style="background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px;">${p.status}</span>
-            </div>
-            <div class="d-address">
-              <i class="ph-fill ph-map-pin" style="color:var(--primary); font-size: 18px;"></i>
-              <span style="line-height: 1.3;">${endStr}</span>
-            </div>
-            <div class="d-actions">
-              <a href="${wazeLink}" target="_blank" class="btn-rota"><i class="ph-bold ph-navigation-arrow"></i> Rota GPS</a>
-              <button class="btn-done" onclick="marcarEntregue(${p.id})"><i class="ph-bold ph-check"></i> Entregue</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    });
-
-    function marcarEntregue(id) {
-      if(confirm('Confirmar entrega ao cliente?')) {
-        // Incrementa metricas
-        let e = parseInt(localStorage.getItem('entregas_hoje') || '0');
-        localStorage.setItem('entregas_hoje', e + 1);
-        
-        // Emite atualização de status
-        socket.emit('update_pedido_status', { id, status: 'Entregue' });
-        
-        // Remove otimista da tela com feedback
-        const eventCard = document.querySelector(`button[onclick="marcarEntregue(${id})"]`).closest('.d-card');
-        if(eventCard) {
-          eventCard.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--green);"><i class="ph-bold ph-check-circle" style="font-size: 32px; display:block; margin-bottom:10px;"></i> Entrega Confirmada!</div>`;
-        }
-
-        setTimeout(() => socket.emit('get_pedidos'), 1500);
-      }
+      
+      const socketScript = document.createElement('script');
+      socketScript.src = `http://${ip}/socket.io/socket.io.js`;
+      socketScript.onload = () => {
+         if (window.io) {
+            const socket = io(`http://${ip}`);
+            socket.on('connect', () => {
+               socket.emit('pwa_device_connected', {
+                  deviceId: deviceId,
+                  appName: appConfig.name,
+                  appId: appId,
+                  userAgent: navigator.userAgent
+               });
+               setTimeout(() => socket.disconnect(), 3000);
+            });
+         }
+      };
+      socketScript.onerror = () => console.log('Socket ignorado (Offline)');
+      document.body.appendChild(socketScript);
+    }
+    
+    function resetarConfig() {
+      document.getElementById('app-frame').style.display = 'none';
+      document.getElementById('setup-screen').style.display = 'flex';
+      document.getElementById('app-frame').src = '';
     }
 
+    let html5QrCode = null;
+
+    function iniciarScanner() {
+      const readerDiv = document.getElementById('qr-reader');
+      const btnScan = document.getElementById('btn-iniciar-scan');
+      
+      if (readerDiv.style.display === 'block') {
+         // Se já está aberto, vamos fechar
+         if (html5QrCode) {
+           html5QrCode.stop().then(() => {
+             readerDiv.style.display = 'none';
+             btnScan.innerHTML = '<i class="ph-bold ph-qr-code"></i> Escanear QR do Caixa';
+           }).catch(err => console.error(err));
+         }
+         return;
+      }
+      
+      readerDiv.style.display = 'block';
+      btnScan.innerHTML = '<i class="ph-bold ph-x"></i> Cancelar Câmera';
+      
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("qr-reader");
+      }
+      
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          // Parar scanner ao ler
+          html5QrCode.stop().then(() => {
+             readerDiv.style.display = 'none';
+             btnScan.innerHTML = '<i class="ph-bold ph-qr-code"></i> Escanear QR do Caixa';
+             
+             try {
+                // Tenta fazer o parse da URL lida do QR Code
+                const urlObj = new URL(decodedText);
+                const ipComPorta = urlObj.host; // Extrai ex: 192.168.1.100:3000
+                document.getElementById('server-ip').value = ipComPorta;
+                conectar();
+             } catch(e) {
+                // Se não for uma URL válida, pode ser só o IP ou texto puro
+                let txt = decodedText.trim();
+                txt = txt.replace('http://', '').replace('https://', '');
+                document.getElementById('server-ip').value = txt;
+                conectar();
+             }
+          });
+        },
+        (err) => { /* ignora erros de leitura de frame vazio */ }
+      ).catch(err => {
+        alert("Erro ao acessar a câmera. Verifique se as permissões foram concedidas ou digite o IP manualmente. (" + err + ")");
+        readerDiv.style.display = 'none';
+        btnScan.innerHTML = '<i class="ph-bold ph-qr-code"></i> Escanear QR do Caixa';
+      });
+    }
+
+    init();
   </script>
 </body>
 </html>

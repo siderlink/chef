@@ -500,6 +500,117 @@
 
   socket.on('atualizacao_caixa', () => { socket.emit('get_estado_caixa'); });
 
+  socket.on('novo_dispositivo_pwa', (data) => {
+    if (window.showToast) {
+       window.showToast(`📱 Novo dispositivo conectado: ${data.appName}`, 'success');
+    } else {
+       alert(`📱 Novo dispositivo conectado: ${data.appName}`);
+    }
+  });
+
+  window.abrirModalPwa = function() {
+    document.getElementById('modal-gerenciar-pwa').style.display = 'flex';
+    window.carregarDispositivosPwa();
+  };
+
+  window.carregarDispositivosPwa = async function() {
+    const container = document.getElementById('lista-pwa-container');
+    container.innerHTML = '<p style="color:#94a3b8; text-align:center; font-size:13px;"><i class="ph-bold ph-spinner ph-spin"></i> Carregando...</p>';
+    try {
+      const res = await fetch('/api/pwa-dispositivos', {
+         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+      });
+      const data = await res.json();
+      if (!data || data.length === 0) {
+         container.innerHTML = '<p style="color:#94a3b8; text-align:center; font-size:13px;">Nenhum dispositivo conectado recentemente.</p>';
+         return;
+      }
+      
+      container.innerHTML = data.map(d => {
+         const icon = d.app_id === 'garcom' ? 'ph-notebook' : (d.app_id === 'cozinha' ? 'ph-cooking-pot' : 'ph-device-mobile');
+         const isOnline = (new Date() - new Date(d.last_seen)) < 5 * 60000; // < 5 minutos
+         const statusDot = isOnline ? '<span style="display:inline-block; width:8px; height:8px; background:#22c55e; border-radius:50%; margin-right:6px;"></span>' : '<span style="display:inline-block; width:8px; height:8px; background:#ef4444; border-radius:50%; margin-right:6px;"></span>';
+         
+         return `
+           <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:16px; margin-bottom:12px; display:flex; flex-direction:column; gap:12px;">
+             <div style="display:flex; justify-content:space-between; align-items:center;">
+               <div style="display:flex; align-items:center; gap:12px;">
+                 <div style="width:40px; height:40px; border-radius:8px; background:rgba(59,130,246,0.1); color:#3b82f6; display:flex; align-items:center; justify-content:center; font-size:20px;">
+                   <i class="ph-bold ${icon}"></i>
+                 </div>
+                 <div>
+                   <strong style="color:#f8fafc; font-size:14px; display:block;">${d.app_name}</strong>
+                   <span style="color:#94a3b8; font-size:12px; display:flex; align-items:center; margin-top:4px;">${statusDot} Visto: ${new Date(d.last_seen).toLocaleTimeString()}</span>
+                 </div>
+               </div>
+               <button onclick="removerDispositivoPwa('${d.device_id}')" title="Desconectar" style="background:rgba(239,68,68,0.1); color:#ef4444; border:none; width:36px; height:36px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px;">
+                 <i class="ph-bold ph-trash"></i>
+               </button>
+             </div>
+             <div style="display:flex; gap:8px; flex-wrap:wrap; font-size:12px;">
+                <select id="pwa-tipo-${d.device_id}" style="background:#1e293b; color:white; border:1px solid #334155; border-radius:6px; padding:6px; outline:none;" onchange="salvarPermissoesPwa('${d.device_id}')">
+                   <option value="padrao" ${d.perm_tipo === 'padrao'?'selected':''}>Tipo: Padrão</option>
+                   <option value="garcom" ${d.perm_tipo === 'garcom'?'selected':''}>Garçom</option>
+                   <option value="cozinha" ${d.perm_tipo === 'cozinha'?'selected':''}>Cozinha</option>
+                   <option value="motoboy" ${d.perm_tipo === 'motoboy'?'selected':''}>Motoboy</option>
+                </select>
+                <select id="pwa-classe-${d.device_id}" style="background:#1e293b; color:white; border:1px solid #334155; border-radius:6px; padding:6px; outline:none;" onchange="salvarPermissoesPwa('${d.device_id}')">
+                   <option value="operacional" ${d.perm_classe === 'operacional'?'selected':''}>Operacional</option>
+                   <option value="supervisao" ${d.perm_classe === 'supervisao'?'selected':''}>Supervisão</option>
+                   <option value="gerencial" ${d.perm_classe === 'gerencial'?'selected':''}>Gerencial</option>
+                </select>
+                <select id="pwa-genero-${d.device_id}" style="background:#1e293b; color:white; border:1px solid #334155; border-radius:6px; padding:6px; outline:none;" onchange="salvarPermissoesPwa('${d.device_id}')">
+                   <option value="mobile" ${d.perm_genero === 'mobile'?'selected':''}>Mobile</option>
+                   <option value="kds" ${d.perm_genero === 'kds'?'selected':''}>Passivo (KDS)</option>
+                   <option value="terminal" ${d.perm_genero === 'terminal'?'selected':''}>Terminal</option>
+                </select>
+                <select id="pwa-grau-${d.device_id}" style="background:#1e293b; color:white; border:1px solid #334155; border-radius:6px; padding:6px; outline:none;" onchange="salvarPermissoesPwa('${d.device_id}')">
+                   <option value="1" ${d.perm_grau == 1?'selected':''}>Grau 1 (Básico)</option>
+                   <option value="2" ${d.perm_grau == 2?'selected':''}>Grau 2 (Edição)</option>
+                   <option value="3" ${d.perm_grau == 3?'selected':''}>Grau 3 (Admin)</option>
+                </select>
+             </div>
+           </div>
+         `;
+      }).join('');
+    } catch(err) {
+      container.innerHTML = '<p style="color:#ef4444; text-align:center; font-size:13px;">Erro ao carregar dispositivos.</p>';
+    }
+  };
+
+  window.removerDispositivoPwa = async function(deviceId) {
+    if (!confirm('Deseja realmente remover este dispositivo?')) return;
+    try {
+      await fetch('/api/pwa-dispositivos/' + deviceId + '/remover', {
+         method: 'POST',
+         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+      });
+      window.carregarDispositivosPwa();
+    } catch(err) {
+      alert('Erro ao remover dispositivo');
+    }
+  };
+
+  window.salvarPermissoesPwa = async function(deviceId) {
+    const tipo = document.getElementById('pwa-tipo-' + deviceId).value;
+    const classe = document.getElementById('pwa-classe-' + deviceId).value;
+    const genero = document.getElementById('pwa-genero-' + deviceId).value;
+    const grau = document.getElementById('pwa-grau-' + deviceId).value;
+    
+    try {
+      await fetch('/api/pwa-dispositivos/' + deviceId + '/permissoes', {
+         method: 'POST',
+         headers: { 
+           'Authorization': 'Bearer ' + localStorage.getItem('token'),
+           'Content-Type': 'application/json'
+         },
+         body: JSON.stringify({ tipo, classe, genero, grau })
+      });
+      if (window.showToast) window.showToast('Permissões salvas!', 'success');
+    } catch(err) {
+      alert('Erro ao salvar permissões');
+    }
+  };
   
   // ─── QR DO PONTO (com renderizador direto e robusto) ──────────
   let pontoUrl = '';

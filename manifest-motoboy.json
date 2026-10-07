@@ -1,0 +1,16 @@
+{
+  "name": "App do Motoboy",
+  "short_name": "Motoboy",
+  "start_url": "/pwa-loader.html?app=motoboy",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#22c55e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.ico",
+      "sizes": "192x192 512x512",
+      "type": "image/x-icon"
+    }
+  ]
+}

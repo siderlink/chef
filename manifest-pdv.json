@@ -1,0 +1,16 @@
+{
+  "name": "PDV Mobile",
+  "short_name": "Caixa",
+  "start_url": "/pwa-loader.html?app=pdv",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.ico",
+      "sizes": "192x192 512x512",
+      "type": "image/x-icon"
+    }
+  ]
+}

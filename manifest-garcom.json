@@ -1,0 +1,16 @@
+{
+  "name": "App do Garçom",
+  "short_name": "Garçom",
+  "start_url": "/pwa-loader.html?app=garcom",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.ico",
+      "sizes": "192x192 512x512",
+      "type": "image/x-icon"
+    }
+  ]
+}

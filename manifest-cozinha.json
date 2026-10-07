@@ -1,0 +1,16 @@
+{
+  "name": "KDS Cozinha",
+  "short_name": "Cozinha",
+  "start_url": "/pwa-loader.html?app=cozinha",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#ef4444",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.ico",
+      "sizes": "192x192 512x512",
+      "type": "image/x-icon"
+    }
+  ]
+}

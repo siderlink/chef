@@ -6,7 +6,7 @@
   <title>Chef Sync PWA</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
-  <link rel="manifest" href="/manifest-central.json">
+  <link rel="manifest" href="/manifest-pdv.json">
   <style>
     body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #0f172a; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
     
@@ -70,7 +70,7 @@
     }
 
     const params = new URLSearchParams(window.location.search);
-    const appId = params.get('app') || 'garcom';
+    const appId = params.get('app') || 'pdv';
     
     const appMap = {
       'garcom': { file: 'garcom.html', name: 'App do Garçom' },

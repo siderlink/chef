@@ -1,0 +1,16 @@
+{
+  "name": "Painel Gerencial",
+  "short_name": "Painel Dono",
+  "start_url": "/pwa-loader.html?app=gerente",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.ico",
+      "sizes": "192x192 512x512",
+      "type": "image/x-icon"
+    }
+  ]
+}
