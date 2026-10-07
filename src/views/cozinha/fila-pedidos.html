@@ -208,6 +208,12 @@
         </button>
       </div>
 
+      <!-- Botão Resumo de Produção -->
+      <button type="button" onclick="window.abrirResumoProducao()" class="kds-nav-btn" style="background: rgba(234, 179, 8, 0.15); color: #ca8a04; border: 1.5px solid rgba(234, 179, 8, 0.4); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px;" title="Ver totais agrupados para cozinhar em lote (Batching)">
+        <i class="ph-bold ph-cooking-pot" style="font-size: 16px;"></i>
+        <span>Agrupar (Batches)</span>
+      </button>
+
       <!-- Botão Alternar para Versão V1 Clássica -->
       <button type="button" id="btn-switch-to-v1" onclick="window.trocarVersaoFila('classica')" class="kds-nav-btn kds-btn-version-switch" title="Alternar para a Fila de Pedidos V1 (Clássica)">
         <i class="ph-bold ph-arrow-counter-clockwise"></i>
@@ -848,6 +854,24 @@
       </div>
     </div>
   </div>
+  <!-- Modal de Resumo de Produção (Batches) -->
+  <div id="modal-resumo-producao" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);z-index:99999;backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+    <div style="background:var(--bg-secondary, white);width:90%;max-width:500px;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.2);overflow:hidden;display:flex;flex-direction:column;max-height:85vh; border:1px solid var(--border-color, #e2e8f0);">
+      <div style="padding:16px;border-bottom:1px solid var(--border-color, #e2e8f0);display:flex;justify-content:space-between;align-items:center;background:var(--bg-tertiary, #f8fafc);">
+        <h3 style="margin:0;font-size:16px;font-weight:800;color:var(--text-main, #0f172a);display:flex;align-items:center;gap:8px;">
+          <i class="ph-bold ph-cooking-pot" style="color:#ca8a04;"></i> Resumo de Produção (Em Preparo/Espera)
+        </h3>
+        <button onclick="document.getElementById('modal-resumo-producao').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted, #64748b);"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <div id="resumo-producao-list" style="padding:16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;">
+        <!-- Injetado via JS -->
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid var(--border-color, #e2e8f0);background:var(--bg-tertiary, #f8fafc);display:flex;justify-content:flex-end;">
+        <button onclick="document.getElementById('modal-resumo-producao').style.display='none'" class="btn-secondary" style="padding:8px 16px;border-radius:8px;font-weight:700;">Fechar</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>

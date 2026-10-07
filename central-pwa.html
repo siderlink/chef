@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central de Apps (PWA) - Chef Cozinha</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="manifest" href="/manifest-central.json">
+  <style>
+    :root {
+      --bg: #0f172a; --panel: #1e293b; --border: #334155;
+      --text: #f8fafc; --muted: #94a3b8;
+      --primary: #3b82f6; --success: #22c55e;
+    }
+    body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    .header { text-align: center; margin-bottom: 40px; margin-top: 20px; }
+    .header h1 { font-family: 'Outfit', sans-serif; font-size: 2.5rem; margin: 0; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header p { color: var(--muted); margin-top: 8px; font-size: 1.1rem; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; max-width: 1000px; }
+    
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px; text-align: center; transition: 0.3s; position: relative; overflow: hidden; }
+    .card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 30px rgba(59,130,246,0.15); }
+    
+    .icon-wrapper { width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px; background: rgba(255,255,255,0.05); }
+    .card.garcom .icon-wrapper { color: #f59e0b; background: rgba(245,158,11,0.1); }
+    .card.cozinha .icon-wrapper { color: #ef4444; background: rgba(239,68,68,0.1); }
+    .card.motoboy .icon-wrapper { color: #22c55e; background: rgba(34,197,94,0.1); }
+    .card.caixa .icon-wrapper { color: #3b82f6; background: rgba(59,130,246,0.1); }
+    .card.gerente .icon-wrapper { color: #8b5cf6; background: rgba(139,92,246,0.1); }
+
+    .card h3 { margin: 0 0 8px 0; font-family: 'Outfit', sans-serif; font-size: 1.4rem; }
+    .card p { color: var(--muted); font-size: 0.9rem; line-height: 1.4; margin-bottom: 20px; min-height: 40px; }
+    
+    .btn-install { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .btn-install:hover { filter: brightness(1.1); }
+    .btn-install:active { transform: scale(0.95); }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Central de PWAs</h1>
+    <p>Escolha o módulo e instale o App no seu dispositivo</p>
+  </div>
+
+  <div class="grid">
+    <div class="card garcom">
+      <div class="icon-wrapper"><i class="ph-bold ph-notebook"></i></div>
+      <h3>App do Garçom</h3>
+      <p>Lançamento de pedidos, mesas e comandas.</p>
+      <a href="/pwa-loader.html?app=garcom" class="btn-install">
+        <i class="ph-bold ph-arrow-circle-right"></i> Abrir & Instalar
+      </a>
+    </div>
+
+    <div class="card cozinha">
+      <div class="icon-wrapper"><i class="ph-bold ph-cooking-pot"></i></div>
+      <h3>KDS Cozinha</h3>
+      <p>Fila de produção e roteamento de pratos.</p>
+      <a href="/pwa-loader.html?app=cozinha" class="btn-install">
+        <i class="ph-bold ph-arrow-circle-right"></i> Abrir & Instalar
+      </a>
+    </div>
+
+    <div class="card motoboy">
+      <div class="icon-wrapper"><i class="ph-bold ph-motorcycle"></i></div>
+      <h3>App do Motoboy</h3>
+      <p>Entregas e GPS em tempo real.</p>
+      <a href="/pwa-loader.html?app=motoboy" class="btn-install">
+        <i class="ph-bold ph-arrow-circle-right"></i> Abrir & Instalar
+      </a>
+    </div>
+
+    <div class="card caixa">
+      <div class="icon-wrapper"><i class="ph-bold ph-desktop"></i></div>
+      <h3>PDV Mobile</h3>
+      <p>Fechamento de contas e NFC-e.</p>
+      <a href="/pwa-loader.html?app=pdv" class="btn-install">
+        <i class="ph-bold ph-arrow-circle-right"></i> Abrir & Instalar
+      </a>
+    </div>
+    
+    <div class="card gerente">
+      <div class="icon-wrapper"><i class="ph-bold ph-chart-line-up"></i></div>
+      <h3>Painel Gerencial</h3>
+      <p>Dashboard de vendas e DRE.</p>
+      <a href="/pwa-loader.html?app=gerente" class="btn-install">
+        <i class="ph-bold ph-arrow-circle-right"></i> Abrir & Instalar
+      </a>
+    </div>
+  </div>
+</body>
+</html>

@@ -709,7 +709,7 @@ app.use((req, res, next) => {
   }
 
   // 6. Arquivos .json que não sejam manifest.json ou plugins autorizados
-  if (lower.endsWith('.json') && filename !== 'manifest.json' && filename !== 'super-admin-manifest.json' && !lower.startsWith('/plugins/')) {
+  if (lower.endsWith('.json') && filename !== 'manifest.json' && filename !== 'super-admin-manifest.json' && filename !== 'garcom-manifest.json' && !lower.startsWith('/plugins/')) {
     return res.status(403).send('Acesso negado.');
   }
 
@@ -895,7 +895,14 @@ const superAdminRoutes = require('./src/routes/superadmin.routes.js');
 const staticOpts = {
   extensions: ['html'],
   setHeaders: (res, filePath) => {
-    if (/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|wasm)$/i.test(filePath)) {
+    const lower = filePath.toLowerCase();
+    if (lower.endsWith('sw.js') || lower.endsWith('sw-garcom.js') || lower.endsWith('service-worker.js')) {
+      res.setHeader('Service-Worker-Allowed', '/');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    } else if (lower.endsWith('.webmanifest') || lower.endsWith('manifest.json') || lower.endsWith('garcom-manifest.json')) {
+      res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache');
+    } else if (/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|wasm)$/i.test(filePath)) {
       res.setHeader('Cache-Control', 'public, max-age=86400');
     } else if (filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-cache');

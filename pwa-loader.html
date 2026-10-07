@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Chef Sync PWA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="manifest" href="/manifest-central.json">
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #0f172a; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
+    
+    #setup-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; text-align: center; }
+    .brand-icon { font-size: 64px; color: #3b82f6; margin-bottom: 20px; }
+    h1 { font-family: 'Outfit', sans-serif; font-size: 2rem; margin: 0 0 10px 0; }
+    p { color: #94a3b8; font-size: 1rem; margin-bottom: 30px; max-width: 300px; line-height: 1.5; }
+    
+    .input-group { width: 100%; max-width: 320px; text-align: left; margin-bottom: 20px; }
+    .input-group label { display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 8px; font-weight: 600; }
+    .input-group input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #334155; background: #1e293b; color: white; font-size: 1.1rem; box-sizing: border-box; font-family: monospace; }
+    .input-group input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.3); }
+    
+    .btn-connect { width: 100%; max-width: 320px; background: #3b82f6; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-connect:active { transform: scale(0.96); }
+    
+    #app-frame { display: none; width: 100%; height: 100%; border: none; background: #fff; }
+    
+    #btn-change-ip { position: fixed; bottom: -50px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 20px 20px 0 0; font-size: 12px; border: none; z-index: 9999; transition: 0.3s; opacity: 0; cursor: pointer; backdrop-filter: blur(4px); }
+    body:hover #btn-change-ip { bottom: 0; opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Tela de Configuração de IP -->
+  <div id="setup-screen">
+    <i class="ph-bold ph-wifi-high brand-icon"></i>
+    <h1 id="app-title">Conectar Servidor</h1>
+    <p>Insira o IP do computador onde o Chef Sync está rodando.</p>
+    
+    <div class="input-group">
+      <label>Endereço IP / Porta</label>
+      <input type="text" id="server-ip" placeholder="Ex: 192.168.1.100:3000" value="">
+    </div>
+    
+    <button class="btn-connect" onclick="conectar()">
+      <i class="ph-bold ph-plug"></i> Conectar e Entrar
+    </button>
+  </div>
+
+  <!-- App Wrapper (Iframe) -->
+  <iframe id="app-frame" allow="geolocation; camera; microphone; fullscreen"></iframe>
+  
+  <button id="btn-change-ip" onclick="resetarConfig()"><i class="ph-bold ph-gear"></i> Mudar IP do Servidor</button>
+
+  <script>
+    // Registra o Service Worker Global
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw-loader.js').then(reg => {
+        console.log('SW Loader registrado!', reg);
+      });
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const appId = params.get('app') || 'garcom';
+    
+    const appMap = {
+      'garcom': { file: 'garcom.html', name: 'App do Garçom' },
+      'cozinha': { file: 'fila-pedidos.html', name: 'KDS Cozinha' },
+      'motoboy': { file: 'motoboy.html', name: 'App do Motoboy' },
+      'pdv': { file: 'pdv-mobile.html', name: 'PDV Mobile' },
+      'gerente': { file: 'painel-dono.html', name: 'Painel Gerencial' }
+    };
+    
+    const appConfig = appMap[appId] || appMap['garcom'];
+    document.getElementById('app-title').innerText = appConfig.name;
+
+    // Tenta preencher automaticamente com o host atual se não houver salvo
+    const defaultHost = window.location.host;
+    
+    function init() {
+      const savedIp = localStorage.getItem('chef_server_ip');
+      if (savedIp) {
+        document.getElementById('server-ip').value = savedIp;
+        carregarIframe(savedIp);
+      } else {
+        document.getElementById('server-ip').value = defaultHost;
+      }
+    }
+    
+    function conectar() {
+      let ip = document.getElementById('server-ip').value.trim();
+      if (!ip) return;
+      
+      // Remove http:// se o usuário digitou
+      ip = ip.replace('http://', '').replace('https://', '');
+      
+      localStorage.setItem('chef_server_ip', ip);
+      carregarIframe(ip);
+    }
+    
+    function carregarIframe(ip) {
+      document.getElementById('setup-screen').style.display = 'none';
+      const frame = document.getElementById('app-frame');
+      frame.style.display = 'block';
+      frame.src = `http://${ip}/${appConfig.file}`;
+    }
+    
+    function resetarConfig() {
+      document.getElementById('app-frame').style.display = 'none';
+      document.getElementById('setup-screen').style.display = 'flex';
+      document.getElementById('app-frame').src = '';
+    }
+
+    init();
+  </script>
+</body>
+</html>

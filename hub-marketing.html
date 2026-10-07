@@ -946,11 +946,14 @@
                         <div><span style="color: var(--text-muted);">Baleias (Whales):</span> <strong id="cop-kpi-whales" style="color: #818cf8;">0</strong></div>
                         <div><span style="color: var(--text-muted);">Risco Churn:</span> <strong id="cop-kpi-churn" style="color: #ef4444;">0</strong></div>
                         <div><span style="color: var(--text-muted);">Ticket Médio:</span> <strong id="cop-kpi-ticket" style="color: #10b981;">R$ 0</strong></div>
+                        <div><span style="color: var(--text-muted);">Vendas Totais:</span> <strong id="cop-kpi-vendas" style="color: #f59e0b;">0</strong></div>
+                        <div><span style="color: var(--text-muted);">ROI Marketing:</span> <strong id="cop-kpi-roi" style="color: #a855f7;">0%</strong></div>
                     </div>
                 </div>
 
                 <!-- PROMPT PILLS -->
                 <div style="display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 6px;">
+                    <button class="btn btn-glass" style="font-size: 0.8rem; border-radius: 20px; white-space: nowrap;" onclick="enviarPerguntaCopiloto('Como otimizar o ROI de Marketing e acelerar as vendas operacionais hoje?')">📈 Otimizar ROI de Vendas e Operação</button>
                     <button class="btn btn-glass" style="font-size: 0.8rem; border-radius: 20px; white-space: nowrap;" onclick="enviarPerguntaCopiloto('Como aumentar o faturamento em 25% este mês usando meus dados atuais?')">🚀 Como aumentar o faturamento em 25%?</button>
                     <button class="btn btn-glass" style="font-size: 0.8rem; border-radius: 20px; white-space: nowrap;" onclick="enviarPerguntaCopiloto('Quais clientes VIP devo resgatar com urgência hoje?')">🚨 Resgate urgente de VIPs em churn</button>
                     <button class="btn btn-glass" style="font-size: 0.8rem; border-radius: 20px; white-space: nowrap;" onclick="enviarPerguntaCopiloto('Como preencher o salão nas terças e quartas-feiras ociosas?')">🍸 Lotar terças e quartas silenciosas</button>
@@ -2687,6 +2690,17 @@
 
                 const resposta = res?.resposta || 'Análise estratégica concluída.';
                 const acoes = res?.acoesSugeridas || [];
+                
+                // Atualiza KPIs com dados reais e precisos calculados pelo Copiloto
+                if (res?.kpis) {
+                    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+                    if (res.kpis.totalPerfis !== undefined) setEl('cop-kpi-perfis', res.kpis.totalPerfis);
+                    if (res.kpis.whales !== undefined) setEl('cop-kpi-whales', res.kpis.whales);
+                    if (res.kpis.churnRisk !== undefined) setEl('cop-kpi-churn', res.kpis.churnRisk);
+                    if (res.kpis.ticketMedio !== undefined) setEl('cop-kpi-ticket', formatMoeda(res.kpis.ticketMedio));
+                    if (res.kpis.totalVendas !== undefined) setEl('cop-kpi-vendas', res.kpis.totalVendas);
+                    if (res.kpis.roiMarketing !== undefined) setEl('cop-kpi-roi', res.kpis.roiMarketing + '%');
+                }
 
                 // Formata markdown simples para HTML
                 let formattedHtml = resposta

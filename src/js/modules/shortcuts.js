@@ -249,6 +249,13 @@ document.addEventListener('keydown', (e) => {
       return;
     }
 
+    // ESC fecha o modal de checkout
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (typeof window.fecharCheckoutModal === 'function') window.fecharCheckoutModal();
+      return;
+    }
+
     if (!isInputActive) {
       const keyUpper = e.key.toUpperCase();
       let selectMethod = null;
@@ -256,18 +263,17 @@ document.addEventListener('keydown', (e) => {
       else if (e.key === '2' || keyUpper === 'P') selectMethod = 'Pix';
       else if (e.key === '3' || keyUpper === 'C') selectMethod = 'Cartão de Crédito';
       else if (e.key === '4' || keyUpper === 'V') selectMethod = 'Cartão de Débito';
-      else if (e.key === '5' || keyUpper === 'F') selectMethod = 'Fiado / Conta';
+      else if (e.key === '5' || keyUpper === 'R') selectMethod = 'Vale Refeição';
+      else if (e.key === '6' || keyUpper === 'F') selectMethod = 'Fiado';
 
       if (selectMethod) {
         e.preventDefault();
-        const sel = document.getElementById('checkout-modal-metodo');
-        if (sel) {
-          sel.value = selectMethod;
+        if (typeof window.checkoutModalSelectMethod === 'function') {
+          window.checkoutModalSelectMethod(selectMethod);
+        } else {
+          const sel = document.getElementById('checkout-modal-metodo');
+          if (sel) sel.value = selectMethod;
         }
-        if (typeof window.checkoutModalSelectTouchMethod === 'function') {
-          window.checkoutModalSelectTouchMethod(selectMethod);
-        }
-        if (window.checkoutModalAddPagamento) window.checkoutModalAddPagamento();
       }
     }
   }

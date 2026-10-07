@@ -29,28 +29,61 @@
         <button style="background:var(--primary); color:#fff; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; cursor:pointer;"><i class="ph-bold ph-shopping-cart"></i> Gerar Lista de Compras</button>
     </div>
 
-    <div class="grid">
-        <div class="card" style="border: 1px solid var(--red);">
-            <div class="alert">Acaba em 2 dias!</div>
-            <h3 class="title">Tomate Carmem</h3>
-            <div class="info"><span>Estoque Atual: 4.2 kg</span><span>Gasto Médio: 1.8 kg/dia</span></div>
-            <div class="progress-bg"><div class="progress-bar" style="width: 15%; background: var(--red);"></div></div>
-            <div class="ai-insight"><strong>Insight Gemini:</strong> Final de semana chegando. Sugiro comprar 15kg para garantir as pizzas de sexta e sábado.</div>
-        </div>
-
-        <div class="card">
-            <h3 class="title">Carne Moída (Blend Acém)</h3>
-            <div class="info"><span>Estoque Atual: 22 kg</span><span>Gasto Médio: 3.5 kg/dia</span></div>
-            <div class="progress-bg"><div class="progress-bar" style="width: 45%; background: var(--yellow);"></div></div>
-            <div class="ai-insight"><strong>Insight Gemini:</strong> Estoque seguro por aprox. 6 dias. Fique atento a promoções nos frigoríficos locais na quarta-feira.</div>
-        </div>
-
-        <div class="card">
-            <h3 class="title">Cerveja Heineken 600ml</h3>
-            <div class="info"><span>Estoque Atual: 180 un</span><span>Gasto Médio: 12 un/dia</span></div>
-            <div class="progress-bg"><div class="progress-bar" style="width: 80%; background: var(--green);"></div></div>
-            <div class="ai-insight"><strong>Insight Gemini:</strong> Nível excelente. A proporção de saída está estável comparada ao mês anterior.</div>
+    <div class="grid" id="grid-estoque">
+        <div style="text-align: center; width: 100%; color: #94a3b8; padding: 40px;">
+            Carregando inteligência preditiva...
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/hub-marketing/economia-desempenho', {
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('chef_token') }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if(data.ok && data.data && data.data.itensPereciveis) {
+                    renderCards(data.data.itensPereciveis);
+                } else {
+                    document.getElementById('grid-estoque').innerHTML = '<div style="color:red; width:100%; text-align:center;">Erro ao carregar dados.</div>';
+                }
+            })
+            .catch(e => {
+                console.error(e);
+                document.getElementById('grid-estoque').innerHTML = '<div style="color:red; width:100%; text-align:center;">Falha na conexão com o servidor.</div>';
+            });
+        });
+
+        function renderCards(itens) {
+            const grid = document.getElementById('grid-estoque');
+            grid.innerHTML = '';
+            
+            if (itens.length === 0) {
+                grid.innerHTML = '<div style="width:100%; text-align:center; padding: 30px; color: var(--green);">Nenhum risco no estoque detectado! 🎉</div>';
+                return;
+            }
+
+            itens.forEach(item => {
+                // Cálculo ilustrativo para progress bar (0 a 100%)
+                const percEstoque = Math.min(Math.max((item.estoque / 50) * 100, 10), 100); 
+                const colorVar = percEstoque < 30 ? 'var(--red)' : (percEstoque < 60 ? 'var(--yellow)' : 'var(--green)');
+                
+                const card = document.createElement('div');
+                card.className = 'card';
+                if (percEstoque < 30) {
+                    card.style.border = '1px solid var(--red)';
+                }
+
+                card.innerHTML = \`
+                    \${percEstoque < 30 ? \`<div class="alert">\${item.validade}</div>\` : ''}
+                    <h3 class="title">\${item.nome}</h3>
+                    <div class="info"><span>Estoque Atual: \${item.estoque} un/kg</span><span>Custo: R$ \${item.custo_unitario.toFixed(2)}</span></div>
+                    <div class="progress-bg"><div class="progress-bar" style="width: \${percEstoque}%; background: \${colorVar};"></div></div>
+                    <div class="ai-insight"><strong>Insight Gemini:</strong> \${item.acao_sugerida}</div>
+                \`;
+                grid.appendChild(card);
+            });
+        }
+    </script>
 </body>
 </html>

@@ -4594,3 +4594,134 @@ body.theme-dark .shortcut-pill {
 .left-actions.mini .shortcut-pill {
   display: none !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   CHECKOUT PRO UX: MÉTODOS 1-CLIQUE, CÉDULAS & TROCO INSTANTÂNEO
+   ══════════════════════════════════════════════════════════════════ */
+.checkout-method-pill {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 9px 6px !important;
+  border-radius: 9px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  border: 1.5px solid var(--border-color, #e2e8f0) !important;
+  background: var(--bg-card, #ffffff) !important;
+  color: var(--text-primary, #0f172a) !important;
+  user-select: none !important;
+}
+
+.checkout-method-pill:hover {
+  transform: translateY(-1px) !important;
+  border-color: #94a3b8 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+}
+
+.checkout-method-pill:active {
+  transform: translateY(0) !important;
+}
+
+.checkout-method-pill.active[data-method="Dinheiro"] {
+  border: 2px solid #16a34a !important;
+  background: #f0fdf4 !important;
+  color: #15803d !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 0 1px #16a34a, 0 3px 8px rgba(22, 163, 74, 0.2) !important;
+}
+
+.checkout-method-pill.active[data-method="Pix"] {
+  border: 2px solid #0284c7 !important;
+  background: #f0f9ff !important;
+  color: #0369a1 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 0 1px #0284c7, 0 3px 8px rgba(2, 132, 199, 0.2) !important;
+}
+
+.checkout-method-pill.active[data-method="Cartão de Crédito"] {
+  border: 2px solid #7c3aed !important;
+  background: #faf5ff !important;
+  color: #6b21a8 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 0 1px #7c3aed, 0 3px 8px rgba(124, 58, 237, 0.2) !important;
+}
+
+.checkout-method-pill.active[data-method="Cartão de Débito"] {
+  border: 2px solid #2563eb !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 0 1px #2563eb, 0 3px 8px rgba(37, 99, 235, 0.2) !important;
+}
+
+.checkout-method-pill.active[data-method="Vale Refeição"] {
+  border: 2px solid #ea580c !important;
+  background: #fff7ed !important;
+  color: #c2410c !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 0 1px #ea580c, 0 3px 8px rgba(234, 88, 12, 0.2) !important;
+}
+
+.checkout-method-pill.active[data-method="Fiado"] {
+  border: 2px solid #d97706 !important;
+  background: #fffbeb !important;
+  color: #b45309 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 0 1px #d97706, 0 3px 8px rgba(217, 119, 6, 0.2) !important;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .checkout-method-pill,
+body.dark-mode .checkout-method-pill,
+body.theme-dark .checkout-method-pill {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .checkout-method-pill.active[data-method="Dinheiro"] {
+  background: rgba(22, 163, 74, 0.2) !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .checkout-method-pill.active[data-method="Pix"] {
+  background: rgba(2, 132, 199, 0.2) !important;
+  color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .checkout-method-pill.active[data-method="Cartão de Crédito"] {
+  background: rgba(124, 58, 237, 0.2) !important;
+  color: #c084fc !important;
+}
+
+[data-theme="dark"] .checkout-method-pill.active[data-method="Cartão de Débito"] {
+  background: rgba(37, 99, 235, 0.2) !important;
+  color: #60a5fa !important;
+}
+
+[data-theme="dark"] .checkout-method-pill.active[data-method="Vale Refeição"] {
+  background: rgba(234, 88, 12, 0.2) !important;
+  color: #fb923c !important;
+}
+
+[data-theme="dark"] .checkout-method-pill.active[data-method="Fiado"] {
+  background: rgba(217, 119, 6, 0.2) !important;
+  color: #fcd34d !important;
+}
+
+[data-theme="dark"] #checkout-modal-troco-live-card {
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%) !important;
+  border-color: #059669 !important;
+}
+
+[data-theme="dark"] #checkout-modal-troco-live-val {
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] #checkout-modal-pix-panel {
+  background: #0f172a !important;
+  border-color: #0284c7 !important;
+}

@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/fill/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="/socket.io.min.js"></script>
   <script src="/theme-manager.js"></script>
 
@@ -287,13 +289,11 @@
           <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span> GPS Ativo
         </span>
       </div>
-      <div class="col-body" style="background: #e2e8f0; display: flex; align-items: center; justify-content: center; position: relative;">
-        <div id="gps-radar-preview" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #475569;">
-          <i class="ph-bold ph-map-trifold" style="font-size: 48px; color: #94a3b8; margin-bottom: 10px;"></i>
-          <div style="font-weight: 800; font-size: 16px;">Mapa de Rotas Inteligentes</div>
-          <div style="font-size: 12px; max-width: 280px; margin-top: 4px;">Acompanhamento de proximidade e sequência de entregas por bairro.</div>
-          <div id="gps-log-stream" style="margin-top: 16px; font-size: 11px; background: rgba(255,255,255,0.85); padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e1;">
-            Aguardando sinal GPS dos motoboys...
+      <div class="col-body" style="background: #e2e8f0; position: relative;">
+        <div id="mapa-radar" style="width: 100%; height: 100%; z-index: 1;"></div>
+        <div style="position: absolute; bottom: 16px; left: 16px; right: 16px; z-index: 2; pointer-events: none; display: flex; justify-content: center;">
+          <div id="gps-log-stream" style="background: rgba(15, 23, 42, 0.85); color: white; padding: 10px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto;">
+            <i class="ph-bold ph-radar ph-spin"></i> Aguardando sinal GPS dos motoboys...
           </div>
         </div>
       </div>
@@ -535,16 +535,52 @@
       }).then(() => carregarMotoboys());
     }
 
+    // Mapa Radar Leaflet
+    let radarMap;
+    let motoboyMarkers = {};
+
+    function initRadarMap() {
+      const latLngRestaurante = [-23.550520, -46.633308];
+      radarMap = L.map('mapa-radar').setView(latLngRestaurante, 13);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; Chef Cozinha Delivery',
+        maxZoom: 19
+      }).addTo(radarMap);
+      
+      // Ícone do restaurante
+      L.marker(latLngRestaurante, {
+        icon: L.divIcon({ className: 'custom-div-icon', html: '<div style="background:#ef4444;border-radius:50%;width:24px;height:24px;border:3px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;"><i class="ph-bold ph-storefront" style="font-size:12px;"></i></div>', iconSize: [24, 24], iconAnchor: [12, 12] })
+      }).addTo(radarMap).bindPopup("<b>Seu Restaurante</b>");
+    }
+
     // Socket GPS & Atualizações
     socket.on('cheff_entregas_atualizado', () => carregarTudo());
     socket.on('cheff_entregas_gps_posicao', (data) => {
       const stream = document.getElementById('gps-log-stream');
       if (stream) {
-        stream.innerHTML = `📍 <b>Motoboy #${data.motoboyId}</b> em movimento (Lat: ${data.lat.toFixed(4)}, Lng: ${data.lng.toFixed(4)})`;
+        stream.innerHTML = `<i class="ph-bold ph-radar ph-spin" style="color:#22c55e;"></i> <b>Motoboy #${data.motoboyId}</b> em movimento...`;
+      }
+      
+      // Atualizar no mapa
+      if (radarMap) {
+        if (!motoboyMarkers[data.motoboyId]) {
+           const icon = L.divIcon({
+             className: 'custom-div-icon',
+             html: `<div style="background:#22c55e;border-radius:50%;width:26px;height:26px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:12px;">${data.motoboyId}</div>`,
+             iconSize: [26, 26], iconAnchor: [13, 13]
+           });
+           motoboyMarkers[data.motoboyId] = L.marker([data.lat, data.lng], {icon}).addTo(radarMap);
+           motoboyMarkers[data.motoboyId].bindTooltip('Motoboy #' + data.motoboyId);
+        } else {
+           motoboyMarkers[data.motoboyId].setLatLng([data.lat, data.lng]);
+        }
       }
     });
 
-    document.addEventListener('DOMContentLoaded', carregarTudo);
+    document.addEventListener('DOMContentLoaded', () => {
+      carregarTudo();
+      initRadarMap();
+    });
   </script>
 </body>
 </html>

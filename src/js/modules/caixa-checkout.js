@@ -37,6 +37,12 @@ if (typeof window !== 'undefined') {
  * @param {string|number} val
  */
 function checkoutModalSetQuickCash(val) {
+  if (typeof window !== 'undefined') {
+    const sel = document.getElementById('checkout-modal-metodo');
+    if (sel && sel.value !== 'Dinheiro' && typeof window.checkoutModalSelectMethod === 'function') {
+      window.checkoutModalSelectMethod('Dinheiro');
+    }
+  }
   const falta = (typeof window !== 'undefined' ? window.mesaFaltaPagar : 0) || 0;
   let valor;
   if (val === 'exato') {
@@ -53,8 +59,8 @@ function checkoutModalSetQuickCash(val) {
   const inputValor = typeof document !== 'undefined' ? document.getElementById('checkout-modal-valor') : null;
   if (inputValor) {
     inputValor.value = 'R$ ' + valor.toFixed(2).replace('.', ',');
-    inputValor.style.borderColor = '#3ab55b';
-    inputValor.style.background = '#f0fff4';
+    inputValor.style.borderColor = '#16a34a';
+    inputValor.style.background = '#f0fdf4';
     setTimeout(() => {
       inputValor.style.borderColor = '';
       inputValor.style.background = '';

@@ -3763,3 +3763,122 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// --- ACOMPANHAMENTO INTELIGENTE DE DEMANDA (BUFFET -> COZINHA) ---
+function iniciarOuvintesBuffetCozinha() {
+  if (window.socket && typeof window.socket.on === 'function') {
+    window.socket.on('alerta_buffet_cozinha', function(alerta) {
+      // Cria alerta visual explosivo no KDS
+      const wrap = document.getElementById('chef-bc-wrap') || document.body;
+      const card = document.createElement('div');
+      card.style.position = 'fixed';
+      card.style.top = '12%';
+      card.style.left = '50%';
+      card.style.transform = 'translateX(-50%)';
+      card.style.background = '#ef4444';
+      card.style.color = 'white';
+      card.style.padding = '20px 32px';
+      card.style.borderRadius = '16px';
+      card.style.boxShadow = '0 10px 40px rgba(239, 68, 68, 0.6)';
+      card.style.zIndex = '999999';
+      card.style.display = 'flex';
+      card.style.flexDirection = 'column';
+      card.style.alignItems = 'center';
+      card.style.gap = '10px';
+      card.style.animation = 'bcIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+      
+      card.innerHTML = `
+        <div style="font-size: 32px; font-weight: 900; letter-spacing: 1px;">🚨 DEMANDA ALTA NO BUFFET 🚨</div>
+        <div style="font-size: 18px; font-weight: 600; text-align: center;">Foram pesados ${alerta.totalPratos || '?'} pratos (${alerta.totalKg || '?'} kg) nos últimos ${alerta.janelaMinutos || 15} min!</div>
+        <div style="font-size: 16px; opacity: 0.9; margin-top: 5px;">Prepare-se para reposição iminente das cubas.</div>
+        <button onclick="this.parentElement.remove()" style="margin-top: 15px; padding: 10px 24px; border: none; background: rgba(0,0,0,0.25); color: white; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;">ESTOU CIENTE (X)</button>
+      `;
+      wrap.appendChild(card);
+      
+      // Auto fechar em 45 segundos
+      setTimeout(() => { if (card.parentElement) card.remove(); }, 45000);
+      
+      // Adicionar no painel de IA / Dicas Rápidas da Cozinha
+      const iaPanel = document.getElementById('ia-gerente-content');
+      if (iaPanel) {
+        const dica = document.createElement('div');
+        dica.style.padding = '10px';
+        dica.style.background = 'rgba(239, 68, 68, 0.1)';
+        dica.style.borderLeft = '4px solid #ef4444';
+        dica.style.marginBottom = '8px';
+        dica.style.borderRadius = '4px';
+        dica.innerHTML = `<strong>${alerta.hora || new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})} - ⚖️ Buffet:</strong> Alto fluxo detectado! ${alerta.totalPratos || '?'} pratos recentes. Fique atento à reposição.`;
+        iaPanel.prepend(dica);
+        const fabBadge = document.getElementById('ia-gerente-badge');
+        if (fabBadge) fabBadge.style.display = 'block';
+      }
+
+      // Tenta emitir som (se houver som configurado no KDS)
+      if (typeof window.tocarKdsSound === 'function') {
+        window.tocarKdsSound('alerta'); // usa a func nativa do KDS
+      }
+    });
+  } else {
+    // Tenta novamente a cada 2s até que a inicialização do socket do frontend conclua
+    setTimeout(iniciarOuvintesBuffetCozinha, 2000);
+  }
+}
+document.addEventListener('DOMContentLoaded', iniciarOuvintesBuffetCozinha);
+
+// ── Modulo: Resumo de Produção (Batching) ──
+window.abrirResumoProducao = function() {
+  const modal = document.getElementById('modal-resumo-producao');
+  const container = document.getElementById('resumo-producao-list');
+  if (!modal || !container) return;
+
+  // Percorre `rawQueue` (ou os itens filtrados)
+  const pendentes = window.rawQueue ? window.rawQueue.filter(i => i.status === 'Em espera' || i.status === 'Em preparo') : [];
+  
+  if (pendentes.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;font-weight:600;">Nenhum item pendente para produção.</div>';
+    modal.style.display = 'flex';
+    return;
+  }
+
+  // Agrupa
+  const agrupado = {};
+  pendentes.forEach(item => {
+    // Filtro de Setor Ativo: Se o Setor Atual não for 'Todos', ignorar se o item for de outro setor.
+    if (typeof currentSector !== 'undefined' && currentSector !== 'Todos') {
+       if (item.sector && item.sector.trim().toLowerCase() !== currentSector.trim().toLowerCase()) {
+         return; // Ignora deste batch
+       }
+    }
+
+    const key = item.productName.trim();
+    if (!agrupado[key]) agrupado[key] = { qtd: 0, statusPreparo: 0, statusEspera: 0, locais: new Set() };
+    agrupado[key].qtd += item.quantity || 1;
+    if (item.status === 'Em preparo') agrupado[key].statusPreparo += item.quantity || 1;
+    if (item.status === 'Em espera') agrupado[key].statusEspera += item.quantity || 1;
+    if (item.localName) agrupado[key].locais.add(item.localName);
+  });
+
+  const arrayAgrupado = Object.entries(agrupado).sort((a,b) => b[1].qtd - a[1].qtd); // Ordena por quantidade DESC
+  
+  if (arrayAgrupado.length === 0) {
+     container.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;font-weight:600;">Nenhum item pendente para o setor atual.</div>';
+  } else {
+     container.innerHTML = arrayAgrupado.map(([nome, dados]) => `
+       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+         <div>
+           <div style="font-weight:800;color:#0f172a;font-size:15px;margin-bottom:4px;">${nome}</div>
+           <div style="font-size:11.5px;color:#64748b;">
+             <span style="color:#f59e0b;font-weight:600;">${dados.statusEspera} em espera</span> • 
+             <span style="color:#3b82f6;font-weight:600;">${dados.statusPreparo} no fogo</span>
+           </div>
+           <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Mesas: ${Array.from(dados.locais).join(', ')}</div>
+         </div>
+         <div style="background:#ca8a04;color:white;font-weight:900;font-size:20px;padding:8px 16px;border-radius:10px;">
+           x${dados.qtd}
+         </div>
+       </div>
+     `).join('');
+  }
+
+  modal.style.display = 'flex';
+};

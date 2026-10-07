@@ -1526,12 +1526,15 @@
   <script src="/broadcast.js"></script>
   <script src="/i18n.js"></script>
   <link rel="icon" href="/icons/icon.ico">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#fc4b15">
+  <link rel="manifest" href="/garcom-manifest.json">
+  <meta name="theme-color" content="#090d16">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Chef Cozinha">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <meta name="apple-mobile-web-app-title" content="Garçom">
+  <meta name="application-name" content="Garçom">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png">
   <script src="/socket.io.min.js"></script>
   <script src="/fuzzy-search.js"></script>
   <link rel="stylesheet" href="/apple-transitions.css">
@@ -1562,6 +1565,9 @@
           style="color:#8b5cf6; font-size:24px; background:none; border:none; cursor:pointer; white-space:nowrap; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center;"
           title="Comando de Voz IA (Salão)" aria-label="Comando de Voz IA"
           onclick="window.abrirModalVozIA && window.abrirModalVozIA()"><i class="ph-bold ph-microphone"></i></button>
+        <button id="btn-pwa-install"
+          title="Instalar App Garçom no Celular" aria-label="Instalar App Garçom"
+          onclick="window.instalarAppGarcom &amp;&amp; window.instalarAppGarcom()"><i class="ph-bold ph-device-mobile"></i><span class="pwa-badge-pulse"></span></button>
         <button id="btn-notificacoes"
           style="color:#3b82f6; font-size:24px; background:none; border:none; cursor:pointer; white-space:nowrap; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center;"
           title="Ativar notificações push" aria-label="Ativar notificações push"
@@ -3121,6 +3127,7 @@
   <script src="/garcom-modules/garcom-ui-ux.js"></script>
   <script src="/garcom-modules/garcom-comandas.js"></script>
   <script src="/garcom-modules/garcom-theme.js"></script>
+  <script src="/garcom-modules/garcom-pwa.js"></script>
   <script>window.PUSH_ROLE = 'garcom';</script>
   <script src="push-client.js"></script>
 

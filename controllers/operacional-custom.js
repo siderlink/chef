@@ -96,6 +96,11 @@ module.exports = function(app, { io, getTenantDb }) {
       io.emit('alerta_pedir_conta', data.mesa);
     });
 
+    socket.on('alerta_pdv_cozinha', (msg) => {
+      console.log(`PDV/Garçom notificando cozinha: ${msg}`);
+      io.emit('ia_manobra_executada', { mensagem: msg });
+    });
+
     // --- Roteirizador Lógico ---
     socket.on('get_rotas', () => {
       db.all(`SELECT * FROM rotas_entrega WHERE status = 'Despachada'`, [], (err, rows) => {

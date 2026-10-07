@@ -320,6 +320,17 @@
       </header>
 
       <div class="dash-container">
+        <!-- Resumo IA -->
+        <div id="ai-insight-widget" style="margin-bottom: 20px; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, rgba(252,75,21,0.1), rgba(245,158,11,0.1)); border: 1px solid rgba(252,75,21,0.2); display: flex; gap: 16px; align-items: center; cursor: pointer;" onclick="window.location.href='hub-marketing.html'">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(252,75,21,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="ph-bold ph-brain" style="font-size: 24px; color: var(--dash-accent);"></i>
+            </div>
+            <div>
+                <h3 style="margin: 0 0 4px 0; font-size: 16px; color: var(--dash-text); font-weight: 700;">Copiloto Executivo</h3>
+                <p id="ai-insight-text" style="margin: 0; font-size: 14px; color: var(--dash-text-muted); line-height: 1.5;">Analisando tendências de vendas...</p>
+            </div>
+        </div>
+
         <!-- KPI Cards -->
         <div class="dash-grid">
           <div class="dash-card">
@@ -395,6 +406,7 @@
 
 
 <script src="/fullscreen.js"></script>
+<script src="/dashboard.js"></script>
 
 
 </body>

@@ -40,6 +40,20 @@ socket.on('dashboard_stats_result', (stats) => {
   document.getElementById('dash-pedidos-hoje').innerText = stats.pedidosHoje || 0;
   document.getElementById('dash-ticket-medio').innerText = formatCurrency(parseMoneyDash(stats.ticketMedio));
 
+  // AI Copilot Insight
+  fetch('/api/hub-marketing/ia/insights-automaticos', {
+    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('chef_token') }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(data.ok && data.data && data.data.length > 0) {
+      const el = document.getElementById('ai-insight-text');
+      if (el) el.innerText = data.data[0].mensagem;
+    }
+  }).catch(e => {
+    console.error('Erro IA Copilot', e);
+  });
+
   // Top Clientes
   const topClientesTbody = document.getElementById('lista-top-clientes');
   if (topClientesTbody) {

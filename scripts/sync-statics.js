@@ -47,7 +47,9 @@ const mappings = [
   ['fila-pedidos-classica.html', 'src/views/cozinha/fila-pedidos-classica.html'],
   ['fila-pedidos.html', 'src/views/cozinha/fila-pedidos.html'],
   ['garcom-lite.html', 'src/views/garcom/garcom-lite.html'],
-  ['garcom.html', 'src/views/garcom/garcom.html']
+  ['garcom.html', 'src/views/garcom/garcom.html'],
+  ['garcom-manifest.json', 'public/garcom-manifest.json'],
+  ['sw-garcom.js', 'public/sw-garcom.js']
 ];
 
 let syncCount = 0;

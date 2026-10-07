@@ -7,6 +7,8 @@
   
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
   <style>
     :root {
@@ -40,8 +42,10 @@
     .pedido-id { font-weight: 700; font-size: 1.1rem; }
     .pedido-cliente { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
     
-    .col-mapa { flex: 1; background: #e2e8f0; position: relative; display: flex; align-items: center; justify-content: center; flex-direction: column; color: var(--muted); }
-    .col-mapa i { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
+    .col-mapa { flex: 1; background: #e2e8f0; position: relative; }
+    #mapa-entregas { width: 100%; height: 100%; z-index: 1; }
+    .mapa-overlay { position: absolute; top: 16px; left: 16px; right: 16px; z-index: 2; pointer-events: none; display: flex; justify-content: center; }
+    .mapa-alerta { background: rgba(15, 23, 42, 0.85); color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto; }
     
     .col-rotas { width: 450px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
     .lista-rotas { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
@@ -86,11 +90,12 @@
 
     <!-- COLUNA 2: Mapa Visual -->
     <div class="col-mapa">
-      <i class="ph-bold ph-map-pin-line"></i>
-      <h3>Mapa de Otimização</h3>
-      <p style="text-align: center; max-width: 300px; margin-top: 8px; font-size: 0.9rem;">
-        Selecione os pedidos na lista à esquerda para visualizar a rota otimizada por IA.
-      </p>
+      <div id="mapa-entregas"></div>
+      <div class="mapa-overlay">
+        <div class="mapa-alerta" id="mapa-status">
+          <i class="ph-bold ph-map-pin-line"></i> Selecione pedidos para traçar a rota
+        </div>
+      </div>
     </div>
 
     <!-- COLUNA 3: Rotas Montadas -->
@@ -118,6 +123,41 @@
       socket.emit('get_pedidos');
       socket.emit('get_rotas');
     });
+
+    // Configuração do Mapa Leaflet
+    let map;
+    let markersLayer = new L.LayerGroup();
+    let routeLayer = new L.LayerGroup();
+    const coordenadasMock = {
+      'Centro': [-23.550520, -46.633308],
+      'Jardins': [-23.5645, -46.666],
+      'Pinheiros': [-23.5615, -46.696],
+      'Moema': [-23.6000, -46.662],
+      'Vila Mariana': [-23.589, -46.634],
+      'Tatuapé': [-23.535, -46.574],
+      'Santana': [-23.502, -46.625]
+    };
+    
+    function initMap() {
+      // Centro base (Restaurante)
+      const latLngRestaurante = [-23.550520, -46.633308];
+      map = L.map('mapa-entregas').setView(latLngRestaurante, 13);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; Chef Cozinha Delivery',
+        maxZoom: 19
+      }).addTo(map);
+      
+      markersLayer.addTo(map);
+      routeLayer.addTo(map);
+      
+      // Ícone do restaurante
+      L.marker(latLngRestaurante, {
+        icon: L.divIcon({ className: 'custom-div-icon', html: '<div style="background:#ef4444;border-radius:50%;width:24px;height:24px;border:3px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;"><i class="ph-bold ph-storefront" style="font-size:12px;"></i></div>', iconSize: [24, 24], iconAnchor: [12, 12] })
+      }).addTo(map).bindPopup("<b>Seu Restaurante</b>");
+    }
+    
+    // Inicializar no carregamento
+    initMap();
 
     socket.on('pedidos_atualizados', (pedidos) => {
       // Filtra pedidos Prontos para entrega
@@ -149,6 +189,7 @@
     function renderPedidos() {
       const container = document.getElementById('lista-pedidos');
       container.innerHTML = '';
+      markersLayer.clearLayers();
       
       document.querySelector('.col-header span').textContent = `Pedidos Prontos (${pedidosProntos.length})`;
 
@@ -163,6 +204,19 @@
             <div class="pedido-cliente"><i class="ph-bold ph-user"></i> ${p.userName || 'Cliente'} • <b>R$ ${parseFloat(p.total).toFixed(2)}</b></div>
           </div>
         `;
+        
+        // Plotar no mapa (simulação de lat/lng pelo bairro)
+        const coords = coordenadasMock[p.bairro] || [-23.550520 + (Math.random()-0.5)*0.1, -46.633308 + (Math.random()-0.5)*0.1];
+        p._latlng = coords; // salvar para traçar rota
+        
+        const markerIcon = L.divIcon({
+           className: 'custom-div-icon',
+           html: `<div id="marker-${p.id}" style="background:#cbd5e1;border-radius:50%;width:24px;height:24px;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;color:#334155;font-weight:bold;font-size:10px;transition:0.3s;">${p.id}</div>`,
+           iconSize: [24, 24], iconAnchor: [12, 12]
+        });
+        
+        const marker = L.marker(coords, {icon: markerIcon}).addTo(markersLayer);
+        marker.bindTooltip(`Pedido #${p.id} - ${p.bairro || 'Sem Bairro'}`);
       });
     }
 
@@ -170,13 +224,44 @@
       playClick();
       const card = document.getElementById(`card-${id}`);
       const chk = document.getElementById(`chk-${id}`);
+      const markerEl = document.getElementById(`marker-${id}`);
+      
       if(card.classList.contains('selected')) {
         card.classList.remove('selected');
         chk.checked = false;
+        if(markerEl) { markerEl.style.background = '#cbd5e1'; markerEl.style.color = '#334155'; }
       } else {
         card.classList.add('selected');
         chk.checked = true;
+        if(markerEl) { markerEl.style.background = '#3b82f6'; markerEl.style.color = 'white'; }
       }
+      atualizarTracoRota();
+    }
+    
+    function atualizarTracoRota() {
+      routeLayer.clearLayers();
+      const selecionados = Array.from(document.querySelectorAll('.card-pedido.selected')).map(c => c.id.replace('card-', ''));
+      const restaurante = [-23.550520, -46.633308];
+      
+      if(selecionados.length === 0) {
+        document.getElementById('mapa-status').innerHTML = '<i class="ph-bold ph-map-pin-line"></i> Selecione pedidos para traçar a rota';
+        return;
+      }
+      
+      let pontos = [restaurante];
+      selecionados.forEach(id => {
+         const p = pedidosProntos.find(x => String(x.id) === id);
+         if(p && p._latlng) pontos.push(p._latlng);
+      });
+      
+      // Desenha linha conectando os pontos
+      L.polyline(pontos, {color: '#3b82f6', weight: 4, opacity: 0.7, dashArray: '10, 10'}).addTo(routeLayer);
+      
+      // Atualiza o status
+      document.getElementById('mapa-status').innerHTML = `<i class="ph-bold ph-magic-wand"></i> Rota IA traçada: <b>Restaurante + ${selecionados.length} Paradas</b>`;
+      
+      // Centraliza e ajusta o zoom
+      map.fitBounds(L.latLngBounds(pontos), {padding: [50, 50]});
     }
 
     let rotasDraft = [];

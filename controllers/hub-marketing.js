@@ -1698,8 +1698,11 @@ module.exports = function(app, options) {
         try {
             const { pergunta = '', contexto = {} } = req.body || {};
             
-            // Extrai inteligência real do banco de dados
+            // Extrai inteligência real e financeira do banco de dados (Hub 360)
             const perfis = await allAsync(masterDb, 'SELECT * FROM hub_mkt_perfis');
+            const vendas = await allAsync(masterDb, "SELECT * FROM hub_mkt_vendas WHERE status != 'cancelado'");
+            const campanhas = await allAsync(masterDb, 'SELECT * FROM hub_mkt_campanhas');
+
             const totalPerfis = perfis.length;
             const whales = perfis.filter(p => Number(p.total_gasto || 0) >= 400 || p.frequencia_visita === 'vip');
             
@@ -1710,31 +1713,57 @@ module.exports = function(app, options) {
                 return d >= 21 && (Number(p.total_gasto || 0) >= 150 || (p.total_visitas || 0) >= 3);
             });
 
+            // Métricas Financeiras e Operacionais
             const receitaTotal = perfis.reduce((acc, p) => acc + Number(p.total_gasto || 0), 0);
-            const ticketMedio = totalPerfis > 0 ? (receitaTotal / totalPerfis) : 0;
+            const ticketMedioPerfis = totalPerfis > 0 ? (receitaTotal / totalPerfis) : 0;
+            
+            const totalVendas = vendas.length;
+            const receitaVendas = vendas.reduce((acc, v) => acc + Number(v.valor_total || 0), 0);
+            const ticketMedioReal = totalVendas > 0 ? (receitaVendas / totalVendas) : ticketMedioPerfis;
+            
+            // ROI de Marketing & Eficiência
+            const custoMarketing = campanhas.reduce((acc, c) => acc + Number(c.custo || 0), 0);
+            const receitaMarketing = campanhas.reduce((acc, c) => acc + Number(c.valor_gerado || 0), 0);
+            const roiMarketing = custoMarketing > 0 ? (((receitaMarketing - custoMarketing) / custoMarketing) * 100).toFixed(1) : 0;
 
-            const prompt = `Você é o Diretor de Crescimento e Estrategista IA Cheff.pro de Elite.
-DADOS REAIS DA OPERAÇÃO:
+            const prompt = `Você é o Diretor de Crescimento, CFO Estratégico e IA Cheff.pro de Elite.
+DADOS REAIS DA OPERAÇÃO (MARKETING + FINANCEIRO):
 - Total de Perfis na Base: ${totalPerfis}
 - Clientes Baleia (Whales / Alto Ticket): ${whales.length}
 - Clientes VIP em Risco de Churn (>21 dias sem visita): ${churnRisk.length}
-- Faturamento Consolidado: R$ ${receitaTotal.toFixed(2)}
-- Ticket Médio Geral: R$ ${ticketMedio.toFixed(2)}
+- Faturamento Consolidado (Vendas): R$ ${receitaVendas.toFixed(2)} (Em ${totalVendas} transações)
+- Ticket Médio Real de Venda: R$ ${ticketMedioReal.toFixed(2)}
+- Investimento em Marketing: R$ ${custoMarketing.toFixed(2)}
+- Retorno de Marketing (ROI): ${roiMarketing}% (Receita gerada: R$ ${receitaMarketing.toFixed(2)})
 
 PERGUNTA DO GESTOR:
-"${pergunta || 'Como podemos acelerar o faturamento e lucrar mais esta semana?'}"
+"${pergunta || 'Como podemos otimizar a operação para acelerar o faturamento e lucrar mais esta semana?'}"
 
-Responda em formato executivo, direto ao ponto, com tom de consultor de elite (estilo McKinsey Gastronômica).
+Responda em formato executivo, direto ao ponto, com tom de consultor financeiro de elite (estilo McKinsey Gastronômica).
 Apresente:
-1. 🎯 Diagnóstico Cirúrgico (com dados reais)
-2. 💡 2 a 3 Alavancas de Lucro Imediatas (com projeção de R$)
-3. 🚀 Plano de Ação para Hoje`;
+1. 🎯 Diagnóstico Operacional & Financeiro (com dados reais)
+2. 💡 2 a 3 Alavancas de Lucro (Estratégia + Projeção de R$)
+3. 🚀 Plano de Ação Imediato`;
 
             const fallbackFn = () => {
                 const pLower = pergunta.toLowerCase();
+                
+                if (pLower.includes('financeiro') || pLower.includes('roi') || pLower.includes('lucro')) {
+                    return `### 📊 Diagnóstico Financeiro & Operacional
+Sua operação já transacionou **${totalVendas} vendas**, com um ticket médio de **R$ ${ticketMedioReal.toFixed(2)}**. O seu ROI de Marketing atual é de **${roiMarketing}%**, o que indica uma ${(roiMarketing > 200 ? 'ótima alavancagem' : 'oportunidade de otimização no CAC (Custo de Aquisição)')}.
+
+### 💡 3 Alavancas de Lucro Financeiro:
+1. **Redução de Custo Ocioso:** Com base no mapa de calor, as terças-feiras rodam com 40% de ociosidade na cozinha. Ative promoções "Delivery Only" nestes dias para diluir o custo fixo.
+2. **Upsell de Bebidas Premium (+R$ 22/mesa):** O Ticket Médio (R$ ${ticketMedioReal.toFixed(2)}) pode ser esticado se o Garçom Mobile bloquear o fechamento até sugerir a sobremesa da casa.
+3. **Reinvestimento do ROI:** Como seu ROI é de ${roiMarketing}%, recomendo dobrar a injeção na campanha que atraiu os **${whales.length} clientes VIPs**.
+
+### 🚀 Ação Recomendada para Hoje:
+Ajuste os preços dos pratos de curva A (mais vendidos) em **+3.5%**. Essa margem imperceptível impacta diretamente o lucro líquido no final do mês sem afetar a demanda.`;
+                }
+
                 if (pLower.includes('ticket') || pLower.includes('aumentar') || pLower.includes('faturamento')) {
                     return `### 💎 Diagnóstico Cirúrgico Cheff.pro
-Sua base conta com **${totalPerfis} clientes cadastrados** e um ticket médio de **R$ ${ticketMedio.toFixed(2)}**. O maior potencial de expansão imediata está no pareto de upsell na mesa e resgate dos clientes de alto valor.
+Sua base conta com **${totalPerfis} clientes cadastrados** e o ticket médio real é de **R$ ${ticketMedioReal.toFixed(2)}**. O maior potencial de expansão imediata está no pareto de upsell na mesa e resgate dos clientes de alto valor.
 
 ### 💡 3 Alavancas de Lucro Imediatas:
 1. **Harmonização Sugestiva no Garçom (+R$ 18 por mesa):** Ative no módulo Garçom Mobile a sugestão automática de vinho ou drink artesanal assim que o prato principal for lançado.
@@ -1748,7 +1777,7 @@ Dispare a campanha para o segmento **"Baleias / Whales"** convidando para uma ex
                 if (pLower.includes('churn') || pLower.includes('perda') || pLower.includes('sumido')) {
                     return `### 🚨 Radar de Retenção & Churn VIP
 Identificamos **${churnRisk.length} clientes de alta frequência/ticket** que não visitam a casa há mais de 21 dias.
-Estes clientes representam um risco de perda acumulada de **R$ ${(churnRisk.length * 320).toLocaleString('pt-BR')}/mês** se não forem ativados imediatamente.
+Estes clientes representam um risco de perda acumulada de **R$ ${(churnRisk.length * ticketMedioReal).toLocaleString('pt-BR')}/mês** se não forem ativados imediatamente.
 
 ### 💡 Protocolo de Resgate Imediato:
 - **Gatilho de Saudade Exclusiva:** Mensagem assinada pelo Chef via WhatsApp.
@@ -1756,24 +1785,37 @@ Estes clientes representam um risco de perda acumulada de **R$ ${(churnRisk.leng
 - **Taxa esperada de reativação:** 24% a 38% com disparo nos próximos 60 minutos.`;
                 }
 
-                return `### 🎯 Consultoria Estratégica Cheff.pro
-Com base no histórico consolidado de **${totalPerfis} perfis** e **${whales.length} clientes Baleia**, a operação possui excelente índice de atração, com margem clara para ampliação de margem de contribuição.
+                return `### 🎯 Consultoria Financeira e Estratégica Cheff.pro
+Com base no histórico consolidado de **${totalVendas} vendas** totalizando **R$ ${receitaVendas.toFixed(2)}**, a operação possui margem para ampliação rápida de lucro.
 
-### 💡 Recomendações Estratégicas:
-- **Terças e Quartas Silenciosas:** Implemente o Happy Hour Dinâmico entre 17h30 e 20h.
-- **Proteção do Top 3 Pratos:** Foque o marketing nos pratos de margem líquida superior a 62%.
-- **Sentinela no Salão:** Quando um dos **${whales.length} clientes VIP** chegar, o garçom mobile receberá um alerta dourado para serviço de alto padrão.`;
+### 💡 Recomendações Operacionais:
+- **Terças e Quartas Silenciosas:** Implemente o Happy Hour Dinâmico (Preço de Custo + 20% em Bebidas) para atrair volume.
+- **Proteção da Margem:** Foque o marketing nos pratos com margem de lucro líquido superior a 62%.
+- **Sentinela no Salão:** Quando um dos **${whales.length} clientes Baleia** chegar, garanta que o serviço seja impecável para fidelizar os maiores gastadores.`;
             };
 
             const respostaTexto = await chamarIAEstrategica({
                 prompt,
-                systemInstruction: 'Você é o Estrategista de Vendas e IA de Crescimento do Cheff.pro.',
+                systemInstruction: 'Você é o CFO, Estrategista de Vendas e IA de Crescimento do Cheff.pro.',
                 isJson: false,
                 fallbackFn
             });
 
             // Ações interativas sugeridas para o painel
             const acoesSugeridas = [
+                {
+                    id: 'acao-cupom-lucro',
+                    titulo: 'Lançar Oferta de Alto ROI com Cupom Inteligente',
+                    descricao: 'Gere automaticamente um código dinâmico rastreável para otimizar conversão sem ferir a margem líquida.',
+                    icone: '🎫',
+                    acaoTipo: 'abrir_campanha',
+                    payload: {
+                        nome: 'Campanha de Maximização de Lucro (Gerada por IA)',
+                        segmento: 'Risco de Churn',
+                        tipo: 'whatsapp',
+                        corpo: 'Oi {nome}! O Chef notou sua ausência. Para comemorarmos seu retorno esta semana, gerei um voucher especial: apresente o código CHEFF-VIP-20 no fechamento da conta para ganhar uma sobremesa premium ou 20% OFF na entrada! Válido até quinta.'
+                    }
+                },
                 {
                     id: 'acao-camp-vip',
                     titulo: 'Disparar Campanha VIP para Baleias',
@@ -1817,7 +1859,10 @@ Com base no histórico consolidado de **${totalPerfis} perfis** e **${whales.len
                     totalPerfis,
                     whales: whales.length,
                     churnRisk: churnRisk.length,
-                    ticketMedio: Math.round(ticketMedio)
+                    ticketMedio: Math.round(ticketMedioReal),
+                    totalVendas,
+                    receitaVendas: Math.round(receitaVendas),
+                    roiMarketing: Math.round(roiMarketing)
                 },
                 acoesSugeridas
             });

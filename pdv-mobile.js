@@ -1362,4 +1362,14 @@ window.abrirZoomQrPontoMobile = function () {
     popup.style.top = Math.min(y, window.innerHeight - 200) + 'px';
     popup.style.display = 'flex';
   };
+
+window.notificarCozinha = function() {
+  if (typeof showToast === 'function') {
+    showToast('Aviso enviado para a cozinha!', 'success');
+  }
+  if (window.socket) {
+    window.socket.emit('alerta_pdv_cozinha', 'Atenção na pista! (Via Garçom/PDV)');
+  }
+};
+
   
