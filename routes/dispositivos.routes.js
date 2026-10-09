@@ -84,6 +84,41 @@ function createDispositivosRouter() {
     res.json({ success: true });
   });
 
+  // ── GERENCIAMENTO DE DISPOSITIVOS PWA ──────────────────────────────────────
+  const { withTenant } = getContext();
+
+  router.get('/pwa-dispositivos', verificarToken, (req, res) => {
+    withTenant(req, () => {
+      getDb().all(`SELECT * FROM pwa_dispositivos ORDER BY last_seen DESC`, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: 'Erro ao buscar dispositivos' });
+        res.json(rows || []);
+      });
+    });
+  });
+
+  router.post('/pwa-dispositivos/:deviceId/remover', verificarToken, (req, res) => {
+    withTenant(req, () => {
+      getDb().run(`DELETE FROM pwa_dispositivos WHERE device_id = ?`, [req.params.deviceId], function(err) {
+        if (err) return res.status(500).json({ error: 'Erro ao remover' });
+        res.json({ success: true });
+      });
+    });
+  });
+
+  router.post('/pwa-dispositivos/:deviceId/permissoes', verificarToken, (req, res) => {
+    const { tipo, classe, genero, grau } = req.body || {};
+    withTenant(req, () => {
+      getDb().run(
+        `UPDATE pwa_dispositivos SET perm_tipo = ?, perm_classe = ?, perm_genero = ?, perm_grau = ? WHERE device_id = ?`,
+        [tipo || null, classe || null, genero || null, grau || null, req.params.deviceId],
+        function(err) {
+          if (err) return res.status(500).json({ error: 'Erro ao salvar permissões' });
+          res.json({ success: true });
+        }
+      );
+    });
+  });
+
   return router;
 }
 

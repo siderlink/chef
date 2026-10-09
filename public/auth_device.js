@@ -657,7 +657,10 @@ setTimeout(() => {
     if (btn) btn.click();
   });
 
-  window.switchMobileTab('mesas');
+  const isMobInit = window.innerWidth <= 767 || document.body.classList.contains('force-mobile');
+  if (isMobInit) {
+    window.switchMobileTab('mesas');
+  }
 }, 100);
 
 // --- MENU HAMBURGER MOBILE ---

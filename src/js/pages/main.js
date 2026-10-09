@@ -11166,8 +11166,13 @@ window.addEventListener('DOMContentLoaded', () => {
     if (typeof renderOrders === 'function') renderOrders();
     const ws = document.querySelector('.workspace');
     if (ws) {
-      ws.classList.remove('active-tab-acoes');
-      ws.classList.add('active-tab-mesas');
+      const isMobile = window.innerWidth <= 767 || document.body.classList.contains('force-mobile');
+      if (isMobile) {
+        ws.classList.remove('active-tab-acoes');
+        ws.classList.add('active-tab-mesas');
+      } else {
+        ws.classList.remove('active-tab-mesas', 'active-tab-pedido', 'active-tab-acoes', 'active-tab-resumo');
+      }
     }
   }, 100);
 });

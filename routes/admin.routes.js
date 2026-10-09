@@ -430,6 +430,74 @@ function createAdminRouter() {
     }
   });
 
+  // ── GET /layout/injected-css — CSS customizado do tenant ───────────────────
+  router.get('/layout/injected-css', (req, res) => {
+    res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    withTenant(req, () => {
+      const db = getDb();
+      db.get('SELECT valor FROM configuracoes WHERE chave = "custom_css_override"', (err, row) => {
+        if (row && row.valor) return res.send(row.valor);
+        res.send('/* Chef Injected CSS */');
+      });
+    });
+  });
+
+  // ── GET /qr — Gerador seguro de QR code em imagem GIF ───────────────────────
+  router.get('/qr', (req, res) => {
+    const data = String(req.query.data || '').slice(0, 2048);
+    if (!data) return res.status(400).send('Missing data');
+    const size = Math.min(Math.max(parseInt(req.query.size, 10) || 140, 60), 1000);
+    try {
+      const path = require('path');
+      const qrPath = path.join(__dirname, '..', 'public', 'vendor', 'qrcode', 'qrcode-generator.js');
+      const qrLib = require(qrPath);
+      const qr = qrLib(0, 'M');
+      qr.addData(data);
+      qr.make();
+      const cell = Math.max(2, Math.floor(size / qr.getModuleCount()));
+      const dataUrl = qr.createDataURL(cell, 4);
+      const img = Buffer.from(dataUrl.replace(/^data:image\/gif;base64,/, ''), 'base64');
+      res.setHeader('Content-Type', 'image/gif');
+      res.setHeader('Cache-Control', 'no-store');
+      res.send(img);
+    } catch (err) {
+      res.status(500).send('Erro ao gerar QR');
+    }
+  });
+
+  // ── GET /server-status — Status e conexões do servidor com restrição de rede privada ─
+  router.get('/server-status', (req, res) => {
+    const remoteIp = req.socket.remoteAddress || '';
+    const isPrivate = remoteIp === '127.0.0.1' || remoteIp === '::1' || remoteIp === '::ffff:127.0.0.1' ||
+      remoteIp.startsWith('192.168.') || remoteIp.startsWith('::ffff:192.168.') ||
+      remoteIp.startsWith('10.') || remoteIp.startsWith('::ffff:10.') ||
+      remoteIp.startsWith('172.') || remoteIp.startsWith('::ffff:172.');
+
+    if (!isPrivate) {
+      return res.status(403).send('Acesso não autorizado.');
+    }
+
+    const { activeSockets } = getContext();
+    const connections = [];
+    if (activeSockets && typeof activeSockets.forEach === 'function') {
+      activeSockets.forEach(s => {
+        connections.push({
+          ip: s.ip,
+          device: s.device,
+          user: s.user
+        });
+      });
+    }
+
+    res.json({
+      status: 'rodando',
+      protocol: 'http',
+      port: process.env.PORT || 8080,
+      connections,
+      logs: []
+    });
+  });
+
   return router;
 }
 

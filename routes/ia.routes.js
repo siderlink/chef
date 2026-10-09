@@ -283,7 +283,10 @@ function createIaRouter() {
   });
 
   // ── POST /api/ia/extrair-cardapio-fotos ──────────────────────────────
-  router.post('/extrair-cardapio-fotos', upload.array('fotos', 10), (req, res) => {
+  const uploadArrayMiddleware = (upload && typeof upload.array === 'function')
+    ? upload.array('fotos', 10)
+    : (req, res, next) => next();
+  router.post('/extrair-cardapio-fotos', uploadArrayMiddleware, (req, res) => {
     withTenant(req, async () => {
       try {
         const fs   = require('fs');

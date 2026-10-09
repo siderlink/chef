@@ -180,7 +180,7 @@ function createAuthRouter() {
   });
 
   // ─── GET  /api/restaurante/info-publica ────────────────────────────────
-  router.get('/restaurante-info-publica', (req, res) => {
+  router.get(['/restaurante-info-publica', '/info-publica'], (req, res) => {
     const { id, codigo, slug, todos } = req.query;
     if (todos === '1' || todos === 'true') {
       return masterDb.all('SELECT id, nome FROM restaurantes WHERE ativo = 1 ORDER BY nome ASC', [], (err, rows) => {

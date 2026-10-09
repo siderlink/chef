@@ -227,6 +227,148 @@ function createMesasRouter() {
     });
   });
 
+  // ── GET /perfil/:mesa_nome — Perfil analítico da mesa e histórico de consumo ─
+  router.get('/perfil/:mesa_nome', (req, res) => {
+    const mesa_nome = req.params.mesa_nome;
+
+    withTenant(req, () => {
+      const db = getDb();
+      db.all("SELECT id, userName, productName, quantity, total, createdAt, localName, status FROM pedidos WHERE localName = ? ORDER BY id DESC LIMIT 300", [mesa_nome], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        let clientes_recentes = [];
+        let itemCounts = {};
+        let soma = 0;
+        let clienteConsumo = {};
+        let abertaEm = null;
+
+        (rows || []).forEach(r => {
+          const isPagamento = r.productName && (String(r.productName).includes('Pgto Parcial') || String(r.productName).includes('Pagamento'));
+          if (isPagamento) return;
+
+          if (r.userName && r.userName.trim() !== '' && r.userName.toLowerCase() !== 'cliente padrão') {
+            if (!clientes_recentes.includes(r.userName)) clientes_recentes.push(r.userName);
+          }
+
+          soma += parseFloat(r.total) || 0;
+
+          if (r.productName) {
+            const qty = parseInt(r.quantity, 10) || 1;
+            itemCounts[r.productName] = (itemCounts[r.productName] || 0) + qty;
+          }
+
+          // Consumo por cliente
+          const cliente = (r.userName && r.userName.trim() !== '' && r.userName.toLowerCase() !== 'cliente padrão')
+            ? r.userName.trim() : 'Cliente Padrão';
+          if (!clienteConsumo[cliente]) clienteConsumo[cliente] = { nome: cliente, valor: 0, pedidos: 0 };
+          clienteConsumo[cliente].valor += parseFloat(r.total) || 0;
+          clienteConsumo[cliente].pedidos++;
+        });
+
+        let mais_pedidos = Object.keys(itemCounts).map(nome => ({ nome, qty: itemCounts[nome] }));
+        mais_pedidos.sort((a, b) => b.qty - a.qty);
+        mais_pedidos = mais_pedidos.slice(0, 5);
+
+        const clientes_detalhe = Object.values(clienteConsumo)
+          .sort((a, b) => b.valor - a.valor)
+          .slice(0, 10);
+
+        const count = (rows && rows.length) ? rows.length : 0;
+        const media = count > 0 ? soma / count : 0;
+
+        try {
+          const abertos = (rows || []).filter(r => !['Finalizado', 'Pago', 'Cancelado', 'Entregue'].includes(r.status));
+          const fonte = (abertos.length > 0 ? abertos : rows || []).slice(-1)[0];
+          if (fonte && fonte.createdAt) abertaEm = fonte.createdAt;
+        } catch (e) { }
+
+        res.json({
+          mesa: mesa_nome,
+          clientes_recentes: clientes_recentes.slice(0, 5),
+          mais_pedidos,
+          media_valor: media,
+          total_pedidos: count,
+          aberta_em: abertaEm,
+          clientes_detalhe
+        });
+      });
+    });
+  });
+
+  // ── GET /sugestoes-promocao — Inteligência de vendas e detecção de ociosidade ─
+  router.get('/sugestoes-promocao', (req, res) => {
+    withTenant(req, () => {
+      const db = getDb();
+      db.all(`SELECT productName, SUM(quantity) as qty FROM pedidos WHERE createdAt >= datetime('now', '-7 days') GROUP BY productName`, (err, vendidos) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        let vended = {};
+        (vendidos || []).forEach(r => {
+          if (r.productName) vended[r.productName] = (vended[r.productName] || 0) + (parseInt(r.qty, 10) || 1);
+        });
+
+        db.all("SELECT nome, preco FROM produtos WHERE status != 'inativo'", (err2, produtos) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+
+          let obsoletos = [];
+          let vendidosArr = [];
+
+          (produtos || []).forEach(prod => {
+            if (!vended[prod.nome]) {
+              obsoletos.push(prod);
+            } else {
+              vendidosArr.push({ nome: prod.nome, qty: vended[prod.nome], preco: prod.preco });
+            }
+          });
+
+          vendidosArr.sort((a, b) => b.qty - a.qty);
+          let tendencias = vendidosArr.slice(0, 5);
+
+          let sugestoes = [];
+          if (tendencias.length > 0 && obsoletos.length > 0) {
+            let top = tendencias[0];
+            let obs = obsoletos[0];
+            sugestoes.push({
+              tipo: 'combo',
+              titulo: 'Combo de Alta Conversão',
+              descricao: `Crie um combo oferecendo '${top.nome}' (tendência) junto com '${obs.nome}' (baixa saída) com um leve desconto. Isso ajudará a girar o estoque do item obsoleto!`
+            });
+          }
+
+          if (obsoletos.length > 1) {
+            sugestoes.push({
+              tipo: 'obsoleto',
+              titulo: 'Alerta de Baixa Saída',
+              descricao: `Os itens '${obsoletos[0].nome}' e '${obsoletos[1].nome}' não tiveram saídas nos últimos 7 dias. Considere criar uma promoção de "Compre 1 e Leve 2" ou dar como brinde em pedidos acima de um valor X.`
+            });
+          }
+
+          if (tendencias.length > 1) {
+            sugestoes.push({
+              tipo: 'tendencia',
+              titulo: 'Tendência de Vendas',
+              descricao: `Aproveite a alta demanda de '${tendencias[0].nome}' e '${tendencias[1].nome}'. Você pode aumentar sutilmente a margem de lucro ou criar variações Premium desses produtos.`
+            });
+          }
+
+          if (sugestoes.length === 0) {
+            sugestoes.push({
+              tipo: 'info',
+              titulo: 'Dados Insuficientes',
+              descricao: 'Ainda não há dados suficientes nos últimos 7 dias para gerar sugestões precisas. Continue registrando as vendas!'
+            });
+          }
+
+          res.json({
+            obsoletos: obsoletos.slice(0, 5),
+            tendencias,
+            sugestoes
+          });
+        });
+      });
+    });
+  });
+
   return router;
 }
 

@@ -1837,21 +1837,18 @@ body.theme-dark .shortcut-pill {
   display: none;
 }
 
-/* Tablet: esconde a sidebar de Ações no painel de Mesas para dar mais espaço */
+/* Tablet otimizado: mantém 3 colunas e divisão mesas/produtos */
 @media (min-width: 768px) and (max-width: 1024px) {
   .left-actions,
   aside.left-actions,
-  #left-panel,
-  #resizer-left {
-    display: none !important;
+  #left-panel {
+    width: 210px !important;
+    min-width: 190px !important;
   }
-  .workspace .main-workspace,
-  #main-panel,
   #mesas-section-container,
   .mesas-container {
-    flex: 1 1 100% !important;
-    min-width: 0 !important;
-    width: 100% !important;
+    flex: 0 0 45% !important;
+    height: 45% !important;
   }
 }
 
@@ -2718,10 +2715,71 @@ body.theme-dark .shortcut-pill {
   }
 
   .left-actions,
-  .main-workspace,
-  .right-info,
-  .mesas-container {
+  aside.left-actions,
+  #left-panel {
     display: flex !important;
+    flex-direction: column !important;
+    width: var(--left-sidebar-width, 240px) !important;
+    flex: 0 0 var(--left-sidebar-width, 240px) !important;
+    min-width: 220px !important;
+    max-width: 320px !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .main-workspace,
+  #main-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-width: 360px !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .mesas-container,
+  #mesas-section-container {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 0 0 45% !important;
+    min-height: 120px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .middle-v-splitter,
+  #splitter-middle-v {
+    display: flex !important;
+    height: 8px !important;
+    cursor: row-resize !important;
+  }
+
+  .products-container,
+  #products-section-container {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 120px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .right-info,
+  aside.right-info,
+  #right-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    width: var(--right-sidebar-width, 300px) !important;
+    flex: 0 0 var(--right-sidebar-width, 300px) !important;
+    min-width: 270px !important;
+    max-width: 360px !important;
+    flex-shrink: 0 !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
   }
 
   .resizer {

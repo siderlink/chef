@@ -285,6 +285,236 @@
   <script src="/fuzzy-search.js"></script>
   <script type="module" src="main.js"></script>
         <script src="/chef-layout-customizer.js" defer></script>
+
+  
+
+
+  <style id="caixa-classico-layout-shield">
+    /* ══════════════════════════════════════════════════════════════════════════
+       BLINDAGEM DEFINITIVA DO CAIXA CLÁSSICO: 3 COLUNAS + DIVISÃO MESAS/PRODUTOS
+       ══════════════════════════════════════════════════════════════════════════ */
+    @media (min-width: 768px) {
+      html, body {
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .grandchef-app {
+        height: 100vh !important;
+        max-height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+      }
+
+      .workspace {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: stretch !important;
+        width: 100% !important;
+        flex: 1 1 0% !important;
+        height: calc(100vh - 84px) !important;
+        min-height: 0 !important;
+        max-height: calc(100vh - 84px) !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+      }
+
+      /* 1. BARRA LATERAL ESQUERDA: AÇÕES (VERTICAL COM TEXTOS E BOTÕES) */
+      #left-panel,
+      aside.left-actions,
+      .left-actions {
+        display: flex !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        width: 230px !important;
+        min-width: 210px !important;
+        max-width: 320px !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        flex: 0 0 230px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+        order: 1 !important;
+      }
+
+      #left-panel .action-group,
+      .left-actions .action-group {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin-bottom: 8px !important;
+      }
+
+      #left-panel .btn-grid-2,
+      .left-actions .btn-grid-2 {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+        width: 100% !important;
+      }
+
+      /* 2. SPLITTERS VERTICAIS (ENTRE COLUNAS) */
+      #resizer-left {
+        display: flex !important;
+        width: 6px !important;
+        min-width: 6px !important;
+        height: 100% !important;
+        cursor: col-resize !important;
+        flex-shrink: 0 !important;
+        order: 2 !important;
+      }
+
+      #resizer-right {
+        display: flex !important;
+        width: 6px !important;
+        min-width: 6px !important;
+        height: 100% !important;
+        cursor: col-resize !important;
+        flex-shrink: 0 !important;
+        order: 4 !important;
+      }
+
+      /* 3. COLUNA CENTRAL: CONSTRANGIDA AO TAMANHO EXATO DA TELA (MESAS 45%, PRODUTOS 55%) */
+      #main-panel,
+      .main-workspace,
+      body:not(.chef-monitor-vertical):not(.force-mobile):not(.legacy-v1) #main-panel {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 0% !important;
+        min-width: 360px !important;
+        height: calc(100vh - 84px) !important;
+        min-height: 0 !important;
+        max-height: calc(100vh - 84px) !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+        order: 3 !important;
+      }
+
+      #mesas-section-container,
+      .mesas-container {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 0 0 45% !important;
+        height: 45% !important;
+        min-height: 0 !important;
+        max-height: 45% !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+      }
+
+      #mesas-section-container .mesas-scroll,
+      .mesas-container .mesas-scroll,
+      #orders-grid {
+        display: block !important;
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        height: calc(100% - 38px) !important;
+        max-height: calc(100% - 38px) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+      }
+
+      #splitter-middle-v,
+      .middle-v-splitter {
+        display: flex !important;
+        flex: 0 0 8px !important;
+        height: 8px !important;
+        min-height: 8px !important;
+        max-height: 8px !important;
+        width: 100% !important;
+        cursor: row-resize !important;
+        background: var(--bg-secondary, #e2e8f0) !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+      }
+
+      #products-section-container,
+      .products-container {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 0% !important;
+        height: calc(55% - 8px) !important;
+        min-height: 0 !important;
+        max-height: calc(55% - 8px) !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+      }
+
+      #products-section-container .products-table-wrapper,
+      .products-container .products-table-wrapper {
+        display: block !important;
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        height: calc(100% - 38px) !important;
+        max-height: calc(100% - 38px) !important;
+        width: 100% !important;
+        overflow-y: auto !important;
+        overflow-x: auto !important;
+        box-sizing: border-box !important;
+      }
+
+      /* 4. BARRA LATERAL DIREITA: RESUMO E INFORMAÇÕES */
+      #right-panel,
+      aside.right-info,
+      .right-info,
+      body:not(.chef-monitor-vertical):not(.force-mobile):not(.legacy-v1) #right-panel {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 300px !important;
+        min-width: 270px !important;
+        max-width: 360px !important;
+        height: calc(100vh - 84px) !important;
+        min-height: 0 !important;
+        max-height: calc(100vh - 84px) !important;
+        flex: 0 0 300px !important;
+        flex-shrink: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+        order: 5 !important;
+      }
+
+      /* 5. NEUTRALIZAÇÃO DE CLASSES MOBILE ACIDENTAIS NO DESKTOP */
+      .workspace.active-tab-mesas #left-panel,
+      .workspace.active-tab-mesas aside.left-actions,
+      .workspace.active-tab-mesas .left-actions,
+      .workspace.active-tab-mesas #right-panel,
+      .workspace.active-tab-mesas aside.right-info,
+      .workspace.active-tab-mesas .right-info,
+      .workspace.active-tab-mesas #products-section-container,
+      .workspace.active-tab-mesas .products-container,
+      .workspace.active-tab-mesas #splitter-middle-v,
+      .workspace.active-tab-mesas .middle-v-splitter,
+      .workspace.active-tab-pedido #left-panel,
+      .workspace.active-tab-pedido aside.left-actions,
+      .workspace.active-tab-pedido .left-actions,
+      .workspace.active-tab-pedido #mesas-section-container,
+      .workspace.active-tab-pedido .mesas-container,
+      .workspace.active-tab-pedido #splitter-middle-v,
+      .workspace.active-tab-pedido .middle-v-splitter,
+      .workspace.active-tab-acoes #main-panel,
+      .workspace.active-tab-acoes .main-workspace,
+      .workspace.active-tab-acoes #right-panel,
+      .workspace.active-tab-acoes aside.right-info,
+      .workspace.active-tab-acoes .right-info {
+        display: flex !important;
+      }
+    }
+  </style>
+
 </head>
 
 <body>
@@ -595,7 +825,7 @@
       <div class="action-popup-content" id="action-popup-content"></div>
     </div>
 
-    <div class="workspace active-tab-mesas">
+    <div class="workspace">
 
       <!-- LEFT ACTIONS -->
       <aside class="left-actions" id="left-panel">
@@ -2897,6 +3127,12 @@
       </div>
     </div>
   </div>
+
+
+
+
+
+
 </body>
 
 </html>
