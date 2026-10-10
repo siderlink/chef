@@ -15454,10 +15454,12 @@ function carregarHoneypotInvasores() {
     invasores.forEach(function(inv) {
       var agentShort = (inv.user_agent || '').substring(0, 45) + ((inv.user_agent || '').length > 45 ? '...' : '');
       var first = new Date(inv.first_seen).toLocaleString('pt-BR');
+      var safeIpId = 'geo-inv-' + inv.ip.replace(/[^a-zA-Z0-9]/g, '-');
       
       html += '<tr style="border-left: 3px solid #ef4444;">';
       html += '<td>' +
                 '<div style="font-weight:bold; color:#ef4444; font-size:1.05rem;"><i class="fa-solid fa-mask"></i> ' + escHtml(inv.ip) + '</div>' +
+                '<div id="' + safeIpId + '" style="margin-top:6px; margin-bottom:4px;"><span style="color:#94a3b8; font-size:0.75rem;"><i class="fa-solid fa-earth-americas"></i> Localizando no Radar...</span></div>' +
                 '<div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;" title="' + escHtml(inv.user_agent) + '">' + escHtml(agentShort) + '</div>' +
               '</td>';
       html += '<td>' +
@@ -15472,6 +15474,31 @@ function carregarHoneypotInvasores() {
       html += '</tr>';
     });
     document.getElementById('lista-honeypot-invasores').innerHTML = html;
+
+    // Disparar radar assíncrono para cada IP usando GeoJS
+    invasores.forEach(async function(inv) {
+      var safeIpId = 'geo-inv-' + inv.ip.replace(/[^a-zA-Z0-9]/g, '-');
+      try {
+        if(inv.ip === '127.0.0.1' || inv.ip === '::1' || inv.ip.startsWith('192.168.')) {
+          document.getElementById(safeIpId).innerHTML = '<span style="color:#3b82f6; font-size:0.75rem;"><i class="fa-solid fa-network-wired"></i> Rede Local (Localhost)</span>';
+          return;
+        }
+        let res = await fetch('https://get.geojs.io/v1/ip/geo/' + inv.ip + '.json');
+        let geo = await res.json();
+        if(geo && geo.country_code) {
+          let flagUrl = 'https://flagcdn.com/20x15/' + geo.country_code.toLowerCase() + '.png';
+          let geoHtml = '<div style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:#cbd5e1;">' +
+                          '<img src="' + flagUrl + '" alt="' + geo.country_code + '" style="border-radius:2px; box-shadow:0 0 2px rgba(0,0,0,0.5);"> ' +
+                          '<span>' + escHtml(geo.city || geo.country) + ' &bull; ' + escHtml((geo.organization || geo.organization_name || '').substring(0,25)) + '</span>' +
+                        '</div>';
+          document.getElementById(safeIpId).innerHTML = geoHtml;
+        } else {
+          document.getElementById(safeIpId).innerHTML = '<span style="color:#94a3b8; font-size:0.75rem;"><i class="fa-solid fa-ghost"></i> Origem Oculta</span>';
+        }
+      } catch(e) {
+        document.getElementById(safeIpId).innerHTML = '<span style="color:#ef4444; font-size:0.75rem;"><i class="fa-solid fa-triangle-exclamation"></i> Radar Falhou</span>';
+      }
+    });
   });
 }
 
@@ -15548,6 +15575,7 @@ function carregarHoneypotFingerprints() {
       html += '<td style="font-size:0.8rem;">' +
                 '<div><i class="fa-solid fa-battery-full" style="color:#22c55e;"></i> ' + escHtml(fp.battery || 'N/A') + '</div>' +
                 '<div><i class="fa-solid fa-wifi" style="color:#0ea5e9;"></i> ' + escHtml(fp.connection_type || 'N/A') + '</div>' +
+                '<button class="btn-action" style="margin-top:6px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border-color:#ef4444;" onclick="abrirControleTroll(\'' + escHtml(fp.session_token) + '\')"><i class="fa-solid fa-gamepad"></i> Controle Troll</button>' +
               '</td>';
       html += '</tr>';
     });
@@ -15571,6 +15599,8 @@ function carregarConfigHoneypot() {
     if (document.getElementById('chk-hp-seo')) document.getElementById('chk-hp-seo').checked = (c.enable_seo_beacon === 'true');
     if (document.getElementById('chk-hp-fake-data')) document.getElementById('chk-hp-fake-data').checked = (c.enable_fake_data === 'true');
     if (document.getElementById('chk-hp-data-bomb')) document.getElementById('chk-hp-data-bomb').checked = (c.enable_data_bomb === 'true');
+    if (document.getElementById('inp-hp-webhook')) document.getElementById('inp-hp-webhook').value = c.discord_webhook || '';
+    if (typeof carregarWhitelist === 'function') carregarWhitelist();
   });
 }
 
@@ -15579,7 +15609,8 @@ function salvarConfigHoneypot() {
     enable_fingerprint: document.getElementById('chk-hp-fingerprint') ? (document.getElementById('chk-hp-fingerprint').checked ? 'true' : 'false') : 'false',
     enable_seo_beacon: document.getElementById('chk-hp-seo') ? (document.getElementById('chk-hp-seo').checked ? 'true' : 'false') : 'false',
     enable_fake_data: document.getElementById('chk-hp-fake-data') ? (document.getElementById('chk-hp-fake-data').checked ? 'true' : 'false') : 'false',
-    enable_data_bomb: document.getElementById('chk-hp-data-bomb') ? (document.getElementById('chk-hp-data-bomb').checked ? 'true' : 'false') : 'false'
+    enable_data_bomb: document.getElementById('chk-hp-data-bomb') ? (document.getElementById('chk-hp-data-bomb').checked ? 'true' : 'false') : 'false',
+    discord_webhook: document.getElementById('inp-hp-webhook') ? document.getElementById('inp-hp-webhook').value : ''
   };
   
   var x = new XMLHttpRequest();
@@ -15603,4 +15634,119 @@ window.baixarIscaPara = baixarIscaPara;
 window.carregarConfigHoneypot = carregarConfigHoneypot;
 window.salvarConfigHoneypot = salvarConfigHoneypot;
 
+function carregarWhitelist() {
+  apiGet('/api/super/honeypot/whitelist', function(err, data) {
+    if (err || !data || !data.ok) return;
+    var html = '';
+    (data.ips || []).forEach(function(ip) {
+      html += '<li style="padding:8px 12px; border-bottom:1px solid #3f3f46; display:flex; justify-content:space-between;">' +
+                '<span style="font-family:monospace;">' + escHtml(ip) + '</span>' +
+                '<i class="fa-solid fa-trash" style="color:#ef4444; cursor:pointer;" onclick="removerIpWhitelist(\'' + escHtml(ip) + '\')"></i>' +
+              '</li>';
+    });
+    if(!html) html = '<li style="padding:8px 12px; text-align:center; color:#94a3b8;">Nenhum IP na whitelist.</li>';
+    var el = document.getElementById('lista-hp-whitelist');
+    if(el) el.innerHTML = html;
+  });
+}
 
+function adicionarIpWhitelist() {
+  var el = document.getElementById('inp-hp-whitelist');
+  if(!el) return;
+  var ip = el.value.trim();
+  if (!ip) return;
+  var x = new XMLHttpRequest();
+  x.open('POST', '/api/super/honeypot/whitelist', true);
+  x.setRequestHeader('Content-Type', 'application/json');
+  x.setRequestHeader('x-super-admin-token', getSuperAdminToken());
+  x.onreadystatechange = function() {
+    if(x.readyState === 4 && x.status === 200) {
+      el.value = '';
+      carregarWhitelist();
+      showToast('IP adicionado à Whitelist.', 'success');
+    }
+  };
+  x.send(JSON.stringify({ ip: ip }));
+}
+
+function removerIpWhitelist(ip) {
+  var x = new XMLHttpRequest();
+  x.open('POST', '/api/super/honeypot/whitelist', true);
+  x.setRequestHeader('Content-Type', 'application/json');
+  x.setRequestHeader('x-super-admin-token', getSuperAdminToken());
+  x.onreadystatechange = function() {
+    if(x.readyState === 4 && x.status === 200) {
+      carregarWhitelist();
+      showToast('IP removido da Whitelist.', 'success');
+    }
+  };
+  x.send(JSON.stringify({ ip: ip, remove: true }));
+}
+
+window.carregarWhitelist = carregarWhitelist;
+window.adicionarIpWhitelist = adicionarIpWhitelist;
+window.removerIpWhitelist = removerIpWhitelist;
+
+
+
+/* ═══ CONTROLE REMOTO TROLL ═══ */
+
+function abrirControleTroll(sessionToken) {
+  if (!sessionToken) return showToast('Sessão inválida para trollagem.', 'warning');
+  document.getElementById('troll-target-session').value = sessionToken;
+  document.getElementById('troll-session-id').textContent = 'Sessão: ' + sessionToken.substring(0, 12) + '...';
+  abrirModal('modal-troll-remote');
+}
+window.abrirControleTroll = abrirControleTroll;
+
+function enviarComandoTroll(action, extra) {
+  var sessionToken = document.getElementById('troll-target-session').value;
+  if (!sessionToken) return;
+  
+  var payload = { session_token: sessionToken, action: action };
+  if (extra) payload.extra = extra;
+  
+  var x = new XMLHttpRequest();
+  x.open('POST', '/api/super/honeypot/troll-command', true);
+  x.setRequestHeader('Content-Type', 'application/json');
+  x.setRequestHeader('x-super-admin-token', getSuperAdminToken());
+  x.onreadystatechange = function() {
+    if (x.readyState === 4 && x.status === 200) {
+      showToast('Comando [' + action + '] enviado ao invasor!', 'success');
+      if (action === 'alert') document.getElementById('troll-msg-input').value = '';
+    }
+  };
+  x.send(JSON.stringify(payload));
+}
+window.enviarComandoTroll = enviarComandoTroll;
+
+/* ═══ WAF AUTO-BAN E BLOQUEIO MANUAL ═══ */
+
+function bloquearIpWaf(ipTarget) {
+  if (!confirm('Deseja realmente BANIR o IP ' + ipTarget + ' no WAF? Ele perderá acesso a TODAS as rotas do servidor.')) return;
+  
+  var x = new XMLHttpRequest();
+  x.open('POST', '/api/super/honeypot/waf/ban', true);
+  x.setRequestHeader('Content-Type', 'application/json');
+  x.setRequestHeader('x-super-admin-token', getSuperAdminToken());
+  
+  x.onreadystatechange = function() {
+    if (x.readyState === 4) {
+      if (x.status === 200) {
+        showToast('IP ' + ipTarget + ' bloqueado com sucesso pelo Firewall.', 'success');
+        // Adiciona um riscado visual na linha da tabela
+        var safeId = 'inv-row-' + ipTarget.replace(/[^a-zA-Z0-9]/g, '-');
+        var tr = document.getElementById(safeId);
+        if (tr) {
+          tr.style.opacity = '0.5';
+          tr.style.pointerEvents = 'none';
+          tr.style.filter = 'grayscale(100%)';
+        }
+      } else {
+        showToast('Erro ao banir IP no WAF.', 'error');
+      }
+    }
+  };
+  x.send(JSON.stringify({ ip: ipTarget }));
+}
+window.bloquearIpWaf = bloquearIpWaf;

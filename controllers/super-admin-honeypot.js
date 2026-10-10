@@ -20,6 +20,47 @@ module.exports = function (app, masterDb, sqlite3, options = {}) {
   const notifEngine = new SuperAdminNotificationEngine({ masterDb, io });
   const pendingTrollCommands = {};
 
+  masterDb.run(`
+    CREATE TABLE IF NOT EXISTS honeypot_waf_banned_ips (
+      ip TEXT PRIMARY KEY,
+      reason TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  const wafBannedIps = new Set();
+  masterDb.all(`SELECT ip FROM honeypot_waf_banned_ips`, [], (err, rows) => {
+    if (rows) rows.forEach(r => wafBannedIps.add(r.ip));
+  });
+
+  const wafWhitelist = new Set(['127.0.0.1', '::1']);
+  masterDb.run(`CREATE TABLE IF NOT EXISTS honeypot_waf_whitelist (ip TEXT PRIMARY KEY)`);
+  masterDb.all(`SELECT ip FROM honeypot_waf_whitelist`, [], (err, rows) => {
+    if (rows) rows.forEach(r => wafWhitelist.add(r.ip));
+  });
+
+  app.use((req, res, next) => {
+    const rawIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '127.0.0.1').replace('::ffff:', '');
+    
+    if (wafWhitelist.has(rawIp)) return next();
+
+    if (wafBannedIps.has(rawIp)) {
+      res.status(403);
+      return res.end();
+    }
+
+    // Honeytoken intercept
+    if (req.method === 'POST' && req.body && req.body.email === 'root_sys@chefcozinha.com.br') {
+      wafBannedIps.add(rawIp);
+      masterDb.run(`INSERT OR IGNORE INTO honeypot_waf_banned_ips (ip, reason) VALUES (?, ?)`, [rawIp, 'FATAL: Honeytoken Triggered']);
+      sendWebhookAlert(`🚨 **WAF Baniu um Invasor!**\nO IP \`${rawIp}\` tentou usar a credencial falsa (Honeytoken) e foi bloqueado permanentemente.`);
+      res.status(403);
+      return res.end();
+    }
+
+    next();
+  });
+
   // Cria tabela de logs de honeypot se não existir
   masterDb.run(`
     CREATE TABLE IF NOT EXISTS honeypot_logs (
@@ -81,6 +122,19 @@ module.exports = function (app, masterDb, sqlite3, options = {}) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  async function sendWebhookAlert(message) {
+    try {
+      const config = await getConfig();
+      if (config.discord_webhook && config.discord_webhook.startsWith('http')) {
+        fetch(config.discord_webhook, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: message })
+        }).catch(() => {});
+      }
+    } catch(e) {}
+  }
+
   // Helper para registrar e alertar sobre o invasor
   function alertarInvasor(req, tipo, detalhes = {}) {
     const rawIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip || '127.0.0.1')
@@ -94,6 +148,30 @@ module.exports = function (app, masterDb, sqlite3, options = {}) {
       `INSERT INTO honeypot_logs (ip, tipo, url, payload, user_agent, session_token) VALUES (?, ?, ?, ?, ?, ?)`,
       [rawIp, tipo, url, JSON.stringify(detalhes), userAgent, sessionToken],
       () => {}
+    );
+
+    // Auto-Ban Logic: Check if IP hit 3 traps in the last 5 minutes
+    masterDb.get(
+      `SELECT COUNT(*) as recentHits FROM honeypot_logs WHERE ip = ? AND created_at > datetime('now', '-5 minutes')`,
+      [rawIp],
+      (err, row) => {
+        if (row && row.recentHits >= 3 && !wafBannedIps.has(rawIp)) {
+          if (wafWhitelist.has(rawIp)) return;
+          wafBannedIps.add(rawIp);
+          masterDb.run(`INSERT OR IGNORE INTO honeypot_waf_banned_ips (ip, reason) VALUES (?, ?)`, [rawIp, 'Auto-ban: 3+ traps in 5 mins']);
+          sendWebhookAlert(`🚨 **WAF Auto-Ban!**\nO IP \`${rawIp}\` foi banido após cair em Múltiplas Armadilhas no Honeypot.`);
+          if (options && options.io) {
+            options.io.emit('alerta_impostor_super_admin', {
+              ip: rawIp,
+              tipo: 'WAF_AUTO_BAN',
+              url: 'SISTEMA WAF',
+              user_agent: 'Sistema de Defesa',
+              data: new Date(),
+              detalhes: { message: 'IP banido automaticamente por comportamento hostil repetitivo.' }
+            });
+          }
+        }
+      }
     );
 
     // 2. Notificação Enterprise (P1 - Crítica & Fraude)
@@ -343,7 +421,33 @@ INSERT INTO fake_hackers VALUES (1, '${req.ip || '127.0.0.1'}', 'TROUXA_QUE_TENT
     );
   });
 
+  app.get('/api/super/honeypot/whitelist', (req, res) => {
+    res.json({ ok: true, ips: Array.from(wafWhitelist) });
+  });
+
+  app.post('/api/super/honeypot/whitelist', (req, res) => {
+    const { ip, remove } = req.body;
+    if (remove) {
+      wafWhitelist.delete(ip);
+      masterDb.run(`DELETE FROM honeypot_waf_whitelist WHERE ip = ?`, [ip]);
+    } else if (ip) {
+      wafWhitelist.add(ip);
+      masterDb.run(`INSERT OR IGNORE INTO honeypot_waf_whitelist (ip) VALUES (?)`, [ip]);
+    }
+    res.json({ ok: true });
+  });
+
   // 6 Novos Endpoints: Invasores, Timeline, Fingerprints, Iscas e Coleta
+
+  app.post('/api/super/honeypot/waf/ban', (req, res) => {
+    const { ip } = req.body;
+    if (!ip) return res.json({ ok: false });
+    
+    wafBannedIps.add(ip);
+    masterDb.run(`INSERT OR IGNORE INTO honeypot_waf_banned_ips (ip, reason) VALUES (?, ?)`, [ip, 'Manual WAF Ban via Super Admin']);
+    
+    res.json({ ok: true, message: 'IP banido no WAF com sucesso.' });
+  });
 
   app.get('/api/super/honeypot/config', async (req, res) => {
     const config = await getConfig();

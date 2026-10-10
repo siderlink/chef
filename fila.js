@@ -550,6 +550,14 @@ window.restaurarTamanhosPadrao = function() {
   kdsSectionSizes = Object.assign({}, DEFAULT_SECTION_SIZES);
   localStorage.setItem('chef_kds_section_sizes', JSON.stringify(kdsSectionSizes));
   localStorage.setItem('chef_kds_caixa_alta', '0');
+  ['nome', 'qtd', 'obs', 'comps'].forEach(c => {
+    localStorage.removeItem('chef_kds_font_' + c);
+    document.documentElement.style.removeProperty('--kds-font-' + c);
+    const ql = document.getElementById('queue-list');
+    if (ql) ql.style.removeProperty('--kds-font-' + c);
+  });
+  if (typeof window.updateFontScale === 'function') window.updateFontScale(1.0);
+  if (typeof window.aplicarTamanhosCamposSalvos === 'function') window.aplicarTamanhosCamposSalvos();
   aplicarTamanhosCSS(kdsSectionSizes);
   renderQueue(true);
   kdsAgendarSalvarNoServidor();
@@ -2425,7 +2433,7 @@ function renderizarCardIndividual(item, itemIndex = 0) {
           ${badgeEspecial}
         </div>
         ${pizzaKdsHtml}
-        ${obsEsc ? `<div class="item-observacao" style="background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:4px 8px; border-radius:6px; font-size:12px; font-weight:800; margin-top:4px;"><i class="ph-bold ph-warning-circle"></i> OBS: ${obsEsc}</div>` : ''}
+        ${obsEsc ? `<div class="item-observacao" style="background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:4px 8px; border-radius:6px; font-weight:800; margin-top:4px;"><i class="ph-bold ph-warning-circle"></i> OBS: ${obsEsc}</div>` : ''}
         ${compsHtml}
         ${smartSyncHtml}
       </div>`;
@@ -2905,12 +2913,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // CONTROLE DO TAMANHO DE FONTE
   let currentFontScale = parseFloat(localStorage.getItem('chef_kds_font_scale') || localStorage.getItem('queue-font-scale') || '1.0');
   function updateFontScale(scale) {
-    currentFontScale = Math.min(Math.max(scale, 0.6), 2.0);
+    currentFontScale = Math.round(Math.min(Math.max(scale, 0.6), 2.0) * 10) / 10;
     localStorage.setItem('chef_kds_font_scale', currentFontScale.toString());
     localStorage.setItem('queue-font-scale', currentFontScale.toString());
+    window.filaFontScale = currentFontScale;
     document.documentElement.style.setProperty('--queue-font-scale', currentFontScale);
     const queueList = document.getElementById('queue-list');
-    if (queueList) queueList.style.fontSize = (currentFontScale * 100) + '%';
+    if (queueList) {
+      queueList.style.setProperty('--queue-font-scale', currentFontScale);
+      queueList.style.fontSize = (currentFontScale * 100) + '%';
+    }
+    const labelScale = document.getElementById('kds-val-font-scale');
+    if (labelScale) labelScale.innerText = Math.round(currentFontScale * 100) + '%';
     kdsAgendarSalvarNoServidor();
   }
   window.updateFontScale = updateFontScale;
@@ -2936,12 +2950,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Popup font buttons (work even without sidebar buttons)
+  // Popup font buttons
   document.querySelectorAll('#popup-btn-font-dec, #popup-btn-font-inc').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.onclick = () => {
       const delta = btn.id === 'popup-btn-font-inc' ? 0.1 : -0.1;
       updateFontScale(currentFontScale + delta);
-    });
+    };
   });
 });
 
@@ -2956,40 +2970,75 @@ window.alterarTamanhoCampo = function(campo, delta) {
   const storageKey = 'chef_kds_font_' + campo;
   
   // Define tamanhos padrao
-  const defaultSizes = { nome: 16.5, qtd: 15, obs: 12, comps: 11.7 };
+  const defaultSizes = { nome: 16.5, qtd: 18, obs: 12, comps: 11.5 };
   
   // Pega o atual do estilo root ou do cache
   let currentRaw = document.documentElement.style.getPropertyValue(cssVar) || localStorage.getItem(storageKey);
   let size = parseFloat(currentRaw);
-  if (isNaN(size) || !size) size = defaultSizes[campo];
+  if (isNaN(size) || !size) size = defaultSizes[campo] || 15;
   
   // Incremento/Decremento
   size += (delta * 1.5);
+  size = Math.round(size * 10) / 10;
   
   // Limites
   if (size < 8) size = 8;
-  if (size > 40) size = 40;
+  if (size > 42) size = 42;
   
   document.documentElement.style.setProperty(cssVar, size + 'px');
+  const queueList = document.getElementById('queue-list');
+  if (queueList) queueList.style.setProperty(cssVar, size + 'px');
   localStorage.setItem(storageKey, size);
+
+  // Atualizar visualizador no modal de configuracoes se existir
+  const lbl = document.getElementById('kds-val-font-' + campo);
+  if (lbl) lbl.innerText = size + 'px';
+
+  kdsAgendarSalvarNoServidor();
 };
 
 // Ao inicializar, aplicar tamanhos salvos
 function aplicarTamanhosCamposSalvos() {
+  const defaultSizes = { nome: 16.5, qtd: 18, obs: 12, comps: 11.5 };
+  const queueList = document.getElementById('queue-list');
   ['nome', 'qtd', 'obs', 'comps'].forEach(campo => {
     const val = localStorage.getItem('chef_kds_font_' + campo);
-    if (val) {
-      document.documentElement.style.setProperty('--kds-font-' + campo, val + 'px');
-    }
+    const size = val ? parseFloat(val) : defaultSizes[campo];
+    document.documentElement.style.setProperty('--kds-font-' + campo, size + 'px');
+    if (queueList) queueList.style.setProperty('--kds-font-' + campo, size + 'px');
+    const lbl = document.getElementById('kds-val-font-' + campo);
+    if (lbl) lbl.innerText = size + 'px';
   });
+
+  const scale = parseFloat(localStorage.getItem('chef_kds_font_scale') || localStorage.getItem('queue-font-scale') || '1.0');
+  document.documentElement.style.setProperty('--queue-font-scale', scale);
+  if (queueList) {
+    queueList.style.setProperty('--queue-font-scale', scale);
+    queueList.style.fontSize = (scale * 100) + '%';
+  }
+  const lblScale = document.getElementById('kds-val-font-scale');
+  if (lblScale) lblScale.innerText = Math.round(scale * 100) + '%';
 }
+window.aplicarTamanhosCamposSalvos = aplicarTamanhosCamposSalvos;
 aplicarTamanhosCamposSalvos();
 
 window.alterarTamanhoFonte = function(delta) {
-  window.filaFontScale = Math.max(0.7, Math.min(1.6, window.filaFontScale + (delta || 0) * 0.1));
-  localStorage.setItem('chef_kds_font_scale', String(window.filaFontScale));
-  const queueList = document.getElementById('queue-list');
-  if (queueList) queueList.style.fontSize = (window.filaFontScale * 100) + '%';
+  let scale = parseFloat(localStorage.getItem('chef_kds_font_scale') || localStorage.getItem('queue-font-scale') || '1.0');
+  scale = Math.round((scale + (delta || 0) * 0.1) * 10) / 10;
+  if (typeof window.updateFontScale === 'function') {
+    window.updateFontScale(scale);
+  } else {
+    window.filaFontScale = Math.max(0.6, Math.min(2.0, scale));
+    localStorage.setItem('chef_kds_font_scale', String(window.filaFontScale));
+    document.documentElement.style.setProperty('--queue-font-scale', window.filaFontScale);
+    const queueList = document.getElementById('queue-list');
+    if (queueList) {
+      queueList.style.setProperty('--queue-font-scale', window.filaFontScale);
+      queueList.style.fontSize = (window.filaFontScale * 100) + '%';
+    }
+    const lblScale = document.getElementById('kds-val-font-scale');
+    if (lblScale) lblScale.innerText = Math.round(window.filaFontScale * 100) + '%';
+  }
   kdsAgendarSalvarNoServidor();
 };
 
@@ -3056,6 +3105,7 @@ window.abrirModalFilaSettings = function() {
       const audioToggle = document.getElementById('kds-toggle-sound');
       if (audioToggle) audioToggle.checked = audioStatus;
       if (typeof renderizarCamposCardModal === 'function') renderizarCamposCardModal();
+      if (typeof window.aplicarTamanhosCamposSalvos === 'function') window.aplicarTamanhosCamposSalvos();
     } catch (e) {}
   }
 };

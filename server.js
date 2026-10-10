@@ -11302,6 +11302,20 @@ if (!process.env.SUPER_ADMIN_ISOLADO) {
     } catch (eNichos) {
       console.error('Erro ao carregar o Controller Add-ons Nichos Operacionais:', eNichos);
     }
+
+    try {
+      require('./controllers/hub-logistica')(app, {
+        db,
+        masterDb,
+        io,
+        sqlite3,
+        verificarToken,
+        getTenantDb
+      });
+      console.log('🚀 Hub Logístico & Rede de Motoboys carregado com sucesso.');
+    } catch (eLogistica) {
+      console.error('Erro ao carregar o Hub Logístico:', eLogistica);
+    }
   } catch (e) {
     console.error('Erro ao carregar o Controller do Super Admin:', e);
   }

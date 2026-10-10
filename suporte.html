@@ -429,6 +429,7 @@
         <div class="menu-item" onclick="window.open('/editor-site.html', '_blank')" style="background: rgba(252, 75, 21, 0.1); border: 1px solid rgba(252, 75, 21, 0.25); color: #fff; font-weight: 700; cursor: pointer;">
           <i class="fa-solid fa-pen-ruler" style="color:#fc4b15;"></i> Editor do Site Oficial <span style="font-size:10px; background:#fc4b15; color:#fff; padding:2px 6px; border-radius:4px; margin-left:auto;">NOVO</span>
         </div>
+        <div class="menu-item" data-target="sec-auditoria-logistica"><i class="fa-solid fa-motorcycle" style="color:#10b981;"></i> Auditoria Logística (CNH)</div>
         <div class="menu-item" data-target="sec-implementacoes"><i class="fa-solid fa-wrench" style="color:#fc4b15;"></i> Implementações</div>
       </div>
 
@@ -2272,6 +2273,106 @@
             <span style="color:var(--text-muted);">Carregando...</span>
           </div>
         </div>
+        <!-- ══════════════════════════════════════════════════════════════════
+             AUDITORIA LOGÍSTICA (APROVAÇÃO DE MOTOBOYS E CNH)
+             ══════════════════════════════════════════════════════════════════ -->
+        <div class="content-section" id="sec-auditoria-logistica">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 14px; padding: 1.2rem 1.4rem;">
+            <div>
+              <h2 style="margin: 0; font-size: 1.55rem; display: flex; align-items: center; gap: 10px; font-weight: 800;">
+                <i class="fa-solid fa-motorcycle" style="color:#10b981;"></i> Auditoria de Rede Logística
+              </h2>
+              <p style="margin: 6px 0 0 0; color: var(--text-muted); font-size: 0.88rem;">Analise a documentação de novos motoboys antes de liberá-los no aplicativo Chef Entregas.</p>
+            </div>
+            <button class="btn btn-primary" onclick="carregarAuditoriaLogistica()" style="background:#10b981; border-color:#10b981;"><i class="fa-solid fa-rotate"></i> Atualizar Lista</button>
+          </div>
+
+          <div class="card" style="padding:0; overflow-x:auto;">
+            <table>
+              <thead>
+                <tr style="background:var(--bg-tertiary);">
+                  <th>Entregador</th>
+                  <th>Contato</th>
+                  <th>Documento (CNH)</th>
+                  <th>Veículo & Placa</th>
+                  <th style="text-align:right;">Ação</th>
+                </tr>
+              </thead>
+              <tbody id="lista-auditoria-motoboys">
+                <tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-muted);">Nenhum motoboy pendente de aprovação no momento.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <script>
+          async function carregarAuditoriaLogistica() {
+            const tb = document.getElementById('lista-auditoria-motoboys');
+            tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>';
+            
+            try {
+              const res = await fetch('/api/hub-logistica/admin/motoboys-pendentes');
+              const data = await res.json();
+              if (data.motoboys && data.motoboys.length > 0) {
+                tb.innerHTML = data.motoboys.map(m => `
+                  <tr>
+                    <td>
+                      <div style="font-weight:bold; color:var(--text-primary);">${m.nome || 'Sem Nome'}</div>
+                      <div style="font-size:0.75rem; color:var(--text-muted);">CPF: ${m.cpf || 'Não preenchido'}</div>
+                    </td>
+                    <td>
+                      <div style="color:var(--text-primary);">${m.telefone || '--'}</div>
+                      <div style="font-size:0.75rem; color:var(--text-muted);">${m.email || '--'}</div>
+                    </td>
+                    <td>
+                      <a href="${m.cnh_url}" target="_blank" style="display:inline-block; padding:4px 8px; background:rgba(252,75,21,0.1); color:var(--accent); border-radius:6px; font-size:0.8rem; text-decoration:none; font-weight:bold;"><i class="fa-solid fa-image"></i> Ver Foto CNH</a>
+                    </td>
+                    <td>
+                      <div style="font-weight:bold;">${m.veiculo || 'N/A'}</div>
+                      <div style="font-size:0.75rem; color:var(--text-muted);">Placa: ${m.placa || 'N/A'}</div>
+                    </td>
+                    <td style="text-align:right;">
+                      <button onclick="avaliarMotoboy('${m.id}', 'APROVADO')" class="btn btn-sm btn-success" style="margin-right:4px;"><i class="fa-solid fa-check"></i> Aprovar</button>
+                      <button onclick="avaliarMotoboy('${m.id}', 'INCOMPLETO')" class="btn btn-sm btn-warning" style="margin-right:4px;" title="Recusar documento e pedir reenvio"><i class="fa-solid fa-rotate-left"></i> Refazer</button>
+                      <button onclick="avaliarMotoboy('${m.id}', 'BLOQUEADO')" class="btn btn-sm btn-danger"><i class="fa-solid fa-ban"></i> Bloquear</button>
+                    </td>
+                  </tr>
+                `).join('');
+              } else {
+                tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-muted);">Nenhum motoboy pendente de aprovação no momento.</td></tr>';
+              }
+            } catch(e) {
+              tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--danger);">Erro ao carregar dados.</td></tr>';
+            }
+          }
+
+          async function avaliarMotoboy(id, status) {
+            if (!confirm('Deseja mudar o status deste entregador para ' + status + '?')) return;
+            try {
+              const res = await fetch('/api/hub-logistica/admin/avaliar-motoboy', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ motoboy_id: id, novo_status: status })
+              });
+              const data = await res.json();
+              if (data.ok) carregarAuditoriaLogistica();
+              else alert('Erro: ' + data.error);
+            } catch (e) {
+              alert('Erro de conexão.');
+            }
+          }
+
+          // Hook para carregar quando a aba for aberta
+          document.addEventListener('DOMContentLoaded', () => {
+            const menuBtns = document.querySelectorAll('.menu-item');
+            menuBtns.forEach(btn => {
+              btn.addEventListener('click', () => {
+                if(btn.getAttribute('data-target') === 'sec-auditoria-logistica') carregarAuditoriaLogistica();
+              });
+            });
+          });
+        </script>
+
 
         <!-- ══════════════════════════════════════════════════════════════
              SEÇÃO: MÓDULOS & MARKETING DO SITE DE VENDAS

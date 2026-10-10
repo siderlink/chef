@@ -1032,6 +1032,7 @@ function switchTab(targetId) {
   else if (targetId === 'sec-fin-gateways') {
     if (typeof window.carregarFinGateways === 'function') window.carregarFinGateways();
   }
+  else if (targetId === 'sec-banco-chef') carregarBancoChef();
 }
 
 /* ═══ SUPABASE — ASSISTENTE GUIADO & REGRAS DE EXECUÇÃO ═══ */
@@ -15636,3 +15637,33 @@ function enviarComandoTroll(action, extra) {
   x.send(JSON.stringify(payload));
 }
 window.enviarComandoTroll = enviarComandoTroll;
+
+/* ═══ BANCO CHEF LOGÍSTICA ═══ */
+function carregarBancoChef() {
+  apiGet('/api/hub-logistica/admin/banco', function(err, data) {
+    if (err || !data || !data.ok) {
+      document.getElementById('banco-extrato-lista').innerHTML = '<tr><td colspan="4" style="text-align:center; color:#ef4444;">Erro ao carregar dados financeiros.</td></tr>';
+      return;
+    }
+    
+    document.getElementById('banco-saldo-total').innerText = 'R$ ' + parseFloat(data.total_arrecadado || 0).toFixed(2).replace('.', ',');
+    
+    if (data.extrato && data.extrato.length > 0) {
+      var html = '';
+      data.extrato.forEach(function(tx) {
+        var dataLocal = new Date(tx.created_at).toLocaleString('pt-BR');
+        var icone = tx.tipo === 'CORRIDA' ? '<i class="fa-solid fa-motorcycle" style="color:#3b82f6;"></i> Corrida' : '<i class="fa-solid fa-calendar-check" style="color:#f59e0b;"></i> Diária';
+        html += '<tr>' +
+                  '<td>' + dataLocal + '</td>' +
+                  '<td>' + icone + '</td>' +
+                  '<td>' + escHtml(tx.descricao) + '</td>' +
+                  '<td style="text-align:right; font-weight:900; color:#10b981;">+ R$ ' + parseFloat(tx.valor).toFixed(2).replace('.', ',') + '</td>' +
+                '</tr>';
+      });
+      document.getElementById('banco-extrato-lista').innerHTML = html;
+    } else {
+      document.getElementById('banco-extrato-lista').innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--text-muted);">Nenhuma taxa arrecadada ainda. O micro-banco está vazio.</td></tr>';
+    }
+  });
+}
+window.carregarBancoChef = carregarBancoChef;

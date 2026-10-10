@@ -729,42 +729,49 @@
             <span class="fila-settings-label">Tamanhos Individuais dos Campos</span>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
               <span style="font-size:12px;font-weight:700;">Nome do Produto</span>
-              <div class="fila-settings-row" style="width:auto;gap:4px;">
-                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('nome',-1)">A-</button>
-                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('nome',1)">A+</button>
+              <div class="fila-settings-row" style="width:auto;gap:6px;align-items:center;">
+                <span id="kds-val-font-nome" style="font-size:11px;font-weight:800;color:var(--kds-primary,#fc4b15);min-width:44px;text-align:right;">16.5px</span>
+                <button type="button" class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('nome',-1)">A-</button>
+                <button type="button" class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('nome',1)">A+</button>
               </div>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
               <span style="font-size:12px;font-weight:700;">Quantidade</span>
-              <div class="fila-settings-row" style="width:auto;gap:4px;">
-                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('qtd',-1)">A-</button>
-                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('qtd',1)">A+</button>
+              <div class="fila-settings-row" style="width:auto;gap:6px;align-items:center;">
+                <span id="kds-val-font-qtd" style="font-size:11px;font-weight:800;color:var(--kds-primary,#fc4b15);min-width:44px;text-align:right;">18px</span>
+                <button type="button" class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('qtd',-1)">A-</button>
+                <button type="button" class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('qtd',1)">A+</button>
               </div>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
               <span style="font-size:12px;font-weight:700;">Observações</span>
-              <div class="fila-settings-row" style="width:auto;gap:4px;">
-                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('obs',-1)">A-</button>
-                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('obs',1)">A+</button>
+              <div class="fila-settings-row" style="width:auto;gap:6px;align-items:center;">
+                <span id="kds-val-font-obs" style="font-size:11px;font-weight:800;color:var(--kds-primary,#fc4b15);min-width:44px;text-align:right;">12px</span>
+                <button type="button" class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('obs',-1)">A-</button>
+                <button type="button" class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('obs',1)">A+</button>
               </div>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <span style="font-size:12px;font-weight:700;">Adicionais</span>
-              <div class="fila-settings-row" style="width:auto;gap:4px;">
-                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('comps',-1)">A-</button>
-                <button class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('comps',1)">A+</button>
+              <div class="fila-settings-row" style="width:auto;gap:6px;align-items:center;">
+                <span id="kds-val-font-comps" style="font-size:11px;font-weight:800;color:var(--kds-primary,#fc4b15);min-width:44px;text-align:right;">11.5px</span>
+                <button type="button" class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('comps',-1)">A-</button>
+                <button type="button" class="fila-settings-btn" style="padding:4px 10px;min-height:30px;" onclick="window.alterarTamanhoCampo('comps',1)">A+</button>
               </div>
             </div>
           </div>
 
           <!-- SEÇÃO TAMANHO DA LETRA -->
         <div class="fila-settings-group">
-          <span class="fila-settings-label">Tamanho da Letra</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span class="fila-settings-label" style="margin:0;">Tamanho Geral da Letra (Escala)</span>
+            <span id="kds-val-font-scale" style="font-size:11px;font-weight:800;color:var(--kds-primary,#fc4b15);">100%</span>
+          </div>
           <div class="fila-settings-row">
-            <button class="fila-settings-btn flex-1" id="popup-btn-font-dec" onclick="window.alterarTamanhoFonte && window.alterarTamanhoFonte(-1)">
+            <button type="button" class="fila-settings-btn flex-1" id="popup-btn-font-dec" onclick="window.alterarTamanhoFonte && window.alterarTamanhoFonte(-1)">
               <i class="ph ph-text-aa-offset-decrease"></i><span>A-</span>
             </button>
-            <button class="fila-settings-btn flex-1" id="popup-btn-font-inc" onclick="window.alterarTamanhoFonte && window.alterarTamanhoFonte(1)">
+            <button type="button" class="fila-settings-btn flex-1" id="popup-btn-font-inc" onclick="window.alterarTamanhoFonte && window.alterarTamanhoFonte(1)">
               <i class="ph ph-text-aa-offset-increase"></i><span>A+</span>
             </button>
           </div>

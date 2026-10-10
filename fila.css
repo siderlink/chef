@@ -28,6 +28,11 @@
   --kds-card-min-width: 290px;
   --kds-grid-columns: repeat(auto-fill, minmax(var(--kds-card-min-width, 290px), 1fr));
   --kds-font-size: 15px;
+  --queue-font-scale: 1;
+  --kds-font-nome: 16.5px;
+  --kds-font-qtd: 18px;
+  --kds-font-obs: 12px;
+  --kds-font-comps: 11.5px;
 }
 
 [data-theme="dark"], body.dark-mode, body.theme-dark {
@@ -168,9 +173,10 @@ body.kds-body, .kds-body {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 0 0 auto !important;
-  min-width: max-content !important;
+  flex: 0 1 auto;
+  min-width: 0;
   justify-content: center;
+  overflow: hidden;
 }
 
 /* Status tabs */
@@ -611,7 +617,7 @@ body.theme-dark .kds-btn-batches {
   gap: 8px !important;
 }
 #queue-list.card-tam-p:not(.modo-lista) .kds-product-name {
-  font-size: var(--kds-font-nome, 13.5px) !important;
+  font-size: calc(var(--kds-font-nome, 13.5px) * var(--queue-font-scale, 1)) !important;
 }
 #queue-list.card-tam-m:not(.modo-lista):not(.modo-kanban) .queue-item,
 .queue-list.card-tam-m:not(.modo-lista):not(.modo-kanban) .queue-item {
@@ -621,7 +627,7 @@ body.theme-dark .kds-btn-batches {
   gap: 12px !important;
 }
 #queue-list.card-tam-m:not(.modo-lista) .kds-product-name {
-  font-size: var(--kds-font-nome, var(--kds-font-size, 16px)) !important;
+  font-size: calc(var(--kds-font-nome, var(--kds-font-size, 16px)) * var(--queue-font-scale, 1)) !important;
 }
 #queue-list.card-tam-g:not(.modo-lista):not(.modo-kanban) .queue-item,
 .queue-list.card-tam-g:not(.modo-lista):not(.modo-kanban) .queue-item {
@@ -631,7 +637,7 @@ body.theme-dark .kds-btn-batches {
   gap: 16px !important;
 }
 #queue-list.card-tam-g:not(.modo-lista) .kds-product-name {
-  font-size: var(--kds-font-nome, 19px) !important;
+  font-size: calc(var(--kds-font-nome, 19px) * var(--queue-font-scale, 1)) !important;
 }
 #queue-list.card-tam-gg:not(.modo-lista):not(.modo-kanban) .queue-item,
 .queue-list.card-tam-gg:not(.modo-lista):not(.modo-kanban) .queue-item {
@@ -641,7 +647,7 @@ body.theme-dark .kds-btn-batches {
   gap: 20px !important;
 }
 #queue-list.card-tam-gg:not(.modo-lista) .kds-product-name {
-  font-size: var(--kds-font-nome, 22px) !important;
+  font-size: calc(var(--kds-font-nome, 22px) * var(--queue-font-scale, 1)) !important;
 }
 
 #queue-list:not(.modo-lista):not(.modo-kanban) .queue-item,
@@ -676,11 +682,12 @@ body.theme-dark .kds-btn-batches {
   justify-content: center !important;
   background: linear-gradient(135deg, #fc4b15 0%, #ea3802 100%) !important;
   color: #ffffff !important;
-  font-size: 18px !important;
+  font-size: calc(var(--kds-font-qtd, var(--kds-font-size, 18px)) * var(--queue-font-scale, 1)) !important;
   font-weight: 950 !important;
   padding: 3px 10px !important;
   min-width: 36px !important;
-  height: 32px !important;
+  height: auto !important;
+  min-height: 30px !important;
   border-radius: 8px !important;
   box-shadow: 0 2px 8px rgba(252, 75, 21, 0.35) !important;
   margin-right: 8px !important;
@@ -691,11 +698,11 @@ body.theme-dark .kds-btn-batches {
 #queue-list:not(.modo-lista) .kds-card-qty-inline.qty-high {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.45) !important;
-  font-size: 19px !important;
+  font-size: calc(var(--kds-font-qtd, var(--kds-font-size, 19px)) * var(--queue-font-scale, 1)) !important;
 }
 
 #queue-list:not(.modo-lista) .kds-product-name {
-  font-size: 17px !important;
+  font-size: calc(var(--kds-font-nome, var(--kds-font-size, 17px)) * var(--queue-font-scale, 1)) !important;
   font-weight: 900 !important;
   color: var(--kds-text-primary) !important;
   line-height: 1.25 !important;
@@ -720,7 +727,7 @@ body.theme-dark .kds-btn-batches {
 .queue-list.modo-lista {
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: var(--kds-card-gap, 8px) !important;
   width: 100% !important;
   max-width: 100% !important;
   padding: 4px 0 90px 0 !important;
@@ -732,9 +739,9 @@ body.theme-dark .kds-btn-batches {
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  gap: 12px !important;
+  gap: var(--kds-card-gap, 12px) !important;
   width: 100% !important;
-  min-height: 58px !important;
+  min-height: var(--kds-card-height, 58px) !important;
   background: var(--kds-card-bg) !important;
   border: 1.5px solid var(--kds-card-border) !important;
   border-radius: 14px !important;
@@ -750,13 +757,15 @@ body.theme-dark .kds-btn-batches {
 }
 
 #queue-list.modo-lista .kds-qty-badge {
-  flex: 0 0 44px !important;
-  width: 44px !important;
-  height: 40px !important;
+  flex: 0 0 var(--kds-col-qty-width, 44px) !important;
+  width: var(--kds-col-qty-width, 44px) !important;
+  height: calc(var(--kds-card-height, 58px) * 0.65) !important;
+  max-height: 52px !important;
+  min-height: 34px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 16px !important;
+  font-size: calc(var(--kds-font-qtd, var(--kds-font-size, 16px)) * var(--queue-font-scale, 1)) !important;
   font-weight: 900 !important;
   background: linear-gradient(135deg, #fc4b15 0%, #ea3802 100%) !important;
   color: #ffffff !important;
@@ -767,10 +776,10 @@ body.theme-dark .kds-btn-batches {
 }
 
 #queue-list.modo-lista .kds-card-mobile-header {
-  flex: 0 0 auto !important;
-  min-width: 280px !important;
-  max-width: 360px !important;
-  width: auto !important;
+  flex: 0 0 var(--kds-col-header-width, 260px) !important;
+  min-width: var(--kds-col-header-width, 260px) !important;
+  max-width: var(--kds-col-header-width, 360px) !important;
+  width: var(--kds-col-header-width, 260px) !important;
   margin: 0 !important;
   padding: 6px 12px !important;
   display: flex !important;
@@ -887,7 +896,7 @@ body.theme-dark .kds-btn-batches {
 }
 
 #queue-list.modo-lista .kds-product-name {
-  font-size: 15px !important;
+  font-size: calc(var(--kds-font-nome, var(--kds-font-size, 15px)) * var(--queue-font-scale, 1)) !important;
   font-weight: 800 !important;
   color: var(--kds-text-primary) !important;
   white-space: normal !important;
@@ -895,9 +904,9 @@ body.theme-dark .kds-btn-batches {
 }
 
 #queue-list.modo-lista .item-pronto {
-  flex: 0 0 auto !important;
-  width: auto !important;
-  min-width: auto !important;
+  flex: 0 0 var(--kds-col-action-width, 230px) !important;
+  width: var(--kds-col-action-width, 230px) !important;
+  min-width: var(--kds-col-action-width, 140px) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: flex-end !important;
@@ -921,10 +930,11 @@ body.theme-dark .kds-btn-batches {
 #queue-list.modo-lista .item-pronto .btn-chamar,
 #queue-list.modo-lista .item-pronto .btn-entregar {
   height: 38px !important;
+  min-height: calc(36px * var(--queue-font-scale, 1)) !important;
   width: auto !important;
   min-width: max-content !important;
   padding: 0 16px !important;
-  font-size: 13px !important;
+  font-size: calc(13px * var(--queue-font-scale, 1)) !important;
   font-weight: 800 !important;
   border-radius: 9px !important;
   border: none !important;
@@ -1212,11 +1222,12 @@ body:has(#queue-list.modo-kanban) .kds-main-container,
   justify-content: center !important;
   background: linear-gradient(135deg, #fc4b15 0%, #ea3802 100%) !important;
   color: #ffffff !important;
-  font-size: 19px !important;
+  font-size: calc(var(--kds-font-qtd, var(--kds-font-size, 19px)) * var(--queue-font-scale, 1)) !important;
   font-weight: 950 !important;
   padding: 3px 10px !important;
   min-width: 38px !important;
-  height: 34px !important;
+  height: auto !important;
+  min-height: 32px !important;
   border-radius: 9px !important;
   box-shadow: 0 2px 8px rgba(252, 75, 21, 0.4) !important;
   margin: 0 !important;
@@ -1227,11 +1238,11 @@ body:has(#queue-list.modo-kanban) .kds-main-container,
 .kds-kanban-body .kds-card-qty-inline.qty-high {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
   box-shadow: 0 0 12px rgba(239, 68, 68, 0.5) !important;
-  font-size: 20px !important;
+  font-size: calc(var(--kds-font-qtd, var(--kds-font-size, 20px)) * var(--queue-font-scale, 1)) !important;
 }
 
 .kds-kanban-body .kds-product-name {
-  font-size: 17.5px !important;
+  font-size: calc(var(--kds-font-nome, var(--kds-font-size, 17.5px)) * var(--queue-font-scale, 1)) !important;
   font-weight: 900 !important;
   color: #ffffff !important;
   line-height: 1.25 !important;
@@ -1323,7 +1334,8 @@ body:has(#queue-list.modo-kanban) .kds-main-container,
   flex: 1 1 auto !important;
   min-width: 0 !important;
   height: 38px !important;
-  font-size: 12.5px !important;
+  min-height: calc(36px * var(--queue-font-scale, 1)) !important;
+  font-size: calc(12.5px * var(--queue-font-scale, 1)) !important;
   font-weight: 850 !important;
   border-radius: 9px !important;
   padding: 0 10px !important;
@@ -2069,7 +2081,7 @@ body.kds-modo-tv .item-pronto button {
 }
 
 .kds-qty-badge {
-  font-size: 18px !important;
+  font-size: calc(var(--kds-font-qtd, 18px) * var(--queue-font-scale, 1)) !important;
   font-weight: 900 !important;
   background: #fc4b15 !important;
   color: #ffffff !important;
@@ -2081,7 +2093,7 @@ body.kds-modo-tv .item-pronto button {
 }
 
 .kds-product-name {
-  font-size: var(--kds-font-nome, var(--kds-font-size, 16.5px)) !important;
+  font-size: calc(var(--kds-font-nome, var(--kds-font-size, 16.5px)) * var(--queue-font-scale, 1)) !important;
   font-weight: 800 !important;
   color: var(--kds-text-primary) !important;
   line-height: 1.25 !important;
@@ -2099,8 +2111,9 @@ body.kds-modo-tv .item-pronto button {
 .item-pronto .btn-entregar {
   flex: 1 1 auto !important;
   height: 44px !important;
+  min-height: calc(40px * var(--queue-font-scale, 1)) !important;
   border-radius: 12px !important;
-  font-size: 13.5px !important;
+  font-size: calc(13.5px * var(--queue-font-scale, 1)) !important;
   font-weight: 800 !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -2461,19 +2474,23 @@ body.kds-modo-tv .item-pronto button {
 
 /* Escala e Tamanhos de Textos */
 .kds-product-name {
-  font-size: var(--kds-font-nome, var(--kds-font-size, 15px)) !important;
+  font-size: calc(var(--kds-font-nome, var(--kds-font-size, 16px)) * var(--queue-font-scale, 1)) !important;
   font-weight: 800 !important;
   line-height: 1.25 !important;
   color: var(--kds-text-primary) !important;
 }
 
+.kds-card-qty-inline, .kds-qty-badge {
+  font-size: calc(var(--kds-font-qtd, var(--kds-font-size, 18px)) * var(--queue-font-scale, 1)) !important;
+}
+
 .kds-mesa-title {
-  font-size: calc(var(--kds-font-size, 15px) * 1.05) !important;
+  font-size: calc(var(--kds-font-size, 15px) * 1.05 * var(--queue-font-scale, 1)) !important;
   font-weight: 800 !important;
 }
 
 .kds-card-garcom {
-  font-size: var(--kds-font-obs, calc(var(--kds-font-size, 15px) * 0.8)) !important;
+  font-size: calc(var(--kds-font-size, 15px) * 0.82 * var(--queue-font-scale, 1)) !important;
   font-weight: 700 !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -2497,15 +2514,15 @@ body.kds-modo-tv .item-pronto button {
 }
 
 .kds-card-time-badge {
-  font-size: var(--kds-font-obs, calc(var(--kds-font-size, 15px) * 0.8)) !important;
+  font-size: calc(var(--kds-font-size, 15px) * 0.85 * var(--queue-font-scale, 1)) !important;
 }
 
 .item-observacao {
-  font-size: var(--kds-font-obs, calc(var(--kds-font-size, 15px) * 0.8)) !important;
+  font-size: calc(var(--kds-font-obs, calc(var(--kds-font-size, 15px) * 0.85)) * var(--queue-font-scale, 1)) !important;
 }
 
-.item-composicoes, .comp-item {
-  font-size: var(--kds-font-comps, calc(var(--kds-font-size, 15px) * 0.78)) !important;
+.item-composicoes, .comp-item, .badge-kds-fatia, .kds-pizza-retiradas, .kds-pizza-adicionais {
+  font-size: calc(var(--kds-font-comps, calc(var(--kds-font-size, 15px) * 0.78)) * var(--queue-font-scale, 1)) !important;
 }
 
 /* Modo Caixa Alta (TODOS MAIÚSCULOS) */
