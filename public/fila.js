@@ -1,4 +1,3 @@
-
 function formatarTempoFila(mins) {
   if (!mins || mins <= 0) return 'agora';
   if (mins < 60) return `${mins} min`;
@@ -7,9 +6,23 @@ function formatarTempoFila(mins) {
     const m = mins % 60;
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
   }
-  const d = Math.floor(mins / 1440);
-  return `+${d}d`;
+  return `>24h`;
 }
+
+window.toggleKdsToolsMenu = function(force) {
+  const menu = document.getElementById('kds-tools-dropdown-menu');
+  if (!menu) return;
+  const isShow = typeof force === 'boolean' ? force : !menu.classList.contains('show');
+  menu.classList.toggle('show', isShow);
+};
+
+document.addEventListener('click', function(e) {
+  const wrap = document.querySelector('.kds-dropdown-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const menu = document.getElementById('kds-tools-dropdown-menu');
+    if (menu) menu.classList.remove('show');
+  }
+});
 
 const HOST = window.location.hostname;
 
@@ -197,6 +210,7 @@ setInterval(() => {
 
 document.addEventListener('DOMContentLoaded', () => {
   atualizarBotaoSmartSyncUI();
+  if (typeof atualizarModoFocoUI === 'function') atualizarModoFocoUI();
 });
 
 // ── Preferências da fila sincronizadas com o servidor (config por restaurante) ──
@@ -741,39 +755,96 @@ window.resetarOrdemCampos = function() {
 
 
 // ── APLICAR PRESET DE ORDEM (1 CLIQUE) ──
-window.aplicarPresetOrdem = function(ordemArray) {
+window.aplicarPresetOrdem = function(ordemArray, ocultosArray) {
   kdsCardOrder = ordemArray.slice();
   localStorage.setItem('chef_kds_card_order', JSON.stringify(kdsCardOrder));
+  if (Array.isArray(ocultosArray)) {
+    kdsCardHidden = new Set(ocultosArray);
+    localStorage.setItem('chef_kds_card_hidden', JSON.stringify(ocultosArray));
+  }
+  atualizarModoFocoUI();
   renderizarCamposCardModal();
   renderQueue(true);
   kdsAgendarSalvarNoServidor();
 };
 
+window.alternarModoFocoItemQtd = function() {
+  const hidden = new Set(window.obterCardHidden());
+  const vaiAtivar = !hidden.has('cabecalho');
+  if (vaiAtivar) {
+    hidden.add('cabecalho');
+  } else {
+    hidden.delete('cabecalho');
+  }
+  kdsCardHidden = hidden;
+  localStorage.setItem('chef_kds_card_hidden', JSON.stringify(Array.from(hidden)));
+  atualizarModoFocoUI();
+  renderizarCamposCardModal();
+  renderQueue(true);
+  kdsAgendarSalvarNoServidor();
+  if (typeof window.showKdsToast === 'function') {
+    window.showKdsToast(vaiAtivar ? '🎯 Modo Foco: Apenas Item & Quantidade na tela!' : '👀 Atributos secundários visíveis (Mesa, Garçom, Tempo)', 'info');
+  }
+};
+
+function atualizarModoFocoUI() {
+  const isFoco = window.obterCardHidden().has('cabecalho');
+  const btn = document.getElementById('btn-toggle-modo-foco');
+  const lbl = document.getElementById('label-modo-foco');
+  const desc = document.getElementById('desc-modo-foco');
+  if (btn) {
+    btn.style.background = isFoco ? 'rgba(252, 75, 21, 0.15)' : 'transparent';
+  }
+  if (lbl) {
+    lbl.innerText = isFoco ? 'Modo Foco: ATIVO (Item/Qtd)' : 'Foco: Item & Qtd';
+  }
+  if (desc) {
+    desc.innerText = isFoco ? 'Mesa e Garçom ocultos (clique para restaurar)' : 'Ocultar/Exibir Mesa e Garçom';
+  }
+  const btnTop = document.getElementById('btn-top-modo-foco');
+  if (btnTop) {
+    if (isFoco) {
+      btnTop.classList.add('active');
+      btnTop.innerHTML = '<i class="ph-bold ph-target"></i> <span>🎯 Foco Ativo</span>';
+      btnTop.title = 'Modo Foco ATIVO: Apenas Item e Quantidade visíveis. Clique para exibir atributos completos.';
+    } else {
+      btnTop.classList.remove('active');
+      btnTop.innerHTML = '<i class="ph-bold ph-target"></i> <span>Foco: Item &amp; Qtd</span>';
+      btnTop.title = 'Modo Foco Cozinha: Exibir apenas Item e Quantidade (Ocultar Mesa, Garçom e atributos opcionais)';
+    }
+  }
+}
+
+
 // ── PRESETS DE ORDEM PARA O DRAWER ──
 const ORDER_PRESETS = [
   {
-    nome: '\u26a1 Opera\u00e7\u00e3o R\u00e1pida (Recomendado)',
-    desc: 'Quantidade \u2192 Produto \u2192 Mesa \u2192 Bot\u00f5es',
+    nome: '🔥 Foco Total (Item & Quantidade)',
+    desc: 'Produto e Quantidade em destaque absoluto (Mesa e Garçom opcionais/ocultos)',
+    ordem: ['quantidade', 'produto', 'acao'],
+    ocultos: ['cabecalho'],
+    cor: '#fc4b15'
+  },
+  {
+    nome: '⚡ Operação Completa (Recomendado)',
+    desc: 'Quantidade → Produto → Mesa → Botões',
     ordem: ['quantidade', 'produto', 'cabecalho', 'acao'],
+    ocultos: [],
     cor: '#22c55e'
   },
   {
-    nome: '\ud83c\udf7d\ufe0f Mesa Primeiro',
-    desc: 'Mesa \u2192 Quantidade \u2192 Produto \u2192 Bot\u00f5es',
-    ordem: ['cabecalho', 'quantidade', 'produto', 'acao'],
-    cor: '#3b82f6'
-  },
-  {
-    nome: '\ud83d\udce6 Produto Destaque',
-    desc: 'Produto \u2192 Quantidade \u2192 Mesa \u2192 Bot\u00f5es',
+    nome: '📦 Produto Primeiro',
+    desc: 'Produto → Quantidade → Mesa → Botões',
     ordem: ['produto', 'quantidade', 'cabecalho', 'acao'],
+    ocultos: [],
     cor: '#f59e0b'
   },
   {
-    nome: '\ud83c\udfaf A\u00e7\u00e3o Imediata',
-    desc: 'Bot\u00f5es \u2192 Quantidade \u2192 Produto \u2192 Mesa',
-    ordem: ['acao', 'quantidade', 'produto', 'cabecalho'],
-    cor: '#ef4444'
+    nome: '🍽️ Mesa Primeiro',
+    desc: 'Mesa → Quantidade → Produto → Botões',
+    ordem: ['cabecalho', 'quantidade', 'produto', 'acao'],
+    ocultos: [],
+    cor: '#3b82f6'
   }
 ];
 
@@ -784,24 +855,26 @@ function renderizarCamposCardList(containerId) {
   const hidden = window.obterCardHidden();
   const ordemStr = JSON.stringify(ordemAtual);
 
-  const fieldIcons = { quantidade: '\ud83d\udd22', produto: '\ud83c\udf54', cabecalho: '\ud83d\udccd', acao: '\u25b6\ufe0f' };
-  const fieldShortLabels = { quantidade: 'QTD', produto: 'PRODUTO', cabecalho: 'MESA', acao: 'BOT\u00d5ES' };
+  const fieldIcons = { quantidade: '🔢', produto: '🍔', cabecalho: '📍', acao: '▶️' };
+  const fieldShortLabels = { quantidade: 'QTD', produto: 'PRODUTO', cabecalho: 'MESA/GARÇOM', acao: 'BOTÕES' };
 
   let html = '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">';
   html += '<span style="font-size:12px;font-weight:800;color:var(--kds-text-primary);margin-bottom:2px;">Escolha a Ordem (1 clique):</span>';
   ORDER_PRESETS.forEach(p => {
-    const isActive = JSON.stringify(p.ordem) === ordemStr;
+    const isOrderMatch = JSON.stringify(p.ordem) === ordemStr;
+    const isHiddenMatch = (!p.ocultos && hidden.size === 0) || (p.ocultos && p.ocultos.every(k => hidden.has(k)) && (!p.ocultos.length || hidden.size === p.ocultos.length));
+    const isActive = isOrderMatch && isHiddenMatch;
     const activeBorder = isActive ? `border: 2.5px solid ${p.cor}; box-shadow: 0 0 12px ${p.cor}44;` : `border: 1.5px solid var(--kds-card-border);`;
     const activeLabel = isActive ? `<span style="font-size:10px;font-weight:900;color:${p.cor};background:${p.cor}18;padding:1px 6px;border-radius:4px;margin-left:auto;">ATIVO</span>` : '';
     html += `
-      <button type="button" onclick="window.aplicarPresetOrdem(${JSON.stringify(p.ordem).replace(/"/g, '&quot;')})"
+      <button type="button" onclick="window.aplicarPresetOrdem(${JSON.stringify(p.ordem).replace(/"/g, '&quot;')}, ${JSON.stringify(p.ocultos || []).replace(/"/g, '&quot;')})"
         style="display:flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:10px;${activeBorder};background:var(--kds-card-bg);cursor:pointer;text-align:left;transition:all 0.15s ease;">
         <div style="display:flex;align-items:center;gap:6px;">
           <span style="font-size:13px;font-weight:800;color:var(--kds-text-primary);">${p.nome}</span>
           ${activeLabel}
         </div>
         <div style="display:flex;align-items:center;gap:4px;margin-top:2px;">
-          ${p.ordem.map(k => `<span style="font-size:11px;font-weight:700;color:var(--kds-text-muted);background:var(--kds-btn-bg);padding:2px 6px;border-radius:4px;">${fieldIcons[k]} ${fieldShortLabels[k]}</span>`).join('<span style="color:var(--kds-text-muted);font-size:10px;">\u2192</span>')}
+          ${p.ordem.map(k => `<span style="font-size:11px;font-weight:700;color:var(--kds-text-muted);background:var(--kds-btn-bg);padding:2px 6px;border-radius:4px;">${fieldIcons[k]} ${fieldShortLabels[k]}</span>`).join('<span style="color:var(--kds-text-muted);font-size:10px;">→</span>')}
         </div>
       </button>`;
   });
@@ -913,6 +986,24 @@ let previousOrderIds = new Set();
 const chamarTimestamps = {};
 const garcomBuscando = new Map();
 
+window.normalizarStatusKds = function(st) {
+  if (!st) return 'Em espera';
+  const s = String(st).trim().toUpperCase();
+  if (s === 'RECEBIDO' || s === 'PENDENTE' || s === 'EM ESPERA' || s === 'ESPERA' || s === 'AGUARDANDO MARCHA') {
+    return 'Em espera';
+  }
+  if (s === 'PREPARO' || s === 'EM PREPARO' || s === 'PREPARANDO') {
+    return 'Em preparo';
+  }
+  if (s === 'PRONTO' || s === 'PRONTOS') {
+    return 'Pronto';
+  }
+  if (s === 'FINALIZADO' || s === 'ENTREGUE' || s === 'PAGO' || s === 'CANCELADO') {
+    return s.charAt(0) + s.slice(1).toLowerCase();
+  }
+  return st;
+};
+
 window.filaSearchInput = function() {
   const input = document.getElementById('fila-search-input');
   if (!input) return;
@@ -984,7 +1075,7 @@ function carregarPedidos() {
     .then(data => {
       if (Array.isArray(data)) {
         const oldIds = new Set(queueData.map(p => p.id));
-        queueData = data;
+        queueData = data.map(p => ({ ...p, status: window.normalizarStatusKds(p.status) }));
         renderQueue();
         renderizarSecoesFila();
       }
@@ -1352,7 +1443,7 @@ socket.on('pedidos_atualizados', (data) => {
     return;
   }
   const oldIds = new Set(queueData.map(p => p.id));
-  queueData = data;
+  queueData = data.map(p => ({ ...p, status: window.normalizarStatusKds(p.status) }));
   let newestId = null;
   data.forEach(p => {
     if (!oldIds.has(p.id)) {
@@ -1798,7 +1889,8 @@ function renderQueue(forceRerender) {
   if (!queueList) return;
 
   const filtered = queueData.filter(item => {
-    if (item.status === 'Finalizado' || item.status === 'Cancelado' || item.status === 'Entregue' || item.status === 'Fracionado' || item.status === 'Pago') {
+    const sNorm = window.normalizarStatusKds(item.status);
+    if (sNorm === 'Finalizado' || sNorm === 'Cancelado' || sNorm === 'Entregue' || sNorm === 'Fracionado' || sNorm === 'Pago') {
       return false;
     }
     const itemSector = (item.sector || '').trim().toLowerCase();
@@ -1807,13 +1899,13 @@ function renderQueue(forceRerender) {
     if (currentSector !== 'Todos' && item.sector && itemSector !== currentSector.trim().toLowerCase()) {
       return false;
     }
-    if (currentFilter === 'Em espera' && item.status !== 'Pendente' && item.status !== 'Em espera') {
+    if (currentFilter === 'Em espera' && sNorm !== 'Em espera') {
       return false;
     }
-    if (currentFilter === 'Em preparo' && item.status !== 'Em preparo' && item.status !== 'Em Preparo') {
+    if (currentFilter === 'Em preparo' && sNorm !== 'Em preparo') {
       return false;
     }
-    if (currentFilter === 'Pronto' && item.status !== 'Pronto' && item.status !== 'Prontos') {
+    if (currentFilter === 'Pronto' && sNorm !== 'Pronto') {
       return false;
     }
     if (filaTipoFiltro !== 'todos' && tipoDoItem(item) !== filaTipoFiltro) {
@@ -1848,9 +1940,18 @@ function renderQueue(forceRerender) {
   });
 
   // Atualizar badges de contagem em tempo real
-  const countEspera = queueData.filter(i => (i.status === 'Pendente' || i.status === 'Em espera' || i.status === 'Aguardando Marcha') && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(i.status)).length;
-  const countPreparo = queueData.filter(i => (i.status === 'Em preparo' || i.status === 'Em Preparo') && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(i.status)).length;
-  const countPronto = queueData.filter(i => (i.status === 'Pronto' || i.status === 'Prontos') && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(i.status)).length;
+  const countEspera = queueData.filter(i => {
+    const s = window.normalizarStatusKds(i.status);
+    return s === 'Em espera' && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(s);
+  }).length;
+  const countPreparo = queueData.filter(i => {
+    const s = window.normalizarStatusKds(i.status);
+    return s === 'Em preparo' && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(s);
+  }).length;
+  const countPronto = queueData.filter(i => {
+    const s = window.normalizarStatusKds(i.status);
+    return s === 'Pronto' && !['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(s);
+  }).length;
 
   const countIfood = queueData.filter(i => {
     if (['Finalizado', 'Cancelado', 'Entregue', 'Pago'].includes(i.status)) return false;
@@ -1987,19 +2088,22 @@ window.pararTimerFornoEFinalizar = function(itemId) {
 };
 
 function renderPizzaKdsDetails(item) {
-  const nomeLower = (item.productName || item.nome || '').toLowerCase();
-  const obs = item.observations || '';
-  let comps = [];
   try {
-    comps = typeof item.composicoes === 'string' ? JSON.parse(item.composicoes) : (item.composicoes || []);
-  } catch (_) { comps = []; }
+    const nomeLower = (item.productName || item.nome || '').toLowerCase();
+    const obs = item.observations || '';
+    let comps = [];
+    try {
+      const raw = typeof item.composicoes === 'string' ? JSON.parse(item.composicoes) : item.composicoes;
+      comps = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
+    } catch (_) { comps = []; }
+    if (!Array.isArray(comps)) comps = [];
 
-  const isPizza = nomeLower.includes('pizza') || (item.sector || '').toLowerCase().includes('forno') || comps.some(c => {
-    const cat = (c.categoria || '').toLowerCase();
-    return cat.includes('fatia') || cat.includes('borda') || cat.includes('tamanho');
-  });
+    const isPizza = nomeLower.includes('pizza') || (item.sector || '').toLowerCase().includes('forno') || comps.some(c => {
+      const cat = (c && c.categoria ? String(c.categoria) : '').toLowerCase();
+      return cat.includes('fatia') || cat.includes('borda') || cat.includes('tamanho');
+    });
 
-  if (!isPizza) return '';
+    if (!isPizza) return '';
 
   const fatias = comps.filter(c => (c.categoria || '').toLowerCase().includes('fatia'));
   const retiradas = comps.filter(c => (c.categoria || '').toLowerCase().includes('retirada')).map(c => c.opcao || c.nome || String(c));
@@ -2100,6 +2204,9 @@ function renderPizzaKdsDetails(item) {
 
   html += `</div>`;
   return html;
+} catch (err) {
+  return '';
+}
 }
 
 function renderizarCardIndividual(item, itemIndex = 0) {
@@ -2108,7 +2215,7 @@ function renderizarCardIndividual(item, itemIndex = 0) {
   const bgColor = getBgColor(diffMins);
   const localColor = getComandaColor(item.localName);
 
-  const status = item.status;
+  const status = window.normalizarStatusKds(item.status);
   const id = safeId(item.id);
   const qty = safeQty(item.quantity);
   let btnIcon, btnColor, nextStatus, btnTitle, btnText;
@@ -2373,9 +2480,9 @@ function renderizarCardIndividual(item, itemIndex = 0) {
       return true;
     });
 
-    const itensEspera = itensValidos.filter(i => i.status === 'Pendente' || i.status === 'Em espera' || i.status === 'Aguardando Marcha');
-    const itensPreparo = itensValidos.filter(i => i.status === 'Em preparo' || i.status === 'Em Preparo');
-    const itensProntos = itensValidos.filter(i => i.status === 'Pronto' || i.status === 'Prontos');
+    const itensEspera = itensValidos.filter(i => window.normalizarStatusKds(i.status) === 'Em espera');
+    const itensPreparo = itensValidos.filter(i => window.normalizarStatusKds(i.status) === 'Em preparo');
+    const itensProntos = itensValidos.filter(i => window.normalizarStatusKds(i.status) === 'Pronto');
 
     const htmlEspera = itensEspera.map(renderizarCardIndividual).join('');
     const htmlPreparo = itensPreparo.map(renderizarCardIndividual).join('');
@@ -2475,12 +2582,17 @@ function applyColumnWidth(col, widthVal) {
 
   const elements = document.querySelectorAll(`.col-${col}, .item-${col}`);
   elements.forEach(el => {
-    if (col === 'produto') {
+    if (col === 'pronto') {
+      el.style.setProperty('flex', '0 0 auto', 'important');
+      el.style.setProperty('width', 'auto', 'important');
+      el.style.setProperty('min-width', 'auto', 'important');
+    } else if (col === 'produto') {
       el.style.setProperty('flex', `1 1 ${wStr}`, 'important');
+      el.style.setProperty('width', wStr, 'important');
     } else {
       el.style.setProperty('flex', `0 0 ${wStr}`, 'important');
+      el.style.setProperty('width', wStr, 'important');
     }
-    el.style.setProperty('width', wStr, 'important');
   });
 }
 
@@ -3422,10 +3534,14 @@ window.atualizarIconeSomKds = function() {
   const btn = document.getElementById('btn-toggle-sound');
   if (btn) {
     btn.innerHTML = isAtivo
-      ? `<i class="ph-bold ph-speaker-high" style="color: #10b981; font-size: 16px;"></i> <span>Som: ON</span>`
-      : `<i class="ph-bold ph-speaker-slash" style="color: #ef4444; font-size: 16px;"></i> <span>Mudo</span>`;
+      ? `<i class="ph-bold ph-speaker-high" style="color: #10b981; font-size: 16px;"></i>`
+      : `<i class="ph-bold ph-speaker-slash" style="color: #ef4444; font-size: 16px;"></i>`;
     btn.style.borderColor = isAtivo ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)';
     btn.title = isAtivo ? 'Alertas sonoros ativados (Clique para silenciar)' : 'Alertas sonoros mutados (Clique para ativar)';
+  }
+  const dropText = document.getElementById('btn-drop-sound-status');
+  if (dropText) {
+    dropText.textContent = isAtivo ? 'Alertas Sonoros: Ligado' : 'Alertas Sonoros: Mudo';
   }
 };
 
@@ -3763,3 +3879,122 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// --- ACOMPANHAMENTO INTELIGENTE DE DEMANDA (BUFFET -> COZINHA) ---
+function iniciarOuvintesBuffetCozinha() {
+  if (window.socket && typeof window.socket.on === 'function') {
+    window.socket.on('alerta_buffet_cozinha', function(alerta) {
+      // Cria alerta visual explosivo no KDS
+      const wrap = document.getElementById('chef-bc-wrap') || document.body;
+      const card = document.createElement('div');
+      card.style.position = 'fixed';
+      card.style.top = '12%';
+      card.style.left = '50%';
+      card.style.transform = 'translateX(-50%)';
+      card.style.background = '#ef4444';
+      card.style.color = 'white';
+      card.style.padding = '20px 32px';
+      card.style.borderRadius = '16px';
+      card.style.boxShadow = '0 10px 40px rgba(239, 68, 68, 0.6)';
+      card.style.zIndex = '999999';
+      card.style.display = 'flex';
+      card.style.flexDirection = 'column';
+      card.style.alignItems = 'center';
+      card.style.gap = '10px';
+      card.style.animation = 'bcIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+      
+      card.innerHTML = `
+        <div style="font-size: 32px; font-weight: 900; letter-spacing: 1px;">🚨 DEMANDA ALTA NO BUFFET 🚨</div>
+        <div style="font-size: 18px; font-weight: 600; text-align: center;">Foram pesados ${alerta.totalPratos || '?'} pratos (${alerta.totalKg || '?'} kg) nos últimos ${alerta.janelaMinutos || 15} min!</div>
+        <div style="font-size: 16px; opacity: 0.9; margin-top: 5px;">Prepare-se para reposição iminente das cubas.</div>
+        <button onclick="this.parentElement.remove()" style="margin-top: 15px; padding: 10px 24px; border: none; background: rgba(0,0,0,0.25); color: white; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;">ESTOU CIENTE (X)</button>
+      `;
+      wrap.appendChild(card);
+      
+      // Auto fechar em 45 segundos
+      setTimeout(() => { if (card.parentElement) card.remove(); }, 45000);
+      
+      // Adicionar no painel de IA / Dicas Rápidas da Cozinha
+      const iaPanel = document.getElementById('ia-gerente-content');
+      if (iaPanel) {
+        const dica = document.createElement('div');
+        dica.style.padding = '10px';
+        dica.style.background = 'rgba(239, 68, 68, 0.1)';
+        dica.style.borderLeft = '4px solid #ef4444';
+        dica.style.marginBottom = '8px';
+        dica.style.borderRadius = '4px';
+        dica.innerHTML = `<strong>${alerta.hora || new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})} - ⚖️ Buffet:</strong> Alto fluxo detectado! ${alerta.totalPratos || '?'} pratos recentes. Fique atento à reposição.`;
+        iaPanel.prepend(dica);
+        const fabBadge = document.getElementById('ia-gerente-badge');
+        if (fabBadge) fabBadge.style.display = 'block';
+      }
+
+      // Tenta emitir som (se houver som configurado no KDS)
+      if (typeof window.tocarKdsSound === 'function') {
+        window.tocarKdsSound('alerta'); // usa a func nativa do KDS
+      }
+    });
+  } else {
+    // Tenta novamente a cada 2s até que a inicialização do socket do frontend conclua
+    setTimeout(iniciarOuvintesBuffetCozinha, 2000);
+  }
+}
+document.addEventListener('DOMContentLoaded', iniciarOuvintesBuffetCozinha);
+
+// ── Modulo: Resumo de Produção (Batching) ──
+window.abrirResumoProducao = function() {
+  const modal = document.getElementById('modal-resumo-producao');
+  const container = document.getElementById('resumo-producao-list');
+  if (!modal || !container) return;
+
+  // Percorre `rawQueue` (ou os itens filtrados)
+  const pendentes = window.rawQueue ? window.rawQueue.filter(i => i.status === 'Em espera' || i.status === 'Em preparo') : [];
+  
+  if (pendentes.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;font-weight:600;">Nenhum item pendente para produção.</div>';
+    modal.style.display = 'flex';
+    return;
+  }
+
+  // Agrupa
+  const agrupado = {};
+  pendentes.forEach(item => {
+    // Filtro de Setor Ativo: Se o Setor Atual não for 'Todos', ignorar se o item for de outro setor.
+    if (typeof currentSector !== 'undefined' && currentSector !== 'Todos') {
+       if (item.sector && item.sector.trim().toLowerCase() !== currentSector.trim().toLowerCase()) {
+         return; // Ignora deste batch
+       }
+    }
+
+    const key = item.productName.trim();
+    if (!agrupado[key]) agrupado[key] = { qtd: 0, statusPreparo: 0, statusEspera: 0, locais: new Set() };
+    agrupado[key].qtd += item.quantity || 1;
+    if (item.status === 'Em preparo') agrupado[key].statusPreparo += item.quantity || 1;
+    if (item.status === 'Em espera') agrupado[key].statusEspera += item.quantity || 1;
+    if (item.localName) agrupado[key].locais.add(item.localName);
+  });
+
+  const arrayAgrupado = Object.entries(agrupado).sort((a,b) => b[1].qtd - a[1].qtd); // Ordena por quantidade DESC
+  
+  if (arrayAgrupado.length === 0) {
+     container.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;font-weight:600;">Nenhum item pendente para o setor atual.</div>';
+  } else {
+     container.innerHTML = arrayAgrupado.map(([nome, dados]) => `
+       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+         <div>
+           <div style="font-weight:800;color:#0f172a;font-size:15px;margin-bottom:4px;">${nome}</div>
+           <div style="font-size:11.5px;color:#64748b;">
+             <span style="color:#f59e0b;font-weight:600;">${dados.statusEspera} em espera</span> • 
+             <span style="color:#3b82f6;font-weight:600;">${dados.statusPreparo} no fogo</span>
+           </div>
+           <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Mesas: ${Array.from(dados.locais).join(', ')}</div>
+         </div>
+         <div style="background:#ca8a04;color:white;font-weight:900;font-size:20px;padding:8px 16px;border-radius:10px;">
+           x${dados.qtd}
+         </div>
+       </div>
+     `).join('');
+  }
+
+  modal.style.display = 'flex';
+};

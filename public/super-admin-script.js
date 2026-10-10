@@ -190,10 +190,104 @@ window.toggleCentralNotificacoesSuper = function() {
   if (typeof switchTab === 'function') switchTab('sec-notificacoes');
 };
 
+/* ═══ HONEYPOT & DEFESA ATIVA (PEGADINHAS & LABIRINTO) ═══ */
+window.dispararPegadinhaInvasor = function(detalhes) {
+  detalhes = detalhes || {};
+  var motivo = detalhes.motivo || 'TENTATIVA_DE_INVASAO_DETECTADA';
+
+  console.warn(
+    "%c🚨 [HONEYPOT ATIVADO] Tentativa de invasão detectada e gravada no servidor!",
+    "font-size:16px; color:#ef4444; font-weight:bold; background:#111; padding:10px; border:2px solid #ef4444;"
+  );
+  console.log("%cSeu IP e fingerprint foram registrados na Central de Segurança do Chef Cozinha.", "color:#fef08a; font-weight:bold;");
+
+  var modal = document.getElementById('modal-honeypot-trap');
+  var txtMotivo = document.getElementById('honeypot-motivo-texto');
+  if (txtMotivo) txtMotivo.textContent = motivo;
+  if (modal) modal.style.display = 'flex';
+
+  // Reporta ao backend para registrar no SQLite, emitir socket e notificação P1
+  try {
+    fetch('/api/seguranca/reportar-violacao', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tipo_violacao: 'HONEYPOT_TRAP_' + motivo,
+        url: window.location.href,
+        restaurante_id: '0',
+        timestamp: new Date().toISOString(),
+        detalhes: detalhes
+      })
+    }).catch(function() {});
+  } catch(e) {}
+};
+
+window.fugirBotaoTroll = function(btn) {
+  if (!btn) return;
+  var maxX = Math.max(80, window.innerWidth - 320);
+  var maxY = Math.max(80, window.innerHeight - 80);
+  var randomX = Math.floor(Math.random() * maxX);
+  var randomY = Math.floor(Math.random() * maxY);
+  btn.style.position = 'fixed';
+  btn.style.zIndex = '99999999';
+  btn.style.left = randomX + 'px';
+  btn.style.top = randomY + 'px';
+};
+
+window.fecharPegadinhaHoneypot = function() {
+  var modal = document.getElementById('modal-honeypot-trap');
+  if (modal) modal.style.display = 'none';
+
+  var btn = document.getElementById('btn-troll-foge');
+  if (btn) {
+    btn.style.position = '';
+    btn.style.zIndex = '';
+    btn.style.left = '';
+    btn.style.top = '';
+  }
+
+  var trapTokenEl = document.getElementById('admin-backdoor-token');
+  var trapRootEl = document.getElementById('root-master-key');
+  if (trapTokenEl) trapTokenEl.value = '';
+  if (trapRootEl) trapRootEl.value = '';
+
+  var passInput = document.getElementById('local-senha');
+  if (passInput) passInput.focus();
+};
+
+// 🍯 Iscas no Console DevTools para quem inspeciona variáveis globais
+try {
+  ['ROOT_MASTER_KEY', 'godMode', 'dumpAllDatabases', 'developerBackdoor', '__super_admin_secret__'].forEach(function(trapKey) {
+    Object.defineProperty(window, trapKey, {
+      get: function() {
+        window.dispararPegadinhaInvasor({ motivo: 'LEITURA_CONSOLE_' + trapKey });
+        return '🚨 HONEYPOT ATIVADO: Acesso a ' + trapKey + ' foi registrado!';
+      },
+      set: function(val) {
+        window.dispararPegadinhaInvasor({ motivo: 'ESCRITA_CONSOLE_' + trapKey, val: val });
+      },
+      configurable: true
+    });
+  });
+} catch(e) {}
+
 /* ═══ LOGIN LOCAL ═══ */
 function loginLocal() {
   var senhaInput = document.getElementById('local-senha');
   var senha = senhaInput ? senhaInput.value.trim() : '';
+
+  // 🍯 Checagem de Honeypot Fields (Invisíveis)
+  var trapTokenEl = document.getElementById('admin-backdoor-token');
+  var trapRootEl = document.getElementById('root-master-key');
+  var trapToken = trapTokenEl ? trapTokenEl.value.trim() : '';
+  var trapRoot = trapRootEl ? trapRootEl.value.trim() : '';
+
+  if (trapToken || trapRoot) {
+    // Pegadinha acionada no front-end!
+    window.dispararPegadinhaInvasor({ motivo: 'CAMPO_HONEYPOT_PREENCHIDO', token: trapToken });
+    return;
+  }
+
   if (!senha) { showToast('Informe a senha de administrador!', 'warning'); return; }
 
   var x = new XMLHttpRequest();
@@ -210,6 +304,8 @@ function loginLocal() {
           localStorage.setItem('super_token', localToken);
           sessionStorage.setItem('super_admin_token', localToken);
           entrarNoPainel(true);
+        } else if (data.honeypot_triggered) {
+          window.dispararPegadinhaInvasor({ motivo: 'HONEYPOT_BACKEND_REJEITOU' });
         } else {
           showToast(data.erro || 'Erro ao realizar login.', 'danger');
         }
@@ -218,17 +314,24 @@ function loginLocal() {
       }
     }
   };
-  x.send(JSON.stringify({ senha: senha }));
+  x.send(JSON.stringify({
+    senha: senha,
+    admin_backdoor_token: trapToken,
+    root_master_key: trapRoot
+  }));
 }
 
 function entrarNoPainel(isExplicitLogin) {
   var token = getSuperAdminToken();
-  if (token && !localToken) localToken = token;
-  var headers = {};
-  if (token) {
-    headers['x-super-admin-token'] = token;
-    headers['Authorization'] = 'Bearer ' + token;
+  if (!token) {
+    exibirTelaLogin();
+    return;
   }
+  if (!localToken) localToken = token;
+  var headers = {
+    'x-super-admin-token': token,
+    'Authorization': 'Bearer ' + token
+  };
 
   fetch('/api/super/panel-template?t=' + Date.now(), { credentials: 'same-origin', headers: headers, cache: 'no-store' })
     .then(function(res) {
@@ -247,15 +350,26 @@ function entrarNoPainel(isExplicitLogin) {
 
 function carregarEExibirPainel(html) {
   isLocalMode = true;
+  document.body.classList.remove('auth-pending');
+  document.body.classList.add('authenticated', 'auth-checked');
+  document.body.style.alignItems = 'stretch';
+
   var root = document.getElementById('admin-panel-root');
   if (root) root.innerHTML = html;
 
   var loginContainer = document.getElementById('login-container');
-  if (loginContainer) loginContainer.style.display = 'none';
+  if (loginContainer) {
+    loginContainer.style.setProperty('display', 'none', 'important');
+  }
 
   var adminPanel = document.getElementById('admin-panel');
-  if (adminPanel) adminPanel.style.display = 'grid';
-  document.body.style.alignItems = 'stretch';
+  if (adminPanel) {
+    adminPanel.classList.add('authenticated');
+    adminPanel.style.setProperty('display', window.innerWidth <= 900 ? 'block' : 'grid', 'important');
+  }
+
+  var cloak = document.getElementById('auth-cloak');
+  if (cloak && cloak.parentNode) cloak.parentNode.removeChild(cloak);
 
   initAdminPanelUI();
 
@@ -269,14 +383,30 @@ function carregarEExibirPainel(html) {
 
 function exibirTelaLogin() {
   isLocalMode = false;
+  document.body.classList.remove('authenticated');
+  document.body.classList.remove('auth-pending');
+  document.body.classList.add('auth-checked');
+  document.body.style.alignItems = 'center';
+
   var root = document.getElementById('admin-panel-root');
   if (root) root.innerHTML = '';
 
   var loginContainer = document.getElementById('login-container');
-  if (loginContainer) loginContainer.style.display = 'flex';
+  if (loginContainer) {
+    loginContainer.style.setProperty('display', 'flex', 'important');
+  }
+
+  var adminPanel = document.getElementById('admin-panel');
+  if (adminPanel) {
+    adminPanel.style.setProperty('display', 'none', 'important');
+    adminPanel.classList.remove('authenticated');
+  }
 
   var earlyStyle = document.getElementById('early-tab-style');
   if (earlyStyle && earlyStyle.parentNode) earlyStyle.parentNode.removeChild(earlyStyle);
+
+  var cloak = document.getElementById('auth-cloak');
+  if (cloak && cloak.parentNode) cloak.parentNode.removeChild(cloak);
 }
 
 var _superAdminSocket = null;
@@ -474,9 +604,7 @@ function logout() {
   sessionStorage.removeItem('super_admin_token');
   localToken = '';
   isLocalMode = false;
-  document.getElementById('login-container').style.display = 'flex';
-  document.getElementById('admin-panel').style.display = 'none';
-  document.body.style.alignItems = 'center';
+  exibirTelaLogin();
 }
 
 /* ═══ CLIENTES ═══ */
@@ -743,6 +871,7 @@ function switchTab(targetId) {
     'sec-servidor': ['Servidor', 'Status, backup e manutenção do servidor'],
     'sec-mensagens': ['Mensagens', 'Envie atualizações e avisos para todos os restaurantes'],
     'sec-logs': ['Logs do Sistema', 'Auditoria e logs de requisições API'],
+    'sec-honeypot': ['Honeypot & Labirinto', 'Trajetória de invasores, defesa ativa e coleta de impressões digitais'],
     'sec-config': ['Configurações', 'Configurações globais da plataforma'],
     'sec-ia-global': ['Inteligência Artificial Global', 'Configuração Master do Google Gemini e operação de IA para restaurantes'],
     'sec-funcoes': ['Funções', 'Gerencie funcionalidades habilitadas por restaurante'],
@@ -837,6 +966,7 @@ function switchTab(targetId) {
     if (typeof window.carregarTemasLista === 'function') window.carregarTemasLista();
   }
   else if (targetId === 'sec-logs') carregarLogs(0);
+  else if (targetId === 'sec-honeypot') carregarDashboardHoneypot();
   else if (targetId === 'sec-config') carregarConfig();
   else if (targetId === 'sec-ia-global') carregarConfig();
   else if (targetId === 'sec-licencas') { if (typeof window.carregarLicencas === 'function') window.carregarLicencas(); }
@@ -4557,9 +4687,10 @@ document.addEventListener('DOMContentLoaded', function() {
     localStorage.setItem('chef_super_admin_local_token', savedToken);
     localStorage.setItem('super_admin_token', savedToken);
     localStorage.setItem('super_token', savedToken);
+    entrarNoPainel(false);
+  } else {
+    exibirTelaLogin();
   }
-
-  entrarNoPainel(false);
 });
 
   /* ═══ LICENÇAS & TELEMETRIA ═══ */
@@ -15218,3 +15349,258 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+/* ═══ DASHBOARD DE DEFESA ATIVA (HONEYPOT) ═══ */
+
+function carregarDashboardHoneypot() {
+  carregarHoneypotStatsResumo();
+  carregarHoneypotInvasores();
+  carregarConfigHoneypot();
+}
+
+function alternarAbaHoneypot(abaId) {
+  var abas = document.querySelectorAll('.hp-aba-content');
+  var botoes = document.querySelectorAll('#sec-honeypot .tab-btn');
+  
+  for(var i=0; i<abas.length; i++) {
+    abas[i].classList.remove('active');
+    abas[i].style.display = 'none';
+  }
+  for(var j=0; j<botoes.length; j++) {
+    botoes[j].classList.remove('active');
+  }
+  
+  var alvo = document.getElementById(abaId);
+  if (alvo) {
+    alvo.classList.add('active');
+    alvo.style.display = 'block';
+  }
+  
+  // Encontrar o botão certo (hackzinho pro id)
+  var btnId = 'tab-' + abaId.replace('-aba-', '-');
+  var btn = document.getElementById(btnId);
+  if (btn) btn.classList.add('active');
+  
+  // Carregar dados se necessário
+  if (abaId === 'hp-aba-invasores') carregarHoneypotInvasores();
+  else if (abaId === 'hp-aba-timeline') carregarHoneypotTimeline();
+  else if (abaId === 'hp-aba-fingerprints') carregarHoneypotFingerprints();
+  else if (abaId === 'hp-aba-config') carregarConfigHoneypot();
+}
+
+function carregarHoneypotStatsResumo() {
+  apiGet('/api/super/honeypot/stats', function(err, data) {
+    if (err || !data || !data.ok) return;
+    
+    var totalDetectado = 0;
+    var totalIscas = 0;
+    
+    (data.resumo || []).forEach(function(item) {
+      totalDetectado += item.total;
+      if (item.tipo === 'BAIXOU_ISCA_BACKUP') totalIscas += item.total;
+    });
+    
+    document.getElementById('hp-total-detect').innerHTML = totalDetectado;
+    document.getElementById('hp-iscas').innerHTML = totalIscas;
+  });
+  
+  apiGet('/api/super/honeypot/fingerprints', function(err, data) {
+    if (err || !data || !data.ok) return;
+    document.getElementById('hp-fingerprints').innerHTML = (data.fingerprints || []).length;
+  });
+}
+
+function renderizarTrajetoria(trajectory) {
+  if (!trajectory || trajectory.length === 0) return '<span style="color:var(--text-muted);">Nenhuma trajetória.</span>';
+  
+  var html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+  trajectory.forEach(function(t, idx) {
+    var data = new Date(t.created_at).toLocaleTimeString('pt-BR');
+    var isTroll = t.tipo === 'LABYRINTH_GRAND_FINALE' || t.tipo === 'BAIXOU_ISCA_BACKUP';
+    var icon = isTroll ? '<i class="fa-solid fa-skull-crossbones" style="color:#ef4444;"></i>' : '<i class="fa-solid fa-arrow-right" style="color:#3b82f6;"></i>';
+    var corTipo = isTroll ? '#ef4444' : '#eab308';
+    
+    html += '<div style="display:flex; align-items:flex-start; gap:8px; font-size:0.8rem;">' +
+              '<div style="min-width:55px; color:var(--text-muted);">' + data + '</div>' +
+              '<div>' + icon + '</div>' +
+              '<div>' +
+                '<span style="font-weight:600; color:' + corTipo + ';">' + escHtml(t.tipo) + '</span><br>' +
+                '<span style="color:#94a3b8; font-family:monospace; font-size:0.75rem;">' + escHtml(t.url) + '</span>' +
+              '</div>' +
+            '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function carregarHoneypotInvasores() {
+  document.getElementById('lista-honeypot-invasores').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando Invasores...</td></tr>';
+  
+  apiGet('/api/super/honeypot/invasores', function(err, data) {
+    if (err || !data || !data.ok) {
+      document.getElementById('lista-honeypot-invasores').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#ef4444;">Erro ao carregar invasores.</td></tr>';
+      return;
+    }
+    
+    var invasores = data.invasores || [];
+    document.getElementById('hp-unicos').innerHTML = invasores.length;
+    
+    if (invasores.length === 0) {
+      document.getElementById('lista-honeypot-invasores').innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum invasor detectado. Seu honeypot está faminto.</td></tr>';
+      return;
+    }
+    
+    var html = '';
+    invasores.forEach(function(inv) {
+      var agentShort = (inv.user_agent || '').substring(0, 45) + ((inv.user_agent || '').length > 45 ? '...' : '');
+      var first = new Date(inv.first_seen).toLocaleString('pt-BR');
+      
+      html += '<tr style="border-left: 3px solid #ef4444;">';
+      html += '<td>' +
+                '<div style="font-weight:bold; color:#ef4444; font-size:1.05rem;"><i class="fa-solid fa-mask"></i> ' + escHtml(inv.ip) + '</div>' +
+                '<div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;" title="' + escHtml(inv.user_agent) + '">' + escHtml(agentShort) + '</div>' +
+              '</td>';
+      html += '<td>' +
+                '<div style="font-size:0.85rem;"><span style="color:#10b981;">' + inv.total_hits + '</span> armadilhas ativadas</div>' +
+                '<div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Início: ' + first + '</div>' +
+              '</td>';
+      html += '<td>' + renderizarTrajetoria(inv.trajectory) + '</td>';
+      html += '<td>' +
+                '<button class="btn-action" style="padding:0.4rem 0.6rem; margin-bottom:4px;" onclick="baixarIscaPara(' + "'" + escHtml(inv.ip) + "'" + ')" title="Gerar Isca de Tracking (DB Falso)"><i class="fa-solid fa-download"></i> Gerar Isca DB</button><br>' +
+                '<button class="btn-action" style="padding:0.4rem 0.6rem; border-color:#ef4444; color:#ef4444;" onclick="bloquearIpWaf(' + "'" + escHtml(inv.ip) + "'" + ')"><i class="fa-solid fa-ban"></i> Banir IP (WAF)</button>' +
+              '</td>';
+      html += '</tr>';
+    });
+    document.getElementById('lista-honeypot-invasores').innerHTML = html;
+  });
+}
+
+function carregarHoneypotTimeline() {
+  document.getElementById('lista-honeypot-timeline').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando Timeline...</td></tr>';
+  
+  apiGet('/api/super/honeypot/timeline', function(err, data) {
+    if (err || !data || !data.ok) {
+      document.getElementById('lista-honeypot-timeline').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#ef4444;">Erro ao carregar timeline.</td></tr>';
+      return;
+    }
+    
+    var timeline = data.timeline || [];
+    if (timeline.length === 0) {
+      document.getElementById('lista-honeypot-timeline').innerHTML = '<tr><td colspan="5" style="text-align:center;">Timeline vazia.</td></tr>';
+      return;
+    }
+    
+    var html = '';
+    timeline.forEach(function(item) {
+      var d = new Date(item.created_at).toLocaleString('pt-BR');
+      var isCritical = item.tipo === 'LABYRINTH_GRAND_FINALE' || item.tipo === 'EMERGENCY_ROOT_BYPASS';
+      var cor = isCritical ? '#ef4444' : '#eab308';
+      var payloadStr = '';
+      try {
+        if(item.payload) {
+          var p = JSON.parse(item.payload);
+          payloadStr = JSON.stringify(p);
+        }
+      } catch(e) {}
+      
+      html += '<tr>';
+      html += '<td style="font-size:0.8rem;">' + d + '</td>';
+      html += '<td style="font-weight:600; font-size:0.85rem;"><i class="fa-solid fa-mask" style="color:#94a3b8;"></i> ' + escHtml(item.ip) + '</td>';
+      html += '<td style="font-weight:600; color:' + cor + '; font-size:0.85rem;">' + escHtml(item.tipo) + '</td>';
+      html += '<td style="font-size:0.8rem; font-family:monospace; color:#3b82f6;" title="' + escHtml(payloadStr) + '">' + escHtml(item.url) + '</td>';
+      html += '<td style="font-size:0.7rem; color:#94a3b8; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="' + escHtml(item.user_agent) + '">' + escHtml(item.user_agent) + '</td>';
+      html += '</tr>';
+    });
+    document.getElementById('lista-honeypot-timeline').innerHTML = html;
+  });
+}
+
+function carregarHoneypotFingerprints() {
+  document.getElementById('lista-honeypot-fingerprints').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando Fingerprints...</td></tr>';
+  
+  apiGet('/api/super/honeypot/fingerprints', function(err, data) {
+    if (err || !data || !data.ok) {
+      document.getElementById('lista-honeypot-fingerprints').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#ef4444;">Erro ao carregar tracking.</td></tr>';
+      return;
+    }
+    
+    var fps = data.fingerprints || [];
+    if (fps.length === 0) {
+      document.getElementById('lista-honeypot-fingerprints').innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum fingerprint coletado. Envie a Isca DB para um invasor!</td></tr>';
+      return;
+    }
+    
+    var html = '';
+    fps.forEach(function(fp) {
+      var d = new Date(fp.created_at).toLocaleString('pt-BR');
+      
+      html += '<tr>';
+      html += '<td style="font-size:0.8rem;">' + d + '<br><span style="color:#6366f1;font-family:monospace;font-size:0.7rem;">Sessão: ' + (fp.session_token || '').substring(0,8) + '</span></td>';
+      html += '<td style="font-weight:bold; color:#ef4444;"><i class="fa-solid fa-mask"></i> ' + escHtml(fp.ip) + '<br><span style="color:#94a3b8;font-size:0.75rem;font-weight:normal;">' + escHtml(fp.timezone) + '</span></td>';
+      html += '<td style="font-size:0.8rem;">' +
+                '<i class="fa-solid fa-desktop" style="color:#3b82f6;"></i> ' + escHtml(fp.screen_resolution) + '<br>' +
+                '<i class="fa-solid fa-microchip" style="color:#10b981;"></i> ' + escHtml(fp.platform) +
+              '</td>';
+      html += '<td style="font-size:0.8rem;">' +
+                '<div title="' + escHtml(fp.webgl_info) + '" style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><i class="fa-solid fa-cubes" style="color:#a855f7;"></i> ' + escHtml(fp.webgl_info) + '</div>' +
+                '<div><i class="fa-solid fa-fingerprint" style="color:#f59e0b;"></i> Canvas: <span style="font-family:monospace;font-size:0.7rem;">' + escHtml(fp.canvas_hash) + '</span></div>' +
+              '</td>';
+      html += '<td style="font-size:0.8rem;">' +
+                '<div><i class="fa-solid fa-battery-full" style="color:#22c55e;"></i> ' + escHtml(fp.battery || 'N/A') + '</div>' +
+                '<div><i class="fa-solid fa-wifi" style="color:#0ea5e9;"></i> ' + escHtml(fp.connection_type || 'N/A') + '</div>' +
+              '</td>';
+      html += '</tr>';
+    });
+    document.getElementById('lista-honeypot-fingerprints').innerHTML = html;
+  });
+}
+
+function baixarIscaPara(ipAlvo) {
+  // Baixa o arquivo malicioso/isca no navegador do Super Admin e pede pra enviar pro invasor.
+  // Pode ser feito abrindo a URL:
+  var url = '/api/super/honeypot/download-isca?for_ip=' + encodeURIComponent(ipAlvo);
+  window.open(url, '_blank');
+  showToast('Isca gerada! Envie este arquivo "SQL" falso para o invasor.', 'success');
+}
+
+function carregarConfigHoneypot() {
+  apiGet('/api/super/honeypot/config', function(err, data) {
+    if (err || !data || !data.ok) return;
+    var c = data.config || {};
+    if (document.getElementById('chk-hp-fingerprint')) document.getElementById('chk-hp-fingerprint').checked = (c.enable_fingerprint === 'true');
+    if (document.getElementById('chk-hp-seo')) document.getElementById('chk-hp-seo').checked = (c.enable_seo_beacon === 'true');
+    if (document.getElementById('chk-hp-fake-data')) document.getElementById('chk-hp-fake-data').checked = (c.enable_fake_data === 'true');
+    if (document.getElementById('chk-hp-data-bomb')) document.getElementById('chk-hp-data-bomb').checked = (c.enable_data_bomb === 'true');
+  });
+}
+
+function salvarConfigHoneypot() {
+  var updates = {
+    enable_fingerprint: document.getElementById('chk-hp-fingerprint') ? (document.getElementById('chk-hp-fingerprint').checked ? 'true' : 'false') : 'false',
+    enable_seo_beacon: document.getElementById('chk-hp-seo') ? (document.getElementById('chk-hp-seo').checked ? 'true' : 'false') : 'false',
+    enable_fake_data: document.getElementById('chk-hp-fake-data') ? (document.getElementById('chk-hp-fake-data').checked ? 'true' : 'false') : 'false',
+    enable_data_bomb: document.getElementById('chk-hp-data-bomb') ? (document.getElementById('chk-hp-data-bomb').checked ? 'true' : 'false') : 'false'
+  };
+  
+  var x = new XMLHttpRequest();
+  x.open('POST', '/api/super/honeypot/config', true);
+  x.setRequestHeader('Content-Type', 'application/json');
+  x.setRequestHeader('x-super-admin-token', getSuperAdminToken());
+  x.onreadystatechange = function() {
+    if(x.readyState === 4) {
+      if(x.status === 200) showToast('Configurações da Isca salvas!', 'success');
+      else showToast('Erro ao salvar', 'error');
+    }
+  };
+  x.send(JSON.stringify(updates));
+}
+
+window.alternarAbaHoneypot = alternarAbaHoneypot;
+window.carregarHoneypotInvasores = carregarHoneypotInvasores;
+window.carregarHoneypotTimeline = carregarHoneypotTimeline;
+window.carregarHoneypotFingerprints = carregarHoneypotFingerprints;
+window.baixarIscaPara = baixarIscaPara;
+window.carregarConfigHoneypot = carregarConfigHoneypot;
+window.salvarConfigHoneypot = salvarConfigHoneypot;
+
+

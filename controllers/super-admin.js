@@ -28,6 +28,7 @@ module.exports = function (app, masterDb, sqlite3, options) {
     require('./remote-support')(app, masterDb, sqlite3, options);
     require('./contador-cheff')(app, masterDb, sqlite3, options);
     require('./super-admin-financeiro')(app, masterDb, sqlite3, options);
+    require('./super-admin-honeypot')(app, masterDb, sqlite3, options);
   } catch (errMod) {
     console.error('[Super Admin Sub-controllers Error]', errMod);
   }
@@ -75,6 +76,11 @@ module.exports = function (app, masterDb, sqlite3, options) {
     } else {
       res.status(404).json({ ok: false, erro: 'Template do painel nao encontrado.' });
     }
+  });
+
+  // Rota de verificação rápida de autenticação
+  app.get('/api/super/check-auth', superAdminAuth, (req, res) => {
+    res.json({ ok: true, authenticated: true, superAdmin: req.superAdmin });
   });
 
   function listarBancosTenant() {

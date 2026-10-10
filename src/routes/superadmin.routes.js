@@ -78,6 +78,27 @@ router.post('/api/super/login-local', async (req, res) => {
   if (loginBloqueado(rawIp)) {
     return res.status(429).json({ ok: false, erro: 'Muitas tentativas. Aguarde 15 minutos.' });
   }
+
+  // 🍯 Verificação de Honeypot: Se bots/fraudadores preencherem campos ocultos
+  if (req.body && (req.body.admin_backdoor_token || req.body.root_master_key)) {
+    try {
+      io.emit('alerta_impostor_super_admin', {
+        email: 'Honeypot Input Trap',
+        cargo: 'Bot / Fraudador de Login',
+        restaurante_id: 0,
+        restaurante_nome: 'Tentativa de Bypass no Login',
+        ip: rawIp,
+        mensagem: `🚨 BOT/FRAUDADOR DETECTADO: Tentativa de preenchimento de campo honeypot oculto no login do Super Admin! IP: ${rawIp}`
+      });
+    } catch (e) {}
+    await new Promise(r => setTimeout(r, 3000));
+    return res.status(403).json({
+      ok: false,
+      honeypot_triggered: true,
+      erro: '⚠️ Dispositivo em quarentena de segurança. Handshake criptográfico rejeitado.'
+    });
+  }
+
   const senha = req.body && req.body.senha;
   const ok = await verificarSenhaAdmin(senha);
   if (!ok) {

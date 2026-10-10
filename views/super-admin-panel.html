@@ -205,6 +205,11 @@
                 <i class="fa-solid fa-file-invoice"></i>
                 <span>Logs do Sistema</span>
               </div>
+              <div class="menu-item" data-target="sec-honeypot" id="menu-item-honeypot">
+                <i class="fa-solid fa-spider" style="color:var(--danger,#ef4444);"></i>
+                <span>Honeypot & Labirinto</span>
+                <span id="honeypot-badge" style="background:var(--danger,#ef4444);color:#fff;font-size:0.6rem;padding:2px 7px;border-radius:99px;font-weight:700;">ISCA</span>
+              </div>
               <div class="menu-item menu-item-alert" data-target="sec-recuperar-acesso">
                 <i class="fa-solid fa-user-shield"></i>
                 <span>Recuperar Acesso</span>
@@ -7092,6 +7097,177 @@
             </div>
           </div>
 
+          <div class="content-section" id="sec-honeypot">
+            <div class="info-banner" style="border-left-color:var(--danger,#ef4444); background:rgba(239, 68, 68, 0.05);">
+              <i class="fa-solid fa-spider" style="color:var(--danger,#ef4444);"></i>
+              <div class="info-banner-content">
+                <h4 style="color:var(--danger,#ef4444);">Dashboard de Defesa Ativa (Honeypot)</h4>
+                <p>Monitore invasores capturados, analise o comportamento no labirinto e visualize impressões digitais coletadas (fingerprints) através das iscas.</p>
+              </div>
+            </div>
+
+            <!-- Resumo e Métricas -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+              <div class="card-metrica" style="border-color:rgba(239, 68, 68, 0.3);">
+                <div class="metrica-icon" style="background:rgba(239, 68, 68, 0.1);color:#ef4444;"><i class="fa-solid fa-bug"></i></div>
+                <div class="metrica-info">
+                  <span class="metrica-titulo">Total de Ameaças Detectadas</span>
+                  <span class="metrica-valor" id="hp-total-detect"><i class="fa-solid fa-spinner fa-spin"></i></span>
+                </div>
+              </div>
+              <div class="card-metrica" style="border-color:rgba(245, 158, 11, 0.3);">
+                <div class="metrica-icon" style="background:rgba(245, 158, 11, 0.1);color:#f59e0b;"><i class="fa-solid fa-user-ninja"></i></div>
+                <div class="metrica-info">
+                  <span class="metrica-titulo">Invasores Únicos (IPs)</span>
+                  <span class="metrica-valor" id="hp-unicos"><i class="fa-solid fa-spinner fa-spin"></i></span>
+                </div>
+              </div>
+              <div class="card-metrica" style="border-color:rgba(16, 185, 129, 0.3);">
+                <div class="metrica-icon" style="background:rgba(16, 185, 129, 0.1);color:#10b981;"><i class="fa-solid fa-fingerprint"></i></div>
+                <div class="metrica-info">
+                  <span class="metrica-titulo">Fingerprints Coletados</span>
+                  <span class="metrica-valor" id="hp-fingerprints"><i class="fa-solid fa-spinner fa-spin"></i></span>
+                </div>
+              </div>
+              <div class="card-metrica" style="border-color:rgba(139, 92, 246, 0.3);">
+                <div class="metrica-icon" style="background:rgba(139, 92, 246, 0.1);color:#8b5cf6;"><i class="fa-solid fa-download"></i></div>
+                <div class="metrica-info">
+                  <span class="metrica-titulo">Iscas Baixadas</span>
+                  <span class="metrica-valor" id="hp-iscas"><i class="fa-solid fa-spinner fa-spin"></i></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Abas Internas -->
+            <div class="tabs-container" style="margin-bottom:1.5rem;">
+              <button class="tab-btn active" onclick="alternarAbaHoneypot('hp-aba-invasores')" id="tab-hp-invasores"><i class="fa-solid fa-users-viewfinder"></i> Trajetória dos Invasores</button>
+              <button class="tab-btn" onclick="alternarAbaHoneypot('hp-aba-timeline')" id="tab-hp-timeline"><i class="fa-solid fa-clock-rotate-left"></i> Timeline Global</button>
+              <button class="tab-btn" onclick="alternarAbaHoneypot('hp-aba-fingerprints')" id="tab-hp-fingerprints"><i class="fa-solid fa-fingerprint"></i> Fingerprints (Tracking)</button>
+              <button class="tab-btn" onclick="alternarAbaHoneypot('hp-aba-config')" id="tab-hp-config"><i class="fa-solid fa-sliders"></i> Configurações da Isca</button>
+            </div>
+
+            <!-- Aba Invasores -->
+            <div id="hp-aba-invasores" class="hp-aba-content active">
+              <div class="flex-row" style="margin-bottom:1rem;justify-content:space-between;align-items:center;">
+                <h3 style="margin:0;"><i class="fa-solid fa-users-viewfinder"></i> Invasores Identificados</h3>
+                <button class="btn-action" onclick="carregarHoneypotInvasores()" style="padding:0.4rem 0.8rem;"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Invasor (IP / Agent)</th>
+                      <th>Atividade</th>
+                      <th>Trajetória no Labirinto (Linha do Tempo)</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lista-honeypot-invasores">
+                    <tr><td colspan="4" style="text-align:center;padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Aba Timeline Global -->
+            <div id="hp-aba-timeline" class="hp-aba-content" style="display:none;">
+               <div class="flex-row" style="margin-bottom:1rem;justify-content:space-between;align-items:center;">
+                <h3 style="margin:0;"><i class="fa-solid fa-list"></i> Timeline de Logs Brutos</h3>
+                <button class="btn-action" onclick="carregarHoneypotTimeline()" style="padding:0.4rem 0.8rem;"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Data/Hora</th>
+                      <th>IP</th>
+                      <th>Tipo / Armadilha</th>
+                      <th>Endpoint URL</th>
+                      <th>User Agent</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lista-honeypot-timeline">
+                    <tr><td colspan="5" style="text-align:center;padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Aba Fingerprints -->
+            <div id="hp-aba-fingerprints" class="hp-aba-content" style="display:none;">
+              <div class="info-banner" style="border-left-color:#10b981; background:rgba(16, 185, 129, 0.05); margin-bottom:1rem; padding:12px;">
+                <i class="fa-solid fa-shield-cat" style="color:#10b981;"></i>
+                <div class="info-banner-content" style="font-size:0.9rem;">
+                  <h4 style="margin:0 0 4px 0; color:#10b981;">Tracking de Iscas (Backlinks SEO)</h4>
+                  <p style="margin:0;">Dados de navegadores coletados através de arquivos falsos de banco de dados (.html disfarçado). Estes arquivos enviam a impressão digital e geram backlinks para o Chef Cozinha.</p>
+                </div>
+              </div>
+              <div class="flex-row" style="margin-bottom:1rem;justify-content:space-between;align-items:center;">
+                <h3 style="margin:0;"><i class="fa-solid fa-fingerprint"></i> Sessões Rastreadas</h3>
+                <button class="btn-action" onclick="carregarHoneypotFingerprints()" style="padding:0.4rem 0.8rem;"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>IP de Origem</th>
+                      <th>Hardware & Tela</th>
+                      <th>Software & WebGL</th>
+                      <th>Bateria / Conexão</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lista-honeypot-fingerprints">
+                    <tr><td colspan="5" style="text-align:center;padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Aba Configurações -->
+            <div id="hp-aba-config" class="hp-aba-content" style="display:none;">
+              <div class="flex-row" style="margin-bottom:1rem;justify-content:space-between;align-items:center;">
+                <h3 style="margin:0;"><i class="fa-solid fa-sliders"></i> Comportamento das Iscas (Backups Falsos)</h3>
+                <button class="btn-action" onclick="salvarConfigHoneypot()" style="padding:0.4rem 1.2rem; background:#10b981; color:#fff; border:none;"><i class="fa-solid fa-save"></i> Salvar</button>
+              </div>
+              
+              <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:1.5rem;">
+                <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border-color);">
+                  <div>
+                    <strong style="display:block; font-size:1rem; margin-bottom:4px;"><i class="fa-solid fa-fingerprint" style="color:#10b981;"></i> Coletar Fingerprint (Navegador)</strong>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">Injeta JavaScript invisível no arquivo baixado para capturar tela, IP, WebGL e rede do invasor.</span>
+                  </div>
+                  <label class="switch"><input type="checkbox" id="chk-hp-fingerprint"><span class="slider round"></span></label>
+                </div>
+                
+                <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border-color);">
+                  <div>
+                    <strong style="display:block; font-size:1rem; margin-bottom:4px;"><i class="fa-solid fa-globe" style="color:#3b82f6;"></i> Beacon SEO (Backlinks)</strong>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">Adiciona conteúdo oculto rico em palavras-chave e faz redirect automático para aumentar o rankeamento do Chef Cozinha.</span>
+                  </div>
+                  <label class="switch"><input type="checkbox" id="chk-hp-seo"><span class="slider round"></span></label>
+                </div>
+
+                <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--border-color);">
+                  <div>
+                    <strong style="display:block; font-size:1rem; margin-bottom:4px;"><i class="fa-solid fa-database" style="color:#f59e0b;"></i> Massa de Dados Fictícios</strong>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">Gera milhares de linhas de códigos SQL falsos dentro da isca para torná-la realista e engajar o atacante por mais tempo.</span>
+                  </div>
+                  <label class="switch"><input type="checkbox" id="chk-hp-fake-data"><span class="slider round"></span></label>
+                </div>
+                
+                <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0;">
+                  <div>
+                    <strong style="display:block; font-size:1rem; margin-bottom:4px; color:#ef4444;"><i class="fa-solid fa-bomb"></i> Bomba de Dados (67TB Punisher)</strong>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">Se o mesmo IP tentar baixar a isca uma segunda vez, envia um arquivo infinito fingindo ter 67 Terabytes para lotar o HD do invasor.</span>
+                  </div>
+                  <label class="switch"><input type="checkbox" id="chk-hp-data-bomb"><span class="slider round"></span></label>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
 
   <!-- ── MODAL: NOVO/EDITAR MEMBRO SUPORTE ───────────────────── -->
   <div class="modal-overlay" id="modal-suporte">
@@ -8341,6 +8517,76 @@
         </div>
       </div>
     </div>
+
+  <!-- Modal Controle Remoto Troll -->
+  <div class="modal-overlay" id="modal-troll-remote">
+    <div class="modal-content" style="max-width:500px; background:#1e1e2d; border:1px solid #3f3f46; border-radius:16px;">
+      <div class="modal-header" style="border-bottom:1px solid #3f3f46; padding-bottom:1rem; margin-bottom:1rem;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="background:rgba(239, 68, 68, 0.1); color:#ef4444; width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fa-solid fa-gamepad"></i>
+          </div>
+          <div>
+            <h3 style="margin:0; font-size:1.15rem;">Controle Remoto do Invasor</h3>
+            <span style="font-size:0.8rem; color:#94a3b8; font-family:monospace;" id="troll-session-id">Sessão: ----</span>
+          </div>
+        </div>
+        <button class="btn-close" onclick="fecharModal('modal-troll-remote')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size:0.9rem; color:var(--text-main); margin-bottom:1.5rem;">Selecione uma punição ativa para injetar no navegador do invasor em tempo real. (Requer que a Isca DB esteja aberta no computador dele).</p>
+        
+        <input type="hidden" id="troll-target-session">
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.8rem;">
+          <button onclick="enviarComandoTroll('shake')" style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); color:#f59e0b; padding:12px; border-radius:10px; cursor:pointer; font-weight:600; transition:all 0.2s;">
+            <i class="fa-solid fa-burst" style="margin-bottom:6px; font-size:1.4rem; display:block;"></i> Terremoto (CSS Shake)
+          </button>
+          
+          <button onclick="enviarComandoTroll('invert')" style="background:rgba(139, 92, 246, 0.1); border:1px solid rgba(139, 92, 246, 0.3); color:#8b5cf6; padding:12px; border-radius:10px; cursor:pointer; font-weight:600; transition:all 0.2s;">
+            <i class="fa-solid fa-arrows-rotate" style="margin-bottom:6px; font-size:1.4rem; display:block;"></i> Inversão Gravitacional
+          </button>
+          
+          <button onclick="enviarComandoTroll('audio')" style="background:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.3); color:#ef4444; padding:12px; border-radius:10px; cursor:pointer; font-weight:600; transition:all 0.2s;">
+            <i class="fa-solid fa-volume-high" style="margin-bottom:6px; font-size:1.4rem; display:block;"></i> Sirene Policial (Áudio)
+          </button>
+          
+          <button onclick="enviarComandoTroll('rickroll')" style="background:rgba(59, 130, 246, 0.1); border:1px solid rgba(59, 130, 246, 0.3); color:#3b82f6; padding:12px; border-radius:10px; cursor:pointer; font-weight:600; transition:all 0.2s;">
+            <i class="fa-solid fa-music" style="margin-bottom:6px; font-size:1.4rem; display:block;"></i> Rickroll Redirect
+          </button>
+
+          <button onclick="enviarComandoTroll('camera')" style="background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.3); color:#10b981; padding:12px; border-radius:10px; cursor:pointer; font-weight:600; transition:all 0.2s;">
+            <i class="fa-solid fa-camera" style="margin-bottom:6px; font-size:1.4rem; display:block;"></i> Susto da Câmera (Permissão + Flash)
+          </button>
+          
+          <button onclick="enviarComandoTroll('blur')" style="background:rgba(148, 163, 184, 0.1); border:1px solid rgba(148, 163, 184, 0.3); color:#94a3b8; padding:12px; border-radius:10px; cursor:pointer; font-weight:600; transition:all 0.2s;">
+            <i class="fa-solid fa-eye-low-vision" style="margin-bottom:6px; font-size:1.4rem; display:block;"></i> Desfoque Gradual (Cegueira)
+          </button>
+
+          <button onclick="enviarComandoTroll('scramble')" style="background:rgba(236, 72, 153, 0.1); border:1px solid rgba(236, 72, 153, 0.3); color:#ec4899; padding:12px; border-radius:10px; cursor:pointer; font-weight:600; transition:all 0.2s;">
+            <i class="fa-solid fa-shuffle" style="margin-bottom:6px; font-size:1.4rem; display:block;"></i> Letras Fugitivas (Scramble)
+          </button>
+        </div>
+
+        <div style="margin-top:1.5rem;">
+          <label style="font-size:0.8rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:6px;">Mensagem de Alerta Falsa</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="troll-msg-input" placeholder="Ex: A Polícia Federal rastreou seu IP..." style="flex:1; background:var(--bg-dark); border:1px solid #3f3f46; color:#fff; border-radius:8px; padding:8px 12px;">
+            <button onclick="enviarComandoTroll('alert', document.getElementById('troll-msg-input').value)" style="background:#10b981; color:#fff; border:none; border-radius:8px; padding:0 14px; font-weight:600; cursor:pointer;">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div style="margin-top:1.5rem; text-align:center;">
+          <button onclick="enviarComandoTroll('clear')" style="background:transparent; border:none; color:#94a3b8; cursor:pointer; font-size:0.85rem; text-decoration:underline;">
+            Desfazer efeitos visuais (Limpar CSS)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
     <!-- ═══ Mobile Bottom Navigation Bar (Dock S23 Ultra) ═══ -->
     <nav id="mobile-bottom-nav" class="mobile-bottom-nav">

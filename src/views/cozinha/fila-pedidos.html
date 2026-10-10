@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/fila.css?v=20261006_kds2">
+  <link rel="stylesheet" href="/fila.css?v=20261009_vh1">
   <link rel="stylesheet" href="/device-adapters.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/regular/style.css">
   <link rel="stylesheet" href="/vendor/phosphor/src/bold/style.css">
@@ -22,12 +22,13 @@
   <script src="/broadcast.js"></script>
   <script src="/i18n.js"></script>
   <link rel="icon" href="/icons/icon.ico">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#fc4b15">
+  <link rel="manifest" href="/manifest-cozinha.json">
+  <meta name="theme-color" content="#ef4444">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Chef Cozinha">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <meta name="apple-mobile-web-app-title" content="KDS Cozinha">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png">
   <script src="/resilience-guard.js"></script>
   <script src="/offline-queue.js"></script>
   <script src="/socket.io.min.js"></script>
@@ -112,7 +113,7 @@
     .kds-sla-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   </style>
 
-  <script src="fila.js?v=20261006_kds2"></script>
+  <script src="fila.js?v=20261009_vh1"></script>
 </head>
 
 <body class="kds-body">
@@ -123,15 +124,16 @@
     <!-- ESQUERDA: VOLTAR AO CAIXA + BRAND -->
     <div class="kds-navbar-left">
       <button class="kds-nav-btn kds-btn-caixa" onclick="window.location.href='/index.html'" title="Voltar ao Caixa (Início)">
-        <i class="ph-bold ph-house"></i>
+        <i class="ph-bold ph-arrow-left"></i>
         <span>Caixa</span>
       </button>
-      <div class="kds-brand-badge" style="cursor:pointer;" onclick="window.abrirModalSetor()" title="Mudar Setor">
+      <div class="kds-brand-badge" onclick="window.abrirModalSetor()" title="Mudar Setor">
         <i class="ph-fill ph-chef-hat" style="color: #fc4b15; font-size: 24px;"></i>
         <div class="kds-brand-texts">
           <strong class="kds-brand-name">KDS Cozinha</strong>
           <span class="kds-brand-sector" id="current-sector-label-sub">Todos os Setores</span>
         </div>
+        <i class="ph-bold ph-caret-down kds-sector-caret"></i>
       </div>
     </div>
 
@@ -160,9 +162,9 @@
 
       <!-- SLA Legend -->
       <div class="kds-sla-legend" title="SLA de Tempo por Pedido">
-        <span><span class="kds-sla-dot" style="background:#22c55e;"></span>&lt;12m</span>
-        <span><span class="kds-sla-dot" style="background:#f59e0b;"></span>12-20m</span>
-        <span><span class="kds-sla-dot" style="background:#ef4444;"></span>&gt;20m</span>
+        <span><span class="kds-sla-dot dot-green"></span>&lt;12m</span>
+        <span><span class="kds-sla-dot dot-amber"></span>12-20m</span>
+        <span><span class="kds-sla-dot dot-red"></span>&gt;20m</span>
       </div>
 
       <div class="kds-nav-separator"></div>
@@ -171,7 +173,7 @@
       <div class="kds-chips-scroll" id="kds-sectors-scroll-wrap">
         <button class="kds-chip-item active sector-modal-btn" data-sector="Todos" onclick="window.abrirModalSetor()">
           <i class="ph-bold ph-storefront"></i> <span>Todos os Setores</span>
-          <i class="ph-bold ph-caret-down" style="margin-left: 5px;"></i>
+          <i class="ph-bold ph-caret-down" style="margin-left: 4px;"></i>
         </button>
         <button class="kds-chip-item" id="kds-filter-ifood" onclick="window.filtrarCanal('ifood')" title="Filtrar apenas pedidos de Delivery iFood">
           <i class="ph-bold ph-moped" style="color: #ea1d2c;"></i> <span>iFood</span>
@@ -181,102 +183,193 @@
       </div>
     </div>
 
-    <!-- DIREITA: SELETOR GRADE/LINHAS/KANBAN + AJUSTES DE LAYOUT + BUSCA + TEMA -->
+    <!-- DIREITA: SELETOR GRADE/LINHAS/KANBAN + BUSCA + AÇÕES + FERRAMENTAS + STATUS -->
     <div class="kds-navbar-right">
-      <!-- Botão Sincronizar Poller iFood -->
-      <button type="button" id="btn-sync-ifood" onclick="window.sincronizarIfoodManual()" class="kds-nav-btn" style="background: rgba(234,29,44,0.12); color: #ea1d2c; border: 1.5px solid rgba(234,29,44,0.3); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px;" title="Consultar novos pedidos no iFood agora (Poller)">
-        <i class="ph-bold ph-moped" style="font-size: 16px;"></i>
-        <span>iFood Sync</span>
-      </button>
-
-      <!-- Botão Smart-Sync de Cozinha (Saída Simultânea) -->
-      <button type="button" id="btn-toggle-smartsync" onclick="window.alternarSmartSync()" class="kds-nav-btn" style="background: rgba(139,92,246,0.15); color: #8b5cf6; border: 1.5px solid rgba(139,92,246,0.4); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px;" title="Ativar/Desativar sincronização inteligente de tempos de cocção para saída simultânea">
-        <i class="ph-bold ph-hourglass-high" style="font-size: 16px;"></i>
-        <span id="label-smartsync">Smart-Sync: ON</span>
-      </button>
-
-      <!-- Seletor de Modo de Exibição: Grade vs Linhas vs Kanban -->
-      <div style="display: flex; background: var(--bg-tertiary, #1e293b); padding: 3px; border-radius: 10px; border: 1px solid var(--border-color, #334155); gap: 2px;">
-        <button type="button" id="btn-layout-grid" onclick="window.alterarModoDisposicao('grid')" title="Modo Grade de Cards" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 800; cursor: pointer; background: #fc4b15; color: white; display: flex; align-items: center; gap: 4px;">
+      <!-- Seletor de Modo: Grade vs Linhas vs Kanban -->
+      <div class="kds-view-selector" style="display: inline-flex !important; flex-direction: row !important; align-items: center !important;">
+        <button type="button" id="btn-layout-grid" onclick="window.alterarModoDisposicao('grid')" title="Modo Grade de Cards" style="display: inline-flex !important; flex-direction: row !important; align-items: center !important;">
           <i class="ph-bold ph-squares-four"></i> <span>Grade</span>
         </button>
-        <button type="button" id="btn-layout-lista" onclick="window.alterarModoDisposicao('lista')" title="Modo Exibição em Linha" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted, #94a3b8); display: flex; align-items: center; gap: 4px;">
+        <button type="button" id="btn-layout-lista" onclick="window.alterarModoDisposicao('lista')" title="Modo Exibição em Linhas" style="display: inline-flex !important; flex-direction: row !important; align-items: center !important;">
           <i class="ph-bold ph-rows"></i> <span>Linhas</span>
         </button>
-        <button type="button" id="btn-layout-kanban" onclick="window.alterarModoDisposicao('kanban')" title="Modo Kanban (3 Colunas de Status)" style="padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-muted, #94a3b8); display: flex; align-items: center; gap: 4px;">
+        <button type="button" id="btn-layout-kanban" onclick="window.alterarModoDisposicao('kanban')" title="Modo Kanban (3 Colunas)" style="display: inline-flex !important; flex-direction: row !important; align-items: center !important;">
           <i class="ph-bold ph-columns"></i> <span>Kanban</span>
         </button>
       </div>
 
-      <!-- Botão Resumo de Produção -->
-      <button type="button" onclick="window.abrirResumoProducao()" class="kds-nav-btn" style="background: rgba(234, 179, 8, 0.15); color: #ca8a04; border: 1.5px solid rgba(234, 179, 8, 0.4); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px;" title="Ver totais agrupados para cozinhar em lote (Batching)">
-        <i class="ph-bold ph-cooking-pot" style="font-size: 16px;"></i>
-        <span>Agrupar (Batches)</span>
+      <!-- Botão Resumo de Produção (Batches) -->
+      <button type="button" onclick="window.abrirResumoProducao()" class="kds-btn-batches" title="Ver totais agrupados para cozinhar em lote (Batching)">
+        <i class="ph-bold ph-cooking-pot"></i>
+        <span>Lotes</span>
       </button>
 
-      <!-- Botão Alternar para Versão V1 Clássica -->
-      <button type="button" id="btn-switch-to-v1" onclick="window.trocarVersaoFila('classica')" class="kds-nav-btn kds-btn-version-switch" title="Alternar para a Fila de Pedidos V1 (Clássica)">
-        <i class="ph-bold ph-arrow-counter-clockwise"></i>
-        <span>V1 Clássica</span>
+      <!-- Botão Modo Foco: Item & Quantidade (Ocultar/Exibir atributos secundários) -->
+      <button type="button" id="btn-top-modo-foco" onclick="window.alternarModoFocoItemQtd()" class="kds-btn-foco" title="Modo Foco Cozinha: Exibir apenas Item e Quantidade (Ocultar Mesa, Garçom e atributos opcionais)">
+        <i class="ph-bold ph-target"></i>
+        <span>Foco: Item &amp; Qtd</span>
       </button>
 
-      <!-- Botão Loja de Presets de Nicho (Pizzaria, Buffet, Sushi, Bar, etc) -->
-      <button type="button" id="btn-loja-layouts" onclick="window.abrirLojaLayouts()" class="kds-nav-btn kds-btn-loja" title="Loja de Presets Especializados (Pizzarias, Sushis, Buffets, Bares e À La Carte)">
-        <i class="ph-bold ph-storefront"></i>
-        <span>Loja de Presets</span>
-        <span class="kds-badge-pulse-store">Nichos</span>
-      </button>
+      <!-- Busca rápida -->
+      <div class="kds-search-bar">
+        <i class="ph ph-magnifying-glass"></i>
+        <input type="text" id="fila-search-input" placeholder="Buscar..." oninput="window.filaSearchInput && window.filaSearchInput()">
+      </div>
 
-      <!-- Botão Modo Edição Direta -->
-      <button type="button" id="btn-toggle-modo-edicao" onclick="window.toggleModoEdicaoKds()" class="kds-nav-btn" style="background: rgba(59,130,246,0.12); color: #3b82f6; border: 1.5px solid rgba(59,130,246,0.3); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px; margin-right: 8px;" title="Arraste os itens direto nos cards e clique com botão direito para redimensionar">
-        <i class="ph-bold ph-pencil-simple" style="font-size: 16px;"></i>
-        <span>Ajuste Direto</span>
-      </button>
+      <!-- Ações rápidas de Cozinha -->
+      <div class="kds-quick-actions">
+        <!-- Botão Sincronizar Poller iFood -->
+        <button type="button" id="btn-sync-ifood" onclick="window.sincronizarIfoodManual()" class="kds-icon-btn kds-action-ifood" title="Consultar novos pedidos no iFood agora (Poller)">
+          <i class="ph-bold ph-moped"></i>
+          <span style="display:none;">iFood Sync</span>
+        </button>
 
-      <!-- Botão Ajustar Layout & Tamanhos -->
-      <button type="button" id="btn-toggle-layout-drawer" onclick="window.toggleLayoutDrawer()" class="kds-nav-btn" style="background: rgba(252,75,21,0.12); color: #fc4b15; border: 1.5px solid rgba(252,75,21,0.3); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px;" title="Configurar Layout, Largura de Seções e Posições">
-        <i class="ph-bold ph-sliders-horizontal" style="font-size: 16px;"></i>
-        <span>Layout</span>
-      </button>
+        <!-- Botão Smart-Sync de Cozinha (Saída Simultânea) -->
+        <button type="button" id="btn-toggle-smartsync" onclick="window.alternarSmartSync()" class="kds-icon-btn kds-action-smartsync" title="Ativar/Desativar sincronização inteligente de tempos de cocção">
+          <i class="ph-bold ph-hourglass-high"></i>
+          <span id="label-smartsync" style="display:none;">Smart-Sync: ON</span>
+        </button>
 
-      <!-- Botão Modo TV / Telão (Letras GG, Alto Contraste, Fullscreen) -->
-      <button type="button" id="btn-toggle-modo-tv" onclick="window.alternarModoTv()" class="kds-nav-btn" style="background: rgba(34,197,94,0.12); color: #22c55e; border: 1.5px solid rgba(34,197,94,0.35); padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; height: 34px;" title="Ativar Modo TV / Telão (Letras GG, Alto Contraste, Tela Cheia) [Tecla T]">
-        <i class="ph-bold ph-television" style="font-size: 16px;"></i>
-        <span>Modo TV</span>
-      </button>
+        <!-- Botão Alerta Sonoro / Mudo -->
+        <button type="button" id="btn-toggle-sound" onclick="window.toggleKdsSound()" class="kds-icon-btn" title="Alternar Alertas Sonoros da Cozinha">
+          <i class="ph-bold ph-speaker-high" id="icon-kds-sound"></i>
+        </button>
 
-      <!-- Botão Alerta Sonoro / Mudo -->
-      <button type="button" id="btn-toggle-sound" onclick="window.toggleKdsSound()" class="kds-nav-btn" style="height: 34px; padding: 0 10px; border-radius: 10px; font-size: 12px; font-weight: 700; border: 1.5px solid rgba(16,185,129,0.35); color: #10b981;" title="Alternar Alertas Sonoros da Cozinha">
-        <i class="ph-bold ph-speaker-high" style="font-size: 16px;"></i>
-        <span>Som: ON</span>
-      </button>
+        <!-- Botão Tela Cheia (Fullscreen) -->
+        <button type="button" id="btn-toggle-fullscreen" onclick="window.toggleKdsFullscreen()" class="kds-icon-btn" title="Alternar Tela Cheia (F11)">
+          <i class="ph-bold ph-arrows-out" id="icon-kds-fullscreen"></i>
+        </button>
 
-      <!-- Botão Tela Cheia (Fullscreen) -->
-      <button type="button" id="btn-toggle-fullscreen" onclick="window.toggleKdsFullscreen()" class="kds-icon-btn" title="Alternar Tela Cheia (F11 ou tecla F)">
-        <i class="ph-bold ph-arrows-out" id="icon-kds-fullscreen"></i>
-      </button>
+        <!-- Alternar Tema Claro / Escuro -->
+        <button class="kds-icon-btn" onclick="if(window.ChefTheme && window.ChefTheme.toggle) { window.ChefTheme.toggle(); } else if(typeof window.toggleTheme==='function') { window.toggleTheme(); }" title="Alternar Tema Claro / Escuro">
+          <i class="ph-bold ph-moon" id="theme-toggle-icon"></i>
+        </button>
+
+        <!-- Menu Dropdown de Ferramentas & Ajustes do KDS -->
+        <div class="kds-dropdown-wrap">
+          <button type="button" id="btn-kds-tools-menu" onclick="window.toggleKdsToolsMenu()" class="kds-icon-btn" title="Mais Ferramentas e Configurações">
+            <i class="ph-bold ph-sliders-horizontal"></i>
+          </button>
+          <div id="kds-tools-dropdown-menu" class="kds-dropdown-menu">
+            <div class="kds-dropdown-header">Ferramentas KDS</div>
+            
+            <button type="button" id="btn-toggle-modo-foco" onclick="window.alternarModoFocoItemQtd(); window.toggleKdsToolsMenu(false);" class="kds-dropdown-item" title="Alternar foco: exibir apenas Item e Quantidade, ocultando Mesa e Garçom">
+              <i class="ph-bold ph-target" style="color: #fc4b15;"></i>
+              <div>
+                <strong id="label-modo-foco">Foco: Item & Qtd</strong>
+                <small id="desc-modo-foco">Ocultar/Exibir Mesa e Garçom</small>
+              </div>
+            </button>
+
+            <button type="button" id="btn-toggle-modo-edicao" onclick="window.toggleModoEdicaoKds(); window.toggleKdsToolsMenu(false);" class="kds-dropdown-item">
+              <i class="ph-bold ph-pencil-simple" style="color: #3b82f6;"></i>
+              <div>
+                <strong>Ajuste Direto</strong>
+                <small>Organizar seções e posições</small>
+              </div>
+            </button>
+
+            <button type="button" id="btn-toggle-layout-drawer" onclick="window.toggleLayoutDrawer(); window.toggleKdsToolsMenu(false);" class="kds-dropdown-item">
+              <i class="ph-bold ph-layout" style="color: #fc4b15;"></i>
+              <div>
+                <strong>Painel de Layout</strong>
+                <small>Larguras, fontes e densidade</small>
+              </div>
+            </button>
+
+            <button type="button" id="btn-toggle-modo-tv" onclick="window.alternarModoTv(); window.toggleKdsToolsMenu(false);" class="kds-dropdown-item">
+              <i class="ph-bold ph-television" style="color: #22c55e;"></i>
+              <div>
+                <strong>Modo TV / Telão GG</strong>
+                <small>Letras gigantes e alto contraste</small>
+              </div>
+            </button>
+
+            <button type="button" id="btn-loja-layouts" onclick="window.abrirLojaLayouts(); window.toggleKdsToolsMenu(false);" class="kds-dropdown-item">
+              <i class="ph-bold ph-storefront" style="color: #f59e0b;"></i>
+              <div>
+                <strong>Loja de Presets</strong>
+                <small>Pizzaria, Buffet, Sushi, Bar</small>
+              </div>
+            </button>
+
+            <button type="button" id="btn-switch-to-v1" onclick="window.trocarVersaoFila('classica'); window.toggleKdsToolsMenu(false);" class="kds-dropdown-item">
+              <i class="ph-bold ph-arrow-counter-clockwise" style="color: #8b5cf6;"></i>
+              <div>
+                <strong>Fila V1 Clássica</strong>
+                <small>Versão compacta tradicional</small>
+              </div>
+            </button>
+
+            <div class="kds-dropdown-divider"></div>
+
+            <!-- ITENS EXCLUSIVOS PARA MOBILE / TELA VERTICAL ESTREITA -->
+            <button type="button" onclick="window.sincronizarIfoodManual(); window.toggleKdsToolsMenu(false);" class="kds-dropdown-item kds-mobile-tool-item">
+              <i class="ph-bold ph-moped" style="color: #ea1d2c;"></i>
+              <div>
+                <strong>Sincronizar iFood</strong>
+                <small>Consultar novos pedidos agora</small>
+              </div>
+            </button>
+
+            <button type="button" onclick="window.alternarSmartSync(); window.toggleKdsToolsMenu(false);" class="kds-dropdown-item kds-mobile-tool-item">
+              <i class="ph-bold ph-hourglass-high" style="color: #3b82f6;"></i>
+              <div>
+                <strong>Smart-Sync de Cocção</strong>
+                <small>Sincronizar saída simultânea de pratos</small>
+              </div>
+            </button>
+
+            <button type="button" onclick="window.toggleKdsSound(); window.toggleKdsToolsMenu(false);" class="kds-dropdown-item kds-mobile-tool-item">
+              <i class="ph-bold ph-speaker-high" style="color: #10b981;"></i>
+              <div>
+                <strong id="btn-drop-sound-status">Alertas Sonoros</strong>
+                <small>Ativar ou silenciar bipes</small>
+              </div>
+            </button>
+
+            <button type="button" onclick="window.toggleKdsFullscreen(); window.toggleKdsToolsMenu(false);" class="kds-dropdown-item kds-mobile-tool-item">
+              <i class="ph-bold ph-arrows-out" style="color: #64748b;"></i>
+              <div>
+                <strong>Tela Cheia (Fullscreen)</strong>
+                <small>Maximizar KDS na tela inteira</small>
+              </div>
+            </button>
+
+            <button type="button" onclick="if(window.ChefTheme && window.ChefTheme.toggle) { window.ChefTheme.toggle(); } else if(typeof window.toggleTheme==='function') { window.toggleTheme(); } window.toggleKdsToolsMenu(false);" class="kds-dropdown-item kds-mobile-tool-item">
+              <i class="ph-bold ph-moon" style="color: #a855f7;"></i>
+              <div>
+                <strong>Alternar Tema</strong>
+                <small>Modo Escuro / Modo Claro</small>
+              </div>
+            </button>
+
+            <button type="button" onclick="window.abrirModalSetor(); window.toggleKdsToolsMenu(false);" class="kds-dropdown-item kds-mobile-tool-item">
+              <i class="ph-bold ph-chef-hat" style="color: #fc4b15;"></i>
+              <div>
+                <strong>Mudar Setor da Cozinha</strong>
+                <small>Cozinha, Bar, Sobremesas, Todos</small>
+              </div>
+            </button>
+
+            <div class="kds-dropdown-divider kds-mobile-tool-item"></div>
+
+            <button type="button" onclick="window.abrirModalFilaSettings(); window.toggleKdsToolsMenu(false);" class="kds-dropdown-item">
+              <i class="ph-bold ph-gear" style="color: #64748b;"></i>
+              <div>
+                <strong>Configurações da Fila</strong>
+                <small>Alertas, ordenação e sons</small>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Status de Conexão em Tempo Real -->
       <div id="kds-connection-badge" class="kds-conn-badge online" title="Status da Conexão em Tempo Real">
         <span class="kds-conn-dot"></span>
         <span id="kds-conn-text">Online</span>
       </div>
-
-      <!-- Busca rápida -->
-      <div class="kds-search-bar">
-        <i class="ph ph-magnifying-glass"></i>
-        <input type="text" id="fila-search-input" placeholder="Buscar mesa..." oninput="window.filaSearchInput && window.filaSearchInput()">
-      </div>
-
-      <!-- Alternar Tema Claro / Escuro -->
-      <button class="kds-icon-btn" onclick="if(window.ChefTheme && window.ChefTheme.toggle) { window.ChefTheme.toggle(); } else if(typeof window.toggleTheme==='function') { window.toggleTheme(); }" title="Alternar Tema Claro / Escuro">
-        <i class="ph-bold ph-moon" id="theme-toggle-icon"></i>
-      </button>
-
-      <!-- Configurações do KDS -->
-      <button class="kds-icon-btn" onclick="window.abrirModalFilaSettings()" title="Configurações da Fila">
-        <i class="ph-bold ph-gear"></i>
-      </button>
     </div>
   </header>
 

@@ -734,25 +734,20 @@ body.dark-mode .qtd-number.is-multiple,
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4) !important;
 }
 
-/* Botões de Ação na Linha da Fila (Pronto / Reverter) */
-body.dark-mode .btn-pronto,
-[data-theme="dark"] .btn-pronto {
-  background-color: rgba(239, 68, 68, 0.15) !important;
-  border: 1px solid rgba(239, 68, 68, 0.35) !important;
-  color: #f87171 !important;
-}
-body.dark-mode .btn-pronto:hover,
-[data-theme="dark"] .btn-pronto:hover {
-  background-color: rgba(239, 68, 68, 0.28) !important;
+/* Botões de Ação na Linha da Fila (Alto Contraste e Cores Vivas) */
+.queue-item .btn-pronto,
+.queue-item .btn-chamar,
+.queue-item .btn-entregar {
   color: #ffffff !important;
 }
 
 body.dark-mode .btn-reverter,
 [data-theme="dark"] .btn-reverter {
-  background-color: rgba(255,255,255,0.06) !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
+  background-color: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
   color: #94a3b8 !important;
 }
+
 
 /* Observações & Composições (fundo do item continua pastel → texto escuro) */
 body.dark-mode .item-observacao,

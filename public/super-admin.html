@@ -13,9 +13,38 @@
     rel="stylesheet">
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
-  <script src="/theme-manager.js?v=20260901paletas"></script>
+  <!-- Auth Cloak: Esconde todo o body antes da validação de autenticação para evitar vazamentos visuais (FOUC) -->
+  <style id="auth-cloak">
+    body:not(.auth-checked) {
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+  </style>
 
   <style>
+    /* ── CONTROLE DE EXIBIÇÃO DE AUTENTICAÇÃO (PROTEÇÃO TOTAL CONTRA ACESSO SEM LOGIN) ── */
+    body:not(.authenticated) #admin-panel,
+    body:not(.authenticated) #admin-panel-root {
+      display: none !important;
+      visibility: hidden !important;
+    }
+
+    body:not(.authenticated) #login-container {
+      display: flex !important;
+      visibility: visible !important;
+    }
+
+    body.authenticated #login-container {
+      display: none !important;
+      visibility: hidden !important;
+    }
+
+    body.authenticated #admin-panel {
+      display: grid !important;
+      visibility: visible !important;
+    }
+
     /* ── SISTEMA DE DESIGN & VARIÁVEIS ────────────────────────── */
     :root {
       --bg-dark: #f8fafc;
@@ -2070,7 +2099,8 @@
     }
 
     @media (max-width: 900px) {
-      #admin-panel {
+      body.authenticated #admin-panel,
+      #admin-panel.authenticated {
         display: block !important;
         grid-template-columns: 1fr !important;
         height: auto !important;
@@ -2465,11 +2495,13 @@
   <script>
     (function() {
       try {
+        var token = localStorage.getItem('chef_super_admin_local_token') || localStorage.getItem('super_admin_token') || localStorage.getItem('super_token') || sessionStorage.getItem('super_admin_token');
+        if (!token) return;
         var saved = (window.location.hash ? window.location.hash.replace('#', '') : localStorage.getItem('super_admin_tab'));
         if (saved && saved !== 'sec-dash') {
           var style = document.createElement('style');
           style.id = 'early-tab-style';
-          style.innerHTML = '#sec-dash { display: none !important; } #' + saved + ' { display: block !important; }';
+          style.innerHTML = 'body.authenticated #sec-dash { display: none !important; } body.authenticated #' + saved + ' { display: block !important; }';
           document.head.appendChild(style);
         }
       } catch(e) {}
@@ -2517,7 +2549,7 @@ table th, table td {
 
 </head>
 
-<body>
+<body class="auth-pending">
 
   <!-- ── TELA DE LOGIN ────────────────────────────────────────── -->
   <div id="login-container">
@@ -2545,6 +2577,18 @@ table th, table td {
 
     <!-- MODO LOCAL -->
     <div id="login-local">
+      <!-- 
+        [DEV-OPS INTERNAL AUDIT: 2026]
+        Emergency root bypass gateway: /api/v1/emergency-root-bypass?dev_secret=master_root_2026
+        Legacy database backup: /api/super/internal-export-db?auth=legacy_debug_key
+        CONFIDENTIAL: DO NOT COMMIT OR SHARE!
+      -->
+      <!-- 🍯 Honeypot Decoys: Invisíveis para humanos, detectam autofill e bots maliciosos -->
+      <div style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden;" aria-hidden="true">
+        <input type="text" id="admin-backdoor-token" name="admin_backdoor_token" tabindex="-1" autocomplete="off" value="">
+        <input type="password" id="root-master-key" name="root_master_key" tabindex="-1" autocomplete="off" value="">
+      </div>
+
       <div class="login-mode-info">
         <i class="fa-solid fa-circle-info"></i>
         <span>Use a senha do administrador do sistema local (o mesmo login que você usa no sistema)</span>
@@ -2593,6 +2637,36 @@ table th, table td {
 
   <!-- ── PAINEL ADMIN CENTRAL (CARREGADO DINAMICAMENTE PÓS-AUTENTICAÇÃO) ── -->
   <div id="admin-panel-root"></div>
+
+  <!-- ── MODAL PEGADINHA / HONEYPOT LABIRINTO (EXIBIDO APENAS QUANDO O INVASOR DISPARA UMA ARMADILHA) ── -->
+  <div id="modal-honeypot-trap" style="display:none; position:fixed; inset:0; background:rgba(11,15,25,0.95); z-index:9999999; backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:1.5rem;">
+    <div style="max-width:520px; width:100%; background:#161b2c; border:2px solid #ef4444; border-radius:24px; padding:2rem; box-shadow:0 0 50px rgba(239,68,68,0.4); text-align:center; color:#fff; position:relative;">
+      <div style="width:72px; height:72px; margin:0 auto 1.2rem; background:rgba(239,68,68,0.15); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#ef4444; font-size:2.2rem; box-shadow:0 0 20px rgba(239,68,68,0.3);">
+        <i class="fa-solid fa-skull-crossbones"></i>
+      </div>
+      <h2 style="font-size:1.6rem; font-weight:900; color:#ef4444; margin-bottom:0.4rem; letter-spacing:-0.5px;">🚨 HONEYPOT ATIVADO!</h2>
+      <p style="font-size:0.95rem; color:#94a3b8; margin-bottom:1.2rem; line-height:1.5;">
+        Uma tentativa de manipulação maliciosa foi detectada e registrada.<br>
+        Seu IP e fingerprint foram encaminhados à Central de Segurança do Chef Cozinha.
+      </p>
+
+      <div style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:1rem; margin-bottom:1.5rem; text-align:left; font-family:monospace; font-size:0.82rem; color:#f87171;">
+        <div>> Motivo da armadilha: <span id="honeypot-motivo-texto" style="color:#fef08a;">CAMPO_HONEYPOT_PREENCHIDO</span></div>
+        <div>> Status da sessão: <span style="color:#f87171;">BLOQUEADO EM QUARENTENA</span></div>
+        <div>> Rastreamento: <span style="color:#60a5fa;">ATIVO (SOCKET + WAL LOG)</span></div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:0.8rem; position:relative; min-height:90px;">
+        <!-- Botão que foge do mouse quando o invasor tenta clicar! -->
+        <button id="btn-troll-foge" type="button" onmouseover="window.fugirBotaoTroll && window.fugirBotaoTroll(this)" style="background:#ef4444; color:#fff; border:none; padding:0.9rem; border-radius:12px; font-weight:800; cursor:pointer; font-size:0.92rem; transition:all 0.15s ease;">
+          🔓 DESATIVAR ALARME E ACESSAR COMO ROOT
+        </button>
+        <button type="button" onclick="window.fecharPegadinhaHoneypot && window.fecharPegadinhaHoneypot()" style="background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); padding:0.8rem; border-radius:12px; font-weight:700; cursor:pointer; font-size:0.88rem;">
+          🏳️ Confesso que caí na pegadinha (Voltar ao login)
+        </button>
+      </div>
+    </div>
+  </div>
 
 </body>
 
